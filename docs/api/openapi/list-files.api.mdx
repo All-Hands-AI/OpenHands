@@ -1,0 +1,71 @@
+---
+id: list-files
+title: "List files"
+description: "List files in the specified path"
+sidebar_label: "List files"
+hide_title: true
+hide_table_of_contents: true
+api: eJydVE1v00AQ/SurOYG0jQ2Ui29VaaGoFVUBcagitLEn9bbr3e3uOCJY/u/V2E5i4kai9SV2dj7evHn7Gigw5kF70s5CBpc6klhqg1FoK6hEET3meqmxEF5RCRKcx6A4/KKADIyOdM7xIMGroCokDBGy2wasqhAyyJ1dYYhdym9dgATNnYZqAR9rHbCAjEKNEmJeYqUga4DWntMjBW3voJV7SE9HZcXFJ2jltuNQumvzWGNY/9NnqUx8SaNrRaUgJ8yOmmVwFbRzrhq9sxEj13mfpvzzDKFu2SeCZDYILXGg8t7ovBsguY8c3UxRqRAU49eEVXwGLT8SjtPjaeub2pKuUFhHQltNWhn9F4tXgHCLe8yJNxx4+6T7gTEEFw5gaiV8fI6PM87puNT27tWsvAZQK6FCKh2r9g67ZNZJBonyOhmrNCbNnmjbhBEfbeBGDKuNyutgIIOSyMcsSZT3M2XMUalsEWcFrmAip+CKOu9U25fplLurkiWJcbkypYuUfUjTdFLhko9FgSs0zldoaVtoztDyOmhad9gWqAKGk5rHvJ2Pj78zoz1p46Atc4wEhkvC330QyOHl3IVKEWTw9dcPYGa1XbouXZPh+G8e7RfmQJxcX0wm2J5m4tQVKC4xRimu1AOKKxcQJDC9fey7WTpL+VZ6F6lSnR6Ge74zq/0OzU5R/2Npw9CEfyjxRmnL/bqVNINIbkF53Qt1JxOQkE3dbaSUuQReI6c3zUJF/BlM2/LfvS3xjgod1cKMjOngIIeM6AD+B1zvvHClTM0hnUZWKmju+cL+b24GD30r9s33AISNh9n1GMIG2j517byVUKIqMHTI+qiTPEdPo/yJQfBI25v9+YwF+QTTcV3v
+sidebar_class_name: "get api-method"
+info_path: api/open/openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"List files"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/list-files"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+List files in the specified path
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"},{"name":"path","in":"query","required":false,"schema":{"type":"string"},"description":"Path to list files from"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"List of files","content":{"application/json":{"schema":{"type":"array","items":{"type":"string"}}}}},"404":{"description":"Runtime not initialized","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}},"500":{"description":"Error listing files","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

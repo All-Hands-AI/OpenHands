@@ -1,0 +1,71 @@
+---
+id: zip-current-workspace
+title: "Download workspace as zip"
+description: "Download the current workspace as a zip file"
+sidebar_label: "Download workspace as zip"
+hide_title: true
+hide_table_of_contents: true
+api: eJyVVE1P20AQ/SurObXSEqetetkbAtpSgYr6IQ5RVE3sCV6wd5fZdWiw/N+rsZNgQqjUXGKv583He2+2hYJizjYk6x0YOPUPrvJYqFSSyhtmckk9eL6LAXNSGBWqRxvU0lYEGnwgRoGeF2Dg0YaTAXK9RYCGgIw1JeIIZtaCw5rAQO7dijj24N+2AA1W6gdMJWhgum8sUwEmcUMaYl5SjWBaSOsg8JjYuhvo9F7/J6O06vwUurkki8G7SFHw76dT+XuO2rU7ni33LpFLEo0hVDbvk2aPNsjRax1pWHquMYGBhXXIa+i6rtPw8VDdM2bPUjNYd/NE8+vFb6PgDlT3i1vKk7DNokmyw7QkBQ7QNvw01JRKL9LdUA8W9g1kGGw2Fihm7Z5enfBwVFimPHleg4ZIvNpq3HAFBsqUQjRZhiFMsKqOSnRFnBS0gn3VrtgXTd5rNqSBTo+zmCyrfI5V6WMyH6bT6YsMF/JZFbSiyodaTLtNNJfW8oZtWve9LQiZ+LiRSWfz8ecfQurA2zhoR550AhsvyvsQBHrz8Gmr+9frnyDkWrf0PdymSuK/BXJfhAN1fHX+YoLdV6NOfEHqgmLU6hLvSF16Fk8IvUPsu8l0MhXzBx9Tjb0lNnu1W+BnSyum3SvYPnnsf7d+w0eiPykLFVonrfRqtRsLzQCDHWz8ZCLQYF6u/XMfzTWIyJKhbRcY6RdXXSfH9w2xKDjXsEK2uBBOZy0UNspzAWaJVaR/TPnm++ZWeav2r4lXZtocohODr7Bq5A003NH6wBXWzTsNJWFB3Hc2RB3nOYU0wu9fJmLB3R5+PhPv/AUH8fJA
+sidebar_class_name: "get api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Download workspace as zip"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/zip-directory"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Download the current workspace as a zip file
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Workspace zip file","content":{"application/zip":{"schema":{"type":"string","format":"binary"}}}},"500":{"description":"Error zipping workspace","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

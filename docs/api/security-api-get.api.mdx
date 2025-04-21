@@ -1,0 +1,71 @@
+---
+id: security-api-get
+title: "Security analyzer API (GET)"
+description: "Catch-all route for security analyzer API GET requests"
+sidebar_label: "Security analyzer API (GET)"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVMFu2zAM/RWBpxZQa2/rSbeg67IOLVasHXYIgoGx2VqtIqmSHCw1/O8DbScNkqwbguUS29J7JB8f2UBJsQjaJ+0sKDjHVFQnaIwIrk4k7l0QkYo66LQUaNEsXyiI0c2lGF/ciUDPNcUUQYLzFJBJLktQsIKMvB5TAgkeA84pUYigJg1YnBMoKJxdUIgd7qcuQYLmJDymCiQwuw5UgkqhJgmxqGiOoBpIS8/wmIK2D9DK7SI2aMXlR2jlOuJA/V/C3O7VpWNtp8wbvbORIlO9z3P++xvBCgOStUlkE6PQe6OLrpzsMTK02c3SzR6pSNC2bSvhLD/7l3DWJaGtThqNfqHy8KgSfGAHJN2XW1JCbfZo2P8kzClVjp3yMNgjVaAgQ6+zTVPErNnySJutvJU1jGpBQqSwWDmrDgYUVCn5qLIMvT9FY04qtGU8LWkB2028Ca6si84pPU3nllcWlWXGFWgqF5P6kOf5DsMVH4uSFmScn5NNa6KpXA9Cl9uMMFAY1VzrZLp5fMu69tJtXlrLx5nAYE1+7y+BHB4+uTDHBAq+/LgDllfbe9fBdTJ8/6sn+5k1YIvuVLA+VeLclSSuKEYprvGJxLULbEaWt7/77jQ/zXkWvItpjp0rhtnaPw9H44u74+2QzavRDl85gzaJfqXMG9SW0+o61wyGmgB63bv61VIgQe0unnWjJKgOPJXAPWeSpplhpO/BtC1/fq4pcEOnEhYYNM5Y4kkDpY78XIK6RxPpjZKPvg0751hs76o/lDV8RMsJLtDU/AYSnmi5Z4+yhQ/K5o2VdlBiwzJsJVSEJYVOp/5oVBTk0wZoZ9/wgKz3xPiCnf0bRn1REA==
+sidebar_class_name: "get api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Security analyzer API (GET)"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/security/{path}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Catch-all route for security analyzer API GET requests
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"},{"name":"path","in":"path","required":true,"schema":{"type":"string"},"description":"Security analyzer API path"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Security analyzer response","content":{"application/json":{"schema":{"type":"object"}}}},"404":{"description":"Security analyzer not initialized","content":{"application/json":{"schema":{"type":"object","properties":{"detail":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

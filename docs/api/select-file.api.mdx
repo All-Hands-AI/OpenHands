@@ -1,0 +1,71 @@
+---
+id: select-file
+title: "Get file content"
+description: "Retrieve the content of a specified file"
+sidebar_label: "Get file content"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VE1P3DAQ/SvWnFopbEJbLr6tKFAqUBEt6gGtKq89SwyJbWwn6irKf68mye6GDbTqh5pLEns+3rx5Mw0oDNJrF7U1wOEao9dYI4s5MmlNRBOZXTHBgkOpVxoVW+kCIQHr0AtyO1fAIWCBMp72V054UWJEH4DfNmBEicBBWlOjD53PN60gAU0pnYg5JODxsdIeFfDoK0wgyBxLAbyBuHbkHqLX5g7aZA/y8SgsO38PbbLNOCDt0jxW6Nd/k+dKxJyoIGYoMIuWLZH5gTEF7YKiB2dNwEAB32QZvZ6GIYo2zEICmy/egHCu0LKrI70PZNxM0dnlPUpydJ4aEHWfSlqFz9TQPQm8OzyaArkxYtlXYR0attRG+PWmuf8IFnpv/cu4jp4j6IR8Okza3P1PPG0CJcbckpzvsHMmaXJIhdPpWL0hbfbE3Kb9ABwMeAP6eiP/yhfAIY/RBZ6mwrmZKIqDXBgVZgprmAjNW1XJTs59mE7Suyg8TQsrRZHbEPnbLMsmES7omimssbCupBHeBFoQNFl5HdcdtiUKj35eUZ23i/H1Z6K0Z21stKWOkMAwPvTfG0EyfJxaX4oIHD5+/QJErTYr27nrWJD9J4fmA3HA5lfnkwq2t5wdW4XsAkNI2KV4QHZpPTFM9Pa2h7NsltG8OhtiKTpBDAvgDGM/q7uBe5Kn2Qnrd1bfQEHE7zF1hdCGsncNagbN3IJwutftTjWQAJ8uwbFwFglQV8m/aZYi4I0v2paO+/VFLVM60OAq4CtRBPxJRa+uh133mv1yeb1Q1AOud3u0FkVFJp2MauE14fhzTPuL+wUIw6Ew6zGEDbR9PttFm0COQqHvkPVWcynRxZH/ZIlQSdvpPzshzf4A5G914Q==
+sidebar_class_name: "get api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get file content"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/select-file"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Retrieve the content of a specified file
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"},{"name":"file","in":"query","required":true,"schema":{"type":"string"},"description":"Path of the file to be retrieved"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"File content","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"string"}}}}}},"415":{"description":"Unable to open binary file","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}},"500":{"description":"Error opening file","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

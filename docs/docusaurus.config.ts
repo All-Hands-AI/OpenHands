@@ -35,7 +35,35 @@ const config: Config = {
   markdown: {
     mermaid: true,
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: ['@docusaurus/theme-mermaid', 'docusaurus-theme-openapi-docs'],
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'api',
+        path: 'api',
+        routeBasePath: 'api',
+        sidebarPath: './api/sidebar.ts',
+      },
+    ],
+    [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: 'openapi',
+        docsPluginId: 'api',
+        config: {
+          openhands: {
+            specPath: 'openapi.json',
+            outputDir: 'api/openapi',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+              categoryLinkSource: 'tag',
+            },
+          },
+        },
+      },
+    ],
+  ],
   presets: [
     [
       'classic',
@@ -74,6 +102,11 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'User Guides',
+        },
+        {
+          to: '/api',
+          position: 'left',
+          label: 'API Reference',
         },
         {
           type: 'localeDropdown',

@@ -1,7 +1,13 @@
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {
-  apiSidebar: [require('./modules/python/sidebar.json')],
+  apiSidebar: [
+    {
+      type: 'link',
+      label: 'REST API Reference',
+      href: '/api',
+    },
+  ],
   docsSidebar: [
     {
       type: 'doc',

@@ -1,0 +1,71 @@
+---
+id: get-vscode-url
+title: "Get VSCode URL"
+description: "Get the VSCode URL for the conversation"
+sidebar_label: "Get VSCode URL"
+hide_title: true
+hide_table_of_contents: true
+api: eJzFlFFP2zAQx79KdE+bZJps0178hhhjTKAhGPBQVchNjsbg2Ma+VKuifPfpnFBCyybtaX2pY9+d/3f383VQYSyD9qSdBQknSBnVmN1cHbkKs+vLs+zehbRVOrvGEFWyFOA8hrQ+rUDCCukmlq7C62BAgFdBNUgYIsh5B1Y1CBKmEe50BQI03+kV1SAg4FOrA1YgKbQoIJY1NgpkB7Tx7B4paLuCXuxoPpqEzU6/QL/gYNE7GzGy/8ei4L/XXi8ZgmBlhJbYSnlvdJmC5Q+RTbt9KW75gCVxooHrQHq4aJ1KcNcGsy9bgG2NUUuDQ4J9+gn4/Ja44xBcyFZIpO0q++9SBSALeqMXz1k0SLUbQUj9pxok5MrrfNr1mHc7EPT5oOSgTeBEDOtnapI2qIl8lHmuvJ8pYw5qZas4q3ANuxxcBFe1ZaJgCAO9mEaReW5cqUztIslPRVHsRTjj46zCNRrnG7S0DbRgaWUbNG2StiWqgOGw5TTni+nxFTdgqPHUaFs5VgIj3fw9GIEYF19daBSBhO+3P4Erq+29S+6auB/ww6P9xjXIDi9O9zLYnsosMXOGMYrsXD1idu4CggAu72D7YVbMCn5O3kVqVMJnfKk8Bl5R9+qW7gXCfxgYY/6Evyj3RmnLV4/8DbzMQXk9IP5CDAiQ+4NjAs1CAHeU3btuqSKPoL7n7acWA7drIWCtgh6AnndQ6cjrCuS9MhH/kt27y3Eovc92p8wfEho3ld2wSmVa/gIBj7h5YwL2i15AjarCkJQNVodliZ4m/nsPnYHbPrmTYyblN+LMABM=
+sidebar_class_name: "get api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get VSCode URL"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/vscode-url"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Get the VSCode URL for the conversation
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"VSCode URL","content":{"application/json":{"schema":{"type":"object","properties":{"vscode_url":{"type":"string","nullable":true}}}}}},"500":{"description":"Error getting VSCode URL","content":{"application/json":{"schema":{"type":"object","properties":{"vscode_url":{"type":"string","nullable":true},"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

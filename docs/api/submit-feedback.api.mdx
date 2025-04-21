@@ -1,0 +1,71 @@
+---
+id: submit-feedback
+title: "Submit feedback"
+description: "Submit user feedback for a conversation"
+sidebar_label: "Submit feedback"
+hide_title: true
+hide_table_of_contents: true
+api: eJydVd9P2zAQ/leie9ok03Sb9pKnMQYaEwgETHuoqukaX6nBiY3tFKoo//t0cdqmTUEafWni83336/suNUjyuVM2KFNCBrfVrFAhqTy5ZE4kZ5g/JnPjEkxyUy7JeWxvCjCWXPt8LiED3/qddR4gwKLDggI5D9mkhhILggz6GH+VBAGKo1oMCxDg6KlSjiRkwVUkwOcLKhCyGsLKsrsPTpX30Ii9rE96sMn5D2imEYx8+G7kihH2sXNTBioDm9BarfLWOX3wDFgPQ5vZA+WBC3NceVDk2UoFKj3MUMDcuAIDZN2NRgBnqCL6oBxLrlCezf4QmKQ5VprRrFNLDNT6GI1OhdVBwPXsDhjbH/fHW1P6WMbn8Zj/dru6nmYShxtIJr7Kc/J+Xmm9gnc3MSbw9VDMU+eMWwdU5f2GhO+PNhgZh3itL42AgsLCMKet8a03kzODFK1K+/z1ab1H5yaNiR/1kvbklmsRVE5DBosQrM/SFK0dodZHCyylH0lawj6tr52RVd6SOsJAI/ooWZpqk6NeGB+yL+PxeIBwweZE0pK0sQWVYQM05dTyKhJoUsOM0JE7rrjWybRvvuW+xtb1L236x5lAJ1Z+j5dAdA9nayH8+nMH3F+e181WnKcvWFhNPTEBb59vFM9HuSmgJ56tKHY0sxFGXxc9NW7k0NOIKuemrUMFjg9XlsqfPIzk+Pp80MqNNUtOjKTkgrwXySU+UnJpHO3k+Gk0Ho2jRn0osKVntwG7BdtjyE6Yesvy/9jF3SQCvYTUalQlx255Unf0nQBaFTW0JTAIyIYbeZ/DUwFMMMao6xl6+u100/DxU0WO2TMVsESncMZtnNQglednCdkctac3Svxw063lj8n+Dn+lqu4QS94/S9QVv4GAR1od+L4000bAglCSazOLt05i/KM7xtqiDJYKqy16HOc52fDm3Wlvc1xf3d6xALpvT2Ek+zh85o8cPseMjQ3rfd+e1aCxvK/wnu9GTP79A/iXqXw=
+sidebar_class_name: "post api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Submit feedback"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/conversations/{conversation_id}/submit-feedback"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Submit user feedback for a conversation
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"email":{"type":"string","format":"email"},"version":{"type":"string"},"permissions":{"type":"string","default":"private"},"polarity":{"type":"string"},"feedback":{"type":"string"}}}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Feedback submitted successfully","content":{"application/json":{"schema":{"type":"object"}}}},"500":{"description":"Error submitting feedback","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

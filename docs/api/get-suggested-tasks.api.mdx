@@ -1,0 +1,63 @@
+---
+id: get-suggested-tasks
+title: "Get suggested tasks"
+description: "Get suggested tasks for the authenticated user across their most recently pushed repositories"
+sidebar_label: "Get suggested tasks"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VE1v2zAM/SsCz2rs7uPi2zBsXYcWK9AWOwTBoNhsrMaWNJLOFgT57wPtJHWTnIbNFwt6BPn03pM2UCGX5JP4GKCAKxTD3WKBLFgZcbxk8xTJSI3GdVJjEF86xTpGMq6kyKyoJ9NGFkNYYpBmbVLHNVaGMEX2Eskjg4WYkJzOuq6ggAXK/X7Yg84CC4ScYmBkKDbwJs/195rj/Wt+YKGMQTCIlrqUGmXoY8ieWes3wGWNrdOVrBNCAY7IrcGCF2x5tB/nz1gKWEikRMUPLMRLg6MyFvJhAVsLHTVn9w+nXp+Fh40zQEmo4v5wcgpbeIrUKgKVE7wQ3yJsh8/Cu/zyVKkPL475GAwSRfoLufb8+kHvz1nyGJYh/vonE7YWWpQ67vKhZjipoYDMJZ9p6rJDQC/2AWCkFRJDMd0MnkAtkrjIMpfSxDXNRe1CxZMKV2CPuN9RrLqyF2hoA1s77lJkWRNL19SRpXib5/lJhxuFTYUrbGJqMcih0UyplR15Wffc5ugISW2BYjobw/cqyRC3cdFBIWWiB+3LoNgVgd0tPu+j8fX7A6iGPjzFUXbhW8LwRTUwH+6uT05wQAvzMVZobpDZmlu3RHMbCcGCyjvUXk7ySa5hTZGldb2hwfWkzrwex6M2L9n474/NTjrB35KlxvkwurJDqKbgkgcL2l/VPQrWzIK6rnWbzdwxPlKz3er2zw71bk9nFlaOvJuryNPZ1kKNrkLq3V7iWi9hWWLSHK9c0/Wvz/GN0BwcMn/1SQ38A4Mr9Uk=
+sidebar_class_name: "get api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get suggested tasks"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/user/suggested-tasks"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Get suggested tasks for the authenticated user across their most recently pushed repositories
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Suggested tasks","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","properties":{"title":{"type":"string"},"url":{"type":"string"},"repository":{"type":"string"},"type":{"type":"string"},"created_at":{"type":"string","format":"date-time"}}}}}}},"401":{"description":"Authentication error","content":{"application/json":{"schema":{"type":"string"}}}},"500":{"description":"Unknown error","content":{"application/json":{"schema":{"type":"string"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

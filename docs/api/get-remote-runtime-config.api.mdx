@@ -1,0 +1,71 @@
+---
+id: get-remote-runtime-config
+title: "Get runtime configuration"
+description: "Retrieve the runtime configuration (session ID and runtime ID)"
+sidebar_label: "Get runtime configuration"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVMFu2zAM/RWBpxbQYm+76VY0W5ehxYpsww5BMCgWW6uVJVWigwWG/32g7aZB0g0D5osl65Hme3xUBwZzlWwkGzwoWCIli1sUVKNIrSfboKiCv7P3bdIMEmcZc+bFYi60N3vUYn4OEkLEEbcwoOAeaYlNIFyOoMshE0iIOukGCVMGterA6wZBQRX8FlMe4n9aAxIsFxU11SAh4VNrExpQlFqUkKsaGw2qA9pFDs+UrL+HXh6RujxIKxZz6NecLMfgM2aOf1eW/DqS4jX2ILlIQk8coGN0thoOiofMUd1pVWHzgBUx58TikB3/OcnGNE8YSPCtc3rjcOTaS5hE/zf4+EhokOow9WEQnWpQUOhoi0Opc9EdKd8X1XOnMqbtc5va5EBBTRSzKgod40w796bW3uSZwS0cC3+bgmmrQfYxDfTyMIsqChcq7eqQSb0vy/IkwzUfC4NbdCE26GmfaM2lVW2ytBtq26BOmC5aprhaHx5/5Y6Moh+C9ipyJTDZifcjCOS0+BhSowkUfP7xDVhV6+/CEG6JFYcvEf0n1kBc3C5OGOxPlbgMBsU15izFjX5EcRMSggSWd8S+nZWzkv0bQ6ZGD36aRuMK6fV5PP5h92LQ/5/mSSHCX1REp63n4ob+dZObVqCjHafixU8gQZ3O8mSptQTuN4d23UZn/J5c3/PnpxYTN3MtYauTHQ296sDYzGsD6k67jH8hfLac7ohzcTz0fyAzfdR+x53QruUdSHjE3SsXUr/uJdSoDaahshF1UVUY6SD+5F5gO+6H8eoD++g3sUPpBQ==
+sidebar_class_name: "get api-method"
+info_path: api//openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get runtime configuration"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/config"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Retrieve the runtime configuration (session ID and runtime ID)
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Runtime configuration","content":{"application/json":{"schema":{"type":"object","properties":{"runtime_id":{"type":"string","nullable":true},"session_id":{"type":"string","nullable":true}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

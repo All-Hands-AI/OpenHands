@@ -1,0 +1,71 @@
+---
+id: get-conversation
+title: "Get conversation"
+description: "Get conversation details"
+sidebar_label: "Get conversation"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVE1v2zAM/SsGTxug1t7Wk29F22UZ+hG0K3YIgkKxmVitLKkSHSww/N8H2m5qOFmGYb7YlvhIPvKRNeQYMq8cKWsghQlSlFmzQR8kH0U5klQ6gADr0Ldn0xxSWCNdDOxAgJNelkjoA6TzGowsEVIYOntSOQhQHMdJKkCAx9dKecwhJV+hgJAVWEpIa6CtY3ggr8waGjHKcxg7ml5Cs2BnwVkTMDD+c5Lw6wjqnVlmDaEhtpfOaZW1BvFzYFC9n5RdPmNGTNlzUUh1IcdUD7EgRRoP3mgZ6KlyuSTMnyTt2whYWV/yDbDRCakSGZh5/GdMQI0Zgzw6GxRZvz0ENpXWcskJc3sYR5KqcMgUTVVCOof7x9vb6e0EBDz8uJvNri5hwbS9Wq/RHwNOHqcg4Hw2hUXTPgLOkrO/9NBYila2Mvn/dHHEsotdIhW2F3orbioghVg6FQ/7HOJ61PYGuLx+8zYHldeQQkHkQhrH0rlTqfVJIU0eTnPcwFjZM2/zKmvZdW6gEUMvaRxrm0ld2EDplyRJ9jxc83WU4wa1dSUa2jlacGpZ5RVt29yWKD3684q5zRfD6weuVifrodGueJwJ9PPK/50RiP7j65vqvv/8AVxOZVa2hXf6hzuH5hvXIOKOjxnsbtPowuYYXWMIIrqRLxjdWI8ggMvb2X46TU4T1rSzgUrZ9rrfPeNlNo5Tv2vm2OLrKRP+othpqQxHaxtS97qYg3Sqk+C7MkBAOl4JCwHcN0bU9VIGfPS6afj4tUKewflCwEZ61elxXkOuAn/nkK6kDniEwYf7fpl+jMbb8Q8c+kNptlxRqSv+AwEvuD2wuRse5AJlznM8r3ur8yxDRwP83uyxrHbTNLliPfwGXMA9Fw==
+sidebar_class_name: "get api-method"
+info_path: api/open/openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get conversation"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Get conversation details
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Conversation details","content":{"application/json":{"schema":{"type":"object","properties":{"conversation_id":{"type":"string"},"title":{"type":"string"},"last_updated_at":{"type":"string","format":"date-time"},"created_at":{"type":"string","format":"date-time"},"selected_repository":{"type":"string","nullable":true},"status":{"type":"string","enum":["RUNNING","STOPPED"]},"trigger":{"type":"string","enum":["GUI","API"]}}}}}},"404":{"description":"Conversation not found","content":{"application/json":{"schema":{"type":"object","nullable":true}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

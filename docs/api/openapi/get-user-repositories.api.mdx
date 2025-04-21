@@ -1,0 +1,71 @@
+---
+id: get-user-repositories
+title: "Get user repositories"
+description: "Get repositories for the authenticated user"
+sidebar_label: "Get user repositories"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVE1v2zAM/SsGz2rs7uPiWzFsXYcWK9YVOwRBoVhMrUaWVIrOFgT+7wPtNHWTdMCG+WLD/Hp8fOQGDKaKbGQbPJRwjpwRxpAsB7KYskWgjGvMdMs1eraVZjRZm5BAQYhIWiIvDJRwj3ybkL6NwkFB1KQbZKQE5XQDXjcIJaRADAqs1HxskdaggPCxtYQGyoV2CRWkqsZGQ7kBXsc+isn6e1BgcKFbx1BCbFONBjq118hNIM4CGaS+hXFP0M2kWIrBJ0yS/k1RyOtlBunlZZyCKnhGz+KsY3TChg0+f0gSsTkErIm0tGYZmzT6H+YPWAkBkYRDtgOORevc3cDQfs/7DR5y4lvn9NwhlEwtdgpqbtxdS+5oskh2pXlcaB6CQ+3FuAi0PG5poxEB3Gk+BmERqBELiNMJ2wahGx4F74rTQ47PnlVlg8+QKNA/0PzUVl/o/dFh+qUPP/9LhU5Bg1yHreR7iXMNJeQ62lw2I99TTUJaPem/nwfUzDGVea5jnGjnTmrtTZoYXMG+jq8pmLbq2RnSQKfGWco8d6HSrg6Jy7dFURxkuBRzZnCFLsQGPe8SzQRa1ZLldY9tjpqQZCZQTmdj843wMWh07LSjR5DAdmF7xfROoLYfn5508eXHdxACrV+EPtyyCBa+RvSfhYPs7PrioIOdtcw+BIPZJaaksiu9xOwqEIICoXfwPZ0Uk6IXeEjc6H6a25sjt609stR7e7WTxl8ewy0VjL84j07bYV+G9RsUMgUdLSjYBryAMVMgIxSnzWauE96S6zr5PZxHmY+xSRb8+UC+ivxP1+8VpEtcP9/llXatuPQaWWmyw2GZzuSsoDZIPaAh5qyqMI6jDjZKsux25vyjaOA3G1tBbw==
+sidebar_class_name: "get api-method"
+info_path: api/open/openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get user repositories"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/user/repositories"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Get repositories for the authenticated user
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"sort","in":"query","required":false,"schema":{"type":"string","default":"pushed"},"description":"Sort order for repositories"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"User repositories","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","properties":{"full_name":{"type":"string"},"description":{"type":"string","nullable":true},"html_url":{"type":"string"},"private":{"type":"boolean"},"fork":{"type":"boolean"},"updated_at":{"type":"string","format":"date-time"}}}}}}},"401":{"description":"Authentication error","content":{"application/json":{"schema":{"type":"string"}}}},"500":{"description":"Unknown error","content":{"application/json":{"schema":{"type":"string"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

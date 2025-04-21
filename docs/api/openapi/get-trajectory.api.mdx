@@ -1,0 +1,71 @@
+---
+id: get-trajectory
+title: "Get trajectory"
+description: "Get the conversation trajectory"
+sidebar_label: "Get trajectory"
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVE1v00AQ/SvWnEBaYgPisreqlFLUigqKOEQR2tjTeNv17nZ2HBFZ/u9o7CR1k1JxxBfbu/Px3syb6aDCVJKNbIMHDefIGdeYlcGvkZKR44zJ3GHJgTagIESk4fiiAg0r5JvpbTRkGmSkBHregTcNgoZptF+2AgVWkkXDNSggfGgtYQWaqUUFqayxMaA74E0U98Rk/Qp6dQD2dAry4iP0CwmWYvAJk/i/Kwp5veD1hFoZPKNncTExOlsONvldEr/uGFdYiq+wJqkK2zHrJOajrSEyksMyNuk4Rj8+Cj48B/mMKFC2QmbrV/8PZgW+dc4sHY6t6xWgIH2mdTt6DXIdtsIZ5MI1aMhNtPlUJCnvDjTT509oJ6T1TmQtOdBQM8ek89zEODPOvamNr9KswjUcyuaaQtWWQ/vHMNCraRSd5y6UxtUhsX5fFMVRhEu5zipcowuxQc/7QAuBVrZkeTNgW6IhpJNWaM4X0+vv0pmx+FOjfeUECWyHQf5HI1Dbj0+BGsOg4cvPG5DKWn8bBnfL0g/4GtF/lhpkJ9cXRwz2tzo7DRVml5iSyq7MPWZXgRAUSHlH27ezYlZIt2NI3JhBV9vBHtbFtC9PsnSP6vyHxbLlzfib8+iM9ZJy6Eq31ckcTLSj5h+VAgr08X6ZRF4okE6Ke9ctTcIf5Ppejh9aFL3PFwrWhuwo5HkHlU3yXYG+NS7hC6xefdvurtfZ4TL6C6HdaHmhvDaulT9QcI+bZxZlv+gV1GgqpAHZaHVSlhh54n80+SK0/aidn4lC/gDedBD7
+sidebar_class_name: "get api-method"
+info_path: api/open/openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get trajectory"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/conversations/{conversation_id}/trajectory"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Get the conversation trajectory
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"conversation_id","in":"path","required":true,"schema":{"type":"string"},"description":"Conversation ID"}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Conversation trajectory","content":{"application/json":{"schema":{"type":"object","properties":{"trajectory":{"type":"array","items":{"type":"object"}}}}}}},"500":{"description":"Error getting trajectory","content":{"application/json":{"schema":{"type":"object","properties":{"trajectory":{"type":"array","items":{"type":"object"},"nullable":true},"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,71 @@
+---
+id: store-settings
+title: "Store settings"
+description: "Store user settings"
+sidebar_label: "Store settings"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vk2P2zYQ/SvCnJW10o+LbtsgQbdIkEV3ix4MQxiTY5tZimT44cQ1/N+LIQVLXmu3l6C62OI8zgxn3jzqCJKC8MpFZQ208BCtpyoF8lWgGJXZBqjBOvLIiDsJLQTGPIxWT18ThfiblQdoj/lVeZLQRp+oBmFNJBPZhM5pJbKnxZfAAY8QxI565H/x4AhasOsvJCLU4DzHjYoCWzWabcItTZAhemW2cKoBt0OEK0sgkbyKhw4N6sM/5GdRwpqN8n3OrOutnEZZW6sJDcO07rNVzzphKzrVPdHhRfsaA3XJzziowSStca2pFO7Ehe1tpM4nE1VPnadgkxfUbVBEOz2ISf2aPMcgwx46SRtMOnbCGkkmXJx6cp4BHWwysjM2qs3QnTCPZ16wz0Amhi7aUtSoxAt45+1eSfJdtE904fTcZJRScUTU9xftfla98nBJguP4GfNT0/DPMwYPxKwyTWUVkhAUwiZpfYAfxsaeQpgn45DoL83b69zuzB61klUux49Lhry3c7weUvl1rkzveU+ukTLb6az/Hzmdaugp7iyribMh78a4gxYW6NRikk0gvycfoF0eIY8N7GJ0oV0s0Lkb1PrNDo0MN5L2UD874r23Mgl+qYobONVTL+1ioa1AvbMhtj83TXPl4SObK0l70tb1ZOLZ0WpUlpzbmtCTv018iOVqan7ggpWaTEHnwnAmfNAM4/HJIKiHPx8syxK08Mffj8CF40b8OSru++/YO02XCjlqyiCM48KMHo7GGRksGj4RvhF9oXeXy6PMjev/pWbNa+pV0nhNrwriNYUqiGtN4qoqs7G5KSpyMeGzI/M7M6u6vb+74sXZ2lbvrKTqI4VQV5/wiapP1hPUwKQt2Lc3zU2TxdCG2GMeIoO51eWynbD9IspxHMUXruWBQZG+x4XTqIpGl8ulzNMS0Knc9WHTqgamO1uOR+7SX16fTrz8NZFnLq9q2KNX5SJark417Agl92B5hNLqdyWvN48cn+E6cR5XcsHjVnbcCkEuvopdTTTh/vPDI0/A8EVRmAgevzGN8Bu0kD9KzjdVXrsYgOKTn38B7DkmuQ==
+sidebar_class_name: "post api-method"
+info_path: api/open/openhands-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Store settings"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/settings"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Store user settings
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"language":{"type":"string"},"agent":{"type":"string"},"security_analyzer":{"type":"string"},"confirmation_mode":{"type":"boolean"},"llm_model":{"type":"string"},"llm_api_key":{"type":"string"},"llm_base_url":{"type":"string","nullable":true},"remote_runtime_resource_factor":{"type":"number"},"enable_default_condenser":{"type":"boolean"},"enable_sound_notifications":{"type":"boolean"},"user_consents_to_analytics":{"type":"boolean"},"provider_tokens":{"type":"object","additionalProperties":{"type":"string"}}}}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Settings stored successfully","content":{"application/json":{"schema":{"type":"object","properties":{"message":{"type":"string"}}}}}},"401":{"description":"Invalid token","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}},"500":{"description":"Error storing settings","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
