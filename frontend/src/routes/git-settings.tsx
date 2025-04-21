@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -7,8 +8,16 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
 import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
+import { I18nKey } from "#/i18n/declaration";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
 function GitSettingsScreen() {
+  const { t } = useTranslation();
+
   const { mutate: saveSettings } = useSaveSettings();
   const { mutate: disconnectGitTokens } = useLogout();
 
@@ -36,12 +45,23 @@ function GitSettingsScreen() {
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
 
-    saveSettings({
-      provider_tokens: {
-        github: githubToken,
-        gitlab: gitlabToken,
+    saveSettings(
+      {
+        provider_tokens: {
+          github: githubToken,
+          gitlab: gitlabToken,
+        },
       },
-    });
+      {
+        onSuccess: () => {
+          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
+        },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
+        },
+      },
+    );
   };
 
   return (

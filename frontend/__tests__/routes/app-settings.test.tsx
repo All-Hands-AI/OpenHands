@@ -8,6 +8,7 @@ import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { AuthProvider } from "#/context/auth-context";
 import { AvailableLanguages } from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
+import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
 const renderAppSettingsScreen = () =>
   render(<AppSettingsScreen />, {
@@ -219,5 +220,56 @@ describe("Form submission", () => {
     expect(saveSettingsSpy).toHaveBeenCalled();
 
     expect(submit).toBeDisabled();
+  });
+});
+
+describe("Status toasts", () => {
+  it("should call displaySuccessToast when the settings are saved", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+    const displaySuccessToastSpy = vi.spyOn(
+      ToastHandlers,
+      "displaySuccessToast",
+    );
+
+    renderAppSettingsScreen();
+
+    // Toggle setting to change
+    const sound = await screen.findByTestId(
+      "enable-sound-notifications-switch",
+    );
+    await userEvent.click(sound);
+
+    const submit = await screen.findByTestId("submit-button");
+    await userEvent.click(submit);
+
+    expect(saveSettingsSpy).toHaveBeenCalled();
+    expect(displaySuccessToastSpy).toHaveBeenCalled();
+  });
+
+  it("should call displayErrorToast when the settings fail to save", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+    const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
+
+    saveSettingsSpy.mockRejectedValue(new Error("Failed to save settings"));
+
+    renderAppSettingsScreen();
+
+    // Toggle setting to change
+    const sound = await screen.findByTestId(
+      "enable-sound-notifications-switch",
+    );
+    await userEvent.click(sound);
+
+    const submit = await screen.findByTestId("submit-button");
+    await userEvent.click(submit);
+
+    expect(saveSettingsSpy).toHaveBeenCalled();
+    expect(displayErrorToastSpy).toHaveBeenCalled();
   });
 });

@@ -9,6 +9,11 @@ import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -48,6 +53,11 @@ function AppSettingsScreen() {
           setLanguageInputHasChanged(false);
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
+          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
+        },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
         },
       },
     );
