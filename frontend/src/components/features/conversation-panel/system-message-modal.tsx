@@ -89,7 +89,7 @@ export function SystemMessageModal({
                   <span className="font-semibold text-gray-300">
                     {t("SYSTEM_MESSAGE_MODAL$AGENT_CLASS")}
                   </span>{" "}
-                  <span className="font-medium text-primary">
+                  <span className="font-medium text-gray-100">
                     {systemMessage.agent_class}
                   </span>
                 </div>
@@ -99,7 +99,7 @@ export function SystemMessageModal({
                   <span className="font-semibold text-gray-300">
                     {t("SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION")}
                   </span>{" "}
-                  <span className="text-gray-100 text-primary">
+                  <span className="text-gray-100">
                     {systemMessage.openhands_version}
                   </span>
                 </div>
@@ -139,7 +139,7 @@ export function SystemMessageModal({
 
             <div className="h-[60vh] overflow-auto rounded-md">
               {activeTab === "system" && (
-                <div className="p-6 whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300 shadow-inner">
+                <div className="p-4 whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300 shadow-inner">
                   {systemMessage.content}
                 </div>
               )}
@@ -147,7 +147,7 @@ export function SystemMessageModal({
               {activeTab === "tools" &&
                 systemMessage.tools &&
                 systemMessage.tools.length > 0 && (
-                  <div className="p-4 space-y-4">
+                  <div className="p-2 space-y-3">
                     {systemMessage.tools.map((tool, index) => {
                       // Extract function data from the nested structure
                       const toolData = tool as ToolData;
@@ -175,7 +175,7 @@ export function SystemMessageModal({
                           <button
                             type="button"
                             onClick={() => toggleTool(index)}
-                            className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
+                            className="w-full py-3 px-2 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
                           >
                             <div className="flex items-center">
                               <h3 className="font-bold text-gray-100">
@@ -192,8 +192,8 @@ export function SystemMessageModal({
                           </button>
 
                           {isExpanded && (
-                            <div className="px-4 pb-4 pt-1">
-                              <div className="mt-2 mb-4 p-4 shadow-inner">
+                            <div className="px-2 pb-3 pt-1">
+                              <div className="mt-2 mb-3 p-3 shadow-inner">
                                 <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
                                   {String(description)}
                                 </p>
@@ -201,11 +201,11 @@ export function SystemMessageModal({
 
                               {/* Parameters section */}
                               {parameters && (
-                                <div className="mt-3">
+                                <div className="mt-2">
                                   <h4 className="text-sm font-semibold text-gray-300">
                                     {t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}
                                   </h4>
-                                  <div className="text-sm mt-2 p-4 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
+                                  <div className="text-sm mt-2 p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
                                     <ReactJsonView
                                       src={parameters}
                                       theme={jsonViewTheme}
