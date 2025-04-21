@@ -60,6 +60,8 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
+  // Make sure static files are copied to the build directory
+  staticDirectories: ['static', '.'],
   themeConfig: {
     image: 'img/docusaurus.png',
     navbar: {
@@ -74,6 +76,11 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'User Guides',
+        },
+        {
+          to: '/api',
+          position: 'left',
+          label: 'API Reference',
         },
         {
           type: 'localeDropdown',

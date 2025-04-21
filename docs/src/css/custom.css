@@ -31,3 +31,6 @@
 article a, .a {
   text-decoration: underline;
 }
+
+/* Import Swagger UI styles */
+@import './swagger-ui.css';

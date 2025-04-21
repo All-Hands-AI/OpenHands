@@ -1,0 +1,118 @@
+/* Swagger UI customizations */
+.swagger-ui-container {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Dark mode styles */
+html[data-theme='dark'] .swagger-ui .opblock-tag,
+html[data-theme='dark'] .swagger-ui .opblock .opblock-summary-operation-id,
+html[data-theme='dark'] .swagger-ui .opblock .opblock-summary-path,
+html[data-theme='dark'] .swagger-ui .opblock .opblock-summary-path__deprecated,
+html[data-theme='dark'] .swagger-ui .opblock .opblock-summary-description,
+html[data-theme='dark'] .swagger-ui .opblock-description-wrapper p,
+html[data-theme='dark'] .swagger-ui .opblock-external-docs-wrapper p,
+html[data-theme='dark'] .swagger-ui .opblock-title_normal,
+html[data-theme='dark'] .swagger-ui .opblock-section-header h4,
+html[data-theme='dark'] .swagger-ui .opblock-section-header > label,
+html[data-theme='dark'] .swagger-ui .tab li,
+html[data-theme='dark'] .swagger-ui .response-col_status,
+html[data-theme='dark'] .swagger-ui table thead tr td,
+html[data-theme='dark'] .swagger-ui table thead tr th,
+html[data-theme='dark'] .swagger-ui .parameter__name,
+html[data-theme='dark'] .swagger-ui .parameter__type,
+html[data-theme='dark'] .swagger-ui .parameter__deprecated,
+html[data-theme='dark'] .swagger-ui .parameter__in,
+html[data-theme='dark'] .swagger-ui .parameter__enum,
+html[data-theme='dark'] .swagger-ui .responses-inner h4,
+html[data-theme='dark'] .swagger-ui .responses-inner h5,
+html[data-theme='dark'] .swagger-ui .response-col_links,
+html[data-theme='dark'] .swagger-ui .model-title,
+html[data-theme='dark'] .swagger-ui .model,
+html[data-theme='dark'] .swagger-ui .model-toggle,
+html[data-theme='dark'] .swagger-ui .prop-type,
+html[data-theme='dark'] .swagger-ui .prop-name,
+html[data-theme='dark'] .swagger-ui .prop-format {
+  color: var(--ifm-color-content);
+}
+
+html[data-theme='dark'] .swagger-ui .opblock {
+  background: var(--ifm-card-background-color);
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .opblock .opblock-summary {
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .opblock-tag {
+  border-bottom-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .opblock .opblock-section-header {
+  background: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .scheme-container {
+  background: var(--ifm-card-background-color);
+  box-shadow: none;
+  border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .btn {
+  color: var(--ifm-color-content);
+  background-color: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui select {
+  background-color: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-300);
+  color: var(--ifm-color-content);
+}
+
+html[data-theme='dark'] .swagger-ui input[type=text] {
+  background-color: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-300);
+  color: var(--ifm-color-content);
+}
+
+html[data-theme='dark'] .swagger-ui textarea {
+  background-color: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-300);
+  color: var(--ifm-color-content);
+}
+
+html[data-theme='dark'] .swagger-ui .table-container {
+  background-color: var(--ifm-card-background-color);
+}
+
+html[data-theme='dark'] .swagger-ui table {
+  border-collapse: collapse;
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .response-col_description__inner div.markdown, 
+html[data-theme='dark'] .swagger-ui .response-col_description__inner div.renderedMarkdown {
+  color: var(--ifm-color-content);
+}
+
+html[data-theme='dark'] .swagger-ui .model-box {
+  background-color: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .swagger-ui .topbar {
+  background-color: var(--ifm-navbar-background-color);
+}
+
+html[data-theme='dark'] .swagger-ui .info .title {
+  color: var(--ifm-heading-color);
+}
+
+html[data-theme='dark'] .swagger-ui .info li, 
+html[data-theme='dark'] .swagger-ui .info p, 
+html[data-theme='dark'] .swagger-ui .info table {
+  color: var(--ifm-color-content);
+}
