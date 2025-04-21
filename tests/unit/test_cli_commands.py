@@ -738,3 +738,136 @@ async def test_settings_command_advanced_llm_settings(
                 '\nSave new settings? Current session will be terminated!',
                 ['Yes, proceed', 'No, dismiss'],
             )
+
+
+@pytest.mark.asyncio
+async def test_settings_command_basic_reject_save(
+    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
+):
+    """Tests that rejecting the final save confirmation prevents settings update."""
+    buffer = StringIO()
+
+    with patch('openhands.core.cli.manage_openhands_file', return_value=True), patch(
+        'openhands.core.cli.check_folder_security_agreement', return_value=True
+    ), patch('openhands.core.cli.read_prompt_input') as mock_prompt, patch(
+        'openhands.core.cli.display_shutdown_message'
+    ), patch(
+        'openhands.storage.settings.file_settings_store.FileSettingsStore.store'
+    ) as mock_store, patch(
+        'prompt_toolkit.PromptSession.prompt_async'
+    ) as mock_prompt_async, patch('openhands.core.cli.cli_confirm') as mock_cli_confirm:
+        # Simulate entering '/settings'
+        mock_prompt.side_effect = ['/settings']
+
+        # Simulate choosing 'Basic', then 'No, dismiss' at save
+        mock_cli_confirm.side_effect = [
+            0,  # Mode: Basic
+            1,  # Save confirmation: No, dismiss
+        ]
+
+        # Simulate valid inputs for basic LLM settings
+        mock_prompt_async.side_effect = [
+            'openai',  # Provider
+            'gpt-4',  # Model
+            'sk-testkey',  # API Key
+        ]
+
+        with create_app_session(
+            input=create_pipe_input(), output=create_output(stdout=buffer)
+        ):
+            mock_controller.status_callback = None
+            main_task = asyncio.create_task(main(asyncio.get_event_loop()))
+
+            agent_ready_event = AgentStateChangedObservation(
+                agent_state=AgentState.AWAITING_USER_INPUT,
+                content='Agent is ready for user input',
+            )
+            mock_runtime.event_stream.add_event(agent_ready_event, EventSource.AGENT)
+
+            await asyncio.sleep(0.1)
+
+            try:
+                await asyncio.wait_for(main_task, timeout=1.0)
+            except asyncio.TimeoutError:
+                main_task.cancel()
+                try:
+                    await main_task
+                except asyncio.CancelledError:
+                    pass
+
+            # Check that store was NOT called because user rejected the save
+            mock_store.assert_not_called()
+
+            # Verify the final save confirmation prompt was called
+            mock_cli_confirm.assert_any_call(
+                '\nSave new settings? Current session will be terminated!',
+                ['Yes, proceed', 'No, dismiss'],
+            )
+
+
+@pytest.mark.asyncio
+async def test_settings_command_advanced_reject_save(
+    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
+):
+    """Tests that rejecting the final save confirmation prevents settings update."""
+    buffer = StringIO()
+
+    with patch('openhands.core.cli.manage_openhands_file', return_value=True), patch(
+        'openhands.core.cli.check_folder_security_agreement', return_value=True
+    ), patch('openhands.core.cli.read_prompt_input') as mock_prompt, patch(
+        'openhands.core.cli.display_shutdown_message'
+    ), patch(
+        'openhands.storage.settings.file_settings_store.FileSettingsStore.store'
+    ) as mock_store, patch(
+        'prompt_toolkit.PromptSession.prompt_async'
+    ) as mock_prompt_async, patch('openhands.core.cli.cli_confirm') as mock_cli_confirm:
+        # Simulate entering '/settings'
+        mock_prompt.side_effect = ['/settings']
+
+        # Simulate choosing 'Advanced', then 'No, dismiss' at save
+        mock_cli_confirm.side_effect = [
+            1,  # Mode: Advanced
+            0,  # Confirmation Mode: Enable
+            0,  # Memory Condensation: Enable
+            1,  # Save confirmation: No, dismiss
+        ]
+
+        # Simulate valid inputs for advanced LLM settings
+        mock_prompt_async.side_effect = [
+            'litellm/dummy_model',  # Custom Model
+            'http://dummy_url',  # Base URL
+            'sk-01234567890',  # API Key
+            'CodeActAgent',  # Agent
+        ]
+
+        with create_app_session(
+            input=create_pipe_input(), output=create_output(stdout=buffer)
+        ):
+            mock_controller.status_callback = None
+            main_task = asyncio.create_task(main(asyncio.get_event_loop()))
+
+            agent_ready_event = AgentStateChangedObservation(
+                agent_state=AgentState.AWAITING_USER_INPUT,
+                content='Agent is ready for user input',
+            )
+            mock_runtime.event_stream.add_event(agent_ready_event, EventSource.AGENT)
+
+            await asyncio.sleep(0.1)
+
+            try:
+                await asyncio.wait_for(main_task, timeout=1.0)
+            except asyncio.TimeoutError:
+                main_task.cancel()
+                try:
+                    await main_task
+                except asyncio.CancelledError:
+                    pass
+
+            # Check that store was NOT called because user rejected the save
+            mock_store.assert_not_called()
+
+            # Verify the final save confirmation prompt was called
+            mock_cli_confirm.assert_any_call(
+                '\nSave new settings? Current session will be terminated!',
+                ['Yes, proceed', 'No, dismiss'],
+            )
