@@ -67,7 +67,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
-from openhands.llm.llm import LLM
+from openhands.llm.llm import LLM, LLM_RETRY_EXCEPTIONS
 from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
@@ -285,7 +285,7 @@ class AgentController:
             ):
                 err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
                 self.state.last_error = err_id
-            elif isinstance(e, RateLimitError):
+            elif isinstance(e, LLM_RETRY_EXCEPTIONS):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
             self.status_callback('error', err_id, self.state.last_error)
