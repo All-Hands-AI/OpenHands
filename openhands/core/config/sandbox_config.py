@@ -46,7 +46,7 @@ class SandboxConfig(BaseModel):
     pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
-    base_container_image: str = Field(
+    base_container_image: str | None = Field(
         default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
     runtime_container_image: str | None = Field(default=None)
