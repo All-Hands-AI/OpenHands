@@ -77,50 +77,110 @@ class EventStream(EventStore):
         self._thread_loops[subscriber_id][callback_id] = loop
 
     def close(self) -> None:
+        logger.info("Closing EventStream")
+        # Log the current thread that's calling close
+        current_thread = threading.current_thread()
+        logger.info(f"Close called from thread: {current_thread.name} (id: {current_thread.ident})")
+        
+        # Get a stack trace to see where close is being called from
+        import traceback
+        stack_trace = ''.join(traceback.format_stack())
+        logger.info(f"Close stack trace:\n{stack_trace}")
+        
+        # Log the state of subscribers before close
+        logger.info(f"Subscribers before close: {list(self._subscribers.keys())}")
+        for sid in self._subscribers:
+            logger.info(f"Callbacks for {sid} before close: {list(self._subscribers[sid].keys())}")
+        
         self._stop_flag.set()
+        logger.info("Stop flag set, joining queue thread")
         if self._queue_thread.is_alive():
+            logger.info("Queue thread is alive, joining it")
             self._queue_thread.join()
+            logger.info("Queue thread joined")
+        else:
+            logger.info("Queue thread is not alive")
 
+        logger.info("Cleaning up subscribers")
         subscriber_ids = list(self._subscribers.keys())
+        logger.info(f"Subscriber IDs to clean up: {subscriber_ids}")
+        
         for subscriber_id in subscriber_ids:
+            if subscriber_id not in self._subscribers:
+                logger.warning(f"Subscriber {subscriber_id} no longer exists during close")
+                continue
             callback_ids = list(self._subscribers[subscriber_id].keys())
+            logger.info(f"Callback IDs to clean up for {subscriber_id}: {callback_ids}")
+            
             for callback_id in callback_ids:
+                logger.info(f"Cleaning up subscriber {subscriber_id}, callback {callback_id}")
                 self._clean_up_subscriber(subscriber_id, callback_id)
 
         # Clear queue
+        logger.info("Clearing queue")
+        queue_size = self._queue.qsize()
+        logger.info(f"Queue size before clearing: {queue_size}")
         while not self._queue.empty():
             self._queue.get()
+        logger.info("Queue cleared")
 
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str) -> None:
+        logger.info(f"Cleaning up subscriber {subscriber_id}, callback {callback_id}")
+        # Log the current state of subscribers before cleanup
+        logger.info(f"Subscribers before cleanup: {list(self._subscribers.keys())}")
+        if subscriber_id in self._subscribers:
+            logger.info(f"Callbacks for {subscriber_id} before cleanup: {list(self._subscribers[subscriber_id].keys())}")
+        
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')
             return
         if callback_id not in self._subscribers[subscriber_id]:
             logger.warning(f'Callback not found during cleanup: {callback_id}')
             return
+            
+        # Log thread information
+        logger.info(f"Thread loops before cleanup: {list(self._thread_loops.keys() if hasattr(self, '_thread_loops') else [])}")
+        if subscriber_id in self._thread_loops:
+            logger.info(f"Thread loops for {subscriber_id} before cleanup: {list(self._thread_loops[subscriber_id].keys())}")
+            
         if (
             subscriber_id in self._thread_loops
             and callback_id in self._thread_loops[subscriber_id]
         ):
             loop = self._thread_loops[subscriber_id][callback_id]
             try:
+                logger.info(f"Stopping and closing loop for {subscriber_id}/{callback_id}")
                 loop.stop()
                 loop.close()
             except Exception as e:
                 logger.warning(
                     f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
                 )
+            logger.info(f"Deleting thread loop for {subscriber_id}/{callback_id}")
             del self._thread_loops[subscriber_id][callback_id]
 
+        # Log thread pool information
+        logger.info(f"Thread pools before cleanup: {list(self._thread_pools.keys())}")
+        if subscriber_id in self._thread_pools:
+            logger.info(f"Thread pools for {subscriber_id} before cleanup: {list(self._thread_pools[subscriber_id].keys())}")
+            
         if (
             subscriber_id in self._thread_pools
             and callback_id in self._thread_pools[subscriber_id]
         ):
             pool = self._thread_pools[subscriber_id][callback_id]
+            logger.info(f"Shutting down thread pool for {subscriber_id}/{callback_id}")
             pool.shutdown()
+            logger.info(f"Deleting thread pool for {subscriber_id}/{callback_id}")
             del self._thread_pools[subscriber_id][callback_id]
 
+        logger.info(f"Deleting subscriber {subscriber_id}, callback {callback_id}")
         del self._subscribers[subscriber_id][callback_id]
+        
+        # Log the state after cleanup
+        logger.info(f"Subscribers after cleanup: {list(self._subscribers.keys())}")
+        if subscriber_id in self._subscribers:
+            logger.info(f"Callbacks for {subscriber_id} after cleanup: {list(self._subscribers[subscriber_id].keys())}")
 
     def subscribe(
         self,
@@ -128,23 +188,55 @@ class EventStream(EventStore):
         callback: Callable[[Event], None],
         callback_id: str,
     ) -> None:
+        logger.info(f"Subscribing {subscriber_id}, callback {callback_id}")
+        # Log the current thread that's calling subscribe
+        current_thread = threading.current_thread()
+        logger.info(f"Subscribe called from thread: {current_thread.name} (id: {current_thread.ident})")
+        
+        # Log the state of subscribers before subscribe
+        logger.info(f"Subscribers before subscribe: {list(self._subscribers.keys())}")
+        if subscriber_id in self._subscribers:
+            logger.info(f"Callbacks for {subscriber_id} before subscribe: {list(self._subscribers[subscriber_id].keys())}")
+        
+        # Get a stack trace to see where subscribe is being called from
+        import traceback
+        stack_trace = ''.join(traceback.format_stack())
+        logger.info(f"Subscribe stack trace:\n{stack_trace}")
+        
         initializer = partial(self._init_thread_loop, subscriber_id, callback_id)
         pool = ThreadPoolExecutor(max_workers=1, initializer=initializer)
         if subscriber_id not in self._subscribers:
+            logger.info(f"Creating new subscriber entry for {subscriber_id}")
             self._subscribers[subscriber_id] = {}
             self._thread_pools[subscriber_id] = {}
 
         if callback_id in self._subscribers[subscriber_id]:
+            logger.error(f"Callback ID {callback_id} already exists for subscriber {subscriber_id}")
             raise ValueError(
                 f'Callback ID on subscriber {subscriber_id} already exists: {callback_id}'
             )
 
+        logger.info(f"Adding callback {callback_id} to subscriber {subscriber_id}")
         self._subscribers[subscriber_id][callback_id] = callback
         self._thread_pools[subscriber_id][callback_id] = pool
+        
+        # Log the state after subscribe
+        logger.info(f"Subscribers after subscribe: {list(self._subscribers.keys())}")
+        logger.info(f"Callbacks for {subscriber_id} after subscribe: {list(self._subscribers[subscriber_id].keys())}")
 
     def unsubscribe(
         self, subscriber_id: EventStreamSubscriber, callback_id: str
     ) -> None:
+        logger.info(f"Unsubscribing {subscriber_id}, callback {callback_id}")
+        # Log the current thread that's calling unsubscribe
+        current_thread = threading.current_thread()
+        logger.info(f"Unsubscribe called from thread: {current_thread.name} (id: {current_thread.ident})")
+        
+        # Log the state of subscribers before unsubscribe
+        logger.info(f"Subscribers before unsubscribe: {list(self._subscribers.keys())}")
+        if subscriber_id in self._subscribers:
+            logger.info(f"Callbacks for {subscriber_id} before unsubscribe: {list(self._subscribers[subscriber_id].keys())}")
+        
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
             return
@@ -153,6 +245,11 @@ class EventStream(EventStore):
             logger.warning(f'Callback not found during unsubscribe: {callback_id}')
             return
 
+        # Get a stack trace to see where unsubscribe is being called from
+        import traceback
+        stack_trace = ''.join(traceback.format_stack())
+        logger.info(f"Unsubscribe stack trace:\n{stack_trace}")
+        
         self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource) -> None:
@@ -230,25 +327,96 @@ class EventStream(EventStore):
                 continue
 
             # pass each event to each callback in order
-            for key in sorted(self._subscribers.keys()):
+            # Get a sorted copy of subscriber keys to avoid modification during iteration
+            subscriber_keys = sorted(self._subscribers.keys())
+            logger.info(f"Subscriber keys: {subscriber_keys}")
+                
+            for key in subscriber_keys:
+                logger.info(f"Processing subscriber key: {key}")
+                
+                # Check if the subscriber still exists
+                if key not in self._subscribers:
+                    logger.warning(f"Subscriber {key} no longer exists")
+                    continue
+                    
                 callbacks = self._subscribers[key]
-                for callback_id in callbacks:
+                # Log the state of callbacks dictionary before iteration
+                logger.info(f"Callbacks before iteration for {key}: {list(callbacks.keys())}")
+                
+                # Create a copy of the keys to avoid modification during iteration
+                callback_ids = list(callbacks.keys())
+                logger.info(f"Using copied callback_ids: {callback_ids}")
+                
+                for callback_id in callback_ids:
+                    logger.info(f"Processing callback_id: {callback_id}")
+                    
+                    # Check if the subscriber still exists
+                    if key not in self._subscribers:
+                        logger.warning(f"Subscriber {key} no longer exists during callback processing")
+                        break
+                        
+                    # Check if callback_id still exists in callbacks
+                    if callback_id not in callbacks:
+                        logger.warning(f"Callback_id {callback_id} no longer exists in callbacks dictionary")
+                        continue
+                        
                     callback = callbacks[callback_id]
+                    logger.info(f"Retrieved callback for {callback_id}: {callback}")
+                    
+                    # Check if the thread pool still exists
+                    if key not in self._thread_pools:
+                        logger.warning(f"Thread pool for key {key} no longer exists")
+                        continue
+                    if callback_id not in self._thread_pools[key]:
+                        logger.warning(f"Thread pool for callback_id {callback_id} no longer exists")
+                        continue
+                    
                     pool = self._thread_pools[key][callback_id]
+                    logger.info(f"Submitting callback {callback_id} to thread pool")
                     future = pool.submit(callback, event)
                     future.add_done_callback(self._make_error_handler(callback_id, key))
+                
+                # Log the state of callbacks dictionary after processing this key
+                if key in self._subscribers:
+                    logger.info(f"Callbacks after processing {key}: {list(self._subscribers[key].keys())}")
+                else:
+                    logger.info(f"Subscriber {key} was removed during processing")
 
     def _make_error_handler(
         self, callback_id: str, subscriber_id: str
     ) -> Callable[[Any], None]:
         def _handle_callback_error(fut: Any) -> None:
+            logger.info(f"Handling callback result for {callback_id} in subscriber {subscriber_id}")
+            # Log the current thread that's handling the callback result
+            current_thread = threading.current_thread()
+            logger.info(f"Callback handler running in thread: {current_thread.name} (id: {current_thread.ident})")
+            
             try:
                 # This will raise any exception that occurred during callback execution
-                fut.result()
+                result = fut.result()
+                logger.info(f"Callback {callback_id} completed successfully")
+                
+                # Log the current state of subscribers and thread pools after successful execution
+                logger.info(f"After successful callback - Current subscribers: {list(self._subscribers.keys())}")
+                if subscriber_id in self._subscribers:
+                    logger.info(f"After successful callback - Current callbacks for {subscriber_id}: {list(self._subscribers[subscriber_id].keys())}")
             except Exception as e:
                 logger.error(
                     f'Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}',
                 )
+                # Log the current state of subscribers and thread pools
+                logger.info(f"After error in callback - Current subscribers: {list(self._subscribers.keys())}")
+                if subscriber_id in self._subscribers:
+                    logger.info(f"After error in callback - Current callbacks for {subscriber_id}: {list(self._subscribers[subscriber_id].keys())}")
+                logger.info(f"After error in callback - Current thread pools: {list(self._thread_pools.keys())}")
+                if subscriber_id in self._thread_pools:
+                    logger.info(f"After error in callback - Current thread pools for {subscriber_id}: {list(self._thread_pools[subscriber_id].keys())}")
+                
+                # Get a stack trace to see where the error occurred
+                import traceback
+                stack_trace = ''.join(traceback.format_stack())
+                logger.info(f"Error stack trace:\n{stack_trace}")
+                
                 # Re-raise in the main thread so the error is not swallowed
                 raise e
 
