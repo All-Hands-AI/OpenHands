@@ -21,6 +21,7 @@ from openhands.resolver.resolve_issue import (
 )
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import identify_token
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def cleanup() -> None:
@@ -344,7 +345,13 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
+    platform = call_async_from_sync(
+        identify_token,
+        GENERAL_TIMEOUT,
+        token,
+        my_args.selected_repo,
+        my_args.base_domain,
+    )
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
 
     llm_config = LLMConfig(

@@ -4,7 +4,6 @@ import os
 import re
 from typing import Callable
 
-import httpx
 from pydantic import SecretStr
 
 from openhands.controller.state.state import State
@@ -15,13 +14,14 @@ from openhands.events.action.message import MessageAction
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
 
-def identify_token(
+
+async def identify_token(
     token: str, base_domain: str | None = 'github.com'
 ) -> ProviderType:
-    provider = validate_provider_token(SecretStr(token), base_domain)
+    provider = await validate_provider_token(SecretStr(token), base_domain)
     if not provider:
         raise ValueError('Token is invalid.')
-    
+
     return provider
 
 
