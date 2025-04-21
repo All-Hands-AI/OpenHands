@@ -25,13 +25,26 @@ describe("Content", () => {
     screen.getByTestId("app-settings-screen");
   });
 
-  it("should render the inputs", async () => {
+  it("should render the skeletron before the inputs", async () => {
     renderAppSettingsScreen();
+
+    screen.getByTestId("app-settings-skeleton");
+    expect(screen.queryByTestId("language-input")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("enable-analytics-switch"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("enable-sound-notifications-switch"),
+    ).not.toBeInTheDocument();
 
     await waitFor(() => {
       screen.getByTestId("language-input");
       screen.getByTestId("enable-analytics-switch");
       screen.getByTestId("enable-sound-notifications-switch");
+
+      expect(
+        screen.queryByTestId("app-settings-skeleton"),
+      ).not.toBeInTheDocument();
     });
   });
 

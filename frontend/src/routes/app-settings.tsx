@@ -14,12 +14,13 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
-  const { data: settings } = useSettings();
+  const { data: settings, isLoading } = useSettings();
 
   const [languageInputHasChanged, setLanguageInputHasChanged] =
     React.useState(false);
@@ -100,6 +101,7 @@ function AppSettingsScreen() {
       action={formAction}
       className="flex flex-col h-full justify-between"
     >
+      {!settings && isLoading && <AppSettingsInputsSkeleton />}
       {settings && (
         <div className="px-11 py-9 flex flex-col gap-6">
           <LanguageInput
