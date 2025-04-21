@@ -119,6 +119,7 @@ describe("Form submission", () => {
     const submit = await screen.findByTestId("submit-button");
     expect(submit).toBeDisabled();
 
+    // Language check
     const language = await screen.findByTestId("language-input");
     await userEvent.click(language);
     const norsk = screen.getByText("Norsk");
@@ -128,6 +129,24 @@ describe("Form submission", () => {
     await userEvent.click(language);
     const english = screen.getByText("English");
     await userEvent.click(english);
+    expect(submit).toBeDisabled();
+
+    // Analytics check
+    const analytics = await screen.findByTestId("enable-analytics-switch");
+    await userEvent.click(analytics);
+    expect(submit).not.toBeDisabled();
+
+    await userEvent.click(analytics);
+    expect(submit).toBeDisabled();
+
+    // Sound check
+    const sound = await screen.findByTestId(
+      "enable-sound-notifications-switch",
+    );
+    await userEvent.click(sound);
+    expect(submit).not.toBeDisabled();
+
+    await userEvent.click(sound);
     expect(submit).toBeDisabled();
   });
 });

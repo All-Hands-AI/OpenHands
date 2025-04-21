@@ -11,6 +11,7 @@ interface SettingsDropdownInputProps {
   isDisabled?: boolean;
   defaultSelectedKey?: string;
   isClearable?: boolean;
+  onChange?: (value: string) => void;
 }
 
 export function SettingsDropdownInput({
@@ -22,6 +23,7 @@ export function SettingsDropdownInput({
   isDisabled,
   defaultSelectedKey,
   isClearable,
+  onChange,
 }: SettingsDropdownInputProps) {
   return (
     <label className="flex flex-col gap-2.5 w-[680px]">
@@ -47,6 +49,7 @@ export function SettingsDropdownInput({
               "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
           },
         }}
+        onInputChange={onChange}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
