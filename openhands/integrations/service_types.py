@@ -64,8 +64,8 @@ class RequestMethod(Enum):
 
 
 class BaseGitService:
-    @staticmethod
     async def execute_request(
+        self,
         client: AsyncClient,
         url: str,
         headers: dict,
