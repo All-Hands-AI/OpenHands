@@ -174,7 +174,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -206,24 +207,36 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
-        # run poetry show -v | head -n 1 | awk '{print $2}'
-        poetry_venvs_path = (
-            subprocess.check_output(
-                ['poetry', 'show', '-v'],
+        # Get the poetry venv path using 'poetry env info --path'
+        try:
+            poetry_venvs_path = subprocess.check_output(  # noqa: ASYNC101
+                ['poetry', 'env', 'info', '--path'],
                 env=env,
                 cwd=code_repo_path,
                 text=True,
+                stderr=subprocess.PIPE,
                 shell=False,
+            ).strip()
+            # Verify it's a valid path (basic check)
+            if not os.path.isdir(poetry_venvs_path):
+                raise ValueError(f"'{poetry_venvs_path}' is not a valid directory.")
+        except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
+            # Attempt to fall back to environment variable if set
+            poetry_venvs_path = env.get('POETRY_VIRTUALENVS_PATH', '')
+            if not poetry_venvs_path or not os.path.isdir(poetry_venvs_path):
+                raise RuntimeError(
+                    'Cannot find poetry venv path using `poetry env info --path` or POETRY_VIRTUALENVS_PATH env var. '
+                    'Please check your poetry installation and ensure a virtual environment exists.'
+                ) from e
+            logger.warning(
+                f'Using fallback POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}'
             )
-            .splitlines()[0]
-            .split(':')[1]
-            .strip()
-        )
+
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
         check_dependencies(code_repo_path, poetry_venvs_path)
-        self.server_process = subprocess.Popen(
+        self.server_process = subprocess.Popen(  # noqa: ASYNC101
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -292,7 +305,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
-        if not self._runtime_initialized:
+        if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:

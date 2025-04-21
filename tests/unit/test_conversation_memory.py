@@ -131,8 +131,8 @@ def test_process_events_with_cmd_output_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -154,8 +154,8 @@ def test_process_events_with_ipython_run_cell_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -178,8 +178,8 @@ def test_process_events_with_agent_delegate_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -195,8 +195,8 @@ def test_process_events_with_error_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -232,8 +232,8 @@ def test_process_events_with_file_edit_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -253,8 +253,8 @@ def test_process_events_with_file_read_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -276,8 +276,8 @@ def test_process_events_with_browser_output_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -293,8 +293,8 @@ def test_process_events_with_user_reject_observation(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -323,8 +323,8 @@ def test_process_events_with_empty_environment_info(conversation_memory):
         vision_is_active=False,
     )
 
-    # Should only contain no messages
-    assert len(messages) == 0
+    # Should only contain no messages except system message
+    assert len(messages) == 1
 
     # Verify that build_workspace_context was NOT called since all input values were empty
     conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
@@ -355,7 +355,7 @@ def test_process_events_with_function_calling_observation(conversation_memory):
     )
 
     # No direct message when using function calling
-    assert len(messages) == 0  # should be no messages
+    assert len(messages) == 1  # should be no messages except system message
 
 
 def test_process_events_with_message_action_with_image(conversation_memory):
@@ -371,8 +371,8 @@ def test_process_events_with_message_action_with_image(conversation_memory):
         vision_is_active=True,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'assistant'
     assert len(result.content) == 2
     assert isinstance(result.content[0], TextContent)
@@ -391,8 +391,8 @@ def test_process_events_with_user_cmd_action(conversation_memory):
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -424,8 +424,8 @@ def test_process_events_with_agent_finish_action_with_tool_metadata(
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'assistant'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -467,8 +467,8 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -522,8 +522,8 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
         vision_is_active=False,
     )
 
-    assert len(messages) == 1
-    result = messages[0]
+    assert len(messages) == 2
+    result = messages[1]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -566,7 +566,7 @@ def test_process_events_with_microagent_observation_extensions_disabled(
     )
 
     # When prompt extensions are disabled, the RecallObservation should be ignored
-    assert len(messages) == 0  # should be no messages
+    assert len(messages) == 1  # should be no messages except system message
 
     # Verify the prompt_manager was not called
     conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
@@ -588,7 +588,7 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
     )
 
     # The implementation returns an empty string and it doesn't creates a message
-    assert len(messages) == 0  # should be no messages
+    assert len(messages) == 1  # should be no messages except system message
 
     # When there are no triggered agents, build_microagent_info is not called
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
@@ -800,12 +800,12 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
     )
 
     # Verify that only the first occurrence of content for each agent is included
-    assert len(messages) == 1
+    assert len(messages) == 2  # with system message
 
     # First microagent should include all agents since they appear here first
-    assert 'Image best practices v1' in messages[0].content[0].text
-    assert 'Git best practices v1' in messages[0].content[0].text
-    assert 'Python best practices v1' in messages[0].content[0].text
+    assert 'Image best practices v1' in messages[1].content[0].text
+    assert 'Git best practices v1' in messages[1].content[0].text
+    assert 'Python best practices v1' in messages[1].content[0].text
 
 
 def test_process_events_with_microagent_observation_deduplication_disabled_agents(
@@ -849,11 +849,11 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
     )
 
     # Verify that disabled agents are filtered out and only the first occurrence of enabled agents is included
-    assert len(messages) == 1
+    assert len(messages) == 2
 
     # First microagent should include enabled_agent but not disabled_agent
-    assert 'Disabled agent content' not in messages[0].content[0].text
-    assert 'Enabled agent content v1' in messages[0].content[0].text
+    assert 'Disabled agent content' not in messages[1].content[0].text
+    assert 'Enabled agent content v1' in messages[1].content[0].text
 
 
 def test_process_events_with_microagent_observation_deduplication_empty(
@@ -873,7 +873,10 @@ def test_process_events_with_microagent_observation_deduplication_empty(
     )
 
     # Verify that empty RecallObservations are handled gracefully
-    assert len(messages) == 0  # an empty microagent is not added to Messages
+    assert (
+        len(messages) == 1
+    )  # an empty microagent is not added to Messages, only system message is found
+    assert messages[0].role == 'system'
 
 
 def test_has_agent_in_earlier_events(conversation_memory):
