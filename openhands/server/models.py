@@ -28,9 +28,7 @@ from .db import metadata
 Conversation = Table(
     'conversations',
     metadata,
-    Column(
-        'id', Integer, primary_key=True, autoincrement=True
-    ),
+    Column('id', Integer, primary_key=True, autoincrement=True),
     Column('user_id', String, nullable=False),
     Column('conversation_id', String, nullable=False),
     Column('published', Boolean, nullable=False),

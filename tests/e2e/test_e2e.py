@@ -14,7 +14,6 @@ from openhands.core.cli import (
     DEFAULT_STYLE,
     UsageMetrics,
     display_message,
-    print_formatted_text,
     shutdown,
     update_usage_metrics,
 )

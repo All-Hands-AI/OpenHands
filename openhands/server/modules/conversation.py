@@ -1,3 +1,5 @@
+import asyncio
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
 from openhands.server.models import Conversation
@@ -5,8 +7,6 @@ from openhands.server.shared import (
     ConversationStoreImpl,
     config,
 )
-
-import asyncio
 
 
 class ConversationModule:
@@ -29,7 +29,12 @@ class ConversationModule:
             return {'is_published': False, 'hidden_prompt': False}
 
     async def _update_conversation_visibility(
-        self, conversation_id: str, is_published: bool, user_id: str, configs: dict, title: str
+        self,
+        conversation_id: str,
+        is_published: bool,
+        user_id: str,
+        configs: dict,
+        title: str,
     ):
         try:
             query = Conversation.select().where(
@@ -121,12 +126,21 @@ class ConversationModule:
     async def _response_conversation(self, conversations: list[dict]):
         try:
             # Filter conversations without titles
-            conversation_updated = [conversation for conversation in conversations if not conversation.title]
+            conversation_updated = [
+                conversation
+                for conversation in conversations
+                if not conversation.get('title')
+            ]
 
             if conversation_updated:
                 # Get raw conversation info for those without titles
-                tasks = [self._get_raw_conversation_info(conversation.conversation_id, conversation.user_id)
-                         for conversation in conversation_updated]
+                tasks = [
+                    self._get_raw_conversation_info(
+                        conversation.get('conversation_id', ''),
+                        conversation.get('user_id', ''),
+                    )
+                    for conversation in conversation_updated
+                ]
                 raw_conversations = await asyncio.gather(*tasks)
 
                 raw_conversations_dict = {
@@ -137,16 +151,24 @@ class ConversationModule:
                 # Create update tasks for conversations without titles
                 update_tasks = []
                 for conversation in conversation_updated:
-                    if conversation.conversation_id in raw_conversations_dict:
+                    if conversation.get('conversation_id') in raw_conversations_dict:
                         update_tasks.append(
                             database.execute(
                                 Conversation.update()
                                 .where(
-                                    (Conversation.c.conversation_id == conversation.conversation_id) &
-                                    (Conversation.c.user_id == conversation.user_id)
+                                    (
+                                        Conversation.c.conversation_id
+                                        == conversation.get('conversation_id')
+                                    )
+                                    & (
+                                        Conversation.c.user_id
+                                        == conversation.get('user_id')
+                                    )
                                 )
                                 .values(
-                                    title=raw_conversations_dict[conversation.conversation_id]
+                                    title=raw_conversations_dict[
+                                        conversation.get('conversation_id')
+                                    ]
                                 )
                             )
                         )
@@ -157,17 +179,24 @@ class ConversationModule:
 
                 # Update the titles in our local conversation list
                 for conversation in conversations:
-                    if not conversation.title and conversation.conversation_id in raw_conversations_dict:
-                        conversation.title = raw_conversations_dict[conversation.conversation_id]
+                    if (
+                        not conversation.get('title')
+                        and conversation.get('conversation_id')
+                        in raw_conversations_dict
+                    ):
+                        conversation['title'] = raw_conversations_dict[
+                            conversation.get('conversation_id')
+                        ]
 
             # Format and return all conversations
             return [
                 {
-                    'conversation_id': conversation.conversation_id,
-                    'title': conversation.title or 'Untitled Conversation',  # Fallback title
-                    'short_description': conversation.short_description,
-                    'published': conversation.published,
-                    'view_count': 0
+                    'conversation_id': conversation.get('conversation_id'),
+                    'title': conversation.get('title')
+                    or 'Untitled Conversation',  # Fallback title
+                    'short_description': conversation.get('short_description'),
+                    'published': conversation.get('published'),
+                    'view_count': 0,
                 }
                 for conversation in conversations
             ]
@@ -177,11 +206,11 @@ class ConversationModule:
             # Return basic format even if error occurs
             return [
                 {
-                    'conversation_id': conversation.conversation_id,
-                    'title': conversation.title or 'Untitled Conversation',
-                    'short_description': conversation.short_description,
-                    'published': conversation.published,
-                    'view_count': 0
+                    'conversation_id': conversation.get('conversation_id'),
+                    'title': conversation.get('title') or 'Untitled Conversation',
+                    'short_description': conversation.get('short_description'),
+                    'published': conversation.get('published'),
+                    'view_count': 0,
                 }
                 for conversation in conversations
             ]
@@ -199,9 +228,11 @@ class ConversationModule:
 
             if published is not None:
                 query = query.where(Conversation.c.published == published)
-            print("conversation_ids", conversation_ids)
+            print('conversation_ids', conversation_ids)
             if conversation_ids and len(conversation_ids) > 0:
-                query = query.where(Conversation.c.conversation_id.in_(conversation_ids))
+                query = query.where(
+                    Conversation.c.conversation_id.in_(conversation_ids)
+                )
 
             if page == 1 and len(prioritized_usecase_ids) > 0:
                 prioritized_query = query.where(
@@ -209,17 +240,21 @@ class ConversationModule:
                 )
                 prioritized_items = await database.fetch_all(prioritized_query)
 
-                remaining_query = query.where(
-                    ~Conversation.c.conversation_id.in_(prioritized_usecase_ids)
-                ).offset(0).limit(limit - len(prioritized_items))
+                remaining_query = (
+                    query.where(
+                        ~Conversation.c.conversation_id.in_(prioritized_usecase_ids)
+                    )
+                    .offset(0)
+                    .limit(limit - len(prioritized_items))
+                )
                 remaining_items = await database.fetch_all(remaining_query)
 
                 items = [*prioritized_items, *remaining_items]
                 items = await self._response_conversation(items)
                 return {
-                    "items": items,
-                    "page": page,
-                    "limit": limit,
+                    'items': items,
+                    'page': page,
+                    'limit': limit,
                 }
 
             # Normal pagination for other pages
@@ -227,9 +262,9 @@ class ConversationModule:
             items = await database.fetch_all(query)
             items = await self._response_conversation(items)
             return {
-                "items": items,
-                "page": page,
-                "limit": limit,
+                'items': items,
+                'page': page,
+                'limit': limit,
             }
         except Exception as e:
             logger.error(f'Error getting list conversations: {str(e)}')
