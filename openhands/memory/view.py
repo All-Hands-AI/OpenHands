@@ -59,14 +59,16 @@ class View(BaseModel):
         # The relevant summary is always in the last condensation event (i.e., the most recent one).
         for event in reversed(events):
             if isinstance(event, CondensationAction):
-                if event.summary is not None and event.summary_offset is not None:
+                if event.summary is not None:
                     summary = event.summary
                     summary_offset = event.summary_offset
                     break
 
-        if summary is not None and summary_offset is not None:
-            kept_events.insert(
-                summary_offset, AgentCondensationObservation(content=summary)
-            )
+        if summary is not None:
+            summary_obs = AgentCondensationObservation(content=summary)
+            if summary_offset is not None:
+                kept_events.insert(summary_offset, summary_obs)
+            else:
+                kept_events.append(summary_obs)
 
         return View(events=kept_events)
