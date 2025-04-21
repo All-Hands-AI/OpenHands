@@ -574,7 +574,7 @@ def main() -> None:
     parser.add_argument(
         '--base-container-image',
         type=str,
-        default='',
+        default=None,
         help='base container image to use.',
     )
     parser.add_argument(
@@ -663,10 +663,14 @@ def main() -> None:
 
     runtime_container_image = my_args.runtime_container_image
 
-    if runtime_container_image is not None and base_container_image != '':
+    if runtime_container_image is not None and base_container_image is not None:
         raise ValueError('Cannot provide both runtime and base container images.')
 
-    if runtime_container_image is None and base_container_image == '' and not my_args.is_experimental:
+    if (
+        runtime_container_image is None
+        and base_container_image is None
+        and not my_args.is_experimental
+    ):
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
