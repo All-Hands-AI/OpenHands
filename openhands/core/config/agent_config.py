@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, ValidationError
 
-from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.config.condenser_config import CondenserConfig, LLMAgentCacheCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 
 
@@ -32,7 +32,7 @@ class AgentConfig(BaseModel):
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
     condenser: CondenserConfig = Field(
-        default_factory=lambda: NoOpCondenserConfig(type='noop')
+        default_factory=lambda: LLMAgentCacheCondenserConfig(type='agentcache')
     )
 
     model_config = {'extra': 'forbid'}

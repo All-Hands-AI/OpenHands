@@ -85,6 +85,23 @@ class LLMSummarizingCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class LLMAgentCacheCondenserConfig(BaseModel):
+    """Configuration for LLMAgentCacheCondenser."""
+
+    type: Literal['agentcache'] = Field('agentcache')
+    trigger_word: str = Field(
+        default="CONDENSE!",
+        description='The trigger word that will cause the condenser to activate.',
+    )
+    max_size: int = Field(
+        default=100,
+        description='Maximum size of the condensed history before triggering forgetting.',
+        ge=2,
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 class AmortizedForgettingCondenserConfig(BaseModel):
     """Configuration for AmortizedForgettingCondenser."""
 
@@ -177,6 +194,7 @@ CondenserConfig = (
     | BrowserOutputCondenserConfig
     | RecentEventsCondenserConfig
     | LLMSummarizingCondenserConfig
+    | LLMAgentCacheCondenserConfig
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
@@ -281,6 +299,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'observation_masking': ObservationMaskingCondenserConfig,
         'recent': RecentEventsCondenserConfig,
         'llm': LLMSummarizingCondenserConfig,
+        'agentcache': LLMAgentCacheCondenserConfig,
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
