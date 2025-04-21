@@ -744,15 +744,26 @@ class LLM(RetryMixin, DebugMixin):
         self.metrics.reset()
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
+        # normalize to list
         if isinstance(messages, Message):
             messages = [messages]
 
-        # set flags to know how to serialize the messages
+        # —— new: only for Gemini models, clean out any zero‐length text chunks —— 
+        model_name = getattr(self.config, "model", "").lower()
+        if "gemini" in model_name:
+            for msg in messages:
+                if hasattr(msg, "content"):
+                    for content_item in msg.content:
+                        # if this is a text‐type entry with no actual text, replace it with a single space
+                        if getattr(content_item, "type", None) == "text" and not getattr(content_item, "text", None):
+                            content_item.text = " "
+
+        # then set the usual flags
         for message in messages:
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
-            if 'deepseek' in self.config.model:
+            if "deepseek" in model_name:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization
