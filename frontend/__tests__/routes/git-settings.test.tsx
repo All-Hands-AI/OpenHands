@@ -328,6 +328,37 @@ describe("Form submission", () => {
 
     expect(logoutSpy).toHaveBeenCalled();
   });
+
+  it("should disable the button after submitting changes", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const submit = await screen.findByTestId("submit-button");
+    expect(submit).toBeDisabled();
+
+    const githubInput = await screen.findByTestId("github-token-input");
+    await userEvent.type(githubInput, "test-token");
+    expect(submit).not.toBeDisabled();
+
+    // submit the form
+    await userEvent.click(submit);
+    expect(saveSettingsSpy).toHaveBeenCalled();
+
+    expect(submit).toBeDisabled();
+
+    const gitlabInput = await screen.findByTestId("gitlab-token-input");
+    await userEvent.type(gitlabInput, "test-token");
+    expect(submit).not.toBeDisabled();
+
+    // submit the form
+    await userEvent.click(submit);
+    expect(saveSettingsSpy).toHaveBeenCalled();
+
+    expect(submit).toBeDisabled();
+  });
 });
 
 describe("Status toasts", () => {

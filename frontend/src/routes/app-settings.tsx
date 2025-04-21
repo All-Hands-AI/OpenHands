@@ -50,14 +50,16 @@ function AppSettingsScreen() {
       {
         onSuccess: () => {
           handleCaptureConsent(enableAnalytics);
-          setLanguageInputHasChanged(false);
-          setAnalyticsSwitchHasChanged(false);
-          setSoundNotificationsSwitchHasChanged(false);
           displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         },
         onError: (error) => {
           const errorMessage = retrieveAxiosErrorMessage(error);
           displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
+        },
+        onSettled: () => {
+          setLanguageInputHasChanged(false);
+          setAnalyticsSwitchHasChanged(false);
+          setSoundNotificationsSwitchHasChanged(false);
         },
       },
     );

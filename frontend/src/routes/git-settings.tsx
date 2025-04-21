@@ -60,6 +60,10 @@ function GitSettingsScreen() {
           const errorMessage = retrieveAxiosErrorMessage(error);
           displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
         },
+        onSettled: () => {
+          setGithubTokenInputHasValue(false);
+          setGitlabTokenInputHasValue(false);
+        },
       },
     );
   };
