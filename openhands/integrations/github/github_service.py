@@ -179,7 +179,7 @@ class GitHubService(GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', True)
+                is_public=not repo.get('private', True),
             )
             for repo in all_repos
         ]

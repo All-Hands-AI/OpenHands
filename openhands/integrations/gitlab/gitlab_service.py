@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
@@ -14,7 +15,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-from openhands.core.logger import openhands_logger as logger
+
 
 class GitLabService(GitService):
     BASE_URL = 'https://gitlab.com/api/v4'
@@ -77,24 +78,22 @@ class GitLabService(GitService):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid GitLab token')
-            
+
             logger.warning(f'Status error on GL API: {e}')
             raise UnknownException('Unknown error')
 
         except httpx.HTTPError as e:
             logger.warning(f'HTTP error on GL API: {e}')
             raise UnknownException('Unknown error')
-        
-    async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any]
-    ) -> Any:
+
+    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
-        
+
         Args:
             query: The GraphQL query string
             variables: Optional variables for the GraphQL query
-            
+
         Returns:
             The data portion of the GraphQL response
         """
@@ -103,37 +102,35 @@ class GitLabService(GitService):
                 gitlab_headers = await self._get_gitlab_headers()
                 # Add content type header for GraphQL
                 gitlab_headers['Content-Type'] = 'application/json'
-                
+
                 payload = {
-                    "query": query,
-                    "variables": variables,
+                    'query': query,
+                    'variables': variables,
                 }
-                
+
                 response = await client.post(
-                    self.GRAPHQL_URL, 
-                    headers=gitlab_headers, 
-                    json=payload
+                    self.GRAPHQL_URL, headers=gitlab_headers, json=payload
                 )
-                
+
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     gitlab_headers = await self._get_gitlab_headers()
                     gitlab_headers['Content-Type'] = 'application/json'
                     response = await client.post(
-                        self.GRAPHQL_URL, 
-                        headers=gitlab_headers, 
-                        json=payload
+                        self.GRAPHQL_URL, headers=gitlab_headers, json=payload
                     )
 
                 response.raise_for_status()
                 result = response.json()
-                
+
                 # Check for GraphQL errors
-                if "errors" in result:
-                    error_message = result["errors"][0].get("message", "Unknown GraphQL error")
-                    raise UnknownException(f"GraphQL error: {error_message}")
-                
-                return result.get("data")
+                if 'errors' in result:
+                    error_message = result['errors'][0].get(
+                        'message', 'Unknown GraphQL error'
+                    )
+                    raise UnknownException(f'GraphQL error: {error_message}')
+
+                return result.get('data')
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid GitLab token')
@@ -228,7 +225,7 @@ class GitLabService(GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
-                is_public = repo.get('visibility') == 'public'
+                is_public=repo.get('visibility') == 'public',
             )
             for repo in all_repos
         ]
