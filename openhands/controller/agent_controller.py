@@ -293,9 +293,6 @@ class AgentController:
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
 
-    def step(self):
-        asyncio.create_task(self._step_with_exception_handling())
-
     async def _step_with_exception_handling(self):
         try:
             await self._step()
@@ -416,7 +413,7 @@ class AgentController:
                 f'Stepping agent after event: {type(event).__name__}',
                 extra={'msg_type': 'STEPPING_AGENT'},
             )
-            self.step()
+            await self._step_with_exception_handling()
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             # If we received a user message but aren't stepping, log why
             self.log(

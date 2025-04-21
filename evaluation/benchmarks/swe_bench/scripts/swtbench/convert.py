@@ -65,7 +65,7 @@ def main(
             ci_mode = pred['metadata']['details'].get('mode', '') == 'swt-ci'
             try:
                 git_diff = remove_setup_files(git_diff, pred['instance'], ci_mode)
-            except:
+            except:  # noqa: E722
                 _LOGGER.warning(
                     'Warning: Invalid git diff found for instance %s',
                     pred['instance_id'],
