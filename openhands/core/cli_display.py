@@ -3,7 +3,8 @@ import sys
 import time
 
 from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import HTML, FormattedText
+from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
+from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
@@ -54,6 +55,28 @@ class UsageMetrics:
         self.total_cache_read: int = 0
         self.total_cache_write: int = 0
         self.session_init_time: float = time.time()
+
+
+class CustomDiffLexer(Lexer):
+    """Custom lexer for the specific diff format."""
+
+    def lex_document(self, document) -> StyleAndTextTuples:
+        lines = document.lines
+
+        def get_line(lineno: int) -> StyleAndTextTuples:
+            line = lines[lineno]
+            if line.startswith('+'):
+                return [('ansigreen', line)]
+            elif line.startswith('-'):
+                return [('ansired', line)]
+            elif line.startswith('[') or line.startswith('('):
+                # Style for metadata lines like [Existing file...] or (content...)
+                return [('bold', line)]
+            else:
+                # Default style for other lines
+                return [('', line)]
+
+        return get_line
 
 
 # CLI initialization and startup display functions
@@ -206,18 +229,19 @@ def display_command_output(output: str):
 
 
 def display_file_edit(event: FileEditAction | FileEditObservation):
-    container = Frame(
-        TextArea(
-            text=f'{event}',
-            read_only=True,
-            style=COLOR_GREY,
-            wrap_lines=True,
-        ),
-        title='File Edit',
-        style=f'fg:{COLOR_GREY}',
-    )
-    print_container(container)
-    print_formatted_text('')
+    if isinstance(event, FileEditObservation):
+        container = Frame(
+            TextArea(
+                text=event.visualize_diff(n_context_lines=4),
+                read_only=True,
+                wrap_lines=True,
+                lexer=CustomDiffLexer(),
+            ),
+            title='File Edit',
+            style=f'fg:{COLOR_GREY}',
+        )
+        print_container(container)
+        print_formatted_text('')
 
 
 def display_file_read(event: FileReadObservation):
@@ -366,10 +390,12 @@ def display_usage_metrics(usage_metrics: UsageMetrics):
 
     labels_and_values = [
         ('   Total Cost (USD):', cost_str),
+        ('', ''),
         ('   Total Input Tokens:', input_tokens_str),
         ('      Cache Hits:', cache_read_str),
         ('      Cache Writes:', cache_write_str),
         ('   Total Output Tokens:', output_tokens_str),
+        ('', ''),
         ('   Total Tokens:', total_tokens_str),
     ]
 
