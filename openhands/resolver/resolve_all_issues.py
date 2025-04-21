@@ -14,16 +14,14 @@ from tqdm import tqdm
 import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.resolve_issue import (
     issue_handler_factory,
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
-from openhands.resolver.utils import (
-    Platform,
-    identify_token,
-)
+from openhands.resolver.utils import identify_token
 
 
 def cleanup() -> None:
@@ -56,7 +54,7 @@ async def resolve_issues(
     repo: str,
     token: str,
     username: str,
-    platform: Platform,
+    platform: ProviderType,
     max_iterations: int,
     limit_issues: int | None,
     num_workers: int,
@@ -368,9 +366,6 @@ def main() -> None:
         raise ValueError('Token is required.')
 
     platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
-    if platform == Platform.INVALID:
-        raise ValueError('Token is invalid.')
-
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
 
     llm_config = LLMConfig(
