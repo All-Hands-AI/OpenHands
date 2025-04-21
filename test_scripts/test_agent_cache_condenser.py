@@ -8,9 +8,9 @@ from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.config.condenser_config import LLMAgentCacheCondenserConfig
-from openhands.events.action.agent import AgentMessageAction
+from openhands.events.action.message import MessageAction
 from openhands.events.event import Event
-from openhands.events.observation.agent import AgentMessageObservation
+from openhands.events.observation.agent import AgentThinkObservation
 from openhands.llm.llm import LLM
 from openhands.memory.condenser.impl.llm_agent_cache_condenser import LLMAgentCacheCondenser
 
@@ -20,16 +20,16 @@ def create_test_conversation(num_messages: int = 20) -> List[Event]:
     events = []
     
     # Add initial user message
-    events.append(AgentMessageAction(message="Hello, I need help with a task."))
+    events.append(MessageAction(content="Hello, I need help with a task."))
     
     # Add alternating agent and user messages
     for i in range(num_messages):
         if i % 2 == 0:
             # Agent message
-            events.append(AgentMessageObservation(message=f"I'll help you with that. This is message {i}."))
+            events.append(AgentThinkObservation(content=f"I'll help you with that. This is message {i}."))
         else:
             # User message
-            events.append(AgentMessageAction(message=f"Thanks, here's more information. This is message {i}."))
+            events.append(MessageAction(content=f"Thanks, here's more information. This is message {i}."))
     
     return events
 
@@ -56,7 +56,7 @@ def test_agent_cache_condenser():
     events = create_test_conversation(num_messages=20)
     
     # Add a message with the trigger word
-    events.append(AgentMessageObservation(message="Let me think about this. CONDENSE!"))
+    events.append(AgentThinkObservation(content="Let me think about this. CONDENSE!"))
     
     state = State(history=cast(List[Event], events))
     
