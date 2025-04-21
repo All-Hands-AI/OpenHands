@@ -6,6 +6,7 @@ from urllib.parse import quote
 import pytest
 
 from openhands.core.config import LLMConfig
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread
 from openhands.resolver.resolver_output import Issue, ResolverOutput
@@ -19,7 +20,6 @@ from openhands.resolver.send_pull_request import (
     send_pull_request,
     update_existing_pull_request,
 )
-from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
@@ -290,7 +290,7 @@ def test_update_existing_pull_request(
         issue,
         token,
         username,
-        Platform.GITLAB,
+        ProviderType.GITLAB,
         patch_dir,
         llm_config,
         comment_message=None,
@@ -392,7 +392,7 @@ def test_send_pull_request(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITLAB,
+        platform=ProviderType.GITLAB,
         patch_dir=repo_path,
         pr_type=pr_type,
         target_branch=target_branch,
@@ -499,7 +499,7 @@ def test_send_pull_request_with_reviewer(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITLAB,
+        platform=ProviderType.GITLAB,
         patch_dir=repo_path,
         pr_type='ready',
         reviewer=reviewer,
@@ -547,7 +547,7 @@ def test_send_pull_request_invalid_target_branch(
             issue=mock_issue,
             token='test-token',
             username='test-user',
-            platform=Platform.GITLAB,
+            platform=ProviderType.GITLAB,
             patch_dir=repo_path,
             pr_type='ready',
             target_branch='nonexistent-branch',
@@ -582,7 +582,7 @@ def test_send_pull_request_git_push_failure(
             issue=mock_issue,
             token='test-token',
             username='test-user',
-            platform=Platform.GITLAB,
+            platform=ProviderType.GITLAB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -642,7 +642,7 @@ def test_send_pull_request_permission_error(
             issue=mock_issue,
             token='test-token',
             username='test-user',
-            platform=Platform.GITLAB,
+            platform=ProviderType.GITLAB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -762,7 +762,7 @@ def test_process_single_pr_update(
         resolver_output,
         token,
         username,
-        Platform.GITLAB,
+        ProviderType.GITLAB,
         pr_type,
         mock_llm_config,
         None,
@@ -781,7 +781,7 @@ def test_process_single_pr_update(
         issue=resolver_output.issue,
         token=token,
         username=username,
-        platform=Platform.GITLAB,
+        platform=ProviderType.GITLAB,
         patch_dir=f'{mock_output_dir}/patches/pr_1',
         additional_message='[Test success 1]',
         llm_config=mock_llm_config,
@@ -805,7 +805,7 @@ def test_process_single_issue(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
-    platform = Platform.GITLAB
+    platform = ProviderType.GITLAB
 
     resolver_output = ResolverOutput(
         issue=Issue(
@@ -914,7 +914,7 @@ def test_process_single_issue_unsuccessful(
         resolver_output,
         token,
         username,
-        Platform.GITLAB,
+        ProviderType.GITLAB,
         pr_type,
         mock_llm_config,
         None,
@@ -1006,7 +1006,7 @@ def test_process_all_successful_issues(
         'output_dir',
         'token',
         'username',
-        Platform.GITLAB,
+        ProviderType.GITLAB,
         'draft',
         mock_llm_config,  # llm_config
         None,  # fork_owner
@@ -1023,7 +1023,7 @@ def test_process_all_successful_issues(
                 resolver_output_1,
                 'token',
                 'username',
-                Platform.GITLAB,
+                ProviderType.GITLAB,
                 'draft',
                 mock_llm_config,
                 None,
@@ -1038,7 +1038,7 @@ def test_process_all_successful_issues(
                 resolver_output_3,
                 'token',
                 'username',
-                Platform.GITLAB,
+                ProviderType.GITLAB,
                 'draft',
                 mock_llm_config,
                 None,
@@ -1081,7 +1081,7 @@ def test_send_pull_request_branch_naming(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITLAB,
+        platform=ProviderType.GITLAB,
         patch_dir=repo_path,
         pr_type='branch',
     )
@@ -1151,6 +1151,7 @@ def test_main(
     mock_args.target_branch = None
     mock_args.reviewer = None
     mock_args.pr_title = None
+    mock_args.selected_repo = None
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
@@ -1165,7 +1166,7 @@ def test_main(
     mock_resolver_output = MagicMock()
     mock_load_single_resolver_output.return_value = mock_resolver_output
 
-    mock_identify_token.return_value = Platform.GITLAB
+    mock_identify_token.return_value = ProviderType.GITLAB
 
     # Run main function
     main()
@@ -1184,7 +1185,7 @@ def test_main(
         mock_resolver_output,
         'mock_token',
         'mock_username',
-        Platform.GITLAB,
+        ProviderType.GITLAB,
         'draft',
         llm_config,
         None,
@@ -1208,7 +1209,7 @@ def test_main(
         '/mock/output',
         'mock_token',
         'mock_username',
-        Platform.GITLAB,
+        ProviderType.GITLAB,
         'draft',
         llm_config,
         None,
@@ -1221,8 +1222,11 @@ def test_main(
         main()
 
     # Test for invalid token
-    mock_identify_token.return_value = Platform.INVALID
-    with pytest.raises(ValueError, match='Token is invalid.'):
+    mock_args.issue_number = '42'  # Reset to valid issue number
+    mock_getenv.side_effect = (
+        lambda key, default=None: None
+    )  # Return None for all env vars
+    with pytest.raises(ValueError, match='token is not set'):
         main()
 
 
