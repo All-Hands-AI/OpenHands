@@ -36,6 +36,7 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
+  plugins: [],
   presets: [
     [
       'classic',
@@ -74,6 +75,11 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'User Guides',
+        },
+        {
+          to: '/api/',
+          label: 'API',
+          position: 'left',
         },
         {
           type: 'localeDropdown',
