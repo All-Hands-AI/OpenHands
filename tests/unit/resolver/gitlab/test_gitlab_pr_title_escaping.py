@@ -3,9 +3,9 @@ import subprocess
 import tempfile
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.send_pull_request import make_commit, send_pull_request
+from openhands.resolver.send_pull_request import make_commit
+from openhands.resolver.utils import Platform
 
 
 def test_commit_message_with_quotes():
@@ -155,12 +155,13 @@ def test_pr_title_with_quotes(monkeypatch):
 
         # Try to send a PR - this will fail if the title is incorrectly escaped
         logger.info('Sending PR...')
+        from openhands.resolver.send_pull_request import send_pull_request
 
         send_pull_request(
             issue=issue,
             token='dummy-token',
             username='test-user',
-            platform=ProviderType.GITHUB,
+            platform=Platform.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )
