@@ -5,6 +5,7 @@ from openhands.core.message_utils import (
 from openhands.events.event import Event
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.metrics import Metrics, TokenUsage
+from tests.unit.testing_utils import create_tool_call_metadata
 
 
 def test_get_token_usage_for_event():
@@ -28,15 +29,14 @@ def test_get_token_usage_for_event():
 
     # Create an event referencing that response_id
     event = Event()
-    mock_tool_call_metadata = ToolCallMetadata(
+    # Use our utility function to create tool_call_metadata
+    mock_tool_call_metadata = create_tool_call_metadata(
         tool_call_id='test-tool-call',
         function_name='fake_function',
-        model_response={'id': 'test-response-id'},
+        model_response_id='test-response-id',
         total_calls_in_response=1,
     )
-    event._tool_call_metadata = (
-        mock_tool_call_metadata  # normally you'd do event.tool_call_metadata = ...
-    )
+    event._tool_call_metadata = mock_tool_call_metadata
 
     # We should find that usage record
     found = get_token_usage_for_event(event, metrics)
@@ -45,7 +45,14 @@ def test_get_token_usage_for_event():
     assert found.response_id == 'test-response-id'
 
     # If we change the event's response ID, we won't find anything
-    mock_tool_call_metadata.model_response.id = 'some-other-id'
+    # Create a new tool_call_metadata with a different response ID
+    mock_tool_call_metadata = create_tool_call_metadata(
+        tool_call_id='test-tool-call',
+        function_name='fake_function',
+        model_response_id='some-other-id',
+        total_calls_in_response=1,
+    )
+    event._tool_call_metadata = mock_tool_call_metadata
     found2 = get_token_usage_for_event(event, metrics)
     assert found2 is None
 
@@ -87,17 +94,17 @@ def test_get_token_usage_for_event_id():
         e._id = i
         # We'll attach usage_1 to event 1, usage_2 to event 3
         if i == 1:
-            e._tool_call_metadata = ToolCallMetadata(
+            e._tool_call_metadata = create_tool_call_metadata(
                 tool_call_id='tid1',
                 function_name='fn1',
-                model_response={'id': 'resp-1'},
+                model_response_id='resp-1',
                 total_calls_in_response=1,
             )
         elif i == 3:
-            e._tool_call_metadata = ToolCallMetadata(
+            e._tool_call_metadata = create_tool_call_metadata(
                 tool_call_id='tid2',
                 function_name='fn2',
-                model_response={'id': 'resp-2'},
+                model_response_id='resp-2',
                 total_calls_in_response=1,
             )
         events.append(e)
@@ -141,10 +148,10 @@ def test_get_token_usage_for_event_fallback():
 
     event = Event()
     # Provide some mismatched tool_call_metadata:
-    event._tool_call_metadata = ToolCallMetadata(
+    event._tool_call_metadata = create_tool_call_metadata(
         tool_call_id='irrelevant-tool-call',
         function_name='fake_function',
-        model_response={'id': 'not-matching-any-usage'},
+        model_response_id='not-matching-any-usage',
         total_calls_in_response=1,
     )
     # But also set event.response_id to the actual usage ID

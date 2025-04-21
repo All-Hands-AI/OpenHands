@@ -58,6 +58,23 @@ class RecentEventsCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class LLMAgentCacheCondenserConfig(BaseModel):
+    """Configuration for LLMAgentCacheCondenser."""
+
+    type: Literal['agentcache'] = Field('agentcache')
+    max_size: int = Field(
+        default=100,
+        description='Maximum number of events before condensation is triggered.',
+        ge=1,
+    )
+    trigger_word: str = Field(
+        default='CONDENSE!',
+        description='Word that triggers condensation when found in user messages.',
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
@@ -181,6 +198,7 @@ CondenserConfig = (
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
     | CondenserPipelineConfig
+    | LLMAgentCacheCondenserConfig
 )
 
 
@@ -284,6 +302,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
+        'agentcache': LLMAgentCacheCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:

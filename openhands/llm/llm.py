@@ -54,6 +54,8 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
+    'gpt-4o-mini',  # technically we should list many more penai models here.
+    # they do support caching. but they do not require explicit cache management.
 ]
 
 # function calling supporting models
@@ -249,9 +251,15 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
-            if not messages:
+            if not messages or len(messages) < 1:
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
+                )
+
+            # anthropic requires at least one user message.
+            if not any(message.get('role') == 'user' for message in messages):
+                raise ValueError(
+                    'At least one message with role "user" is required for the completion.'
                 )
 
             # log the entire LLM prompt
@@ -662,7 +670,7 @@ class LLM(RetryMixin, DebugMixin):
             boolean: True if executing a local model.
         """
         if self.config.base_url is not None:
-            for substring in ['localhost', '127.0.0.1' '0.0.0.0']:
+            for substring in ['localhost', '127.0.0.1', '0.0.0.0']:
                 if substring in self.config.base_url:
                     return True
         elif self.config.model is not None:
