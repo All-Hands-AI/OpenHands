@@ -62,13 +62,13 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 # File viewer functionality moved to openhands/runtime/file_viewer_server.py
 from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
-from openhands.runtime.utils import find_available_tcp_port
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
@@ -555,10 +555,11 @@ if __name__ == '__main__':
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
-
     # Start the file viewer server in a separate thread
     logger.info('Starting file viewer server')
-    _file_viewer_port = find_available_tcp_port(min_port=args.port + 1, max_port=args.port + 10000)
+    _file_viewer_port = find_available_tcp_port(
+        min_port=args.port + 1, max_port=args.port + 10000
+    )
     server_url, _ = start_file_viewer_server(port=_file_viewer_port)
     logger.info(f'File viewer server started at {server_url}')
 
