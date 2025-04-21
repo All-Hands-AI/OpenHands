@@ -61,7 +61,7 @@ class GitLabService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
-    async def _fetch_data(
+    async def _make_request(
         self,
         url: str,
         params: dict | None = None,
@@ -72,7 +72,7 @@ class GitLabService(BaseGitService, GitService):
                 gitlab_headers = await self._get_gitlab_headers()
 
                 # Make initial request
-                response = await self.make_request(
+                response = await self.execute_request(
                     client=client,
                     url=url,
                     headers=gitlab_headers,
@@ -84,7 +84,7 @@ class GitLabService(BaseGitService, GitService):
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     gitlab_headers = await self._get_gitlab_headers()
-                    response = await self.make_request(
+                    response = await self.execute_request(
                         client=client,
                         url=url,
                         headers=gitlab_headers,
@@ -168,7 +168,7 @@ class GitLabService(BaseGitService, GitService):
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
 
         return User(
             id=response.get('id'),
@@ -192,7 +192,7 @@ class GitLabService(BaseGitService, GitService):
             'visibility': 'public',
         }
 
-        response, _ = await self._fetch_data(url, params)
+        response, _ = await self._make_request(url, params)
         repos = [
             Repository(
                 id=repo.get('id'),
@@ -228,7 +228,7 @@ class GitLabService(BaseGitService, GitService):
                 'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
                 'membership': 1,  # Use 1 instead of True
             }
-            response, headers = await self._fetch_data(url, params)
+            response, headers = await self._make_request(url, params)
 
             if not response:  # No more repositories
                 break

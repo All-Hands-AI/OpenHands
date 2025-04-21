@@ -61,7 +61,7 @@ class GitHubService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
-    async def _fetch_data(
+    async def _make_request(
         self,
         url: str,
         params: dict | None = None,
@@ -72,7 +72,7 @@ class GitHubService(BaseGitService, GitService):
                 github_headers = await self._get_github_headers()
 
                 # Make initial request
-                response = await self.make_request(
+                response = await self.execute_request(
                     client=client,
                     url=url,
                     headers=github_headers,
@@ -84,7 +84,7 @@ class GitHubService(BaseGitService, GitService):
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
-                    response = await self.make_request(
+                    response = await self.execute_request(
                         client=client,
                         url=url,
                         headers=github_headers,
@@ -112,7 +112,7 @@ class GitHubService(BaseGitService, GitService):
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
 
         return User(
             id=response.get('id'),
@@ -143,7 +143,7 @@ class GitHubService(BaseGitService, GitService):
 
         while len(repos) < max_repos:
             page_params = {**params, 'page': str(page)}
-            response, headers = await self._fetch_data(url, page_params)
+            response, headers = await self._make_request(url, page_params)
 
             # Extract repositories from response
             page_repos = response.get(extract_key, []) if extract_key else response
@@ -209,7 +209,7 @@ class GitHubService(BaseGitService, GitService):
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
         installations = response.get('installations', [])
         return [i['id'] for i in installations]
 
@@ -226,7 +226,7 @@ class GitHubService(BaseGitService, GitService):
             'order': order,
         }
 
-        response, _ = await self._fetch_data(url, params)
+        response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
 
         repos = [
