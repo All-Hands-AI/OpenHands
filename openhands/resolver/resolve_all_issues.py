@@ -370,7 +370,6 @@ def main() -> None:
         identify_token,
         GENERAL_TIMEOUT,
         token,
-        my_args.selected_repo,
         my_args.base_domain,
     )
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']

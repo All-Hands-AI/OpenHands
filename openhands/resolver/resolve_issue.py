@@ -693,7 +693,6 @@ def main() -> None:
         identify_token,
         GENERAL_TIMEOUT,
         token,
-        my_args.selected_repo,
         my_args.base_domain,
     )
 
