@@ -30,6 +30,15 @@ def generate_file_viewer_html(file_path: str) -> str:
         '.jpg',
         '.jpeg',
         '.gif',
+        '.txt',
+        '.md',
+        '.py',
+        '.js',
+        '.html',
+        '.css',
+        '.json',
+        '.xml',
+        '.csv',
     ]
 
     # Check if the file extension is supported
