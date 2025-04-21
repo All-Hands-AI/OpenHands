@@ -1,7 +1,7 @@
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
-import AllHandsLogo from "#/icons/hands.svg?react";
+import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
 
 export function HomeHeader() {
   const {
