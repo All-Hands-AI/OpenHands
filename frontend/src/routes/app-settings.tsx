@@ -71,52 +71,56 @@ function AppSettingsScreen() {
     !soundNotificationsSwitchHasChanged;
 
   return (
-    <form data-testid="app-settings-screen" action={formAction}>
+    <form
+      data-testid="app-settings-screen"
+      action={formAction}
+      className="flex flex-col h-full justify-between"
+    >
       {settings && (
-        <SettingsDropdownInput
-          testId="language-input"
-          onChange={checkIfLanguageInputHasChanged}
-          label={t(I18nKey.SETTINGS$LANGUAGE)}
-          items={AvailableLanguages.map((l) => ({
-            key: l.value,
-            label: l.label,
-          }))}
-          defaultSelectedKey={settings?.LANGUAGE}
-          name="language-input"
-          isClearable={false}
-        />
+        <div className="px-11 py-9 flex flex-col gap-6">
+          <SettingsDropdownInput
+            testId="language-input"
+            onChange={checkIfLanguageInputHasChanged}
+            label={t(I18nKey.SETTINGS$LANGUAGE)}
+            items={AvailableLanguages.map((l) => ({
+              key: l.value,
+              label: l.label,
+            }))}
+            defaultSelectedKey={settings.LANGUAGE}
+            name="language-input"
+            isClearable={false}
+          />
+
+          <SettingsSwitch
+            testId="enable-analytics-switch"
+            name="enable-analytics-switch"
+            defaultIsToggled={!!settings.USER_CONSENTS_TO_ANALYTICS}
+            onToggle={checkIfAnalyticsSwitchHasChanged}
+          >
+            {t(I18nKey.ANALYTICS$ENABLE)}
+          </SettingsSwitch>
+
+          <SettingsSwitch
+            testId="enable-sound-notifications-switch"
+            name="enable-sound-notifications-switch"
+            defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
+            onToggle={checkIfSoundNotificationsSwitchHasChanged}
+          >
+            {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
+          </SettingsSwitch>
+        </div>
       )}
 
-      {settings && (
-        <SettingsSwitch
-          testId="enable-analytics-switch"
-          name="enable-analytics-switch"
-          defaultIsToggled={!!settings.USER_CONSENTS_TO_ANALYTICS}
-          onToggle={checkIfAnalyticsSwitchHasChanged}
+      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+        <BrandButton
+          testId="submit-button"
+          variant="primary"
+          type="submit"
+          isDisabled={submitButtonIsDisabled}
         >
-          {t(I18nKey.ANALYTICS$ENABLE)}
-        </SettingsSwitch>
-      )}
-
-      {settings && (
-        <SettingsSwitch
-          testId="enable-sound-notifications-switch"
-          name="enable-sound-notifications-switch"
-          defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
-          onToggle={checkIfSoundNotificationsSwitchHasChanged}
-        >
-          {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
-        </SettingsSwitch>
-      )}
-
-      <BrandButton
-        testId="submit-button"
-        variant="primary"
-        type="submit"
-        isDisabled={submitButtonIsDisabled}
-      >
-        Save Changes
-      </BrandButton>
+          Save Changes
+        </BrandButton>
+      </div>
     </form>
   );
 }
