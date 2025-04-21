@@ -192,8 +192,8 @@ export function SystemMessageModal({
                           </button>
 
                           {isExpanded && (
-                            <div className="px-2 pb-3 pt-1">
-                              <div className="mt-2 mb-3 p-3 shadow-inner">
+                            <div className="pb-3 pt-1">
+                              <div className="mt-2 mb-3">
                                 <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">
                                   {String(description)}
                                 </p>
@@ -205,7 +205,7 @@ export function SystemMessageModal({
                                   <h4 className="text-sm font-semibold text-gray-300">
                                     {t("SYSTEM_MESSAGE_MODAL$PARAMETERS")}
                                   </h4>
-                                  <div className="text-sm mt-2 p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
+                                  <div className="text-sm mt-2 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
                                     <ReactJsonView
                                       src={parameters}
                                       theme={jsonViewTheme}
