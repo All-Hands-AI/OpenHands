@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Protocol
 
+from httpx import AsyncClient
 from pydantic import BaseModel, SecretStr
 
 from openhands.server.types import AppMode
@@ -55,6 +56,25 @@ class UnknownException(ValueError):
     """Raised when there is an issue with GitHub communcation."""
 
     pass
+
+
+class RequestMethod(Enum):
+    POST = 'post'
+    GET = 'get'
+
+
+class BaseGitService:
+    async def execute_request(
+        self,
+        client: AsyncClient,
+        url: str,
+        headers: dict,
+        params: dict | None,
+        method: RequestMethod = RequestMethod.GET,
+    ):
+        if method == RequestMethod.POST:
+            return await client.post(url, headers=headers, json=params)
+        return await client.get(url, headers=headers, params=params)
 
 
 class GitService(Protocol):
