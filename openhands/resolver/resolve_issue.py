@@ -26,6 +26,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.stream import EventStreamSubscriber
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import Issue
@@ -35,7 +36,6 @@ from openhands.resolver.interfaces.issue_definitions import (
 )
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
-    Platform,
     codeact_user_response,
     get_unique_uid,
     identify_token,
@@ -49,7 +49,7 @@ AGENT_CLASS = 'CodeActAgent'
 
 def initialize_runtime(
     runtime: Runtime,
-    platform: Platform,
+    platform: ProviderType,
 ) -> None:
     """Initialize the runtime for the agent.
 
@@ -68,7 +68,7 @@ def initialize_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-    if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+    if platform == ProviderType.GITLAB and os.getenv('GITLAB_CI') == 'true':
         action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -85,7 +85,7 @@ def initialize_runtime(
 async def complete_runtime(
     runtime: Runtime,
     base_commit: str,
-    platform: Platform,
+    platform: ProviderType,
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
 
@@ -121,7 +121,7 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-    if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+    if platform == ProviderType.GITLAB and os.getenv('GITLAB_CI') == 'true':
         action = CmdRunAction(command='sudo git add -A')
     else:
         action = CmdRunAction(command='git add -A')
@@ -162,7 +162,7 @@ async def complete_runtime(
 
 async def process_issue(
     issue: Issue,
-    platform: Platform,
+    platform: ProviderType,
     base_commit: str,
     max_iterations: int,
     llm_config: LLMConfig,
@@ -320,15 +320,15 @@ def issue_handler_factory(
     repo: str,
     token: str,
     llm_config: LLMConfig,
-    platform: Platform,
+    platform: ProviderType,
     username: str | None = None,
     base_domain: str | None = None,
 ) -> ServiceContextIssue | ServiceContextPR:
     # Determine default base_domain based on platform
     if base_domain is None:
-        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
+        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
     if issue_type == 'issue':
-        if platform == Platform.GITHUB:
+        if platform == ProviderType.GITHUB:
             return ServiceContextIssue(
                 GithubIssueHandler(owner, repo, token, username, base_domain),
                 llm_config,
@@ -339,7 +339,7 @@ def issue_handler_factory(
                 llm_config,
             )
     elif issue_type == 'pr':
-        if platform == Platform.GITHUB:
+        if platform == ProviderType.GITHUB:
             return ServiceContextPR(
                 GithubPRHandler(owner, repo, token, username, base_domain), llm_config
             )
@@ -356,7 +356,7 @@ async def resolve_issue(
     repo: str,
     token: str,
     username: str,
-    platform: Platform,
+    platform: ProviderType,
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
@@ -391,7 +391,7 @@ async def resolve_issue(
     """
     # Determine default base_domain based on platform
     if base_domain is None:
-        base_domain = 'github.com' if platform == Platform.GITHUB else 'gitlab.com'
+        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
 
     issue_handler = issue_handler_factory(
         issue_type, owner, repo, token, llm_config, platform, username, base_domain
@@ -669,8 +669,6 @@ def main() -> None:
         raise ValueError('Token is required.')
 
     platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
-    if platform == Platform.INVALID:
-        raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     model = my_args.llm_model or os.environ['LLM_MODEL']

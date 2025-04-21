@@ -11,6 +11,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.issue import Issue, ReviewThread
@@ -24,7 +25,6 @@ from openhands.resolver.resolve_issue import (
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
-from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def test_initialize_runtime():
         ),
     ]
 
-    initialize_runtime(mock_runtime, Platform.GITHUB)
+    initialize_runtime(mock_runtime, ProviderType.GITHUB)
 
     assert mock_runtime.run_action.call_count == 2
     mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
@@ -108,7 +108,7 @@ async def test_resolve_issue_no_issues_found():
                 repo='test-repo',
                 token='test-token',
                 username='test-user',
-                platform=Platform.GITHUB,
+                platform=ProviderType.GITHUB,
                 max_iterations=5,
                 output_dir='/tmp',
                 llm_config=LLMConfig(model='test', api_key='test'),
@@ -315,7 +315,9 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
-    result = await complete_runtime(mock_runtime, 'base_commit_hash', Platform.GITHUB)
+    result = await complete_runtime(
+        mock_runtime, 'base_commit_hash', ProviderType.GITHUB
+    )
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
@@ -442,7 +444,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             # Call the function
             result = await process_issue(
                 issue,
-                Platform.GITHUB,
+                ProviderType.GITHUB,
                 base_commit,
                 max_iterations,
                 llm_config,

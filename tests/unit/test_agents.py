@@ -6,9 +6,6 @@ from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
-    get_tools as codeact_get_tools,
-)
-from openhands.agenthub.codeact_agent.function_calling import (
     response_to_actions as codeact_response_to_actions,
 )
 from openhands.agenthub.codeact_agent.tools import (
@@ -23,9 +20,6 @@ from openhands.agenthub.codeact_agent.tools import (
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
-)
-from openhands.agenthub.readonly_agent.function_calling import (
-    get_tools as readonly_get_tools,
 )
 from openhands.agenthub.readonly_agent.function_calling import (
     response_to_actions as readonly_response_to_actions,
@@ -72,6 +66,22 @@ def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     return agent
 
 
+def test_agent_with_default_config_has_default_tools():
+    config = AgentConfig()
+    codeact_agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    assert len(codeact_agent.tools) > 0
+    default_tool_names = [tool['function']['name'] for tool in codeact_agent.tools]
+    assert {
+        'browser',
+        'execute_bash',
+        'execute_ipython_cell',
+        'finish',
+        'str_replace_editor',
+        'think',
+        'web_read',
+    }.issubset(default_tool_names)
+
+
 @pytest.fixture
 def mock_state() -> State:
     state = Mock(spec=State)
@@ -104,61 +114,6 @@ def test_step_with_pending_actions(agent):
     result = agent.step(Mock())
     assert result == pending_action
     assert len(agent.pending_actions) == 0
-
-
-def test_codeact_get_tools_default():
-    tools = codeact_get_tools(
-        enable_jupyter=True,
-        enable_llm_editor=True,
-        enable_browsing=True,
-    )
-    assert len(tools) > 0
-
-    # Check required tools are present
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'execute_bash' in tool_names
-    assert 'execute_ipython_cell' in tool_names
-    assert 'edit_file' in tool_names
-    assert 'web_read' in tool_names
-
-
-def test_readonly_get_tools_default():
-    tools = readonly_get_tools()
-    assert len(tools) > 0
-
-    # Check required tools are present
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'execute_bash' not in tool_names
-    assert 'execute_ipython_cell' not in tool_names
-    assert 'edit_file' not in tool_names
-    assert 'web_read' in tool_names
-    assert 'grep' in tool_names
-    assert 'glob' in tool_names
-    assert 'think' in tool_names
-
-
-def test_codeact_get_tools_with_options():
-    # Test with all options enabled
-    tools = codeact_get_tools(
-        enable_browsing=True,
-        enable_jupyter=True,
-        enable_llm_editor=True,
-    )
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'browser' in tool_names
-    assert 'execute_ipython_cell' in tool_names
-    assert 'edit_file' in tool_names
-
-    # Test with all options disabled
-    tools = codeact_get_tools(
-        enable_browsing=False,
-        enable_jupyter=False,
-        enable_llm_editor=False,
-    )
-    tool_names = [tool['function']['name'] for tool in tools]
-    assert 'browser' not in tool_names
-    assert 'execute_ipython_cell' not in tool_names
-    assert 'edit_file' not in tool_names
 
 
 def test_cmd_run_tool():
