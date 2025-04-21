@@ -219,16 +219,18 @@ class LocalRuntime(ActionExecutionClient):
             ).strip()
             # Verify it's a valid path (basic check)
             if not os.path.isdir(poetry_venvs_path):
-                 raise ValueError(f"'{poetry_venvs_path}' is not a valid directory.")
+                raise ValueError(f"'{poetry_venvs_path}' is not a valid directory.")
         except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
             # Attempt to fall back to environment variable if set
-            poetry_venvs_path = env.get('POETRY_VIRTUALENVS_PATH')
+            poetry_venvs_path = env.get('POETRY_VIRTUALENVS_PATH', '')
             if not poetry_venvs_path or not os.path.isdir(poetry_venvs_path):
-                 raise RuntimeError(
+                raise RuntimeError(
                     'Cannot find poetry venv path using `poetry env info --path` or POETRY_VIRTUALENVS_PATH env var. '
                     'Please check your poetry installation and ensure a virtual environment exists.'
-                 ) from e
-            logger.warning(f"Using fallback POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}")
+                ) from e
+            logger.warning(
+                f'Using fallback POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}'
+            )
 
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
