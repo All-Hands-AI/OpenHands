@@ -11,6 +11,7 @@ export default [
     route("settings", "routes/settings.tsx", [
       index("routes/account-settings.tsx"),
       route("git", "routes/git-settings.tsx"),
+      route("app", "routes/app-settings.tsx"),
       route("billing", "routes/billing.tsx"),
     ]),
     route("conversations/:conversationId", "routes/conversation.tsx", [
