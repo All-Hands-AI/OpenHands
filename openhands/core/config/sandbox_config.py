@@ -98,9 +98,9 @@ class SandboxConfig(BaseModel):
             raise ValueError(f'Invalid sandbox configuration: {e}')
 
         return sandbox_mapping
-    
-    @model_validator(mode="after")
-    def set_default_base_image(self) -> "SandboxConfig":
+
+    @model_validator(mode='after')
+    def set_default_base_image(self) -> 'SandboxConfig':
         if self.base_container_image is None:
             self.base_container_image = 'nikolaik/python-nodejs:python3.12-nodejs22'
         return self

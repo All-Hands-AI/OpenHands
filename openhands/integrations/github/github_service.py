@@ -32,7 +32,7 @@ class GitHubService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
-        base_domain: str | None = None
+        base_domain: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager

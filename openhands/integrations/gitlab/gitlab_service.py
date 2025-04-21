@@ -30,7 +30,7 @@ class GitLabService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
-        base_domain: str | None = None
+        base_domain: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
@@ -39,8 +39,8 @@ class GitLabService(GitService):
             self.token = token
 
         if base_domain:
-            self.BASE_URL = f"https://{base_domain}/api/v4"
-            self.GRAPHQL_URL = f"https://{base_domain}/api/graphql"
+            self.BASE_URL = f'https://{base_domain}/api/v4'
+            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
     async def _get_gitlab_headers(self) -> dict[str, Any]:
         """
