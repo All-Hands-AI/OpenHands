@@ -8,9 +8,11 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
+    BaseGitService,
     GitService,
     ProviderType,
     Repository,
+    RequestMethod,
     SuggestedTask,
     TaskType,
     UnknownException,
@@ -20,7 +22,7 @@ from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitHubService(GitService):
+class GitHubService(BaseGitService, GitService):
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -60,27 +62,35 @@ class GitHubService(GitService):
         return self.token
 
     async def _fetch_data(
-        self, url: str, params: dict | None = None, method: str = 'get'
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
 
-                # Helper function to make the appropriate request based on method
-                async def make_request(headers):
-                    if method.lower() == 'post':
-                        return await client.post(url, headers=headers, json=params)
-                    else:
-                        return await client.get(url, headers=headers, params=params)
-
                 # Make initial request
-                response = await make_request(github_headers)
+                response = await self.make_request(
+                    client=client,
+                    url=url,
+                    headers=github_headers,
+                    params=params,
+                    method=method,
+                )
 
                 # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
-                    response = await make_request(github_headers)
+                    response = await self.make_request(
+                        client=client,
+                        url=url,
+                        headers=github_headers,
+                        params=params,
+                        method=method,
+                    )
 
                 response.raise_for_status()
                 headers = {}
