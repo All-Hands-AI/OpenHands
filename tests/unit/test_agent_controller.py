@@ -787,9 +787,9 @@ async def test_run_controller_max_iterations_has_metrics(
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    assert state.metrics.accumulated_cost == 10.0 * 3, (
-        f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
-    )
+    assert (
+        state.metrics.accumulated_cost == 10.0 * 3
+    ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
 
 
 @pytest.mark.asyncio
@@ -1284,7 +1284,6 @@ async def test_action_metrics_copy(mock_agent):
 @pytest.mark.asyncio
 async def test_condenser_metrics_included(mock_agent, test_event_stream):
     """Test that metrics from the condenser's LLM are included in the action metrics."""
-
     # Set up agent metrics
     agent_metrics = Metrics(model_name='agent-model')
     agent_metrics.accumulated_cost = 0.05
@@ -1498,14 +1497,14 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
         # Verify the NullObservation has a cause that points to the RecallAction
         assert null_observation.cause is not None, 'NullObservation cause is None'
-        assert null_observation.cause == recall_action.id, (
-            f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
-        )
+        assert (
+            null_observation.cause == recall_action.id
+        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
 
         # Verify the controller's should_step method returns True for this observation
-        assert controller.should_step(null_observation), (
-            'should_step should return True for this NullObservation'
-        )
+        assert controller.should_step(
+            null_observation
+        ), 'should_step should return True for this NullObservation'
 
         # Verify the controller's step method was called
         # This means the controller processed the NullObservation
@@ -1517,9 +1516,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
         null_observation_zero._cause = 0  # type: ignore[attr-defined]
 
         # Verify the controller's should_step method would return False for this observation
-        assert not controller.should_step(null_observation_zero), (
-            'should_step should return False for NullObservation with cause=0'
-        )
+        assert not controller.should_step(
+            null_observation_zero
+        ), 'should_step should return False for NullObservation with cause=0'
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agent):
@@ -1545,9 +1544,9 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     result = controller.should_step(null_observation)
 
     # It should return False since we only want to step on NullObservation with cause > 0
-    assert result is False, (
-        'should_step should return False for NullObservation with cause = 0'
-    )
+    assert (
+        result is False
+    ), 'should_step should return False for NullObservation with cause = 0'
 
 
 def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
