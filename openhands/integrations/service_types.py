@@ -72,7 +72,6 @@ class BaseGitService:
         params: dict | None,
         method: RequestMethod = RequestMethod.GET,
     ):
-        print('invoked method')
         if method == RequestMethod.POST:
             return await client.post(url, headers=headers, json=params)
         return await client.get(url, headers=headers, params=params)
