@@ -2,36 +2,19 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 from uuid import uuid4
 
 import toml
-from prompt_toolkit import PromptSession, print_formatted_text
-from prompt_toolkit.application import Application
-from prompt_toolkit.completion import (
-    Completer,
-    Completion,
-    FuzzyWordCompleter,
-)
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import HSplit, Window
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import clear, print_container
-from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
-from pydantic import SecretStr
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.cli_display import (
-    COLOR_GOLD,
     COLOR_GREY,
-    COMMANDS,
-    DEFAULT_STYLE,
     UsageMetrics,
     display_banner,
     display_event,
@@ -43,11 +26,14 @@ from openhands.core.cli_display import (
     display_status,
     display_welcome_message,
 )
-from openhands.core.cli_utils import (
-    VERIFIED_ANTHROPIC_MODELS,
-    VERIFIED_OPENAI_MODELS,
-    VERIFIED_PROVIDERS,
-    organize_models_and_providers,
+from openhands.core.cli_prompts import (
+    cli_confirm,
+    read_confirmation_input,
+    read_prompt_input,
+)
+from openhands.core.cli_settings import (
+    modify_llm_settings_advanced,
+    modify_llm_settings_basic,
 )
 from openhands.core.config import (
     AppConfig,
@@ -55,7 +41,6 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -84,9 +69,7 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 )
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime.base import Runtime
-from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
-from openhands.utils.llm import get_supported_llm_models
 
 REPO_MD_CREATE_PROMPT = """
 Please explore this repository. Create the file .openhands/microagents/repo.md with:
@@ -96,71 +79,6 @@ Please explore this repository. Create the file .openhands/microagents/repo.md w
 - Any other information that would be helpful to a brand new developer
 Keep it short--just a few paragraphs will do.
 """
-
-
-class CommandCompleter(Completer):
-    """Custom completer for commands."""
-
-    def get_completions(self, document, complete_event):
-        text = document.text
-
-        # Only show completions if the user has typed '/'
-        if text.startswith('/'):
-            # If just '/' is typed, show all commands
-            if text == '/':
-                for command, description in COMMANDS.items():
-                    yield Completion(
-                        command[1:],  # Remove the leading '/' as it's already typed
-                        start_position=0,
-                        display=f'{command} - {description}',
-                    )
-            # Otherwise show matching commands
-            else:
-                for command, description in COMMANDS.items():
-                    if command.startswith(text):
-                        yield Completion(
-                            command[len(text) :],  # Complete the remaining part
-                            start_position=0,
-                            display=f'{command} - {description}',
-                        )
-
-
-prompt_session = PromptSession(style=DEFAULT_STYLE, completer=CommandCompleter())
-
-
-async def read_prompt_input(multiline=False):
-    try:
-        if multiline:
-            kb = KeyBindings()
-
-            @kb.add('c-d')
-            def _(event):
-                event.current_buffer.validate_and_handle()
-
-            with patch_stdout():
-                message = await prompt_session.prompt_async(
-                    'Enter your message and press Ctrl+D to finish:\n',
-                    multiline=True,
-                    key_bindings=kb,
-                )
-        else:
-            with patch_stdout():
-                message = await prompt_session.prompt_async(
-                    '> ',
-                )
-        return message
-    except (KeyboardInterrupt, EOFError):
-        return '/exit'
-
-
-async def read_confirmation_input():
-    try:
-        confirmation = await prompt_session.prompt_async(
-            'Confirm action (possible security risk)? (y/n) > ',
-        )
-        return confirmation.lower() == 'y'
-    except (KeyboardInterrupt, EOFError):
-        return False
 
 
 async def init_repository(current_dir: str) -> bool:
@@ -227,67 +145,6 @@ def read_file(file_path):
 def write_to_file(file_path, content):
     with open(file_path, 'w') as f:
         f.write(content)
-
-
-def cli_confirm(
-    question: str = 'Are you sure?', choices: Optional[List[str]] = None
-) -> int:
-    """
-    Display a confirmation prompt with the given question and choices.
-    Returns the index of the selected choice.
-    """
-
-    if choices is None:
-        choices = ['Yes', 'No']
-    selected = [0]  # Using list to allow modification in closure
-
-    def get_choice_text():
-        return [
-            ('class:question', f'{question}\n\n'),
-        ] + [
-            (
-                'class:selected' if i == selected[0] else 'class:unselected',
-                f"{'> ' if i == selected[0] else '  '}{choice}\n",
-            )
-            for i, choice in enumerate(choices)
-        ]
-
-    kb = KeyBindings()
-
-    @kb.add('up')
-    def _(event):
-        selected[0] = (selected[0] - 1) % len(choices)
-
-    @kb.add('down')
-    def _(event):
-        selected[0] = (selected[0] + 1) % len(choices)
-
-    @kb.add('enter')
-    def _(event):
-        event.app.exit(result=selected[0])
-
-    style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
-
-    layout = Layout(
-        HSplit(
-            [
-                Window(
-                    FormattedTextControl(get_choice_text),
-                    always_hide_cursor=True,
-                )
-            ]
-        )
-    )
-
-    app = Application(
-        layout=layout,
-        key_bindings=kb,
-        style=style,
-        mouse_support=True,
-        full_screen=False,
-    )
-
-    return app.run(in_thread=True)
 
 
 def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
@@ -411,236 +268,6 @@ async def cleanup_session(
         await controller.close()
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
-
-
-class UserCancelledError(Exception):
-    """Raised when the user cancels an operation via key binding."""
-
-    pass
-
-
-def kb_cancel():
-    """Custom key bindings to handle ESC as a user cancellation."""
-    bindings = KeyBindings()
-
-    @bindings.add('escape')
-    def _(event):
-        event.app.exit(exception=UserCancelledError, style='class:aborting')
-
-    return bindings
-
-
-async def modify_llm_settings_basic(
-    config: AppConfig, settings_store: FileSettingsStore
-) -> bool:
-    model_list = get_supported_llm_models(config)
-    organized_models = organize_models_and_providers(model_list)
-
-    provider_list = list(organized_models.keys())
-    verified_providers = [p for p in VERIFIED_PROVIDERS if p in provider_list]
-    provider_list = [p for p in provider_list if p not in verified_providers]
-    provider_list = verified_providers + provider_list
-
-    provider_completer = FuzzyWordCompleter(provider_list)
-    session = PromptSession(key_bindings=kb_cancel())
-
-    provider = None
-    model = None
-    api_key = None
-
-    try:
-        provider = await session.prompt_async(
-            '(Step 1/3) Select LLM Provider (use Tab for completion): ',
-            completer=provider_completer,
-        )
-
-        if provider not in organized_models:
-            print_formatted_text(
-                HTML(f'\n<grey>Invalid provider selected: {provider}</grey>\n')
-            )
-            return False
-
-        model_list = organized_models[provider]['models']
-        if provider == 'openai':
-            model_list = [m for m in model_list if m not in VERIFIED_OPENAI_MODELS]
-            model_list = VERIFIED_OPENAI_MODELS + model_list
-        if provider == 'anthropic':
-            model_list = [m for m in model_list if m not in VERIFIED_ANTHROPIC_MODELS]
-            model_list = VERIFIED_ANTHROPIC_MODELS + model_list
-
-        model_completer = FuzzyWordCompleter(model_list)
-        model = await session.prompt_async(
-            '(Step 2/3) Select LLM Model (use Tab for completion): ',
-            completer=model_completer,
-        )
-
-        if model not in organized_models[provider]['models']:
-            print_formatted_text(
-                HTML(
-                    f'\n<grey>Invalid model selected: {model} for provider {provider}</grey>\n'
-                )
-            )
-            return False
-
-        session.completer = None  # Reset completer for password prompt
-        api_key = await session.prompt_async('(Step 3/3) Enter API Key: ')
-
-    except (
-        UserCancelledError,
-        KeyboardInterrupt,
-        EOFError,
-    ):
-        return False  # Return False on exception
-
-    # TODO: check for empty string inputs?
-    # Handle case where a prompt might return None unexpectedly
-    if provider is None or model is None or api_key is None:
-        return False
-
-    save_settings = (
-        cli_confirm(
-            '\nSave new settings? Current session will be terminated!',
-            ['Yes, proceed', 'No, dismiss'],
-        )
-        == 0
-    )
-
-    if not save_settings:
-        return False
-
-    llm_config = config.get_llm_config()
-    llm_config.model = provider + organized_models[provider]['separator'] + model
-    llm_config.api_key = SecretStr(api_key)
-    llm_config.base_url = None
-    config.set_llm_config(llm_config)
-
-    config.default_agent = OH_DEFAULT_AGENT
-    config.security.confirmation_mode = False
-    config.enable_default_condenser = True
-
-    agent_config = config.get_agent_config(config.default_agent)
-    agent_config.condenser = LLMSummarizingCondenserConfig(
-        llm_config=llm_config,
-        type='llm',
-    )
-    config.set_agent_config(agent_config, config.default_agent)
-
-    settings = await settings_store.load()
-    if not settings:
-        settings = Settings()
-
-    settings.llm_model = provider + organized_models[provider]['separator'] + model
-    settings.llm_api_key = SecretStr(api_key)
-    settings.llm_base_url = None
-    settings.agent = OH_DEFAULT_AGENT
-    settings.confirmation_mode = False
-    settings.enable_default_condenser = True
-
-    await settings_store.store(settings)
-
-    return True
-
-
-async def modify_llm_settings_advanced(
-    config: AppConfig, settings_store: FileSettingsStore
-) -> bool:
-    session = PromptSession(key_bindings=kb_cancel())
-
-    custom_model = None
-    base_url = None
-    api_key = None
-    agent = None
-
-    try:
-        custom_model = await session.prompt_async('(Step 1/6) Custom Model: ')
-        base_url = await session.prompt_async('(Step 2/6) Base URL: ')
-        api_key = await session.prompt_async('(Step 3/6) API Key: ')
-
-        agent_list = Agent.list_agents()
-        agent_completer = FuzzyWordCompleter(agent_list)
-        agent = await session.prompt_async(
-            '(Step 4/6) Agent (use Tab for completion): ', completer=agent_completer
-        )
-
-        if agent not in agent_list:
-            print_formatted_text(
-                HTML(f'\n<grey>Invalid agent selected: {agent}</grey>\n')
-            )
-            return False
-
-        enable_confirmation_mode = (
-            cli_confirm(
-                question='(Step 5/6) Confirmation Mode:',
-                choices=['Enable', 'Disable'],
-            )
-            == 0
-        )
-
-        enable_memory_condensation = (
-            cli_confirm(
-                question='(Step 6/6) Memory Condensation:',
-                choices=['Enable', 'Disable'],
-            )
-            == 0
-        )
-
-    except (
-        UserCancelledError,
-        KeyboardInterrupt,
-        EOFError,
-    ):
-        return False  # Return False on exception
-
-    # TODO: check for empty string inputs?
-    # Handle case where a prompt might return None unexpectedly
-    if custom_model is None or base_url is None or api_key is None or agent is None:
-        return False
-
-    save_settings = (
-        cli_confirm(
-            '\nSave new settings? Current session will be terminated!',
-            ['Yes, proceed', 'No, dismiss'],
-        )
-        == 0
-    )
-
-    if not save_settings:
-        return False
-
-    llm_config = config.get_llm_config()
-    llm_config.model = custom_model
-    llm_config.base_url = base_url
-    llm_config.api_key = SecretStr(api_key)
-    config.set_llm_config(llm_config)
-
-    config.default_agent = agent
-
-    config.security.confirmation_mode = enable_confirmation_mode
-
-    agent_config = config.get_agent_config(config.default_agent)
-    if enable_memory_condensation:
-        agent_config.condenser = LLMSummarizingCondenserConfig(
-            llm_config=llm_config,
-            type='llm',
-        )
-    else:
-        agent_config.condenser = NoOpCondenserConfig(type='noop')
-    config.set_agent_config(agent_config)
-
-    settings = await settings_store.load()
-    if not settings:
-        settings = Settings()
-
-    settings.llm_model = custom_model
-    settings.llm_api_key = SecretStr(api_key)
-    settings.llm_base_url = base_url
-    settings.agent = agent
-    settings.confirmation_mode = enable_confirmation_mode
-    settings.enable_default_condenser = enable_memory_condensation
-
-    await settings_store.store(settings)
-
-    return True
 
 
 async def run_session(
