@@ -19,7 +19,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 # Import the file viewer server
-from openhands.runtime.file_viewer_server import start_server as start_file_viewer_server
+from openhands.runtime.file_viewer_server import start_file_viewer_server
 
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
