@@ -15,7 +15,7 @@ It is highly recommended that you use GPUs to serve local models for optimal exp
 For example, to download [OpenHands LM 32B v0.1](https://huggingface.co/all-hands/openhands-lm-32b-v0.1):
 
 ```bash
-huggingface-cli download all-hands/openhands-lm-32b-v0.1 --local-dir my_folder/openhands-lm-32b-v0.1
+huggingface-cli download all-hands/openhands-lm-32b-v0.1 --local-dir all-hands/openhands-lm-32b-v0.1
 ```
 
 ## Create an OpenAI-Compatible Endpoint With a Model Serving Framework
@@ -27,7 +27,7 @@ huggingface-cli download all-hands/openhands-lm-32b-v0.1 --local-dir my_folder/o
 
 ```bash
 SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1 python3 -m sglang.launch_server \
-    --model my_folder/openhands-lm-32b-v0.1 \
+    --model all-hands/openhands-lm-32b-v0.1 \
     --served-model-name openhands-lm-32b-v0.1 \
     --port 8000 \
     --tp 2 --dp 1 \
@@ -41,7 +41,7 @@ SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1 python3 -m sglang.launch_server \
 - Example launch command for OpenHands LM 32B (with at least 2 GPUs):
 
 ```bash
-vllm serve my_folder/openhands-lm-32b-v0.1 \
+vllm serve all-hands/openhands-lm-32b-v0.1 \
     --host 0.0.0.0 --port 8000 \
     --api-key mykey \
     --tensor-parallel-size 2 \
@@ -67,7 +67,7 @@ Ensure `config.toml` exists by running `make setup-config` which will create one
 workspace_base="/path/to/your/workspace"
 
 [llm]
-embedding_model="local"
+model="openhands-lm-32b-v0.1"
 ollama_base_url="http://localhost:8000"
 ```
 
