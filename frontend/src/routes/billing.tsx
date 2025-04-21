@@ -2,8 +2,6 @@ import { useSearchParams } from "react-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import { GetConfigResponse } from "#/api/open-hands.types";
-import { queryClient } from "#/entry.client";
 import {
   displayErrorToast,
   displaySuccessToast,
