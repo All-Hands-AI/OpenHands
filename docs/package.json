@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus gen-api-docs openhands && docusaurus start",
+    "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -12,8 +12,7 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc",
-    "gen-api-docs": "docusaurus gen-api-docs openhands"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
@@ -22,7 +21,6 @@
     "@docusaurus/theme-mermaid": "^3.7.0",
     "@mdx-js/react": "^3.1.0",
     "clsx": "^2.0.0",
-    "docusaurus-plugin-openapi-docs": "^4.3.7",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
