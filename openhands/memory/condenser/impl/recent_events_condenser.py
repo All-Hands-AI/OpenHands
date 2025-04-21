@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import RecentEventsCondenserConfig
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
@@ -13,7 +14,7 @@ class RecentEventsCondenser(Condenser):
 
         super().__init__()
 
-    def condense(self, view: View) -> View | Condensation:
+    def condense(self, view: View, state: State, agent=None) -> View | Condensation:
         """Keep only the most recent events (up to `max_events`)."""
         head = view[: self.keep_first]
         tail_length = max(0, self.max_events - len(head))
