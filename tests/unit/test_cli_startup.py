@@ -169,14 +169,17 @@ async def test_cli_startup_folder_security_confirmation_agree(
                 mock_manage_openhands_file.assert_any_call('/test', add_to_trusted=True)
 
                 # Runtime initialization message
-                assert '⚙️ Keeping it grounded: local startup sequence initiated...' in output
+                assert (
+                    '⚙️ Keeping it grounded: local startup sequence initiated...'
+                    in output
+                )
 
                 # ASCII art banner
                 assert '___' in output
 
                 # Version information
                 assert 'OpenHands CLI v' in output
-                
+
                 # Session initialization complete
                 assert 'Initialized session' in output
 
@@ -231,7 +234,10 @@ async def test_cli_startup_folder_security_confirmation_disagree(
                 )
 
                 # Runtime initialization message
-                assert '⚙️ Keeping it grounded: local startup sequence initiated...' not in output
+                assert (
+                    '⚙️ Keeping it grounded: local startup sequence initiated...'
+                    not in output
+                )
 
                 # ASCII art banner
                 assert '___' not in output
@@ -289,7 +295,10 @@ async def test_cli_startup_trusted_folder(
                 )
 
                 # Runtime initialization message
-                assert '⚙️ Keeping it grounded: local startup sequence initiated...' in output
+                assert (
+                    '⚙️ Keeping it grounded: local startup sequence initiated...'
+                    in output
+                )
 
                 # ASCII art banner
                 assert '___' in output
