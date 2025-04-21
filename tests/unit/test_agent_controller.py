@@ -2,8 +2,15 @@ import asyncio
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import litellm
 import pytest
-from litellm import ContentPolicyViolationError, ContextWindowExceededError
+from litellm import (
+    ContentPolicyViolationError,
+    ContextWindowExceededError,
+)
+from litellm.exceptions import (
+    RateLimitError,
+)
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
@@ -211,6 +218,82 @@ async def test_react_to_content_policy_violation(
     # Verify the state was updated correctly
     assert controller.state.last_error == 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
     assert controller.state.agent_state == AgentState.ERROR
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_react_to_rate_limit_error(
+    mock_agent, mock_event_stream, mock_status_callback
+):
+    """Test that the controller properly handles rate limit errors from the LLM."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Create and handle the rate limit error
+    error = RateLimitError(
+        message='Rate limit exceeded',
+        model='gemini-pro',
+        llm_provider='google',
+    )
+    await controller._react_to_exception(error)
+
+    # Verify the agent state was updated to RATE_LIMITED
+    assert controller.state.agent_state == AgentState.RATE_LIMITED
+
+    # Verify the status callback was not called with an error
+    # (since rate limit errors are handled differently)
+    mock_status_callback.assert_not_called()
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_react_to_timeout_error(
+    mock_agent, mock_event_stream, mock_status_callback
+):
+    """Test that the controller properly handles timeout errors from the LLM.
+
+    This test verifies that Timeout errors should also set the agent state to RATE_LIMITED,
+    similar to RateLimitError. Currently, this test will fail because Timeout errors
+    are not specifically handled to set RATE_LIMITED state.
+    """
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Create and handle the timeout error
+    error = litellm.Timeout(
+        message='Request timed out',
+        model='gemini-pro',
+        llm_provider='google',
+    )
+    await controller._react_to_exception(error)
+
+    # Verify the agent state was updated to RATE_LIMITED
+    # This will fail because Timeout errors currently set the state to ERROR
+    assert controller.state.agent_state == AgentState.RATE_LIMITED
+
+    # Verify the status callback was not called with an error
+    # (since rate limit errors are handled differently)
+    mock_status_callback.assert_not_called()
 
     await controller.close()
 
@@ -704,9 +787,9 @@ async def test_run_controller_max_iterations_has_metrics(
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    assert (
-        state.metrics.accumulated_cost == 10.0 * 3
-    ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    assert state.metrics.accumulated_cost == 10.0 * 3, (
+        f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    )
 
 
 @pytest.mark.asyncio
@@ -1415,14 +1498,14 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
         # Verify the NullObservation has a cause that points to the RecallAction
         assert null_observation.cause is not None, 'NullObservation cause is None'
-        assert (
-            null_observation.cause == recall_action.id
-        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        assert null_observation.cause == recall_action.id, (
+            f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        )
 
         # Verify the controller's should_step method returns True for this observation
-        assert controller.should_step(
-            null_observation
-        ), 'should_step should return True for this NullObservation'
+        assert controller.should_step(null_observation), (
+            'should_step should return True for this NullObservation'
+        )
 
         # Verify the controller's step method was called
         # This means the controller processed the NullObservation
@@ -1434,9 +1517,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
         null_observation_zero._cause = 0  # type: ignore[attr-defined]
 
         # Verify the controller's should_step method would return False for this observation
-        assert not controller.should_step(
-            null_observation_zero
-        ), 'should_step should return False for NullObservation with cause=0'
+        assert not controller.should_step(null_observation_zero), (
+            'should_step should return False for NullObservation with cause=0'
+        )
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agent):
@@ -1462,9 +1545,9 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     result = controller.should_step(null_observation)
 
     # It should return False since we only want to step on NullObservation with cause > 0
-    assert (
-        result is False
-    ), 'should_step should return False for NullObservation with cause = 0'
+    assert result is False, (
+        'should_step should return False for NullObservation with cause = 0'
+    )
 
 
 def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
