@@ -25,7 +25,7 @@ export function SettingsSwitch({
   };
 
   return (
-    <label className="flex items-center gap-2 w-fit">
+    <label className="flex items-center gap-2 w-fit cursor-pointer">
       <input
         hidden
         data-testid={testId}
