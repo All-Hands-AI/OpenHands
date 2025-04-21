@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypedDict
+
+from openhands.controller.state.state import State
+from openhands.core.message import Message
 
 if TYPE_CHECKING:
-    from openhands.controller.state.state import State
     from openhands.core.config import AgentConfig
     from openhands.events.action import Action
     from openhands.events.action.message import SystemMessageAction
@@ -11,7 +13,7 @@ from openhands.core.exceptions import (
     AgentNotRegisteredError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
 
@@ -159,3 +161,40 @@ class Agent(ABC):
         - mcp_tools (list[dict]): The list of MCP tools.
         """
         self.mcp_tools = mcp_tools
+
+
+class LLMCompletionParams(TypedDict, total=False):
+    messages: List[Message]
+    tools: Optional[List[Any]]
+    extra_body: Optional[Dict[str, Any]]
+    extra: Optional[Dict[str, Any]]
+
+
+class LLMCompletionProvider(ABC):
+    """Mixin interface for agents that can expose their LLM call generation details.
+
+    This interface is used by condensers that need to use the agent's LLM completion
+    parameters to ensure consistent caching between the agent and condenser.
+    """
+
+    llm: LLM
+
+    @abstractmethod
+    def _get_messages(self, condensed_history: list[Event]) -> list[Message]:
+        """Convert events to messages for the LLM."""
+        pass
+
+    @abstractmethod
+    def build_llm_completion_params(
+        self, condensed_history: List[Event], state: State
+    ) -> dict[str, Any]:
+        """Build parameters for LLM completion.
+
+        Args:
+            condensed_history: List of events to convert to messages for the LLM
+            state: Current state
+
+        Returns:
+            Dictionary of parameters for LLM completion
+        """
+        pass
