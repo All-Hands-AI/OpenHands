@@ -547,7 +547,20 @@ class WindowsPowershellSession:
         command = action.command.strip()
         timeout_seconds = action.timeout or 60 # Default to 60 seconds hard timeout
 
-        logger.info(f"Received command: '{command}', Timeout: {timeout_seconds}s")
+        logger.info(f"Received command: \'{command}\', Timeout: {timeout_seconds}s")
+
+        # Check if the command contains multiple commands separated by newlines
+        # Note: This is a simple check and doesn't parse PowerShell syntax deeply like bashlex.
+        # It won't catch multiple commands on the same line separated by ';'.
+        lines = [line for line in command.split('\n') if line.strip()]
+        if len(lines) > 1:
+            return ErrorObservation(
+                content=(
+                    f'ERROR: Cannot execute multiple commands at once.\\n'
+                    f'Please run each command separately OR chain them using PowerShell syntax (e.g., \';\' or pipelines) within a single command line.\\n'
+                    f'Provided commands (split by newline):\\n{"\\n".join(f"({i+1}) {cmd}" for i, cmd in enumerate(lines))}'
+                )
+            )
 
         with self._job_lock: # Ensure thread-safe access/modification of self.active_job
             # --- Handle interaction with existing job ---

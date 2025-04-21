@@ -209,6 +209,19 @@ def test_multiple_commands(windows_bash_session):
     assert result_use_var.exit_code == 0
 
 
+def test_multiple_commands_rejected(windows_bash_session):
+    """Test that executing multiple commands separated by newline is rejected."""
+    # Test multiple commands separated by newline
+    command_str = "Write-Output 'First Command'\nWrite-Output 'Second Command'"
+    action = CmdRunAction(command=command_str)
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, ErrorObservation)
+    assert "ERROR: Cannot execute multiple commands at once." in result.content
+    assert "(1) Write-Output 'First Command'" in result.content
+    assert "(2) Write-Output 'Second Command'" in result.content
+
+
 def test_working_directory(windows_bash_session, temp_work_dir):
     """Test working directory handling."""
     initial_cwd = windows_bash_session._cwd
