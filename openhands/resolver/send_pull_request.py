@@ -22,6 +22,7 @@ from openhands.resolver.io_utils import (
 from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import identify_token
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
@@ -685,7 +686,12 @@ def main() -> None:
         )
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
-    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
+    platform = call_async_from_sync(
+        identify_token,
+        GENERAL_TIMEOUT,
+        token,
+        my_args.base_domain,
+    )
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(

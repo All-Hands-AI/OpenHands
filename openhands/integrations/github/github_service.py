@@ -32,12 +32,16 @@ class GitHubService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_domain: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
 
         if token:
             self.token = token
+
+        if base_domain:
+            self.BASE_URL = f'https://{base_domain}/api/v3'
 
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
