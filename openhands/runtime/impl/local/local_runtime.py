@@ -210,6 +210,8 @@ class LocalRuntime(ActionExecutionClient):
         # Extract the poetry venv by parsing output of a shell command
         # Equivalent to:
         # run poetry show -v | head -n 1 | awk '{print $2}'
+        # The first line could be different, this seems fragile, can we do it differently?
+        start_line = ['using virtualenv:', 'found:']
         poetry_show_first_line = subprocess.check_output(  # noqa: ASYNC101
             ['poetry', 'show', '-v'],
             env=env,
@@ -222,12 +224,12 @@ class LocalRuntime(ActionExecutionClient):
             stderr=subprocess.STDOUT,
             shell=False,
         ).splitlines()[0]
-        if not poetry_show_first_line.lower().startswith('found:'):
+        if not any(poetry_show_first_line.lower().startswith(line) for line in start_line):
             raise RuntimeError(
                 'Cannot find poetry venv path. Please check your poetry installation.'
                 f'First line of poetry show -v: {poetry_show_first_line}'
             )
-        # Split off the 'Found:' part
+        # Split off the initial part
         poetry_venvs_path = poetry_show_first_line.split(':')[1].strip()
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
