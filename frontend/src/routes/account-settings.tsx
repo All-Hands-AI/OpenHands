@@ -14,9 +14,7 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
-import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
@@ -72,7 +70,6 @@ function AccountSettings() {
   };
 
   const isLLMKeySet = settings?.LLM_API_KEY_SET;
-  const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
   const modelsAndProviders = organizeModelsAndProviders(
@@ -90,11 +87,6 @@ function AccountSettings() {
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const onSubmit = async (formData: FormData) => {
-    const languageLabel = formData.get("language-input")?.toString();
-    const languageValue = AvailableLanguages.find(
-      ({ label }) => label === languageLabel,
-    )?.value;
-
     const llmProvider = formData.get("llm-provider-input")?.toString();
     const llmModel = formData.get("llm-model-input")?.toString();
     const fullLlmModel = `${llmProvider}/${llmModel}`.toLowerCase();
@@ -107,12 +99,8 @@ function AccountSettings() {
       ({ label }) => label === rawRemoteRuntimeResourceFactor,
     )?.key;
 
-    const userConsentsToAnalytics =
-      formData.get("enable-analytics-switch")?.toString() === "on";
     const enableMemoryCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
-    const enableSoundNotifications =
-      formData.get("enable-sound-notifications-switch")?.toString() === "on";
     const llmBaseUrl = formData.get("base-url-input")?.toString().trim() || "";
     const inputApiKey = formData.get("llm-api-key-input")?.toString() || "";
     const llmApiKey =
@@ -130,10 +118,7 @@ function AccountSettings() {
     const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
     const newSettings = {
-      LANGUAGE: languageValue,
-      user_consents_to_analytics: userConsentsToAnalytics,
       ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
-      ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
       LLM_MODEL: finalLlmModel,
       LLM_BASE_URL: finalLlmBaseUrl,
       llm_api_key: finalLlmApiKey,
@@ -149,7 +134,6 @@ function AccountSettings() {
 
     saveSettings(newSettings, {
       onSuccess: () => {
-        handleCaptureConsent(userConsentsToAnalytics);
         displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
@@ -211,20 +195,15 @@ function AccountSettings() {
               data-testid="llm-settings-section"
               className="flex flex-col gap-6"
             >
-              <div className="flex items-center gap-7">
-                <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-                  {t(I18nKey.SETTINGS$LLM_SETTINGS)}
-                </h2>
-                {!shouldHandleSpecialSaasCase && (
-                  <SettingsSwitch
-                    testId="advanced-settings-switch"
-                    defaultIsToggled={isAdvancedSettingsSet}
-                    onToggle={onToggleAdvancedMode}
-                  >
-                    {t(I18nKey.SETTINGS$ADVANCED)}
-                  </SettingsSwitch>
-                )}
-              </div>
+              {!shouldHandleSpecialSaasCase && (
+                <SettingsSwitch
+                  testId="advanced-settings-switch"
+                  defaultIsToggled={isAdvancedSettingsSet}
+                  onToggle={onToggleAdvancedMode}
+                >
+                  {t(I18nKey.SETTINGS$ADVANCED)}
+                </SettingsSwitch>
+              )}
 
               {llmConfigMode === "basic" && !shouldHandleSpecialSaasCase && (
                 <ModelSelector
@@ -356,40 +335,6 @@ function AccountSettings() {
               )}
             </section>
           )}
-
-          <section className="flex flex-col gap-6">
-            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t(I18nKey.ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS)}
-            </h2>
-
-            <SettingsDropdownInput
-              testId="language-input"
-              name="language-input"
-              label={t(I18nKey.SETTINGS$LANGUAGE)}
-              items={AvailableLanguages.map((language) => ({
-                key: language.value,
-                label: language.label,
-              }))}
-              defaultSelectedKey={settings.LANGUAGE}
-              isClearable={false}
-            />
-
-            <SettingsSwitch
-              testId="enable-analytics-switch"
-              name="enable-analytics-switch"
-              defaultIsToggled={!!isAnalyticsEnabled}
-            >
-              {t(I18nKey.ANALYTICS$ENABLE)}
-            </SettingsSwitch>
-
-            <SettingsSwitch
-              testId="enable-sound-notifications-switch"
-              name="enable-sound-notifications-switch"
-              defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
-            >
-              {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
-            </SettingsSwitch>
-          </section>
         </div>
       </form>
 

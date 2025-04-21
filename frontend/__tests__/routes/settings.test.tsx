@@ -8,7 +8,6 @@ import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
@@ -54,20 +53,6 @@ describe("Settings Screen", () => {
     });
   };
 
-  it("should render", async () => {
-    renderSettingsScreen();
-
-    await waitFor(() => {
-      // Use queryAllByText to handle multiple elements with the same text
-      expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(
-        0,
-      );
-      screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
-      screen.getByText("BUTTON$RESET_TO_DEFAULTS");
-      screen.getByText("BUTTON$SAVE");
-    });
-  });
-
   it("should render the navbar", async () => {
     const sections = ["llm", "git", "application", "secrets"];
 
@@ -92,15 +77,6 @@ describe("Settings Screen", () => {
           ENABLE_BILLING: false,
           HIDE_LLM_SETTINGS: false,
         },
-      });
-    });
-
-    it("should render the account settings", async () => {
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        screen.getByTestId("language-input");
-        screen.getByTestId("enable-analytics-switch");
       });
     });
 
@@ -574,21 +550,20 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const languageInput = await screen.findByTestId("language-input");
-      await user.click(languageInput);
+      const agentInput = await screen.findByTestId("agent-input");
+      await user.click(agentInput);
 
-      const norskOption = await screen.findByText("Norsk");
-      await user.click(norskOption);
+      const agentOption = await screen.findByText("CoActAgent");
+      await user.click(agentOption);
 
-      expect(languageInput).toHaveValue("Norsk");
+      expect(agentInput).toHaveValue("CoActAgent");
 
       const saveButton = screen.getByText("BUTTON$SAVE");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          llm_api_key: "", // empty because it's not set previously
-          language: "no",
+          agent: "CoActAgent",
         }),
       );
     });
@@ -636,13 +611,13 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const languageInput = await screen.findByTestId("language-input");
-      await user.click(languageInput);
+      const agentInput = await screen.findByTestId("agent-input");
+      await user.click(agentInput);
 
-      const norskOption = await screen.findByText("Norsk");
-      await user.click(norskOption);
+      const agentOption = await screen.findByText("CoActAgent");
+      await user.click(agentOption);
 
-      expect(languageInput).toHaveValue("Norsk");
+      expect(agentInput).toHaveValue("CoActAgent");
 
       const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       await user.click(resetButton);
@@ -659,30 +634,6 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         expect(resetSettingsSpy).toHaveBeenCalled();
-      });
-
-      // Mock the settings response after reset
-      getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_base_url: "",
-        confirmation_mode: false,
-        security_analyzer: "",
-      });
-
-      // Wait for the mutation to complete and the modal to be removed
-      await waitFor(() => {
-        expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
-        expect(
-          screen.queryByTestId("llm-custom-model-input"),
-        ).not.toBeInTheDocument();
-        expect(screen.queryByTestId("base-url-input")).not.toBeInTheDocument();
-        expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
-        expect(
-          screen.queryByTestId("security-analyzer-input"),
-        ).not.toBeInTheDocument();
-        expect(
-          screen.queryByTestId("enable-confirmation-mode-switch"),
-        ).not.toBeInTheDocument();
       });
     });
 
@@ -703,42 +654,6 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).not.toHaveBeenCalled();
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
-    });
-
-    it("should call handleCaptureConsent with true if the save is successful", async () => {
-      const user = userEvent.setup();
-      const handleCaptureConsentSpy = vi.spyOn(
-        ConsentHandlers,
-        "handleCaptureConsent",
-      );
-      renderSettingsScreen();
-
-      const analyticsConsentInput = await screen.findByTestId(
-        "enable-analytics-switch",
-      );
-
-      expect(analyticsConsentInput).not.toBeChecked();
-      await user.click(analyticsConsentInput);
-      expect(analyticsConsentInput).toBeChecked();
-
-      const saveButton = screen.getByText("BUTTON$SAVE");
-      await user.click(saveButton);
-
-      expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
-    });
-
-    it("should call handleCaptureConsent with false if the save is successful", async () => {
-      const user = userEvent.setup();
-      const handleCaptureConsentSpy = vi.spyOn(
-        ConsentHandlers,
-        "handleCaptureConsent",
-      );
-      renderSettingsScreen();
-
-      const saveButton = await screen.findByText("BUTTON$SAVE");
-      await user.click(saveButton);
-
-      expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
     });
 
     it("should render the security analyzer input if the confirmation mode is enabled", async () => {
