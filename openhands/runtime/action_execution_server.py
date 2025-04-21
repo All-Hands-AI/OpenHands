@@ -18,6 +18,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+# Import the file viewer server
+from openhands.runtime.file_viewer_server import start_server as start_file_viewer_server
+
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -60,7 +63,8 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
-from openhands.runtime.utils.file_viewer import generate_file_viewer_html
+# File viewer functionality moved to openhands/runtime/file_viewer_server.py
+from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -532,6 +536,12 @@ class ActionExecutor:
 
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
+    
+    # Start the file viewer server in a separate thread
+    logger.info("Starting file viewer server")
+    server_url, _ = start_file_viewer_server()
+    logger.info(f"File viewer server started at {server_url}")
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -839,53 +849,8 @@ if __name__ == '__main__':
             logger.error(f'Error listing files: {e}')
             return []
 
-    @app.get('/view')
-    async def view_file(path: str, request: Request):
-        """View a file using an embedded viewer.
-
-        Args:
-            path (str): The absolute path of the file to view.
-            request (Request): The FastAPI request object.
-
-        Returns:
-            HTMLResponse: An HTML page with an appropriate viewer for the file.
-        """
-        # Security check: Only allow requests from localhost
-        client_host = request.client.host if request.client else None
-        if client_host not in ['127.0.0.1', 'localhost', '::1']:
-            logger.warning(f'Unauthorized file view attempt from {client_host}')
-            return HTMLResponse(
-                content='<h1>Access Denied</h1><p>This endpoint is only accessible from localhost</p>',
-                status_code=403,
-            )
-
-        if not os.path.isabs(path):
-            return HTMLResponse(
-                content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
-                status_code=400,
-            )
-
-        if not os.path.exists(path):
-            return HTMLResponse(
-                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
-            )
-
-        if os.path.isdir(path):
-            return HTMLResponse(
-                content=f'<h1>Error: Path is a directory</h1><p>{path}</p>',
-                status_code=400,
-            )
-
-        try:
-            html_content = generate_file_viewer_html(path)
-            return HTMLResponse(content=html_content)
-
-        except Exception as e:
-            logger.error(f'Error serving file viewer: {str(e)}')
-            return HTMLResponse(
-                content=f'<h1>Error viewing file</h1><p>{path}</p><p>{str(e)}</p>',
-                status_code=500,
-            )
+    # The /view endpoint has been moved to a separate server
+    # See openhands/runtime/file_viewer_server.py
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
