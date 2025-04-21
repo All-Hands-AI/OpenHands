@@ -26,54 +26,60 @@ git fetch upstream
 
 ## 2. Container Image Management
 
-To ensure consistency, build, tag, and distribute your own `runtime` and `agent` images.
+To ensure consistency, build, tag, and distribute your own `runtime` and `agent` images based on your primary integration branch.
 
 **a. Building Images:**
 
-Use the standard OpenHands build process, typically involving `docker build` or `make` targets defined in the repository. Identify the specific Dockerfiles or build commands for the `runtime` and `agent` images.
+*   **Source Branch:** Images should be built by CI/CD processes triggered by commits to the `release/stable-with-patches` branch.
+*   **Build Process:** Use the standard OpenHands build process (`docker build`, `make`, etc.).
+*   **Base Image Consideration:** While the image is built *from* the code in `release/stable-with-patches`, consider how the underlying base OS/dependency image specified in the Dockerfile is kept up-to-date. This might involve periodically updating the base image tag in the Dockerfile itself as part of the fork maintenance.
 
-*(Example - Adapt based on actual build commands)*
+*(Example - Adapt based on actual build commands, assuming build context is repo root)*
 ```bash
-# Example: Build the runtime image
-docker build -t your-registry/openhands-runtime:<your-tag> -f path/to/runtime/Dockerfile .
+# Example: Build triggered by CI on release/stable-with-patches
+git checkout release/stable-with-patches
+MAIN_COMMIT_BASE=$(git log -n 1 --pretty=%H main) # Get the latest main commit integrated
+BUILD_TAG="stable-$(date +%Y%m%d)-$(git rev-parse --short HEAD)-main-${MAIN_COMMIT_BASE:0:7}"
 
-# Example: Build the agent image
-docker build -t your-registry/openhands-agent:<your-tag> -f path/to/agent/Dockerfile .
+docker build -t your-registry/openhands-runtime:${BUILD_TAG} -f path/to/runtime/Dockerfile .
+docker build -t your-registry/openhands-agent:${BUILD_TAG} -f path/to/agent/Dockerfile .
+
+# Optionally, also tag as 'latest-stable' or similar
+docker tag your-registry/openhands-runtime:${BUILD_TAG} your-registry/openhands-runtime:latest-stable
+docker tag your-registry/openhands-agent:${BUILD_TAG} your-registry/openhands-agent:latest-stable
 ```
 
 **b. Tagging Strategy:**
 
-Use a consistent tagging scheme. Options include:
-*   **Commit SHA:** `your-registry/openhands-runtime:$(git rev-parse --short HEAD)` - Precise, but requires updating configurations frequently.
-*   **Version/Date Tag:** `your-registry/openhands-runtime:v1.2.3-custom` or `your-registry/openhands-runtime:20250421` - Easier to manage stable versions.
-*   **Branch Name:** `your-registry/openhands-runtime:main-custom` - For development/testing branches.
-
-**Choose a tag (e.g., `stable-custom`) that you will consistently use for your deployments.**
+*   **Primary Tag:** Use a descriptive tag that indicates the source branch, date, commit SHA of the release branch, and potentially the `main` branch commit it's based on (see example above). E.g., `stable-YYYYMMDD-<release-sha>-main-<main-sha>`.
+*   **Floating Tag (Optional):** Maintain a floating tag like `latest-stable` that points to the most recent successful build from `release/stable-with-patches`. This simplifies configuration for environments that should always use the latest stable version.
 
 **c. Distribution:**
 
-Push the tagged images to a container registry accessible by your resolver flow and local environments (e.g., Docker Hub, GitHub Container Registry, private registry).
+Push the tagged images (both specific and floating, if used) to your container registry (e.g., Docker Hub, GHCR, private registry).
 
 ```bash
-# Example: Push images
-docker push your-registry/openhands-runtime:<your-tag>
-docker push your-registry/openhands-agent:<your-tag>
+# Example: Push images (adapt tags)
+docker push your-registry/openhands-runtime:${BUILD_TAG}
+docker push your-registry/openhands-agent:${BUILD_TAG}
+docker push your-registry/openhands-runtime:latest-stable
+docker push your-registry/openhands-agent:latest-stable
 ```
 
 **d. Configuration:**
 
-Update your OpenHands configuration (e.g., environment variables, config files) to explicitly use your custom image tags:
+Update your OpenHands configurations (environment variables, config files, deployment manifests) to use your custom image tags. Prefer using a specific build tag for production/critical environments and the floating tag (`latest-stable`) for development or less critical deployments.
 
-*   `RUNTIME_IMAGE=your-registry/openhands-runtime:<your-tag>`
-*   `AGENT_IMAGE=your-registry/openhands-agent:<your-tag>`
+*   `RUNTIME_IMAGE=your-registry/openhands-runtime:latest-stable` (or specific tag)
+*   `AGENT_IMAGE=your-registry/openhands-agent:latest-stable` (or specific tag)
 
-Ensure these configurations are applied wherever OpenHands runs (local dev, CI/CD, resolver flows).
+Ensure these configurations are applied consistently across all environments (local dev, CI/CD, resolver flows).
 
-**When you update your fork and need new images, repeat steps a-c with a *new tag* and then update the configuration (d) to roll out the change.**
+**The CI/CD pipeline for `release/stable-with-patches` handles the build, tag, and push process automatically.** Configuration updates might be manual or automated depending on your deployment strategy.
 
-## 3. Upstream Synchronization and Security
+## 3. Upstream Synchronization and Integration
 
-Keep your fork updated with the main repository intentionally.
+This section describes how to keep your `main` branch in sync with `upstream/main` and how to integrate those updates into your `release/stable-with-patches` branch.
 
 **a. Fetch Upstream Changes:**
 
@@ -83,11 +89,14 @@ Regularly fetch the latest changes from the `upstream` remote.
 git fetch upstream
 ```
 
-**b. Review Changes:**
+**b. Review Upstream Changes:**
 
-Before merging, review the changes made upstream since your last sync.
+Before integrating, review the changes made upstream since your `main` branch was last updated.
 
 ```bash
+# Ensure you are on your local main branch
+git checkout main
+
 # See commit history difference
 git log HEAD..upstream/main --oneline --graph
 
@@ -96,30 +105,37 @@ git diff HEAD..upstream/main
 ```
 Pay close attention to changes in core components, interfaces between `agent` and `runtime`, dependencies, and security-related areas.
 
-**c. Integrate Changes (Rebase Recommended):**
+**c. Update Local `main` Branch (Rebase Recommended):**
 
-It's generally recommended to **rebase** your main branch (or the branch you base your features on) onto the upstream main branch. This maintains a linear history.
+Rebase your local `main` branch onto `upstream/main` to maintain a clean, linear history mirroring the upstream repository.
 
 ```bash
-# Ensure you are on your main branch (e.g., 'main' or 'master')
 git checkout main
-
-# Rebase your main branch onto the upstream main branch
 git rebase upstream/main
 ```
 
-**Conflict Resolution:** If conflicts occur during rebase, Git will pause. Edit the conflicted files to resolve the differences, then use `git add <file>` and `git rebase --continue`. If you get stuck, `git rebase --abort` will cancel the rebase.
+**Conflict Resolution (Main):** Conflicts here should be rare if you are not making direct commits to `main`. If they occur, resolve them, `git add <file>`, and `git rebase --continue`.
 
-**Alternative (Merge):** If rebasing proves too complex due to extensive changes or conflicts, you can use merge:
+**Push Updated `main`:** Push the updated `main` branch to your fork's origin. Use `--force-with-lease` because you rebased.
+
 ```bash
-git checkout main
-git merge upstream/main -m "Merge upstream/main into main"
+git push origin main --force-with-lease
 ```
-This creates a merge commit, which can make history less linear but might be safer for complex integrations.
 
-**d. Testing:**
+**d. Integrate Upstream Changes into `release/stable-with-patches` (Rebase):**
 
-After syncing (rebase or merge), thoroughly test your fork, especially areas affected by upstream changes and your custom patches. Run linters, unit tests, and integration tests if available.
+Regularly rebase your `release/stable-with-patches` branch onto the updated `main` branch. This incorporates the latest upstream changes while keeping your custom patches on top.
+
+```bash
+git checkout release/stable-with-patches
+git rebase main
+```
+
+**Conflict Resolution (Release Branch):** Conflicts are more likely here, as upstream changes might clash with your custom patches. Carefully resolve conflicts, ensuring both upstream updates and your custom logic are correctly merged. Use `git status` to see conflicted files, edit them, then `git add <file>` and `git rebase --continue`. If you get stuck, `git rebase --abort` cancels the rebase.
+
+**e. Testing:**
+
+After rebasing `release/stable-with-patches`, thoroughly test your fork. Run linters, unit tests, integration tests, and perform manual checks focusing on areas affected by both upstream changes and your custom patches.
 
 ```bash
 # Example: Run pre-commit checks and tests (adapt as needed)
@@ -129,108 +145,119 @@ pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
 # poetry run pytest ...
 ```
 
-**e. Update Container Images:**
+**f. Push Updated `release/stable-with-patches`:**
 
-If the upstream changes necessitate rebuilding your container images (e.g., dependency updates, core changes), rebuild, tag (potentially with a new tag), and push them (Section 2). Update your configurations accordingly.
-
-**f. Push Changes:**
-
-Push the updated main branch to your fork origin. Use `--force-with-lease` if you rebased.
+Push the rebased `release/stable-with-patches` branch to your fork's origin. Use `--force-with-lease` because you rebased.
 
 ```bash
-# If you rebased:
-git push origin main --force-with-lease
-
-# If you merged:
-git push origin main
+git push origin release/stable-with-patches --force-with-lease
 ```
 
-## 4. Local Patch Management
+**This push will typically trigger your CI/CD pipeline to build and deploy new container images (as described in Section 2).**
 
-Manage your custom features or temporary PR inclusions using feature branches.
+## 4. Custom Development Workflow
+
+All custom development and integration of external patches happen relative to the `release/stable-with-patches` branch.
 
 **a. Create Feature Branches:**
 
-For each distinct patch, custom feature, or external PR you want to include, create a dedicated branch off your main branch.
+For any new custom feature, bug fix, or integration of an external patch, create a dedicated branch based *off the latest `release/stable-with-patches`*.
 
 ```bash
-# Ensure main is up-to-date first (Section 3)
-git checkout main
-git pull origin main # Or ensure it matches the rebased/merged state
+# Ensure release/stable-with-patches is up-to-date locally
+git checkout release/stable-with-patches
+git pull origin release/stable-with-patches
 
-# Create a branch for your patch
-git checkout -b feature/my-custom-patch
-# Or for an external PR
-git checkout -b feat/upstream-pr-123
+# Create a branch for your feature/fix/patch
+git checkout -b feature/my-new-widget
+# Or for an external PR you want to test/integrate temporarily
+git checkout -b feat/try-upstream-pr-456
 ```
 
-**b. Apply Patches:**
+**b. Develop and Commit:**
 
-*   **For your own features:** Develop directly on the feature branch. Commit your changes.
-*   **For external PRs:** Fetch the PR branch into your local repo and cherry-pick the commits onto your feature branch.
+*   **Custom Features/Fixes:** Make your code changes on the feature branch. Commit frequently with clear messages.
+*   **External Patches/PRs:** Apply the patch or cherry-pick commits from the external PR onto your feature branch.
     ```bash
-    # Example: Fetch PR #123 from upstream
-    git fetch upstream pull/123/head:upstream-pr-123
-    git checkout feat/upstream-pr-123
-    # Identify commits from the PR branch (e.g., using git log upstream-pr-123)
+    # Example: Cherry-pick commits for PR #456
+    git fetch upstream pull/456/head:upstream-pr-456
+    # Identify commits from the PR branch (e.g., using git log upstream-pr-456)
     git cherry-pick <commit-sha-1> <commit-sha-2> ...
     ```
-*   **Using `.patch` files:**
-    ```bash
-    git apply path/to/patchfile.patch
-    git commit -am "Apply patch for feature X"
-    ```
 
-**c. Keeping Patches Updated (Rebasing Feature Branches):**
+**c. Keep Feature Branch Updated (Optional but Recommended):**
 
-After you update your `main` branch by syncing with `upstream` (Section 3), rebase your feature branches onto the updated `main`.
+If `release/stable-with-patches` is updated (e.g., after a rebase onto `main`) while you are still working on your feature, rebase your feature branch onto the latest `release/stable-with-patches` to minimize future merge conflicts.
 
 ```bash
-git checkout feature/my-custom-patch
-git rebase main
-
-# Resolve any conflicts, then: git add <file>, git rebase --continue
-# Finally, push the rebased branch (forcefully)
-git push origin feature/my-custom-patch --force-with-lease
+git checkout feature/my-new-widget
+git pull origin release/stable-with-patches --rebase # Or git rebase origin/release/stable-with-patches
+# Resolve conflicts if any
+git push origin feature/my-new-widget --force-with-lease
 ```
-Repeat for all active feature branches.
 
-**d. Integrating Patches for Deployment:**
+**d. Create Pull Request (PR):**
 
-To create a build that includes specific patches, create an integration branch or directly build from a branch that merges the desired features:
+Once your feature/fix is complete and tested locally, push the feature branch to your origin and create a Pull Request (PR) targeting the `release/stable-with-patches` branch.
 
 ```bash
-# Option 1: Integration Branch
-git checkout main
-git checkout -b release/stable-with-patches
-git merge feature/my-custom-patch --no-ff -m "Integrate custom patch"
-git merge feat/upstream-pr-123 --no-ff -m "Integrate upstream PR #123"
-# Build/test/tag images from this 'release/stable-with-patches' branch
-
-# Option 2: Build directly from a feature branch if it's the only one needed
-# Build/test/tag images from 'feature/my-custom-patch'
+git push origin feature/my-new-widget
+# Go to your Git hosting platform (e.g., GitHub) and create a PR
+# Base branch: release/stable-with-patches
+# Compare branch: feature/my-new-widget
 ```
 
-**e. Removing Obsolete Patches:**
+**e. Code Review and Merge:**
 
-*   **Upstream PR Merged:** If an external PR you included (`feat/upstream-pr-123`) gets merged into `upstream/main`, your next rebase of `main` onto `upstream/main` (Section 3c) will incorporate those changes officially.
-    *   Delete your local feature branch for that PR: `git branch -D feat/upstream-pr-123`
-    *   Delete the remote branch: `git push origin --delete feat/upstream-pr-123`
-    *   If you used an integration branch (d), you'll need to recreate it without merging the now-obsolete feature branch.
-*   **Custom Patch No Longer Needed:** Simply delete the feature branch locally and remotely. Recreate any integration branches without merging it.
+Follow your team's code review process. Once the PR is approved, merge it into `release/stable-with-patches` (typically using the merge button on the Git hosting platform, often configured to use squash or merge commits).
+
+**f. Automatic Build and Deployment:**
+
+The merge into `release/stable-with-patches` should automatically trigger the CI/CD pipeline (Section 2) to build, tag, and push new container images.
+
+**g. Removing Patches:**
+
+*   **External PR Merged Upstream:** If an external PR you integrated via a feature branch is merged into `upstream/main`, the changes will eventually be incorporated into `release/stable-with-patches` when it's rebased onto `main` (Section 3d). You can simply delete your temporary feature branch (`feature/try-upstream-pr-456`). The rebase of `release/stable-with-patches` might require conflict resolution if your temporary integration conflicts with the official merge.
+*   **Custom Feature No Longer Needed:** If a custom feature merged into `release/stable-with-patches` needs to be reverted, use `git revert` on the `release/stable-with-patches` branch to undo the merge commit (or the specific commits if squashed). This creates a new commit that undoes the changes.
 
 ## 5. Workflow Summary
 
-1.  **Sync `main`:** `git checkout main`, `git fetch upstream`, `git rebase upstream/main` (review changes first!). Resolve conflicts. Test. `git push origin main --force-with-lease`.
-2.  **Update Feature Branches:** For each `feature/xxx` branch: `git checkout feature/xxx`, `git rebase main`. Resolve conflicts. Test. `git push origin feature/xxx --force-with-lease`.
-3.  **Build/Deploy:**
-    *   Decide which patches are needed for the current build.
-    *   Create/update an integration branch (e.g., `release/stable-custom`) by merging `main` and the required `feature/xxx` branches.
-    *   Build `runtime` and `agent` images from this integration branch.
-    *   Tag images with your chosen scheme (e.g., `stable-custom`, `YYYYMMDD`).
-    *   Push images to your registry.
-    *   Update OpenHands configurations to use the new image tags.
-4.  **Clean Up:** Regularly delete feature branches for patches that have been merged upstream or are no longer needed.
+This revised workflow focuses on keeping `main` aligned with upstream and using `release/stable-with-patches` as the integration point for custom work and upstream updates.
 
-This workflow balances staying up-to-date with upstream, maintaining your custom changes, and ensuring consistent, secure deployments.
+**Regular Upkeep (e.g., daily/weekly):**
+
+1.  **Sync `main` with Upstream:**
+    *   `git checkout main`
+    *   `git fetch upstream`
+    *   Review `upstream/main` changes (`git log HEAD..upstream/main`)
+    *   `git rebase upstream/main`
+    *   `git push origin main --force-with-lease`
+
+2.  **Update `release/stable-with-patches`:**
+    *   `git checkout release/stable-with-patches`
+    *   `git rebase main`
+    *   **Resolve Conflicts:** Carefully merge upstream changes with your custom patches.
+    *   **Test Thoroughly:** Run all checks and tests (`pre-commit`, `pytest`, etc.).
+    *   `git push origin release/stable-with-patches --force-with-lease`
+    *   *(CI/CD triggers image build/push from `release/stable-with-patches`)*
+
+**Custom Feature Development:**
+
+1.  **Start Feature:**
+    *   `git checkout release/stable-with-patches`
+    *   `git pull origin release/stable-with-patches`
+    *   `git checkout -b feature/my-new-feature`
+2.  **Develop & Commit:** Make changes, commit locally.
+3.  **Update Feature Branch (Optional):** `git pull origin release/stable-with-patches --rebase`
+4.  **Push & Create PR:**
+    *   `git push origin feature/my-new-feature`
+    *   Create PR on Git platform targeting `release/stable-with-patches`.
+5.  **Review & Merge:** After approval, merge the PR into `release/stable-with-patches`.
+    *   *(CI/CD triggers image build/push from `release/stable-with-patches`)*
+
+**Deployment:**
+
+*   Configure environments (dev, staging, prod) to use the desired container image tag (e.g., `your-registry/openhands-runtime:latest-stable` or a specific `stable-YYYYMMDD-...` tag) pushed by the CI/CD pipeline for `release/stable-with-patches`.
+
+This workflow ensures `main` remains a clean mirror of upstream, while `release/stable-with-patches` continuously integrates both upstream updates and reviewed custom features, providing a stable base for builds and deployments.
 
