@@ -121,7 +121,7 @@ class CommandCompleter(Completer):
 prompt_session = PromptSession(style=DEFAULT_STYLE, completer=CommandCompleter())
 
 
-def display_settings(config: AppConfig) -> int:
+def display_settings(config: AppConfig):
     llm_config = config.get_llm_config()
     advanced_llm_settings = True if llm_config.base_url else False
 
@@ -193,15 +193,6 @@ def display_settings(config: AppConfig) -> int:
     )
 
     print_container(container)
-
-    return cli_confirm(
-        'Which settings would you like to modify?',
-        [
-            'Basic',
-            'Advanced',
-            'Go back',
-        ],
-    )
 
 
 async def read_prompt_input(multiline=False):
@@ -903,7 +894,15 @@ async def run_session(
                 display_shutdown_message(usage_metrics, sid)
                 return
             elif next_message == '/settings':
-                modify_settings = display_settings(config)
+                display_settings(config)
+                modify_settings = cli_confirm(
+                    'Which settings would you like to modify?',
+                    [
+                        'Basic',
+                        'Advanced',
+                        'Go back',
+                    ],
+                )
 
                 if modify_settings == 0:
                     new_session_requested = await modify_llm_settings_basic(
