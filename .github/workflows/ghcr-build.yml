@@ -166,7 +166,7 @@ jobs:
           echo "DOCKER_BUILD_ARGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.build_args | join(",")')" >> $GITHUB_ENV
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
-        uses: useblacksmith/build-push-action@v1
+        uses: useblacksmith/build-push-action@v6
         with:
           push: true
           tags: ${{ env.DOCKER_TAGS }}
@@ -177,7 +177,7 @@ jobs:
       # Forked repos can't push to GHCR, so we just build in order to populate the cache for rebuilding
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
-        uses: useblacksmith/build-push-action@v1
+        uses: useblacksmith/build-push-action@v6
         with:
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
@@ -269,7 +269,7 @@ jobs:
       # Forked repos can't push to GHCR, so we need to rebuild using cache
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
-        uses: useblacksmith/build-push-action@v1
+        uses: useblacksmith/build-push-action@v6
         with:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
@@ -341,7 +341,7 @@ jobs:
       # Forked repos can't push to GHCR, so we need to rebuild using cache
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
-        uses: useblacksmith/build-push-action@v1
+        uses: useblacksmith/build-push-action@v6
         with:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
