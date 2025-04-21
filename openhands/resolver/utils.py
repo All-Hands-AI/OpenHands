@@ -2,7 +2,6 @@ import logging
 import multiprocessing as mp
 import os
 import re
-from enum import Enum
 from typing import Callable
 
 import httpx
@@ -12,17 +11,12 @@ from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
-
-
-class Platform(Enum):
-    INVALID = 0
-    GITHUB = 1
-    GITLAB = 2
+from openhands.integrations.service_types import ProviderType
 
 
 def identify_token(
-    token: str, selected_repo: str | None = None, base_domain: str = 'github.com'
-) -> Platform:
+    token: str, selected_repo: str | None = None, base_domain: str | None = 'github.com'
+) -> ProviderType:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 
@@ -32,12 +26,12 @@ def identify_token(
         base_domain (str): The base domain for GitHub Enterprise (default: "github.com").
 
     Returns:
-        Platform: "GitHub" if the token is valid for GitHub,
+        ProviderType: "GitHub" if the token is valid for GitHub,
              "GitLab" if the token is valid for GitLab,
              "Invalid" if the token is not recognized by either.
     """
     # Determine GitHub API base URL based on domain
-    if base_domain == 'github.com':
+    if base_domain is None or base_domain == 'github.com':
         github_api_base = 'https://api.github.com'
     else:
         github_api_base = f'https://{base_domain}/api/v3'
@@ -55,7 +49,7 @@ def identify_token(
                 github_repo_url, headers=github_bearer_headers, timeout=5
             )
             if github_repo_response.status_code == 200:
-                return Platform.GITHUB
+                return ProviderType.GITHUB
         except httpx.HTTPError as e:
             logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
 
@@ -66,7 +60,7 @@ def identify_token(
     try:
         github_response = httpx.get(github_url, headers=github_headers, timeout=5)
         if github_response.status_code == 200:
-            return Platform.GITHUB
+            return ProviderType.GITHUB
     except httpx.HTTPError as e:
         logger.error(f'Error connecting to GitHub API: {e}')
 
@@ -76,10 +70,11 @@ def identify_token(
     try:
         gitlab_response = httpx.get(gitlab_url, headers=gitlab_headers, timeout=5)
         if gitlab_response.status_code == 200:
-            return Platform.GITLAB
+            return ProviderType.GITLAB
     except httpx.HTTPError as e:
         logger.error(f'Error connecting to GitLab API: {e}')
-    return Platform.INVALID
+
+    raise ValueError('Token is invalid.')
 
 
 def codeact_user_response(

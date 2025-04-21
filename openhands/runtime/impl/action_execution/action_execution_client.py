@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-from abc import abstractmethod
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -96,7 +95,7 @@ class ActionExecutionClient(Runtime):
 
     @property
     def action_execution_server_url(self) -> str:
-        raise NotImplementedError("Action execution server URL is not implemented")
+        raise NotImplementedError('Action execution server URL is not implemented')
 
     @property
     def runtime_initialized(self) -> bool:
