@@ -206,7 +206,7 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     -NoNewline""",
             """Write-Output 'hello`nworld`nare`nyou`nthere?'""",
             """Write-Output 'hello`nworld`nare`nyou`n`nthere?'""",
-            """Write-Output 'hello`nworld "'""",
+            """Write-Output 'hello`nworld `"'""",  # Escape the trailing double quote
         ]
     else:
         cmds = [
