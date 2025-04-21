@@ -129,6 +129,9 @@ class Runtime(FileEditRuntimeMixin):
 
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
+        
+        # Flag to track if setup.sh has completed
+        self._setup_script_completed = True  # Default to True if no setup script exists
 
         self.config = copy.deepcopy(config)
         atexit.register(self.close)
@@ -384,6 +387,10 @@ class Runtime(FileEditRuntimeMixin):
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
             return
+            
+        # Set flag to indicate setup.sh is running
+        self._setup_script_completed = False
+        self.log('info', 'Running setup.sh script')
 
         if self.status_callback:
             self.status_callback(
@@ -394,6 +401,11 @@ class Runtime(FileEditRuntimeMixin):
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
+        else:
+            self.log('info', 'Setup script completed successfully')
+        
+        # Set a flag to indicate that setup.sh has completed
+        self._setup_script_completed = True
 
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
@@ -479,6 +491,18 @@ class Runtime(FileEditRuntimeMixin):
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
+        # Check if this is a command from the agent (not from setup.sh itself)
+        # and if setup.sh is still running
+        if (
+            isinstance(action, CmdRunAction) 
+            and not getattr(action, 'is_static', False)  # Not an internal command
+            and not self._setup_script_completed  # Setup script is still running
+        ):
+            self.log('warning', 'Attempted to run command before setup.sh completed')
+            return ErrorObservation(
+                'Cannot execute commands until setup.sh has completed. Please wait.'
+            )
+            
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
