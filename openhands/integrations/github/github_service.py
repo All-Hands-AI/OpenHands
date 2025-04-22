@@ -11,6 +11,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     GitService,
     ProviderType,
+    RateLimitError,
     Repository,
     RequestMethod,
     SuggestedTask,
@@ -102,6 +103,9 @@ class GitHubService(BaseGitService, GitService):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid Github token')
+            elif e.response.status_code == 429:
+                logger.warning(f'Rate limit exceeded on GitHub API: {e}')
+                raise RateLimitError('GitHub API rate limit exceeded')
 
             logger.warning(f'Status error on GH API: {e}')
             raise UnknownException('Unknown error')
@@ -266,6 +270,9 @@ class GitHubService(BaseGitService, GitService):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise AuthenticationError('Invalid Github token')
+            elif e.response.status_code == 429:
+                logger.warning(f'Rate limit exceeded on GitHub API: {e}')
+                raise RateLimitError('GitHub API rate limit exceeded')
 
             logger.warning(f'Status error on GH API: {e}')
             raise UnknownException('Unknown error')
