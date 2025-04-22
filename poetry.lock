@@ -4885,13 +4885,15 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mcpm"
-version = "1.2.0"
+version = "1.5.1"
 description = "MCPM - Model Context Protocol Manager"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "mcpm-1.5.1-py3-none-any.whl", hash = "sha256:2de253ac8d62b5bc13a62ab70acdff0b1d00f51fa1654f105d7b065131a131e5"},
+    {file = "mcpm-1.5.1.tar.gz", hash = "sha256:8bfa5b79db88de371234114af844960eef279a57da3f3929fd99929ce3da9b68"},
+]
 
 [package.dependencies]
 click = ">=8.1.3"
@@ -4904,12 +4906,6 @@ requests = ">=2.28.0"
 rich = ">=12.0.0"
 ruamel-yaml = ">=0.18.10"
 watchfiles = ">=1.0.4"
-
-[package.source]
-type = "git"
-url = "https://github.com/xingyaoww/mcpm.sh.git"
-reference = "HEAD"
-resolved_reference = "8980481b6da189cf39c297a727e4540ad853d0f2"
 
 [[package]]
 name = "mdurl"
@@ -10420,4 +10416,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "82763fb3ce12aba7fbf76651fa3ea72be700feaabb4d944540fc1156745bb6c1"
+content-hash = "101f33971dadd4d2119c65f1de0f29adbb5a637da1854efdc80d0a0ca6031a7b"

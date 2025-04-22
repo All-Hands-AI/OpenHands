@@ -76,7 +76,7 @@ mcp = "1.6.0"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
-mcpm = { git = "https://github.com/xingyaoww/mcpm.sh.git"}
+mcpm = "^1.5.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.6"
