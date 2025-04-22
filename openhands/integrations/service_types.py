@@ -61,7 +61,7 @@ class UnknownException(ValueError):
 
 
 class RateLimitError(ValueError):
-    """Raised when API rate limits are exceeded."""
+    """Raised when the git provider's API rate limits are exceeded."""
 
     pass
 
