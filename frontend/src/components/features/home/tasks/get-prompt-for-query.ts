@@ -42,8 +42,6 @@ export const getPromptForQuery = (
     case "UNRESOLVED_COMMENTS":
       return getUnresolvedCommentsPrompt(issueNumber, repo);
     case "OPEN_ISSUE":
-      // Using i18next directly to avoid circular dependency issues
-      // This is a special case since this file is imported by components that use useTranslation
       return getOpenIssuePrompt(issueNumber, repo);
     default:
       return "";
