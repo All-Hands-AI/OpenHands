@@ -200,7 +200,7 @@ class CodeActAgent(Agent):
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
-        actions = self.response_to_actions_fn(response)
+        actions = self.response_to_actions_fn(response, mcp_tool_names=list(self.mcp_tools.keys()))
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)

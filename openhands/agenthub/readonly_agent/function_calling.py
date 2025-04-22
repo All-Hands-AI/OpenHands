@@ -102,7 +102,7 @@ def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
     return echo_cmd + complete_cmd
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | None = None) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -197,6 +197,15 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
+            # McpAction (MCP)
+            # ================================================
+            elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
+                action = McpAction(
+                    name=tool_call.function.name,
+                    arguments=tool_call.function.arguments,
+                )
 
             else:
                 raise FunctionCallNotExistsError(
