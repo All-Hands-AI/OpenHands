@@ -95,7 +95,7 @@ async def load_custom_secrets_names(
 
 @app.post('/secrets', response_model=dict[str, str])
 async def add_custom_secret(
-    request: Request, custom_secrets: POSTSettingsCustomSecrets
+    request: Request, incoming_secrets: POSTSettingsCustomSecrets
 ) -> JSONResponse:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
@@ -108,15 +108,15 @@ async def add_custom_secret(
                 secret_value,
             ) in existing_settings.secrets_store.custom_secrets.items():
                 if (
-                    secret_name not in custom_secrets.custom_secrets
+                    secret_name not in incoming_secrets.custom_secrets
                 ):  # Allow incoming values to override existing ones
-                    custom_secrets.custom_secrets[secret_name] = (
+                    incoming_secrets.custom_secrets[secret_name] = (
                         secret_value.get_secret_value()
                     )
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
-                custom_secrets=custom_secrets.custom_secrets,
+                custom_secrets=incoming_secrets.custom_secrets,
                 provider_tokens=existing_settings.secrets_store.provider_tokens
             )
             
