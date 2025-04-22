@@ -28,6 +28,7 @@ env:
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  if: false
   define-matrix:
     runs-on: blacksmith
     outputs:

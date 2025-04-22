@@ -23,7 +23,7 @@ jobs:
   # Run python unit tests on Linux
   test-on-linux:
     name: Python Unit Tests on Linux
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
@@ -51,8 +51,10 @@ jobs:
         run: poetry install --without evaluation
       - name: Build Environment
         run: make build
+      - name: Generate .env file
+        run: cp .env.example .env
       - name: Run Tests
-        run: poetry run pytest --forked -n auto -svv ./tests/unit
+        run: poetry run pytest --forked -n auto -svv ./tests/unit -k "not test_storage and not test_json_encoder" && poetry run pytest tests/unit/test_storage.py tests/unit/test_json_encoder.py
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v5
       #   env:

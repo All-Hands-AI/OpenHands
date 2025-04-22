@@ -5,6 +5,7 @@ on:
     types: [labeled]
 
 jobs:
+  if: false
   # Frontend lint fixes
   lint-fix-frontend:
     if: github.event.label.name == 'lint-fix'
