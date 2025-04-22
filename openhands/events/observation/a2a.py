@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 
-from openhands.a2a.common.types import TaskArtifactUpdateEvent, TaskStatusUpdateEvent, Task 
+from openhands.a2a.common.types import (
+    Task,
+    TaskArtifactUpdateEvent,
+    TaskStatusUpdateEvent,
+)
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
@@ -14,10 +18,12 @@ class A2AListRemoteAgentsObservation(Observation):
     @property
     def message(self) -> str:
         return self.content
-    
+
+
 @dataclass
 class A2ASendTaskUpdateObservation(Observation):
     """This data class represents the result of a A2A Send Task operation."""
+
     agent_name: str
     task_update_event: TaskStatusUpdateEvent
     observation: str = ObservationType.A2A_SEND_TASK_UPDATE_EVENT
@@ -26,9 +32,11 @@ class A2ASendTaskUpdateObservation(Observation):
     def message(self) -> str:
         return self.content
 
+
 @dataclass
 class A2ASendTaskArtifactObservation(Observation):
     """This data class represents the result of a A2A Send Task operation."""
+
     agent_name: str
     task_artifact_event: TaskArtifactUpdateEvent
     observation: str = ObservationType.A2A_SEND_TASK_ARTIFACT
@@ -36,11 +44,12 @@ class A2ASendTaskArtifactObservation(Observation):
     @property
     def message(self) -> str:
         return self.content
-    
+
+
 @dataclass
 class A2ASendTaskResponseObservation(Observation):
     """This data class represents the result of a A2A Send Task operation."""
-   
+
     agent_name: str
     task: Task
     observation: str = ObservationType.A2A_SEND_TASK_RESPONSE
@@ -48,4 +57,3 @@ class A2ASendTaskResponseObservation(Observation):
     @property
     def message(self) -> str:
         return self.content
-

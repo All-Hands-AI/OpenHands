@@ -45,6 +45,8 @@ class Agent(ABC):
             workspace_mount_path_in_sandbox_store_in_session
         )
         self.a2a_manager = a2a_manager
+        self.system_prompt: str = ''
+        self.user_prompt: str = ''
 
     @property
     def complete(self) -> bool:
@@ -127,3 +129,19 @@ class Agent(ABC):
         - mcp_tools (list[dict]): The list of MCP tools.
         """
         self.mcp_tools = mcp_tools
+
+    def set_system_prompt(self, system_prompt: str) -> None:
+        """Set the system prompt for the agent.
+
+        Args:
+        - system_prompt (str): The system prompt.
+        """
+        self.system_prompt = system_prompt
+
+    def set_user_prompt(self, user_prompt: str) -> None:
+        """Set the user prompt for the agent.
+
+        Args:
+        - user_prompt (str): The user prompt.
+        """
+        self.user_prompt = user_prompt

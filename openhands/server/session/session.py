@@ -5,6 +5,7 @@ from logging import LoggerAdapter
 
 import socketio
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
@@ -86,6 +87,8 @@ class Session:
         initial_message: MessageAction | None,
         replay_json: str | None,
         mnemonic: str | None = None,
+        system_prompt: str | None = None,
+        user_prompt: str | None = None,
     ):
         start_time = time.time()
         self.agent_session.event_stream.add_event(
@@ -144,10 +147,26 @@ class Session:
         if self.config.runtime == 'local':
             workspace_mount_path_in_sandbox_store_in_session = False
 
+        a2a_manager: A2AManager | None = None
+        try:
+            a2a_manager = A2AManager(agent_config.a2a_server_urls)
+            await a2a_manager.initialize_agent_cards()
+        except Exception as e:
+            self.logger.warning(f'Error initializing A2A manager: {e}')
+
         agent = Agent.get_cls(agent_cls)(
-            llm, agent_config, workspace_mount_path_in_sandbox_store_in_session
+            llm,
+            agent_config,
+            workspace_mount_path_in_sandbox_store_in_session,
+            a2a_manager,
         )
         agent.set_mcp_tools(mcp_tools)
+
+        if system_prompt:
+            agent.set_system_prompt(system_prompt)
+
+        if user_prompt:
+            agent.set_user_prompt(user_prompt)
 
         git_provider_tokens = None
         selected_repository = None

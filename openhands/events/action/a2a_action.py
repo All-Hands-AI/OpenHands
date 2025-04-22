@@ -13,7 +13,7 @@ class A2AListRemoteAgentsAction(Action):
 
     @property
     def message(self) -> str:
-        return "I am listing the available remote agents."    
+        return 'I am listing the available remote agents.'
 
 
 @dataclass
@@ -33,10 +33,10 @@ class A2ASendTaskAction(Action):
 
     @property
     def message(self) -> str:
-        return f"""I am sending a task to the remote agent {self.agent_name} with: \n 
-            task_message: \n {self.task_message} \n 
+        return f"""I am sending a task to the remote agent {self.agent_name} with: \n
+            task_message: \n {self.task_message} \n
           """
-    
+
     def __str__(self) -> str:
         return f"""A2ASendTaskAction(
             agent_name={self.agent_name},

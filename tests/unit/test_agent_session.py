@@ -42,6 +42,7 @@ def mock_agent():
     agent.sandbox_plugins = []
     agent.config = agent_config
     agent.prompt_manager = MagicMock()
+    agent.a2a_manager = MagicMock()
 
     return agent
 

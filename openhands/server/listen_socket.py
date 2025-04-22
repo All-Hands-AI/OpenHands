@@ -54,6 +54,9 @@ async def connect(connection_id: str, environ):
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
     conversation_id = query_params.get('conversation_id', [None])[0]
+    system_prompt = query_params.get('system_prompt', [None])[0]
+    user_prompt = query_params.get('user_prompt', [None])[0]
+
     # providers_raw: list[str] = query_params.get('providers_set', [])
     # providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
 
@@ -87,10 +90,15 @@ async def connect(connection_id: str, environ):
             conversation_store = await ConversationStoreImpl.get_instance(
                 config, whitelisted_user_id, None
             )
+            if not conversation_store:
+                raise ConnectionRefusedError('Conversation store not found')
             conversation_metadata_result_set = await conversation_store.get_metadata(
                 conversation_id
             )
-            if conversation_metadata_result_set.user_id == whitelisted_user_id:
+            if (
+                conversation_metadata_result_set
+                and conversation_metadata_result_set.user_id == whitelisted_user_id
+            ):
                 is_whitelisted = True
                 logger.info(
                     f'Whitelisted access for user {user_id} and conversation {conversation_id}'
@@ -151,7 +159,14 @@ async def connect(connection_id: str, environ):
 
     github_user_id = ''
     event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id, github_user_id, mnemonic
+        conversation_id,
+        connection_id,
+        settings,
+        user_id,
+        github_user_id,
+        mnemonic,
+        system_prompt,
+        user_prompt,
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'

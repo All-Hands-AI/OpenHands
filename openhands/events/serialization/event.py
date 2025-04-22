@@ -50,22 +50,39 @@ DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | 
 }
 
 
-def _convert_dict_to_pydantic(data: dict | Any, model_class: type[BaseModel]) -> BaseModel:
+def _convert_dict_to_pydantic(
+    data: dict | Any, model_class: type[BaseModel]
+) -> BaseModel:
     """Convert a dictionary to a Pydantic model, handling nested dictionaries recursively."""
     if not isinstance(data, dict):
         return data
-    
+
     for key, value in data.items():
         if isinstance(value, dict):
             # Try to find the corresponding field type in the model
             field = model_class.model_fields.get(key)
-            if field and hasattr(field.annotation, '__origin__') and issubclass(field.annotation.__origin__, BaseModel):
-                data[key] = _convert_dict_to_pydantic(value, field.annotation.__origin__)
-            elif field and isinstance(field.annotation, type) and issubclass(field.annotation, BaseModel):
+            if (
+                field
+                and hasattr(field.annotation, '__origin__')
+                and issubclass(field.annotation.__origin__, BaseModel)
+            ):
+                data[key] = _convert_dict_to_pydantic(
+                    value, field.annotation.__origin__
+                )
+            elif (
+                field
+                and isinstance(field.annotation, type)
+                and issubclass(field.annotation, BaseModel)
+            ):
                 data[key] = _convert_dict_to_pydantic(value, field.annotation)
         elif isinstance(value, list):
-            data[key] = [_convert_dict_to_pydantic(item, model_class) if isinstance(item, dict) else item for item in value]
-    
+            data[key] = [
+                _convert_dict_to_pydantic(item, model_class)
+                if isinstance(item, dict)
+                else item
+                for item in value
+            ]
+
     return model_class(**data)
 
 
@@ -77,7 +94,7 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
         evt = observation_from_dict(data)
     else:
         raise ValueError(f'Unknown event type: {data}')
-    
+
     for key in UNDERSCORE_KEYS:
         if key in data:
             value = data[key]
@@ -106,15 +123,20 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                         )
                 value = metrics
             setattr(evt, '_' + key, value)
-    
+
     # Handle nested BaseModel objects in the event's properties
     if hasattr(evt, 'nested') and isinstance(evt.nested, dict):
         # Try to find the corresponding model class from the event's type hints
         from typing import get_type_hints
+
         type_hints = get_type_hints(type(evt))
-        if 'nested' in type_hints and isinstance(type_hints['nested'], type) and issubclass(type_hints['nested'], BaseModel):
+        if (
+            'nested' in type_hints
+            and isinstance(type_hints['nested'], type)
+            and issubclass(type_hints['nested'], BaseModel)
+        ):
             evt.nested = _convert_dict_to_pydantic(evt.nested, type_hints['nested'])
-    
+
     return evt
 
 

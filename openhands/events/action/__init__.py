@@ -1,3 +1,7 @@
+from openhands.events.action.a2a_action import (
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
+)
 from openhands.events.action.action import Action, ActionConfirmationStatus
 from openhands.events.action.agent import (
     AgentDelegateAction,
@@ -17,7 +21,6 @@ from openhands.events.action.files import (
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction
-from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
 
 __all__ = [
     'Action',

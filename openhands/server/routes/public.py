@@ -3,7 +3,6 @@ import warnings
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-import httpx
 from fastapi import APIRouter, HTTPException
 
 from openhands.security.options import SecurityAnalyzers
@@ -19,6 +18,8 @@ from openhands.server.shared import (
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+import aiohttp
+
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -70,11 +71,13 @@ async def get_litellm_models() -> list[str]:
         if ollama_base_url:
             ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
-                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']
-                for model in ollama_models_list:
-                    model_list.append('ollama/' + model['name'])
-                break
-            except httpx.HTTPError as e:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(ollama_url, timeout=3) as response:
+                        ollama_models_list = await response.json()['models']
+                        for model in ollama_models_list:
+                            model_list.append('ollama/' + model['name'])
+                        break
+            except aiohttp.ClientError as e:
                 logger.error(f'Error getting OLLAMA models: {e}')
 
     return list(sorted(set(model_list)))

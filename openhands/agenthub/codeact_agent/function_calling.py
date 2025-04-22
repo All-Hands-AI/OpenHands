@@ -36,10 +36,13 @@ from openhands.events.action import (
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
+    McpAction,
     MessageAction,
-    McpAction
 )
-from openhands.events.action.a2a_action import A2AListRemoteAgentsAction, A2ASendTaskAction
+from openhands.events.action.a2a_action import (
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
+)
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm import LLM

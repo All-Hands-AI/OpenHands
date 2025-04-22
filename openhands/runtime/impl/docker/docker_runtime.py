@@ -126,7 +126,7 @@ class DockerRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
-            a2a_manager=a2a_manager
+            a2a_manager=a2a_manager,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available
@@ -230,7 +230,7 @@ class DockerRuntime(ActionExecutionClient):
             )
             raise ex
 
-    def _init_container(self, known_used_ports: Set[int] = set()):
+    def _init_container(self, known_used_ports: Set[int] | None = None):
         start_time = time.time()
         # we don't need to find available port. Just randomize it and try again if it's already in use.
         # It's faster and simpler.
@@ -241,7 +241,8 @@ class DockerRuntime(ActionExecutionClient):
             EXECUTION_SERVER_PORT_RANGE[0],
             EXECUTION_SERVER_PORT_RANGE[1],
         )
-        used_ports.update(known_used_ports)
+        if known_used_ports:
+            used_ports.update(known_used_ports)
         self._host_port = next_available_port(
             EXECUTION_SERVER_PORT_RANGE[0], EXECUTION_SERVER_PORT_RANGE[1], used_ports
         )

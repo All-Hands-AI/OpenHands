@@ -1,9 +1,9 @@
 import os
 from collections import deque
+from typing import override
 
-from openhands.a2a.A2AManager import A2AManager
-from openhands.a2a.tool import ListRemoteAgents, SendTask
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.a2a.tool import ListRemoteAgents, SendTask
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -95,6 +95,24 @@ class CodeActAgent(Agent):
             logger.info(f'Condenser config: {self.config.condenser.llm_config}')
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.info(f'Using condenser: {type(self.condenser)}')
+
+    @override
+    def set_system_prompt(self, system_prompt: str) -> None:
+        self.system_prompt = system_prompt
+        if self.prompt_manager:
+            self.prompt_manager.set_system_message(system_prompt)
+        logger.info(
+            f'New system prompt: {self.conversation_memory.process_initial_messages()}'
+        )
+
+    @override
+    def set_user_prompt(self, user_prompt: str) -> None:
+        self.user_prompt = user_prompt
+        if self.prompt_manager:
+            self.prompt_manager.set_user_message(user_prompt)
+        logger.info(
+            f'New user prompt: {self.conversation_memory.process_initial_messages()}'
+        )
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -205,11 +223,12 @@ class CodeActAgent(Agent):
         """
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
-        agent_infos = self.a2a_manager.list_remote_agents() if self.a2a_manager else None
+        agent_infos = (
+            self.a2a_manager.list_remote_agents() if self.a2a_manager else None
+        )
         # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active(),
-            agent_infos=agent_infos
+            with_caching=self.llm.is_caching_prompt_active(), agent_infos=agent_infos
         )
 
         # Use ConversationMemory to process events

@@ -1,25 +1,27 @@
+import json
+from typing import Any, AsyncIterable
+
 import httpx
 from httpx_sse import connect_sse
-from typing import Any, AsyncIterable
+
 from openhands.a2a.common.types import (
-    AgentCard,
-    GetTaskRequest,
-    SendTaskRequest,
-    SendTaskResponse,
-    JSONRPCRequest,
-    GetTaskResponse,
-    CancelTaskResponse,
-    CancelTaskRequest,
-    SetTaskPushNotificationRequest,
-    SetTaskPushNotificationResponse,
-    GetTaskPushNotificationRequest,
-    GetTaskPushNotificationResponse,
     A2AClientHTTPError,
     A2AClientJSONError,
+    AgentCard,
+    CancelTaskRequest,
+    CancelTaskResponse,
+    GetTaskPushNotificationRequest,
+    GetTaskPushNotificationResponse,
+    GetTaskRequest,
+    GetTaskResponse,
+    JSONRPCRequest,
+    SendTaskRequest,
+    SendTaskResponse,
     SendTaskStreamingRequest,
     SendTaskStreamingResponse,
+    SetTaskPushNotificationRequest,
+    SetTaskPushNotificationResponse,
 )
-import json
 
 
 class A2AClient:
@@ -36,7 +38,7 @@ class A2AClient:
         request = SendTaskStreamingRequest(params=payload)
         with httpx.Client(timeout=None) as client:
             with connect_sse(
-                client, "POST", self.url, json=request.model_dump()
+                client, 'POST', self.url, json=request.model_dump()
             ) as event_source:
                 try:
                     for sse in event_source.iter_sse():

@@ -2,8 +2,6 @@ from typing import Generator
 
 from litellm import ModelResponse
 
-from openhands.a2a.common.types import Artifact
-from openhands.a2a.utils import convert_parts
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
@@ -147,14 +145,18 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False, agent_infos=list | None) -> list[Message]:
+    def process_initial_messages(
+        self, with_caching: bool = False, agent_infos=list | None
+    ) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
             Message(
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.get_system_message(agent_infos=agent_infos),
+                        text=self.prompt_manager.get_system_message(
+                            agent_infos=agent_infos
+                        ),
                         cache_prompt=with_caching,
                     )
                 ],
