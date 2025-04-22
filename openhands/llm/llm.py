@@ -69,6 +69,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o1-2024-12-17',
     'o3-mini-2025-01-31',
     'o3-mini',
+    'o4-mini-2025-04-16',
+    'o4-mini',
     'gemini-2.5-pro',
 ]
 
@@ -77,6 +79,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o1',
     'o3-mini-2025-01-31',
     'o3-mini',
+    'o4-mini-2025-04-16',
+    'o4-mini',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -149,7 +153,7 @@ class LLM(RetryMixin, DebugMixin):
         }
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1].lower() in REASONING_EFFORT_SUPPORTED_MODELS
         ):
             kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
@@ -455,7 +459,10 @@ class LLM(RetryMixin, DebugMixin):
                     self.config.max_output_tokens = self.model_info['max_tokens']
             if 'claude-3-7-sonnet' in self.config.model:
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
-
+            if 'o4-mini' in self.config.model:
+                # to prevent litellm from setting max_output_tokens to 1000000
+                # and cause context window issues with the model
+                self.config.max_output_tokens = 32768
         # Initialize function calling capability
         # Check if model name is in our supported list
         model_name_supported = (
