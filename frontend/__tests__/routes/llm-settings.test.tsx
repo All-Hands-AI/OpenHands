@@ -428,9 +428,58 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
   });
 
-  it.todo("should reset button state when switching between forms");
+  it("should reset button state when switching between forms", async () => {
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
 
-  it.todo("should disable the button when submitting changes");
+    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+    const submitButton = screen.getByTestId("submit-button");
+
+    expect(submitButton).toBeDisabled();
+
+    // dirty the basic form
+    const apiKey = screen.getByTestId("llm-api-key-input");
+    await userEvent.type(apiKey, "test-api-key");
+    expect(submitButton).not.toBeDisabled();
+
+    await userEvent.click(advancedSwitch);
+    expect(submitButton).toBeDisabled();
+
+    // dirty the advanced form
+    const model = screen.getByTestId("llm-custom-model-input");
+    await userEvent.type(model, "openai/gpt-4o");
+    expect(submitButton).not.toBeDisabled();
+
+    await userEvent.click(advancedSwitch);
+    expect(submitButton).toBeDisabled();
+  });
+
+  it("should disable the button when submitting changes", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+
+    const apiKey = screen.getByTestId("llm-api-key-input");
+    await userEvent.type(apiKey, "test-api-key");
+
+    const submitButton = screen.getByTestId("submit-button");
+    await userEvent.click(submitButton);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        llm_api_key: "test-api-key",
+      }),
+    );
+
+    expect(submitButton).toHaveTextContent("Saving...");
+    expect(submitButton).toBeDisabled();
+
+    await waitFor(() => {
+      expect(submitButton).toHaveTextContent("Save");
+      expect(submitButton).toBeDisabled();
+    });
+  });
 });
 
 describe.todo("Status toasts", () => {

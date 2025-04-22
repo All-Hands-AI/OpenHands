@@ -14,10 +14,11 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
-  const { mutate: saveSettings } = useSaveSettings();
+
+  const { mutate: saveSettings, isPending } = useSaveSettings();
 
   const { data: resources } = useAIConfigOptions();
-  const { data: settings } = useSettings();
+  const { data: settings, isLoading, isFetching } = useSettings();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -49,10 +50,24 @@ function LlmSettingsScreen() {
     const fullLlmModel =
       provider && model && `${provider}/${model}`.toLowerCase();
 
-    saveSettings({
-      LLM_MODEL: fullLlmModel,
-      llm_api_key: apiKey,
-    });
+    saveSettings(
+      {
+        LLM_MODEL: fullLlmModel,
+        llm_api_key: apiKey,
+      },
+      {
+        onSuccess: () => {
+          setDirtyInputs({
+            model: false,
+            apiKey: false,
+            baseUrl: false,
+            agent: false,
+            confirmationMode: false,
+            enableDefaultCondenser: false,
+          });
+        },
+      },
+    );
   };
 
   const advancedFormAction = (formData: FormData) => {
@@ -65,13 +80,39 @@ function LlmSettingsScreen() {
     const enableDefaultCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
 
-    saveSettings({
-      LLM_MODEL: model,
-      LLM_BASE_URL: baseUrl,
-      llm_api_key: apiKey,
-      AGENT: agent,
-      CONFIRMATION_MODE: confirmationMode,
-      ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
+    saveSettings(
+      {
+        LLM_MODEL: model,
+        LLM_BASE_URL: baseUrl,
+        llm_api_key: apiKey,
+        AGENT: agent,
+        CONFIRMATION_MODE: confirmationMode,
+        ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
+      },
+      {
+        onSuccess: () => {
+          setDirtyInputs({
+            model: false,
+            apiKey: false,
+            baseUrl: false,
+            agent: false,
+            confirmationMode: false,
+            enableDefaultCondenser: false,
+          });
+        },
+      },
+    );
+  };
+
+  const handleToggleAdvancedSettings = (isToggled: boolean) => {
+    setView(isToggled ? "advanced" : "basic");
+    setDirtyInputs({
+      model: false,
+      apiKey: false,
+      baseUrl: false,
+      agent: false,
+      confirmationMode: false,
+      enableDefaultCondenser: false,
     });
   };
 
@@ -147,9 +188,7 @@ function LlmSettingsScreen() {
       <SettingsSwitch
         testId="advanced-settings-switch"
         defaultIsToggled={view === "advanced"}
-        onToggle={(isToggled) => {
-          setView(isToggled ? "advanced" : "basic");
-        }}
+        onToggle={handleToggleAdvancedSettings}
       >
         {t(I18nKey.SETTINGS$ADVANCED)}
       </SettingsSwitch>
@@ -160,13 +199,15 @@ function LlmSettingsScreen() {
             data-testid="llm-settings-form-basic"
             className="flex flex-col gap-6"
           >
-            <ModelSelector
-              models={modelsAndProviders}
-              currentModel={
-                settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
-              }
-              onChange={handleModelIsDirty}
-            />
+            {!isLoading && !isFetching && (
+              <ModelSelector
+                models={modelsAndProviders}
+                currentModel={
+                  settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+                }
+                onChange={handleModelIsDirty}
+              />
+            )}
 
             <SettingsInput
               testId="llm-api-key-input"
@@ -262,9 +303,10 @@ function LlmSettingsScreen() {
           testId="submit-button"
           type="submit"
           variant="primary"
-          isDisabled={!formIsDirty}
+          isDisabled={!formIsDirty || isPending}
         >
-          Save Changes
+          {!isPending && "Save Changes"}
+          {isPending && "Saving..."}
         </BrandButton>
       </form>
     </div>
