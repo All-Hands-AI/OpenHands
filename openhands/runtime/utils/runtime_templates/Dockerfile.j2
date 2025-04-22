@@ -8,7 +8,11 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
     EDITOR=code \
     VISUAL=code \
     GIT_EDITOR="code --wait" \
-    OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server
+    OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server \
+    GOPATH=/go \
+    GOROOT=/usr/local/go \
+    PATH="/usr/local/go/bin:/go/bin:/root/.cargo/bin:${PATH}" \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 {% macro setup_base_system() %}
 
@@ -31,6 +35,104 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install Docker
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates gnupg lsb-release && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Java
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jdk maven gradle && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Golang
+RUN curl -OL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz && \
+    rm go1.21.0.linux-amd64.tar.gz && \
+    echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && \
+    echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/bash.bashrc
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    echo "source $HOME/.cargo/env" >> /etc/bash.bashrc
+
+# Install PHP
+RUN apt-get update && \
+    apt-get install -y php php-cli php-fpm php-json php-common php-mysql php-zip php-gd php-mbstring php-curl php-xml php-pear php-bcmath composer && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Ruby
+RUN apt-get update && \
+    apt-get install -y ruby-full ruby-bundler && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install common development tools and libraries
+RUN apt-get update && \
+    apt-get install -y \
+    sqlite3 \
+    postgresql-client \
+    mysql-client \
+    redis-tools \
+    libsqlite3-dev \
+    libpq-dev \
+    libmysqlclient-dev \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libffi-dev \
+    liblzma-dev \
+    libncurses-dev \
+    libxml2-dev \
+    libxslt-dev \
+    unixodbc-dev \
+    freetds-dev \
+    protobuf-compiler \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install common Python packages globally
+RUN pip3 install --no-cache-dir \
+    ipython \
+    jupyter \
+    pandas \
+    numpy \
+    matplotlib \
+    scikit-learn \
+    tensorflow \
+    torch \
+    flask \
+    django \
+    fastapi \
+    sqlalchemy \
+    pytest \
+    black \
+    mypy \
+    pylint \
+    isort
+
+# Install common Node.js packages globally
+RUN npm install -g \
+    typescript \
+    ts-node \
+    eslint \
+    prettier \
+    jest \
+    mocha \
+    express-generator \
+    create-react-app \
+    @angular/cli \
+    @vue/cli \
+    next
+
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
@@ -46,7 +148,9 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 # Create necessary directories
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
-    mkdir -p /openhands/poetry
+    mkdir -p /openhands/poetry && \
+    mkdir -p /go && \
+    chmod -R 777 /go
 
 {% endmacro %}
 
