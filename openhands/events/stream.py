@@ -232,11 +232,17 @@ class EventStream(EventStore):
             # pass each event to each callback in order
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
-                for callback_id in callbacks:
-                    callback = callbacks[callback_id]
-                    pool = self._thread_pools[key][callback_id]
-                    future = pool.submit(callback, event)
-                    future.add_done_callback(self._make_error_handler(callback_id, key))
+                # Create a copy of the keys to avoid "dictionary changed size during iteration" error
+                callback_ids = list(callbacks.keys())
+                for callback_id in callback_ids:
+                    # Check if callback_id still exists (might have been removed during iteration)
+                    if callback_id in callbacks:
+                        callback = callbacks[callback_id]
+                        pool = self._thread_pools[key][callback_id]
+                        future = pool.submit(callback, event)
+                        future.add_done_callback(
+                            self._make_error_handler(callback_id, key)
+                        )
 
     def _make_error_handler(
         self, callback_id: str, subscriber_id: str

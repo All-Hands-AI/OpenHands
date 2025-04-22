@@ -5,6 +5,7 @@ This runtime runs the action_execution_server directly on the local machine with
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 from typing import Callable
@@ -174,7 +175,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -203,40 +205,29 @@ class LocalRuntime(ActionExecutionClient):
         env = os.environ.copy()
         # Get the code repo path
         code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-        env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
+        env['PYTHONPATH'] = f'{code_repo_path}{os.pathsep}{env.get("PYTHONPATH", "")}'
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
 
-        # run poetry show -v | head -n 1 | awk '{print $2}'
-        def get_poetry_venvs_path():
-            output = subprocess.check_output(
-                ['poetry', 'show', '-v'],
-                env=env,
-                cwd=code_repo_path,
-                text=True,
-                shell=False,
-            )
-            return output.splitlines()[0].split(':')[1].strip()
+        # Derive environment paths using sys.executable
+        interpreter_path = sys.executable
+        python_bin_path = os.path.dirname(interpreter_path)
+        env_root_path = os.path.dirname(python_bin_path)
 
-        poetry_venvs_path = await call_sync_from_async(get_poetry_venvs_path)
-        env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
-        logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
+        # Prepend the interpreter's bin directory to PATH for subprocesses
+        env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
+        logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
-        await call_sync_from_async(
-            lambda: check_dependencies(code_repo_path, poetry_venvs_path)
+        # Check dependencies using the derived env_root_path
+        check_dependencies(code_repo_path, env_root_path)
+        self.server_process = subprocess.Popen(  # noqa: ASYNC101
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+            env=env,
         )
-
-        def start_server_process():
-            return subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                bufsize=1,
-                env=env,
-            )
-
-        self.server_process = await call_sync_from_async(start_server_process)
 
         # Start a thread to read and log server output
         def log_output():
@@ -298,7 +289,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
-        if not self._runtime_initialized:
+        if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:

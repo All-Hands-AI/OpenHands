@@ -58,6 +58,7 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -111,6 +112,9 @@ class Runtime(FileEditRuntimeMixin):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
+        self.git_handler = GitHandler(
+            execute_shell_fn=self._execute_shell_fn_git_handler
+        )
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -305,13 +309,30 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    async def clone_repo(
+    async def clone_or_init_repo(
         self,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE,
-        selected_repository: str | Repository,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        selected_repository: str | Repository | None,
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
+        if not selected_repository:
+            # In SaaS mode (indicated by user_id being set), always run git init
+            # In OSS mode, only run git init if workspace_base is not set
+            if self.user_id or not self.config.workspace_base:
+                logger.debug(
+                    'No repository selected. Initializing a new git repository in the workspace.'
+                )
+                action = CmdRunAction(
+                    command='git init',
+                )
+                self.run_action(action)
+            else:
+                logger.info(
+                    'In workspace mount mode, not initializing a new git repository.'
+                )
+            return ''
+
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
@@ -323,9 +344,11 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.git_provider
         )
 
+        if not git_provider_tokens:
+            raise RuntimeError('Need git provider tokens to clone repo')
         git_token = git_provider_tokens[chosen_provider].token
         if not git_token:
-            raise RuntimeError('Require valid git token to clone repo')
+            raise RuntimeError('Need a valid git token to clone repo')
 
         domain = provider_domains[chosen_provider]
         repository = (
@@ -584,6 +607,35 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    # ====================================================================
+    # Git
+    # ====================================================================
+
+    def _execute_shell_fn_git_handler(
+        self, command: str, cwd: str | None
+    ) -> CommandResult:
+        """
+        This function is used by the GitHandler to execute shell commands.
+        """
+        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        exit_code = 0
+        content = ''
+
+        if hasattr(obs, 'exit_code'):
+            exit_code = obs.exit_code
+        if hasattr(obs, 'content'):
+            content = obs.content
+
+        return CommandResult(content=content, exit_code=exit_code)
+
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_changes()
+
+    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_diff(file_path)
 
     @property
     def additional_agent_instructions(self) -> str:

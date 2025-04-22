@@ -310,6 +310,7 @@ function AccountSettings() {
                       label: agent,
                     })) || []
                   }
+                  wrapperClassName="w-[680px]"
                   defaultSelectedKey={settings.AGENT}
                   isClearable={false}
                 />
@@ -379,7 +380,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              {t(I18nKey.SETTINGS$GITHUB_SETTINGS)}
+              {t(I18nKey.SETTINGS$GIT_SETTINGS)}
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -502,6 +503,7 @@ function AccountSettings() {
                 label: language.label,
               }))}
               defaultSelectedKey={settings.LANGUAGE}
+              wrapperClassName="w-[680px]"
               isClearable={false}
             />
 

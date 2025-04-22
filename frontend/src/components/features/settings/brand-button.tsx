@@ -29,7 +29,7 @@ export function BrandButton({
       type={type}
       onClick={onClick}
       className={cn(
-        "w-fit p-2 rounded disabled:opacity-30 disabled:cursor-not-allowed",
+        "w-fit p-2 text-sm rounded disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80",
         variant === "primary" && "bg-primary text-[#0D0F11]",
         variant === "secondary" && "border border-primary text-primary",
         startContent && "flex items-center justify-center gap-2",

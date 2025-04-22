@@ -86,14 +86,8 @@ async def read_file(
         )
 
     try:
-        # Use synchronous file operations in a separate thread to avoid blocking
-        from openhands.utils.async_utils import call_sync_from_async
-
-        def read_file_sync():
-            with open(whole_path, 'r', encoding='utf-8') as file:
-                return read_lines(file.readlines(), start, end)
-
-        lines = await call_sync_from_async(read_file_sync)
+        with open(whole_path, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
+            lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
         return ErrorObservation(f'File not found: {path}')
     except UnicodeDecodeError:
@@ -133,22 +127,16 @@ async def write_file(
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
         try:
-            # Use synchronous file operations in a separate thread to avoid blocking
-            from openhands.utils.async_utils import call_sync_from_async
+            with open(whole_path, mode, encoding='utf-8') as file:  # noqa: ASYNC101
+                if mode != 'w':
+                    all_lines = file.readlines()
+                    new_file = insert_lines(insert, all_lines, start, end)
+                else:
+                    new_file = [i + '\n' for i in insert]
 
-            def file_operation():
-                with open(whole_path, mode, encoding='utf-8') as file:
-                    if mode != 'w':
-                        all_lines = file.readlines()
-                        new_file = insert_lines(insert, all_lines, start, end)
-                    else:
-                        new_file = [i + '\n' for i in insert]
-
-                    file.seek(0)
-                    file.writelines(new_file)
-                    file.truncate()
-
-            await call_sync_from_async(file_operation)
+                file.seek(0)
+                file.writelines(new_file)
+                file.truncate()
         except FileNotFoundError:
             return ErrorObservation(f'File not found: {path}')
         except IsADirectoryError:

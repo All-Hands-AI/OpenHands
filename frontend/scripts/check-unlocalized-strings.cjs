@@ -105,6 +105,7 @@ function isRawTranslationKey(str) {
 // Specific technical strings that should be excluded from localization
 const EXCLUDED_TECHNICAL_STRINGS = [
   "openid email profile", // OAuth scope string - not user-facing
+  "OPEN_ISSUE", // Task type identifier, not a UI string
 ];
 
 function isExcludedTechnicalString(str) {
@@ -275,8 +276,8 @@ function isCommonDevelopmentString(str) {
 
   // HTML tags and attributes
   if (
-    /^<[a-z0-9]+>.*<\/[a-z0-9]+>$/.test(str) ||
-    /^<[a-z0-9]+ [^>]+\/>$/.test(str)
+    /^<[a-z0-9]+(?:\s[^>]*)?>.*<\/[a-z0-9]+>$/i.test(str) ||
+    /^<[a-z0-9]+ [^>]+\/>$/i.test(str)
   ) {
     return true;
   }
