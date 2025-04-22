@@ -8,13 +8,14 @@ export const usePostLoginRedirect = (isLoggedIn: boolean) => {
 
   useEffect(() => {
     if (isLoggedIn) {
-      // Only redirect to last page if user is on the root page
-      if (location.pathname === "/") {
-        const lastPage = getLastPage();
-        if (lastPage) {
+      // Check if there's a saved last page
+      const lastPage = getLastPage();
+      if (lastPage) {
+        // Don't redirect if the user is already on the saved page
+        if (location.pathname !== lastPage) {
           navigate(lastPage);
-          clearLastPage();
         }
+        clearLastPage();
       }
     }
   }, [isLoggedIn, navigate, location.pathname]);

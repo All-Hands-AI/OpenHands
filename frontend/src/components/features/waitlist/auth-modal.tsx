@@ -11,6 +11,7 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { saveLastPage } from "#/utils/last-page";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
@@ -28,6 +29,8 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
+      // Save the current path before redirecting to auth
+      saveLastPage();
       handleCaptureConsent(true);
       window.location.href = githubAuthUrl;
     }
@@ -35,6 +38,8 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
+      // Save the current path before redirecting to auth
+      saveLastPage();
       handleCaptureConsent(true);
       window.location.href = gitlabAuthUrl;
     }

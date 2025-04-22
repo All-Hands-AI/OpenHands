@@ -9,6 +9,12 @@ export const saveLastPage = () => {
     currentPath !== "/tos"
   ) {
     localStorage.setItem(LAST_PAGE_KEY, currentPath);
+  } else if (currentPath === "/" && window.location.search) {
+    // If we're on the root page but have query parameters, save the full URL
+    localStorage.setItem(
+      LAST_PAGE_KEY,
+      window.location.pathname + window.location.search,
+    );
   }
 };
 
