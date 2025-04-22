@@ -16,5 +16,7 @@ export function useApiKeys() {
       const keys = await ApiKeysClient.getApiKeys();
       return Array.isArray(keys) ? keys : [];
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 }
