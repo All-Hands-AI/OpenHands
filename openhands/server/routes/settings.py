@@ -100,7 +100,7 @@ async def add_custom_secret(
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
-        existing_settings = await settings_store.load()
+        existing_settings: Settings = await settings_store.load()
         if existing_settings:
             for (
                 secret_name,
@@ -118,6 +118,8 @@ async def add_custom_secret(
                 custom_secrets=custom_secrets.custom_secrets,
                 provider_tokens=existing_settings.secrets_store.provider_tokens
             )
+
+            print(updated_secret_store)
             
             updated_settings = existing_settings.model_copy(
                 update={

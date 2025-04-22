@@ -119,7 +119,7 @@ class SecretStore(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def convert_dict_to_mappingproxy(
-        cls, data: dict[str, dict[str, Any]] | PROVIDER_TOKEN_TYPE
+        cls, data: dict[str, dict[str, Any] | MappingProxyType] | PROVIDER_TOKEN_TYPE
     ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
@@ -147,6 +147,8 @@ class SecretStore(BaseModel):
 
                 # Convert to MappingProxyType
                 new_data['provider_tokens'] = MappingProxyType(converted_tokens)
+            elif isinstance(tokens, MappingProxyType):
+                new_data['provider_tokens'] = tokens
 
         if 'custom_secrets' in data:
             secrets = data['custom_secrets']
@@ -159,7 +161,9 @@ class SecretStore(BaseModel):
                         converted_secrets[key] = value
 
                 new_data['custom_secrets'] = MappingProxyType(converted_secrets)
-                
+            elif isinstance(secrets, MappingProxyType):
+                new_data['custom_secrets'] = secrets
+
         return new_data
 
 

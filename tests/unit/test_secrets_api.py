@@ -349,6 +349,7 @@ async def test_custom_secrets_operations_preserve_settings(test_client, mock_set
     assert stored_settings.enable_default_condenser is True
     assert stored_settings.enable_sound_notifications is False
     assert stored_settings.user_consents_to_analytics is True
+    assert len(stored_settings.secrets_store.provider_tokens) == 2
 
     # 2. Test updating an existing custom secret
     update_secret_data = {
@@ -373,6 +374,7 @@ async def test_custom_secrets_operations_preserve_settings(test_client, mock_set
     assert stored_settings.enable_default_condenser is True
     assert stored_settings.enable_sound_notifications is False
     assert stored_settings.user_consents_to_analytics is True
+    assert len(stored_settings.secrets_store.provider_tokens) == 2
 
     # 3. Test deleting a custom secret
     response = test_client.delete('/api/secrets/NEW_SECRET')
@@ -392,3 +394,4 @@ async def test_custom_secrets_operations_preserve_settings(test_client, mock_set
     assert stored_settings.enable_default_condenser is True
     assert stored_settings.enable_sound_notifications is False
     assert stored_settings.user_consents_to_analytics is True
+    assert len(stored_settings.secrets_store.provider_tokens) == 2
