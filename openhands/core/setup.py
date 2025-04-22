@@ -115,18 +115,16 @@ def initialize_repository_for_runtime(
     )
     provider_tokens = secret_store.provider_tokens if secret_store else None
 
-    repo_directory = None
-    if selected_repository and provider_tokens:
-        logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = call_async_from_sync(
-            runtime.clone_repo,
-            GENERAL_TIMEOUT,
-            provider_tokens,
-            selected_repository,
-            None,
-        )
-        # Run setup script if it exists
-        runtime.maybe_run_setup_script()
+    logger.debug(f'Selected repository {selected_repository}.')
+    repo_directory = call_async_from_sync(
+        runtime.clone_or_init_repo,
+        GENERAL_TIMEOUT,
+        provider_tokens,
+        selected_repository,
+        None,
+    )
+    # Run setup script if it exists
+    runtime.maybe_run_setup_script()
 
     return repo_directory
 
@@ -171,11 +169,10 @@ def create_memory(
     return memory
 
 
-def create_agent(config: AppConfig, agent_name: str = '') -> Agent:
-    agent_name = agent_name or config.default_agent
-    agent_cls: Type[Agent] = Agent.get_cls(agent_name)
-    agent_config = config.get_agent_config(agent_name)
-    llm_config = config.get_llm_config_from_agent(agent_name)
+def create_agent(config: AppConfig) -> Agent:
+    agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+    agent_config = config.get_agent_config(config.default_agent)
+    llm_config = config.get_llm_config_from_agent(config.default_agent)
 
     agent = agent_cls(
         llm=LLM(config=llm_config),
@@ -187,7 +184,6 @@ def create_agent(config: AppConfig, agent_name: str = '') -> Agent:
 
 def create_controller(
     agent: Agent,
-    planning_agent: Agent | None,
     runtime: Runtime,
     config: AppConfig,
     headless_mode: bool = True,
@@ -207,7 +203,6 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        planning_agent=planning_agent,
         max_iterations=config.max_iterations,
         max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),

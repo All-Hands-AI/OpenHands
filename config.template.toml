@@ -104,12 +104,6 @@
 # Maximum age of conversations in seconds before they are automatically closed
 #conversation_max_age_seconds = 864000  # 10 days
 
-###### planning configuration #######
-enable_planning=true
-default_planning_agent="PlanningAgent"
-# CodeActAgent for coding tasks, TaskSolvingAgent for general tasks
-default_task_solving_agent="TaskSolvingAgent"
-
 
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')

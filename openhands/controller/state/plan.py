@@ -52,7 +52,8 @@ class Plan:
     def _format_plan(self, w_result: bool = True) -> str:
         """Format a plan for display."""
         output = f'Plan: {self.title} (ID: {self.plan_id})\n'
-        output += '=' * len(output) + '\n\n'
+        n_chars = len(output)
+        output += '=' * n_chars + '\n\n'
 
         # Calculate progress statistics
         total_tasks = len(self.tasks)
@@ -106,11 +107,11 @@ class Plan:
 
             if w_result:
                 output += (
-                    f'{i}. {status_symbol} {task_content}\n------- task_result -------\n{task_result.strip()} \n\n'
+                    f'{i + 1}. {status_symbol} {task_content}\n{"-" * (n_chars//2)} task_result {"-" * (n_chars//2)}n{task_result.strip()}\n{"-" * len(output)}\n\n'
                     if task_result
-                    else f'{i}. {status_symbol} {task_content}\n\n'
+                    else f'{i + 1}. {status_symbol} {task_content}\n\n'
                 )
             else:
-                output += f'{i}. {status_symbol} {task_content}\n'
+                output += f'{i + 1}. {status_symbol} {task_content}\n'
 
         return output

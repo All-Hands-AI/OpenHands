@@ -116,6 +116,9 @@ class TaskSolvingAgent(CodeActAgent):
             ]
             params['tools'] += unique_mcp_tools
 
+        # import json
+        # logger.warning(f'TaskSolvingAgent messages:\n{json.dumps(params["messages"], indent=2)}')
+
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)

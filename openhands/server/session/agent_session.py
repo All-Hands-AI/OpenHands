@@ -80,7 +80,6 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        planning_agent: Agent | None,
         max_iterations: int,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         max_budget_per_task: float | None = None,
@@ -130,7 +129,6 @@ class AgentSession:
                     initial_message,
                     replay_json,
                     agent,
-                    planning_agent,
                     config,
                     max_iterations,
                     max_budget_per_task,
@@ -140,7 +138,6 @@ class AgentSession:
             else:
                 self.controller = self._create_controller(
                     agent,
-                    planning_agent,
                     config.security.confirmation_mode,
                     max_iterations,
                     max_budget_per_task=max_budget_per_task,
@@ -216,7 +213,6 @@ class AgentSession:
         initial_message: MessageAction | None,
         replay_json: str,
         agent: Agent,
-        planning_agent: Agent | None,
         config: AppConfig,
         max_iterations: int,
         max_budget_per_task: float | None,
@@ -233,7 +229,6 @@ class AgentSession:
         replay_events = ReplayManager.get_replay_events(json.loads(replay_json))
         self.controller = self._create_controller(
             agent,
-            planning_agent,
             config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
@@ -342,7 +337,6 @@ class AgentSession:
     def _create_controller(
         self,
         agent: Agent,
-        planning_agent: Agent | None,
         confirmation_mode: bool,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -386,7 +380,6 @@ class AgentSession:
             sid=self.sid,
             event_stream=self.event_stream,
             agent=agent,
-            planning_agent=planning_agent,
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,

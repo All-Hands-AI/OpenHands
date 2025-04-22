@@ -17,7 +17,7 @@ from openhands.events.action.files import (
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
-from openhands.events.action.plan import CreatePlanAction, MarkTaskAction, AssignTaskAction
+from openhands.events.action.plan import CreatePlanAction, MarkTaskAction
 
 __all__ = [
     'Action',
@@ -41,6 +41,4 @@ __all__ = [
     'McpAction',
     'CreatePlanAction',
     'MarkTaskAction',
-    'AssignTaskAction',
-
 ]

@@ -12,7 +12,6 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
-    FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
@@ -21,7 +20,10 @@ from openhands.agenthub.codeact_agent.tools import (
     create_str_replace_editor_tool,
 )
 from openhands.agenthub.planning_agent.tools import (
-    PlanningTool
+    FinishTool,
+    PlanningTool,
+    DelegateToCodeActAgentTool,
+    DelegateToTaskSolvingAgentTool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -210,6 +212,17 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     tasks=arguments.get('tasks', []),
                 )
 
+            elif tool_call.function.name == DelegateToCodeActAgentTool['function']['name']:
+                action = AgentDelegateAction(
+                    agent='CodeActAgent',
+                    inputs=arguments,
+                )
+            elif tool_call.function.name == DelegateToTaskSolvingAgentTool['function']['name']:
+                action = AgentDelegateAction(
+                    agent='TaskSolvingAgent',
+                    inputs=arguments,
+                )
+
             # ================================================
             # McpAction (MCP)
             # ================================================
@@ -254,4 +267,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools() -> list[ChatCompletionToolParam]:
-    return [PlanningTool]
+    return [PlanningTool, FinishTool]
+
+def get_delegation_tools() -> list[ChatCompletionToolParam]:
+    return [
+        DelegateToCodeActAgentTool,
+        DelegateToTaskSolvingAgentTool,
+    ]

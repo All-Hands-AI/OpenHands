@@ -71,26 +71,4 @@ class MarkTaskAction(Action):
 
     @property
     def message(self) -> str:
-        return self.task_content
-
-
-@dataclass
-class AssignTaskAction(Action):
-    """An action where the agent assigns a task to a delegate.
-
-    Attributes:
-        plan_id (str): The ID of the plan.
-        task_index (int): The index of the task to assign.
-        delegate_id (str): The ID of the delegate.
-        action (str): The action type, namely ActionType.PLAN.
-    """
-
-    plan_id: str
-    task_index: int
-    task_content: str
-    delegate_id: str
-    action: str = ActionType.ASIGN_TASK
-
-    @property
-    def message(self) -> str:
-        return f'Assigned task {self.task_index}. {self.task_content} in plan {self.plan_id} to delegate {self.delegate_id}'
+        return f'Lets delegate task "{self.task_content}" to appropriate agent.'

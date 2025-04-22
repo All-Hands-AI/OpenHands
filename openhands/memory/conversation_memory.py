@@ -19,8 +19,8 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
-    AssignTaskAction,
-    CreatePlanAction
+    CreatePlanAction,
+    MarkTaskAction
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import SystemMessageAction
@@ -35,6 +35,7 @@ from openhands.events.observation import (
     FileReadObservation,
     IPythonRunCellObservation,
     UserRejectObservation,
+    CreatePlanObservation
 )
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
@@ -212,6 +213,7 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 McpAction,
+                CreatePlanAction
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -291,36 +293,11 @@ class ConversationMemory:
                     content=content,
                 )
             ]
-        elif isinstance(action, AssignTaskAction):
-            return [Message(role='user', content=[TextContent(text=action.message)])]
-
-        elif isinstance(action, CreatePlanAction):
-            tool_metadata = action.tool_call_metadata
-            assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                + str(action)
-            )
-
-            model_response: ModelResponse = tool_metadata.model_response
-            assistant_msg = getattr(model_response.choices[0], 'message')
-            content = assistant_msg.content or ''
-
-            args = eval(assistant_msg.tool_calls[0].function.arguments)
-            if 'command' in args:
-                del args['command']
-
-            plan = Plan(**args)
-
+        elif isinstance(action, MarkTaskAction):
             return [
                 Message(
-                    role='assistant',  # type: ignore[arg-type]
-                    content=[
-                        TextContent(
-                            text=(
-                                content + '\n' + json.dumps(plan.to_dict(), indent=2)
-                            ).strip()
-                        )
-                    ],
+                    role='user',  # always user for MarkTaskAction
+                    content=[TextContent(text=action.message)],
                 )
             ]
         
@@ -390,6 +367,9 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, MCPObservation):
             # logger.warning(f'MCPObservation: {obs}')
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, CreatePlanObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
@@ -530,7 +510,8 @@ class ConversationMemory:
                             repo_instructions=repo_instructions,
                         )
                     )
-                    message_content.append(TextContent(text=formatted_workspace_text))
+                    if formatted_workspace_text.strip():
+                        message_content.append(TextContent(text=formatted_workspace_text))
 
                 # Add microagent knowledge if present
                 if has_microagent_knowledge:
@@ -539,7 +520,8 @@ class ConversationMemory:
                             triggered_agents=filtered_agents,
                         )
                     )
-                    message_content.append(TextContent(text=formatted_microagent_text))
+                    if formatted_microagent_text.strip():
+                        message_content.append(TextContent(text=formatted_microagent_text))
 
                 # Return the combined message if we have any content
                 if message_content:

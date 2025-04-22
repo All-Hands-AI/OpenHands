@@ -36,10 +36,6 @@ class Settings(BaseModel):
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
 
-    # planning config
-    planning_agent: str | None = None
-    task_solving_agent: str | None = None
-
     model_config = {
         'validate_assignment': True,
     }

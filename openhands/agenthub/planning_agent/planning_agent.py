@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 
 import openhands.agenthub.planning_agent.function_calling as planning_function_calling
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
@@ -21,7 +22,6 @@ class PlanningAgent(CodeActAgent):
     """
     This Agent wraps the CodeAct agent with planning tools.
     """
-    planning_capabilities: bool = True
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class PlanningAgent(CodeActAgent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        params['tools'] = self.tools
+        params['tools'] = deepcopy(self.tools)
 
         if self.mcp_tools and self.config.enable_mcp_tools:
             # Only add tools with unique names
@@ -117,6 +117,12 @@ class PlanningAgent(CodeActAgent):
                 if tool['function']['name'] not in existing_names
             ]
             params['tools'] += unique_mcp_tools
+
+        if hasattr(self, 'enable_delegation') and self.enable_delegation:
+
+            params['tools'] = planning_function_calling.get_delegation_tools()
+
+        params['tools'] = params['tools'][::-1]  # reverse order because of LLM bias
 
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
