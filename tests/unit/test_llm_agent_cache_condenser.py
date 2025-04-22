@@ -176,7 +176,7 @@ CHANGES: User asked about database schema and agent explained the tables and rel
     assert 'User asked about database schema' in result.action.summary
 
 
-def test_should_condense_max_size(agent: CodeActAgent):
+def test_should_condense_max_size():
     """Test that the LLMAgentCacheCondenser correctly determines when to condense based on size."""
     condenser = LLMAgentCacheCondenser(max_size=10)
 
@@ -409,3 +409,67 @@ CURRENT_STATE: Conversation initialized
     messages = agent._get_messages(view.events)
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
+
+
+from unittest.mock import patch
+
+import pytest
+
+
+def test_condensation_triggered_by_user_message_in_context(agent):
+    """Test that the user message triggering condensation is part of the context passed to the LLM."""
+
+    condenser = LLMAgentCacheCondenser(trigger_word='CONDENSE!', max_size=500)
+    agent.condenser = condenser
+
+    # Create events with a user message containing a goal
+    user_message_goal = MessageAction('I want you to do some things for me.')
+    user_message_goal._source = 'user'  # type: ignore [attr-defined]
+    user_message_goal._id = 1  # type: ignore [attr-defined]
+
+    # Add agent messages
+    agent_messages = []
+    for i in range(3):
+        event = MessageAction(f'Agent response {i}')
+        event._source = 'agent'  # type: ignore [attr-defined]
+        event._id = i + 2  # type: ignore [attr-defined]
+        agent_messages.append(event)
+
+    # Add a user message containing the trigger word
+    user_message_trigger = MessageAction('Please CONDENSE! the conversation history.')
+    user_message_trigger._source = 'user'  # type: ignore [attr-defined]
+    user_message_trigger._id = 5  # type: ignore [attr-defined]
+
+    # Combine all events
+    events = [user_message_goal] + agent_messages + [user_message_trigger]
+
+    state = State(history=cast(list[Event], events))
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = """
+USER_CONTEXT: Simple greeting
+COMPLETED: User and AI greeted each other
+PENDING: None
+CURRENT_STATE: Conversation initialized
+        """
+
+    with patch.object(
+        agent.llm, 'completion', return_value=mock_response
+    ) as mock_completion:
+        # Perform condensation
+        condenser.condensed_history(state, agent)
+
+        # Verify that the LLM completion was called
+        mock_completion.assert_called_once()
+
+        # Extract the parameters passed to the LLM
+        params = mock_completion.call_args[1]
+        messages = params.get('messages', [])
+
+        # Check that the user message triggering condensation is part of the context
+        assert any(
+            hasattr(message, 'content')
+            and message.content[0].text == 'Please CONDENSE! the conversation history.'
+            for message in messages
+        )
