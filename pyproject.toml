@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.32.0"
+version = "0.32.1"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -87,6 +87,12 @@ python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 traceloop-sdk = "0.24.0"
+PyYAML = "^6.0.1"
+
+json-schema-to-pydantic = "0.2.3"
+autogen_core = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-core"}
+autogen_agentchat = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-agentchat"}
+autogen_ext = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-ext"}
 opentelemetry-distro = "<0.53b1"
 opentelemetry-instrumentation-asyncio = "0.46b0"
 opentelemetry-instrumentation-aws-lambda = "0.46b0"

@@ -20,6 +20,7 @@ from litellm.exceptions import (  # noqa
     Timeout,
 )
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
@@ -64,6 +65,10 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
+from openhands.events.observation.a2a import (
+    A2ASendTaskArtifactObservation,
+    A2ASendTaskUpdateObservation,
+)
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -94,6 +99,7 @@ class AgentController:
         AgentStateChangedObservation,
     )
     _cached_first_user_message: MessageAction | None = None
+    a2a_manager: A2AManager | None = None
 
     def __init__(
         self,
@@ -110,6 +116,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        a2a_manager: A2AManager | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -162,6 +169,7 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+        self.a2a_manager = a2a_manager
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -335,6 +343,13 @@ class AgentController:
             if isinstance(event, AgentStateChangedObservation) or isinstance(
                 event, NullObservation
             ):
+                return False
+            if (
+                isinstance(event, A2ASendTaskUpdateObservation)
+                and not event.task_update_event['final']
+            ):
+                return False
+            if isinstance(event, A2ASendTaskArtifactObservation):
                 return False
             return True
         return False

@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from openhands.controller.state.state import State
     from openhands.core.config import AgentConfig
     from openhands.events.action import Action
+from openhands.a2a.A2AManager import A2AManager
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
@@ -33,6 +34,7 @@ class Agent(ABC):
         llm: LLM,
         config: 'AgentConfig',
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
+        a2a_manager: A2AManager | None = None,
     ):
         self.llm = llm
         self.config = config
@@ -42,6 +44,7 @@ class Agent(ABC):
         self.workspace_mount_path_in_sandbox_store_in_session = (
             workspace_mount_path_in_sandbox_store_in_session
         )
+        self.a2a_manager = a2a_manager
         self.system_prompt: str = ''
         self.user_prompt: str = ''
 

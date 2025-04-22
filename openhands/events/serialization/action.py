@@ -1,6 +1,10 @@
 from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
+from openhands.events.action.a2a_action import (
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
+)
 from openhands.events.action.action import Action
 from openhands.events.action.agent import (
     AgentDelegateAction,
@@ -43,6 +47,8 @@ actions = (
     MessageAction,
     CondensationAction,
     McpAction,
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

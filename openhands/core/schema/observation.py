@@ -61,3 +61,15 @@ class ObservationType(str, Enum):
     PLAYWRIGHT_MCP_BROWSER_SCREENSHOT = 'playwright_mcp_browser_screenshot'
     """Result of a Playwright MCP Browser Screenshot operation. The response is a base64 encoded string of the screenshot, which should be streamed to the client using the correct format matching
     browsergym's screenshot format."""
+
+    A2A_LIST_REMOTE_AGENTS = 'a2a_list_remote_agents'
+    """Result of a A2A List Remote Agents operation. The response is a list of remote agents."""
+
+    A2A_SEND_TASK_UPDATE_EVENT = 'a2a_send_task_update_event'
+    """Result of a A2A Send Task Update Event operation. The response is a list of remote agents."""
+
+    A2A_SEND_TASK_ARTIFACT = 'a2a_send_task_artifact'
+    """Result of a A2A Send Task Artifact operation. The response is a list of remote agents."""
+
+    A2A_SEND_TASK_RESPONSE = 'a2a_send_task_response'
+    """Result of a A2A Send Task Response operation. The response is a list of remote agents."""

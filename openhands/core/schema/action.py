@@ -87,3 +87,9 @@ class ActionType(str, Enum):
 
     CONDENSATION = 'condensation'
     """Condenses a list of events into a summary."""
+
+    A2A_LIST_REMOTE_AGENTS = 'a2a_list_remote_agents'
+    """List the available remote agents you can use to delegate the task."""
+
+    A2A_SEND_TASK = 'a2a_send_task'
+    """Send a task to a remote agent."""

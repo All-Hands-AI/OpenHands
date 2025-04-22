@@ -678,6 +678,12 @@ async def main(loop: asyncio.AbstractEventLoop):
     agent = create_agent(config)
     mcp_tools = await fetch_mcp_tools_from_config(config.dict_mcp_config, sid=sid)
     agent.set_mcp_tools(mcp_tools)
+    if agent.a2a_manager:
+        try:
+            await agent.a2a_manager.initialize_agent_cards()
+        except Exception as e:
+            logger.warning(f'Error initializing A2A manager: {e}')
+
     runtime = create_runtime(
         config,
         sid=sid,

@@ -10,11 +10,17 @@ import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import AsyncGenerator, Callable, cast
 from zipfile import ZipFile
 
 import httpx
 
+from openhands.a2a.A2AManager import A2AManager
+from openhands.a2a.common.types import (
+    Task,
+    TaskArtifactUpdateEvent,
+    TaskStatusUpdateEvent,
+)
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
@@ -30,6 +36,10 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.a2a_action import (
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
+)
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -40,6 +50,12 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
     UserRejectObservation,
+)
+from openhands.events.observation.a2a import (
+    A2AListRemoteAgentsObservation,
+    A2ASendTaskArtifactObservation,
+    A2ASendTaskResponseObservation,
+    A2ASendTaskUpdateObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import (
@@ -110,6 +126,7 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        a2a_manager: A2AManager | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -156,6 +173,7 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+        self.a2a_manager = a2a_manager
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -286,6 +304,15 @@ class Runtime(FileEditRuntimeMixin):
                 # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
                 logger.debug(f'Calling call_tool_mcp with event: {event}')
                 observation: Observation = await getattr(self, McpAction.action)(event)
+            elif isinstance(event, A2AListRemoteAgentsAction) or isinstance(
+                event, A2ASendTaskAction
+            ):
+                async for observation in self.call_a2a(event):
+                    if observation is not None:
+                        observation._cause = event.id  # type: ignore[attr-defined]
+                        observation.tool_call_metadata = event.tool_call_metadata
+                        self.event_stream.add_event(observation, EventSource.AGENT)
+                return
             else:
                 observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
@@ -556,6 +583,50 @@ class Runtime(FileEditRuntimeMixin):
     @abstractmethod
     async def call_tool_mcp(self, action: McpAction) -> Observation:
         pass
+
+    async def call_a2a(
+        self, action: A2AListRemoteAgentsAction | A2ASendTaskAction
+    ) -> AsyncGenerator[Observation, None]:
+        if self.a2a_manager is None:
+            yield ErrorObservation('A2A manager is not set')
+            return
+
+        if isinstance(action, A2AListRemoteAgentsAction):
+            list_agent = self.a2a_manager.list_remote_agents()
+            yield A2AListRemoteAgentsObservation(content=json.dumps(list_agent))
+        elif isinstance(action, A2ASendTaskAction):
+            logger.info(
+                f'Sending task to {action.agent_name} message: {action.task_message}'
+            )
+            try:
+                async for task_response in self.a2a_manager.send_task(
+                    action.agent_name, action.task_message, self.sid
+                ):
+                    if task_response is None or task_response.result is None:
+                        continue
+                    result = task_response.result
+
+                    if isinstance(result, TaskStatusUpdateEvent):
+                        yield A2ASendTaskUpdateObservation(
+                            agent_name=action.agent_name,
+                            task_update_event=result,
+                            content=result.model_dump_json(),
+                        )
+                    elif isinstance(result, TaskArtifactUpdateEvent):
+                        yield A2ASendTaskArtifactObservation(
+                            agent_name=action.agent_name,
+                            task_artifact_event=result,
+                            content=result.model_dump_json(),
+                        )
+                    elif isinstance(result, Task):
+                        yield A2ASendTaskResponseObservation(
+                            agent_name=action.agent_name,
+                            task=result,
+                            content=result.model_dump_json(),
+                        )
+            except Exception as e:
+                yield ErrorObservation(f'Error sending task: {e}')
+                return
 
     # ====================================================================
     # File operations

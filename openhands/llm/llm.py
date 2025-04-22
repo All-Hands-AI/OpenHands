@@ -23,7 +23,6 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 from opentelemetry import trace
-from traceloop.sdk import Traceloop
 from traceloop.sdk.decorators import workflow
 
 from openhands.core.exceptions import LLMNoResponseError
@@ -113,10 +112,10 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
-        if session_id and user_id:
-            Traceloop.set_association_properties(
-                {'session_id': session_id, 'user_id': user_id}
-            )
+        # if os.getenv('TRACELOOP_BASE_URL') and session_id and user_id:
+        #     Traceloop.set_association_properties(
+        #         {'session_id': session_id, 'user_id': user_id}
+        #     )
         self._tried_model_info = False
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)

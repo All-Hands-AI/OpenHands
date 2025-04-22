@@ -9,6 +9,7 @@ import httpx
 import tenacity
 from docker.models.containers import Container
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
@@ -77,6 +78,7 @@ class DockerRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        a2a_manager: A2AManager | None = None,
     ):
         # TODO FIXME: we don't need to close containers when BE shut down. Only users can close the containers by deleting the conversation.
         # if not DockerRuntime._shutdown_listener_id:
@@ -124,6 +126,7 @@ class DockerRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            a2a_manager=a2a_manager,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available

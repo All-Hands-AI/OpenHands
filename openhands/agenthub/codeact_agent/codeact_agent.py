@@ -3,6 +3,8 @@ from collections import deque
 from typing import override
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.a2a.A2AManager import A2AManager
+from openhands.a2a.tool import ListRemoteAgents, SendTask
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -59,6 +61,7 @@ class CodeActAgent(Agent):
         llm: LLM,
         config: AgentConfig,
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
+        a2a_manager: A2AManager | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -66,8 +69,14 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         - workspace_mount_path_in_sandbox_store_in_session (bool, optional): Whether to store the workspace mount path in session. Defaults to True.
+        - a2a_manager (A2AManager, optional): The A2A manager to be used by this agent. Defaults to None.
         """
-        super().__init__(llm, config, workspace_mount_path_in_sandbox_store_in_session)
+        super().__init__(
+            llm,
+            config,
+            workspace_mount_path_in_sandbox_store_in_session,
+            a2a_manager,
+        )
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
@@ -77,6 +86,10 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             llm=self.llm,
         )
+        # Add A2A tools if A2A server URLs are provided
+        if self.config.a2a_server_urls:
+            built_in_tools.append(ListRemoteAgents)
+            built_in_tools.append(SendTask)
 
         self.tools = built_in_tools
 
@@ -218,10 +231,12 @@ class CodeActAgent(Agent):
         """
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
-
+        agent_infos = (
+            self.a2a_manager.list_remote_agents() if self.a2a_manager else None
+        )
         # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
+            with_caching=self.llm.is_caching_prompt_active(), agent_infos=agent_infos
         )
 
         # Use ConversationMemory to process events

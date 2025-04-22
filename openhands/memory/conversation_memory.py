@@ -19,6 +19,10 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.a2a_action import (
+    A2AListRemoteAgentsAction,
+    A2ASendTaskAction,
+)
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
@@ -32,6 +36,11 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     PlanObservation,
     UserRejectObservation,
+)
+from openhands.events.observation.a2a import (
+    A2AListRemoteAgentsObservation,
+    A2ASendTaskArtifactObservation,
+    A2ASendTaskUpdateObservation,
 )
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
@@ -136,14 +145,18 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
+    def process_initial_messages(
+        self, with_caching: bool = False, agent_infos=list | None
+    ) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
             Message(
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.get_system_message(),
+                        text=self.prompt_manager.get_system_message(
+                            agent_infos=agent_infos
+                        ),
                         cache_prompt=with_caching,
                     )
                 ],
@@ -200,6 +213,8 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 McpAction,
+                A2AListRemoteAgentsAction,
+                A2ASendTaskAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -543,6 +558,14 @@ class ConversationMemory:
             # If prompt extensions are disabled, we don't add any additional info
             # TODO: test this
             return []
+        elif isinstance(obs, A2AListRemoteAgentsObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, A2ASendTaskUpdateObservation):
+            return []
+        elif isinstance(obs, A2ASendTaskArtifactObservation):
+            text = self.prompt_manager.build_a2a_info(obs)
+            message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
