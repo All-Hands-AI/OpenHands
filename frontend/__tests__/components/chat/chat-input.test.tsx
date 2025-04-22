@@ -223,7 +223,7 @@ describe("ChatInput", () => {
     render(<ChatInput onSubmit={onSubmitMock} />);
     const textarea = screen.getByRole("textbox");
     expect(textarea).toBeInTheDocument();
-    
+
     // The actual verification of maxRows=16 is handled internally by the TextareaAutosize component
     // and affects how many rows the textarea can expand to
   });

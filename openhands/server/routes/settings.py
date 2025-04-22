@@ -80,9 +80,7 @@ async def load_custom_secrets_names(
             for secret_name, _ in settings.secrets_store.custom_secrets.items():
                 custom_secrets.append(secret_name)
 
-        secret_names = GETSettingsCustomSecrets(
-            custom_secrets=custom_secrets
-        )
+        secret_names = GETSettingsCustomSecrets(custom_secrets=custom_secrets)
         return secret_names
 
     except Exception as e:
@@ -115,14 +113,12 @@ async def add_custom_secret(
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
                 custom_secrets=incoming_secrets.custom_secrets,
-                provider_tokens=existing_settings.secrets_store.provider_tokens
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
             )
-            
+
             # Only update SecretStore in Settings
             updated_settings = existing_settings.model_copy(
-                update={
-                    'secrets_store': updated_secret_store
-                }
+                update={'secrets_store': updated_secret_store}
             )
 
             updated_settings = convert_to_settings(updated_settings)
@@ -159,9 +155,9 @@ async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
                 custom_secrets=custom_secrets,
-                provider_tokens=existing_settings.secrets_store.provider_tokens
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
             )
-            
+
             updated_settings = existing_settings.model_copy(
                 update={'secrets_store': updated_secret_store}
             )

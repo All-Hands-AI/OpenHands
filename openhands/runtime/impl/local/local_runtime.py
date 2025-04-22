@@ -206,31 +206,37 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
+
         # run poetry show -v | head -n 1 | awk '{print $2}'
-        poetry_venvs_path = (
-            subprocess.check_output(
+        def get_poetry_venvs_path():
+            output = subprocess.check_output(
                 ['poetry', 'show', '-v'],
                 env=env,
                 cwd=code_repo_path,
                 text=True,
                 shell=False,
             )
-            .splitlines()[0]
-            .split(':')[1]
-            .strip()
-        )
+            return output.splitlines()[0].split(':')[1].strip()
+
+        poetry_venvs_path = await call_sync_from_async(get_poetry_venvs_path)
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
-        check_dependencies(code_repo_path, poetry_venvs_path)
-        self.server_process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1,
-            env=env,
+        await call_sync_from_async(
+            lambda: check_dependencies(code_repo_path, poetry_venvs_path)
         )
+
+        def start_server_process():
+            return subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                bufsize=1,
+                env=env,
+            )
+
+        self.server_process = await call_sync_from_async(start_server_process)
 
         # Start a thread to read and log server output
         def log_output():
