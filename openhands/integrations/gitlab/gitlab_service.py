@@ -48,7 +48,7 @@ class GitLabService(BaseGitService, GitService):
         """
         Retrieve the GitLab Token to construct the headers
         """
-        if self.user_id and not self.token:
+        if not self.token:
             self.token = await self.get_latest_token()
 
         return {
