@@ -2,7 +2,7 @@ export type SuggestedTaskType =
   | "MERGE_CONFLICTS"
   | "FAILING_CHECKS"
   | "UNRESOLVED_COMMENTS"
-  | "OPEN_ISSUE";
+  | "OPEN_ISSUE"; // This is a task type identifier, not a UI string
 
 export interface SuggestedTask {
   issue_number: number;

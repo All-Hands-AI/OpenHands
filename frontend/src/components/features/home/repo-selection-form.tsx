@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
@@ -22,6 +23,7 @@ export function RepositorySelectionForm({
     isSuccess,
   } = useCreateConversation();
   const isCreatingConversationElsewhere = useIsCreatingConversation();
+  const { t } = useTranslation();
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
@@ -70,7 +72,7 @@ export function RepositorySelectionForm({
         onClick={() => createConversation({ selectedRepository })}
       >
         {!isCreatingConversation && "Launch"}
-        {isCreatingConversation && "Loading..."}
+        {isCreatingConversation && t("HOME$LOADING")}
       </BrandButton>
     </>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { SuggestedTask } from "./task.types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
@@ -6,12 +7,14 @@ import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { getPromptForQuery } from "./get-prompt-for-query";
 import { TaskIssueNumber } from "./task-issue-number";
 
-const TASK_TYPE_MAP: Record<SuggestedTask["task_type"], string> = {
+const getTaskTypeMap = (
+  t: (key: string) => string,
+): Record<SuggestedTask["task_type"], string> => ({
   FAILING_CHECKS: "Fix failing checks",
   MERGE_CONFLICTS: "Resolve merge conflicts",
-  OPEN_ISSUE: "Open issue",
+  OPEN_ISSUE: t("HOME$OPEN_ISSUE"),
   UNRESOLVED_COMMENTS: "Resolve unresolved comments",
-};
+});
 
 interface TaskCardProps {
   task: SuggestedTask;
@@ -21,6 +24,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const { data: repositories } = useUserRepositories();
   const { mutate: createConversation, isPending } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
+  const { t } = useTranslation();
 
   const getRepo = (repo: string) => {
     const repositoriesList = repositories?.pages.flatMap((page) => page.data);
@@ -53,7 +57,7 @@ export function TaskCard({ task }: TaskCardProps) {
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full pl-8">
-        <p className="font-semibold">{TASK_TYPE_MAP[task.task_type]}</p>
+        <p className="font-semibold">{getTaskTypeMap(t)[task.task_type]}</p>
         <p>{task.title}</p>
       </div>
 
@@ -68,7 +72,7 @@ export function TaskCard({ task }: TaskCardProps) {
         onClick={handleLaunchConversation}
       >
         {!isPending && "Launch"}
-        {isPending && "Loading..."}
+        {isPending && t("HOME$LOADING")}
       </button>
     </li>
   );

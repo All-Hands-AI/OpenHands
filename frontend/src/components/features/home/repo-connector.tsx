@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ConnectToProviderMessage } from "./connect-to-provider-message";
 import { useAuth } from "#/context/auth-context";
 import { RepositorySelectionForm } from "./repo-selection-form";
@@ -11,6 +12,7 @@ interface RepoConnectorProps {
 export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const { providersAreSet } = useAuth();
   const { data: config } = useConfig();
+  const { t } = useTranslation();
 
   const isSaaS = config?.APP_MODE === "saas";
 
@@ -19,7 +21,7 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
       data-testid="repo-connector"
       className="w-full flex flex-col gap-6"
     >
-      <h2 className="heading">Connect to a Repository</h2>
+      <h2 className="heading">{t("HOME$CONNECT_TO_REPOSITORY")}</h2>
 
       {!providersAreSet && <ConnectToProviderMessage />}
       {providersAreSet && (

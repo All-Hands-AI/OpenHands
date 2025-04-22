@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
@@ -10,6 +11,7 @@ export function HomeHeader() {
     isSuccess,
   } = useCreateConversation();
   const isCreatingConversationElsewhere = useIsCreatingConversation();
+  const { t } = useTranslation();
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
@@ -21,7 +23,7 @@ export function HomeHeader() {
       <AllHandsLogo />
 
       <div className="flex items-center justify-between">
-        <h1 className="heading">Let&apos;s Start Building!</h1>
+        <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
         <BrandButton
           testId="header-launch-button"
           variant="primary"
@@ -30,17 +32,16 @@ export function HomeHeader() {
           isDisabled={isCreatingConversation}
         >
           {!isCreatingConversation && "Launch from Scratch"}
-          {isCreatingConversation && "Loading..."}
+          {isCreatingConversation && t("HOME$LOADING")}
         </BrandButton>
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-sm max-w-[424px]">
-          OpenHands makes it easy to build and maintain software using AI-driven
-          development.
+          {t("HOME$OPENHANDS_DESCRIPTION")}
         </p>
         <p className="text-sm">
-          Not sure how to start?{" "}
+          {t("HOME$NOT_SURE_HOW_TO_START")}{" "}
           <a
             href="https://docs.all-hands.dev/modules/usage/getting-started"
             target="_blank"
