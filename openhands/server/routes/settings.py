@@ -118,8 +118,6 @@ async def add_custom_secret(
                 custom_secrets=custom_secrets.custom_secrets,
                 provider_tokens=existing_settings.secrets_store.provider_tokens
             )
-
-            print(updated_secret_store)
             
             updated_settings = existing_settings.model_copy(
                 update={

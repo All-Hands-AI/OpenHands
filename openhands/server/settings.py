@@ -69,13 +69,11 @@ class Settings(BaseModel):
         secret_store = SecretStore(provider_tokens={}, custom_secrets={})
 
         if isinstance(tokens, dict):
-            print('updating providers')
             converted_store = SecretStore(provider_tokens=tokens)
             secret_store = secret_store.model_copy(
                 update={'provider_tokens': converted_store.provider_tokens}
             )
         else:
-            print('updating here')
             secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
