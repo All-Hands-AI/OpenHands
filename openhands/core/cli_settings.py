@@ -157,6 +157,9 @@ async def modify_llm_settings_basic(
 
         session.completer = None  # Reset completer for password prompt
         api_key = await session.prompt_async('(Step 3/3) Enter API Key: ')
+        if not api_key:
+            print_formatted_text(HTML('\n<grey>API Key cannot be empty</grey>'))
+            return False
 
     except (
         UserCancelledError,
@@ -226,8 +229,19 @@ async def modify_llm_settings_advanced(
 
     try:
         custom_model = await session.prompt_async('(Step 1/6) Custom Model: ')
+        if not custom_model:
+            print_formatted_text(HTML('\n<grey>Custom Model cannot be empty</grey>'))
+            return False
+
         base_url = await session.prompt_async('(Step 2/6) Base URL: ')
+        if not base_url:
+            print_formatted_text(HTML('\n<grey>Base URL cannot be empty</grey>'))
+            return False
+
         api_key = await session.prompt_async('(Step 3/6) API Key: ')
+        if not api_key:
+            print_formatted_text(HTML('\n<grey>API Key cannot be empty</grey>'))
+            return False
 
         agent_list = Agent.list_agents()
         agent_completer = FuzzyWordCompleter(agent_list)
