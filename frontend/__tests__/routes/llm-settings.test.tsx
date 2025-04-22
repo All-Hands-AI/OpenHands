@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
 import OpenHands from "#/api/open-hands";
@@ -18,14 +18,15 @@ const renderLlmSettingsScreen = () =>
     ),
   });
 
-describe("Content", () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+beforeEach(() => {
+  vi.resetAllMocks();
+});
 
+describe("Content", () => {
   describe("Basic form", () => {
-    it("should render the basic form by default", () => {
+    it("should render the basic form by default", async () => {
       renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
 
       const basicFom = screen.getByTestId("llm-settings-form-basic");
       within(basicFom).getByTestId("llm-provider-input");
@@ -36,6 +37,7 @@ describe("Content", () => {
 
     it("should render the default values if non exist", async () => {
       renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
 
       const provider = screen.getByTestId("llm-provider-input");
       const model = screen.getByTestId("llm-model-input");
@@ -59,6 +61,7 @@ describe("Content", () => {
       });
 
       renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
 
       const provider = screen.getByTestId("llm-provider-input");
       const model = screen.getByTestId("llm-model-input");
@@ -77,6 +80,7 @@ describe("Content", () => {
   describe("Advanced form", () => {
     it("should render the advanced form if the switch is toggled", async () => {
       renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
 
       const advancedSwitch = screen.getByTestId("advanced-settings-switch");
       const basicForm = screen.getByTestId("llm-settings-form-basic");
@@ -111,6 +115,7 @@ describe("Content", () => {
 
     it("should render the default advanced settings", async () => {
       renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
 
       const advancedSwitch = screen.getByTestId("advanced-settings-switch");
       expect(advancedSwitch).not.toBeChecked();
@@ -132,7 +137,7 @@ describe("Content", () => {
       expect(apiKey).toHaveProperty("placeholder", "");
       expect(agent).toHaveValue("CodeActAgent");
       expect(confirmation).not.toBeChecked();
-      expect(condensor).not.toBeChecked();
+      expect(condensor).toBeChecked();
     });
 
     it("should render the advanced form if existings settings are advanced", async () => {
@@ -160,10 +165,11 @@ describe("Content", () => {
         llm_api_key_set: true,
         agent: "CoActAgent",
         confirmation_mode: true,
-        enable_default_condenser: true,
+        enable_default_condenser: false,
       });
 
       renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
 
       const model = screen.getByTestId("llm-custom-model-input");
       const baseUrl = screen.getByTestId("base-url-input");
@@ -183,7 +189,7 @@ describe("Content", () => {
         expect(apiKey).toHaveProperty("placeholder", "<hidden>");
         expect(agent).toHaveValue("CoActAgent");
         expect(confirmation).toBeChecked();
-        expect(condensor).toBeChecked();
+        expect(condensor).not.toBeChecked();
       });
     });
   });

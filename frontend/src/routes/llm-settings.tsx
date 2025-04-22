@@ -22,8 +22,10 @@ function LlmSettingsScreen() {
     else setView("basic");
   }, [settings]);
 
+  if (!settings) return null;
+
   return (
-    <div>
+    <div data-testid="llm-settings-screen">
       <input
         type="checkbox"
         data-testid="advanced-settings-switch"
@@ -36,14 +38,14 @@ function LlmSettingsScreen() {
           <ModelSelector
             models={modelsAndProviders}
             currentModel={
-              settings?.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+              settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
             }
           />
 
           <input
             data-testid="llm-api-key-input"
             defaultValue=""
-            placeholder={settings?.LLM_API_KEY_SET ? "<hidden>" : ""}
+            placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
           />
           <div data-testid="llm-api-key-help-anchor" />
         </div>
@@ -54,22 +56,29 @@ function LlmSettingsScreen() {
           <input
             data-testid="llm-custom-model-input"
             defaultValue={
-              settings?.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+              settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
             }
           />
-          <input data-testid="base-url-input" defaultValue="" />
-          <input data-testid="llm-api-key-input" defaultValue="" />
+          <input
+            data-testid="base-url-input"
+            defaultValue={settings.LLM_BASE_URL}
+          />
+          <input
+            data-testid="llm-api-key-input"
+            defaultValue=""
+            placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
+          />
           <div data-testid="llm-api-key-help-anchor" />
-          <input data-testid="agent-input" defaultValue="CodeActAgent" />
+          <input data-testid="agent-input" defaultValue={settings.AGENT} />
           <input
             type="checkbox"
             data-testid="enable-confirmation-mode-switch"
-            defaultChecked={false}
+            defaultChecked={settings.CONFIRMATION_MODE}
           />
           <input
             type="checkbox"
             data-testid="enable-memory-condenser-switch"
-            defaultChecked={false}
+            defaultChecked={settings.ENABLE_DEFAULT_CONDENSER}
           />
         </div>
       )}
