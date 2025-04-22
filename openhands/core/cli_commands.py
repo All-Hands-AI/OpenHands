@@ -2,25 +2,27 @@ import asyncio
 from pathlib import Path
 
 from prompt_toolkit import print_formatted_text
-from prompt_toolkit.shortcuts import print_container
+from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands.core.cli_input import (
-    cli_confirm,
-)
-from openhands.core.cli_output import (
-    COLOR_GREY,
-    UsageMetrics,
-    display_help,
-    display_shutdown_message,
-    display_status,
-)
 from openhands.core.cli_settings import (
     display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
 )
-from openhands.core.cli_utils import read_file, write_to_file
+from openhands.core.cli_tui import (
+    COLOR_GREY,
+    UsageMetrics,
+    cli_confirm,
+    display_help,
+    display_shutdown_message,
+    display_status,
+)
+from openhands.core.cli_utils import (
+    manage_openhands_file,
+    read_file,
+    write_to_file,
+)
 from openhands.core.config import (
     AppConfig,
 )
@@ -104,6 +106,14 @@ def handle_help_command():
 async def handle_init_command(
     config: AppConfig, event_stream: EventStream, current_dir: str
 ) -> tuple[bool, bool]:
+    REPO_MD_CREATE_PROMPT = """
+        Please explore this repository. Create the file .openhands/microagents/repo.md with:
+            - A description of the project
+            - An overview of the file structure
+            - Any information on how to run tests or other relevant commands
+            - Any other information that would be helpful to a brand new developer
+        Keep it short--just a few paragraphs will do.
+    """
     close_repl = False
     reload_microagents = False
 
@@ -193,16 +203,6 @@ async def handle_settings_command(
     return close_repl, new_session_requested
 
 
-REPO_MD_CREATE_PROMPT = """
-Please explore this repository. Create the file .openhands/microagents/repo.md with:
-- A description of the project
-- An overview of the file structure
-- Any information on how to run tests or other relevant commands
-- Any other information that would be helpful to a brand new developer
-Keep it short--just a few paragraphs will do.
-"""
-
-
 async def init_repository(current_dir: str) -> bool:
     repo_file_path = Path(current_dir) / '.openhands' / 'microagents' / 'repo.md'
     init_repo = False
@@ -257,3 +257,37 @@ async def init_repository(current_dir: str) -> bool:
         )
 
     return init_repo
+
+
+def check_folder_security_agreement(current_dir):
+    is_trusted = manage_openhands_file(current_dir)
+
+    if not is_trusted:
+        security_frame = Frame(
+            TextArea(
+                text=(
+                    f' Do you trust the files in this folder?\n\n'
+                    f'   {current_dir}\n\n'
+                    ' OpenHands may read and execute files in this folder with your permission.'
+                ),
+                style=COLOR_GREY,
+                read_only=True,
+                wrap_lines=True,
+            ),
+            style=f'fg:{COLOR_GREY}',
+        )
+
+        clear()
+        print_container(security_frame)
+        print_formatted_text('')
+
+        confirm = (
+            cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
+        )
+
+        if confirm:
+            manage_openhands_file(current_dir, add_to_trusted=True)
+
+        return confirm
+
+    return True

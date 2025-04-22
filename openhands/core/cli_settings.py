@@ -6,8 +6,12 @@ from prompt_toolkit.widgets import Frame, TextArea
 from pydantic import SecretStr
 
 from openhands.controller.agent import Agent
-from openhands.core.cli_input import UserCancelledError, cli_confirm, kb_cancel
-from openhands.core.cli_output import COLOR_GREY
+from openhands.core.cli_tui import (
+    COLOR_GREY,
+    UserCancelledError,
+    cli_confirm,
+    kb_cancel,
+)
 from openhands.core.cli_utils import (
     VERIFIED_ANTHROPIC_MODELS,
     VERIFIED_OPENAI_MODELS,

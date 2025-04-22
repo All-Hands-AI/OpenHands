@@ -1,53 +1,12 @@
 from pathlib import Path
 
 import toml
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.shortcuts import clear, print_container
-from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands.core.cli_input import (
-    cli_confirm,
-)
-from openhands.core.cli_output import (
-    COLOR_GREY,
+from openhands.core.cli_tui import (
     UsageMetrics,
 )
 from openhands.events.event import Event
 from openhands.llm.metrics import Metrics
-
-
-def check_folder_security_agreement(current_dir):
-    is_trusted = manage_openhands_file(current_dir)
-
-    if not is_trusted:
-        security_frame = Frame(
-            TextArea(
-                text=(
-                    f' Do you trust the files in this folder?\n\n'
-                    f'   {current_dir}\n\n'
-                    ' OpenHands may read and execute files in this folder with your permission.'
-                ),
-                style=COLOR_GREY,
-                read_only=True,
-                wrap_lines=True,
-            ),
-            style=f'fg:{COLOR_GREY}',
-        )
-
-        clear()
-        print_container(security_frame)
-        print_formatted_text('')
-
-        confirm = (
-            cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
-        )
-
-        if confirm:
-            manage_openhands_file(current_dir, add_to_trusted=True)
-
-        return confirm
-
-    return True
 
 
 def manage_openhands_file(folder_path=None, add_to_trusted=False):
