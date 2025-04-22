@@ -269,26 +269,54 @@ class TestModifyLLMSettingsBasic:
         session_instance = MagicMock()
         session_instance.prompt_async = AsyncMock(
             side_effect=[
-                'invalid-provider',  # Invalid provider
+                'invalid-provider',  # First invalid provider
+                'openai',  # Valid provider
+                'invalid-model',  # Invalid model
+                'gpt-4',  # Valid model
+                'new-api-key',  # API key
             ]
         )
         mock_session.return_value = session_instance
 
+        # Mock user confirmation to save settings
+        mock_confirm.return_value = 0  # "Yes, proceed"
+
         # Call the function
         result = await modify_llm_settings_basic(app_config, settings_store)
 
-        # Verify the result
-        assert result is False
+        # Verify error messages were shown for invalid inputs
+        assert (
+            mock_print.call_count >= 2
+        )  # At least two error messages should be printed
 
-        # Verify error message was shown
-        mock_print.assert_called_once()
-        args, kwargs = mock_print.call_args
-        assert isinstance(args[0], HTML)
-        assert 'Invalid provider' in args[0].value
+        # Check for invalid provider error
+        provider_error_found = False
+        model_error_found = False
 
-        # Verify settings were not changed
-        app_config.set_llm_config.assert_not_called()
-        settings_store.store.assert_not_called()
+        for call in mock_print.call_args_list:
+            args, _ = call
+            if args and isinstance(args[0], HTML):
+                if 'Invalid provider selected' in args[0].value:
+                    provider_error_found = True
+                if 'Invalid model selected' in args[0].value:
+                    model_error_found = True
+
+        assert provider_error_found, 'No error message for invalid provider'
+        assert model_error_found, 'No error message for invalid model'
+
+        # Verify the result is True (settings were saved successfully)
+        assert result is True
+
+        # Verify LLM config was updated with correct values
+        app_config.set_llm_config.assert_called_once()
+
+        # Verify settings were saved
+        settings_store.store.assert_called_once()
+        args, kwargs = settings_store.store.call_args
+        settings = args[0]
+        assert settings.llm_model == 'openai/gpt-4'
+        assert settings.llm_api_key.get_secret_value() == 'new-api-key'
+        assert settings.llm_base_url is None
 
 
 class TestModifyLLMSettingsAdvanced:
