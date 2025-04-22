@@ -58,6 +58,12 @@ class UnknownException(ValueError):
     pass
 
 
+class RateLimitError(ValueError):
+    """Raised when API rate limits are exceeded."""
+
+    pass
+
+
 class RequestMethod(Enum):
     POST = 'post'
     GET = 'get'
