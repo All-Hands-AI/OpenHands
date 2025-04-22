@@ -165,7 +165,7 @@ async def test_update_existing_custom_secret(test_client, mock_settings_store, m
     assert response.status_code == 200
 
     # Verify that the settings were stored with the updated secret
-    stored_settings = mock_settings_store.store.call_args[0][0]
+    stored_settings: Settings = mock_settings_store.store.call_args[0][0]
     
     # Check that the secret was updated
     assert "API_KEY" in stored_settings.secrets_store.custom_secrets
@@ -175,6 +175,7 @@ async def test_update_existing_custom_secret(test_client, mock_settings_store, m
     assert stored_settings.language == "en"
     assert stored_settings.agent == "test-agent"
     assert stored_settings.llm_api_key.get_secret_value() == "test-llm-key"
+    assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
 
 
 @pytest.mark.asyncio
