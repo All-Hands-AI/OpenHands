@@ -1,16 +1,66 @@
 import { render, screen } from "@testing-library/react";
-import { describe, test, expect, beforeEach, vi } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import { RepositorySelectionForm } from "./repo-selection-form";
-import { useUserRepositories } from "#/hooks/query/use-user-repositories";
-import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 
-// Mock the hooks
-vi.mock("#/hooks/query/use-user-repositories");
-vi.mock("#/hooks/mutation/use-create-conversation");
-vi.mock("#/hooks/use-is-creating-conversation");
+// Create mock functions
+const mockUseUserRepositories = vi.fn();
+const mockUseCreateConversation = vi.fn();
+const mockUseIsCreatingConversation = vi.fn();
+const mockUseTranslation = vi.fn();
+const mockUseAuth = vi.fn();
+
+// Setup default mock returns
+mockUseUserRepositories.mockReturnValue({
+  data: { pages: [{ data: [] }] },
+  isLoading: false,
+  isError: false,
+});
+
+mockUseCreateConversation.mockReturnValue({
+  mutate: vi.fn(),
+  isPending: false,
+  isSuccess: false,
+});
+
+mockUseIsCreatingConversation.mockReturnValue(false);
+
+mockUseTranslation.mockReturnValue({ t: (key: string) => key });
+
+mockUseAuth.mockReturnValue({
+  isAuthenticated: true,
+  isLoading: false,
+  providersAreSet: true,
+  user: {
+    id: 1,
+    login: "testuser",
+    avatar_url: "https://example.com/avatar.png",
+    name: "Test User",
+    email: "test@example.com",
+    company: "Test Company",
+  },
+  login: vi.fn(),
+  logout: vi.fn(),
+});
+
+// Mock the modules
+vi.mock("#/hooks/query/use-user-repositories", () => ({
+  useUserRepositories: () => mockUseUserRepositories(),
+}));
+
+vi.mock("#/hooks/mutation/use-create-conversation", () => ({
+  useCreateConversation: () => mockUseCreateConversation(),
+}));
+
+vi.mock("#/hooks/use-is-creating-conversation", () => ({
+  useIsCreatingConversation: () => mockUseIsCreatingConversation(),
+}));
+
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => mockUseTranslation(),
+}));
+
+vi.mock("#/context/auth-context", () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 describe("RepositorySelectionForm", () => {
@@ -18,34 +68,11 @@ describe("RepositorySelectionForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Default mock implementations
-    (
-      useUserRepositories as unknown as ReturnType<typeof vi.fn>
-    ).mockReturnValue({
-      data: { pages: [{ data: [] }] },
-      isLoading: false,
-      isError: false,
-    });
-
-    (
-      useCreateConversation as unknown as ReturnType<typeof vi.fn>
-    ).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      isSuccess: false,
-    });
-
-    (
-      useIsCreatingConversation as unknown as ReturnType<typeof vi.fn>
-    ).mockReturnValue(false);
   });
 
-  test("shows loading indicator when repositories are being fetched", async () => {
-    // Mock loading state
-    (
-      useUserRepositories as unknown as ReturnType<typeof vi.fn>
-    ).mockReturnValue({
+  test("shows loading indicator when repositories are being fetched", () => {
+    // Setup loading state
+    mockUseUserRepositories.mockReturnValue({
       data: undefined,
       isLoading: true,
       isError: false,
@@ -58,17 +85,25 @@ describe("RepositorySelectionForm", () => {
     expect(screen.getByText("HOME$LOADING_REPOSITORIES")).toBeInTheDocument();
   });
 
-  test("shows dropdown when repositories are loaded", async () => {
-    // Mock loaded repositories
-    (
-      useUserRepositories as unknown as ReturnType<typeof vi.fn>
-    ).mockReturnValue({
+  test("shows dropdown when repositories are loaded", () => {
+    // Setup loaded repositories
+    mockUseUserRepositories.mockReturnValue({
       data: {
         pages: [
           {
             data: [
-              { id: "1", full_name: "user/repo1" },
-              { id: "2", full_name: "user/repo2" },
+              {
+                id: 1,
+                full_name: "user/repo1",
+                git_provider: "github",
+                is_public: true,
+              },
+              {
+                id: 2,
+                full_name: "user/repo2",
+                git_provider: "github",
+                is_public: true,
+              },
             ],
           },
         ],
@@ -83,11 +118,9 @@ describe("RepositorySelectionForm", () => {
     expect(screen.getByTestId("repo-dropdown")).toBeInTheDocument();
   });
 
-  test("shows error message when repository fetch fails", async () => {
-    // Mock error state
-    (
-      useUserRepositories as unknown as ReturnType<typeof vi.fn>
-    ).mockReturnValue({
+  test("shows error message when repository fetch fails", () => {
+    // Setup error state
+    mockUseUserRepositories.mockReturnValue({
       data: undefined,
       isLoading: false,
       isError: true,

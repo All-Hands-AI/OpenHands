@@ -12,6 +12,58 @@ interface RepositorySelectionFormProps {
   onRepoSelection: (repoTitle: string | null) => void;
 }
 
+// Loading state component
+function RepositoryLoadingState() {
+  const { t } = useTranslation();
+  return (
+    <div
+      data-testid="repo-dropdown-loading"
+      className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded"
+    >
+      <Spinner size="sm" />
+      <span className="text-sm">{t("HOME$LOADING_REPOSITORIES")}</span>
+    </div>
+  );
+}
+
+// Error state component
+function RepositoryErrorState() {
+  const { t } = useTranslation();
+  return (
+    <div
+      data-testid="repo-dropdown-error"
+      className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded text-red-500"
+    >
+      <span className="text-sm">{t("HOME$FAILED_TO_LOAD_REPOSITORIES")}</span>
+    </div>
+  );
+}
+
+// Repository dropdown component
+interface RepositoryDropdownProps {
+  items: { key: React.Key; label: string }[];
+  onSelectionChange: (key: React.Key | null) => void;
+  onInputChange: (value: string) => void;
+}
+
+function RepositoryDropdown({
+  items,
+  onSelectionChange,
+  onInputChange,
+}: RepositoryDropdownProps) {
+  return (
+    <SettingsDropdownInput
+      testId="repo-dropdown"
+      name="repo-dropdown"
+      placeholder="Select a repo"
+      items={items}
+      wrapperClassName="max-w-[500px]"
+      onSelectionChange={onSelectionChange}
+      onInputChange={onInputChange}
+    />
+  );
+}
+
 export function RepositorySelectionForm({
   onRepoSelection,
 }: RepositorySelectionFormProps) {
@@ -57,40 +109,28 @@ export function RepositorySelectionForm({
     }
   };
 
+  // Render the appropriate UI based on the loading/error state
+  const renderRepositorySelector = () => {
+    if (isLoadingRepositories) {
+      return <RepositoryLoadingState />;
+    }
+
+    if (isRepositoriesError) {
+      return <RepositoryErrorState />;
+    }
+
+    return (
+      <RepositoryDropdown
+        items={repositoriesItems || []}
+        onSelectionChange={handleRepoSelection}
+        onInputChange={handleInputChange}
+      />
+    );
+  };
+
   return (
     <>
-      {isLoadingRepositories && (
-        <div
-          data-testid="repo-dropdown-loading"
-          className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded"
-        >
-          <Spinner size="sm" />
-          <span className="text-sm">{t("HOME$LOADING_REPOSITORIES")}</span>
-        </div>
-      )}
-
-      {isRepositoriesError && (
-        <div
-          data-testid="repo-dropdown-error"
-          className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded text-red-500"
-        >
-          <span className="text-sm">
-            {t("HOME$FAILED_TO_LOAD_REPOSITORIES")}
-          </span>
-        </div>
-      )}
-
-      {!isLoadingRepositories && !isRepositoriesError && (
-        <SettingsDropdownInput
-          testId="repo-dropdown"
-          name="repo-dropdown"
-          placeholder="Select a repo"
-          items={repositoriesItems || []}
-          wrapperClassName="max-w-[500px]"
-          onSelectionChange={handleRepoSelection}
-          onInputChange={handleInputChange}
-        />
-      )}
+      {renderRepositorySelector()}
 
       <BrandButton
         testId="repo-launch-button"
