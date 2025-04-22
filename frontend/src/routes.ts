@@ -13,6 +13,7 @@ export default [
       route("git", "routes/git-settings.tsx"),
       route("app", "routes/app-settings.tsx"),
       route("billing", "routes/billing.tsx"),
+      route("temp", "routes/llm-settings.tsx"),
     ]),
     route("conversations/:conversationId", "routes/conversation.tsx", [
       index("routes/editor.tsx"),

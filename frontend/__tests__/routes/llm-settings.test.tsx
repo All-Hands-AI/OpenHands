@@ -1,14 +1,25 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it } from "vitest";
-import LlmSettingsScreen from "#/routes/llm-settings-screen";
+import { describe, expect, it, vi } from "vitest";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import LlmSettingsScreen from "#/routes/llm-settings";
+import OpenHands from "#/api/open-hands";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { AuthProvider } from "#/context/auth-context";
 
-const renderLlmSettingsScreen = () => render(<LlmSettingsScreen />);
+const renderLlmSettingsScreen = () =>
+  render(<LlmSettingsScreen />, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    ),
+  });
 
 describe("Content", () => {
   describe("Basic form", () => {
-    it("should render the basic form by default", async () => {
+    it("should render the basic form by default", () => {
       renderLlmSettingsScreen();
 
       const basicFom = screen.getByTestId("llm-settings-form-basic");
@@ -18,8 +29,44 @@ describe("Content", () => {
       within(basicFom).getByTestId("llm-api-key-help-anchor");
     });
 
-    it.todo("should render the default values if non exist");
-    it.todo("should render the existing settings values");
+    it("should render the default values if non exist", async () => {
+      renderLlmSettingsScreen();
+
+      const provider = screen.getByTestId("llm-provider-input");
+      const model = screen.getByTestId("llm-model-input");
+      const apiKey = screen.getByTestId("llm-api-key-input");
+
+      await waitFor(() => {
+        expect(provider).toHaveValue("Anthropic");
+        expect(model).toHaveValue("claude-3-5-sonnet-20241022");
+
+        expect(apiKey).toHaveValue("");
+        expect(apiKey).toHaveProperty("placeholder", "");
+      });
+    });
+
+    it("should render the existing settings values", async () => {
+      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_model: "openai/gpt-4o",
+        llm_api_key_set: true,
+      });
+
+      renderLlmSettingsScreen();
+
+      const provider = screen.getByTestId("llm-provider-input");
+      const model = screen.getByTestId("llm-model-input");
+      const apiKey = screen.getByTestId("llm-api-key-input");
+
+      await waitFor(() => {
+        expect(provider).toHaveValue("OpenAI");
+        expect(model).toHaveValue("gpt-4o");
+
+        expect(apiKey).toHaveValue("");
+        expect(apiKey).toHaveProperty("placeholder", "<hidden>");
+      });
+    });
   });
 
   describe("Advanced form", () => {
