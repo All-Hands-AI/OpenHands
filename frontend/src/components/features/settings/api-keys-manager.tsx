@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import ApiKeysClient, { ApiKey, CreateApiKeyResponse } from "#/api/api-keys";
+import { ApiKey, CreateApiKeyResponse } from "#/api/api-keys";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { CreateApiKeyModal } from "./create-api-key-modal";
 import { DeleteApiKeyModal } from "./delete-api-key-modal";
 import { NewApiKeyModal } from "./new-api-key-modal";
+import { useApiKeys } from "#/hooks/query/use-api-keys";
 
 export function ApiKeysManager() {
   const { t } = useTranslation();
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: apiKeys = [], isLoading, error } = useApiKeys();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
@@ -22,27 +20,10 @@ export function ApiKeysManager() {
     useState<CreateApiKeyResponse | null>(null);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
 
-  const fetchApiKeys = async () => {
-    try {
-      setIsLoading(true);
-      const keys = await ApiKeysClient.getApiKeys();
-      // Ensure keys is always an array
-      setApiKeys(Array.isArray(keys) ? keys : []);
-    } catch (error) {
-      displayErrorToast(
-        retrieveAxiosErrorMessage(error as AxiosError) ||
-          t(I18nKey.ERROR$GENERIC),
-      );
-      // Set empty array on error
-      setApiKeys([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchApiKeys();
-  }, []);
+  // Display error toast if the query fails
+  if (error) {
+    displayErrorToast(t(I18nKey.ERROR$GENERIC));
+  }
 
   const handleKeyCreated = (newKey: CreateApiKeyResponse) => {
     setNewlyCreatedKey(newKey);
@@ -145,7 +126,6 @@ export function ApiKeysManager() {
         isOpen={createModalOpen}
         onClose={handleCloseCreateModal}
         onKeyCreated={handleKeyCreated}
-        onRefresh={fetchApiKeys}
       />
 
       {/* Delete API Key Modal */}
@@ -153,7 +133,6 @@ export function ApiKeysManager() {
         isOpen={deleteModalOpen}
         keyToDelete={keyToDelete}
         onClose={handleCloseDeleteModal}
-        onRefresh={fetchApiKeys}
       />
 
       {/* Show New API Key Modal */}

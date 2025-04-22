@@ -1,34 +1,32 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import ApiKeysClient, { CreateApiKeyResponse } from "#/api/api-keys";
+import { CreateApiKeyResponse } from "#/api/api-keys";
 import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { ApiKeyModalBase } from "./api-key-modal-base";
+import { useCreateApiKey } from "#/hooks/mutation/use-create-api-key";
 
 interface CreateApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onKeyCreated: (newKey: CreateApiKeyResponse) => void;
-  onRefresh: () => Promise<void>;
 }
 
 export function CreateApiKeyModal({
   isOpen,
   onClose,
   onKeyCreated,
-  onRefresh,
 }: CreateApiKeyModalProps) {
   const { t } = useTranslation();
   const [newKeyName, setNewKeyName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+
+  const createApiKeyMutation = useCreateApiKey();
 
   const handleCreateKey = async () => {
     if (!newKeyName.trim()) {
@@ -37,20 +35,12 @@ export function CreateApiKeyModal({
     }
 
     try {
-      setIsCreating(true);
-      const newKey = await ApiKeysClient.createApiKey(newKeyName);
-
+      const newKey = await createApiKeyMutation.mutateAsync(newKeyName);
       onKeyCreated(newKey);
-      await onRefresh();
       displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_CREATED));
-    } catch (error) {
-      displayErrorToast(
-        retrieveAxiosErrorMessage(error as AxiosError) ||
-          t(I18nKey.ERROR$GENERIC),
-      );
-    } finally {
-      setIsCreating(false);
       setNewKeyName("");
+    } catch (error) {
+      displayErrorToast(t(I18nKey.ERROR$GENERIC));
     }
   };
 
@@ -66,9 +56,9 @@ export function CreateApiKeyModal({
         variant="primary"
         className="grow"
         onClick={handleCreateKey}
-        isDisabled={isCreating || !newKeyName.trim()}
+        isDisabled={createApiKeyMutation.isPending || !newKeyName.trim()}
       >
-        {isCreating ? (
+        {createApiKeyMutation.isPending ? (
           <LoadingSpinner size="small" />
         ) : (
           t(I18nKey.BUTTON$CREATE)
@@ -79,7 +69,7 @@ export function CreateApiKeyModal({
         variant="secondary"
         className="grow"
         onClick={handleCancel}
-        isDisabled={isCreating}
+        isDisabled={createApiKeyMutation.isPending}
       >
         {t(I18nKey.BUTTON$CANCEL)}
       </BrandButton>

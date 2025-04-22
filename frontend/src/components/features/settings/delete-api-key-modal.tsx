@@ -1,49 +1,39 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import ApiKeysClient, { ApiKey } from "#/api/api-keys";
+import { ApiKey } from "#/api/api-keys";
 import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { ApiKeyModalBase } from "./api-key-modal-base";
+import { useDeleteApiKey } from "#/hooks/mutation/use-delete-api-key";
 
 interface DeleteApiKeyModalProps {
   isOpen: boolean;
   keyToDelete: ApiKey | null;
   onClose: () => void;
-  onRefresh: () => Promise<void>;
 }
 
 export function DeleteApiKeyModal({
   isOpen,
   keyToDelete,
   onClose,
-  onRefresh,
 }: DeleteApiKeyModalProps) {
   const { t } = useTranslation();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteApiKeyMutation = useDeleteApiKey();
 
   const handleDeleteKey = async () => {
     if (!keyToDelete) return;
 
     try {
-      setIsDeleting(true);
-      await ApiKeysClient.deleteApiKey(keyToDelete.id);
-      await onRefresh();
+      await deleteApiKeyMutation.mutateAsync(keyToDelete.id);
       displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_DELETED));
       onClose();
     } catch (error) {
-      displayErrorToast(
-        retrieveAxiosErrorMessage(error as AxiosError) ||
-          t(I18nKey.ERROR$GENERIC),
-      );
-    } finally {
-      setIsDeleting(false);
+      displayErrorToast(t(I18nKey.ERROR$GENERIC));
     }
   };
 
@@ -56,9 +46,9 @@ export function DeleteApiKeyModal({
         variant="danger"
         className="grow"
         onClick={handleDeleteKey}
-        isDisabled={isDeleting}
+        isDisabled={deleteApiKeyMutation.isPending}
       >
-        {isDeleting ? (
+        {deleteApiKeyMutation.isPending ? (
           <LoadingSpinner size="small" />
         ) : (
           t(I18nKey.BUTTON$DELETE)
@@ -69,7 +59,7 @@ export function DeleteApiKeyModal({
         variant="secondary"
         className="grow"
         onClick={onClose}
-        isDisabled={isDeleting}
+        isDisabled={deleteApiKeyMutation.isPending}
       >
         {t(I18nKey.BUTTON$CANCEL)}
       </BrandButton>
