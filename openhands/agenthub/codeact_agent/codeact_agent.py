@@ -2,6 +2,7 @@ import os
 from collections import deque
 from typing import override
 
+from openhands.a2a.A2AManager import A2AManager
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.a2a.tool import ListRemoteAgents, SendTask
 from openhands.controller.agent import Agent
@@ -60,6 +61,7 @@ class CodeActAgent(Agent):
         llm: LLM,
         config: AgentConfig,
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
+        a2a_manager: A2AManager | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -67,8 +69,14 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         - workspace_mount_path_in_sandbox_store_in_session (bool, optional): Whether to store the workspace mount path in session. Defaults to True.
+        - a2a_manager (A2AManager, optional): The A2A manager to be used by this agent. Defaults to None.
         """
-        super().__init__(llm, config, workspace_mount_path_in_sandbox_store_in_session)
+        super().__init__(
+            llm,
+            config,
+            workspace_mount_path_in_sandbox_store_in_session,
+            a2a_manager,
+        )
         self.pending_actions: deque[Action] = deque()
         self.reset()
 

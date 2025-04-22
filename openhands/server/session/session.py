@@ -147,9 +147,8 @@ class Session:
         if self.config.runtime == 'local':
             workspace_mount_path_in_sandbox_store_in_session = False
 
-        a2a_manager: A2AManager | None = None
+        a2a_manager: A2AManager = A2AManager(agent_config.a2a_server_urls)
         try:
-            a2a_manager = A2AManager(agent_config.a2a_server_urls)
             await a2a_manager.initialize_agent_cards()
         except Exception as e:
             self.logger.warning(f'Error initializing A2A manager: {e}')

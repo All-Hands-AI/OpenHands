@@ -242,6 +242,9 @@ codeact_enable_jupyter = true
 # length limit
 enable_history_truncation = true
 
+# List of URLs for the A2A server
+a2a_server_urls = ["http://localhost:10000"]
+
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens

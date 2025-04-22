@@ -5,6 +5,7 @@ from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
+from openhands.a2a.A2AManager import A2AManager
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
@@ -75,6 +76,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
+        a2a_manager=agent.a2a_manager,
     )
 
     logger.debug(
@@ -183,10 +185,12 @@ def create_agent(config: AppConfig) -> Agent:
     if config.runtime == 'local':
         workspace_mount_path_in_sandbox_store_in_session = False
 
+    a2a_manager = A2AManager(agent_config.a2a_server_urls)
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,
         workspace_mount_path_in_sandbox_store_in_session=workspace_mount_path_in_sandbox_store_in_session,
+        a2a_manager=a2a_manager,
     )
 
     return agent
@@ -221,6 +225,7 @@ def create_controller(
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
+        a2a_manager=agent.a2a_manager,
     )
     return (controller, initial_state)
 

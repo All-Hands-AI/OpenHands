@@ -588,7 +588,8 @@ class Runtime(FileEditRuntimeMixin):
         self, action: A2AListRemoteAgentsAction | A2ASendTaskAction
     ) -> AsyncGenerator[Observation, None]:
         if self.a2a_manager is None:
-            raise RuntimeError('A2A manager is not set')
+            yield ErrorObservation('A2A manager is not set')
+            return
 
         if isinstance(action, A2AListRemoteAgentsAction):
             list_agent = self.a2a_manager.list_remote_agents()
@@ -597,33 +598,38 @@ class Runtime(FileEditRuntimeMixin):
             logger.info(
                 f'Sending task to {action.agent_name} message: {action.task_message}'
             )
-            async for task_response in self.a2a_manager.send_task(
-                action.agent_name, action.task_message, self.sid
-            ):
-                if task_response is None or task_response.result is None:
-                    continue
-                result = task_response.result
+            try:
+                async for task_response in self.a2a_manager.send_task(
+                    action.agent_name, action.task_message, self.sid
+                ):
+                    if task_response is None or task_response.result is None:
+                        continue
+                    result = task_response.result
 
-                if isinstance(result, TaskStatusUpdateEvent):
-                    yield A2ASendTaskUpdateObservation(
-                        agent_name=action.agent_name,
-                        task_update_event=result,
-                        content=result.model_dump_json(),
-                    )
-                elif isinstance(result, TaskArtifactUpdateEvent):
-                    yield A2ASendTaskArtifactObservation(
-                        agent_name=action.agent_name,
-                        task_artifact_event=result,
-                        content=result.model_dump_json(),
-                    )
-                elif isinstance(result, Task):
-                    yield A2ASendTaskResponseObservation(
-                        agent_name=action.agent_name,
-                        task=result,
-                        content=result.model_dump_json(),
-                    )
-                else:
-                    raise RuntimeError(f'Unknown task response: {result}')
+                    if isinstance(result, TaskStatusUpdateEvent):
+                        yield A2ASendTaskUpdateObservation(
+                            agent_name=action.agent_name,
+                            task_update_event=result,
+                            content=result.model_dump_json(),
+                        )
+                    elif isinstance(result, TaskArtifactUpdateEvent):
+                        yield A2ASendTaskArtifactObservation(
+                            agent_name=action.agent_name,
+                            task_artifact_event=result,
+                            content=result.model_dump_json(),
+                        )
+                    elif isinstance(result, Task):
+                        yield A2ASendTaskResponseObservation(
+                            agent_name=action.agent_name,
+                            task=result,
+                            content=result.model_dump_json(),
+                        )
+                    else:
+                        yield ErrorObservation(f'Unknown task response: {result}')
+                        return
+            except Exception as e:
+                yield ErrorObservation(f'Error sending task: {e}')
+                return
 
     # ====================================================================
     # File operations

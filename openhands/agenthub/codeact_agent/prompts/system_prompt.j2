@@ -73,8 +73,9 @@ Your primary role is to assist users by executing commands, modifying code, and 
 
 {% if agent_infos %}
 <A2A_INFO>
-When send task to an agent, you must preserve the user's message that detected the task and forward it to the agent.
-The list of agents available to you to send tasks to:
+1. If you don't have sufficient tools to solve the task, look for an agent that can help you. Read the agent's description and use it to determine if it can help you.
+2. When send task to an agent, you must preserve the user's message that detected the task and forward it to the agent.
+3. The list of agents available to you to send tasks to:
 Agents:
 {% for agent_info in agent_infos %}
 - name: {{ agent_info.name }}
