@@ -178,11 +178,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
     replay_json = data.replay_json
-
+    user_id = get_user_id(request)
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            get_user_id(request),
+            user_id,
             provider_tokens,
             selected_repository,
             selected_branch,
@@ -190,6 +190,14 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             image_urls,
             replay_json,
         )
+        if conversation_id and user_id is not None:
+            await conversation_module._update_conversation_visibility(
+                conversation_id,
+                False,
+                user_id,
+                {'hidden_prompt': True},
+                ''
+            )
 
         return JSONResponse(
             content={'status': 'ok', 'conversation_id': conversation_id}

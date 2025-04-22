@@ -6,6 +6,22 @@ CREATE TABLE IF NOT EXISTS conversations (
     published BOOLEAN NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS research_views (
+    id SERIAL PRIMARY KEY,
+    conversation_id VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR,
+    user_agent VARCHAR
+);
+
+Create Table IF NOT EXISTS research_trendings (
+    id SERIAL PRIMARY KEY,
+    conversation_id VARCHAR NOT NULL,
+    total_view_24h INT NOT NULL DEFAULT 0,
+    total_view_7d INT NOT NULL DEFAULT 0,
+    total_view_30d INT NOT NULL DEFAULT 0
+);
+
 -- Check if configs column exists, if not add it
 DO $$
 BEGIN
@@ -37,5 +53,15 @@ BEGIN
         ALTER TABLE conversations
         ADD COLUMN short_description TEXT;
     END IF;
-END
+
+    -- add created_at column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'conversations'
+        AND column_name = 'created_at'
+    ) THEN
+        ALTER TABLE conversations
+        ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+    END IF;
+END;
 $$;

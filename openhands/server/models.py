@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Boolean, Column, Integer, String, Table
+from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, Table, func
 
 from .db import metadata
 
@@ -35,4 +35,25 @@ Conversation = Table(
     Column('configs', JSON, nullable=False),
     Column('title', String, nullable=False),
     Column('short_description', String, nullable=False),
+)
+
+ResearchView = Table(
+    'research_views',
+    metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('conversation_id', String, nullable=False),
+    Column('ip_address', String, nullable=True),
+    Column('user_agent', String, nullable=True),
+    Column('created_at', DateTime, default=func.now(), nullable=False),
+)
+
+ResearchTrending = Table(
+    'research_trendings',
+    metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('conversation_id', String, nullable=False),
+    Column('total_view_24h', Integer, nullable=False),
+    Column('total_view_7d', Integer, nullable=False),
+    Column('total_view_30d', Integer, nullable=False),
+    Column('created_at', DateTime, default=func.now(), nullable=False),
 )

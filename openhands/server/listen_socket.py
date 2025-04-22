@@ -79,6 +79,9 @@ async def connect(connection_id: str, environ):
         else:
             user_id = str(info['user_id'])
             conversation_configs = info
+            await conversation_module._update_research_view(
+                conversation_id, environ.get('REMOTE_ADDR', '')
+            )
     else:
         # Get JWT token from query params
         jwt_token = query_params.get('auth', [None])[0]
