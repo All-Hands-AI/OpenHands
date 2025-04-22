@@ -317,11 +317,7 @@ class Runtime(FileEditRuntimeMixin):
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
         if not selected_repository:
-            if self.config.workspace_base:
-                logger.info(
-                    'In workspace mount mode, not initializing a new git repository.'
-                )
-                return ''
+            # Always initialize a git repository in SaaS mode, regardless of workspace_base
             logger.debug(
                 'No repository selected. Initializing a new git repository in the workspace.'
             )
