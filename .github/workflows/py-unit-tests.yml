@@ -19,7 +19,7 @@ jobs:
   # Run python unit tests on Linux
   test-on-linux:
     name: Python Unit Tests on Linux
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
