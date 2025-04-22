@@ -591,7 +591,9 @@ if __name__ == '__main__':
         # Initialize and mount MCP Router
         logger.info('Initializing MCP Router...')
         mcp_router = MCPRouter(
-            profile_path=os.path.join(os.path.dirname(__file__), "mcp", "config.json")
+            profile_path=os.path.join(os.path.dirname(__file__), "mcp", "config.json"),
+            api_key=SESSION_API_KEY,
+
         )
         allowed_origins = ["*"]
         sse_app = await mcp_router.get_sse_server_app(

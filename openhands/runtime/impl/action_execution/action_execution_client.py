@@ -35,7 +35,7 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
-from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPServerConfig
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
@@ -331,7 +331,13 @@ class ActionExecutionClient(Runtime):
     def get_updated_mcp_config(self) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
-        updated_mcp_config.mcp_servers.append(self.action_execution_server_url.rstrip('/') + '/sse')
+        # No API key by default. Child runtime can override this when appropriate 
+        updated_mcp_config.mcp_servers.append(
+            MCPServerConfig(
+                url=self.action_execution_server_url.rstrip('/') + '/sse',
+                api_key=None
+            )
+        )
         self.log(
             'debug',
             f'Updated MCP config by adding runtime as another server: {updated_mcp_config}'
