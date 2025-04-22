@@ -4885,14 +4885,14 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mcpm"
-version = "1.5.1"
+version = "1.4.0"
 description = "MCPM - Model Context Protocol Manager"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcpm-1.5.1-py3-none-any.whl", hash = "sha256:2de253ac8d62b5bc13a62ab70acdff0b1d00f51fa1654f105d7b065131a131e5"},
-    {file = "mcpm-1.5.1.tar.gz", hash = "sha256:8bfa5b79db88de371234114af844960eef279a57da3f3929fd99929ce3da9b68"},
+    {file = "mcpm-1.4.0-py3-none-any.whl", hash = "sha256:1288420fa2a22466d387370a0b72636392fee732e76fb6732d6ed3f3f528e0e9"},
+    {file = "mcpm-1.4.0.tar.gz", hash = "sha256:dceecf32950ad475b4642c646135fb4ef53b4dc57ee50a3c2aeff264b6cd63de"},
 ]
 
 [package.dependencies]
@@ -10416,4 +10416,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "101f33971dadd4d2119c65f1de0f29adbb5a637da1854efdc80d0a0ca6031a7b"
+content-hash = "009a62713fdf06eaf0461a277a6f4dba3252a190543bf8026800c56d70f8a1a2"
