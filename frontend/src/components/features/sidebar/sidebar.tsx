@@ -75,7 +75,8 @@ export function Sidebar() {
 
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
-    endSession();
+    // Always clear the last page when starting a new project
+    endSession(false);
   };
 
   const handleLogout = async () => {

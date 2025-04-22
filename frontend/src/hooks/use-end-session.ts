@@ -27,8 +27,8 @@ export const useEndSession = () => {
     const isConversationPage = window.location.pathname.includes("/conversations/");
     
     // Clear the last page from localStorage unless preserveLastPage is true
-    // or we're on a conversation page (to preserve the URL for after login)
-    if (!preserveLastPage && !isConversationPage) {
+    // and we're on a conversation page (to preserve the URL for after login)
+    if (!preserveLastPage) {
       clearLastPage();
     }
 
