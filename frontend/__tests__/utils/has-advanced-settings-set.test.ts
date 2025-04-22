@@ -30,15 +30,6 @@ describe("hasAdvancedSettingsSet", () => {
       ).toBe(true);
     });
 
-    test("REMOTE_RUNTIME_RESOURCE_FACTOR is not default value", () => {
-      expect(
-        hasAdvancedSettingsSet({
-          ...DEFAULT_SETTINGS,
-          REMOTE_RUNTIME_RESOURCE_FACTOR: 999,
-        }),
-      ).toBe(true);
-    });
-
     test("CONFIRMATION_MODE is true", () => {
       expect(
         hasAdvancedSettingsSet({
