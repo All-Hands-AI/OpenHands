@@ -42,6 +42,7 @@ from openhands.resolver.utils import (
     reset_logger_for_multiprocessing,
 )
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 # Don't make this confgurable for now, unless we have other competitive agents
 AGENT_CLASS = 'CodeActAgent'
@@ -688,7 +689,12 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
+    platform = call_async_from_sync(
+        identify_token,
+        GENERAL_TIMEOUT,
+        token,
+        my_args.base_domain,
+    )
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     model = my_args.llm_model or os.environ['LLM_MODEL']
