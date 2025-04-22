@@ -5,13 +5,13 @@ import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import ApiKeysClient, { CreateApiKeyResponse } from "#/api/api-keys";
 import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { ApiKeyModalBase } from "./api-key-modal-base";
 
 interface CreateApiKeyModalProps {
   isOpen: boolean;
@@ -59,17 +59,40 @@ export function CreateApiKeyModal({
     onClose();
   };
 
-  if (!isOpen) return null;
+  const modalFooter = (
+    <>
+      <BrandButton
+        type="button"
+        variant="primary"
+        className="grow"
+        onClick={handleCreateKey}
+        isDisabled={isCreating || !newKeyName.trim()}
+      >
+        {isCreating ? (
+          <LoadingSpinner size="small" />
+        ) : (
+          t(I18nKey.BUTTON$CREATE)
+        )}
+      </BrandButton>
+      <BrandButton
+        type="button"
+        variant="secondary"
+        className="grow"
+        onClick={handleCancel}
+        isDisabled={isCreating}
+      >
+        {t(I18nKey.BUTTON$CANCEL)}
+      </BrandButton>
+    </>
+  );
 
   return (
-    <ModalBackdrop>
-      <div
-        data-testid="create-api-key-modal"
-        className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary w-[500px]"
-      >
-        <h3 className="text-xl font-bold">
-          {t(I18nKey.SETTINGS$CREATE_API_KEY)}
-        </h3>
+    <ApiKeyModalBase
+      isOpen={isOpen}
+      title={t(I18nKey.SETTINGS$CREATE_API_KEY)}
+      footer={modalFooter}
+    >
+      <div data-testid="create-api-key-modal">
         <p className="text-sm text-gray-300">
           {t(I18nKey.SETTINGS$CREATE_API_KEY_DESCRIPTION)}
         </p>
@@ -79,34 +102,10 @@ export function CreateApiKeyModal({
           placeholder={t(I18nKey.SETTINGS$API_KEY_NAME_PLACEHOLDER)}
           value={newKeyName}
           onChange={(value) => setNewKeyName(value)}
-          className="w-full"
+          className="w-full mt-4"
           type="text"
         />
-        <div className="w-full flex gap-2 mt-2">
-          <BrandButton
-            type="button"
-            variant="primary"
-            className="grow"
-            onClick={handleCreateKey}
-            isDisabled={isCreating || !newKeyName.trim()}
-          >
-            {isCreating ? (
-              <LoadingSpinner size="small" />
-            ) : (
-              t(I18nKey.BUTTON$CREATE)
-            )}
-          </BrandButton>
-          <BrandButton
-            type="button"
-            variant="secondary"
-            className="grow"
-            onClick={handleCancel}
-            isDisabled={isCreating}
-          >
-            {t(I18nKey.BUTTON$CANCEL)}
-          </BrandButton>
-        </div>
       </div>
-    </ModalBackdrop>
+    </ApiKeyModalBase>
   );
 }
