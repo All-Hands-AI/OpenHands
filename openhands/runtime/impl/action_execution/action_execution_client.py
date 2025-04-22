@@ -307,6 +307,10 @@ class ActionExecutionClient(Runtime):
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
+        # First check if the action should be blocked by setup.sh
+        result = super().run_action(action)
+        if isinstance(result, ErrorObservation):
+            return result
         return self.send_action_for_execution(action)
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
