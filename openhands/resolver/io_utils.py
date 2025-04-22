@@ -9,6 +9,7 @@ def load_all_resolver_outputs(output_jsonl: str) -> Iterable[ResolverOutput]:
         for line in f:
             yield ResolverOutput.model_validate(json.loads(line))
 
+
 def load_single_resolver_output(output_jsonl: str, issue_number: int) -> ResolverOutput:
     for resolver_output in load_all_resolver_outputs(output_jsonl):
         if resolver_output.issue.number == issue_number:
