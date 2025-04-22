@@ -47,7 +47,7 @@ class GitHubService(BaseGitService, GitService):
 
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
-        if self.token:
+        if not self.token:
             self.token = await self.get_latest_token()
 
         return {
