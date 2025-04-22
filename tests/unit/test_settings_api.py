@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import SecretStr
 
 from openhands.integrations.provider import ProviderType
 from openhands.server.app import app
