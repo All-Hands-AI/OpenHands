@@ -76,13 +76,6 @@ def check_dependencies(code_repo_path: str, interpreter_root_path: str):
     if 'test' not in pane_output:
         raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
 
-    # Check browser works
-    logger.debug('Checking dependencies: browser')
-    from openhands.runtime.browser.browser_env import BrowserEnv
-
-    browser = BrowserEnv()
-    browser.close()
-
 
 class LocalRuntime(ActionExecutionClient):
     """This runtime will run the action_execution_server directly on the local machine.
