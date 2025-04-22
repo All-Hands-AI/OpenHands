@@ -88,6 +88,7 @@ const openHandsHandlers = [
     HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
+      "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-3-5-sonnet-20241022",
     ]),

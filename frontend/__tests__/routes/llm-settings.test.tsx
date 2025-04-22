@@ -290,12 +290,144 @@ describe("Form submission", () => {
       }),
     );
   });
-  it.todo(
-    "should disable the button if there are no changes in the basic form",
-  );
-  it.todo(
-    "should disable the button if there are no changes in the advanced form",
-  );
+
+  it("should disable the button if there are no changes in the basic form", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      llm_model: "openai/gpt-4o",
+      llm_api_key_set: true,
+    });
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+    screen.getByTestId("llm-settings-form-basic");
+
+    const submitButton = screen.getByTestId("submit-button");
+    expect(submitButton).toBeDisabled();
+
+    const model = screen.getByTestId("llm-model-input");
+    const apiKey = screen.getByTestId("llm-api-key-input");
+
+    // select model
+    await userEvent.click(model);
+    const modelOption = screen.getByText("gpt-4o-mini");
+    await userEvent.click(modelOption);
+    expect(model).toHaveValue("gpt-4o-mini");
+    expect(submitButton).not.toBeDisabled();
+
+    // reset model
+    await userEvent.click(model);
+    const modelOption2 = screen.getByText("gpt-4o");
+    await userEvent.click(modelOption2);
+    expect(model).toHaveValue("gpt-4o");
+    expect(submitButton).toBeDisabled();
+
+    // set api key
+    await userEvent.type(apiKey, "test-api-key");
+    expect(apiKey).toHaveValue("test-api-key");
+    expect(submitButton).not.toBeDisabled();
+
+    // reset api key
+    await userEvent.clear(apiKey);
+    expect(apiKey).toHaveValue("");
+    expect(submitButton).toBeDisabled();
+  });
+
+  it.only("should disable the button if there are no changes in the advanced form", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      llm_model: "openai/gpt-4o",
+      llm_base_url: "https://api.openai.com/v1/chat/completions",
+      llm_api_key_set: true,
+    });
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+    screen.getByTestId("llm-settings-form-advanced");
+
+    const submitButton = screen.getByTestId("submit-button");
+    expect(submitButton).toBeDisabled();
+
+    const model = screen.getByTestId("llm-custom-model-input");
+    const baseUrl = screen.getByTestId("base-url-input");
+    const apiKey = screen.getByTestId("llm-api-key-input");
+    const agent = screen.getByTestId("agent-input");
+    const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+    const condensor = screen.getByTestId("enable-memory-condenser-switch");
+
+    // enter custom model
+    await userEvent.type(model, "-mini");
+    expect(model).toHaveValue("openai/gpt-4o-mini");
+    expect(submitButton).not.toBeDisabled();
+
+    // reset model
+    await userEvent.clear(model);
+    expect(model).toHaveValue("");
+    expect(submitButton).toBeDisabled();
+
+    await userEvent.type(model, "openai/gpt-4o");
+    expect(model).toHaveValue("openai/gpt-4o");
+    expect(submitButton).toBeDisabled();
+
+    // enter base url
+    await userEvent.type(baseUrl, "/extra");
+    expect(baseUrl).toHaveValue(
+      "https://api.openai.com/v1/chat/completions/extra",
+    );
+    expect(submitButton).not.toBeDisabled();
+
+    await userEvent.clear(baseUrl);
+    expect(baseUrl).toHaveValue("");
+    expect(submitButton).toBeDisabled();
+
+    await userEvent.type(baseUrl, "https://api.openai.com/v1/chat/completions");
+    expect(baseUrl).toHaveValue("https://api.openai.com/v1/chat/completions");
+    expect(submitButton).toBeDisabled();
+
+    // set api key
+    await userEvent.type(apiKey, "test-api-key");
+    expect(apiKey).toHaveValue("test-api-key");
+    expect(submitButton).not.toBeDisabled();
+
+    // reset api key
+    await userEvent.clear(apiKey);
+    expect(apiKey).toHaveValue("");
+    expect(submitButton).toBeDisabled();
+
+    // set agent
+    await userEvent.clear(agent);
+    await userEvent.type(agent, "test-agent");
+    expect(agent).toHaveValue("test-agent");
+    expect(submitButton).not.toBeDisabled();
+
+    // reset agent
+    await userEvent.clear(agent);
+    expect(agent).toHaveValue("");
+    expect(submitButton).toBeDisabled();
+
+    await userEvent.type(agent, "CodeActAgent");
+    expect(agent).toHaveValue("CodeActAgent");
+    expect(submitButton).toBeDisabled();
+
+    // toggle confirmation mode
+    await userEvent.click(confirmation);
+    expect(confirmation).toBeChecked();
+    expect(submitButton).not.toBeDisabled();
+    await userEvent.click(confirmation);
+    expect(confirmation).not.toBeChecked();
+    expect(submitButton).toBeDisabled();
+
+    // toggle memory condensor
+    await userEvent.click(condensor);
+    expect(condensor).not.toBeChecked();
+    expect(submitButton).not.toBeDisabled();
+    await userEvent.click(condensor);
+    expect(condensor).toBeChecked();
+    expect(submitButton).toBeDisabled();
+  });
+
   it.todo("should disable the button when submitting changes");
 });
 
