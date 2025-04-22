@@ -19,11 +19,15 @@ class ConversationModule:
         if not sort_by:
             return 0
         if sort_by == SortBy.total_view_24h:
-            return conversation.get('total_view_24h', 0)
+            value = conversation.get('total_view_24h')
+            return 0 if value is None else value
         if sort_by == SortBy.total_view_7d:
-            return conversation.get('total_view_7d', 0)
+            value = conversation.get('total_view_7d')
+            return 0 if value is None else value
         if sort_by == SortBy.total_view_30d:
-            return conversation.get('total_view_30d', 0)
+            value = conversation.get('total_view_30d')
+            return 0 if value is None else value
+        return 0
 
     async def _update_research_view(self, conversation_id: str, ip_address: str = ''):
         try:
@@ -299,11 +303,11 @@ class ConversationModule:
                 }
 
             if sort_by == SortBy.total_view_24h:
-                query = query.order_by(desc(ResearchTrending.c.total_view_24h))
+                query = query.order_by(desc(func.coalesce(ResearchTrending.c.total_view_24h, 0)))
             elif sort_by == SortBy.total_view_7d:
-                query = query.order_by(desc(ResearchTrending.c.total_view_7d))
+                query = query.order_by(desc(func.coalesce(ResearchTrending.c.total_view_7d, 0)))
             elif sort_by == SortBy.total_view_30d:
-                query = query.order_by(desc(ResearchTrending.c.total_view_30d))
+                query = query.order_by(desc(func.coalesce(ResearchTrending.c.total_view_30d, 0)))
 
             # Normal pagination for other pages
             query = query.offset(offset).limit(limit)
