@@ -152,7 +152,12 @@ describe("RepoConnector", () => {
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
-      { full_name: "rbren/polaris", git_provider: "github", id: 1 },
+      {
+        full_name: "rbren/polaris",
+        git_provider: "github",
+        id: 1,
+        is_public: true,
+      },
       undefined,
       [],
       undefined,
@@ -179,7 +184,7 @@ describe("RepoConnector", () => {
 
     await userEvent.click(launchButton);
     expect(launchButton).toBeDisabled();
-    expect(launchButton).toHaveTextContent(/Loading.../i);
+    expect(launchButton).toHaveTextContent(/Loading/i);
   });
 
   it("should not display a button to settings if the user is signed in with their git provider", async () => {

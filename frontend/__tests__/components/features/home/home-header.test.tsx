@@ -64,7 +64,7 @@ describe("HomeHeader", () => {
     });
     await userEvent.click(launchButton);
 
-    expect(launchButton).toHaveTextContent(/Loading.../i);
+    expect(launchButton).toHaveTextContent(/Loading/i);
     expect(launchButton).toBeDisabled();
   });
 });
