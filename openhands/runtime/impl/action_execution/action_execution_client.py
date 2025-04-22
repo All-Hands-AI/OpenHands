@@ -160,45 +160,73 @@ class ActionExecutionClient(Runtime):
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
+        temp_zip_path: str | None = None  # Define temp_zip_path outside the try block
+
         try:
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+            file_to_upload = None
+            upload_data = {}
+
             if recursive:
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_zip:
+                # Create and write the zip file inside the try block
+                with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                     temp_zip_path = temp_zip.name
 
-                with ZipFile(temp_zip_path, 'w') as zipf:
-                    for root, _, files in os.walk(host_src):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(
-                                file_path, os.path.dirname(host_src)
-                            )
-                            zipf.write(file_path, arcname)
+                try:
+                    with ZipFile(temp_zip_path, 'w') as zipf:
+                        for root, _, files in os.walk(host_src):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                arcname = os.path.relpath(
+                                    file_path, os.path.dirname(host_src)
+                                )
+                                zipf.write(file_path, arcname)
 
-                upload_data = {'file': open(temp_zip_path, 'rb')}
+                    self.log('debug', f'Opening temporary zip file for upload: {temp_zip_path}')
+                    file_to_upload = open(temp_zip_path, 'rb')
+                    upload_data = {'file': file_to_upload}
+                except Exception as e:
+                    # Ensure temp file is cleaned up if zipping fails
+                    if temp_zip_path and os.path.exists(temp_zip_path):
+                        os.unlink(temp_zip_path)
+                    raise e # Re-raise the exception after cleanup attempt
             else:
-                upload_data = {'file': open(host_src, 'rb')}
+                self.log('debug', f'Opening source file for upload: {host_src}')
+                file_to_upload = open(host_src, 'rb')
+                upload_data = {'file': file_to_upload}
 
-            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+            # Send the request only if file opening (and zipping if recursive) succeeded
+            if file_to_upload:
+                self.log('debug', 'Sending POST request to /upload_file...')
+                with self._send_action_server_request(
+                    'POST',
+                    f'{self._get_action_execution_server_host()}/upload_file',
+                    files=upload_data,
+                    params=params,
+                    timeout=300,  # Consider if this timeout is sufficient for large files
+                ) as response:
+                    self.log('debug', 'POST request to /upload_file completed.')
+                    self.log(
+                        'debug',
+                        f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
+                    )
+                self.log('debug', 'Finished context for _send_action_server_request.')
 
-            with self._send_action_server_request(
-                'POST',
-                f'{self._get_action_execution_server_host()}/upload_file',
-                files=upload_data,
-                params=params,
-                timeout=300,
-            ) as response:
-                self.log(
-                    'debug',
-                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
-                )
         finally:
-            if recursive:
-                os.unlink(temp_zip_path)
-            self.log(
-                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
-            )
+            self.log('debug', 'Entering finally block for copy_to.')
+            if file_to_upload:
+                self.log('debug', f'Closing file handle for: {file_to_upload.name}')
+                file_to_upload.close()
+
+            # Cleanup the temporary zip file if it was created
+            if temp_zip_path and os.path.exists(temp_zip_path):
+                self.log('debug', f'Attempting to delete temporary zip file: {temp_zip_path}')
+                try:
+                    os.unlink(temp_zip_path)
+                    self.log('debug', f'Successfully deleted temporary zip file: {temp_zip_path}')
+                except Exception as e:
+                    self.log('error', f'Failed to delete temporary zip file {temp_zip_path}: {e}')
+            self.log('debug', f'Exiting finally block for copy_to for host:{host_src}.')
 
     def get_vscode_token(self) -> str:
         if self.vscode_enabled and self._runtime_initialized:
