@@ -255,9 +255,9 @@ class ConversationModule:
             if sort_by:
                 query = select(
                     Conversation,
-                    ResearchTrending.c.total_view_24h,
-                    ResearchTrending.c.total_view_7d,
-                    ResearchTrending.c.total_view_30d
+                    func.coalesce(ResearchTrending.c.total_view_24h, 0).label('total_view_24h'),
+                    func.coalesce(ResearchTrending.c.total_view_7d, 0).label('total_view_7d'),
+                    func.coalesce(ResearchTrending.c.total_view_30d, 0).label('total_view_30d')
                 ).select_from(
                     Conversation.outerjoin(
                         ResearchTrending,
