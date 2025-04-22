@@ -110,9 +110,7 @@ async def add_custom_secret(
                 if (
                     secret_name not in incoming_secrets.custom_secrets
                 ):  # Allow incoming values to override existing ones
-                    incoming_secrets.custom_secrets[secret_name] = (
-                        secret_value.get_secret_value()
-                    )
+                    incoming_secrets.custom_secrets[secret_name] = secret_value
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
@@ -156,7 +154,7 @@ async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse
                 secret_value,
             ) in existing_settings.secrets_store.custom_secrets.items():
                 if secret_name != secret_id:
-                    custom_secrets[secret_name] = secret_value.get_secret_value()
+                    custom_secrets[secret_name] = secret_value
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(

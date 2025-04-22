@@ -132,7 +132,7 @@ class POSTSettingsCustomSecrets(BaseModel):
     Adding new custom secret
     """
 
-    custom_secrets: dict[str, str] = {}
+    custom_secrets: dict[str, str | SecretStr] = {}
 
 
 class GETSettingsModel(Settings):
