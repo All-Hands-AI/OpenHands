@@ -140,7 +140,10 @@ function LlmSettingsScreen() {
   if (!settings) return null;
 
   return (
-    <div data-testid="llm-settings-screen">
+    <div
+      data-testid="llm-settings-screen"
+      className="flex flex-col gap-6 px-11 py-9"
+    >
       <SettingsSwitch
         testId="advanced-settings-switch"
         defaultIsToggled={view === "advanced"}
@@ -153,7 +156,10 @@ function LlmSettingsScreen() {
 
       <form action={view === "basic" ? basicFormAction : advancedFormAction}>
         {view === "basic" && (
-          <div data-testid="llm-settings-form-basic">
+          <div
+            data-testid="llm-settings-form-basic"
+            className="flex flex-col gap-6"
+          >
             <ModelSelector
               models={modelsAndProviders}
               currentModel={
@@ -182,7 +188,10 @@ function LlmSettingsScreen() {
         )}
 
         {view === "advanced" && (
-          <div data-testid="llm-settings-form-advanced">
+          <div
+            data-testid="llm-settings-form-advanced"
+            className="flex flex-col gap-6"
+          >
             <SettingsInput
               testId="llm-custom-model-input"
               name="llm-custom-model-input"
