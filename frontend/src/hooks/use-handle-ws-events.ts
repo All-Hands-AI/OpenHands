@@ -36,7 +36,8 @@ export const useHandleWSEvents = () => {
         // Save the last page before ending session
         saveLastPage();
         displayErrorToast("Session expired.");
-        endSession();
+        // Pass true to preserve the last page we just saved
+        endSession(true);
         return;
       }
 

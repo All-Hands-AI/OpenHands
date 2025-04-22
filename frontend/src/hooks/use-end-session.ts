@@ -14,16 +14,19 @@ export const useEndSession = () => {
 
   /**
    * End the current session by clearing the token and redirecting to the home page.
+   * @param {boolean} preserveLastPage - If true, don't clear the last page from localStorage
    */
-  const endSession = () => {
+  const endSession = (preserveLastPage = false) => {
     dispatch(clearSelectedRepository());
 
     // Reset browser state to initial values
     dispatch(setUrl(browserInitialState.url));
     dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
 
-    // Clear the last page from localStorage
-    clearLastPage();
+    // Clear the last page from localStorage unless preserveLastPage is true
+    if (!preserveLastPage) {
+      clearLastPage();
+    }
 
     navigate("/");
   };
