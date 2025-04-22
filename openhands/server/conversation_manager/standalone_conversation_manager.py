@@ -119,6 +119,7 @@ class StandaloneConversationManager(ConversationManager):
         mnemonic: str | None = None,
         system_prompt: str | None = None,
         user_prompt: str | None = None,
+        mcp_disable: dict[str, bool] | None = None,
     ) -> EventStore:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
@@ -135,6 +136,7 @@ class StandaloneConversationManager(ConversationManager):
             mnemonic=mnemonic,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
+            mcp_disable=mcp_disable,
         )
         if not event_stream:
             logger.error(
@@ -268,6 +270,7 @@ class StandaloneConversationManager(ConversationManager):
         mnemonic: str | None = None,
         system_prompt: str | None = None,
         user_prompt: str | None = None,
+        mcp_disable: dict[str, bool] | None = None,
     ) -> EventStore:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
@@ -316,6 +319,7 @@ class StandaloneConversationManager(ConversationManager):
                     mnemonic,
                     system_prompt,
                     user_prompt,
+                    mcp_disable,
                 )
             )
             # This does not get added when resuming an existing conversation

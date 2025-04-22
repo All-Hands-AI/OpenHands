@@ -89,6 +89,7 @@ class Session:
         mnemonic: str | None = None,
         system_prompt: str | None = None,
         user_prompt: str | None = None,
+        mcp_disable: dict[str, bool] | None = None,
     ):
         start_time = time.time()
         self.agent_session.event_stream.add_event(
@@ -136,6 +137,11 @@ class Session:
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
+
+        if mcp_disable:
+            for key in mcp_disable:
+                if key in self.config.dict_mcp_config and mcp_disable[key]:
+                    del self.config.dict_mcp_config[key]
 
         mcp_tools = await fetch_mcp_tools_from_config(
             self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic

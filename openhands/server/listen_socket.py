@@ -56,7 +56,7 @@ async def connect(connection_id: str, environ):
     conversation_id = query_params.get('conversation_id', [None])[0]
     system_prompt = query_params.get('system_prompt', [None])[0]
     user_prompt = query_params.get('user_prompt', [None])[0]
-
+    mcp_disable = query_params.get('mcp_disable', [None])[0]
     # providers_raw: list[str] = query_params.get('providers_set', [])
     # providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
 
@@ -170,6 +170,7 @@ async def connect(connection_id: str, environ):
         mnemonic,
         system_prompt,
         user_prompt,
+        mcp_disable,
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
