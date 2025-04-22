@@ -1,12 +1,13 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { AuthProvider } from "#/context/auth-context";
+import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 
 const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
@@ -18,6 +19,10 @@ const renderLlmSettingsScreen = () =>
   });
 
 describe("Content", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("Basic form", () => {
     it("should render the basic form by default", () => {
       renderLlmSettingsScreen();
@@ -104,9 +109,83 @@ describe("Content", () => {
       expect(screen.getByTestId("llm-settings-form-basic")).toBeInTheDocument();
     });
 
-    it.todo(
-      "should render the advanced form if existings settings are advanced",
-    );
+    it("should render the default advanced settings", async () => {
+      renderLlmSettingsScreen();
+
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      expect(advancedSwitch).not.toBeChecked();
+
+      await userEvent.click(advancedSwitch);
+
+      const model = screen.getByTestId("llm-custom-model-input");
+      const baseUrl = screen.getByTestId("base-url-input");
+      const apiKey = screen.getByTestId("llm-api-key-input");
+      const agent = screen.getByTestId("agent-input");
+      const confirmation = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
+      const condensor = screen.getByTestId("enable-memory-condenser-switch");
+
+      expect(model).toHaveValue("anthropic/claude-3-5-sonnet-20241022");
+      expect(baseUrl).toHaveValue("");
+      expect(apiKey).toHaveValue("");
+      expect(apiKey).toHaveProperty("placeholder", "");
+      expect(agent).toHaveValue("CodeActAgent");
+      expect(confirmation).not.toBeChecked();
+      expect(condensor).not.toBeChecked();
+    });
+
+    it("should render the advanced form if existings settings are advanced", async () => {
+      const hasAdvancedSettingsSetSpy = vi.spyOn(
+        AdvancedSettingsUtlls,
+        "hasAdvancedSettingsSet",
+      );
+      hasAdvancedSettingsSetSpy.mockReturnValue(true);
+
+      renderLlmSettingsScreen();
+
+      await waitFor(() => {
+        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+        expect(advancedSwitch).toBeChecked();
+        screen.getByTestId("llm-settings-form-advanced");
+      });
+    });
+
+    it("should render existing advanced settings correctly", async () => {
+      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_model: "openai/gpt-4o",
+        llm_base_url: "https://api.openai.com/v1/chat/completions",
+        llm_api_key_set: true,
+        agent: "CoActAgent",
+        confirmation_mode: true,
+        enable_default_condenser: true,
+      });
+
+      renderLlmSettingsScreen();
+
+      const model = screen.getByTestId("llm-custom-model-input");
+      const baseUrl = screen.getByTestId("base-url-input");
+      const apiKey = screen.getByTestId("llm-api-key-input");
+      const agent = screen.getByTestId("agent-input");
+      const confirmation = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
+      const condensor = screen.getByTestId("enable-memory-condenser-switch");
+
+      await waitFor(() => {
+        expect(model).toHaveValue("openai/gpt-4o");
+        expect(baseUrl).toHaveValue(
+          "https://api.openai.com/v1/chat/completions",
+        );
+        expect(apiKey).toHaveValue("");
+        expect(apiKey).toHaveProperty("placeholder", "<hidden>");
+        expect(agent).toHaveValue("CoActAgent");
+        expect(confirmation).toBeChecked();
+        expect(condensor).toBeChecked();
+      });
+    });
   });
 });
 

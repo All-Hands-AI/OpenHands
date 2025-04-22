@@ -7,6 +7,10 @@ describe("hasAdvancedSettingsSet", () => {
     expect(hasAdvancedSettingsSet(DEFAULT_SETTINGS)).toBe(false);
   });
 
+  it("should return false if an empty object", () => {
+    expect(hasAdvancedSettingsSet({})).toBe(false);
+  });
+
   describe("should be true if", () => {
     test("LLM_BASE_URL is set", () => {
       expect(

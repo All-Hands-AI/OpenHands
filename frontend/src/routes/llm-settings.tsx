@@ -3,6 +3,7 @@ import { ModelSelector } from "#/components/shared/modals/settings/model-selecto
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useSettings } from "#/hooks/query/use-settings";
+import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 
 function LlmSettingsScreen() {
   const { data: resources } = useAIConfigOptions();
@@ -14,11 +15,19 @@ function LlmSettingsScreen() {
     resources?.models || [],
   );
 
+  React.useEffect(() => {
+    const userSettingsIsAdvanced = hasAdvancedSettingsSet(settings || {});
+
+    if (userSettingsIsAdvanced) setView("advanced");
+    else setView("basic");
+  }, [settings]);
+
   return (
     <div>
       <input
         type="checkbox"
         data-testid="advanced-settings-switch"
+        checked={view === "advanced"}
         onChange={(e) => setView(e.target.checked ? "advanced" : "basic")}
       />
 
@@ -42,13 +51,26 @@ function LlmSettingsScreen() {
 
       {view === "advanced" && (
         <div data-testid="llm-settings-form-advanced">
-          <div data-testid="llm-custom-model-input" />
-          <div data-testid="base-url-input" />
-          <div data-testid="llm-api-key-input" />
+          <input
+            data-testid="llm-custom-model-input"
+            defaultValue={
+              settings?.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+            }
+          />
+          <input data-testid="base-url-input" defaultValue="" />
+          <input data-testid="llm-api-key-input" defaultValue="" />
           <div data-testid="llm-api-key-help-anchor" />
-          <div data-testid="agent-input" />
-          <div data-testid="enable-confirmation-mode-switch" />
-          <div data-testid="enable-memory-condenser-switch" />
+          <input data-testid="agent-input" defaultValue="CodeActAgent" />
+          <input
+            type="checkbox"
+            data-testid="enable-confirmation-mode-switch"
+            defaultChecked={false}
+          />
+          <input
+            type="checkbox"
+            data-testid="enable-memory-condenser-switch"
+            defaultChecked={false}
+          />
         </div>
       )}
     </div>
