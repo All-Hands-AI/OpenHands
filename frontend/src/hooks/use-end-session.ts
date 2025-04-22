@@ -6,6 +6,7 @@ import {
   setUrl,
 } from "#/state/browser-slice";
 import { clearSelectedRepository } from "#/state/initial-query-slice";
+import { clearLastPage } from "#/utils/last-page";
 
 export const useEndSession = () => {
   const navigate = useNavigate();
@@ -20,6 +21,9 @@ export const useEndSession = () => {
     // Reset browser state to initial values
     dispatch(setUrl(browserInitialState.url));
     dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
+
+    // Clear the last page from localStorage
+    clearLastPage();
 
     navigate("/");
   };

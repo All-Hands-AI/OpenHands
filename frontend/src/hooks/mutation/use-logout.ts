@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "../query/use-config";
+import { clearLastPage } from "#/utils/last-page";
 
 export const useLogout = () => {
   const { setProviderTokensSet, setProvidersAreSet } = useAuth();
@@ -24,6 +25,9 @@ export const useLogout = () => {
       // Update token state - this will trigger a settings refetch since it's part of the query key
       setProviderTokensSet([]);
       setProvidersAreSet(false);
+
+      // Clear the last page from localStorage
+      clearLastPage();
 
       // Navigate to root page and refresh the page
       navigate("/");
