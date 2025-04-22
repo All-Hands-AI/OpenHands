@@ -113,11 +113,15 @@ async def add_custom_secret(
                         secret_value.get_secret_value()
                     )
 
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets.custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens
+            )
+            
             updated_settings = existing_settings.model_copy(
                 update={
-                    'secrets_store': SecretStore(
-                        custom_secrets=custom_secrets.custom_secrets
-                    )
+                    'secrets_store': updated_secret_store
                 }
             )
 
@@ -152,8 +156,14 @@ async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse
                 if secret_name != secret_id:
                     custom_secrets[secret_name] = secret_value.get_secret_value()
 
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens
+            )
+            
             updated_settings = existing_settings.model_copy(
-                update={'secrets_store': SecretStore(custom_secrets=custom_secrets)}
+                update={'secrets_store': updated_secret_store}
             )
 
             updated_settings = convert_to_settings(updated_settings)
