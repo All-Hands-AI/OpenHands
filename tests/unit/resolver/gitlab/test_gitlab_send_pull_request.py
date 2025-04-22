@@ -19,6 +19,7 @@ from openhands.resolver.send_pull_request import (
     send_pull_request,
     update_existing_pull_request,
 )
+from openhands.resolver.send_pull_request import main
 
 
 @pytest.fixture
@@ -1006,7 +1007,6 @@ def test_main(
     mock_process_single_issue,
     mock_parser,
 ):
-    from openhands.resolver.send_pull_request import main
 
     # Setup mock parser
     mock_args = MagicMock()
