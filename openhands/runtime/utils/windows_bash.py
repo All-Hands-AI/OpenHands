@@ -344,11 +344,10 @@ class WindowsPowershellSession:
 
             # Collect errors from the Receive-Job command itself
             if ps_receive.Streams.Error:
-                # These errors are about Receive-Job, not necessarily from the job's script
+                # These errors are about Receive-Job, often reflecting errors from the job's script
                 receive_job_errors = [str(e) for e in ps_receive.Streams.Error]
                 logger.warning(f"Errors during Receive-Job for Job ID {job.Id}: {receive_job_errors}")
-                # Should these be added to error_parts? Maybe distinguish them.
-                # For now, let's log them but not include in main error stream.
+                error_parts.extend(receive_job_errors)
 
             # How to get the job's actual error stream?
             # Receive-Job typically forwards the job's output stream.
@@ -830,7 +829,10 @@ class WindowsPowershellSession:
             # Use the current CWD for the job's initial location
             # Ensure CWD is escaped correctly for the script block
             escaped_cwd = self._cwd.replace("'", "''")
-            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{escaped_cwd}'; {escaped_command} 2>&1 }}"
+            # $ErrorActionPreference = 'Continue' # Default is Continue, seems fine. Let errors write to stream.
+            # Check $? after the command. If it's false, exit 1.
+            # Do NOT redirect 2>&1 here, let error stream be separate.
+            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{escaped_cwd}'; {escaped_command}; if (-not $?) {{ exit 1 }} }}"
 
             logger.info(f"Starting command as PowerShell job: {command}")
             ps_start.AddScript(start_job_script)
@@ -1017,9 +1019,10 @@ class WindowsPowershellSession:
                  final_output += f"\\n[ERROR STREAM]\\n{error_stream_text}"
             else:
                  final_output = f"[ERROR STREAM]\\n{error_stream_text}"
-            # If there were errors in the stream, ensure exit code reflects failure
-            # unless it was already set to -1 (timeout/shutdown)
+            # If there were errors collected from the stream, ensure exit code reflects failure,
+            # even if the job state was 'Completed', unless it was already -1 (timeout/shutdown).
             if exit_code == 0:
+                logger.info(f"Detected errors in stream ({len(all_errors)} records) but job state was Completed (exit_code=0). Forcing exit_code to 1.")
                 exit_code = 1
 
         # Create metadata

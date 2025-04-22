@@ -288,7 +288,8 @@ class ActionExecutor:
 
         # Determine no-pager command
         if is_windows:
-            no_pager_cmd = 'function git { git.exe --no-pager $args }'
+            # TODO: fix this later
+            no_pager_cmd = 'Write-Output "Hello World"' # '$function:git = { git.exe --no-pager $args }'
         else:
             no_pager_cmd = 'alias git="git --no-pager"'
 

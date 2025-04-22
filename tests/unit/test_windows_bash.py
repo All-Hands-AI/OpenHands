@@ -569,4 +569,16 @@ def test_long_running_command_followed_by_execute(windows_bash_session):
     else: # If '2' wasn't printed previously, it might be here along with '3' or just '3'
          assert '2' in obs.content or '3' in obs.content
     assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-    assert obs.exit_code == 0 
+    assert obs.exit_code == 0
+
+def test_command_non_existent_file(windows_bash_session):
+    """Test command execution for a non-existent file returns non-zero exit code."""
+    # Use Get-Content which should fail if the file doesn't exist
+    action = CmdRunAction(command="Get-Content non_existent_file.txt")
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, CmdOutputObservation)
+    # Check that the exit code is non-zero (should be 1 due to the '$?' check)
+    assert result.exit_code == 1
+    # Check that the error message is captured in the output (error stream part)
+    assert "Cannot find path" in result.content or "does not exist" in result.content 
