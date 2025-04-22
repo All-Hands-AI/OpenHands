@@ -41,15 +41,15 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
+def check_dependencies(code_repo_path: str, interpreter_root_path: str):
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
         raise ValueError(
             f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
         )
-    if not os.path.exists(poetry_venvs_path):
+    if not os.path.exists(interpreter_root_path):
         raise ValueError(
-            f'Poetry venvs path {poetry_venvs_path} does not exist. ' + ERROR_MESSAGE
+            f'Interpreter path {interpreter_root_path} does not exist. ' + ERROR_MESSAGE
         )
     # Check jupyter is installed
     logger.debug('Checking dependencies: Jupyter')
