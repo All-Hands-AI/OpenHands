@@ -11,6 +11,11 @@ import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { BrandButton } from "#/components/features/settings/brand-button";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -57,6 +62,7 @@ function LlmSettingsScreen() {
       },
       {
         onSuccess: () => {
+          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
           setDirtyInputs({
             model: false,
             apiKey: false,
@@ -65,6 +71,10 @@ function LlmSettingsScreen() {
             confirmationMode: false,
             enableDefaultCondenser: false,
           });
+        },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
         },
       },
     );
@@ -91,6 +101,7 @@ function LlmSettingsScreen() {
       },
       {
         onSuccess: () => {
+          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
           setDirtyInputs({
             model: false,
             apiKey: false,
@@ -99,6 +110,10 @@ function LlmSettingsScreen() {
             confirmationMode: false,
             enableDefaultCondenser: false,
           });
+        },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
         },
       },
     );

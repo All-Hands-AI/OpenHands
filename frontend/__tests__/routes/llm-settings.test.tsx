@@ -11,6 +11,7 @@ import {
 } from "#/mocks/handlers";
 import { AuthProvider } from "#/context/auth-context";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
+import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
 const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
@@ -482,7 +483,100 @@ describe("Form submission", () => {
   });
 });
 
-describe.todo("Status toasts", () => {
-  it.todo("should call displaySuccessToast when the settings are saved");
-  it.todo("should call displayErrorToast when the settings are saved");
+describe("Status toasts", () => {
+  describe("Basic form", () => {
+    it("should call displaySuccessToast when the settings are saved", async () => {
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+      const displaySuccessToastSpy = vi.spyOn(
+        ToastHandlers,
+        "displaySuccessToast",
+      );
+
+      renderLlmSettingsScreen();
+
+      // Toggle setting to change
+      const apiKeyInput = await screen.findByTestId("llm-api-key-input");
+      await userEvent.type(apiKeyInput, "test-api-key");
+
+      const submit = await screen.findByTestId("submit-button");
+      await userEvent.click(submit);
+
+      expect(saveSettingsSpy).toHaveBeenCalled();
+      await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
+    });
+
+    it("should call displayErrorToast when the settings fail to save", async () => {
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+      const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
+
+      saveSettingsSpy.mockRejectedValue(new Error("Failed to save settings"));
+
+      renderLlmSettingsScreen();
+
+      // Toggle setting to change
+      const apiKeyInput = await screen.findByTestId("llm-api-key-input");
+      await userEvent.type(apiKeyInput, "test-api-key");
+
+      const submit = await screen.findByTestId("submit-button");
+      await userEvent.click(submit);
+
+      expect(saveSettingsSpy).toHaveBeenCalled();
+      expect(displayErrorToastSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("Advanced form", () => {
+    it("should call displaySuccessToast when the settings are saved", async () => {
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+      const displaySuccessToastSpy = vi.spyOn(
+        ToastHandlers,
+        "displaySuccessToast",
+      );
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      await userEvent.click(advancedSwitch);
+      await screen.findByTestId("llm-settings-form-advanced");
+
+      // Toggle setting to change
+      const apiKeyInput = await screen.findByTestId("llm-api-key-input");
+      await userEvent.type(apiKeyInput, "test-api-key");
+
+      const submit = await screen.findByTestId("submit-button");
+      await userEvent.click(submit);
+
+      expect(saveSettingsSpy).toHaveBeenCalled();
+      await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
+    });
+
+    it("should call displayErrorToast when the settings fail to save", async () => {
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+      const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
+
+      saveSettingsSpy.mockRejectedValue(new Error("Failed to save settings"));
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      await userEvent.click(advancedSwitch);
+      await screen.findByTestId("llm-settings-form-advanced");
+
+      // Toggle setting to change
+      const apiKeyInput = await screen.findByTestId("llm-api-key-input");
+      await userEvent.type(apiKeyInput, "test-api-key");
+
+      const submit = await screen.findByTestId("submit-button");
+      await userEvent.click(submit);
+
+      expect(saveSettingsSpy).toHaveBeenCalled();
+      expect(displayErrorToastSpy).toHaveBeenCalled();
+    });
+  });
 });
