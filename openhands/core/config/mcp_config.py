@@ -1,4 +1,3 @@
-from typing import List, Union, Dict
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError
@@ -21,8 +20,8 @@ class MCPConfig(BaseModel):
     Attributes:
         mcp_servers: List of MCP SSE server configs
     """
-    mcp_servers: List[MCPServerConfig] = Field(default_factory=list)
-    selected_tool_names: List[str] = Field(default_factory=list)
+    mcp_servers: list[MCPServerConfig] = Field(default_factory=list)
+    selected_tool_names: list[str] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 
