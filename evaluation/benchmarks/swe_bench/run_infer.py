@@ -87,7 +87,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         elif 'gemini' in llm_model:
             template_name = 'swe_gemini.j2'
         else:
-            template_name = 'swe_default.j2'  # Default for 'swe' mode
+            template_name = 'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
     else:
         # Fallback or error handling if mode is unexpected
         logger.error(f"Unexpected evaluation mode: {mode}. Falling back to default.")
