@@ -45,6 +45,7 @@ on:
         required: false
 
 jobs:
+  if: false
   del_runs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:

@@ -58,6 +58,7 @@ permissions:
   issues: write
 
 jobs:
+  if: false
   auto-fix:
     if: |
       github.event_name == 'workflow_call' ||

@@ -20,6 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  if: false
   # Build the documentation website
   build:
     if: github.repository == 'All-Hands-AI/OpenHands'

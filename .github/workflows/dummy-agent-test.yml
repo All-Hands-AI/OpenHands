@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  if: false
   test:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:

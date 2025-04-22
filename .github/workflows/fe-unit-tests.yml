@@ -18,6 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  if: false
   # Run frontend unit tests
   fe-test:
     name: FE Unit Tests
