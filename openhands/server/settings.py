@@ -125,7 +125,7 @@ class POSTSettingsModel(Settings):
 
     provider_tokens: dict[str, str] = {}
 
-class POSTSettingsCustomSecrets:
+class POSTSettingsCustomSecrets(BaseModel):
     """
     Adding new custom secret
     """
@@ -141,7 +141,7 @@ class GETSettingsModel(Settings):
     llm_api_key_set: bool
 
 
-class GETSettingsCustomSecrets:
+class GETSettingsCustomSecrets(BaseModel):
     """
     Custom secrets names
     """
