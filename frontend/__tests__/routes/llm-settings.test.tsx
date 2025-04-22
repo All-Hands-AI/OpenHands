@@ -196,7 +196,13 @@ describe("Content", () => {
         expect(condensor).not.toBeChecked();
       });
     });
+
+    it.todo(
+      "should render the security analyzer when confirmation mode is enabled",
+    );
   });
+
+  it.todo("should render an indicator if the llm api key is set");
 });
 
 describe("Form submission", () => {
@@ -480,6 +486,8 @@ describe("Form submission", () => {
       expect(submitButton).toBeDisabled();
     });
   });
+
+  it.todo("should reset the settings when the reset button is clicked");
 });
 
 describe("Status toasts", () => {
@@ -578,4 +586,8 @@ describe("Status toasts", () => {
       expect(displayErrorToastSpy).toHaveBeenCalled();
     });
   });
+});
+
+describe("SaaS mode", () => {
+  it.todo("should render the runtime settings input");
 });
