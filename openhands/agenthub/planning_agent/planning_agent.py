@@ -53,7 +53,6 @@ class PlanningAgent(CodeActAgent):
             if not is_found:
                 self.tools.append(specialized_tool)
 
-
         # Override prompt_manager to use planning-specific prompts
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -118,8 +117,8 @@ class PlanningAgent(CodeActAgent):
             ]
             params['tools'] += unique_mcp_tools
 
-        if hasattr(self, 'enable_delegation') and self.enable_delegation:
-
+        # ensure only delegation tools are used if delegation is enabled
+        if self.enable_delegation:
             params['tools'] = planning_function_calling.get_delegation_tools()
 
         params['tools'] = params['tools'][::-1]  # reverse order because of LLM bias

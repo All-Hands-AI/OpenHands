@@ -3,9 +3,8 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable, ClassVar, Tuple, Type
-import time
 from datetime import datetime
+from typing import Callable, ClassVar, Tuple, Type
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -55,28 +54,28 @@ from openhands.events.action import (
     AgentRejectAction,
     ChangeAgentStateAction,
     CmdRunAction,
+    CreatePlanAction,
     IPythonRunCellAction,
+    MarkTaskAction,
     MessageAction,
     NullAction,
-    MarkTaskAction,
-    CreatePlanAction,
     SystemMessageAction,
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.action.plan import TaskStatus
 from openhands.events.event import Event
 from openhands.events.observation import (
-    CreatePlanObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
+    CreatePlanObservation,
     ErrorObservation,
     NullObservation,
     Observation,
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
+from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
-from openhands.events.tool import ToolCallMetadata
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -101,7 +100,7 @@ class AgentController:
         NullAction,
         NullObservation,
         ChangeAgentStateAction,
-        AgentStateChangedObservation
+        AgentStateChangedObservation,
     )
     _cached_first_user_message: MessageAction | None = None
 
@@ -144,7 +143,7 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
-        self.delgate_tool_call_metadata: ToolCallMetadata|None = None
+        self.delgate_tool_call_metadata: ToolCallMetadata | None = None
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -302,9 +301,6 @@ class AgentController:
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
 
-    def step(self):
-        asyncio.create_task(self._step_with_exception_handling())
-
     async def _step_with_exception_handling(self):
         try:
             await self._step()
@@ -376,7 +372,7 @@ class AgentController:
             if isinstance(event, CreatePlanObservation):
                 # this is a plan creation observation, so we should not step
                 return False
-            
+
             if (
                 isinstance(event, NullObservation)
                 and event.cause is not None
@@ -430,7 +426,10 @@ class AgentController:
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             # Only add MarkTaskAction events with IN_PROGRESS status
-            if not (isinstance(event, MarkTaskAction) and event.task_status != TaskStatus.IN_PROGRESS):
+            if not (
+                isinstance(event, MarkTaskAction)
+                and event.task_status != TaskStatus.IN_PROGRESS
+            ):
                 self.state.history.append(event)
 
         if isinstance(event, Action):
@@ -445,7 +444,7 @@ class AgentController:
                 f'Stepping agent after event: {type(event).__name__}',
                 extra={'msg_type': 'STEPPING_AGENT'},
             )
-            self.step()
+            await self._step_with_exception_handling()
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             # If we received a user message but aren't stepping, log why
             self.log(
@@ -470,17 +469,18 @@ class AgentController:
             )
             await self.delegate.set_agent_state_to(AgentState.RUNNING)
             return
-        
+
         # --------------------- Planning agent actions ---------------------
         elif isinstance(action, CreatePlanAction):
             # Create a plan
             self._create_plan(action)
 
-            
             active_plan: Plan = self.state.plans[self.state.active_plan_id]
 
             # add create plan observation to the event stream
-            create_plan_obs = CreatePlanObservation(content=active_plan._format_plan(w_result=False))
+            create_plan_obs = CreatePlanObservation(
+                content=active_plan._format_plan(w_result=False)
+            )
             create_plan_obs.tool_call_metadata = action.tool_call_metadata
             self.event_stream.add_event(
                 create_plan_obs,
@@ -497,9 +497,9 @@ class AgentController:
                     task_content=active_plan.tasks[0].content,
                     task_status=TaskStatus.IN_PROGRESS,
                 ),
-                EventSource.AGENT,# source agent for UI
+                EventSource.AGENT,  # source agent for UI
             )
-        
+
         # /------------------------- Planning agent actions ---------------------
 
         elif isinstance(action, AgentFinishAction):
@@ -779,16 +779,15 @@ class AgentController:
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         delegate_agent.set_mcp_tools(self.agent.mcp_tools)
 
-
         # assign the task to the delegate
         assign_plan: Plan = self.state.plans[self.state.active_plan_id]
         current_task_index = self.state.current_task_index
-        task_content = action.inputs.get("task", None)
-        if task_content is None or task_content.strip().count("\n") > 0:
+        task_content = action.inputs.get('task', None)
+        if task_content is None or task_content.strip().count('\n') > 0:
             task_content = assign_plan.tasks[current_task_index].content
         # overwrite the task content with the one from the action
         # assign_plan.tasks[current_task_index].content = task_content
-        
+
         assign_task_prompt = f"""
         CURRENT PLAN STATUS:
         {assign_plan._format_plan(w_result=True)}
@@ -801,7 +800,7 @@ class AgentController:
 
         state = State(
             session_id=self.id.removesuffix('-delegate'),
-            inputs={"task": task_content},
+            inputs={'task': task_content},
             local_iteration=0,
             iteration=self.state.iteration,
             max_iterations=self.state.max_iterations,
@@ -847,7 +846,6 @@ class AgentController:
 
         # ensure that delegation is enabled if only one plan is created
         self.agent.enable_delegation = True
-    
 
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).

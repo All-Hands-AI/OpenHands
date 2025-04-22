@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Type
 from datetime import datetime
+from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
@@ -31,6 +31,7 @@ class Agent(ABC):
 
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
+    enable_delegation: bool = False
 
     def __init__(
         self,
@@ -63,13 +64,15 @@ class Agent(ABC):
                 )
                 return None
 
-            system_message = self.prompt_manager.get_system_message(current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            system_message = self.prompt_manager.get_system_message(
+                current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
 
             # Get tools if available
             tools = getattr(self, 'tools', None)
 
             system_message_action = SystemMessageAction(
-                content=system_message, tools=tools
+                content=system_message, tools=tools, agent_class=self.name
             )
             # Set the source attribute
             system_message_action._source = EventSource.AGENT  # type: ignore

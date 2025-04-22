@@ -2,9 +2,9 @@ import os
 import subprocess
 import tempfile
 
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
-from openhands.resolver.utils import Platform
 
 
 def test_commit_message_with_quotes():
@@ -160,7 +160,7 @@ def test_pr_title_with_quotes(monkeypatch):
             issue=issue,
             token='dummy-token',
             username='test-user',
-            platform=Platform.GITHUB,
+            platform=ProviderType.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )
