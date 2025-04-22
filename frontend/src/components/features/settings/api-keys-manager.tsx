@@ -3,23 +3,18 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { SettingsInput } from "#/components/features/settings/settings-input";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import ApiKeysClient, { ApiKey, CreateApiKeyResponse } from "#/api/api-keys";
-import {
-  displayErrorToast,
-  displaySuccessToast,
-} from "#/utils/custom-toast-handlers";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { CreateApiKeyModal } from "./create-api-key-modal";
+import { DeleteApiKeyModal } from "./delete-api-key-modal";
+import { NewApiKeyModal } from "./new-api-key-modal";
 
 export function ApiKeysManager() {
   const { t } = useTranslation();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [newKeyName, setNewKeyName] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
@@ -49,50 +44,24 @@ export function ApiKeysManager() {
     fetchApiKeys();
   }, []);
 
-  const handleCreateKey = async () => {
-    if (!newKeyName.trim()) {
-      displayErrorToast(t(I18nKey.ERROR$REQUIRED_FIELD));
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      const newKey = await ApiKeysClient.createApiKey(newKeyName);
-
-      setNewlyCreatedKey(newKey);
-      setCreateModalOpen(false);
-      setShowNewKeyModal(true);
-      await fetchApiKeys();
-      displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_CREATED));
-    } catch (error) {
-      displayErrorToast(
-        retrieveAxiosErrorMessage(error as AxiosError) ||
-          t(I18nKey.ERROR$GENERIC),
-      );
-    } finally {
-      setIsCreating(false);
-      setNewKeyName("");
-    }
+  const handleKeyCreated = (newKey: CreateApiKeyResponse) => {
+    setNewlyCreatedKey(newKey);
+    setCreateModalOpen(false);
+    setShowNewKeyModal(true);
   };
 
-  const handleDeleteKey = async () => {
-    if (!keyToDelete) return;
+  const handleCloseCreateModal = () => {
+    setCreateModalOpen(false);
+  };
 
-    try {
-      setIsDeleting(true);
-      await ApiKeysClient.deleteApiKey(keyToDelete.id);
-      await fetchApiKeys();
-      setDeleteModalOpen(false);
-      setKeyToDelete(null);
-      displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_DELETED));
-    } catch (error) {
-      displayErrorToast(
-        retrieveAxiosErrorMessage(error as AxiosError) ||
-          t(I18nKey.ERROR$GENERIC),
-      );
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setKeyToDelete(null);
+  };
+
+  const handleCloseNewKeyModal = () => {
+    setShowNewKeyModal(false);
+    setNewlyCreatedKey(null);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -172,143 +141,27 @@ export function ApiKeysManager() {
       </div>
 
       {/* Create API Key Modal */}
-      {createModalOpen && (
-        <ModalBackdrop>
-          <div
-            data-testid="create-api-key-modal"
-            className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary w-[500px]"
-          >
-            <h3 className="text-xl font-bold">
-              {t(I18nKey.SETTINGS$CREATE_API_KEY)}
-            </h3>
-            <p className="text-sm text-gray-300">
-              {t(I18nKey.SETTINGS$CREATE_API_KEY_DESCRIPTION)}
-            </p>
-            <SettingsInput
-              testId="api-key-name-input"
-              label={t(I18nKey.SETTINGS$NAME)}
-              placeholder={t(I18nKey.SETTINGS$API_KEY_NAME_PLACEHOLDER)}
-              value={newKeyName}
-              onChange={(value) => setNewKeyName(value)}
-              className="w-full"
-              type="text"
-            />
-            <div className="w-full flex gap-2 mt-2">
-              <BrandButton
-                type="button"
-                variant="primary"
-                className="grow"
-                onClick={handleCreateKey}
-                isDisabled={isCreating || !newKeyName.trim()}
-              >
-                {isCreating ? (
-                  <LoadingSpinner size="small" />
-                ) : (
-                  t(I18nKey.BUTTON$CREATE)
-                )}
-              </BrandButton>
-              <BrandButton
-                type="button"
-                variant="secondary"
-                className="grow"
-                onClick={() => {
-                  setCreateModalOpen(false);
-                  setNewKeyName("");
-                }}
-                isDisabled={isCreating}
-              >
-                {t(I18nKey.BUTTON$CANCEL)}
-              </BrandButton>
-            </div>
-          </div>
-        </ModalBackdrop>
-      )}
+      <CreateApiKeyModal
+        isOpen={createModalOpen}
+        onClose={handleCloseCreateModal}
+        onKeyCreated={handleKeyCreated}
+        onRefresh={fetchApiKeys}
+      />
 
       {/* Delete API Key Modal */}
-      {deleteModalOpen && keyToDelete && (
-        <ModalBackdrop>
-          <div
-            data-testid="delete-api-key-modal"
-            className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary w-[500px]"
-          >
-            <h3 className="text-xl font-bold">
-              {t(I18nKey.SETTINGS$DELETE_API_KEY)}
-            </h3>
-            <p className="text-sm">
-              {t(I18nKey.SETTINGS$DELETE_API_KEY_CONFIRMATION, {
-                name: keyToDelete.name,
-              })}
-            </p>
-            <div className="w-full flex gap-2 mt-2">
-              <BrandButton
-                type="button"
-                variant="danger"
-                className="grow"
-                onClick={handleDeleteKey}
-                isDisabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <LoadingSpinner size="small" />
-                ) : (
-                  t(I18nKey.BUTTON$DELETE)
-                )}
-              </BrandButton>
-              <BrandButton
-                type="button"
-                variant="secondary"
-                className="grow"
-                onClick={() => {
-                  setDeleteModalOpen(false);
-                  setKeyToDelete(null);
-                }}
-                isDisabled={isDeleting}
-              >
-                {t(I18nKey.BUTTON$CANCEL)}
-              </BrandButton>
-            </div>
-          </div>
-        </ModalBackdrop>
-      )}
+      <DeleteApiKeyModal
+        isOpen={deleteModalOpen}
+        keyToDelete={keyToDelete}
+        onClose={handleCloseDeleteModal}
+        onRefresh={fetchApiKeys}
+      />
 
       {/* Show New API Key Modal */}
-      {showNewKeyModal && newlyCreatedKey && (
-        <ModalBackdrop>
-          <div
-            data-testid="new-api-key-modal"
-            className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary w-[600px]"
-          >
-            <h3 className="text-xl font-bold">
-              {t(I18nKey.SETTINGS$API_KEY_CREATED)}
-            </h3>
-            <p className="text-sm">{t(I18nKey.SETTINGS$API_KEY_WARNING)}</p>
-            <div className="bg-base-tertiary p-4 rounded-md font-mono text-sm break-all">
-              {newlyCreatedKey.key}
-            </div>
-            <div className="w-full flex gap-2 mt-2">
-              <BrandButton
-                type="button"
-                variant="primary"
-                onClick={() => {
-                  navigator.clipboard.writeText(newlyCreatedKey.key);
-                  displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_COPIED));
-                }}
-              >
-                {t(I18nKey.BUTTON$COPY_TO_CLIPBOARD)}
-              </BrandButton>
-              <BrandButton
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setShowNewKeyModal(false);
-                  setNewlyCreatedKey(null);
-                }}
-              >
-                {t(I18nKey.BUTTON$CLOSE)}
-              </BrandButton>
-            </div>
-          </div>
-        </ModalBackdrop>
-      )}
+      <NewApiKeyModal
+        isOpen={showNewKeyModal}
+        newlyCreatedKey={newlyCreatedKey}
+        onClose={handleCloseNewKeyModal}
+      />
     </>
   );
 }
