@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
+      POETRY_VIRTUALENVS_IN_PROJECT: true
     strategy:
       matrix:
         python-version: ['3.12']
@@ -36,10 +37,17 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Install tmux
         run: sudo apt-get update && sudo apt-get install -y tmux
-      - name: Setup Node.js
-        uses: useblacksmith/setup-node@v5
+      # - name: Setup Node.js
+      #   uses: useblacksmith/setup-node@v5
+      #   with:
+      #     node-version: '22.x'
+      - name: Cache virtual environment
+        uses: actions/cache@v4
         with:
-          node-version: '22.x'
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python

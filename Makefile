@@ -34,7 +34,7 @@ check-dependencies:
 	@$(MAKE) -s check-system
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
-	@$(MAKE) -s check-nodejs
+	# @$(MAKE) -s check-nodejs
 ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
