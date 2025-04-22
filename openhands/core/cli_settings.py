@@ -103,6 +103,37 @@ def display_settings(config: AppConfig):
     print_container(container)
 
 
+async def get_validated_input(
+    session: PromptSession,
+    prompt_text: str,
+    completer=None,
+    validator=None,
+    error_message='Input cannot be empty',
+):
+    session.completer = completer
+    value = None
+
+    while True:
+        value = await session.prompt_async(prompt_text)
+
+        if validator:
+            is_valid = validator(value)
+            if not is_valid:
+                print_formatted_text('')
+                print_formatted_text(HTML(f'<grey>{error_message}: {value}</grey>'))
+                print_formatted_text('')
+                continue
+        elif not value:
+            print_formatted_text('')
+            print_formatted_text(HTML(f'<grey>{error_message}</grey>'))
+            print_formatted_text('')
+            continue
+
+        break
+
+    return value
+
+
 async def modify_llm_settings_basic(
     config: AppConfig, settings_store: FileSettingsStore
 ) -> bool:
@@ -122,16 +153,13 @@ async def modify_llm_settings_basic(
     api_key = None
 
     try:
-        provider = await session.prompt_async(
-            '(Step 1/3) Select LLM Provider (use Tab for completion): ',
+        provider = await get_validated_input(
+            session,
+            '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
             completer=provider_completer,
+            validator=lambda x: x in organized_models,
+            error_message='Invalid provider selected',
         )
-
-        if provider not in organized_models:
-            print_formatted_text(
-                HTML(f'\n<grey>Invalid provider selected: {provider}</grey>')
-            )
-            return False
 
         model_list = organized_models[provider]['models']
         if provider == 'openai':
@@ -142,24 +170,19 @@ async def modify_llm_settings_basic(
             model_list = VERIFIED_ANTHROPIC_MODELS + model_list
 
         model_completer = FuzzyWordCompleter(model_list)
-        model = await session.prompt_async(
-            '(Step 2/3) Select LLM Model (use Tab for completion): ',
+        model = await get_validated_input(
+            session,
+            '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
             completer=model_completer,
+            validator=lambda x: x in organized_models[provider]['models'],
+            error_message=f'Invalid model selected for provider {provider}',
         )
 
-        if model not in organized_models[provider]['models']:
-            print_formatted_text(
-                HTML(
-                    f'\n<grey>Invalid model selected: {model} for provider {provider}</grey>'
-                )
-            )
-            return False
-
-        session.completer = None  # Reset completer for password prompt
-        api_key = await session.prompt_async('(Step 3/3) Enter API Key: ')
-        if not api_key:
-            print_formatted_text(HTML('\n<grey>API Key cannot be empty</grey>'))
-            return False
+        api_key = await get_validated_input(
+            session,
+            '(Step 3/3) Enter API Key (CTRL-c to cancel): ',
+            error_message='API Key cannot be empty',
+        )
 
     except (
         UserCancelledError,
@@ -228,36 +251,33 @@ async def modify_llm_settings_advanced(
     agent = None
 
     try:
-        custom_model = await session.prompt_async('(Step 1/6) Custom Model: ')
-        if not custom_model:
-            print_formatted_text(HTML('\n<grey>Custom Model cannot be empty</grey>'))
-            return False
+        custom_model = await get_validated_input(
+            session,
+            '(Step 1/6) Custom Model (CTRL-c to cancel): ',
+            error_message='Custom Model cannot be empty',
+        )
 
-        base_url = await session.prompt_async('(Step 2/6) Base URL: ')
-        if not base_url:
-            print_formatted_text(HTML('\n<grey>Base URL cannot be empty</grey>'))
-            return False
+        base_url = await get_validated_input(
+            session, '(Step 2/6) Base URL (CTRL-c to cancel): ', error_message='Base URL cannot be empty'
+        )
 
-        api_key = await session.prompt_async('(Step 3/6) API Key: ')
-        if not api_key:
-            print_formatted_text(HTML('\n<grey>API Key cannot be empty</grey>'))
-            return False
+        api_key = await get_validated_input(
+            session, '(Step 3/6) API Key (CTRL-c to cancel): ', error_message='API Key cannot be empty'
+        )
 
         agent_list = Agent.list_agents()
         agent_completer = FuzzyWordCompleter(agent_list)
-        agent = await session.prompt_async(
-            '(Step 4/6) Agent (use Tab for completion): ', completer=agent_completer
+        agent = await get_validated_input(
+            session,
+            '(Step 4/6) Agent (TAB for options, CTRL-c to cancel): ',
+            completer=agent_completer,
+            validator=lambda x: x in agent_list,
+            error_message='Invalid agent selected',
         )
-
-        if agent not in agent_list:
-            print_formatted_text(
-                HTML(f'\n<grey>Invalid agent selected: {agent}</grey>')
-            )
-            return False
 
         enable_confirmation_mode = (
             cli_confirm(
-                question='(Step 5/6) Confirmation Mode:',
+                question='(Step 5/6) Confirmation Mode (CTRL-c to cancel):',
                 choices=['Enable', 'Disable'],
             )
             == 0
@@ -265,7 +285,7 @@ async def modify_llm_settings_advanced(
 
         enable_memory_condensation = (
             cli_confirm(
-                question='(Step 6/6) Memory Condensation:',
+                question='(Step 6/6) Memory Condensation (CTRL-c to cancel):',
                 choices=['Enable', 'Disable'],
             )
             == 0
