@@ -1,29 +1,41 @@
-from typing import List
+from typing import List, Union, Dict
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError
+
+
+class MCPServerConfig(BaseModel):
+    """Configuration for a single MCP server.
+    
+    Attributes:
+        url: The server URL
+        api_key: Optional API key for authentication
+    """
+    url: str
+    api_key: str | None = None
 
 
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
-        mcp_servers: List of MCP SSE (Server-Sent Events) server URLs.
+        mcp_servers: List of MCP SSE server configs
     """
-
-    mcp_servers: List[str] = Field(default_factory=list)
+    mcp_servers: List[MCPServerConfig] = Field(default_factory=list)
     selected_tool_names: List[str] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 
     def validate_servers(self) -> None:
         """Validate that server URLs are valid and unique."""
+        urls = [server.url for server in self.mcp_servers]
+
         # Check for duplicate server URLs
-        if len(set(self.mcp_servers)) != len(self.mcp_servers):
+        if len(set(urls)) != len(urls):
             raise ValueError('Duplicate MCP server URLs are not allowed')
 
         # Validate URLs
-        for url in self.mcp_servers:
+        for url in urls:
             try:
                 result = urlparse(url)
                 if not all([result.scheme, result.netloc]):
@@ -45,6 +57,17 @@ class MCPConfig(BaseModel):
         mcp_mapping: dict[str, MCPConfig] = {}
 
         try:
+            # Convert all entries in mcp_servers to MCPServerConfig objects
+            if 'mcp_servers' in data:
+                servers = []
+                for server in data['mcp_servers']:
+                    if isinstance(server, dict):
+                        servers.append(MCPServerConfig(**server))
+                    else:
+                        # Convert string URLs to MCPServerConfig objects with no API key
+                        servers.append(MCPServerConfig(url=server))
+                data['mcp_servers'] = servers
+
             # Create SSE config if present
             mcp_config = MCPConfig.model_validate(data)
             mcp_config.validate_servers()
