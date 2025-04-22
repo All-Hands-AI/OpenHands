@@ -549,12 +549,6 @@ def process_single_issue(
         )
 
 
-    llm_config: LLMConfig,
-    fork_owner: str | None,
-    base_domain: str | None = None,
-) -> None:
-    # Determine default base_domain based on platform
-    if base_domain is None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description='Send a pull request to Github or Gitlab.'
