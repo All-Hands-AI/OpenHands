@@ -13,7 +13,12 @@ from prompt_toolkit.widgets import Frame, TextArea
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
-from openhands.core.cli_display import (
+from openhands.core.cli_input import (
+    cli_confirm,
+    read_confirmation_input,
+    read_prompt_input,
+)
+from openhands.core.cli_output import (
     COLOR_GREY,
     UsageMetrics,
     display_banner,
@@ -21,17 +26,12 @@ from openhands.core.cli_display import (
     display_help,
     display_initialization_animation,
     display_runtime_initialization_message,
-    display_settings,
     display_shutdown_message,
     display_status,
     display_welcome_message,
 )
-from openhands.core.cli_prompts import (
-    cli_confirm,
-    read_confirmation_input,
-    read_prompt_input,
-)
 from openhands.core.cli_settings import (
+    display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
 )

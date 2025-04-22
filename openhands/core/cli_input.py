@@ -1,3 +1,7 @@
+# CLI input functions
+# Handles all input from the console
+# CLI Settings related input is handled seperately in cli_settings.py
+
 from typing import List, Optional
 
 from prompt_toolkit import PromptSession
@@ -10,7 +14,6 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.core.cli_display import COLOR_GOLD, COMMANDS, DEFAULT_STYLE
 
 

@@ -1,3 +1,7 @@
+# CLI output functions
+# Handles all output to the console
+# CLI Settings related output is handled seperately in cli_settings.py
+
 import asyncio
 import sys
 import time
@@ -302,80 +306,6 @@ def display_help():
             '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>\n'
         )
     )
-
-
-def display_settings(config: AppConfig):
-    llm_config = config.get_llm_config()
-    advanced_llm_settings = True if llm_config.base_url else False
-
-    # Prepare labels and values based on settings
-    labels_and_values = []
-    if not advanced_llm_settings:
-        # Attempt to determine provider, fallback if not directly available
-        provider = getattr(
-            llm_config,
-            'provider',
-            llm_config.model.split('/')[0] if '/' in llm_config.model else 'Unknown',
-        )
-        labels_and_values.extend(
-            [
-                ('   LLM Provider', str(provider)),
-                ('   LLM Model', str(llm_config.model)),
-                ('   API Key', '********' if llm_config.api_key else 'Not Set'),
-            ]
-        )
-    else:
-        labels_and_values.extend(
-            [
-                ('   Custom Model', str(llm_config.model)),
-                ('   Base URL', str(llm_config.base_url)),
-                ('   API Key', '********' if llm_config.api_key else 'Not Set'),
-            ]
-        )
-
-    # Common settings
-    labels_and_values.extend(
-        [
-            ('   Agent', str(config.default_agent)),
-            (
-                '   Confirmation Mode',
-                'Enabled' if config.security.confirmation_mode else 'Disabled',
-            ),
-            (
-                '   Memory Condensation',
-                'Enabled' if config.enable_default_condenser else 'Disabled',
-            ),
-        ]
-    )
-
-    # Calculate max widths for alignment
-    # Ensure values are strings for len() calculation
-    str_labels_and_values = [(label, str(value)) for label, value in labels_and_values]
-    max_label_width = (
-        max(len(label) for label, _ in str_labels_and_values)
-        if str_labels_and_values
-        else 0
-    )
-
-    # Construct the summary text with aligned columns
-    settings_lines = [
-        f'{label+":":<{max_label_width+1}} {value:<}'  # Changed value alignment to left (<)
-        for label, value in str_labels_and_values
-    ]
-    settings_text = '\n'.join(settings_lines)
-
-    container = Frame(
-        TextArea(
-            text=settings_text,
-            read_only=True,
-            style=COLOR_GREY,
-            wrap_lines=True,
-        ),
-        title='Settings',
-        style=f'fg:{COLOR_GREY}',
-    )
-
-    print_container(container)
 
 
 def display_usage_metrics(usage_metrics: UsageMetrics):
