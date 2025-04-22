@@ -339,7 +339,7 @@ def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
     try:
         if is_windows():
             # Windows PowerShell version
-            obs = _run_cmd_action(runtime, 'cd $HOME; Get-Location')
+            obs = _run_cmd_action(runtime, 'cd $HOME && Get-Location')
             assert obs.exit_code == 0
             # Check for Windows-style home paths
             if runtime_cls == LocalRuntime:

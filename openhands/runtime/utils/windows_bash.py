@@ -254,6 +254,7 @@ class WindowsPowershellSession:
 
     def _run_ps_command(self, script: str, log_output: bool = True) -> list[System.Management.Automation.PSObject]:
         """Helper to run a simple synchronous command in the runspace."""
+        logger.debug(f"_run_ps_command: Executing script: '{script}'")
         ps = None
         results = []
         errors = []
@@ -262,20 +263,17 @@ class WindowsPowershellSession:
             ps.Runspace = self.runspace
             ps.AddScript(script)
             results = ps.Invoke()
-            if ps.Streams.Error:
-                errors = [str(e) for e in ps.Streams.Error]
-                if log_output:
-                    logger.error(f"Errors running script:\n{script}\n--- Errors:\n{errors}")
         except Exception as e:
-            logger.error(f"Exception running script:\n{script}\n--- Exception:\n{e}")
+            logger.error(f"_run_ps_command: Exception running script:\n{script}\n--- Exception:\n{e}")
             logger.error(traceback.format_exc())
-            errors.append(f"Exception: {e}")
+            errors.append(f"Exception: {e}") # Ensure exception is captured as error
         finally:
             if ps:
                 ps.Dispose()
         # You might want to return errors too, or raise exception
         # For now, just return results, errors are logged
-        return results if results else []
+        # Return empty list on error to avoid downstream issues
+        return results if results and not errors else []
 
     def _get_job_object(self, job_id: int) -> System.Management.Automation.Job | None:
         """Retrieves a job object by its ID."""
@@ -527,19 +525,51 @@ class WindowsPowershellSession:
         """Gets the current working directory from the runspace."""
         # Use helper to run Get-Location
         results = self._run_ps_command("Get-Location")
-        if results and hasattr(results[0], 'Path'):
-            fetched_cwd = str(results[0].Path)
-            if os.path.isdir(fetched_cwd):
-                if fetched_cwd != self._cwd:
-                    logger.info(f"Session CWD updated based on Get-Location: {fetched_cwd}")
-                    self._cwd = fetched_cwd
-                return self._cwd
+
+        # --- Add more detailed check logging ---
+        if results and results.Count > 0:
+            first_result = results[0]
+            has_path_attr = hasattr(first_result, 'Path')
+
+            if has_path_attr:
+                 # Original logic resumes here if hasattr is True
+                 fetched_cwd = str(first_result.Path)
+                 if os.path.isdir(fetched_cwd):
+                     if fetched_cwd != self._cwd:
+                         logger.info(f"_get_current_cwd: Fetched CWD '{fetched_cwd}' differs from cached '{self._cwd}'. Updating cache.")
+                         self._cwd = fetched_cwd
+                     return self._cwd
+                 else:
+                     logger.warning(f"_get_current_cwd: Path '{fetched_cwd}' is not a valid directory. Returning cached CWD: {self._cwd}")
+                     return self._cwd
             else:
-                logger.warning(f"Get-Location returned invalid path: {fetched_cwd}. Returning cached CWD: {self._cwd}")
-                return self._cwd
-        else:
-            logger.error(f"Could not determine CWD via Get-Location. Returning cached CWD: {self._cwd}")
-            return self._cwd
+                # Handle cases where Path attribute is missing (e.g., unexpected object type)
+                # Maybe the path is in BaseObject?
+                try:
+                     base_object = first_result.BaseObject
+                     if hasattr(base_object, 'Path'):
+                          fetched_cwd = str(base_object.Path)
+                          if os.path.isdir(fetched_cwd):
+                              if fetched_cwd != self._cwd:
+                                  logger.info(f"_get_current_cwd: Fetched CWD '{fetched_cwd}' (from BaseObject) differs from cached '{self._cwd}'. Updating cache.")
+                                  self._cwd = fetched_cwd
+                              return self._cwd
+                          else:
+                              logger.warning(f"_get_current_cwd: Path '{fetched_cwd}' (from BaseObject) is not a valid directory. Returning cached CWD: {self._cwd}")
+                              return self._cwd
+                     else:
+                          logger.error(f"_get_current_cwd: BaseObject also lacks Path attribute. Cannot determine CWD from result: {first_result}")
+                          return self._cwd # Return cached
+                except AttributeError as ae:
+                     logger.error(f"_get_current_cwd: Error accessing BaseObject or its Path: {ae}. Result: {first_result}")
+                     return self._cwd # Return cached
+                except Exception as ex:
+                     logger.error(f"_get_current_cwd: Unexpected error checking BaseObject: {ex}. Result: {first_result}")
+                     return self._cwd # Return cached
+
+        # This path is taken if _run_ps_command returned [] or results.Count was 0
+        logger.error(f"_get_current_cwd: No valid results received from Get-Location call. Returning cached CWD: {self._cwd}")
+        return self._cwd
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """
@@ -603,51 +633,185 @@ class WindowsPowershellSession:
             )
         # --- End validation ---
 
+        # --- Check if it's a CWD command to run synchronously ---
+        is_cwd_command = False
+        identified_cwd_cmd_name = None
+        if statements and statements.Count == 1:
+            # Check if the single statement is a CommandAst for a CWD command
+            statement = statements[0]
+            # Need to import CommandAst first
+            try:
+                from System.Management.Automation.Language import CommandAst, PipelineAst
+                # Check if it's a Pipeline with one element which is a CommandAst
+                if isinstance(statement, PipelineAst):
+                    pipeline_elements = statement.PipelineElements
+                    if pipeline_elements and pipeline_elements.Count == 1 and isinstance(pipeline_elements[0], CommandAst):
+                        command_ast = pipeline_elements[0]
+                        command_name = command_ast.GetCommandName()
+                        if command_name and command_name.lower() in ['set-location', 'cd', 'push-location', 'pop-location']:
+                            is_cwd_command = True
+                            identified_cwd_cmd_name = command_name
+                            logger.info(f"execute: Identified CWD command via PipelineAst: {command_name}")
+                        # else:
+                            # logger.debug(f"execute: Command in Pipeline '{command_name or \'<unknown>\'}' is not a CWD command.") # Remove
+                    # else:
+                        # logger.debug(f"execute: Pipeline does not contain a single CommandAst.") # Remove
+                # Also handle direct CommandAst (might occur for commands without arguments?)
+                elif isinstance(statement, CommandAst):
+                    command_name = statement.GetCommandName()
+                    if command_name and command_name.lower() in ['set-location', 'cd', 'push-location', 'pop-location']:
+                        is_cwd_command = True
+                        identified_cwd_cmd_name = command_name
+                        logger.info(f"execute: Identified CWD command via direct CommandAst: {command_name}")
+                    # else:
+                         # logger.debug(f"execute: Direct CommandAst '{command_name or \'<unknown>\'}' is not a CWD command.") # Remove
+                # else:
+                     # logger.debug(f"execute: Statement is not PipelineAst or CommandAst, type: {type(statement)}.") # Remove
+            except ImportError as imp_err:
+                 logger.error(f"execute: Failed to import CommandAst: {imp_err}. Cannot check for CWD commands.")
+            except Exception as ast_err:
+                 logger.error(f"execute: Error checking command AST: {ast_err}")
+
+        # logger.debug(f"execute: is_cwd_command = {is_cwd_command}") # Remove
+
+        # === Synchronous Execution Path (for CWD commands) ===
+        if is_cwd_command:
+            logger.info(f"execute: Entering synchronous execution path for CWD command: '{command}'")
+            ps_sync = None
+            sync_output = ""
+            sync_errors = []
+            sync_exit_code = 1 # Default to error
+
+            try:
+                # logger.debug(f"execute[sync]: Creating PowerShell instance for '{command}'.") # Remove
+                ps_sync = PowerShell.Create()
+                ps_sync.Runspace = self.runspace
+                # Execute the CWD command directly
+                # logger.debug(f"execute[sync]: Invoking script: '{command}'") # Remove
+                ps_sync.AddScript(command)
+                sync_results_ps = ps_sync.Invoke()
+                # logger.debug(f"execute[sync]: Invoke finished. Result count: {sync_results_ps.Count if sync_results_ps else 0}") # Remove
+
+                # Capture output (e.g., Push-Location might output the stack)
+                if sync_results_ps:
+                    sync_output = "\\n".join([str(r) for r in sync_results_ps])
+                    # logger.debug(f"execute[sync]: Captured output: {sync_output[:100]}...") # Remove
+
+                # Check for errors in the stream
+                if ps_sync.Streams.Error and ps_sync.Streams.Error.Count > 0:
+                    sync_errors = [str(e) for e in ps_sync.Streams.Error]
+                    logger.error(f"execute[sync]: Errors executing '{command}': {sync_errors}")
+                    sync_exit_code = 1 # Error stream means failure
+                else:
+                    # logger.debug(f"execute[sync]: No errors found in stream for '{command}'. Setting exit code 0.") # Remove
+                    # No errors in the stream implies success for these cmdlets
+                    sync_exit_code = 0
+
+            except Exception as e:
+                logger.error(f"execute[sync]: Exception executing '{command}': {e}")
+                logger.error(traceback.format_exc())
+                sync_errors.append(f"[Sync Execution Exception: {e}]")
+                sync_exit_code = 1 # Ensure error on exception
+            finally:
+                if ps_sync:
+                    # logger.debug(f"execute[sync]: Disposing PowerShell instance for '{command}'.") # Remove
+                    ps_sync.Dispose()
+
+            # --- ALWAYS update CWD after synchronous execution ---
+            # logger.debug(f"execute[sync]: Finished execution. ExitCode={sync_exit_code}. Current self._cwd BEFORE update: '{self._cwd}'") # Remove
+            current_cwd = self._get_current_cwd() # Queries runspace and updates self._cwd
+            # logger.debug(f"execute[sync]: Current self._cwd AFTER update: '{self._cwd}'. Value from _get_current_cwd: '{current_cwd}'") # Remove
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
+
+            # Construct observation
+            final_output_content = sync_output.strip()
+            if sync_errors:
+                 error_stream_text = "\\n".join(sync_errors)
+                 if final_output_content:
+                     final_output_content += f"\\n[ERROR STREAM]\\n{error_stream_text}"
+                 else:
+                     final_output_content = f"[ERROR STREAM]\\n{error_stream_text}"
+
+            metadata = CmdOutputMetadata(exit_code=sync_exit_code, working_dir=python_safe_cwd)
+            metadata.suffix = f"\\n[Synchronous command executed. Exit Code: {sync_exit_code}, CWD: {metadata.working_dir}]"
+            # logger.debug(f"execute[sync]: Returning observation. Content: '{final_output_content[:100]}...', Metadata: {metadata}") # Remove
+
+            # Return observation for synchronous command
+            return CmdOutputObservation(
+                content=final_output_content,
+                command=action.command,
+                metadata=metadata
+            )
+
+        # === Asynchronous Execution Path (for non-CWD commands) ===
+        logger.info(f"execute: Entering asynchronous execution path for command: '{command}'")
+        # If we reach here, it's not a simple CWD command, proceed with job logic.
         with self._job_lock: # Ensure thread-safe access/modification of self.active_job
             # --- Handle interaction with existing job ---
             if self.active_job:
                 # Refresh job state before checking command
-                current_job_state = self._get_job_object(self.active_job.Id).JobStateInfo.State
-                if current_job_state not in [JobState.Running, JobState.NotStarted]:
-                    logger.info(f"Active job {self.active_job.Id} was finished ({current_job_state}) before receiving command '{command}'. Clearing job.")
-                    # Job finished on its own, clean it up before proceeding
-                    self._receive_job_output(self.active_job, keep=False) # Consume final output
-                    remove_script = f"Remove-Job -Job (Get-Job -Id {self.active_job.Id})"
-                    self._run_ps_command(remove_script)
-                    self.active_job = None
+                active_job_obj = self._get_job_object(self.active_job.Id) # Get current job object
+                if not active_job_obj:
+                     logger.warning(f"Could not retrieve active job object {self.active_job.Id}. Clearing.")
+                     self.active_job = None # Clear if object is gone
                 else:
-                    # Active job is still running
-                    if command == "":
-                        return self._check_active_job() # Returns observation
-                    elif command == "C-c":
-                        return self._stop_active_job() # Returns observation
-                    else:
-                        # Policy: Stop old job if new command received
-                        logger.warning(f"Received new command '{command}' while job {self.active_job.Id} was active. Stopping old job first.")
-                        # We need to release the lock to call _stop_active_job which acquires it
-                        # This is tricky. Let's stop it synchronously here.
-                        stop_script = f"Stop-Job -Job (Get-Job -Id {self.active_job.Id})"
-                        self._run_ps_command(stop_script)
-                        time.sleep(0.1) # Brief pause
-                        self._receive_job_output(self.active_job, keep=False) # Consume output
-                        remove_script = f"Remove-Job -Job (Get-Job -Id {self.active_job.Id})"
-                        self._run_ps_command(remove_script)
-                        logger.info(f"Old job {self.active_job.Id} stopped and removed.")
-                        self.active_job = None
-                        # Fall through to start the new command as a job
+                     current_job_state = active_job_obj.JobStateInfo.State
+                     if current_job_state not in [JobState.Running, JobState.NotStarted]:
+                         logger.info(f"Active job {self.active_job.Id} was finished ({current_job_state}) before receiving command '{command}'. Clearing job.")
+                         # Job finished on its own, clean it up before proceeding
+                         self._receive_job_output(self.active_job, keep=False) # Consume final output
+                         remove_script = f"Remove-Job -Job (Get-Job -Id {self.active_job.Id})"
+                         self._run_ps_command(remove_script)
+                         self.active_job = None
+                     else:
+                         # Active job is still running
+                         if command == "":
+                             # Check active job, returns observation directly
+                             # Note: _check_active_job needs modification to update CWD on completion
+                             return self._check_active_job_and_update_cwd(action) # Pass action for command info
+                         elif command == "C-c":
+                             # Stop active job, returns observation directly
+                             # Note: _stop_active_job needs modification to use cached CWD
+                             return self._stop_active_job_and_update_cwd(action) # Pass action for command info
+                         else:
+                             # Policy: New command received while job running -> Error? Stop old job?
+                             # Current policy: Stop old job first.
+                             logger.warning(f"Received new command '{command}' while job {self.active_job.Id} was active. Stopping old job first.")
+                             # Stop synchronously within the lock
+                             stop_script = f"Stop-Job -Job (Get-Job -Id {self.active_job.Id})"
+                             self._run_ps_command(stop_script)
+                             time.sleep(0.1) # Brief pause
+                             self._receive_job_output(self.active_job, keep=False) # Consume output
+                             remove_script = f"Remove-Job -Job (Get-Job -Id {self.active_job.Id})"
+                             self._run_ps_command(remove_script)
+                             logger.info(f"Old job {self.active_job.Id} stopped and removed.")
+                             self.active_job = None
+                             # Fall through to start the new command as a job below
+
 
             # --- If we reach here, there is no active job ---
             if command == "": # Handle empty command when NO job is active
                 logger.warning("Received empty command string (no active job).")
-                current_cwd = self._get_current_cwd() # Get raw CWD
+                # Get current CWD and update state
+                current_cwd = self._get_current_cwd() # Queries runspace and updates self._cwd
                 python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
-                return CmdOutputObservation(content="", command="", metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)) # Use escaped version
+                metadata = CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                metadata.suffix = f"\\n[Empty command received. No active job. CWD: {metadata.working_dir}]"
+                return CmdOutputObservation(content="", command="", metadata=metadata)
 
             if command.startswith("C-"): # Handle C-* when NO job is active/relevant
                 logger.warning(f"Received control character command: {command}. Not supported when no job active.")
-                return ErrorObservation(content=f"Control commands like {command} are not supported or relevant when no job is active.")
+                # Get current CWD for context, but it doesn't change
+                current_cwd = self._cwd # Use cached CWD
+                python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
+                metadata = CmdOutputMetadata(exit_code=1, working_dir=python_safe_cwd) # Indicate error, use cached CWD
+                return ErrorObservation(
+                    content=f"Control commands like {command} are not supported or relevant when no job is active.",
+                    metadata=metadata # Add metadata for context
+                 )
 
-        # --- Start a new job (Lock is released after the 'with' block above) ---
+        # --- Start the command as a new asynchronous job ---
+        # (Lock is released after the 'with' block above if job interaction occurred)
         ps_start = None
         job = None
         output_builder = []
@@ -658,19 +822,15 @@ class WindowsPowershellSession:
         job_id = None # Keep track of the job ID
 
         try:
+            # ... (rest of the job starting logic remains the same) ...
+            # Use the lock when setting self.active_job
             ps_start = PowerShell.Create()
             ps_start.Runspace = self.runspace
-
-            # Use Invoke-Command within Start-Job for better CWD context? Maybe not needed.
-            # Escape command for script block? Use single quotes if command has no single quotes.
-            # If command has single quotes, more complex escaping needed.
-            # For now, assume simple commands or test robustness.
-            # Consider potential injection if command is crafted maliciously.
             escaped_command = command.replace("'", "''") # Basic single quote escaping
-            # Assign a name to the job for easier retrieval? Or just get the latest?
-            # Let's try getting the latest job ID
-            # Redirect stderr to stdout (2>&1) within the job's script block
-            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{self._cwd}'; {escaped_command} 2>&1 }}"
+            # Use the current CWD for the job's initial location
+            # Ensure CWD is escaped correctly for the script block
+            escaped_cwd = self._cwd.replace("'", "''")
+            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{escaped_cwd}'; {escaped_command} 2>&1 }}"
 
             logger.info(f"Starting command as PowerShell job: {command}")
             ps_start.AddScript(start_job_script)
@@ -681,15 +841,11 @@ class WindowsPowershellSession:
                 errors = [str(e) for e in ps_start.Streams.Error]
                 logger.error(f"Errors during Start-Job execution: {errors}")
                 all_errors.extend(errors)
-                # Don't necessarily fail yet, maybe the job still started. Try Get-Job.
+                # Continue to try and get job, maybe it partially succeeded
 
             # Now, try to get the latest job
             ps_get = PowerShell.Create()
             ps_get.Runspace = self.runspace
-            # Get the job that was just created. If multiple jobs run concurrently, this could be fragile.
-            # Maybe assign a unique name? Let's try getting the latest job ID first.
-            # Note: Relying on `$global:LASTEXITCODE` after Start-Job is unreliable for job success.
-            # We need to query the job state.
             get_job_script = "Get-Job | Sort-Object -Property Id -Descending | Select-Object -First 1"
             ps_get.AddScript(get_job_script)
             get_results = ps_get.Invoke()
@@ -701,40 +857,31 @@ class WindowsPowershellSession:
                 job_start_failed = True # Fail if we can't even get the job
 
             if not job_start_failed and get_results and len(get_results) > 0:
-                potential_job = get_results[0] # This is likely a PSObject wrapper
-                # Check if it's a valid job object (duck typing)
-                # Previous check failed for PSRemotingJob, try direct access
-                # Access the BaseObject to get the underlying Job object
+                potential_job = get_results[0]
                 try:
                     underlying_job = potential_job.BaseObject
                     job_id_test = underlying_job.Id
-                    # Try accessing State via JobStateInfo property
                     job_state_test = underlying_job.JobStateInfo.State
-                    # If access works, consider it a valid job object
-                    job = underlying_job # Use the BaseObject going forward
-                    job_id = job.Id # Store the ID
+                    job = underlying_job
+                    job_id = job.Id
+                    # Acquire lock ONLY when modifying shared state (self.active_job)
                     with self._job_lock:
                         self.active_job = job
-                    # Use the retrieved state for logging
-                    logger.info(f"Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}, Type: {type(job)}")
-                    # Check if the job immediately failed?
-                    # Compare against the JobState enum directly
+                    logger.info(f"Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}")
                     if job_state_test == JobState.Failed:
                         logger.error(f"Job {job.Id} failed immediately after starting.")
-                        # Should we collect error info here?
                         output_chunk, error_chunk = self._receive_job_output(job, keep=False)
                         if output_chunk: output_builder.append(output_chunk)
                         if error_chunk: all_errors.extend(error_chunk)
-                        job_start_failed = True # Treat immediate failure as startup failure
-                        # Clean up the failed job
+                        job_start_failed = True
                         remove_script = f"Remove-Job -Job (Get-Job -Id {job.Id})"
                         self._run_ps_command(remove_script)
-                        self.active_job = None # Clear active job
-                except AttributeError:
-                    # Log which attribute failed if possible
-                    logger.error(f"Get-Job returned an object without expected Id/State properties (via JobStateInfo) on its BaseObject: {potential_job}, BaseObject: {getattr(potential_job, 'BaseObject', 'N/A')}, Type: {type(potential_job)}")
-                    logger.error(traceback.format_exc()) # Log the full traceback for the attribute error
-                    all_errors.append("Get-Job did not return a valid Job object (missing properties on BaseObject).")
+                        with self._job_lock: # Need lock to clear
+                            self.active_job = None
+                except AttributeError as e:
+                    logger.error(f"Get-Job returned an object without expected properties on BaseObject: {e}")
+                    logger.error(traceback.format_exc())
+                    all_errors.append("Get-Job did not return a valid Job object.")
                     job_start_failed = True
 
             elif not job_start_failed:
@@ -750,30 +897,33 @@ class WindowsPowershellSession:
         finally:
             if ps_start:
                 ps_start.Dispose()
-            if 'ps_get' in locals() and ps_get: # Ensure ps_get is defined before disposing
+            if 'ps_get' in locals() and ps_get:
                 ps_get.Dispose()
 
         if job_start_failed:
-            # Return error observation based on startup errors
+            # Update CWD state even on failure, although it likely didn't change
+            current_cwd = self._get_current_cwd()
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
+            metadata = CmdOutputMetadata(exit_code=1, working_dir=python_safe_cwd)
             return ErrorObservation(
-                content=f"Failed to start PowerShell job.\n[ERRORS]\n" + "\n".join(all_errors)
+                content=f"Failed to start PowerShell job.\\n[ERRORS]\\n" + "\\n".join(all_errors),
+                metadata=metadata # Include CWD context
             )
 
         # --- Monitor the Job ---
-        # We now have a self.active_job set
         start_time = time.monotonic()
         monitoring_loop_finished = False
         shutdown_requested = False
+        final_state = JobState.Failed # Assume failed unless updated
+
 
         while not monitoring_loop_finished:
             if not should_continue():
                 logger.warning("Shutdown signal received during job monitoring.")
-                # Don't stop the job here, let the main loop handle shutdown logic if needed
-                # Just exit the monitoring loop.
                 shutdown_requested = True
                 monitoring_loop_finished = True
                 exit_code = -1 # Indicate external interruption
-                continue # Skip rest of loop
+                continue
 
             elapsed_seconds = time.monotonic() - start_time
             if elapsed_seconds > timeout_seconds:
@@ -781,83 +931,99 @@ class WindowsPowershellSession:
                 timed_out = True
                 monitoring_loop_finished = True
                 exit_code = -1 # Indicate timeout occurred
-                continue # Skip rest of loop
+                continue
 
-            # Check for output periodically
-            # Use the lock briefly to access self.active_job safely inside helper
-            current_job = self._get_job_object(job.Id) # Refresh job object outside lock
-            if not current_job:
-                logger.error(f"Job {job.Id} object disappeared during monitoring.")
+            # Get current job object safely
+            current_job_obj = self._get_job_object(job_id)
+            if not current_job_obj:
+                logger.error(f"Job {job_id} object disappeared during monitoring.")
                 all_errors.append("[Job object lost during monitoring]")
                 monitoring_loop_finished = True
                 exit_code = 1
+                final_state = JobState.Failed # Update final state
                 continue
 
-            output_chunk, error_chunk = self._receive_job_output(current_job, keep=True)
+            # Check for output
+            output_chunk, error_chunk = self._receive_job_output(current_job_obj, keep=True)
             if output_chunk:
                 output_builder.append(output_chunk)
             if error_chunk:
                 all_errors.extend(error_chunk)
-                # Treat errors as output for observation? Append to builder?
-                # Let's keep them separate for now, maybe combine at the end.
 
             # Check job state
-            # Access state via JobStateInfo
-            current_state = current_job.JobStateInfo.State
+            current_state = current_job_obj.JobStateInfo.State
             if current_state not in [JobState.Running, JobState.NotStarted]:
-                logger.info(f"Job {job.Id} finished monitoring loop with state: {current_state}")
+                logger.info(f"Job {job_id} finished monitoring loop with state: {current_state}")
                 monitoring_loop_finished = True
-                # Determine exit code based on final state later
-                continue # Exit loop
+                final_state = current_state # Store the final state
+                continue
 
-            # Wait briefly
             time.sleep(0.1) # Sleep 100ms
 
-        # --- Monitoring loop finished (Timeout, Shutdown, Job Complete/Failed) ---
+        # --- Monitoring loop finished ---
 
-        # Gather final state (output was already gathered during the loop with keep=True)
-        final_job = self._get_job_object(job.Id) # Get final state
-        # Access state via JobStateInfo
-        final_state = final_job.JobStateInfo.State if final_job else JobState.Failed
-        job_finished_naturally = not timed_out and not shutdown_requested
+        # Determine if job finished naturally based on final state
+        job_finished_naturally = (not timed_out and not shutdown_requested and
+                                 final_state in [JobState.Completed, JobState.Stopped, JobState.Failed])
 
+
+        determined_cwd = self._cwd # Default to cached CWD
         if job_finished_naturally:
-            logger.info(f"Job {job.Id} finished naturally with state: {final_state}. Clearing final output buffer.")
+            logger.info(f"Job {job_id} finished naturally with state: {final_state}. Clearing final output buffer.")
+            # Get final output/errors
+            final_job_obj = self._get_job_object(job_id) # Re-fetch just in case
+            if final_job_obj:
+                 _, final_error_chunk = self._receive_job_output(final_job_obj, keep=False)
+                 if final_error_chunk: all_errors.extend(final_error_chunk)
+            else:
+                 logger.warning(f"Could not get final job object {job_id} to clear output buffer.")
 
-            # Call receive_job_output one last time with keep=False to clear the job's output buffer,
-            # but DO NOT append the standard output result to output_builder as it was collected during the loop.
-            _, final_error_chunk = self._receive_job_output(final_job, keep=False)
-            # Collect any final errors reported when clearing buffer.
-            if final_error_chunk: all_errors.extend(final_error_chunk)
 
-            # Determine final exit code based on the state when the loop finished
+            # Determine final exit code based on state
             exit_code = 0 if final_state == JobState.Completed else 1
 
-            # Clean up finished job
+            # --- Update CWD only if job COMPLETED successfully ---
+            if final_state == JobState.Completed:
+                 logger.info(f"Job {job_id} completed successfully. Querying final CWD.")
+                 determined_cwd = self._get_current_cwd() # Query runspace and update self._cwd
+            else:
+                 logger.info(f"Job {job_id} finished but did not complete successfully ({final_state}). Using cached CWD: {self._cwd}")
+                 determined_cwd = self._cwd # Use cached CWD for Failed/Stopped states
+
+
+            # Clean up finished job (remove from PS repository)
             with self._job_lock: # Lock to clear active_job
-                remove_script = f"Remove-Job -Job (Get-Job -Id {job.Id})"
+                remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
                 self._run_ps_command(remove_script)
-                if self.active_job and self.active_job.Id == job.Id:
+                if self.active_job and self.active_job.Id == job_id:
                     self.active_job = None
-                logger.info(f"Cleaned up finished job {job.Id}")
+                logger.info(f"Cleaned up finished job {job_id}")
 
-        # If timed_out or shutdown_requested, self.active_job remains set. Exit code already set to -1.
+        else:
+            # Job timed out or was shutdown - use cached CWD
+            logger.info(f"Job {job_id} did not finish naturally (timeout={timed_out}, shutdown={shutdown_requested}). Using cached CWD: {self._cwd}")
+            determined_cwd = self._cwd # Use cached CWD
+            # Exit code is already -1 from loop exit reason
 
-        # Get current CWD (might have changed if commands ran outside job?)
-        current_cwd = self._get_current_cwd() # Get CWD after potential job activity
-        python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
+
+        # Escape CWD for metadata
+        python_safe_cwd = determined_cwd.replace('\\\\', '\\\\\\\\')
 
         # Combine output and errors for final observation
-        final_output = "\n".join(output_builder)
+        final_output = "\\n".join(output_builder).strip()
         if all_errors:
-            final_output += "\n[ERROR STREAM]\n" + "\n".join(all_errors)
+            error_stream_text = "\\n".join(all_errors)
+            if final_output:
+                 final_output += f"\\n[ERROR STREAM]\\n{error_stream_text}"
+            else:
+                 final_output = f"[ERROR STREAM]\\n{error_stream_text}"
             # If there were errors in the stream, ensure exit code reflects failure
             # unless it was already set to -1 (timeout/shutdown)
             if exit_code == 0:
                 exit_code = 1
 
         # Create metadata
-        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=python_safe_cwd) # Use escaped version
+        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=python_safe_cwd) # Use determined CWD
         if timed_out:
             # Match the suffix format expected by tests for timeout
             suffix = (
@@ -867,12 +1033,14 @@ class WindowsPowershellSession:
                 f"or send keys to interrupt/kill the command.]"
             )
         elif shutdown_requested:
-            suffix = f"\n[Command execution cancelled due to shutdown signal. Job {job.Id} may still be running. Exit code: {exit_code}, CWD: {metadata.working_dir}]"
+            suffix = f"\\n[Command execution cancelled due to shutdown signal. Job {job_id} may still be running. Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
         elif job_finished_naturally:
-            status = "Completed" if exit_code == 0 else f"Finished ({final_state})"
-            suffix = f"\n[Command completed via Job {job.Id}. Status: {status}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
-        else: # Should not happen? Fallback
-            suffix = f"\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+            # Use the actual final state determined earlier
+            status = "Completed" if final_state == JobState.Completed else f"Finished ({final_state})"
+            suffix = f"\\n[Command completed via Job {job_id}. Status: {status}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+        else: # Should not happen, but defensive fallback
+             suffix = f"\\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+
         metadata.suffix = suffix
 
         return CmdOutputObservation(
@@ -894,12 +1062,17 @@ class WindowsPowershellSession:
                 logger.warning(f"Session closing with active job {self.active_job.Id}. Attempting to stop and remove.")
                 job_id = self.active_job.Id
                 try:
-                    stop_script = f"Stop-Job -Job (Get-Job -Id {job_id})"
-                    self._run_ps_command(stop_script) # Use helper before runspace closes
-                    time.sleep(0.1)
-                    remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
-                    self._run_ps_command(remove_script)
-                    logger.info(f"Stopped and removed active job {job_id} during close.")
+                    # Ensure job object exists before trying to stop/remove
+                    active_job_obj = self._get_job_object(job_id)
+                    if active_job_obj:
+                        stop_script = f"Stop-Job -Job (Get-Job -Id {job_id})"
+                        self._run_ps_command(stop_script) # Use helper before runspace closes
+                        time.sleep(0.1)
+                        remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
+                        self._run_ps_command(remove_script)
+                        logger.info(f"Stopped and removed active job {job_id} during close.")
+                    else:
+                        logger.warning(f"Could not find job object {job_id} to stop/remove during close.")
                 except Exception as e:
                     logger.error(f"Error stopping/removing job {job_id} during close: {e}")
                 self.active_job = None

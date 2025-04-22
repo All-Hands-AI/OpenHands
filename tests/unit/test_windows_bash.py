@@ -256,7 +256,7 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     sub_dir_str = str(sub_dir_path)
 
     # Test changing directory
-    action_cd = CmdRunAction(command=f"Set-Location '{sub_dir_str}'")
+    action_cd = CmdRunAction(command=f"Set-Location subdir")
     result_cd = windows_bash_session.execute(action_cd)
     assert isinstance(result_cd, CmdOutputObservation)
     assert result_cd.exit_code == 0
