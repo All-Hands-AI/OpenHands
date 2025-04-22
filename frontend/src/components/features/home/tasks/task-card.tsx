@@ -10,10 +10,10 @@ import { TaskIssueNumber } from "./task-issue-number";
 const getTaskTypeMap = (
   t: (key: string) => string,
 ): Record<SuggestedTask["task_type"], string> => ({
-  FAILING_CHECKS: "Fix failing checks",
-  MERGE_CONFLICTS: "Resolve merge conflicts",
+  FAILING_CHECKS: t("HOME$FIX_FAILING_CHECKS"),
+  MERGE_CONFLICTS: t("HOME$RESOLVE_MERGE_CONFLICTS"),
   OPEN_ISSUE: t("HOME$OPEN_ISSUE"),
-  UNRESOLVED_COMMENTS: "Resolve unresolved comments",
+  UNRESOLVED_COMMENTS: t("HOME$RESOLVE_UNRESOLVED_COMMENTS"),
 });
 
 interface TaskCardProps {
@@ -71,7 +71,7 @@ export function TaskCard({ task }: TaskCardProps) {
         disabled={isCreatingConversation}
         onClick={handleLaunchConversation}
       >
-        {!isPending && "Launch"}
+        {!isPending && t("HOME$LAUNCH")}
         {isPending && t("HOME$LOADING")}
       </button>
     </li>
