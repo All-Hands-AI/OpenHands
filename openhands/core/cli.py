@@ -21,7 +21,6 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands.a2a.A2AManager import A2AManager
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.core.config import (
@@ -679,11 +678,12 @@ async def main(loop: asyncio.AbstractEventLoop):
     agent = create_agent(config)
     mcp_tools = await fetch_mcp_tools_from_config(config.dict_mcp_config, sid=sid)
     agent.set_mcp_tools(mcp_tools)
-    try:
-        await agent.a2a_manager.initialize_agent_cards()
-    except Exception as e:
-        logger.warning(f'Error initializing A2A manager: {e}')
-        
+    if agent.a2a_manager:
+        try:
+            await agent.a2a_manager.initialize_agent_cards()
+        except Exception as e:
+            logger.warning(f'Error initializing A2A manager: {e}')
+
     runtime = create_runtime(
         config,
         sid=sid,

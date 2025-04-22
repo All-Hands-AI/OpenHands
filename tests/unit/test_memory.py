@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
@@ -66,7 +67,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
-
+    agent.a2a_manager = MagicMock(spec=A2AManager)
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -102,6 +103,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.a2a_manager = MagicMock(spec=A2AManager)
 
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)

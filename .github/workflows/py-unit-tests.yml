@@ -52,7 +52,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked -n auto -svv ./tests/unit
+        run: poetry run pytest --forked -n auto -svv ./tests/unit -k "not test_storage and not test_json_encoder" && poetry run pytest tests/unit/test_storage.py tests/unit/test_json_encoder.py
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v5
       #   env:

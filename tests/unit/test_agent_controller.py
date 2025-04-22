@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from litellm import ContentPolicyViolationError, ContextWindowExceededError
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State, TrafficControlState
@@ -49,6 +50,7 @@ def mock_agent():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.a2a_manager = MagicMock(spec=A2AManager)
     return agent
 
 
@@ -220,6 +222,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.a2a_manager = MagicMock(spec=A2AManager)
 
     runtime = MagicMock(spec=Runtime)
 
@@ -284,6 +287,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.a2a_manager = MagicMock(spec=A2AManager)
     runtime = MagicMock(spec=Runtime)
 
     def on_event(event: Event):
@@ -619,6 +623,7 @@ async def test_run_controller_max_iterations_has_metrics(
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.a2a_manager = MagicMock(spec=A2AManager)
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -736,6 +741,7 @@ async def test_context_window_exceeded_error_handling(
     step_state = StepState()
     mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
+    mock_agent.a2a_manager = MagicMock(spec=A2AManager)
 
     # Because we're sending message actions, we need to respond to the recall
     # actions that get generated as a response.
@@ -876,6 +882,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     step_state = StepState()
     mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
+    mock_agent.a2a_manager = MagicMock(spec=A2AManager)
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
@@ -953,6 +960,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
     mock_agent.config.enable_history_truncation = False
+    mock_agent.a2a_manager = MagicMock(spec=A2AManager)
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
@@ -1021,6 +1029,7 @@ async def test_run_controller_with_memory_error(test_event_stream):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.a2a_manager = MagicMock(spec=A2AManager)
 
     # Create a real action to return from the mocked step function
     def agent_step_fn(state):

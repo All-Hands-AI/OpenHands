@@ -624,9 +624,6 @@ class Runtime(FileEditRuntimeMixin):
                             task=result,
                             content=result.model_dump_json(),
                         )
-                    else:
-                        yield ErrorObservation(f'Unknown task response: {result}')
-                        return
             except Exception as e:
                 yield ErrorObservation(f'Error sending task: {e}')
                 return

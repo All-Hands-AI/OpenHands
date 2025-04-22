@@ -5,8 +5,8 @@ from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
-from openhands.a2a.A2AManager import A2AManager
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+from openhands.a2a.A2AManager import A2AManager
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -76,7 +76,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
-        a2a_manager=agent.a2a_manager,
+        a2a_manager=agent.a2a_manager if agent else None,
     )
 
     logger.debug(

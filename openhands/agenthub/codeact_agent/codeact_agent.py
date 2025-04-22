@@ -2,8 +2,8 @@ import os
 from collections import deque
 from typing import override
 
-from openhands.a2a.A2AManager import A2AManager
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.a2a.A2AManager import A2AManager
 from openhands.a2a.tool import ListRemoteAgents, SendTask
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
