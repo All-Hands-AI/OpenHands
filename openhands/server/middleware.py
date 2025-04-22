@@ -235,6 +235,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             '/api/invitation/',
             '/api/user/status',
             '/api/invitation/validate',
+            '/api/usecases',
         ]
 
         self.public_path_patterns = [
@@ -297,6 +298,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             '/api/options/security-analyzers',
             '/api/options/use-cases',
             '/api/options/use-cases/conversations',
+            '/api/usecases',
         ]
 
         self.public_path_patterns = [

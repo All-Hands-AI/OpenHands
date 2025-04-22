@@ -664,7 +664,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     # If we have a task, create initial user action
     initial_user_action = MessageAction(content=task_str) if task_str else None
 
-    sid = str(uuid4())
+    sid = os.getenv('CONVERSATION_ID') or str(uuid4())
     is_loaded = asyncio.Event()
 
     # Show OpenHands banner and session ID

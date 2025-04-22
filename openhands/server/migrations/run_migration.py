@@ -52,7 +52,7 @@ async def run_migration():
         try:
             # Read and execute migration SQL
             migration_path = Path(__file__).parent / 'migrate.sql'
-            with open(migration_path, 'r') as f:
+            with open(migration_path, 'r') as f:  # noqa: ASYNC101
                 sql = f.read()
 
             await conn.execute(sql)

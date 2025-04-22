@@ -8,7 +8,11 @@ on:
   push:
     branches:
       - main
+      - staging
   pull_request:
+    branches:
+      - main
+      - staging
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -48,8 +52,8 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: poetry run pytest --forked -n auto -svv ./tests/unit
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v5
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

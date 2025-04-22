@@ -14,7 +14,6 @@ from openhands.server.middleware import (
     ProviderTokenMiddleware,
     RateLimitMiddleware,
 )
-from openhands.server.static import SPAStaticFiles
 
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
 
@@ -64,6 +63,5 @@ if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
 
 if os.getenv('TRACELOOP_BASE_URL'):
     Traceloop.init(
-        disable_batch=False,
-        app_name=os.getenv('OTEL_SERVICE_NAME', 'openhands')
+        disable_batch=False, app_name=os.getenv('OTEL_SERVICE_NAME', 'openhands')
     )
