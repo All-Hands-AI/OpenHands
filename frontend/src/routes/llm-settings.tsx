@@ -1,12 +1,19 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useSettings } from "#/hooks/query/use-settings";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { I18nKey } from "#/i18n/declaration";
+import { SettingsInput } from "#/components/features/settings/settings-input";
+import { HelpLink } from "#/components/features/settings/help-link";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
 function LlmSettingsScreen() {
+  const { t } = useTranslation();
   const { mutate: saveSettings } = useSaveSettings();
 
   const { data: resources } = useAIConfigOptions();
@@ -33,8 +40,6 @@ function LlmSettingsScreen() {
     if (userSettingsIsAdvanced) setView("advanced");
     else setView("basic");
   }, [settings]);
-
-  if (!settings) return null;
 
   const basicFormAction = (formData: FormData) => {
     const provider = formData.get("llm-provider-input")?.toString();
@@ -73,34 +78,31 @@ function LlmSettingsScreen() {
   const handleModelIsDirty = (model: string | null) => {
     // openai providers are special case; see ModelSelector
     // component for details
-    const modelIsDirty = model !== settings.LLM_MODEL.replace("openai/", "");
+    const modelIsDirty = model !== settings?.LLM_MODEL.replace("openai/", "");
     setDirtyInputs((prev) => ({
       ...prev,
       model: modelIsDirty,
     }));
   };
 
-  const handleApiKeyIsDirty = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const apiKeyIsDirty = e.target.value !== "";
+  const handleApiKeyIsDirty = (apiKey: string) => {
+    const apiKeyIsDirty = apiKey !== "";
     setDirtyInputs((prev) => ({
       ...prev,
       apiKey: apiKeyIsDirty,
     }));
   };
 
-  const handleCustomModelIsDirty = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newModel = e.target.value;
-    const modelIsDirty = newModel !== settings.LLM_MODEL && newModel !== "";
+  const handleCustomModelIsDirty = (model: string) => {
+    const modelIsDirty = model !== settings?.LLM_MODEL && model !== "";
     setDirtyInputs((prev) => ({
       ...prev,
       model: modelIsDirty,
     }));
   };
 
-  const handleBaseUrlIsDirty = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newBaseUrl = e.target.value;
-    const baseUrlIsDirty =
-      newBaseUrl !== settings.LLM_BASE_URL && newBaseUrl !== "";
+  const handleBaseUrlIsDirty = (baseUrl: string) => {
+    const baseUrlIsDirty = baseUrl !== settings?.LLM_BASE_URL;
     setDirtyInputs((prev) => ({
       ...prev,
       baseUrl: baseUrlIsDirty,
@@ -109,29 +111,24 @@ function LlmSettingsScreen() {
 
   const handleAgentIsDirty = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAgent = e.target.value;
-    const agentIsDirty = newAgent !== settings.AGENT && newAgent !== "";
+    const agentIsDirty = newAgent !== settings?.AGENT && newAgent !== "";
     setDirtyInputs((prev) => ({
       ...prev,
       agent: agentIsDirty,
     }));
   };
 
-  const handleConfirmationModeIsDirty = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const confirmationModeIsDirty =
-      e.target.checked !== settings.CONFIRMATION_MODE;
+  const handleConfirmationModeIsDirty = (isToggled: boolean) => {
+    const confirmationModeIsDirty = isToggled !== settings?.CONFIRMATION_MODE;
     setDirtyInputs((prev) => ({
       ...prev,
       confirmationMode: confirmationModeIsDirty,
     }));
   };
 
-  const handleEnableDefaultCondenserIsDirty = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleEnableDefaultCondenserIsDirty = (isToggled: boolean) => {
     const enableDefaultCondenserIsDirty =
-      e.target.checked !== settings.ENABLE_DEFAULT_CONDENSER;
+      isToggled !== settings?.ENABLE_DEFAULT_CONDENSER;
     setDirtyInputs((prev) => ({
       ...prev,
       enableDefaultCondenser: enableDefaultCondenserIsDirty,
@@ -140,14 +137,19 @@ function LlmSettingsScreen() {
 
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
 
+  if (!settings) return null;
+
   return (
     <div data-testid="llm-settings-screen">
-      <input
-        type="checkbox"
-        data-testid="advanced-settings-switch"
-        checked={view === "advanced"}
-        onChange={(e) => setView(e.target.checked ? "advanced" : "basic")}
-      />
+      <SettingsSwitch
+        testId="advanced-settings-switch"
+        defaultIsToggled={view === "advanced"}
+        onToggle={(isToggled) => {
+          setView(isToggled ? "advanced" : "basic");
+        }}
+      >
+        {t(I18nKey.SETTINGS$ADVANCED)}
+      </SettingsSwitch>
 
       <form action={view === "basic" ? basicFormAction : advancedFormAction}>
         {view === "basic" && (
@@ -160,71 +162,101 @@ function LlmSettingsScreen() {
               onChange={handleModelIsDirty}
             />
 
-            <input
-              data-testid="llm-api-key-input"
+            <SettingsInput
+              testId="llm-api-key-input"
               name="llm-api-key-input"
-              defaultValue=""
+              label={t(I18nKey.SETTINGS_FORM$API_KEY)}
+              type="password"
+              className="w-[680px]"
               placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
               onChange={handleApiKeyIsDirty}
             />
-            <div data-testid="llm-api-key-help-anchor" />
+
+            <HelpLink
+              testId="llm-api-key-help-anchor"
+              text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+              linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+              href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+            />
           </div>
         )}
 
         {view === "advanced" && (
           <div data-testid="llm-settings-form-advanced">
-            <input
-              data-testid="llm-custom-model-input"
+            <SettingsInput
+              testId="llm-custom-model-input"
               name="llm-custom-model-input"
+              label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
               defaultValue={
                 settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
               }
+              placeholder="anthropic/claude-3-5-sonnet-20241022"
+              type="text"
+              className="w-[680px]"
               onChange={handleCustomModelIsDirty}
             />
-            <input
-              data-testid="base-url-input"
+
+            <SettingsInput
+              testId="base-url-input"
               name="base-url-input"
+              label={t(I18nKey.SETTINGS$BASE_URL)}
               defaultValue={settings.LLM_BASE_URL}
+              placeholder="https://api.openai.com"
+              type="text"
+              className="w-[680px]"
               onChange={handleBaseUrlIsDirty}
             />
-            <input
-              data-testid="llm-api-key-input"
+
+            <SettingsInput
+              testId="llm-api-key-input"
               name="llm-api-key-input"
-              defaultValue=""
+              label={t(I18nKey.SETTINGS_FORM$API_KEY)}
+              type="password"
+              className="w-[680px]"
               placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
               onChange={handleApiKeyIsDirty}
             />
-            <div data-testid="llm-api-key-help-anchor" />
+            <HelpLink
+              testId="llm-api-key-help-anchor"
+              text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+              linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+              href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+            />
             <input
               data-testid="agent-input"
               name="agent-input"
               defaultValue={settings.AGENT}
               onChange={handleAgentIsDirty}
             />
-            <input
-              type="checkbox"
-              data-testid="enable-confirmation-mode-switch"
+            <SettingsSwitch
+              testId="enable-confirmation-mode-switch"
               name="enable-confirmation-mode-switch"
-              defaultChecked={settings.CONFIRMATION_MODE}
-              onChange={handleConfirmationModeIsDirty}
-            />
-            <input
-              type="checkbox"
-              data-testid="enable-memory-condenser-switch"
+              onToggle={handleConfirmationModeIsDirty}
+              defaultIsToggled={settings.CONFIRMATION_MODE}
+              isBeta
+            >
+              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+            </SettingsSwitch>
+
+            <SettingsSwitch
+              testId="enable-memory-condenser-switch"
               name="enable-memory-condenser-switch"
-              defaultChecked={settings.ENABLE_DEFAULT_CONDENSER}
-              onChange={handleEnableDefaultCondenserIsDirty}
-            />
+              defaultIsToggled={settings.ENABLE_DEFAULT_CONDENSER}
+              onToggle={handleEnableDefaultCondenserIsDirty}
+            >
+              {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
+            </SettingsSwitch>
           </div>
         )}
 
-        <button
-          data-testid="submit-button"
+        <BrandButton
+          testId="submit-button"
           type="submit"
-          disabled={!formIsDirty}
+          variant="primary"
+          isDisabled={!formIsDirty}
         >
           Save Changes
-        </button>
+        </BrandButton>
       </form>
     </div>
   );

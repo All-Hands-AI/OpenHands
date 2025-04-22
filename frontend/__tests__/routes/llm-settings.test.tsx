@@ -380,7 +380,7 @@ describe("Form submission", () => {
 
     await userEvent.clear(baseUrl);
     expect(baseUrl).toHaveValue("");
-    expect(submitButton).toBeDisabled();
+    expect(submitButton).not.toBeDisabled();
 
     await userEvent.type(baseUrl, "https://api.openai.com/v1/chat/completions");
     expect(baseUrl).toHaveValue("https://api.openai.com/v1/chat/completions");
@@ -427,6 +427,8 @@ describe("Form submission", () => {
     expect(condensor).toBeChecked();
     expect(submitButton).toBeDisabled();
   });
+
+  it.todo("should reset button state when switching between forms");
 
   it.todo("should disable the button when submitting changes");
 });
