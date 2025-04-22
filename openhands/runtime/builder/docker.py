@@ -159,6 +159,14 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
         )
 
+        builder_cmd = ['docker', 'buildx', 'use', 'default']
+        subprocess.Popen(
+            builder_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+
         try:
             process = subprocess.Popen(
                 buildx_cmd,

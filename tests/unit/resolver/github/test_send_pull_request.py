@@ -1269,7 +1269,7 @@ def test_main(
     # Run main function
     main()
 
-    mock_identify_token.assert_called_with('mock_token', None, ANY)
+    mock_identify_token.assert_called_with('mock_token', mock_args.base_domain)
 
     llm_config = LLMConfig(
         model=mock_args.llm_model,
