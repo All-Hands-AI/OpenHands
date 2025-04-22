@@ -37,6 +37,7 @@ import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 function AppContent() {
   useConversationConfig();
@@ -68,14 +69,19 @@ function AppContent() {
     [],
   );
 
+  // Use the useIsAuthed hook to check authentication status
+  const { data: isAuthed } = useIsAuthed();
+
   React.useEffect(() => {
-    if (isFetched && !conversation) {
+    // Only show error and redirect if the user is authenticated
+    // This prevents the error when a user is trying to log in to access a conversation
+    if (isAuthed && isFetched && !conversation) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       endSession();
     }
-  }, [conversation, isFetched]);
+  }, [conversation, isFetched, isAuthed]);
 
   React.useEffect(() => {
     dispatch(clearMessages());

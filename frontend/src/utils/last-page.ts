@@ -2,6 +2,13 @@ const LAST_PAGE_KEY = "openhandsLastPage";
 
 export const saveLastPage = () => {
   const currentPath = window.location.pathname;
+  
+  // Always save conversation URLs, even before login
+  if (currentPath.includes("/conversations/")) {
+    localStorage.setItem(LAST_PAGE_KEY, currentPath);
+    return;
+  }
+  
   // Don't save root, tos, or settings pages
   if (
     !currentPath.includes("/settings") &&

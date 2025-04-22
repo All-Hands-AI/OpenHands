@@ -23,8 +23,12 @@ export const useEndSession = () => {
     dispatch(setUrl(browserInitialState.url));
     dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
 
+    // Check if the current page is a conversation page
+    const isConversationPage = window.location.pathname.includes("/conversations/");
+    
     // Clear the last page from localStorage unless preserveLastPage is true
-    if (!preserveLastPage) {
+    // or we're on a conversation page (to preserve the URL for after login)
+    if (!preserveLastPage && !isConversationPage) {
       clearLastPage();
     }
 

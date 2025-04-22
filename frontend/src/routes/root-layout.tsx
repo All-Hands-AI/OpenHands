@@ -137,7 +137,8 @@ export default function MainApp() {
 
   // Track page visits for last page functionality
   React.useEffect(() => {
-    if (pathname && userIsAuthed) {
+    // Always save conversation URLs, even when not authenticated
+    if (pathname && (userIsAuthed || pathname.includes("/conversations/"))) {
       // Save the current page for future reference
       saveLastPage();
     }
