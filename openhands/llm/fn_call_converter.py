@@ -265,7 +265,7 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
     return ret
 
 
-def convert_tools_to_description(tools: list[dict]) -> str:
+def convert_tools_to_description(tools: list[dict], max_desc_length: int = None) -> str:
     ret = ''
     for i, tool in enumerate(tools):
         assert tool['type'] == 'function'
@@ -273,7 +273,12 @@ def convert_tools_to_description(tools: list[dict]) -> str:
         if i > 0:
             ret += '\n'
         ret += f"---- BEGIN FUNCTION #{i+1}: {fn['name']} ----\n"
-        ret += f"Description: {fn['description']}\n"
+
+        # Truncate description if needed
+        desc = fn['description']
+        if max_desc_length and len(desc) > max_desc_length:
+            desc = desc[:max_desc_length-3] + "..."
+        ret += f"Description: {desc}\n"
 
         if 'parameters' in fn:
             ret += 'Parameters:\n'
@@ -286,13 +291,21 @@ def convert_tools_to_description(tools: list[dict]) -> str:
                 param_status = 'required' if is_required else 'optional'
                 param_type = param_info.get('type', 'string')
 
-                # Get parameter description
+                # Get parameter description and truncate if needed
                 desc = param_info.get('description', 'No description provided')
+                if max_desc_length and len(desc) > max_desc_length:
+                    desc = desc[:max_desc_length-3] + "..."
 
                 # Handle enum values if present
                 if 'enum' in param_info:
                     enum_values = ', '.join(f'`{v}`' for v in param_info['enum'])
-                    desc += f'\nAllowed values: [{enum_values}]'
+                    enum_desc = f'\nAllowed values: [{enum_values}]'
+                    if max_desc_length and len(desc + enum_desc) > max_desc_length:
+                        # Only add enum values if there's room
+                        if len(desc) + 20 <= max_desc_length:  # Leave room for "[enum1, enum2,...]"
+                            desc = desc[:max_desc_length-20] + f"\nAllowed values: [...]"
+                    else:
+                        desc += enum_desc
 
                 ret += (
                     f'  ({j+1}) {param_name} ({param_type}, {param_status}): {desc}\n'
@@ -308,6 +321,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
     add_in_context_learning_example: bool = True,
+    max_desc_length: int = None,
 ) -> list[dict]:
     """Convert function calling messages to non-function calling messages."""
     messages = copy.deepcopy(messages)
@@ -562,10 +576,11 @@ def _fix_stopword(content: str) -> str:
 def convert_non_fncall_messages_to_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
+    max_desc_length: int = None,
 ) -> list[dict]:
     """Convert non-function calling messages back to function calling messages."""
     messages = copy.deepcopy(messages)
-    formatted_tools = convert_tools_to_description(tools)
+    formatted_tools = convert_tools_to_description(tools, max_desc_length=max_desc_length)
     system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(
         description=formatted_tools
     )

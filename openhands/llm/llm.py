@@ -225,12 +225,15 @@ class LLM(RetryMixin, DebugMixin):
             mock_fncall_tools = None
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
+                # Handle description length limit for o4-mini
+                max_desc_length = 1024 if 'o4-mini' in self.config.model else None
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages,
                     kwargs['tools'],
                     add_in_context_learning_example=bool(
                         'openhands-lm' not in self.config.model
                     ),
+                    max_desc_length=max_desc_length,
                 )
                 kwargs['messages'] = messages
 
@@ -290,9 +293,13 @@ class LLM(RetryMixin, DebugMixin):
                     )
 
                 non_fncall_response_message = resp.choices[0].message
+                # Handle description length limit for o4-mini
+                max_desc_length = 1024 if 'o4-mini' in self.config.model else None
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
-                        messages + [non_fncall_response_message], mock_fncall_tools
+                        messages + [non_fncall_response_message],
+                        mock_fncall_tools,
+                        max_desc_length=max_desc_length
                     )
                 )
                 fn_call_response_message = fn_call_messages_with_response[-1]
