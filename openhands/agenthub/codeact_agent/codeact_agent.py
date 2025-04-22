@@ -95,7 +95,7 @@ class CodeActAgent(Agent):
         self.response_to_actions_fn = codeact_function_calling.response_to_actions
 
     def _get_tools(self) -> list[ChatCompletionToolParam]:
-        SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+        SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
 
         use_simplified_tool_desc = False
         if self.llm is not None:
