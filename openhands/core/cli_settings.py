@@ -129,7 +129,7 @@ async def modify_llm_settings_basic(
 
         if provider not in organized_models:
             print_formatted_text(
-                HTML(f'\n<grey>Invalid provider selected: {provider}</grey>\n')
+                HTML(f'\n<grey>Invalid provider selected: {provider}</grey>')
             )
             return False
 
@@ -150,7 +150,7 @@ async def modify_llm_settings_basic(
         if model not in organized_models[provider]['models']:
             print_formatted_text(
                 HTML(
-                    f'\n<grey>Invalid model selected: {model} for provider {provider}</grey>\n'
+                    f'\n<grey>Invalid model selected: {model} for provider {provider}</grey>'
                 )
             )
             return False
@@ -237,7 +237,7 @@ async def modify_llm_settings_advanced(
 
         if agent not in agent_list:
             print_formatted_text(
-                HTML(f'\n<grey>Invalid agent selected: {agent}</grey>\n')
+                HTML(f'\n<grey>Invalid agent selected: {agent}</grey>')
             )
             return False
 

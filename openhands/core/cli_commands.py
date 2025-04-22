@@ -176,7 +176,7 @@ async def handle_settings_command(
 
     display_settings(config)
     modify_settings = cli_confirm(
-        'Which settings would you like to modify?',
+        '\nWhich settings would you like to modify?',
         [
             'Basic',
             'Advanced',

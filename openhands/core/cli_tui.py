@@ -136,7 +136,9 @@ def display_banner(session_id: str, is_loaded: asyncio.Event):
     banner_text = (
         'Initialized session' if is_loaded.is_set() else 'Initializing session'
     )
-    print_formatted_text(HTML(f'\n<grey>{banner_text} {session_id}</grey>\n'))
+    print_formatted_text('')
+    print_formatted_text(HTML(f'<grey>{banner_text} {session_id}</grey>'))
+    print_formatted_text('')
 
 
 def display_welcome_message():
@@ -144,7 +146,7 @@ def display_welcome_message():
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
     print_formatted_text(
-        HTML('What do you want to build? <grey>Type /help for help</grey>\n'),
+        HTML('What do you want to build? <grey>Type /help for help</grey>'),
         style=DEFAULT_STYLE,
     )
 
@@ -158,7 +160,7 @@ def display_event(event: Event, config: AppConfig) -> None:
         if event.source == EventSource.AGENT:
             display_message(event.content)
     if isinstance(event, CmdRunAction):
-        display_command(event.command)
+        display_command(event)
     if isinstance(event, CmdOutputObservation):
         display_command_output(event.content)
     if isinstance(event, FileEditAction):
@@ -167,49 +169,30 @@ def display_event(event: Event, config: AppConfig) -> None:
         display_file_edit(event)
     if isinstance(event, FileReadObservation):
         display_file_read(event)
-    if hasattr(event, 'confirmation_state') and config.security.confirmation_mode:
-        display_confirmation(event.confirmation_state)
 
 
 def display_message(message: str):
+    time.sleep(0.2)
     message = message.strip()
 
     if message:
-        print_formatted_text(f'\n{message}\n')
+        print_formatted_text(f'\n{message}')
 
 
-def display_command(command: str):
-    container = Frame(
-        TextArea(
-            text=command,
-            read_only=True,
-            style=COLOR_GREY,
-            wrap_lines=True,
-        ),
-        title='Command Run',
-        style=f'fg:{COLOR_GREY}',
-    )
-    print_container(container)
-    print_formatted_text('')
-
-
-def display_confirmation(confirmation_state: ActionConfirmationStatus):
-    status_map = {
-        ActionConfirmationStatus.CONFIRMED: ('ansigreen', '✅'),
-        ActionConfirmationStatus.REJECTED: ('ansired', '❌'),
-        ActionConfirmationStatus.AWAITING_CONFIRMATION: ('ansiyellow', '⏳'),
-    }
-    color, icon = status_map.get(confirmation_state, ('ansiyellow', ''))
-
-    print_formatted_text(
-        FormattedText(
-            [
-                (color, f'{icon} '),
-                (color, str(confirmation_state)),
-                ('', '\n'),
-            ]
+def display_command(event: CmdRunAction):
+    if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+        container = Frame(
+            TextArea(
+                text=f'$ {event.command}',
+                read_only=True,
+                style=COLOR_GREY,
+                wrap_lines=True,
+            ),
+            title='Action',
+            style='ansired',
         )
-    )
+        print_formatted_text('')
+        print_container(container)
 
 
 def display_command_output(output: str):
@@ -233,11 +216,11 @@ def display_command_output(output: str):
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Command Output',
+        title='Action Output',
         style=f'fg:{COLOR_GREY}',
     )
-    print_container(container)
     print_formatted_text('')
+    print_container(container)
 
 
 def display_file_edit(event: FileEditAction | FileEditObservation):
@@ -253,7 +236,6 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
             style=f'fg:{COLOR_GREY}',
         )
         print_container(container)
-        print_formatted_text('')
 
 
 def display_file_read(event: FileReadObservation):
@@ -268,7 +250,6 @@ def display_file_read(event: FileReadObservation):
         style=f'fg:{COLOR_GREY}',
     )
     print_container(container)
-    print_formatted_text('')
 
 
 # Interactive command output display functions
@@ -311,7 +292,7 @@ def display_help():
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>\n'
+            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
         )
     )
 
@@ -392,7 +373,6 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     print_formatted_text(HTML(f'<grey>Uptime:     {duration_str}</grey>'))
     print_formatted_text('')
     display_usage_metrics(usage_metrics)
-    print_formatted_text('')
 
 
 # Common input functions
@@ -423,7 +403,45 @@ class CommandCompleter(Completer):
                         )
 
 
-prompt_session = PromptSession(style=DEFAULT_STYLE, completer=CommandCompleter())
+prompt_session = PromptSession(style=DEFAULT_STYLE)
+
+# RPrompt animation related variables
+SPINNER_FRAMES = [
+    '[ ■□□□ ]',
+    '[ □■□□ ]',
+    '[ □□■□ ]',
+    '[ □□□■ ]',
+    '[ □□■□ ]',
+    '[ □■□□ ]',
+]
+ANIMATION_INTERVAL = 0.2  # seconds
+
+current_frame_index = 0
+last_update_time = time.monotonic()
+
+
+# RPrompt function for the user confirmation
+def get_rprompt() -> FormattedText:
+    """
+    Returns the current animation frame for the rprompt.
+    This function is called by prompt_toolkit during rendering.
+    """
+    global current_frame_index, last_update_time
+
+    # Only update the frame if enough time has passed
+    # This prevents excessive recalculation during rendering
+    now = time.monotonic()
+    if now - last_update_time > ANIMATION_INTERVAL:
+        current_frame_index = (current_frame_index + 1) % len(SPINNER_FRAMES)
+        last_update_time = now
+
+    # Return the frame wrapped in FormattedText
+    return FormattedText(
+        [
+            ('', ' '),  # Add a space before the spinner
+            (COLOR_GOLD, SPINNER_FRAMES[current_frame_index]),
+        ]
+    )
 
 
 async def read_prompt_input(multiline=False):
@@ -436,6 +454,7 @@ async def read_prompt_input(multiline=False):
                 event.current_buffer.validate_and_handle()
 
             with patch_stdout():
+                print_formatted_text('')
                 message = await prompt_session.prompt_async(
                     'Enter your message and press Ctrl+D to finish:\n',
                     multiline=True,
@@ -443,6 +462,8 @@ async def read_prompt_input(multiline=False):
                 )
         else:
             with patch_stdout():
+                print_formatted_text('')
+                prompt_session.completer = CommandCompleter()
                 message = await prompt_session.prompt_async(
                     '> ',
                 )
@@ -453,10 +474,16 @@ async def read_prompt_input(multiline=False):
 
 async def read_confirmation_input():
     try:
-        confirmation = await prompt_session.prompt_async(
-            'Confirm action (possible security risk)? (y/n) > ',
-        )
-        return confirmation.lower() == 'y'
+        with patch_stdout():
+            prompt_session.completer = None
+            confirmation = await prompt_session.prompt_async(
+                'Proceed with action? (y)es/(n)o > ',
+                rprompt=get_rprompt,
+                refresh_interval=ANIMATION_INTERVAL / 2,
+            )
+            prompt_session.rprompt = None
+            confirmation = confirmation.strip().lower()
+            return confirmation in ['y', 'yes']
     except (KeyboardInterrupt, EOFError):
         return False
 
