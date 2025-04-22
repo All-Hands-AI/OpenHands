@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Spinner } from "@heroui/react";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
@@ -16,7 +17,11 @@ export function RepositorySelectionForm({
 }: RepositorySelectionFormProps) {
   const [selectedRepository, setSelectedRepository] =
     React.useState<GitRepository | null>(null);
-  const { data: repositories } = useUserRepositories();
+  const {
+    data: repositories,
+    isLoading: isLoadingRepositories,
+    isError: isRepositoriesError,
+  } = useUserRepositories();
   const {
     mutate: createConversation,
     isPending,
@@ -54,21 +59,49 @@ export function RepositorySelectionForm({
 
   return (
     <>
-      <SettingsDropdownInput
-        testId="repo-dropdown"
-        name="repo-dropdown"
-        placeholder="Select a repo"
-        items={repositoriesItems || []}
-        wrapperClassName="max-w-[500px]"
-        onSelectionChange={handleRepoSelection}
-        onInputChange={handleInputChange}
-      />
+      {isLoadingRepositories && (
+        <div
+          data-testid="repo-dropdown-loading"
+          className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded"
+        >
+          <Spinner size="sm" />
+          <span className="text-sm">{t("HOME$LOADING_REPOSITORIES")}</span>
+        </div>
+      )}
+
+      {isRepositoriesError && (
+        <div
+          data-testid="repo-dropdown-error"
+          className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded text-red-500"
+        >
+          <span className="text-sm">
+            {t("HOME$FAILED_TO_LOAD_REPOSITORIES")}
+          </span>
+        </div>
+      )}
+
+      {!isLoadingRepositories && !isRepositoriesError && (
+        <SettingsDropdownInput
+          testId="repo-dropdown"
+          name="repo-dropdown"
+          placeholder="Select a repo"
+          items={repositoriesItems || []}
+          wrapperClassName="max-w-[500px]"
+          onSelectionChange={handleRepoSelection}
+          onInputChange={handleInputChange}
+        />
+      )}
 
       <BrandButton
         testId="repo-launch-button"
         variant="primary"
         type="button"
-        isDisabled={!selectedRepository || isCreatingConversation}
+        isDisabled={
+          !selectedRepository ||
+          isCreatingConversation ||
+          isLoadingRepositories ||
+          isRepositoriesError
+        }
         onClick={() => createConversation({ selectedRepository })}
       >
         {!isCreatingConversation && "Launch"}
