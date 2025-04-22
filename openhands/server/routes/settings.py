@@ -80,8 +80,9 @@ async def load_custom_secrets_names(
             for secret_name, _ in settings.secrets_store.custom_secrets.items():
                 custom_secrets.append(secret_name)
 
-        secret_names = GETSettingsCustomSecrets()
-        secret_names.custom_secrets = custom_secrets
+        secret_names = GETSettingsCustomSecrets(
+            custom_secrets=custom_secrets
+        )
         return secret_names
 
     except Exception as e:
