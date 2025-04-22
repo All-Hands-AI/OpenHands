@@ -3,8 +3,8 @@ name: Build and Push Thesis Docker Image
 on:
   push:
     branches:
-      #- staging
-      - 'feat/dockerfile-be-only' 
+      - staging
+      #- 'feat/dockerfile-be-only' 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
