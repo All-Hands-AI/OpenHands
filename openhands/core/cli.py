@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-import toml
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -35,6 +34,10 @@ from openhands.core.cli_settings import (
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
 )
+from openhands.core.cli_utils import (
+    check_folder_security_agreement,
+    update_usage_metrics,
+)
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
@@ -62,7 +65,6 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
-from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -145,103 +147,6 @@ def read_file(file_path):
 def write_to_file(file_path, content):
     with open(file_path, 'w') as f:
         f.write(content)
-
-
-def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
-    if not hasattr(event, 'llm_metrics'):
-        return
-
-    llm_metrics: Metrics | None = getattr(event, 'llm_metrics', None)
-    if not llm_metrics:
-        return
-
-    cost = getattr(llm_metrics, 'accumulated_cost', 0)
-    usage_metrics.total_cost += cost if isinstance(cost, float) else 0
-
-    token_usage = getattr(llm_metrics, 'accumulated_token_usage', None)
-    if not token_usage:
-        return
-
-    prompt_tokens = getattr(token_usage, 'prompt_tokens', 0)
-    completion_tokens = getattr(token_usage, 'completion_tokens', 0)
-    cache_read = getattr(token_usage, 'cache_read_tokens', 0)
-    cache_write = getattr(token_usage, 'cache_write_tokens', 0)
-
-    usage_metrics.total_input_tokens += (
-        prompt_tokens if isinstance(prompt_tokens, int) else 0
-    )
-    usage_metrics.total_output_tokens += (
-        completion_tokens if isinstance(completion_tokens, int) else 0
-    )
-    usage_metrics.total_cache_read += cache_read if isinstance(cache_read, int) else 0
-    usage_metrics.total_cache_write += (
-        cache_write if isinstance(cache_write, int) else 0
-    )
-
-
-def manage_openhands_file(folder_path=None, add_to_trusted=False):
-    openhands_file = Path.home() / '.openhands.toml'
-    default_content: dict = {'trusted_dirs': []}
-
-    if not openhands_file.exists():
-        with open(openhands_file, 'w') as f:
-            toml.dump(default_content, f)
-
-    if folder_path:
-        with open(openhands_file, 'r') as f:
-            try:
-                config = toml.load(f)
-            except Exception:
-                config = default_content
-
-        if 'trusted_dirs' not in config:
-            config['trusted_dirs'] = []
-
-        if folder_path in config['trusted_dirs']:
-            return True
-
-        if add_to_trusted:
-            config['trusted_dirs'].append(folder_path)
-            with open(openhands_file, 'w') as f:
-                toml.dump(config, f)
-
-        return False
-
-    return False
-
-
-def check_folder_security_agreement(current_dir):
-    is_trusted = manage_openhands_file(current_dir)
-
-    if not is_trusted:
-        security_frame = Frame(
-            TextArea(
-                text=(
-                    f' Do you trust the files in this folder?\n\n'
-                    f'   {current_dir}\n\n'
-                    ' OpenHands may read and execute files in this folder with your permission.'
-                ),
-                style=COLOR_GREY,
-                read_only=True,
-                wrap_lines=True,
-            ),
-            style=f'fg:{COLOR_GREY}',
-        )
-
-        clear()
-        print_container(security_frame)
-        print_formatted_text('')
-
-        confirm = (
-            cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
-        )
-
-        if confirm:
-            manage_openhands_file(current_dir, add_to_trusted=True)
-
-        return confirm
-
-    return True
 
 
 async def cleanup_session(
