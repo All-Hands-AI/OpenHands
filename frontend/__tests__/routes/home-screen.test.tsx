@@ -64,8 +64,18 @@ const renderHomeScreen = (initialProvidersAreSet = true) =>
   });
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
-  { id: 1, full_name: "octocat/hello-world", git_provider: "github" },
-  { id: 2, full_name: "octocat/earth", git_provider: "github" },
+  {
+    id: 1,
+    full_name: "octocat/hello-world",
+    git_provider: "github",
+    is_public: true,
+  },
+  {
+    id: 2,
+    full_name: "octocat/earth",
+    git_provider: "github",
+    is_public: true,
+  },
 ];
 
 describe("HomeScreen", () => {

@@ -110,8 +110,18 @@ export const handlers = [
   ...openHandsHandlers,
   http.get("/api/user/repositories", () => {
     const data: GitRepository[] = [
-      { id: 1, full_name: "octocat/hello-world", git_provider: "github" },
-      { id: 2, full_name: "octocat/earth", git_provider: "github" },
+      {
+        id: 1,
+        full_name: "octocat/hello-world",
+        git_provider: "github",
+        is_public: true,
+      },
+      {
+        id: 2,
+        full_name: "octocat/earth",
+        git_provider: "github",
+        is_public: true,
+      },
     ];
 
     return HttpResponse.json(data);

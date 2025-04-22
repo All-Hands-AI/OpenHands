@@ -42,8 +42,18 @@ const renderRepoConnector = (initialProvidersAreSet = true) => {
 };
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
-  { id: 1, full_name: "rbren/polaris", git_provider: "github" },
-  { id: 2, full_name: "All-Hands-AI/OpenHands", git_provider: "github" },
+  {
+    id: 1,
+    full_name: "rbren/polaris",
+    git_provider: "github",
+    is_public: true,
+  },
+  {
+    id: 2,
+    full_name: "All-Hands-AI/OpenHands",
+    git_provider: "github",
+    is_public: true,
+  },
 ];
 
 describe("RepoConnector", () => {
