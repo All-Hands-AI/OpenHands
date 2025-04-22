@@ -6,7 +6,6 @@ from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
-    OH_DEFAULT_TASK_SOLVING_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
 )
