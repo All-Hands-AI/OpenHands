@@ -39,11 +39,10 @@ jobs:
   #         cd frontend
   #         npm run lint
   #         npm run make-i18n && tsc
-
   # Run lint on the python code
   lint-python:
     name: Lint python
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:

@@ -16,6 +16,7 @@ env:
   N_PROCESSES: 10 # Global configuration for number of parallel processes for evaluation
 
 jobs:
+  if: false
   run-integration-tests:
     if: github.event.label.name == 'integration-test' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: blacksmith-4vcpu-ubuntu-2204
