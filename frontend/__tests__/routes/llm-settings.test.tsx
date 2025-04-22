@@ -334,7 +334,7 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
   });
 
-  it.only("should disable the button if there are no changes in the advanced form", async () => {
+  it("should disable the button if there are no changes in the advanced form", async () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
