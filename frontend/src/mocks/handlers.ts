@@ -34,6 +34,15 @@ const MOCK_USER_PREFERENCES: {
   settings: null,
 };
 
+/**
+ * Set the user settings to the default settings
+ *
+ * Useful for resetting the settings in tests
+ */
+export const resetTestHandlersMockSettings = () => {
+  MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
+};
+
 const conversations: Conversation[] = [
   {
     conversation_id: "1",

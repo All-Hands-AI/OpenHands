@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
 import OpenHands from "#/api/open-hands";
-import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import {
+  MOCK_DEFAULT_USER_SETTINGS,
+  resetTestHandlersMockSettings,
+} from "#/mocks/handlers";
 import { AuthProvider } from "#/context/auth-context";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 
@@ -20,6 +23,7 @@ const renderLlmSettingsScreen = () =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+  resetTestHandlersMockSettings();
 });
 
 describe("Content", () => {
@@ -196,8 +200,96 @@ describe("Content", () => {
 });
 
 describe("Form submission", () => {
-  it.todo("should submit the basic form with the correct values");
-  it.todo("should submit the advanced form with the correct values");
+  it("should submit the basic form with the correct values", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+
+    const provider = screen.getByTestId("llm-provider-input");
+    const model = screen.getByTestId("llm-model-input");
+    const apiKey = screen.getByTestId("llm-api-key-input");
+
+    // select provider
+    await userEvent.click(provider);
+    const providerOption = screen.getByText("OpenAI");
+    await userEvent.click(providerOption);
+    expect(provider).toHaveValue("OpenAI");
+
+    // enter api key
+    await userEvent.type(apiKey, "test-api-key");
+
+    // select model
+    await userEvent.click(model);
+    const modelOption = screen.getByText("gpt-4o");
+    await userEvent.click(modelOption);
+    expect(model).toHaveValue("gpt-4o");
+
+    const submitButton = screen.getByTestId("submit-button");
+    await userEvent.click(submitButton);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        llm_model: "openai/gpt-4o",
+        llm_api_key: "test-api-key",
+      }),
+    );
+  });
+
+  it("should submit the advanced form with the correct values", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+
+    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+    await userEvent.click(advancedSwitch);
+
+    const model = screen.getByTestId("llm-custom-model-input");
+    const baseUrl = screen.getByTestId("base-url-input");
+    const apiKey = screen.getByTestId("llm-api-key-input");
+    const agent = screen.getByTestId("agent-input");
+    const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+    const condensor = screen.getByTestId("enable-memory-condenser-switch");
+
+    // enter custom model
+    await userEvent.clear(model);
+    await userEvent.type(model, "openai/gpt-4o");
+    expect(model).toHaveValue("openai/gpt-4o");
+
+    // enter base url
+    await userEvent.type(baseUrl, "https://api.openai.com/v1/chat/completions");
+    expect(baseUrl).toHaveValue("https://api.openai.com/v1/chat/completions");
+
+    // enter api key
+    await userEvent.type(apiKey, "test-api-key");
+
+    // toggle confirmation mode
+    await userEvent.click(confirmation);
+    expect(confirmation).toBeChecked();
+
+    // toggle memory condensor
+    await userEvent.click(condensor);
+    expect(condensor).not.toBeChecked();
+
+    // enter agent
+    await userEvent.clear(agent);
+    await userEvent.type(agent, "CoActAgent");
+    expect(agent).toHaveValue("CoActAgent");
+
+    const submitButton = screen.getByTestId("submit-button");
+    await userEvent.click(submitButton);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        llm_model: "openai/gpt-4o",
+        llm_base_url: "https://api.openai.com/v1/chat/completions",
+        agent: "CoActAgent",
+        confirmation_mode: true,
+        enable_default_condenser: false,
+      }),
+    );
+  });
   it.todo(
     "should disable the button if there are no changes in the basic form",
   );
