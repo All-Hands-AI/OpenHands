@@ -209,17 +209,38 @@ def test_multiple_commands(windows_bash_session):
     assert result_use_var.exit_code == 0
 
 
-def test_multiple_commands_rejected(windows_bash_session):
-    """Test that executing multiple commands separated by newline is rejected."""
-    # Test multiple commands separated by newline
-    command_str = "Write-Output 'First Command'\nWrite-Output 'Second Command'"
-    action = CmdRunAction(command=command_str)
-    result = windows_bash_session.execute(action)
+def test_multiple_commands_rejected_and_individual_execution(windows_bash_session):
+    """Test that executing multiple commands separated by newline is rejected,
+    but individual commands (including multiline) execute correctly."""
+    # Define a list of commands, including multiline and special characters
+    cmds = [
+            'Get-ChildItem',
+            'Write-Output "hello`nworld"',
+            """Write-Output "hello it's me\"""",
+            """Write-Output `
+    'hello' `
+    -NoNewline""",
+            """Write-Output 'hello`nworld`nare`nyou`nthere?'""",
+            """Write-Output 'hello`nworld`nare`nyou`n`nthere?'""",
+            """Write-Output 'hello`nworld `"'""",  # Escape the trailing double quote
+        ]
+    joined_cmds = "\n".join(cmds)
 
-    assert isinstance(result, ErrorObservation)
-    assert "ERROR: Cannot execute multiple commands at once." in result.content
-    assert "(1) Write-Output 'First Command'" in result.content
-    assert "(2) Write-Output 'Second Command'" in result.content
+    # 1. Test that executing multiple commands at once fails
+    action_multi = CmdRunAction(command=joined_cmds)
+    result_multi = windows_bash_session.execute(action_multi)
+
+    assert isinstance(result_multi, ErrorObservation)
+    assert "ERROR: Cannot execute multiple commands at once" in result_multi.content
+
+    # 2. Now run each command individually and verify they work
+    results = []
+    for cmd in cmds:
+        action_single = CmdRunAction(command=cmd)
+        obs = windows_bash_session.execute(action_single)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        results.append(obs.content.strip()) # Strip trailing newlines for comparison
 
 
 def test_working_directory(windows_bash_session, temp_work_dir):

@@ -267,9 +267,10 @@ class ActionExecutor:
             if is_windows:
                 # Windows, local
                 base_git_config = (
-                    'git config --file ./.git_config user.name "openhands"; '
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev"; '
-                    '$env:GIT_CONFIG = (Get-Location).Path + "\\\\.git_config"'
+                    'git config --file ./.git_config user.name "openhands" && '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
+                    # TODO: fix this later
+                    # '$env:GIT_CONFIG = (Get-Location).Path + "\\\\.git_config"'
                 )
             else:
                 # Linux/macOS, local
@@ -291,13 +292,7 @@ class ActionExecutor:
         else:
             no_pager_cmd = 'alias git="git --no-pager"'
 
-        # Combine commands based on OS
-        # If windows, it must be local runtime, use semicolon.
-        # If not windows (Linux/macOS), use && (works for both local and non-local).
-        if is_windows:
-            command_to_run = f'{base_git_config}; {no_pager_cmd}'
-        else:
-            command_to_run = f'{base_git_config} && {no_pager_cmd}'
+        command_to_run = f'{base_git_config} && {no_pager_cmd}'
 
         INIT_COMMANDS.append(command_to_run)
 
@@ -342,8 +337,10 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
+                # Escape backslashes in the path for Python string literal
+                python_safe_cwd = self.bash_session.cwd.replace('\\', '\\\\\\\\')
                 reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{self.bash_session.cwd}")'
+                    f'import os; os.chdir("{python_safe_cwd}")' # Use escaped path
                 )
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(

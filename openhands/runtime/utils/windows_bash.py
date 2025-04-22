@@ -83,13 +83,19 @@ if clr_system_load_success:
         # RunspaceInvoke might be deprecated or unnecessary if using RunspaceFactory/PowerShell.Create()
         # from System.Management.Automation import RunspaceInvoke
 
-        from System.Management.Automation.Runspaces import RunspaceFactory # Needed for runspace creation
-        print("Successfully imported RunspaceFactory type from System.Management.Automation.Runspaces")
+        from System.Management.Automation.Runspaces import RunspaceFactory, RunspaceState # Needed for runspace creation/state checking
+        print("Successfully imported RunspaceFactory and RunspaceState types from System.Management.Automation.Runspaces")
 
         # Import types needed for Job management and state checking
         from System.Management.Automation import PSDataCollection, JobState
         print("Successfully imported PSDataCollection and JobState types from System.Management.Automation")
         
+        # Import Parser types needed for command validation
+        from System.Management.Automation.Language import Parser, ParseError, Token # Removed ParseErrorRecord
+        print("Successfully imported Parser, ParseError, and Token types from System.Management.Automation.Language")
+        
+        # Removed problematic Parser/ParseErrorRecord import attempts
+
         from System import TimeSpan, Uri # Uri might be needed for some operations
         from System.Collections.ObjectModel import Collection
         from System.Text import Encoding # Though maybe not directly needed here
@@ -451,8 +457,10 @@ class WindowsPowershellSession:
                 logger.debug(f"_stop_active_job: Manually appended keyboard interrupt message.")
             # ---
 
-            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
-            metadata.suffix = f"\n[Command/Job stopped. Final State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+            current_cwd = self._cwd # Use the last known CWD from the session
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
+            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=python_safe_cwd) # Use escaped version
+            metadata.suffix = f"\\n[Command/Job stopped. Final State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
 
             return CmdOutputObservation(
                 content=final_content, # Use modified content
@@ -501,9 +509,11 @@ class WindowsPowershellSession:
             if is_finished:
                 exit_code = 0 if current_state == JobState.Completed else 1
 
-            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=self._cwd)
+            current_cwd = self._cwd # Use the last known CWD from the session
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
+            metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=python_safe_cwd) # Use escaped version
             status_suffix = "Finished" if is_finished else "Running"
-            metadata.suffix = f"\n[Job Status: {status_suffix}. Current State: {current_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
+            metadata.suffix = f"\\n[Job Status: {status_suffix}. Current State: {current_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
             if is_finished:
                 metadata.suffix += " (Job Cleared)"
 
@@ -547,20 +557,51 @@ class WindowsPowershellSession:
         command = action.command.strip()
         timeout_seconds = action.timeout or 60 # Default to 60 seconds hard timeout
 
-        logger.info(f"Received command: \'{command}\', Timeout: {timeout_seconds}s")
+        logger.info(f"Received command: '{command}', Timeout: {timeout_seconds}s")
 
-        # Check if the command contains multiple commands separated by newlines
-        # Note: This is a simple check and doesn't parse PowerShell syntax deeply like bashlex.
-        # It won't catch multiple commands on the same line separated by ';'.
-        lines = [line for line in command.split('\n') if line.strip()]
-        if len(lines) > 1:
-            return ErrorObservation(
-                content=(
-                    f'ERROR: Cannot execute multiple commands at once.\\n'
-                    f'Please run each command separately OR chain them using PowerShell syntax (e.g., \';\' or pipelines) within a single command line.\\n'
-                    f'Provided commands (split by newline):\\n{"\\n".join(f"({i+1}) {cmd}" for i, cmd in enumerate(lines))}'
+        # --- Validate command structure using PowerShell Parser ---
+        parse_errors = None # Using NoneType for clarity vs Collection[ParseErrorRecord]()
+        statements = None
+        try:
+            # Parse the input command string
+            # C# signature: ParseInput(string input, out Token[] tokens, out ParseError[] errors)
+            # pythonnet returns (AST, tokens_array, errors_array)
+            ast, _, parse_errors = Parser.ParseInput(command, None)
+            # Check for parsing errors first
+            if parse_errors and parse_errors.Length > 0:
+                # Note: The elements in parse_errors should be of type ParseError
+                error_messages = "\\n".join([f"  - {err.Message} at Line {err.Extent.StartLineNumber}, Column {err.Extent.StartColumnNumber}" for err in parse_errors])
+                logger.error(f"Command failed PowerShell parsing:\\n{error_messages}")
+                return ErrorObservation(
+                    content=(
+                        f'ERROR: Command could not be parsed by PowerShell.\\n'
+                        f'Syntax errors detected:\\n{error_messages}'
+                    )
                 )
+            # Check the number of statements in the script block's main body
+            statements = ast.EndBlock.Statements
+            if statements.Count > 1:
+                logger.error(f"Detected {statements.Count} statements in the command. Only one is allowed.")
+                return ErrorObservation(
+                    content=(
+                        f'ERROR: Cannot execute multiple commands at once.\\n'
+                        f'Detected {statements.Count} statements in the provided command. '
+                        f'Please run each command separately OR chain them using valid PowerShell operators (e.g., pipelines) within a single statement.'
+                    )
+                )
+            elif statements.Count == 0 and not command.strip().startswith('#'): # Allow empty lines or comments
+                logger.warning("Received command that resulted in zero executable statements (likely whitespace or comment).")
+                # This might be handled later, but adding a check here for consistency.
+                # Fall through to handle the empty command logic later.
+                pass # Let the existing empty command handling logic proceed
+
+        except Exception as parse_ex:
+            logger.error(f"Exception during PowerShell command parsing: {parse_ex}")
+            logger.error(traceback.format_exc())
+            return ErrorObservation(
+                content=f'ERROR: An exception occurred while parsing the command: {parse_ex}'
             )
+        # --- End validation ---
 
         with self._job_lock: # Ensure thread-safe access/modification of self.active_job
             # --- Handle interaction with existing job ---
@@ -598,7 +639,9 @@ class WindowsPowershellSession:
             # --- If we reach here, there is no active job ---
             if command == "": # Handle empty command when NO job is active
                 logger.warning("Received empty command string (no active job).")
-                return CmdOutputObservation(content="", command="", metadata=CmdOutputMetadata(exit_code=0, working_dir=self._get_current_cwd()))
+                current_cwd = self._get_current_cwd() # Get raw CWD
+                python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
+                return CmdOutputObservation(content="", command="", metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)) # Use escaped version
 
             if command.startswith("C-"): # Handle C-* when NO job is active/relevant
                 logger.warning(f"Received control character command: {command}. Not supported when no job active.")
@@ -802,6 +845,7 @@ class WindowsPowershellSession:
 
         # Get current CWD (might have changed if commands ran outside job?)
         current_cwd = self._get_current_cwd() # Get CWD after potential job activity
+        python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
 
         # Combine output and errors for final observation
         final_output = "\n".join(output_builder)
@@ -813,7 +857,7 @@ class WindowsPowershellSession:
                 exit_code = 1
 
         # Create metadata
-        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=current_cwd)
+        metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=python_safe_cwd) # Use escaped version
         if timed_out:
             # Match the suffix format expected by tests for timeout
             suffix = (
@@ -823,12 +867,12 @@ class WindowsPowershellSession:
                 f"or send keys to interrupt/kill the command.]"
             )
         elif shutdown_requested:
-            suffix = f"\n[Command execution cancelled due to shutdown signal. Job {job.Id} may still be running. Exit code: {exit_code}, CWD: {current_cwd}]"
+            suffix = f"\n[Command execution cancelled due to shutdown signal. Job {job.Id} may still be running. Exit code: {exit_code}, CWD: {metadata.working_dir}]"
         elif job_finished_naturally:
             status = "Completed" if exit_code == 0 else f"Finished ({final_state})"
-            suffix = f"\n[Command completed via Job {job.Id}. Status: {status}, Exit Code: {exit_code}, CWD: {current_cwd}]"
+            suffix = f"\n[Command completed via Job {job.Id}. Status: {status}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
         else: # Should not happen? Fallback
-            suffix = f"\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {current_cwd}]"
+            suffix = f"\n[Command execution finished. State: {final_state}, Exit Code: {exit_code}, CWD: {metadata.working_dir}]"
         metadata.suffix = suffix
 
         return CmdOutputObservation(
@@ -863,7 +907,9 @@ class WindowsPowershellSession:
         if hasattr(self, 'runspace') and self.runspace:
             try:
                 # Check state using System.Management.Automation.Runspaces namespace
-                if self.runspace.RunspaceStateInfo.State == System.Management.Automation.Runspaces.RunspaceState.Opened:
+                # Get the state info object first to avoid potential pythonnet issues with nested access
+                runspace_state_info = self.runspace.RunspaceStateInfo
+                if runspace_state_info.State == RunspaceState.Opened:
                     self.runspace.Close()
                 self.runspace.Dispose()
                 logger.info("PowerShell runspace closed and disposed.")
