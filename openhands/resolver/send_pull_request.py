@@ -16,7 +16,6 @@ from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import ServiceContextIssue
 from openhands.resolver.io_utils import (
-    load_all_resolver_outputs,
     load_single_resolver_output,
 )
 from openhands.resolver.patching import apply_diff, parse_patch
@@ -668,8 +667,6 @@ def main() -> None:
 
     if not os.path.exists(my_args.output_dir):
         raise ValueError(f'Output directory {my_args.output_dir} does not exist.')
-
-   
 
     if not my_args.issue_number.isdigit():
         raise ValueError(f'Issue number {my_args.issue_number} is not a number.')
