@@ -131,9 +131,6 @@ export function ApiKeysManager() {
                     {t(I18nKey.SETTINGS$NAME)}
                   </th>
                   <th className="text-left p-3 text-sm font-medium">
-                    {t(I18nKey.SETTINGS$KEY_PREFIX)}
-                  </th>
-                  <th className="text-left p-3 text-sm font-medium">
                     {t(I18nKey.SETTINGS$CREATED_AT)}
                   </th>
                   <th className="text-left p-3 text-sm font-medium">
@@ -148,7 +145,6 @@ export function ApiKeysManager() {
                 {apiKeys.map((key) => (
                   <tr key={key.id} className="border-t border-tertiary">
                     <td className="p-3 text-sm">{key.name}</td>
-                    <td className="p-3 text-sm font-mono">{key.prefix}...</td>
                     <td className="p-3 text-sm">
                       {formatDate(key.created_at)}
                     </td>
