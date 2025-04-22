@@ -258,11 +258,15 @@ async def modify_llm_settings_advanced(
         )
 
         base_url = await get_validated_input(
-            session, '(Step 2/6) Base URL (CTRL-c to cancel): ', error_message='Base URL cannot be empty'
+            session,
+            '(Step 2/6) Base URL (CTRL-c to cancel): ',
+            error_message='Base URL cannot be empty',
         )
 
         api_key = await get_validated_input(
-            session, '(Step 3/6) API Key (CTRL-c to cancel): ', error_message='API Key cannot be empty'
+            session,
+            '(Step 3/6) API Key (CTRL-c to cancel): ',
+            error_message='API Key cannot be empty',
         )
 
         agent_list = Agent.list_agents()

@@ -463,6 +463,7 @@ class TestModifyLLMSettingsAdvanced:
                 'https://new-url',  # Base URL
                 'new-api-key',  # API key
                 'invalid-agent',  # Invalid agent
+                'default',  # Valid agent on retry
             ]
         )
         mock_session.return_value = session_instance
@@ -474,8 +475,13 @@ class TestModifyLLMSettingsAdvanced:
         assert result is False
 
         # Verify error message was shown
-        mock_print.assert_called_once()
-        args, kwargs = mock_print.call_args
+        assert (
+            mock_print.call_count == 3
+        )  # Called 3 times: empty line, error message, empty line
+        error_message_call = mock_print.call_args_list[
+            1
+        ]  # The second call contains the error message
+        args, kwargs = error_message_call
         assert isinstance(args[0], HTML)
         assert 'Invalid agent' in args[0].value
 
