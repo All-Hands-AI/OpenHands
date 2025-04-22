@@ -5,13 +5,10 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
-    AuthenticationError,
     BaseGitService,
     GitService,
     ProviderType,
-    RateLimitError,
     Repository,
     RequestMethod,
     SuggestedTask,
@@ -46,6 +43,10 @@ class GitHubService(BaseGitService, GitService):
         if base_domain:
             self.BASE_URL = f'https://{base_domain}/api/v3'
 
+    @property
+    def provider(self) -> str:
+        return ProviderType.GITLAB.value
+    
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
         if not self.token:
@@ -101,18 +102,9 @@ class GitHubService(BaseGitService, GitService):
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid Github token')
-            elif e.response.status_code == 429:
-                logger.warning(f'Rate limit exceeded on GitHub API: {e}')
-                raise RateLimitError('GitHub API rate limit exceeded')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
@@ -268,18 +260,9 @@ class GitHubService(BaseGitService, GitService):
                 return dict(result)
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid Github token')
-            elif e.response.status_code == 429:
-                logger.warning(f'Rate limit exceeded on GitHub API: {e}')
-                raise RateLimitError('GitHub API rate limit exceeded')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
