@@ -15,6 +15,7 @@
     "typecheck": "tsc",
     "generate-swagger-ui": "node generate-swagger-ui.js"
   },
+  "// Note": "The OpenAPI spec is stored in docs/static/openapi.json so it's accessible at /openapi.json in the deployed site",
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
     "@docusaurus/plugin-content-pages": "^3.7.0",

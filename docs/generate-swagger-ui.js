@@ -2,6 +2,16 @@ const fs = require('fs');
 const path = require('path');
 const swaggerUiDist = require('swagger-ui-dist');
 
+/**
+ * This script manually sets up Swagger UI for the Docusaurus documentation.
+ * 
+ * Why we need this approach:
+ * 1. Docusaurus doesn't have a built-in way to integrate Swagger UI
+ * 2. We need to copy the necessary files from swagger-ui-dist to our static directory
+ * 3. We need to create a custom index.html file that points to our OpenAPI spec
+ * 4. This approach allows us to customize the Swagger UI to match our documentation style
+ */
+
 // Get the absolute path to the swagger-ui-dist package
 const swaggerUiDistPath = swaggerUiDist.getAbsoluteFSPath();
 
