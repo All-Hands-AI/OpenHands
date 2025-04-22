@@ -8,6 +8,7 @@ from typing import Any, Literal
 import pandas as pd
 import toml
 from datasets import load_dataset
+from jinja2 import Environment, FileSystemLoader
 
 import openhands.agenthub
 from evaluation.benchmarks.swe_bench.binary_patch_utils import (
@@ -75,154 +76,50 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     mode = metadata.details['mode']
+    llm_model = metadata.llm_config.model
+
+    # Determine the template file based on mode and LLM
     if mode.startswith('swt'):
-        test_instructions = (
-            f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
-            if mode.endswith('ci')
-            else ''
-        )
-        instruction = f"""\
-<uploaded_files>
-/workspace/{workspace_dir_name}
-</uploaded_files>
-I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
-
-<issue_description>
-{instance.problem_statement}
-</issue_description>
-
-
-Can you help me implement the necessary changes to the repository to test whether the issue in <issue_description> was resolved?
-I will take care of all changes to any of the non-test files. This means you DON'T have to modify the actual logic and ONLY have to update test logic and tests!
-Your task is to make the minimal changes to tests files in the /workspace directory to reproduce the issue in the <issue_description>, i.e., such that the generated tests fail in the current state (where the issue is unresolved) and pass when the issue will be resolved.
-Follow these steps to reproduce the issue:
-1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.
-2. Create a script `reproduction.py` to reproduce the error and execute it with `python reproduction.py` using the BashTool, to confirm the error
-3. Edit the sourcecode of the repo to integrate your reproduction script into the test framework
-4. Run the test framework and make sure your tests fail! Only submit FAILING tests! Never submit passing tests.
-{test_instructions}Your thinking should be thorough and so it's fine if it's very long.
-"""
-    else:
-        if ('claude') in metadata.llm_config.model:
-            instruction = f"""
-<uploaded_files>
-/workspace/{workspace_dir_name}
-</uploaded_files>
-
-I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
-
-<issue_description>
-{instance.problem_statement}
-</issue_description>
-
-Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?
-I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
-Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
-
-Follow these phases to resolve the issue:
-
-Phase 1. READING: read the problem and reword it in clearer terms
-   1.1 If there are code or config snippets. Express in words any best practices or conventions in them.
-   1.2 Hightlight message errors, method names, variables, file names, stack traces, and technical details.
-   1.3 Explain the problem in clear terms.
-   1.4 Enumerate the steps to reproduce the problem.
-   1.5 Hightlight any best practices to take into account when testing and fixing the issue
-
-Phase 2. RUNNING: install and run the tests on the repository
-   2.1 Follow the readme
-   2.2 Install the environment and anything needed
-   2.2 Iterate and figure out how to run the tests
-
-Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions
-   3.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
-   3.2 Identify all files related to the problem statement.
-   3.3 Propose the methods and files to fix the issue and explain why.
-   3.4 From the possible file locations, select the most likely location to fix the issue.
-
-Phase 4. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue.
-   4.1 Look at existing test files in the repository to understand the test format/structure.
-   4.2 Create a minimal reproduction script that reproduces the located issue.
-   4.3 Run the reproduction script to confirm you are reproducing the issue.
-   4.4 Adjust the reproduction script as necessary.
-
-Phase 5. FIX ANALYSIS: state clearly the problem and how to fix it
-   5.1 State clearly what the problem is.
-   5.2 State clearly where the problem is located.
-   5.3 State clearly how the test reproduces the issue.
-   5.4 State clearly the best practices to take into account in the fix.
-   5.5 State clearly how to fix the problem.
-
-Phase 6. FIX IMPLEMENTATION: Edit the source code to implement your chosen solution.
-   6.1 Make minimal, focused changes to fix the issue.
-
-Phase 7. VERIFICATION: Test your implementation thoroughly.
-   7.1 Run your reproduction script to verify the fix works.
-   7.2 Add edge cases to your test script to ensure comprehensive coverage.
-   7.3 Run existing tests related to the modified code to ensure you haven't broken anything.
-
-8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
-   8.1 Ensure you've fully addressed all requirements.
-   8.2 Run any tests in the repository related to:
-     8.2.1 The issue you are fixing
-     8.2.2 The files you modified
-     8.2.3 The functions you changed
-   8.3 If any tests fail, revise your implementation until all tests pass
-
-Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
-"""
+        template_name = 'swt.j2'
+    elif mode == 'swe':
+        if 'claude' in llm_model:
+            template_name = 'swe_claude.j2'
+        elif 'gemini' in llm_model:
+            template_name = 'swe_gemini.j2'
         else:
-            instruction = f"""
-# Task: Fix Issue in Python Repository
+            template_name = 'swe_default.j2'  # Default for 'swe' mode
+    else:
+        # Fallback or error handling if mode is unexpected
+        logger.error(f"Unexpected evaluation mode: {mode}. Falling back to default.")
+        template_name = 'swe_default.j2'
 
-## Repository Context
-You are provided with a Python code repository that contains an issue requiring your attention. The repository is located in a sandboxed environment, and you have access to the codebase to implement the necessary changes.
-The code repository is located at: `/workspace/{workspace_dir_name}`
-(This path is provided for context; use file system tools to confirm paths before access).
+    # Set up Jinja2 environment
+    # Assuming templates are in 'evaluation/benchmarks/swe_bench/prompts' relative to this script
+    prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')
+    env = Environment(loader=FileSystemLoader(prompts_dir))
+    template = env.get_template(template_name)
 
-## Goal
-Your goal is to fix the issue described in the **Issue Description** section below. Implement the necessary changes to **non-test files only** within the repository, ensuring that **all relevant tests pass** after your changes.
+    # Prepare context for rendering
+    context = {
+        'instance': instance,
+        'workspace_dir_name': workspace_dir_name,
+        'metadata': metadata,  # Pass metadata if needed in templates
+    }
 
-## Key Requirements & Constraints
+    # Add specific context for swt-ci mode if needed
+    if mode == 'swt-ci':
+        context['test_instructions'] = (
+            f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
+        )
+    else:
+        context['test_instructions'] = '' # Ensure it's defined for other modes
 
-1.  **Understand the problem** very well: it is a bug report, and you know humans don't always write good descriptions. Explore the codebase to understand the related code and the problem in depth. It is possible that the solution needs to be a bit more extensive than just the stated text. Don't exagerate though: don't do unrelated refactoring, but also don't interpret the description too strictly.
-2.  **Focus on the issues:** Implement the fix focusing on non-test files related to the issue.
-2.  **Environment Ready:** The Python environment is pre-configured with all dependencies. Do not install packages.
-3.  **Mandatory Testing Procedure:**
-    *   **Create Test to Reproduce the Issue:** *Before* implementing any fix, you MUST create a *new test* (separate from existing tests) that specifically reproduces the issue.
-            * Take existing tests as example to understand the testing format/structure.
-            * Enhance this test with edge cases.
-            * Run this test to confirm reproduction.
-    *   **Verify Fix:** After implementing the fix, run your test again to verify the issue is resolved.
-    *   **Identify ALL Relevant Tests:** You MUST perform a **dedicated search and analysis** to identify **all** existing unit tests potentially affected by your changes. This includes:
-        *   Tests in the same module/directory as the changed files (e.g., `tests/` subdirectories).
-        *   Tests explicitly importing or using the modified code/classes/functions.
-        *   Tests mentioned in the issue description or related documentation.
-        *   Tests covering functionalities that *depend on* the modified code (analyze callers/dependencies if necessary).
-        **If you cannot confidently identify a specific subset, you MUST identify and plan to run the entire test suite for the modified application or module(s). State your identified test scope clearly.**
-    *   **Run Identified Relevant Tests:** You MUST execute the **complete set** of relevant existing unit tests you identified in the previous step. Ensure you are running the *correct and comprehensive set* of tests. You MUST NOT modify these existing tests.
-    *   **Final Check & Verification:** Before finishing, ensure **all** identified relevant existing tests pass. **Explicitly confirm that you have considered potential omissions in your test selection and believe the executed tests comprehensively cover the impact of your changes.** Failing to identify and run the *complete* relevant set constitutes a failure. If any identified tests fail, revise your fix. Passing all relevant tests is the primary measure of success.
-4.  **Defensive Programming:** Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
-5.  **Final Review:** Compare your solution against the original issue and the base commit ({instance["base_commit"]}) to ensure completeness and test passage.
-
-## General Workflow Guidance
-
-*   Prioritize understanding the problem, exploring the code, planning your fix, implementing it carefully using the required diff format, and **thoroughly testing** according to the **Mandatory Testing Procedure**.
-*   Consider trade-offs between different solutions. The goal is a **robust change that makes the relevant tests pass.** Quality, correctness, and reliability are key.
-*   Actively practice defensive programming: anticipate and handle potential edge cases, unexpected inputs, and different ways the affected code might be called **to ensure the fix works reliably and allows relevant tests to pass.** Analyze the potential impact on other parts of the codebase.
-
-*   IMPORTANT: Your solution will be tested by additional hidden tests, so do not assume the task is complete just because visible tests pass! Refine the solution until you are confident that it is robust and comprehensive according to the **Defensive Programming** requirement.
-
-## Final Note
-Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
-
-## Issue Description
-{instance.problem_statement}
-"""
+    # Render the instruction
+    instruction = template.render(context)
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
+            '\n<IMPORTANT!>\n'
             'You SHOULD NEVER attempt to browse the web. '
             '</IMPORTANT!>\n'
         )
