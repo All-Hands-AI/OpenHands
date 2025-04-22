@@ -4885,15 +4885,13 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mcpm"
-version = "1.4.0"
+version = "1.5.1"
 description = "MCPM - Model Context Protocol Manager"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-files = [
-    {file = "mcpm-1.4.0-py3-none-any.whl", hash = "sha256:1288420fa2a22466d387370a0b72636392fee732e76fb6732d6ed3f3f528e0e9"},
-    {file = "mcpm-1.4.0.tar.gz", hash = "sha256:dceecf32950ad475b4642c646135fb4ef53b4dc57ee50a3c2aeff264b6cd63de"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 click = ">=8.1.3"
@@ -4906,6 +4904,12 @@ requests = ">=2.28.0"
 rich = ">=12.0.0"
 ruamel-yaml = ">=0.18.10"
 watchfiles = ">=1.0.4"
+
+[package.source]
+type = "git"
+url = "https://github.com/xingyaoww/mcpm.sh.git"
+reference = "feature/custom-api-key-support"
+resolved_reference = "f7bebc4f1159c5f6625e961a89e3d827f023eaf8"
 
 [[package]]
 name = "mdurl"
@@ -10416,4 +10420,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "009a62713fdf06eaf0461a277a6f4dba3252a190543bf8026800c56d70f8a1a2"
+content-hash = "2b1a5886e6b52b3538d200b4f43e277d786d2020b828c74e32f386051d0fd98d"
