@@ -14,7 +14,7 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
 
-from openhands.core.cli_display import COLOR_GOLD, COMMANDS, DEFAULT_STYLE
+from openhands.core.cli_output import COLOR_GOLD, COMMANDS, DEFAULT_STYLE
 
 
 class CommandCompleter(Completer):

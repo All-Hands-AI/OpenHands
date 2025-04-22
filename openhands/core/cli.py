@@ -1,38 +1,26 @@
 import asyncio
 import logging
 import sys
-from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.shortcuts import clear, print_container
-from prompt_toolkit.widgets import Frame, TextArea
+from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
+from openhands.core.cli_commands import handle_commands
 from openhands.core.cli_input import (
-    cli_confirm,
     read_confirmation_input,
     read_prompt_input,
 )
 from openhands.core.cli_output import (
-    COLOR_GREY,
     UsageMetrics,
     display_banner,
     display_event,
-    display_help,
     display_initialization_animation,
     display_runtime_initialization_message,
-    display_shutdown_message,
-    display_status,
     display_welcome_message,
-)
-from openhands.core.cli_settings import (
-    display_settings,
-    modify_llm_settings_advanced,
-    modify_llm_settings_basic,
 )
 from openhands.core.cli_utils import (
     check_folder_security_agreement,
@@ -72,81 +60,6 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
-
-REPO_MD_CREATE_PROMPT = """
-Please explore this repository. Create the file .openhands/microagents/repo.md with:
-- A description of the project
-- An overview of the file structure
-- Any information on how to run tests or other relevant commands
-- Any other information that would be helpful to a brand new developer
-Keep it short--just a few paragraphs will do.
-"""
-
-
-async def init_repository(current_dir: str) -> bool:
-    repo_file_path = Path(current_dir) / '.openhands' / 'microagents' / 'repo.md'
-    init_repo = False
-
-    if repo_file_path.exists():
-        try:
-            content = await asyncio.get_event_loop().run_in_executor(
-                None, read_file, repo_file_path
-            )
-
-            print_formatted_text(
-                'Repository instructions file (repo.md) already exists.\n'
-            )
-
-            container = Frame(
-                TextArea(
-                    text=content,
-                    read_only=True,
-                    style=COLOR_GREY,
-                    wrap_lines=True,
-                ),
-                title='Repository Instructions (repo.md)',
-                style=f'fg:{COLOR_GREY}',
-            )
-            print_container(container)
-            print_formatted_text('')  # Add a newline after the frame
-
-            init_repo = (
-                cli_confirm(
-                    'Do you want to re-initialize?',
-                    ['Yes, re-initialize', 'No, dismiss'],
-                )
-                == 0
-            )
-
-            if init_repo:
-                write_to_file(repo_file_path, '')
-        except Exception:
-            print_formatted_text('Error reading repository instructions file (repo.md)')
-            init_repo = False
-    else:
-        print_formatted_text(
-            '\nRepository instructions file will be created by exploring the repository.\n'
-        )
-
-        init_repo = (
-            cli_confirm(
-                'Do you want to proceed?',
-                ['Yes, create', 'No, dismiss'],
-            )
-            == 0
-        )
-
-    return init_repo
-
-
-def read_file(file_path):
-    with open(file_path, 'r') as f:
-        return f.read()
-
-
-def write_to_file(file_path, content):
-    with open(file_path, 'w') as f:
-        f.write(content)
 
 
 async def cleanup_session(
@@ -220,94 +133,22 @@ async def run_session(
             if not next_message.strip():
                 continue
 
-            if next_message == '/exit':
-                confirm_exit = (
-                    cli_confirm('\nTerminate session?', ['Yes, proceed', 'No, dismiss'])
-                    == 0
-                )
+            (
+                close_repl,
+                reload_microagents,
+                new_session_requested,
+            ) = await handle_commands(
+                next_message,
+                event_stream,
+                usage_metrics,
+                sid,
+                config,
+                current_dir,
+                settings_store,
+            )
 
-                if not confirm_exit:
-                    continue
-
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.STOPPED),
-                    EventSource.ENVIRONMENT,
-                )
-                display_shutdown_message(usage_metrics, sid)
+            if close_repl:
                 return
-            elif next_message == '/help':
-                display_help()
-                continue
-            elif next_message == '/init':
-                if config.runtime == 'local':
-                    init_repo = await init_repository(current_dir)
-                    if init_repo:
-                        event_stream.add_event(
-                            MessageAction(content=REPO_MD_CREATE_PROMPT),
-                            EventSource.USER,
-                        )
-                        reload_microagents = True
-                        return
-                else:
-                    print_formatted_text(
-                        '\nRepository initialization through the CLI is only supported for local runtime.\n'
-                    )
-                continue
-            elif next_message == '/status':
-                display_status(usage_metrics, sid)
-                continue
-            elif next_message == '/new':
-                new_session_requested = (
-                    cli_confirm(
-                        '\nCurrent session will be terminated and you will lose the conversation history.\n\nContinue?',
-                        ['Yes, proceed', 'No, dismiss'],
-                    )
-                    == 0
-                )
-
-                if not new_session_requested:
-                    continue
-
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.STOPPED),
-                    EventSource.ENVIRONMENT,
-                )
-
-                display_shutdown_message(usage_metrics, sid)
-                return
-            elif next_message == '/settings':
-                display_settings(config)
-                modify_settings = cli_confirm(
-                    'Which settings would you like to modify?',
-                    [
-                        'Basic',
-                        'Advanced',
-                        'Go back',
-                    ],
-                )
-
-                if modify_settings == 0:
-                    new_session_requested = await modify_llm_settings_basic(
-                        config, settings_store
-                    )
-                elif modify_settings == 1:
-                    new_session_requested = await modify_llm_settings_advanced(
-                        config, settings_store
-                    )
-
-                if new_session_requested:
-                    event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.STOPPED),
-                        EventSource.ENVIRONMENT,
-                    )
-                    display_shutdown_message(usage_metrics, sid)
-                    return
-
-                continue
-
-            action = MessageAction(content=next_message)
-            event_stream.add_event(action, EventSource.USER)
-            return
 
     async def on_event_async(event: Event) -> None:
         nonlocal reload_microagents

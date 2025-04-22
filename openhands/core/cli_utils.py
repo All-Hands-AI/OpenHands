@@ -194,3 +194,13 @@ def is_number(char):
 
 def split_is_actually_version(split):
     return len(split) > 1 and split[1] and split[1][0] and is_number(split[1][0])
+
+
+def read_file(file_path):
+    with open(file_path, 'r') as f:
+        return f.read()
+
+
+def write_to_file(file_path, content):
+    with open(file_path, 'w') as f:
+        f.write(content)
