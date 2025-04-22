@@ -4,7 +4,7 @@ _FINISH_DESCRIPTION = """Signals the completion of the current task or conversat
 
 Use this tool when:
 - You have successfully completed the user's requested task and saved the final answer to file
-- You maynot proceed further due to technical limitations or missing information
+- You may not proceed further due to technical limitations or missing information
 
 The message should concise and include:
 - The path to the file where the final answer is saved
