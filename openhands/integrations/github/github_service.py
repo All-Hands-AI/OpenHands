@@ -45,7 +45,7 @@ class GitHubService(BaseGitService, GitService):
 
     @property
     def provider(self) -> str:
-        return ProviderType.GITLAB.value
+        return ProviderType.GITHUB.value
     
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
