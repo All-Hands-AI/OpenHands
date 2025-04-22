@@ -4908,8 +4908,8 @@ watchfiles = ">=1.0.4"
 [package.source]
 type = "git"
 url = "https://github.com/xingyaoww/mcpm.sh.git"
-reference = "feature/custom-api-key-support"
-resolved_reference = "f7bebc4f1159c5f6625e961a89e3d827f023eaf8"
+reference = "a719bef3bce5ca344271be9e9ed4c23a17f6eb0a"
+resolved_reference = "a719bef3bce5ca344271be9e9ed4c23a17f6eb0a"
 
 [[package]]
 name = "mdurl"
@@ -10420,4 +10420,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "2b1a5886e6b52b3538d200b4f43e277d786d2020b828c74e32f386051d0fd98d"
+content-hash = "3cc060f5a5d4df4987809b622065989780efb741a4eee35b90decf40578374d2"
