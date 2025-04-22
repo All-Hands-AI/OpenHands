@@ -24,7 +24,11 @@ class MCPClient(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    async def connect_sse(self, server_url: str, timeout: float = 30.0) -> None:
+    async def connect_sse(
+        self, server_url: str,
+        timeout: float = 30.0, 
+        api_key: str | None = None
+    ) -> None:
         """Connect to an MCP server using SSE transport.
 
         Args:
@@ -42,6 +46,7 @@ class MCPClient(BaseModel):
                 streams_context = sse_client(
                     url=server_url,
                     timeout=timeout,  # Pass the timeout to sse_client
+                    headers={"Authorization": f"Bearer {api_key}"} if api_key else None
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
                 self.session = await self.exit_stack.enter_async_context(

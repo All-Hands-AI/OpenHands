@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
-from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import McpAction
 from openhands.events.observation.mcp import MCPObservation
@@ -41,7 +41,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    mcp_servers: list[str],
+    mcp_servers: list[MCPServerConfig],
 ) -> list[MCPClient]:
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
@@ -53,7 +53,7 @@ async def create_mcp_clients(
 
             client = MCPClient()
             try:
-                await client.connect_sse(server_url)
+                await client.connect_sse(server_url.url, api_key=server_url.api_key)
                 # Only add the client to the list after a successful connection
                 mcp_clients.append(client)
                 logger.info(f'Connected to MCP server {server_url} via SSE')
