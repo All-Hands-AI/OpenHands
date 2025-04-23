@@ -29,6 +29,7 @@ function LlmSettingsScreen() {
   const { data: config } = useConfig();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
+  const [resetModalIsVisible, setResetModalIsVisible] = React.useState(false);
 
   const [dirtyInputs, setDirtyInputs] = React.useState({
     model: false,
@@ -122,6 +123,21 @@ function LlmSettingsScreen() {
     );
   };
 
+  const formAction = (formData: FormData) => {
+    const isReset = formData.get("reset-settings") !== null;
+    if (isReset) {
+      saveSettings(null, {
+        onSettled: () => {
+          setResetModalIsVisible(false);
+        },
+      });
+      return;
+    }
+
+    if (view === "basic") basicFormAction(formData);
+    else advancedFormAction(formData);
+  };
+
   const handleToggleAdvancedSettings = (isToggled: boolean) => {
     setView(isToggled ? "advanced" : "basic");
     setDirtyInputs({
@@ -200,7 +216,7 @@ function LlmSettingsScreen() {
   return (
     <div data-testid="llm-settings-screen" className="h-full">
       <form
-        action={view === "basic" ? basicFormAction : advancedFormAction}
+        action={formAction}
         className="flex flex-col h-full justify-between"
       >
         <div className="px-11 py-9 flex flex-col gap-12">
@@ -347,6 +363,14 @@ function LlmSettingsScreen() {
         </div>
 
         <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+          <button
+            data-testid="reset-button"
+            type="button"
+            onClick={() => setResetModalIsVisible(true)}
+          >
+            Reset Settings
+          </button>
+
           <BrandButton
             testId="submit-button"
             type="submit"
@@ -357,6 +381,25 @@ function LlmSettingsScreen() {
             {isPending && "Saving..."}
           </BrandButton>
         </div>
+
+        {resetModalIsVisible && (
+          <div data-testid="reset-settings-modal">
+            <button
+              data-testid="cancel-button"
+              type="button"
+              onClick={() => setResetModalIsVisible(false)}
+            >
+              Cancel
+            </button>
+            <button
+              data-testid="confirm-button"
+              name="reset-settings"
+              type="submit"
+            >
+              Confirm
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );
