@@ -32,6 +32,7 @@ from openhands.server.shared import (
     conversation_manager,
 )
 from openhands.server.user_auth import get_github_user_id, get_user_id
+from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -235,15 +236,9 @@ async def git_diff(
     request: Request,
     path: str,
     conversation_id: str,
-    user_id: str = Depends(get_user_id),
-    github_user_id: str = Depends(get_github_user_id),
+    conversation_store = Depends(get_conversation_store),
 ):
     runtime: Runtime = request.state.conversation.runtime
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config,
-        user_id,
-        github_user_id,
-    )
 
     cwd = await get_cwd(
         conversation_store,
