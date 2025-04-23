@@ -112,8 +112,17 @@ export default function MainApp() {
   }, [error?.status, pathname, isFetching]);
 
   const userIsAuthed = !!isAuthed && !authError;
+  const isOnTosPage = pathname === "/accept-tos";
+
+  // Only show the auth modal if:
+  // 1. User is not authenticated
+  // 2. We're not currently on the TOS page
+  // 3. We're in SaaS mode
   const renderAuthModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+    !isFetchingAuth &&
+    !userIsAuthed &&
+    !isOnTosPage &&
+    config.data?.APP_MODE === "saas";
 
   return (
     <div
