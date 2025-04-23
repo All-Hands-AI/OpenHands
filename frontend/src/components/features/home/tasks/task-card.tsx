@@ -6,6 +6,7 @@ import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { getPromptForQuery } from "./get-prompt-for-query";
 import { TaskIssueNumber } from "./task-issue-number";
+import { Provider } from "#/types/settings";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -26,17 +27,19 @@ export function TaskCard({ task }: TaskCardProps) {
   const isCreatingConversation = useIsCreatingConversation();
   const { t } = useTranslation();
 
-  const getRepo = (repo: string) => {
+  const getRepo = (repo: string, git_provider: Provider) => {
     const repositoriesList = repositories?.pages.flatMap((page) => page.data);
     const selectedRepo = repositoriesList?.find(
-      (repository) => repository.full_name === repo,
+      (repository) =>
+        repository.full_name === repo &&
+        repository.git_provider === git_provider,
     );
 
     return selectedRepo;
   };
 
   const handleLaunchConversation = () => {
-    const repo = getRepo(task.repo);
+    const repo = getRepo(task.repo, task.git_provider);
     const query = getPromptForQuery(
       task.git_provider,
       task.task_type,
