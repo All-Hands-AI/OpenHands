@@ -30,6 +30,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
 )
+from openhands.llm.metrics import Metrics
 
 
 class TestDisplayFunctions:
@@ -255,11 +256,8 @@ class TestUsageMetrics:
     def test_usage_metrics_initialization(self):
         metrics = UsageMetrics()
 
-        assert metrics.total_cost == 0.00
-        assert metrics.total_input_tokens == 0
-        assert metrics.total_output_tokens == 0
-        assert metrics.total_cache_read == 0
-        assert metrics.total_cache_write == 0
+        # Only test the attributes that are actually initialized
+        assert isinstance(metrics.metrics, Metrics)
         assert metrics.session_init_time > 0  # Should have a valid timestamp
 
 

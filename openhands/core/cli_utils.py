@@ -44,32 +44,11 @@ def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
     if not hasattr(event, 'llm_metrics'):
         return
 
-    llm_metrics: Metrics | None = getattr(event, 'llm_metrics', None)
+    llm_metrics: Metrics | None = event.llm_metrics
     if not llm_metrics:
         return
 
-    cost = getattr(llm_metrics, 'accumulated_cost', 0)
-    usage_metrics.total_cost += cost if isinstance(cost, float) else 0
-
-    token_usage = getattr(llm_metrics, 'accumulated_token_usage', None)
-    if not token_usage:
-        return
-
-    prompt_tokens = getattr(token_usage, 'prompt_tokens', 0)
-    completion_tokens = getattr(token_usage, 'completion_tokens', 0)
-    cache_read = getattr(token_usage, 'cache_read_tokens', 0)
-    cache_write = getattr(token_usage, 'cache_write_tokens', 0)
-
-    usage_metrics.total_input_tokens += (
-        prompt_tokens if isinstance(prompt_tokens, int) else 0
-    )
-    usage_metrics.total_output_tokens += (
-        completion_tokens if isinstance(completion_tokens, int) else 0
-    )
-    usage_metrics.total_cache_read += cache_read if isinstance(cache_read, int) else 0
-    usage_metrics.total_cache_write += (
-        cache_write if isinstance(cache_write, int) else 0
-    )
+    usage_metrics.metrics = llm_metrics
 
 
 def extract_model_and_provider(model):

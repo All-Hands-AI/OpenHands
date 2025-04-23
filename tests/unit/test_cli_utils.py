@@ -119,16 +119,14 @@ class TestUpdateUsageMetrics:
         event = Event()
         usage_metrics = UsageMetrics()
 
-        original_cost = usage_metrics.total_cost
-        original_input = usage_metrics.total_input_tokens
-        original_output = usage_metrics.total_output_tokens
+        # Store original metrics object for comparison
+        original_metrics = usage_metrics.metrics
 
         update_usage_metrics(event, usage_metrics)
 
         # Metrics should remain unchanged
-        assert usage_metrics.total_cost == original_cost
-        assert usage_metrics.total_input_tokens == original_input
-        assert usage_metrics.total_output_tokens == original_output
+        assert usage_metrics.metrics is original_metrics  # Same object reference
+        assert usage_metrics.metrics.accumulated_cost == 0.0  # Default value
 
     def test_update_usage_metrics_with_cost(self):
         event = Event()
@@ -142,9 +140,10 @@ class TestUpdateUsageMetrics:
 
         update_usage_metrics(event, usage_metrics)
 
-        assert usage_metrics.total_cost == 1.25
-        assert usage_metrics.total_input_tokens == 0
-        assert usage_metrics.total_output_tokens == 0
+        # Test that the metrics object was updated to the one from the event
+        assert usage_metrics.metrics is metrics  # Should be the same object reference
+        # Test that we can access the accumulated_cost through the metrics property
+        assert usage_metrics.metrics.accumulated_cost == 1.25
 
     def test_update_usage_metrics_with_tokens(self):
         event = Event()
@@ -168,11 +167,16 @@ class TestUpdateUsageMetrics:
 
         update_usage_metrics(event, usage_metrics)
 
-        assert usage_metrics.total_cost == 1.5
-        assert usage_metrics.total_input_tokens == 100
-        assert usage_metrics.total_output_tokens == 50
-        assert usage_metrics.total_cache_read == 20
-        assert usage_metrics.total_cache_write == 30
+        # Test that the metrics object was updated to the one from the event
+        assert usage_metrics.metrics is metrics  # Should be the same object reference
+
+        # Test we can access metrics values through the metrics property
+        assert usage_metrics.metrics.accumulated_cost == 1.5
+        assert usage_metrics.metrics.accumulated_token_usage is token_usage
+        assert usage_metrics.metrics.accumulated_token_usage.prompt_tokens == 100
+        assert usage_metrics.metrics.accumulated_token_usage.completion_tokens == 50
+        assert usage_metrics.metrics.accumulated_token_usage.cache_read_tokens == 20
+        assert usage_metrics.metrics.accumulated_token_usage.cache_write_tokens == 30
 
     def test_update_usage_metrics_with_invalid_types(self):
         event = Event()
@@ -196,12 +200,15 @@ class TestUpdateUsageMetrics:
 
         update_usage_metrics(event, usage_metrics)
 
-        # Metrics should remain at zero since invalid types were provided
-        assert usage_metrics.total_cost == 0
-        assert usage_metrics.total_input_tokens == 0
-        assert usage_metrics.total_output_tokens == 0
-        assert usage_metrics.total_cache_read == 0
-        assert usage_metrics.total_cache_write == 0
+        # Test that the metrics object was still updated to the one from the event
+        # Even though the values are invalid types, the metrics object reference should be updated
+        assert usage_metrics.metrics is metrics  # Should be the same object reference
+
+        # We can verify that we can access the properties through the metrics object
+        # The invalid types are preserved since our update_usage_metrics function
+        # simply assigns the metrics object without validation
+        assert usage_metrics.metrics.accumulated_cost == 'not a float'
+        assert usage_metrics.metrics.accumulated_token_usage is token_usage
 
 
 class TestModelAndProviderFunctions:

@@ -36,6 +36,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
 )
+from openhands.llm.metrics import Metrics
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -60,11 +61,7 @@ COMMANDS = {
 
 class UsageMetrics:
     def __init__(self):
-        self.total_cost: float = 0.00
-        self.total_input_tokens: int = 0
-        self.total_output_tokens: int = 0
-        self.total_cache_read: int = 0
-        self.total_cache_write: int = 0
+        self.metrics: Metrics = Metrics()
         self.session_init_time: float = time.time()
 
 
@@ -309,14 +306,20 @@ def display_help():
 
 
 def display_usage_metrics(usage_metrics: UsageMetrics):
-    cost_str = f'${usage_metrics.total_cost:.6f}'
-    input_tokens_str = f'{usage_metrics.total_input_tokens:,}'
-    cache_read_str = f'{usage_metrics.total_cache_read:,}'
-    cache_write_str = f'{usage_metrics.total_cache_write:,}'
-    output_tokens_str = f'{usage_metrics.total_output_tokens:,}'
-    total_tokens_str = (
-        f'{usage_metrics.total_input_tokens + usage_metrics.total_output_tokens:,}'
+    cost_str = f'${usage_metrics.metrics.accumulated_cost:.6f}'
+    input_tokens_str = (
+        f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens:,}'
     )
+    cache_read_str = (
+        f'{usage_metrics.metrics.accumulated_token_usage.cache_read_tokens:,}'
+    )
+    cache_write_str = (
+        f'{usage_metrics.metrics.accumulated_token_usage.cache_write_tokens:,}'
+    )
+    output_tokens_str = (
+        f'{usage_metrics.metrics.accumulated_token_usage.completion_tokens:,}'
+    )
+    total_tokens_str = f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens + usage_metrics.metrics.accumulated_token_usage.completion_tokens:,}'
 
     labels_and_values = [
         ('   Total Cost (USD):', cost_str),
