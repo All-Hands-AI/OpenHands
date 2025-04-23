@@ -10,7 +10,7 @@ import { SuggestionsService } from "#/api/suggestions-service/suggestions-servic
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
 import { AuthProvider } from "#/context/auth-context";
 
-const renderTaskSuggestions = (githubEnabled = true) => {
+const renderTaskSuggestions = (initialProvidersAreSet = true) => {
   const RouterStub = createRoutesStub([
     {
       Component: TaskSuggestions,
@@ -29,7 +29,7 @@ const renderTaskSuggestions = (githubEnabled = true) => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProviderTokens={githubEnabled ? ["github"] : []}>
+        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>

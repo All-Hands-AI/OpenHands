@@ -10,8 +10,7 @@ interface TaskSuggestionsProps {
 }
 
 export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
-  const { providerTokensSet } = useAuth();
-  const githubEnabled = providerTokensSet.includes("github");
+  const { providersAreSet } = useAuth();
 
   const { data: tasks, isLoading } = useSuggestedTasks();
   const suggestedTasks = filterFor
@@ -28,7 +27,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       <h2 className="heading">Suggested Tasks</h2>
 
       <div className="flex flex-col gap-6">
-        {!githubEnabled && <ConnectToProviderMessage />}
+        {!providersAreSet && <ConnectToProviderMessage />}
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && !isLoading && <p>No tasks available</p>}
         {suggestedTasks?.map((taskGroup, index) => (

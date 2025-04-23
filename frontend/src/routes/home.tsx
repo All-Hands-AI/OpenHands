@@ -8,8 +8,7 @@ import { useAuth } from "#/context/auth-context";
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
 function HomeScreen() {
-  const { providerTokensSet } = useAuth();
-  const githubEnabled = providerTokensSet.includes("github");
+  const { providersAreSet } = useAuth();
   const [selectedRepoTitle, setSelectedRepoTitle] = React.useState<
     string | null
   >(null);
@@ -27,7 +26,7 @@ function HomeScreen() {
         <RepoConnector
           onRepoSelection={(title) => setSelectedRepoTitle(title)}
         />
-        {githubEnabled && <TaskSuggestions filterFor={selectedRepoTitle} />}
+        {providersAreSet && <TaskSuggestions filterFor={selectedRepoTitle} />}
       </main>
     </div>
   );

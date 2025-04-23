@@ -50,11 +50,11 @@ const RouterStub = createRoutesStub([
   },
 ]);
 
-const renderHomeScreen = (githubEnabled = true) =>
+const renderHomeScreen = (initialProvidersAreSet = true) =>
   render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProviderTokens={githubEnabled ? ["github"] : []}>
+        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>
