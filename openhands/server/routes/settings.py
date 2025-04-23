@@ -79,12 +79,9 @@ async def load_settings(
 
 @app.get('/secrets', response_model=GETSettingsCustomSecrets)
 async def load_custom_secrets_names(
-    request: Request,
+    settings: Settings | None = Depends(get_user_settings),
 ) -> GETSettingsCustomSecrets | JSONResponse:
     try:
-        user_id = get_user_id(request)
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        settings = await settings_store.load()
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -109,12 +106,10 @@ async def load_custom_secrets_names(
 
 @app.post('/secrets', response_model=dict[str, str])
 async def add_custom_secret(
-    request: Request, incoming_secrets: POSTSettingsCustomSecrets
+    incoming_secrets: POSTSettingsCustomSecrets,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
         existing_settings: Settings = await settings_store.load()
         if existing_settings:
             for (
@@ -153,11 +148,11 @@ async def add_custom_secret(
 
 
 @app.delete('/secrets/{secret_id}')
-async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse:
+async def delete_custom_secret(
+    secret_id: str,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
         existing_settings: Settings | None = await settings_store.load()
         custom_secrets = {}
         if existing_settings:
@@ -195,11 +190,9 @@ async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse
 
 @app.post('/unset-settings-tokens', response_model=dict[str, str])
 async def unset_settings_tokens(
-    request: Request, user_id: str | None = Depends(get_user_id)
+    settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-
         existing_settings = await settings_store.load()
         if existing_settings:
             settings = existing_settings.model_copy(
@@ -222,14 +215,12 @@ async def unset_settings_tokens(
 
 @app.post('/reset-settings', response_model=dict[str, str])
 async def reset_settings(
-    request: Request, user_id: str | None = Depends(get_user_id)
+    settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     """
     Resets user settings.
     """
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-
         existing_settings = await settings_store.load()
         settings = Settings(
             language='en',
@@ -348,7 +339,6 @@ async def store_llm_settings(
 
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
-    request: Request,
     settings: POSTSettingsModel,
     settings_store: SettingsStore = Depends(get_user_settings_store)
 ) -> JSONResponse:
