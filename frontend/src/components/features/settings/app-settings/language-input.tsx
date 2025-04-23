@@ -20,7 +20,7 @@ export function LanguageInput({
     <SettingsDropdownInput
       testId={name}
       name={name}
-      onChange={onChange}
+      onInputChange={onChange}
       label={t(I18nKey.SETTINGS$LANGUAGE)}
       items={AvailableLanguages.map((l) => ({
         key: l.value,
@@ -28,6 +28,7 @@ export function LanguageInput({
       }))}
       defaultSelectedKey={defaultKey}
       isClearable={false}
+      wrapperClassName="w-[680px]"
     />
   );
 }

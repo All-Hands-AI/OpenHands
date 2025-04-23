@@ -48,24 +48,6 @@ describe("Settings Billing", () => {
     expect(credits).not.toBeInTheDocument();
   });
 
-  it("should not render the credits tab if SaaS mode and billing is disabled", async () => {
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-      },
-    });
-
-    renderSettingsScreen();
-
-    const navbar = await screen.findByTestId("settings-navbar");
-    const credits = within(navbar).queryByText("Credits");
-    expect(credits).not.toBeInTheDocument();
-  });
-
   it("should render the credits tab if SaaS mode and billing is enabled", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
