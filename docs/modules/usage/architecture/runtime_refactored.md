@@ -1,10 +1,10 @@
-# Refactored Runtime Building Approach
+# Runtime Building Approach
 
-This document describes the refactored approach to building OpenHands runtime images.
+This document describes the approach to building OpenHands runtime images.
 
 ## Overview
 
-The refactored runtime building approach uses a two-stage process:
+The OpenHands runtime building approach uses a two-stage process:
 
 1. **Dependencies Image**: Build a single image containing all dependencies in the `/openhands` folder
 2. **Runtime Image**: For any base image, copy the `/openhands` folder from the dependencies image
@@ -55,13 +55,13 @@ To build a runtime image using the refactored approach:
 python -m openhands.runtime.utils.runtime_build --build_deps_only
 
 # Build a runtime image using the dependencies image
-python -m openhands.runtime.utils.runtime_build --base_image <base_image> --use_deps_image
+python -m openhands.runtime.utils.runtime_build --base_image <base_image>
 ```
 
 You can also specify a custom dependencies image:
 
 ```bash
-python -m openhands.runtime.utils.runtime_build --base_image <base_image> --use_deps_image --deps_image <deps_image>
+python -m openhands.runtime.utils.runtime_build --base_image <base_image> --deps_image <deps_image>
 ```
 
 ## Compatibility Considerations

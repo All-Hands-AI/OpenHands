@@ -67,57 +67,40 @@ OpenHands' approach to building and managing runtime images ensures efficiency, 
 
 Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) if you are interested in more details.
 
-> **Note**: OpenHands now supports a refactored runtime building approach that uses a two-stage process with a dependencies image. See [Refactored Runtime Building Approach](runtime_refactored.md) for details.
+OpenHands uses a two-stage build process for runtime images. See [Runtime Building Approach](runtime_refactored.md) for details.
 
 ### Image Tagging System
 
-OpenHands uses a three-tag system for its runtime images to balance reproducibility with flexibility.
-Tags may be in one of 2 formats:
+OpenHands uses a simple tagging system for its runtime images:
 
-- **Versioned Tag**: `oh_v{openhands_version}_{base_image}` (e.g.: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
-- **Lock Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
-- **Source Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
-  (e.g.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
+- **Dependencies Image**: `oh_deps_v{openhands_version}` (e.g.: `oh_deps_v0.9.9`)
+- **Runtime Image**: `oh_v{openhands_version}_image_{base_image}_tag_{tag}_{source_hash}`
+  (e.g.: `oh_v0.9.9_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22_1234abcd`)
 
-#### Source Tag - Most Specific
+#### Dependencies Image
 
-This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
-for only the openhands source
+This image contains all the dependencies needed by OpenHands, installed in the `/openhands` folder. It's built once per OpenHands version and can be reused for multiple runtime images.
 
-#### Lock Tag
+#### Runtime Image
 
-This hash is built from the first 16 digits of the MD5 of:
-
-- The name of the base image upon which the image was built (e.g.: `nikolaik/python-nodejs:python3.12-nodejs22`)
-- The content of the `pyproject.toml` included in the image.
-- The content of the `poetry.lock` included in the image.
-
-This effectively gives a hash for the dependencies of Openhands independent of the source code.
-
-#### Versioned Tag - Most Generic
-
-This tag is a concatenation of openhands version and the base image name (transformed to fit in tag standard).
+This image is built by copying the `/openhands` folder from the dependencies image into any base image. The tag includes:
+- The OpenHands version
+- The base image name (transformed to fit in tag standard)
+- A hash of the OpenHands source code
 
 #### Build Process
 
-When generating an image...
+When generating an image:
 
-- **No re-build**: OpenHands first checks whether an image with the same **most specific source tag** exists. If there is such an image,
-  no build is performed - the existing image is used.
-- **Fastest re-build**: OpenHands next checks whether an image with the **generic lock tag** exists. If there is such an image,
-  OpenHands builds a new image based upon it, bypassing all installation steps (like `poetry install` and
-  `apt-get`) except a final operation to copy the current source code. The new image is tagged with a
-  **source** tag only.
-- **Ok-ish re-build**: If neither a **source** nor **lock** tag exists, an image will be built based upon the **versioned** tag image.
-  In versioned tag image, most dependencies should already been installed hence saving time.
-- **Slowest re-build**: If all of the three tags don't exists, a brand new image is built based upon the base
-  image (Which is a slower operation). This new image is tagged with all the **source**, **lock**, and **versioned** tags.
+1. **Dependencies Image**: If the dependencies image doesn't exist, it's built first
+2. **Runtime Image**: The runtime image is built by copying from the dependencies image
+3. **Caching**: If a runtime image with the same tag already exists, it's reused unless force_rebuild is specified
 
-This tagging approach allows OpenHands to efficiently manage both development and production environments.
-
-1. Identical source code and Dockerfile always produce the same image (via hash-based tags)
-2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images)
-3. The **lock** tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image, dependency, and OpenHands version combination
+This approach offers several advantages:
+- Faster build times for new base images
+- Smaller final images (no duplicate dependencies)
+- Better compatibility with different base images
+- Easier maintenance and updates
 
 ## Runtime Plugin System
 

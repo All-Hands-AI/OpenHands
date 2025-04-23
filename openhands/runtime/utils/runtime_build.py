@@ -20,9 +20,6 @@ from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 
 class BuildFromImageType(Enum):
-    SCRATCH = 'scratch'  # Slowest: Build from base image (no dependencies are reused)
-    VERSIONED = 'versioned'  # Medium speed: Reuse the most recent image with the same base image & OH version (a lot of dependencies are already installed)
-    LOCK = 'lock'  # Fastest: Reuse the most recent image with the exact SAME dependencies (lock files)
     DEPS = 'deps'  # Two-stage build: Use a pre-built dependencies image and copy /openhands folder
 
 
@@ -43,7 +40,7 @@ def get_deps_image_name() -> str:
 
 def _generate_dockerfile(
     base_image: str,
-    build_from: BuildFromImageType = BuildFromImageType.SCRATCH,
+    build_from: BuildFromImageType = BuildFromImageType.DEPS,
     extra_deps: str | None = None,
     deps_image: str | None = None,
 ) -> str:
@@ -64,21 +61,12 @@ def _generate_dockerfile(
         )
     )
     
-    if build_from == BuildFromImageType.DEPS:
-        template = env.get_template('refactored/Dockerfile.runtime.j2')
-        dockerfile_content = template.render(
-            base_image=base_image,
-            deps_image=deps_image or get_deps_image_name(),
-            extra_deps=extra_deps if extra_deps is not None else '',
-        )
-    else:
-        template = env.get_template('Dockerfile.j2')
-        dockerfile_content = template.render(
-            base_image=base_image,
-            build_from_scratch=build_from == BuildFromImageType.SCRATCH,
-            build_from_versioned=build_from == BuildFromImageType.VERSIONED,
-            extra_deps=extra_deps if extra_deps is not None else '',
-        )
+    template = env.get_template('Dockerfile.runtime.j2')
+    dockerfile_content = template.render(
+        base_image=base_image,
+        deps_image=deps_image or get_deps_image_name(),
+        extra_deps=extra_deps if extra_deps is not None else '',
+    )
     
     return dockerfile_content
 
@@ -200,7 +188,7 @@ def build_deps_image_in_folder(
             searchpath=os.path.join(os.path.dirname(__file__), 'runtime_templates')
         )
     )
-    template = env.get_template('refactored/Dockerfile.deps.j2')
+    template = env.get_template('Dockerfile.deps.j2')
     dockerfile_content = template.render(
         extra_deps=extra_deps if extra_deps is not None else '',
     )
@@ -262,7 +250,6 @@ def build_runtime_image(
     dry_run: bool = False,
     force_rebuild: bool = False,
     extra_build_args: List[str] | None = None,
-    use_deps_image: bool = False,
     deps_image: str | None = None,
 ) -> str:
     """Prepares the final docker build folder.
@@ -276,355 +263,78 @@ def build_runtime_image(
     - extra_deps (str): Extra dependencies to install
     - build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
-    - force_rebuild (bool): if True, it will create the Dockerfile which uses the base_image
+    - force_rebuild (bool): if True, it will force rebuilding even if the image already exists
     - extra_build_args (List[str]): Additional build arguments to pass to the builder
-    - use_deps_image (bool): if True, it will use the dependencies image approach
-    - deps_image (str): The dependencies image to use (only if use_deps_image is True)
+    - deps_image (str): The dependencies image to use (if None, will use the default)
 
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
 
-    See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
+    See https://docs.all-hands.dev/modules/usage/architecture/runtime_refactored for more details.
     """
-    if use_deps_image:
-        # If using the dependencies image approach, first ensure the dependencies image exists
-        if deps_image is None:
-            deps_image = get_deps_image_name()
-            
-        # Check if the dependencies image exists
-        try:
-            runtime_builder.get_image(deps_image)
-            logger.info(f'Using existing dependencies image: {deps_image}')
-        except Exception:
-            # Dependencies image doesn't exist, build it
-            logger.info(f'Dependencies image {deps_image} not found. Building it...')
-            deps_image = build_deps_image(
-                runtime_builder=runtime_builder,
-                platform=platform,
-                extra_deps=extra_deps,
-                build_folder=build_folder,
-                dry_run=dry_run,
-                extra_build_args=extra_build_args,
-            )
-    
+    # If using the dependencies image approach, first ensure the dependencies image exists
+    if deps_image is None:
+        deps_image = get_deps_image_name()
+        
+    # Check if the dependencies image exists
+    try:
+        runtime_builder.get_image(deps_image)
+        logger.info(f'Using existing dependencies image: {deps_image}')
+    except Exception:
+        # Dependencies image doesn't exist, build it
+        logger.info(f'Dependencies image {deps_image} not found. Building it...')
+        deps_image = build_deps_image(
+            runtime_builder=runtime_builder,
+            platform=platform,
+            extra_deps=extra_deps,
+            build_folder=build_folder,
+            dry_run=dry_run,
+            extra_build_args=extra_build_args,
+        )
+
     if build_folder is None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            if use_deps_image:
-                # For deps image approach, we need a different build process
-                result = build_runtime_image_from_deps(
-                    base_image=base_image,
-                    runtime_builder=runtime_builder,
-                    deps_image=deps_image,
-                    build_folder=Path(temp_dir),
-                    extra_deps=extra_deps,
-                    dry_run=dry_run,
-                    platform=platform,
-                    extra_build_args=extra_build_args,
-                )
-            else:
-                # Use the traditional approach
-                result = build_runtime_image_in_folder(
-                    base_image=base_image,
-                    runtime_builder=runtime_builder,
-                    build_folder=Path(temp_dir),
-                    extra_deps=extra_deps,
-                    dry_run=dry_run,
-                    force_rebuild=force_rebuild,
-                    platform=platform,
-                    extra_build_args=extra_build_args,
-                )
+            result = build_runtime_image_from_deps(
+                base_image=base_image,
+                runtime_builder=runtime_builder,
+                deps_image=deps_image,
+                build_folder=Path(temp_dir),
+                extra_deps=extra_deps,
+                dry_run=dry_run,
+                platform=platform,
+                extra_build_args=extra_build_args,
+                force_rebuild=force_rebuild,
+            )
             return result
 
-    if use_deps_image:
-        # For deps image approach, we need a different build process
-        result = build_runtime_image_from_deps(
-            base_image=base_image,
-            runtime_builder=runtime_builder,
-            deps_image=deps_image,
-            build_folder=Path(build_folder),
-            extra_deps=extra_deps,
-            dry_run=dry_run,
-            platform=platform,
-            extra_build_args=extra_build_args,
-        )
-    else:
-        # Use the traditional approach
-        result = build_runtime_image_in_folder(
-            base_image=base_image,
-            runtime_builder=runtime_builder,
-            build_folder=Path(build_folder),
-            extra_deps=extra_deps,
-            dry_run=dry_run,
-            force_rebuild=force_rebuild,
-            platform=platform,
-            extra_build_args=extra_build_args,
-        )
-    return result
-
-
-def build_runtime_image_in_folder(
-    base_image: str,
-    runtime_builder: RuntimeBuilder,
-    build_folder: Path,
-    extra_deps: str | None,
-    dry_run: bool,
-    force_rebuild: bool,
-    platform: str | None = None,
-    extra_build_args: List[str] | None = None,
-    use_deps_image: bool = False,
-    deps_image: str | None = None,
-) -> str:
-    # If using deps image approach, delegate to the specialized function
-    if use_deps_image:
-        if deps_image is None:
-            deps_image = get_deps_image_name()
-            
-        # Check if the dependencies image exists
-        try:
-            runtime_builder.get_image(deps_image)
-            logger.info(f'Using existing dependencies image: {deps_image}')
-        except Exception:
-            # Dependencies image doesn't exist, build it
-            logger.info(f'Dependencies image {deps_image} not found. Building it...')
-            deps_image = build_deps_image(
-                runtime_builder=runtime_builder,
-                platform=platform,
-                extra_deps=extra_deps,
-                build_folder=build_folder,
-                dry_run=dry_run,
-                extra_build_args=extra_build_args,
-            )
-            
-        return build_runtime_image_from_deps(
-            base_image=base_image,
-            runtime_builder=runtime_builder,
-            deps_image=deps_image,
-            build_folder=build_folder,
-            extra_deps=extra_deps,
-            dry_run=dry_run,
-            platform=platform,
-            extra_build_args=extra_build_args,
-        )
-    
-    # Traditional approach
-    runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
-    lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
-    versioned_tag = (
-        # truncate the base image to 96 characters to fit in the tag max length (128 characters)
-        f'oh_v{oh_version}_{get_tag_for_versioned_image(base_image)}'
-    )
-    versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
-    source_tag = f'{lock_tag}_{get_hash_for_source_files()}'
-    hash_image_name = f'{runtime_image_repo}:{source_tag}'
-
-    logger.info(f'Building image: {hash_image_name}')
-    if force_rebuild:
-        logger.debug(
-            f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'
-        )
-        prep_build_folder(
-            build_folder,
-            base_image,
-            build_from=BuildFromImageType.SCRATCH,
-            extra_deps=extra_deps,
-            deps_image=None,
-        )
-        if not dry_run:
-            _build_sandbox_image(
-                build_folder,
-                runtime_builder,
-                runtime_image_repo,
-                source_tag,
-                lock_tag,
-                versioned_tag,
-                platform,
-                extra_build_args=extra_build_args,
-            )
-        return hash_image_name
-
-    lock_image_name = f'{runtime_image_repo}:{lock_tag}'
-    build_from = BuildFromImageType.SCRATCH
-
-    # If the exact image already exists, we do not need to build it
-    if runtime_builder.image_exists(hash_image_name, False):
-        logger.debug(f'Reusing Image [{hash_image_name}]')
-        return hash_image_name
-
-    # We look for an existing image that shares the same lock_tag. If such an image exists, we
-    # can use it as the base image for the build and just copy source files. This makes the build
-    # much faster.
-    if runtime_builder.image_exists(lock_image_name):
-        logger.debug(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
-        build_from = BuildFromImageType.LOCK
-        base_image = lock_image_name
-    elif runtime_builder.image_exists(versioned_image_name):
-        logger.info(
-            f'Build [{hash_image_name}] from versioned image [{versioned_image_name}]'
-        )
-        build_from = BuildFromImageType.VERSIONED
-        base_image = versioned_image_name
-    else:
-        logger.debug(f'Build [{hash_image_name}] from scratch')
-
-    prep_build_folder(build_folder, base_image, build_from, extra_deps, deps_image=None)
-    if not dry_run:
-        _build_sandbox_image(
-            build_folder,
-            runtime_builder,
-            runtime_image_repo,
-            source_tag=source_tag,
-            lock_tag=lock_tag,
-            # Only tag the versioned image if we are building from scratch.
-            # This avoids too much layers when you lay one image on top of another multiple times
-            versioned_tag=versioned_tag
-            if build_from == BuildFromImageType.SCRATCH
-            else None,
-            platform=platform,
-            extra_build_args=extra_build_args,
-        )
-
-    return hash_image_name
-
-
-def prep_build_folder(
-    build_folder: Path,
-    base_image: str,
-    build_from: BuildFromImageType,
-    extra_deps: str | None,
-    deps_image: str | None = None,
-) -> None:
-    # Copy the source code to directory. It will end up in build_folder/code
-    # If package is not found, build from source code
-    openhands_source_dir = Path(openhands.__file__).parent
-    project_root = openhands_source_dir.parent
-    logger.debug(f'Building source distribution using project root: {project_root}')
-
-    # For DEPS build method, we only need to copy the wrapper scripts
-    if build_from == BuildFromImageType.DEPS:
-        # Copy the 'openhands' directory (Source code)
-        os.makedirs(os.path.join(build_folder, 'code', 'openhands'), exist_ok=True)
-        shutil.copytree(
-            openhands_source_dir,
-            Path(build_folder, 'code', 'openhands'),
-            ignore=shutil.ignore_patterns(
-                '.*/',
-                '__pycache__/',
-                '*.pyc',
-                '*.md',
-            ),
-            dirs_exist_ok=True,
-        )
-    else:
-        # Copy the 'openhands' directory (Source code)
-        shutil.copytree(
-            openhands_source_dir,
-            Path(build_folder, 'code', 'openhands'),
-            ignore=shutil.ignore_patterns(
-                '.*/',
-                '__pycache__/',
-                '*.pyc',
-                '*.md',
-            ),
-        )
-
-        # Copy pyproject.toml and poetry.lock files
-        for file in ['pyproject.toml', 'poetry.lock']:
-            src = Path(openhands_source_dir, file)
-            if not src.exists():
-                src = Path(project_root, file)
-            shutil.copy2(src, Path(build_folder, 'code', file))
-
-    # Create a Dockerfile and write it to build_folder
-    dockerfile_content = _generate_dockerfile(
-        base_image,
-        build_from=build_from,
-        extra_deps=extra_deps,
+    result = build_runtime_image_from_deps(
+        base_image=base_image,
+        runtime_builder=runtime_builder,
         deps_image=deps_image,
+        build_folder=Path(build_folder),
+        extra_deps=extra_deps,
+        dry_run=dry_run,
+        platform=platform,
+        extra_build_args=extra_build_args,
+        force_rebuild=force_rebuild,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
-        file.write(dockerfile_content)  # type: ignore
-
-
-_ALPHABET = string.digits + string.ascii_lowercase
-
-
-def truncate_hash(hash: str) -> str:
-    """Convert the base16 hash to base36 and truncate at 16 characters."""
-    value = int(hash, 16)
-    result: List[str] = []
-    while value > 0 and len(result) < 16:
-        value, remainder = divmod(value, len(_ALPHABET))
-        result.append(_ALPHABET[remainder])
-    return ''.join(result)
-
-
-def get_hash_for_lock_files(base_image: str) -> str:
-    openhands_source_dir = Path(openhands.__file__).parent
-    md5 = hashlib.md5()
-    md5.update(base_image.encode())
-    for file in ['pyproject.toml', 'poetry.lock']:
-        src = Path(openhands_source_dir, file)
-        if not src.exists():
-            src = Path(openhands_source_dir.parent, file)
-        with open(src, 'rb') as f:
-            for chunk in iter(lambda: f.read(4096), b''):
-                md5.update(chunk)
-    # We get away with truncation because we want something that is unique
-    # rather than something that is cryptographically secure
-    result = truncate_hash(md5.hexdigest())
     return result
-
-
-def get_tag_for_versioned_image(base_image: str) -> str:
-    return base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]
 
 
 def get_hash_for_source_files() -> str:
+    """Get a hash of the source files.
+
+    Returns:
+    - str: The hash of the source files
+    """
     openhands_source_dir = Path(openhands.__file__).parent
-    dir_hash = dirhash(
+    source_hash = dirhash(
         openhands_source_dir,
         'md5',
-        ignore=[
-            '.*/',  # hidden directories
-            '__pycache__/',
-            '*.pyc',
-        ],
+        ignore_hidden=True,
+        excluded_extensions=['.pyc', '.md'],
     )
-    # We get away with truncation because we want something that is unique
-    # rather than something that is cryptographically secure
-    result = truncate_hash(dir_hash)
-    return result
-
-
-def _build_sandbox_image(
-    build_folder: Path,
-    runtime_builder: RuntimeBuilder,
-    runtime_image_repo: str,
-    source_tag: str,
-    lock_tag: str,
-    versioned_tag: str | None,
-    platform: str | None = None,
-    extra_build_args: List[str] | None = None,
-) -> str:
-    """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
-    names = [
-        f'{runtime_image_repo}:{source_tag}',
-        f'{runtime_image_repo}:{lock_tag}',
-    ]
-    if versioned_tag is not None:
-        names.append(f'{runtime_image_repo}:{versioned_tag}')
-    names = [name for name in names if not runtime_builder.image_exists(name, False)]
-
-    image_name = runtime_builder.build(
-        path=str(build_folder),
-        tags=names,
-        platform=platform,
-        extra_build_args=extra_build_args,
-    )
-    if not image_name:
-        raise AgentRuntimeBuildError(f'Build failed for image {names}')
-
-    return image_name
+    return source_hash[:8]
 
 
 def build_runtime_image_from_deps(
@@ -636,11 +346,12 @@ def build_runtime_image_from_deps(
     dry_run: bool = False,
     platform: str | None = None,
     extra_build_args: List[str] | None = None,
+    force_rebuild: bool = False,
 ) -> str:
-    """Builds a runtime image by copying the /openhands folder from a dependencies image.
+    """Build a runtime image using the dependencies image.
 
     Parameters:
-    - base_image (str): The name of the base Docker image to use
+    - base_image (str): The base image to use
     - runtime_builder (RuntimeBuilder): The runtime builder to use
     - deps_image (str): The dependencies image to use
     - build_folder (Path): The directory to use for the build
@@ -648,61 +359,46 @@ def build_runtime_image_from_deps(
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
     - platform (str): The target platform for the build (e.g. linux/amd64, linux/arm64)
     - extra_build_args (List[str]): Additional build arguments to pass to the builder
+    - force_rebuild (bool): if True, it will force rebuilding even if the image already exists
 
     Returns:
-    - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
+    - str: The name of the runtime image
     """
-    runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
-    
-    # Create a unique tag for the deps-based image
-    deps_hash = deps_image.split(':')[-1]  # Extract the tag from the deps image
-    base_tag = get_tag_for_versioned_image(base_image)
-    deps_tag = f'oh_deps_{deps_hash}_{base_tag}'
-    source_tag = f'{deps_tag}_{get_hash_for_source_files()}'
-    hash_image_name = f'{runtime_image_repo}:{source_tag}'
+    runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(base_image)
+    source_tag = f'{runtime_image_tag}_{get_hash_for_source_files()}'
+    runtime_image_name = f'{runtime_image_repo}:{source_tag}'
 
-    logger.info(f'Building image from deps: {hash_image_name}')
+    logger.info(f'Building runtime image: {runtime_image_name}')
 
     # Check if the image already exists
-    if runtime_builder.image_exists(hash_image_name, False):
-        logger.info(
-            f'Image {hash_image_name} already exists. Skipping build.'
-        )
-        return hash_image_name
+    if not force_rebuild:
+        try:
+            runtime_builder.get_image(runtime_image_name)
+            logger.info(f'Runtime image {runtime_image_name} already exists. Reusing it.')
+            return runtime_image_name
+        except Exception:
+            logger.info(f'Runtime image {runtime_image_name} not found. Building it...')
 
-    # Generate the Dockerfile
+    # Create a Dockerfile for the runtime image
     dockerfile_content = _generate_dockerfile(
         base_image=base_image,
-        build_from=BuildFromImageType.DEPS,
-        extra_deps=extra_deps,
         deps_image=deps_image,
+        extra_deps=extra_deps,
     )
 
     with open(Path(build_folder, 'Dockerfile'), 'w') as file:
         file.write(dockerfile_content)
 
-    # For DEPS build method, we only need to copy the source code
-    os.makedirs(os.path.join(build_folder, 'code', 'openhands'), exist_ok=True)
-    shutil.copytree(
-        os.path.join(os.path.dirname(openhands.__file__)),
-        os.path.join(build_folder, 'code', 'openhands'),
-        dirs_exist_ok=True,
-    )
-
     if not dry_run:
-        # Build the image
-        _build_sandbox_image(
-            build_folder,
-            runtime_builder,
-            runtime_image_repo,
-            source_tag=source_tag,
-            lock_tag=deps_tag,
-            versioned_tag=None,
+        # Build the runtime image
+        runtime_builder.build_image(
+            path=str(build_folder),
+            tag=runtime_image_name,
             platform=platform,
             extra_build_args=extra_build_args,
         )
 
-    return hash_image_name
+    return runtime_image_name
 
 
 if __name__ == '__main__':
@@ -713,10 +409,8 @@ if __name__ == '__main__':
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
     parser.add_argument('--platform', type=str, default=None)
-    parser.add_argument('--use_deps_image', action='store_true', default=False, 
-                        help='Use the dependencies image approach')
     parser.add_argument('--deps_image', type=str, default=None,
-                        help='The dependencies image to use (only if use_deps_image is True)')
+                        help='The dependencies image to use')
     parser.add_argument('--build_deps_only', action='store_true', default=False,
                         help='Only build the dependencies image')
     args = parser.parse_args()
@@ -760,7 +454,6 @@ if __name__ == '__main__':
                 dry_run=True,
                 force_rebuild=args.force_rebuild,
                 platform=args.platform,
-                use_deps_image=args.use_deps_image,
                 deps_image=args.deps_image,
             )
 
@@ -797,11 +490,10 @@ if __name__ == '__main__':
         logger.debug('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
         image_name = build_runtime_image(
-            args.base_image, 
-            docker_builder, 
+            args.base_image,
+            docker_builder,
             platform=args.platform,
             force_rebuild=args.force_rebuild,
-            use_deps_image=args.use_deps_image,
             deps_image=args.deps_image,
         )
         logger.debug(f'\nBuilt image: {image_name}\n')
