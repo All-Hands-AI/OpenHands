@@ -33,10 +33,7 @@ from openhands.server.shared import (
     file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_metadata import (
-    ConversationMetadata,
-    ConversationTrigger,
-)
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
@@ -60,7 +57,6 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
-    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ):
     logger.info(
@@ -112,7 +108,6 @@ async def _create_new_conversation(
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
-            trigger=conversation_trigger,
             conversation_id=conversation_id,
             title=conversation_title,
             user_id=user_id,
@@ -387,13 +382,12 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> ConversationInfo | None:
+) -> ConversationInfo:
     try:
         title = conversation.title
         if not title:
             title = get_default_conversation_title(conversation.conversation_id)
         return ConversationInfo(
-            trigger=conversation.trigger,
             conversation_id=conversation.conversation_id,
             title=title,
             last_updated_at=conversation.last_updated_at,
@@ -408,4 +402,12 @@ async def _get_conversation_info(
             f'Error loading conversation {conversation.conversation_id}: {str(e)}',
             extra={'session_id': conversation.conversation_id},
         )
-        return None
+        # Create a default ConversationInfo object instead of returning None
+        return ConversationInfo(
+            conversation_id=conversation.conversation_id,
+            title=get_default_conversation_title(conversation.conversation_id),
+            last_updated_at=conversation.last_updated_at,
+            created_at=conversation.created_at,
+            selected_repository='',
+            status=ConversationStatus.STOPPED,
+        )

@@ -127,8 +127,7 @@ class DaytonaRuntime(ActionExecutionClient):
         ]
         return f'https://{port}-{self.workspace.id}.{node_domain}'
 
-    @property
-    def action_execution_server_url(self) -> str:
+    def _get_action_execution_server_host(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:
@@ -185,6 +184,8 @@ class DaytonaRuntime(ActionExecutionClient):
 
         self.api_url = self._construct_api_url(self._sandbox_port)
 
+        # Ensure workspace is not None before accessing its attributes
+        assert self.workspace is not None, 'Workspace should not be None at this point'
         state = self.workspace.instance.state
 
         if state == 'stopping':

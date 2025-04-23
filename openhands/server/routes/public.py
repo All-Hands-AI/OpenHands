@@ -15,6 +15,13 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 from openhands.server.shared import config, server_config
+from openhands.utils.async_utils import call_sync_from_async
+
+
+def _get_ollama_models(url: str) -> list:
+    """Helper function to get Ollama models."""
+    return httpx.get(url, timeout=3).json()['models']
+
 
 app = APIRouter(prefix='/api/options')
 
@@ -60,7 +67,9 @@ async def get_litellm_models() -> list[str]:
         if ollama_base_url:
             ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
-                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']  # noqa: ASYNC100
+                ollama_models_list = await call_sync_from_async(
+                    _get_ollama_models, ollama_url
+                )
                 for model in ollama_models_list:
                     model_list.append('ollama/' + model['name'])
                 break
