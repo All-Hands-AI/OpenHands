@@ -1,6 +1,7 @@
 import os
 from typing import Any
 
+import aiohttp
 import httpx
 from pydantic import SecretStr
 
@@ -257,7 +258,7 @@ class GitLabService(BaseGitService, GitService):
         user = await self.get_user()
         username = user.login
 
-        # GraphQL query to get merge requests and issues
+        # GraphQL query to get merge requests
         query = """
         query GetUserTasks($username: String!) {
           currentUser {
@@ -288,16 +289,6 @@ class GitLabService(BaseGitService, GitService):
                 }
               }
             }
-            assignedIssues(state: opened, sort: UPDATED_DESC, first: 100) {
-              nodes {
-                id
-                iid
-                title
-                project {
-                  fullPath
-                }
-              }
-            }
           }
         }
         """
@@ -305,9 +296,11 @@ class GitLabService(BaseGitService, GitService):
         variables = {'username': username}
 
         try:
+            tasks: list[SuggestedTask] = []
+            
+            # Get merge requests using GraphQL
             response = await self.execute_graphql_query(query, variables)
             data = response.get('currentUser', {})
-            tasks: list[SuggestedTask] = []
 
             # Process merge requests
             merge_requests = data.get('authoredMergeRequests', {}).get('nodes', [])
@@ -352,22 +345,30 @@ class GitLabService(BaseGitService, GitService):
                             title=title,
                         )
                     )
-
-            # Process issues
-            issues = data.get('assignedIssues', {}).get('nodes', [])
-            for issue in issues:
-                repo_name = issue.get('project', {}).get('fullPath', '')
-                issue_number = issue.get('iid')
-                title = issue.get('title', '')
-
-                tasks.append(
-                    SuggestedTask(
-                        task_type=TaskType.OPEN_ISSUE,
-                        repo=repo_name,
-                        issue_number=issue_number,
-                        title=title,
-                    )
-                )
+            
+            # Get assigned issues using REST API
+            url = f"{self.base_url}/api/v4/issues?assignee_username={username}&state=opened&scope=assigned_to_me"
+            headers = {"Authorization": f"Bearer {self.token}"}
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 200:
+                        issues = await response.json()
+                        
+                        # Process issues
+                        for issue in issues:
+                            repo_name = issue.get('references', {}).get('full', '').split('#')[0].strip()
+                            issue_number = issue.get('iid')
+                            title = issue.get('title', '')
+                            
+                            tasks.append(
+                                SuggestedTask(
+                                    task_type=TaskType.OPEN_ISSUE,
+                                    repo=repo_name,
+                                    issue_number=issue_number,
+                                    title=title,
+                                )
+                            )
 
             return tasks
         except Exception as e:
