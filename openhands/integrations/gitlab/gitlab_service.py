@@ -269,7 +269,7 @@ class GitLabService(BaseGitService, GitService):
                 project {
                   fullPath
                 }
-                hasConflicts
+                conflicts
                 mergeStatus
                 pipelines(first: 1) {
                   nodes {
@@ -320,7 +320,7 @@ class GitLabService(BaseGitService, GitService):
                 task_type = TaskType.OPEN_PR
 
                 # Check for specific states
-                if mr.get('hasConflicts'):
+                if mr.get('conflicts'):
                     task_type = TaskType.MERGE_CONFLICTS
                 elif (
                     mr.get('pipelines', {}).get('nodes', [])
