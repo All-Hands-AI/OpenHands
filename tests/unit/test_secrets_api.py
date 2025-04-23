@@ -158,48 +158,47 @@ async def test_add_custom_secret(test_client):
 
 
 @pytest.mark.asyncio
-async def test_update_existing_custom_secret(
-    test_client, mock_settings_store, mock_convert_to_settings
-):
+async def test_update_existing_custom_secret(test_client):
     """Test updating an existing custom secret."""
-    # Create initial settings with a custom secret
-    custom_secrets = {'API_KEY': SecretStr('old-api-key')}
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    secret_store = SecretStore(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
-    initial_settings = Settings(
-        language='en',
-        agent='test-agent',
-        llm_api_key=SecretStr('test-llm-key'),
-        secrets_store=secret_store,
-    )
+    with patch_file_settings_store() as file_settings_store:
+        # Create initial settings with a custom secret
+        custom_secrets = {'API_KEY': SecretStr('old-api-key')}
+        provider_tokens = {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
+        }
+        secret_store = SecretStore(
+            custom_secrets=custom_secrets, provider_tokens=provider_tokens
+        )
+        initial_settings = Settings(
+            language='en',
+            agent='test-agent',
+            llm_api_key=SecretStr('test-llm-key'),
+            secrets_store=secret_store,
+        )
 
-    # Mock the settings store to return our initial settings
-    mock_settings_store.load.return_value = initial_settings
+        # Store the initial settings
+        await file_settings_store.store(initial_settings)
 
-    # Make the POST request to update the custom secret
-    update_secret_data = {'custom_secrets': {'API_KEY': 'new-api-key'}}
-    response = test_client.post('/api/secrets', json=update_secret_data)
-    assert response.status_code == 200
+        # Make the POST request to update the custom secret
+        update_secret_data = {'custom_secrets': {'API_KEY': 'new-api-key'}}
+        response = test_client.post('/api/secrets', json=update_secret_data)
+        assert response.status_code == 200
 
-    # Verify that the settings were stored with the updated secret
-    stored_settings: Settings = mock_settings_store.store.call_args[0][0]
+        # Verify that the settings were stored with the updated secret
+        stored_settings = await file_settings_store.load()
 
-    # Check that the secret was updated
-    assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
-    assert (
-        stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
-        == 'new-api-key'
-    )
+        # Check that the secret was updated
+        assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
+        assert (
+            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            == 'new-api-key'
+        )
 
-    # Check that other settings were preserved
-    assert stored_settings.language == 'en'
-    assert stored_settings.agent == 'test-agent'
-    assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
-    assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
+        # Check that other settings were preserved
+        assert stored_settings.language == 'en'
+        assert stored_settings.agent == 'test-agent'
+        assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
+        assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
 
 
 @pytest.mark.asyncio
