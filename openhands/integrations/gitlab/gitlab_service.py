@@ -1,7 +1,6 @@
 import os
 from typing import Any
 
-import aiohttp
 import httpx
 from pydantic import SecretStr
 
@@ -347,28 +346,33 @@ class GitLabService(BaseGitService, GitService):
                     )
             
             # Get assigned issues using REST API
-            url = f"{self.base_url}/api/v4/issues?assignee_username={username}&state=opened&scope=assigned_to_me"
-            headers = {"Authorization": f"Bearer {self.token}"}
+            endpoint = "/api/v4/issues"
+            params = {
+                "assignee_username": username,
+                "state": "opened",
+                "scope": "assigned_to_me"
+            }
             
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
-                    if response.status == 200:
-                        issues = await response.json()
-                        
-                        # Process issues
-                        for issue in issues:
-                            repo_name = issue.get('references', {}).get('full', '').split('#')[0].strip()
-                            issue_number = issue.get('iid')
-                            title = issue.get('title', '')
-                            
-                            tasks.append(
-                                SuggestedTask(
-                                    task_type=TaskType.OPEN_ISSUE,
-                                    repo=repo_name,
-                                    issue_number=issue_number,
-                                    title=title,
-                                )
-                            )
+            issues_response, _ = await self._make_request(
+                method=RequestMethod.GET,
+                endpoint=endpoint,
+                params=params
+            )
+            
+            # Process issues
+            for issue in issues_response:
+                repo_name = issue.get('references', {}).get('full', '').split('#')[0].strip()
+                issue_number = issue.get('iid')
+                title = issue.get('title', '')
+                
+                tasks.append(
+                    SuggestedTask(
+                        task_type=TaskType.OPEN_ISSUE,
+                        repo=repo_name,
+                        issue_number=issue_number,
+                        title=title,
+                    )
+                )
 
             return tasks
         except Exception as e:
