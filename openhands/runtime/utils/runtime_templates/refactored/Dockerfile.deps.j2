@@ -1,0 +1,125 @@
+FROM ubuntu:22.04 as builder
+
+# Set up environment variables
+ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
+    MAMBA_ROOT_PREFIX=/openhands/micromamba \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server
+
+# Install base system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep \
+        libgl1-mesa-glx libasound2-plugins libatomic1 && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
+        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv && \
+    corepack enable yarn && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup Node.js and Poetry
+RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
+    npm install -g corepack && corepack enable yarn && \
+    curl -fsSL --compressed https://install.python-poetry.org | python - && \
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create necessary directories
+RUN mkdir -p /openhands/bin /openhands/lib /openhands/poetry /openhands/micromamba
+
+# Install micromamba
+RUN mkdir -p /openhands/micromamba/bin && \
+    /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)" && \
+    /openhands/micromamba/bin/micromamba config remove channels defaults
+
+# Create the openhands virtual environment and install poetry and python
+RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
+    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.12 -y
+
+# Create a clean openhands directory for dependencies
+RUN mkdir -p /openhands/code/openhands && \
+    touch /openhands/code/openhands/__init__.py
+
+# Copy dependency files
+COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+
+# Configure micromamba and poetry
+RUN /openhands/micromamba/bin/micromamba config set changeps1 False && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12
+
+# Install project dependencies
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main --no-interaction --no-root && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry install --only runtime --no-interaction --no-root
+
+# Install playwright and its dependencies
+RUN apt-get update && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
+
+# Setup VSCode Server
+ARG RELEASE_TAG="openvscode-server-v1.98.2"
+ARG RELEASE_ORG="gitpod-io"
+
+RUN if [ -z "${RELEASE_TAG}" ]; then \
+        echo "The RELEASE_TAG build arg must be set." >&2 && \
+        exit 1; \
+    fi && \
+    arch=$(uname -m) && \
+    if [ "${arch}" = "x86_64" ]; then \
+        arch="x64"; \
+    elif [ "${arch}" = "aarch64" ]; then \
+        arch="arm64"; \
+    elif [ "${arch}" = "armv7l" ]; then \
+        arch="armhf"; \
+    fi && \
+    wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    if [ -d "${OPENVSCODE_SERVER_ROOT}" ]; then rm -rf "${OPENVSCODE_SERVER_ROOT}"; fi && \
+    mv ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
+    cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
+    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
+
+# Install VSCode extensions
+RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
+    mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor
+
+# Copy Chromium to a specific location
+RUN mkdir -p /openhands/browser && \
+    cp -r /root/.cache/ms-playwright /openhands/browser/
+
+# Copy tmux to /openhands/bin
+RUN cp $(which tmux) /openhands/bin/
+
+# Copy wrapper scripts
+COPY ./code/openhands/runtime/utils/wrappers/* /openhands/bin/
+RUN chmod +x /openhands/bin/*
+
+# Copy library dependencies for tmux
+RUN mkdir -p /openhands/lib && \
+    ldd $(which tmux) | grep -v linux-vdso.so.1 | awk '{print $3}' | grep -v "not found" | xargs -I{} cp -L {} /openhands/lib/ 2>/dev/null || true
+
+# Copy library dependencies for Chromium
+RUN CHROMIUM_PATH=$(find /openhands/browser/ms-playwright -name "chrome" -type f | head -n 1) && \
+    ldd $CHROMIUM_PATH | grep -v linux-vdso.so.1 | awk '{print $3}' | grep -v "not found" | xargs -I{} cp -L {} /openhands/lib/ 2>/dev/null || true
+
+# Set environment variables
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /openhands/bin/oh-env && \
+    echo "export PATH=/openhands/bin:\$PATH" >> /openhands/bin/oh-env && \
+    echo "export LD_LIBRARY_PATH=/openhands/lib:\$LD_LIBRARY_PATH" >> /openhands/bin/oh-env && \
+    echo "export POETRY_VIRTUALENVS_PATH=/openhands/poetry" >> /openhands/bin/oh-env && \
+    echo "export MAMBA_ROOT_PREFIX=/openhands/micromamba" >> /openhands/bin/oh-env && \
+    echo "export PLAYWRIGHT_BROWSERS_PATH=/openhands/browser/ms-playwright" >> /openhands/bin/oh-env && \
+    echo "export OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server" >> /openhands/bin/oh-env
+
+# Clear caches
+RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    /openhands/micromamba/bin/micromamba clean --all
+
+# Install extra dependencies if specified
+{% if extra_deps %}RUN {{ extra_deps }} {% endif %}
