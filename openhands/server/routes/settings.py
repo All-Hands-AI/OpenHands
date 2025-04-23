@@ -328,7 +328,7 @@ async def store_provider_tokens(
 
 
 async def store_llm_settings(
-    request: Request, settings: POSTSettingsModel, settings_store: SettingsStore
+    settings: POSTSettingsModel, settings_store: SettingsStore
 ) -> POSTSettingsModel:
 
     existing_settings = await settings_store.load()
