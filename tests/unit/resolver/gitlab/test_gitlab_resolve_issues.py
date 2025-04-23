@@ -413,7 +413,44 @@ async def test_complete_runtime():
 
 
 @pytest.mark.asyncio
-async def test_process_issue(mock_output_dir, mock_prompt_template):
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        {
+            'name': 'successful_run',
+            'expected_success': True,
+            'expected_error': None,
+            'expected_explanation': 'Issue resolved successfully',
+            'is_pr': False,
+            'comment_success': None,
+        },
+        {
+            'name': 'value_error',
+            'expected_success': False,
+            'expected_error': 'Agent failed to run or crashed',
+            'expected_explanation': 'Agent failed to run',
+            'is_pr': False,
+            'comment_success': None,
+        },
+        {
+            'name': 'runtime_error',
+            'expected_success': False,
+            'expected_error': 'Agent failed to run or crashed',
+            'expected_explanation': 'Agent failed to run',
+            'is_pr': False,
+            'comment_success': None,
+        },
+        {
+            'name': 'json_decode_error',
+            'expected_success': True,
+            'expected_error': None,
+            'expected_explanation': 'Non-JSON explanation',
+            'is_pr': True,
+            'comment_success': [True, False],  # To trigger the PR success logging code path
+        },
+    ],
+)
+async def test_process_issue(mock_output_dir, mock_prompt_template, test_case):
     """Test the process_issue method with different scenarios."""
     # Set up test data
     issue = Issue(
@@ -429,105 +466,72 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
     llm_config = LLMConfig(model='gpt-4', api_key='test_api_key')
     runtime_container_image = 'test_image:latest'
 
-    # Test cases for different scenarios
-    test_cases = [
-        {
-            'name': 'successful_run',
-            'expected_success': True,
-            'expected_error': None,
-            'expected_explanation': 'Issue resolved successfully',
-        },
-        {
-            'name': 'value_error',
-            'expected_success': False,
-            'expected_error': 'Agent failed to run or crashed',
-            'expected_explanation': 'Agent failed to run',
-        },
-        {
-            'name': 'runtime_error',
-            'expected_success': False,
-            'expected_error': 'Agent failed to run or crashed',
-            'expected_explanation': 'Agent failed to run',
-        },
-        {
-            'name': 'json_decode_error',
-            'expected_success': True,
-            'expected_error': None,
-            'expected_explanation': 'Non-JSON explanation',
-            'is_pr': True,
-            'comment_success': [True, False],  # To trigger the PR success logging code path
-        },
-    ]
+    # Create a mock Namespace object with the required attributes
+    mock_args = MagicMock()
+    mock_args.selected_repo = 'test-owner/test-repo'
+    mock_args.token = 'test-token'
+    mock_args.username = 'test-user'
+    mock_args.max_iterations = max_iterations
+    mock_args.output_dir = mock_output_dir
+    mock_args.llm_model = 'gpt-4'
+    mock_args.llm_api_key = 'test_api_key'
+    mock_args.llm_base_url = None
+    mock_args.base_domain = None
+    mock_args.runtime_container_image = runtime_container_image
+    mock_args.base_container_image = None
+    mock_args.is_experimental = False
+    mock_args.issue_number = None
+    mock_args.comment_id = None
+    mock_args.repo_instruction_file = None
+    mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
+    mock_args.prompt_file = None
 
-    for test_case in test_cases:
-        # Create a mock Namespace object with the required attributes
-        mock_args = MagicMock()
-        mock_args.selected_repo = 'test-owner/test-repo'
-        mock_args.token = 'test-token'
-        mock_args.username = 'test-user'
-        mock_args.max_iterations = max_iterations
-        mock_args.output_dir = mock_output_dir
-        mock_args.llm_model = 'gpt-4'
-        mock_args.llm_api_key = 'test_api_key'
-        mock_args.llm_base_url = None
-        mock_args.base_domain = None
-        mock_args.runtime_container_image = runtime_container_image
-        mock_args.base_container_image = None
-        mock_args.is_experimental = False
-        mock_args.issue_number = None
-        mock_args.comment_id = None
-        mock_args.repo_instruction_file = None
-        mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-        mock_args.prompt_file = None
-        
-        # Create a resolver instance with mocked identify_token
-        with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITLAB):
-            resolver = IssueResolver(mock_args)
-        
-        # Set the prompt template and repo instruction directly
-        resolver.prompt_template = mock_prompt_template
-        resolver.repo_instruction = repo_instruction
-        
-        # Mock the handler
-        handler_instance = MagicMock()
-        handler_instance.guess_success.return_value = (
-            test_case['expected_success'],
-            test_case.get('comment_success', None),
-            test_case['expected_explanation'],
-        )
-        handler_instance.get_instruction.return_value = ('Test instruction', [])
-        handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-        
-        # Mock the process_issue method to return a predefined result
-        expected_result = ResolverOutput(
-            issue=issue,
-            issue_type='pr' if test_case.get('is_pr', False) else 'issue',
-            instruction='Test instruction',
-            base_commit=base_commit,
-            git_patch='test patch',
-            history=[],
-            metrics={},
-            success=test_case['expected_success'],
-            comment_success=test_case.get('comment_success', None),
-            result_explanation=test_case['expected_explanation'],
-            error=test_case['expected_error'],
-        )
-        
-        # Use patch to replace the process_issue method with a mock that returns our expected result
-        with patch.object(resolver, 'process_issue', return_value=expected_result):
-            # Call the mocked method
-            result = await resolver.process_issue(issue, base_commit, handler_instance)
-            
-            # Assert the result matches our expectations
-            assert result == expected_result
-            assert result.issue == issue
-            assert result.base_commit == base_commit
-            assert result.git_patch == 'test patch'
-            assert result.success == test_case['expected_success']
-            assert result.result_explanation == test_case['expected_explanation']
-            assert result.error == test_case['expected_error']
+    # Create a resolver instance with mocked identify_token
+    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITLAB):
+        resolver = IssueResolver(mock_args)
 
+    # Set the prompt template and repo instruction directly
+    resolver.prompt_template = mock_prompt_template
+    resolver.repo_instruction = repo_instruction
 
+    # Mock the handler
+    handler_instance = MagicMock()
+    handler_instance.guess_success.return_value = (
+        test_case['expected_success'],
+        test_case.get('comment_success', None),
+        test_case['expected_explanation'],
+    )
+    handler_instance.get_instruction.return_value = ('Test instruction', [])
+    handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
+
+    # Mock the process_issue method to return a predefined result
+    expected_result = ResolverOutput(
+        issue=issue,
+        issue_type='pr' if test_case.get('is_pr', False) else 'issue',
+        instruction='Test instruction',
+        base_commit=base_commit,
+        git_patch='test patch',
+        history=[],
+        metrics={},
+        success=test_case['expected_success'],
+        comment_success=test_case.get('comment_success', None),
+        result_explanation=test_case['expected_explanation'],
+        error=test_case['expected_error'],
+    )
+
+    # Use patch to replace the process_issue method with a mock that returns our expected result
+    with patch.object(resolver, 'process_issue', return_value=expected_result):
+        # Call the mocked method
+        result = await resolver.process_issue(issue, base_commit, handler_instance)
+
+        # Assert the result matches our expectations
+        assert result == expected_result
+        assert result.issue == issue
+        assert result.base_commit == base_commit
+        assert result.git_patch == 'test patch'
+        assert result.success == test_case['expected_success']
+        assert result.result_explanation == test_case['expected_explanation']
+        assert result.error == test_case['expected_error']
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     issue = Issue(
         owner='test_owner',
@@ -929,5 +933,3 @@ def test_download_issue_with_specific_comment():
     assert issues[0].thread_comments == ['Specific comment body']
 
 
-if __name__ == '__main__':
-    pytest.main()
