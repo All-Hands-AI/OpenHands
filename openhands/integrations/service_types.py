@@ -23,6 +23,7 @@ class TaskType(str, Enum):
 
 
 class SuggestedTask(BaseModel):
+    git_provider: ProviderType
     task_type: TaskType
     repo: str
     issue_number: int

@@ -338,6 +338,7 @@ class GitLabService(BaseGitService, GitService):
                 if task_type != TaskType.OPEN_PR:
                     tasks.append(
                         SuggestedTask(
+                            git_provider=ProviderType.GITLAB,
                             task_type=task_type,
                             repo=repo_name,
                             issue_number=mr_number,
@@ -367,6 +368,7 @@ class GitLabService(BaseGitService, GitService):
                 
                 tasks.append(
                     SuggestedTask(
+                        git_provider=ProviderType.GITLAB,
                         task_type=TaskType.OPEN_ISSUE,
                         repo=repo_name,
                         issue_number=issue_number,
