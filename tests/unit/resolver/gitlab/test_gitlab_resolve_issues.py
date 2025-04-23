@@ -1,6 +1,6 @@
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -9,6 +9,7 @@ from openhands.events.action import CmdRunAction
 from openhands.events.observation import (
     CmdOutputMetadata,
     CmdOutputObservation,
+    NullObservation,
 )
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
@@ -18,7 +19,7 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.resolve_issue import IssueResolver
+from openhands.resolver.resolve_issue import IssueResolver, SandboxConfig, AppConfig, AgentConfig
 from openhands.resolver.resolver_output import ResolverOutput
 
 
@@ -397,6 +398,14 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
     [
         {
             'name': 'successful_run',
+            'run_controller_return': MagicMock(
+                history=[NullObservation(content='')],  # Add a proper dataclass instance
+                metrics=MagicMock(
+                    get=MagicMock(return_value={'test_result': 'passed'})
+                ),
+                last_error=None,
+            ),
+            'run_controller_raises': None,
             'expected_success': True,
             'expected_error': None,
             'expected_explanation': 'Issue resolved successfully',
@@ -405,6 +414,7 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
         },
         {
             'name': 'value_error',
+            'run_controller_raises': ValueError('Test value error'),
             'expected_success': False,
             'expected_error': 'Agent failed to run or crashed',
             'expected_explanation': 'Agent failed to run',
@@ -413,6 +423,7 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
         },
         {
             'name': 'runtime_error',
+            'run_controller_raises': RuntimeError('Test runtime error'),
             'expected_success': False,
             'expected_error': 'Agent failed to run or crashed',
             'expected_explanation': 'Agent failed to run',
@@ -421,6 +432,14 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
         },
         {
             'name': 'json_decode_error',
+            'run_controller_return': MagicMock(
+                history=[NullObservation(content='')],  # Add a proper dataclass instance
+                metrics=MagicMock(
+                    get=MagicMock(return_value={'test_result': 'passed'})
+                ),
+                last_error=None,
+            ),
+            'run_controller_raises': None,
             'expected_success': True,
             'expected_error': None,
             'expected_explanation': 'Non-JSON explanation',
@@ -461,34 +480,44 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
     handler_instance.get_instruction.return_value = ('Test instruction', [])
     handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
-    # Mock the process_issue method to return a predefined result
-    expected_result = ResolverOutput(
-        issue=issue,
-        issue_type='pr' if test_case.get('is_pr', False) else 'issue',
-        instruction='Test instruction',
-        base_commit=base_commit,
-        git_patch='test patch',
-        history=[],
-        metrics={},
-        success=test_case['expected_success'],
-        comment_success=test_case.get('comment_success', None),
-        result_explanation=test_case['expected_explanation'],
-        error=test_case['expected_error'],
-    )
+    # Create mock runtime and mock run_controller
+    mock_runtime = MagicMock()
+    mock_runtime.connect = AsyncMock()
+    mock_create_runtime = MagicMock(return_value=mock_runtime)
+    
+    # Configure run_controller mock based on test case
+    mock_run_controller = AsyncMock()
+    if test_case.get('run_controller_raises'):
+        mock_run_controller.side_effect = test_case['run_controller_raises']
+    else:
+        mock_run_controller.return_value = test_case['run_controller_return']
 
-    # Use patch to replace the process_issue method with a mock that returns our expected result
-    with patch.object(resolver, 'process_issue', return_value=expected_result):
-        # Call the mocked method
+    # Patch the necessary functions and methods
+    with patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime), \
+         patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller), \
+         patch.object(resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}), \
+         patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime, \
+         patch('openhands.resolver.resolve_issue.SandboxConfig', return_value=MagicMock()), \
+         patch('openhands.resolver.resolve_issue.AppConfig', return_value=MagicMock()):
+        
+        # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
+        
+        # Verify initialize_runtime was called at least once
+        assert mock_initialize_runtime.called, "initialize_runtime should be called"
 
         # Assert the result matches our expectations
-        assert result == expected_result
+        assert isinstance(result, ResolverOutput)
         assert result.issue == issue
         assert result.base_commit == base_commit
         assert result.git_patch == 'test patch'
         assert result.success == test_case['expected_success']
         assert result.result_explanation == test_case['expected_explanation']
         assert result.error == test_case['expected_error']
+
+        # Assert that the mocked functions were called
+        mock_create_runtime.assert_called_once()
+        mock_runtime.connect.assert_awaited_once()
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     issue = Issue(
         owner='test_owner',
