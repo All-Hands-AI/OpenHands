@@ -24,7 +24,7 @@ class MockUserAuth(UserAuth):
         return 'test-user'
 
     async def get_access_token(self) -> SecretStr | None:
-        return SecretStr("test-token")
+        return SecretStr('test-token')
 
     async def get_provider_tokens(self) -> dict[ProviderType, ProviderToken] | None:  # noqa: E501
         return None
@@ -42,11 +42,11 @@ def test_client():
     # Create a test client
     with patch(
         'openhands.server.user_auth.user_auth.UserAuth.get_instance',
-        return_value=MockUserAuth()
+        return_value=MockUserAuth(),
     ):
         with patch(
             'openhands.server.routes.settings.validate_provider_token',
-            return_value=ProviderType.GITHUB
+            return_value=ProviderType.GITHUB,
         ):
             client = TestClient(app)
             yield client
