@@ -127,9 +127,11 @@ class Runtime(FileEditRuntimeMixin):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         a2a_manager: A2AManager | None = None,
+        mnemonic: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
+        self.mnemonic = mnemonic
         self.event_stream.subscribe(
             EventStreamSubscriber.RUNTIME, self.on_event, self.sid
         )

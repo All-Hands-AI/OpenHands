@@ -79,6 +79,7 @@ class DockerRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         a2a_manager: A2AManager | None = None,
+        mnemonic: str | None = None,
     ):
         # TODO FIXME: we don't need to close containers when BE shut down. Only users can close the containers by deleting the conversation.
         # if not DockerRuntime._shutdown_listener_id:
@@ -89,6 +90,7 @@ class DockerRuntime(ActionExecutionClient):
         self.config = config
         self._runtime_initialized: bool = False
         self.status_callback = status_callback
+        self.mnemonic = mnemonic
 
         self._host_port = -1
         self._container_port = -1
@@ -127,6 +129,7 @@ class DockerRuntime(ActionExecutionClient):
             attach_to_existing,
             headless_mode,
             a2a_manager=a2a_manager,
+            mnemonic=mnemonic,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available

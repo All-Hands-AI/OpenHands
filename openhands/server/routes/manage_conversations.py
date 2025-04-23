@@ -70,6 +70,7 @@ async def _create_new_conversation(
     image_urls: list[str] | None,
     replay_json: str | None,
     attach_convo_id: bool = False,
+    mnemonic: str | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -152,12 +153,16 @@ async def _create_new_conversation(
             content=user_msg or '',
             image_urls=image_urls or [],
         )
+        
+
     await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+        github_user_id=None,
+        mnemonic=mnemonic,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -179,6 +184,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     user_id = get_user_id(request)
+    mnemonic = request.state.user.mnemonic
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
@@ -189,6 +195,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             initial_user_msg,
             image_urls,
             replay_json,
+            mnemonic=mnemonic,
         )
         if conversation_id and user_id is not None:
             await conversation_module._update_conversation_visibility(

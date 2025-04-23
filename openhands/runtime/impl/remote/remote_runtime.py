@@ -50,6 +50,8 @@ class RemoteRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        a2a_manager=None,
+        mnemonic: str | None = None,
     ):
         super().__init__(
             config,
@@ -62,6 +64,8 @@ class RemoteRuntime(ActionExecutionClient):
             headless_mode,
             user_id,
             git_provider_tokens,
+            a2a_manager=a2a_manager,
+            mnemonic=mnemonic,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
