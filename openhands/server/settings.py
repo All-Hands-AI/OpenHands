@@ -94,6 +94,9 @@ class Settings(BaseModel):
         return {
             'provider_tokens': secrets.provider_tokens_serializer(
                 secrets.provider_tokens, info
+            ),
+            'custom_secrets': secrets.custom_secrets_serializer(
+                secrets.custom_secrets, info
             )
         }
 

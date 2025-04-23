@@ -1,6 +1,7 @@
 """Tests for the custom secrets API endpoints."""
 # flake8: noqa: E501
 
+from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -12,38 +13,9 @@ from openhands.integrations.provider import ProviderToken, ProviderType, SecretS
 from openhands.server.routes.settings import app as settings_app
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import UserAuth
+from openhands.storage.memory import InMemoryFileStore
+from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.storage.settings.settings_store import SettingsStore
-
-
-class MockUserAuth(UserAuth):
-    """Mock implementation of UserAuth for testing"""
-
-    def __init__(self):
-        self._settings = None
-        self._settings_store = MagicMock()
-        self._settings_store.load = AsyncMock(return_value=None)
-        self._settings_store.store = AsyncMock()
-
-        # Create provider tokens
-        self._provider_tokens = {
-            ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-        }
-
-    async def get_user_id(self) -> str | None:
-        return 'test-user'
-
-    async def get_access_token(self) -> SecretStr | None:
-        return SecretStr('test-token')
-
-    async def get_provider_tokens(self) -> dict[ProviderType, ProviderToken] | None:
-        return self._provider_tokens
-
-    async def get_user_settings_store(self) -> SettingsStore | None:
-        return self._settings_store
-
-    @classmethod
-    async def get_instance(cls, request: Request) -> UserAuth:
-        return MockUserAuth()
 
 
 @pytest.fixture
@@ -51,20 +23,14 @@ def test_client():
     """Create a test client for the settings API."""
     app = FastAPI()
     app.include_router(settings_app)
+    return TestClient(app)
 
-    # Create a mock auth instance
-    mock_auth = MockUserAuth()
 
-    # Mock the UserAuth.get_instance method to return our mock instance
-    with patch(
-        'openhands.server.user_auth.user_auth.UserAuth.get_instance',
-        new=AsyncMock(return_value=mock_auth),
-    ):
-        with patch(
-            'openhands.server.routes.settings.validate_provider_token',
-            return_value=ProviderType.GITHUB,
-        ):
-            return TestClient(app)
+@contextmanager
+def patch_file_settings_store():
+    store = FileSettingsStore(InMemoryFileStore())
+    with patch('openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance', AsyncMock(return_value=store)):
+        yield store
 
 
 @pytest.fixture
@@ -151,39 +117,39 @@ async def test_load_custom_secrets_names_empty(test_client, mock_settings_store)
 
 
 @pytest.mark.asyncio
-async def test_add_custom_secret(
-    test_client, mock_settings_store, mock_convert_to_settings
-):
+async def test_add_custom_secret(test_client):
     """Test adding a new custom secret."""
-    # Create initial settings with provider tokens but no custom secrets
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    secret_store = SecretStore(provider_tokens=provider_tokens)
-    initial_settings = Settings(
-        language='en',
-        agent='test-agent',
-        llm_api_key=SecretStr('test-llm-key'),
-        secrets_store=secret_store,
-    )
 
-    # Mock the settings store to return our initial settings
-    mock_settings_store.load.return_value = initial_settings
+    with patch_file_settings_store() as file_settings_store:
+        # Create initial settings with provider tokens but no custom secrets
+        provider_tokens = {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
+        }
+        secret_store = SecretStore(provider_tokens=provider_tokens)
+        initial_settings = Settings(
+            language='en',
+            agent='test-agent',
+            llm_api_key=SecretStr('test-llm-key'),
+            secrets_store=secret_store,
+        )
 
-    # Make the POST request to add a custom secret
-    add_secret_data = {'custom_secrets': {'API_KEY': 'api-key-value'}}
-    response = test_client.post('/api/secrets', json=add_secret_data)
-    assert response.status_code == 200
+        # Store the initial settings
+        await file_settings_store.store(initial_settings)
 
-    # Verify that the settings were stored with the new secret
-    stored_settings = mock_settings_store.store.call_args[0][0]
+        # Make the POST request to add a custom secret
+        add_secret_data = {'custom_secrets': {'API_KEY': 'api-key-value'}}
+        response = test_client.post('/api/secrets', json=add_secret_data)
+        assert response.status_code == 200
 
-    # Check that the secret was added
-    assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
-    assert (
-        stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
-        == 'api-key-value'
-    )
+        # Verify that the settings were stored with the new secret
+        stored_settings = await file_settings_store.load()
+
+        # Check that the secret was added
+        assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
+        assert (
+            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            == 'api-key-value'
+        )
 
     # Check that other settings were preserved
     assert stored_settings.language == 'en'
