@@ -346,7 +346,7 @@ class GitLabService(BaseGitService, GitService):
                     )
             
             # Get assigned issues using REST API
-            url = f"{self.base_url}/api/v4/issues"
+            url = f"{self.BASE_URL}/issues"
             params = {
                 "assignee_username": username,
                 "state": "opened",
