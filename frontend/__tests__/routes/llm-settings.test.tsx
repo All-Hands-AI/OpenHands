@@ -278,9 +278,10 @@ describe("Form submission", () => {
     await userEvent.click(condensor);
     expect(condensor).not.toBeChecked();
 
-    // enter agent
-    await userEvent.clear(agent);
-    await userEvent.type(agent, "CoActAgent");
+    // select agent
+    await userEvent.click(agent);
+    const agentOption = screen.getByText("CoActAgent");
+    await userEvent.click(agentOption);
     expect(agent).toHaveValue("CoActAgent");
 
     const submitButton = screen.getByTestId("submit-button");

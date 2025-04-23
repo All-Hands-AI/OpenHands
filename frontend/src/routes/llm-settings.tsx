@@ -168,9 +168,8 @@ function LlmSettingsScreen() {
     }));
   };
 
-  const handleAgentIsDirty = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newAgent = e.target.value;
-    const agentIsDirty = newAgent !== settings?.AGENT && newAgent !== "";
+  const handleAgentIsDirty = (agent: string) => {
+    const agentIsDirty = agent !== settings?.AGENT && agent !== "";
     setDirtyInputs((prev) => ({
       ...prev,
       agent: agentIsDirty,
@@ -290,10 +289,19 @@ function LlmSettingsScreen() {
               linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
               href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
             />
-            <input
-              data-testid="agent-input"
+
+            <SettingsDropdownInput
+              testId="agent-input"
               name="agent-input"
-              defaultValue={settings.AGENT}
+              label={t(I18nKey.SETTINGS$AGENT)}
+              items={
+                resources?.agents.map((agent) => ({
+                  key: agent,
+                  label: agent,
+                })) || []
+              }
+              defaultSelectedKey={settings.AGENT}
+              isClearable={false}
               onChange={handleAgentIsDirty}
             />
 
