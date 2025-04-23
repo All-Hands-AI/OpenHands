@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import socketio
 
@@ -57,6 +58,7 @@ class ConversationManager(ABC):
         mnemonic: str | None,
         system_prompt: str | None,
         user_prompt: str | None,
+        mcp_disable: Any | None,
     ) -> EventStore | None:
         """Join a conversation and return its event stream."""
 
@@ -86,6 +88,10 @@ class ConversationManager(ABC):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
         github_user_id: str | None = None,
+        mnemonic: str | None = None,
+        system_prompt: str | None = None,
+        user_prompt: str | None = None,
+        mcp_disable: dict[str, bool] | None = None,
     ) -> EventStore:
         """Start an event loop if one is not already running"""
 

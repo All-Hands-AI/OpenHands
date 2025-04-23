@@ -189,8 +189,10 @@ async def get_conversations(
 
 @app.get('/use-cases/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str | None = None,
+    conversation_id: str,
 ) -> ConversationInfo | None:
+    if not conversation_id:
+        raise HTTPException(status_code=400, detail='Conversation ID is required')
     whitelisted_user_id = os.getenv('USER_USE_CASE_SAMPLE')
     conversation_store = await ConversationStoreImpl.get_instance(
         config, whitelisted_user_id, None

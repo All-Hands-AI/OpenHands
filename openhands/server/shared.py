@@ -45,13 +45,15 @@ ConversationManagerImpl = get_impl(
     server_config.conversation_manager_class,
 )
 
-conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
+conversation_manager: ConversationManager = ConversationManagerImpl.get_instance(  # type: ignore
     sio, config, file_store, server_config, monitoring_listener
 )
 
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
+SettingsStoreImpl: SettingsStore = get_impl(
+    SettingsStore, server_config.settings_store_class
+)  # type: ignore
 
-ConversationStoreImpl = get_impl(
+ConversationStoreImpl: ConversationStore = get_impl(
     ConversationStore,  # type: ignore
     server_config.conversation_store_class,
 )
