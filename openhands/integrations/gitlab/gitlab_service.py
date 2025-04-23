@@ -259,7 +259,7 @@ class GitLabService(BaseGitService, GitService):
 
         # GraphQL query to get merge requests
         query = """
-        query GetUserTasks($username: String!) {
+        query GetUserTasks {
           currentUser {
             authoredMergeRequests(state: opened, sort: UPDATED_DESC, first: 100) {
               nodes {
@@ -292,7 +292,7 @@ class GitLabService(BaseGitService, GitService):
         }
         """
 
-        variables = {'username': username}
+        variables = {}
 
         try:
             tasks: list[SuggestedTask] = []
