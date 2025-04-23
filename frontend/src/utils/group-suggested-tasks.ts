@@ -16,12 +16,12 @@ export function groupSuggestedTasks(
   for (const task of tasks) {
     if (!groupsMap[task.repo]) {
       groupsMap[task.repo] = {
-        title: task.repo,
+        title: `${task.git_provider}: ${task.repo}`,
         tasks: [],
       };
     }
 
-    groupsMap[task.repo].tasks.push(task);
+    groupsMap[`${task.git_provider}: ${task.repo}`].tasks.push(task);
   }
 
   return Object.values(groupsMap);

@@ -38,6 +38,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const handleLaunchConversation = () => {
     const repo = getRepo(task.repo);
     const query = getPromptForQuery(
+      task.git_provider,
       task.task_type,
       task.issue_number,
       task.repo,
