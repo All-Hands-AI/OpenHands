@@ -259,7 +259,7 @@ async def test_run_session_with_initial_action(
     mock_create_memory.return_value = mock_memory
 
     # Create an initial action
-    initial_action = MessageAction(content='Test initial message')
+    initial_action_content = 'Test initial message'
 
     # Run the function with the initial action
     with patch(
@@ -280,13 +280,20 @@ async def test_run_session_with_initial_action(
 
             # Run the function
             result = await cli.run_session(
-                loop, mock_config, mock_settings_store, '/test/dir', initial_action
+                loop,
+                mock_config,
+                mock_settings_store,
+                '/test/dir',
+                initial_action_content,
             )
 
     # Check that the initial action was added to the event stream
-    mock_runtime.event_stream.add_event.assert_called_once_with(
-        initial_action, EventSource.USER
-    )
+    # It should be converted to a MessageAction in the code
+    mock_runtime.event_stream.add_event.assert_called_once()
+    call_args = mock_runtime.event_stream.add_event.call_args[0]
+    assert isinstance(call_args[0], MessageAction)
+    assert call_args[0].content == initial_action_content
+    assert call_args[1] == EventSource.USER
 
     # Check that run_agent_until_done was called
     mock_run_agent_until_done.assert_called_once()
@@ -450,14 +457,14 @@ async def test_main_with_task(
     # - Second with None after new_session_requested=True
     assert mock_run_session.call_count == 2
 
-    # First call should include a MessageAction with the task content
+    # First call should include a string with the task content
     first_call_args = mock_run_session.call_args_list[0][0]
     assert first_call_args[0] == loop
     assert first_call_args[1] == mock_config
     assert first_call_args[2] == mock_settings_store
     assert first_call_args[3] == '/test/dir'
-    assert isinstance(first_call_args[4], MessageAction)
-    assert first_call_args[4].content == task_str
+    assert isinstance(first_call_args[4], str)
+    assert first_call_args[4] == task_str
 
     # Second call should have None for the action
     second_call_args = mock_run_session.call_args_list[1][0]
