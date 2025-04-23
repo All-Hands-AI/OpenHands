@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Body, Depends, Request, status
+from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -209,7 +209,6 @@ async def new_conversation(
 
 @app.get('/conversations')
 async def search_conversations(
-    request: Request,
     page_id: str | None = None,
     limit: int = 20,
     user_id: str | None = Depends(get_user_id),
