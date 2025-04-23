@@ -47,7 +47,11 @@ class UserAuth(ABC):
 
 
 async def get_user_auth(request: Request) -> UserAuth:
-    impl_name = os.environ.get('USER_AUTH_CLASS') or UserAuth.__class__.__qualname__
+    user_auth = getattr(request.state, 'user_auth', None)
+    if user_auth:
+        return user_auth
+    impl_name = os.environ.get('USER_AUTH_CLASS') or "openhands.server.user_auth.default_user_auth.DefaultUserAuth"
     impl: UserAuth = get_impl(UserAuth, impl_name)
-    result = await impl.get_instance(request)
-    return result
+    user_auth = await impl.get_instance(request)
+    request.state.user_auth = user_auth
+    return user_auth

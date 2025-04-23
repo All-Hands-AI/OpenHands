@@ -38,7 +38,7 @@ async def get_github_user_id(request: Request) -> str | None:
 
 async def get_user_settings(request: Request) -> Settings | None:
     user_auth = await get_user_auth(request)
-    user_settings = await user_auth.get_user_settings
+    user_settings = await user_auth.get_user_settings()
     return user_settings
 
 

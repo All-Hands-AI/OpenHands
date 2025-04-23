@@ -15,7 +15,7 @@ from openhands.storage.settings.settings_store import SettingsStore
 class DefaultUserAuth(UserAuth):
     """Default user authentication mechanism"""
     _settings: Settings | None = None
-    _settings_store: SettingsStore | None
+    _settings_store: SettingsStore | None = None
 
     async def get_user_id(self) -> str | None:
         """The default implementation does not support multi tenancy, so user_id is always None """
@@ -26,14 +26,14 @@ class DefaultUserAuth(UserAuth):
         return None
     
     async def get_user_settings_store(self):
-        settings_store = self.settings_store
+        settings_store = self._settings_store
         if settings_store:
             return settings_store
         user_id = await self.get_user_id()
         settings_store: SettingsStore = await shared.SettingsStoreImpl.get_instance(
             shared.config, user_id
         )
-        self.settings_store = settings_store
+        self._settings_store = settings_store
         return settings_store
 
     async def get_user_settings(self) -> Settings | None:
@@ -46,16 +46,12 @@ class DefaultUserAuth(UserAuth):
         return settings   
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
-        settings = await self._get_settings()
+        settings = await self.get_user_settings()
         secrets_store: SecretStore = getattr(settings, 'secrets_store', None)
         provider_tokens = getattr(secrets_store, 'provider_tokens', None) 
         return provider_tokens
 
     @classmethod
-    def get_instance(cls, request: Request) -> UserAuth:
-        user_auth = getattr(request.state, 'user_auth', None)
-        if user_auth:
-            return user_auth
+    async def get_instance(cls, request: Request) -> UserAuth:
         user_auth = DefaultUserAuth()
-        request.state.user_auth = user_auth
         return user_auth
