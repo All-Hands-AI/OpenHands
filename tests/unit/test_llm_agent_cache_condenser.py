@@ -1,5 +1,5 @@
 from typing import cast
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -404,11 +404,6 @@ CURRENT_STATE: Conversation initialized
     messages = agent.get_messages(view.events)
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
-
-
-from unittest.mock import patch
-
-import pytest
 
 
 def test_condensation_triggered_by_user_message_in_context(agent):
