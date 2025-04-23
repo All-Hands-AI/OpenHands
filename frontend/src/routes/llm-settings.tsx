@@ -18,6 +18,7 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
+import { ResetSettingsModal } from "#/components/features/settings/llm-settings/reset-settings-modal";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -219,7 +220,7 @@ function LlmSettingsScreen() {
         action={formAction}
         className="flex flex-col h-full justify-between"
       >
-        <div className="px-11 py-9 flex flex-col gap-12">
+        <div className="px-11 py-9 flex flex-col gap-6">
           <SettingsSwitch
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}
@@ -363,13 +364,14 @@ function LlmSettingsScreen() {
         </div>
 
         <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
-          <button
-            data-testid="reset-button"
+          <BrandButton
+            testId="reset-button"
             type="button"
+            variant="secondary"
             onClick={() => setResetModalIsVisible(true)}
           >
             Reset Settings
-          </button>
+          </BrandButton>
 
           <BrandButton
             testId="submit-button"
@@ -383,22 +385,7 @@ function LlmSettingsScreen() {
         </div>
 
         {resetModalIsVisible && (
-          <div data-testid="reset-settings-modal">
-            <button
-              data-testid="cancel-button"
-              type="button"
-              onClick={() => setResetModalIsVisible(false)}
-            >
-              Cancel
-            </button>
-            <button
-              data-testid="confirm-button"
-              name="reset-settings"
-              type="submit"
-            >
-              Confirm
-            </button>
-          </div>
+          <ResetSettingsModal onReset={() => setResetModalIsVisible(false)} />
         )}
       </form>
     </div>
