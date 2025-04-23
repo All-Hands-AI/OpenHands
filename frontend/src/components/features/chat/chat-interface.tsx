@@ -19,6 +19,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { ChatHeader } from "./chat-header";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -120,6 +121,7 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
+      <ChatHeader />
       {messages.length === 0 && (
         <ChatSuggestions onSuggestionsClick={setMessageToSend} />
       )}
