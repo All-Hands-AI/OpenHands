@@ -1,12 +1,12 @@
-# Runtime Building Procedure Refactoring
+# Runtime Building Procedure Design
 
-## Current Architecture
+## Architecture Overview
 
 The OpenHands Docker Runtime is a core component that enables secure and flexible execution of AI agent actions. It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
 
-### Current Building Process
+### Traditional Building Process
 
-The current runtime building procedure follows these steps:
+The traditional runtime building procedure follows these steps:
 
 1. **Base Image Selection**: Takes a base image (e.g., `nikolaik/python-nodejs:python3.12-nodejs22`)
 2. **Image Building**: Builds a new Docker image on top of it with OpenHands-specific code and dependencies
@@ -34,11 +34,11 @@ The current runtime building procedure follows these steps:
 3. **Bash Session**: Uses tmux for persistent terminal sessions
 4. **Plugin System**: Supports extensions like Jupyter notebooks
 
-## Proposed Refactoring Approach
+## Two-Stage Building Approach
 
 ### Overview
 
-The proposed approach aims to simplify the runtime building procedure by:
+The two-stage approach simplifies the runtime building procedure by:
 
 1. Building all dependencies into an intermediate Docker image with everything in `/openhands` folder
 2. For any arbitrary base image, simply copying the `/openhands` folder to form the final image
@@ -101,19 +101,19 @@ The proposed approach aims to simplify the runtime building procedure by:
 
 ## Implementation Plan
 
-### Phase 1: Create Base Dependencies Image
+### Phase 1: Create Dependencies Image
 
 1. Create a Dockerfile that installs all dependencies to `/openhands`
 2. Include all necessary libraries and binaries
 3. Create wrapper scripts for key components (Chromium, tmux, etc.)
 4. Test the image with various base images to ensure compatibility
 
-### Phase 2: Modify Runtime Builder
+### Phase 2: Update Runtime Builder
 
-1. Update `runtime_build.py` to support the new building approach
-2. Add option to use the dependencies-only image
+1. Update `runtime_build.py` to implement the two-stage build process
+2. Add option to build dependencies-only image
 3. Implement the copying mechanism for the `/openhands` folder
-4. Maintain backward compatibility with the current approach
+4. Simplify the tagging system for better clarity
 
 ### Phase 3: Integration and Testing
 
@@ -181,6 +181,6 @@ ENV PATH=/openhands/bin:$PATH \
 
 ## Conclusion
 
-The proposed refactoring approach offers significant benefits in terms of build speed, flexibility, and maintainability. While there are challenges related to binary compatibility and system dependencies, these can be addressed with careful implementation of wrapper scripts and proper environment setup.
+The two-stage building approach offers significant benefits in terms of build speed, flexibility, and maintainability. While there are challenges related to binary compatibility and system dependencies, these can be addressed with careful implementation of wrapper scripts and proper environment setup.
 
-By separating the OpenHands dependencies from the base image, we can achieve a more modular and efficient runtime building process that supports a wider range of base images while maintaining the security and isolation properties of the current approach.
+By separating the OpenHands dependencies from the base image, we can achieve a more modular and efficient runtime building process that supports a wider range of base images while maintaining the security and isolation properties of the traditional approach.
