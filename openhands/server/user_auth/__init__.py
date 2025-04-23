@@ -1,5 +1,6 @@
 from fastapi import Request
 from pydantic import SecretStr
+
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.server.settings import Settings

@@ -15,11 +15,6 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import Repository
 from openhands.runtime import get_runtime_cls
-from openhands.server.user_auth import (
-    get_github_user_id,
-    get_provider_tokens,
-    get_user_id,
-)
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -33,6 +28,11 @@ from openhands.server.shared import (
     file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
+from openhands.server.user_auth import (
+    get_github_user_id,
+    get_provider_tokens,
+    get_user_id,
+)
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (

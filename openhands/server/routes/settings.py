@@ -10,14 +10,14 @@ from openhands.integrations.provider import (
     SecretStore,
 )
 from openhands.integrations.utils import validate_provider_token
+from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
+from openhands.server.shared import SettingsStoreImpl, config, server_config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
     get_user_settings,
 )
-from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
-from openhands.server.shared import SettingsStoreImpl, config, server_config
-from openhands.server.types import AppMode
 
 app = APIRouter(prefix='/api')
 
