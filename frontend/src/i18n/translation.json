@@ -89,6 +89,36 @@
         "tr": "Yükleniyor...",
         "de": "Wird geladen..."
     },
+    "HOME$LOADING_REPOSITORIES": {
+        "en": "Loading repositories...",
+        "ja": "リポジトリを読み込み中...",
+        "zh-CN": "加载仓库中...",
+        "zh-TW": "載入儲存庫中...",
+        "ko-KR": "저장소 로딩 중...",
+        "no": "Laster repositories...",
+        "it": "Caricamento repository in corso...",
+        "pt": "Carregando repositórios...",
+        "es": "Cargando repositorios...",
+        "ar": "جار تحميل المستودعات...",
+        "fr": "Chargement des dépôts...",
+        "tr": "Depolar yükleniyor...",
+        "de": "Repositories werden geladen..."
+    },
+    "HOME$FAILED_TO_LOAD_REPOSITORIES": {
+        "en": "Failed to load repositories",
+        "ja": "リポジトリの読み込みに失敗しました",
+        "zh-CN": "加载仓库失败",
+        "zh-TW": "載入儲存庫失敗",
+        "ko-KR": "저장소 로딩 실패",
+        "no": "Kunne ikke laste repositories",
+        "it": "Impossibile caricare i repository",
+        "pt": "Falha ao carregar repositórios",
+        "es": "Error al cargar repositorios",
+        "ar": "فشل في تحميل المستودعات",
+        "fr": "Échec du chargement des dépôts",
+        "tr": "Depolar yüklenemedi",
+        "de": "Fehler beim Laden der Repositories"
+    },
     "HOME$OPEN_ISSUE": {
         "en": "Open issue",
         "ja": "オープンな課題",
