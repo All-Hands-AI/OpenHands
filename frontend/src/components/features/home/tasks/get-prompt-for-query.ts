@@ -11,19 +11,18 @@ const getProviderTerms = (git_provider: Provider) => {
       tokenEnvVar: "GITLAB_TOKEN",
       ciSystem: "CI pipelines",
       ciProvider: "GitLab",
-      requestVerb: "merge request"
-    };
-  } else {
-    return {
-      requestType: "Pull Request",
-      requestTypeShort: "PR",
-      apiName: "GitHub API",
-      tokenEnvVar: "GITHUB_TOKEN",
-      ciSystem: "GitHub Actions",
-      ciProvider: "GitHub",
-      requestVerb: "pull request"
+      requestVerb: "merge request",
     };
   }
+  return {
+    requestType: "Pull Request",
+    requestTypeShort: "PR",
+    apiName: "GitHub API",
+    tokenEnvVar: "GITHUB_TOKEN",
+    ciSystem: "GitHub Actions",
+    ciProvider: "GitHub",
+    requestVerb: "pull request",
+  };
 };
 
 export const getMergeConflictPrompt = (
@@ -32,7 +31,7 @@ export const getMergeConflictPrompt = (
   repo: string,
 ) => {
   const terms = getProviderTerms(git_provider);
-  
+
   return `You are working on ${terms.requestType} #${issueNumber} in repository ${repo}. You need to fix the merge conflicts.
 Use the ${terms.apiName} with the ${terms.tokenEnvVar} environment variable to retrieve the ${terms.requestTypeShort} details. Check out the branch from that ${terms.requestVerb} and look at the diff versus the base branch of the ${terms.requestTypeShort} to understand the ${terms.requestTypeShort}'s intention.
 Then resolve the merge conflicts. If you aren't sure what the right solution is, look back through the commit history at the commits that introduced the conflict and resolve them accordingly.`;
@@ -44,7 +43,7 @@ export const getFailingChecksPrompt = (
   repo: string,
 ) => {
   const terms = getProviderTerms(git_provider);
-  
+
   return `You are working on ${terms.requestType} #${issueNumber} in repository ${repo}. You need to fix the failing CI checks.
 Use the ${terms.apiName} with the ${terms.tokenEnvVar} environment variable to retrieve the ${terms.requestTypeShort} details. Check out the branch from that ${terms.requestVerb} and look at the diff versus the base branch of the ${terms.requestTypeShort} to understand the ${terms.requestTypeShort}'s intention.
 Then use the ${terms.apiName} to look at the ${terms.ciSystem} that are failing on the most recent commit. Try and reproduce the failure locally.
@@ -57,7 +56,7 @@ export const getUnresolvedCommentsPrompt = (
   repo: string,
 ) => {
   const terms = getProviderTerms(git_provider);
-  
+
   return `You are working on ${terms.requestType} #${issueNumber} in repository ${repo}. You need to resolve the remaining comments from reviewers.
 Use the ${terms.apiName} with the ${terms.tokenEnvVar} environment variable to retrieve the ${terms.requestTypeShort} details. Check out the branch from that ${terms.requestVerb} and look at the diff versus the base branch of the ${terms.requestTypeShort} to understand the ${terms.requestTypeShort}'s intention.
 Then use the ${terms.apiName} to retrieve all the feedback on the ${terms.requestTypeShort} so far. If anything hasn't been addressed, address it and commit your changes back to the same branch.`;
@@ -69,7 +68,7 @@ export const getOpenIssuePrompt = (
   repo: string,
 ) => {
   const terms = getProviderTerms(git_provider);
-  
+
   return `You are working on Issue #${issueNumber} in repository ${repo}. Your goal is to fix the issue.
 Use the ${terms.apiName} with the ${terms.tokenEnvVar} environment variable to retrieve the issue details and any comments on the issue. Then check out a new branch and investigate what changes will need to be made.
 Finally, make the required changes and open up a ${terms.requestVerb}. Be sure to reference the issue in the ${terms.requestTypeShort} description.`;

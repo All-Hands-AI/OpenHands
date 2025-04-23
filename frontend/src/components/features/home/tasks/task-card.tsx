@@ -56,7 +56,8 @@ export function TaskCard({ task }: TaskCardProps) {
   // Determine the correct URL format based on git provider
   let href: string;
   if (task.git_provider === "gitlab") {
-    const issueType = task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
+    const issueType =
+      task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
     href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
   } else {
     const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
