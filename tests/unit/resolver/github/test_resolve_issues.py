@@ -50,6 +50,16 @@ def default_mock_args():
 
 
 @pytest.fixture
+def mock_github_token():
+    """Fixture that patches the identify_token function to return GitHub provider type.
+    
+    This eliminates the need for repeated patching in each test function.
+    """
+    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB) as patched:
+        yield patched
+
+
+@pytest.fixture
 def mock_output_dir():
     with tempfile.TemporaryDirectory() as temp_dir:
         repo_path = os.path.join(temp_dir, 'repo')
@@ -94,7 +104,7 @@ def create_cmd_output(exit_code: int, content: str, command: str):
     )
 
 
-def test_initialize_runtime(default_mock_args):
+def test_initialize_runtime(default_mock_args, mock_github_token):
     mock_runtime = MagicMock()
     mock_runtime.run_action.side_effect = [
         create_cmd_output(exit_code=0, content='', command='cd /workspace'),
@@ -103,9 +113,8 @@ def test_initialize_runtime(default_mock_args):
         ),
     ]
 
-    # Mock the identify_token function to return GitHub platform
-    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB):
-        resolver = IssueResolver(default_mock_args)
+    # Create resolver with mocked token identification
+    resolver = IssueResolver(default_mock_args)
 
     resolver.initialize_runtime(mock_runtime)
 
@@ -117,7 +126,7 @@ def test_initialize_runtime(default_mock_args):
 
 
 @pytest.mark.asyncio
-async def test_resolve_issue_no_issues_found(default_mock_args):
+async def test_resolve_issue_no_issues_found(default_mock_args, mock_github_token):
     """Test the resolve_issue method when no issues are found."""
     # Mock dependencies
     mock_handler = MagicMock()
@@ -126,9 +135,8 @@ async def test_resolve_issue_no_issues_found(default_mock_args):
     # Customize the mock args for this test
     default_mock_args.issue_number = 5432
 
-    # Create a resolver instance with mocked identify_token
-    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB):
-        resolver = IssueResolver(default_mock_args)
+    # Create a resolver instance with mocked token identification
+    resolver = IssueResolver(default_mock_args)
 
     # Mock the issue_handler_factory method
     resolver.issue_handler_factory = MagicMock(return_value=mock_handler)
@@ -317,7 +325,7 @@ def test_download_pr_from_github():
 
 
 @pytest.mark.asyncio
-async def test_complete_runtime(default_mock_args):
+async def test_complete_runtime(default_mock_args, mock_github_token):
     mock_runtime = MagicMock()
     mock_runtime.run_action.side_effect = [
         create_cmd_output(exit_code=0, content='', command='cd /workspace'),
@@ -335,9 +343,8 @@ async def test_complete_runtime(default_mock_args):
         create_cmd_output(exit_code=0, content='git diff content', command='git diff --no-color --cached base_commit_hash'),
     ]
 
-    # Create a resolver instance with mocked identify_token
-    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB):
-        resolver = IssueResolver(default_mock_args)
+    # Create resolver with mocked token
+    resolver = IssueResolver(default_mock_args)
 
     result = await resolver.complete_runtime(mock_runtime, 'base_commit_hash')
 
@@ -383,7 +390,7 @@ async def test_complete_runtime(default_mock_args):
         },
     ],
 )
-async def test_process_issue(default_mock_args, mock_output_dir, mock_prompt_template, test_case):
+async def test_process_issue(default_mock_args, mock_github_token, mock_output_dir, mock_prompt_template, test_case):
     """Test the process_issue method with different scenarios."""
 
     # Set up test data
@@ -400,9 +407,8 @@ async def test_process_issue(default_mock_args, mock_output_dir, mock_prompt_tem
     default_mock_args.output_dir = mock_output_dir
     default_mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
-    # Create a resolver instance with mocked identify_token
-    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB):
-        resolver = IssueResolver(default_mock_args)
+    # Create a resolver instance with mocked token identification
+    resolver = IssueResolver(default_mock_args)
 
     # Set the prompt template directly
     resolver.prompt_template = mock_prompt_template
