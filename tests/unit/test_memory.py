@@ -73,7 +73,6 @@ def mock_agent():
     agent.get_system_message.return_value = system_message
 
 
-@pytest.mark.skip("Needs to be updated for the refactor-auth branch")
 @pytest.mark.asyncio
 async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
@@ -101,7 +100,6 @@ async def test_memory_on_event_exception_handling(memory, event_stream, mock_age
         assert state.last_error == 'Error: Exception'
 
 
-@pytest.mark.skip("Needs to be updated for the refactor-auth branch")
 @pytest.mark.asyncio
 async def test_memory_on_workspace_context_recall_exception_handling(
     memory, event_stream, mock_agent
