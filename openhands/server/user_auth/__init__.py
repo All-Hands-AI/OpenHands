@@ -5,7 +5,6 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import get_user_auth
-from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 
