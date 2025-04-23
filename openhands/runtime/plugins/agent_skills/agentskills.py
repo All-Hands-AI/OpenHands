@@ -3,7 +3,7 @@ from inspect import signature
 from openhands.runtime.plugins.agent_skills import (
     file_ops,
     file_reader,
-    openhands_client,
+    a2a_client,
 )
 from openhands.runtime.plugins.agent_skills.utils.dependency import import_functions
 
@@ -14,11 +14,11 @@ import_functions(
     module=file_reader, function_names=file_reader.__all__, target_globals=globals()
 )
 import_functions(
-    module=openhands_client,
-    function_names=openhands_client.__all__,
+    module=a2a_client,
+    function_names=a2a_client.__all__,
     target_globals=globals(),
 )
-__all__ = file_ops.__all__ + file_reader.__all__ + openhands_client.__all__
+__all__ = file_ops.__all__ + file_reader.__all__ + a2a_client.__all__
 
 DOCUMENTATION = ''
 for func_name in __all__:

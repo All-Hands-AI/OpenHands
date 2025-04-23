@@ -45,14 +45,14 @@ DelegateLocalTool = ChatCompletionToolParam(
     ),
 )
 
-_DELEGATE_REMOTE_OH = """Delegate a task to a remote agent hosted on a remote server.
+_DELEGATE_REMOTE = """Delegate a task to a remote agent hosted on a remote server using A2A Protocol.
 """
 
-DelegateRemoteOHTool = ChatCompletionToolParam(
+DelegateRemoteTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='delegate_remote_oh',
-        description=_DELEGATE_REMOTE_OH,
+        name='delegate_remote',
+        description=_DELEGATE_REMOTE,
         parameters={
             'type': 'object',
             'properties': {
@@ -60,20 +60,20 @@ DelegateRemoteOHTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The URL of the remote agent.',
                 },
-                'agent_name': {
-                    'type': 'string',
-                    'description': 'The name of the agent to delegate to.',
-                },
                 'task': {
                     'type': 'string',
                     'description': 'The task to delegate.',
                 },
-                'conversation_id': {
+                'session_id': {
                     'type': 'string',
-                    'description': 'The conversation ID to connect an existing session. If you have requested a task to the agent, check history and enter the correct conversation_id.',
+                    'description': 'The session id of the remote agent.',
                 },
+                'task_id': {
+                    'type': 'string',
+                    'description': 'The task id of the remote agent.',
+                }
             },
-            'required': ['url', 'agent_name', 'task'],
+            'required': ['url', 'task'],
         },
     ),
 )
@@ -124,51 +124,35 @@ def response_to_action(response: ModelResponse) -> Action:
                 f'Failed to parse tool call arguments: {tool_call.function.arguments}'
             ) from e
 
-        if tool_call.function.name == 'delegate_remote_oh':
-            for k in ['url', 'agent_name', 'task']:
+        if tool_call.function.name == 'delegate_remote':
+            for k in ['url', 'task']:
                 if k not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "{k}" in tool call {tool_call.function.name}'
                     )
-
-            message = (
-                arguments['task']
-                + f'\nI\'d like {arguments["agent_name"]} to handle this task'
-            )
+            
+            message = arguments['task']
             message = message.replace('\n', '\\\n')
             url = arguments['url']
-            conversation_id = arguments.get('conversation_id')
-
-            if conversation_id:
+            session_id = arguments.get('session_id')
+            task_id = arguments.get('task_id')
+            if session_id and task_id:
                 code = (
-                    f'await message_to_remote_OH('
+                    f'await send_task_A2A('
                     f'message="{message}", '
                     f'url="{url}", '
-                    f'conversation_id="{conversation_id}")'
+                    f'session_id="{session_id}", '
+                    f'task_id="{task_id}")'
                 )
             else:
                 code = (
-                    f'await message_to_remote_OH('
+                    f'await send_task_A2A('
                     f'message="{message}", '
                     f'url="{url}")'
                 )
 
             action = IPythonRunCellAction(code=code, include_extra=False)
-
-        elif tool_call.function.name == 'delegate_local':
-            for k in ['agent_name', 'task']:
-                if k not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "{k}" in tool call {tool_call.function.name}'
-                    )
-            action = AgentDelegateAction(
-                agent=arguments['agent_name'],
-                inputs={
-                    'task': arguments['task'],
-                    'note': 'When you finish the job, no need to await the user input.',
-                },
-            )
-
+        
         elif tool_call.function.name == 'finish':
             action = AgentFinishAction()
         else:
@@ -192,5 +176,5 @@ def response_to_action(response: ModelResponse) -> Action:
 
 
 def get_tools() -> list[ChatCompletionToolParam]:
-    tools = [DelegateLocalTool, DelegateRemoteOHTool, FinishTool]
+    tools = [DelegateLocalTool, DelegateRemoteTool, FinishTool]
     return tools
