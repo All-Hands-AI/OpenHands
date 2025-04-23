@@ -67,6 +67,8 @@ OpenHands' approach to building and managing runtime images ensures efficiency, 
 
 Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) if you are interested in more details.
 
+> **Note**: OpenHands now supports a refactored runtime building approach that uses a two-stage process with a dependencies image. See [Refactored Runtime Building Approach](runtime_refactored.md) for details.
+
 ### Image Tagging System
 
 OpenHands uses a three-tag system for its runtime images to balance reproducibility with flexibility.
