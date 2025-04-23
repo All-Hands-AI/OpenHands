@@ -1,4 +1,3 @@
-
 from fastapi import Request
 
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -8,7 +7,9 @@ from openhands.integrations.provider import ProviderType
 
 
 async def get_conversation_store(request: Request) -> ConversationStore:
-    conversation_store: ConversationStore = getattr(request.state, 'conversation_store', None)
+    conversation_store: ConversationStore = getattr(
+        request.state, 'conversation_store', None
+    )
     if conversation_store:
         return conversation_store
     user_auth = await get_user_auth(request)
@@ -21,6 +22,3 @@ async def get_conversation_store(request: Request) -> ConversationStore:
     )
     request.state.conversation_store = conversation_store
     return conversation_store
-
-
-

@@ -154,7 +154,11 @@ async def _create_new_conversation(
 
 
 @app.post('/conversations')
-async def new_conversation(data: InitSessionRequest, user_id: str = Depends(get_user_id), provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens)):
+async def new_conversation(
+    data: InitSessionRequest,
+    user_id: str = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
+):
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -209,7 +213,7 @@ async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
     user_id: str | None = Depends(get_user_id),
-    conversation_store: ConversationStore = Depends(get_conversation_store)
+    conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -246,7 +250,7 @@ async def search_conversations(
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str,
-    conversation_store: ConversationStore = Depends(get_conversation_store)
+    conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
@@ -338,7 +342,8 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    conversation_id: str, title: str = Body(embed=True),
+    conversation_id: str,
+    title: str = Body(embed=True),
     user_id: str | None = Depends(get_user_id),
     github_user_id: str | None = Depends(get_github_user_id),
 ) -> bool:

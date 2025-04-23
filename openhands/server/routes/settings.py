@@ -3,9 +3,18 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderToken,
+    ProviderType,
+    SecretStore,
+)
 from openhands.integrations.utils import validate_provider_token
-from openhands.server.user_auth import get_provider_tokens, get_user_id, get_user_settings
+from openhands.server.user_auth import (
+    get_provider_tokens,
+    get_user_id,
+    get_user_settings,
+)
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
@@ -56,11 +65,11 @@ async def load_settings(
 
 
 @app.post('/unset-settings-tokens', response_model=dict[str, str])
-async def unset_settings_tokens(request: Request, user_id: str | None = Depends(get_user_id)) -> JSONResponse:
+async def unset_settings_tokens(
+    request: Request, user_id: str | None = Depends(get_user_id)
+) -> JSONResponse:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, user_id
-        )
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
 
         existing_settings = await settings_store.load()
         if existing_settings:

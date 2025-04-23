@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from fastapi import Request
 from pydantic import SecretStr
@@ -14,17 +13,18 @@ from openhands.storage.settings.settings_store import SettingsStore
 @dataclass
 class DefaultUserAuth(UserAuth):
     """Default user authentication mechanism"""
+
     _settings: Settings | None = None
     _settings_store: SettingsStore | None = None
 
     async def get_user_id(self) -> str | None:
-        """The default implementation does not support multi tenancy, so user_id is always None """
+        """The default implementation does not support multi tenancy, so user_id is always None"""
         return None
 
     async def get_access_token(self) -> SecretStr | None:
-        """The default implementation does not support multi tenancy, so access_token is always None """
+        """The default implementation does not support multi tenancy, so access_token is always None"""
         return None
-    
+
     async def get_user_settings_store(self):
         settings_store = self._settings_store
         if settings_store:
@@ -41,14 +41,14 @@ class DefaultUserAuth(UserAuth):
         if settings:
             return settings
         settings_store = await self.get_user_settings_store()
-        settings = await settings_store.load()  
-        self._settings = settings   
-        return settings   
+        settings = await settings_store.load()
+        self._settings = settings
+        return settings
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         settings = await self.get_user_settings()
         secrets_store: SecretStore = getattr(settings, 'secrets_store', None)
-        provider_tokens = getattr(secrets_store, 'provider_tokens', None) 
+        provider_tokens = getattr(secrets_store, 'provider_tokens', None)
         return provider_tokens
 
     @classmethod

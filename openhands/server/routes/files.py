@@ -188,10 +188,17 @@ def zip_current_workspace(request: Request):
 
 
 @app.get('/git/changes')
-async def git_changes(request: Request, conversation_id: str, user_id: str = Depends(get_user_id), github_user_id: str = Depends(get_github_user_id)):
+async def git_changes(
+    request: Request,
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+    github_user_id: str = Depends(get_github_user_id),
+):
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, github_user_id,
+        config,
+        user_id,
+        github_user_id,
     )
 
     cwd = await get_cwd(
@@ -224,10 +231,18 @@ async def git_changes(request: Request, conversation_id: str, user_id: str = Dep
 
 
 @app.get('/git/diff')
-async def git_diff(request: Request, path: str, conversation_id: str, user_id: str = Depends(get_user_id), github_user_id: str = Depends(get_github_user_id)):
+async def git_diff(
+    request: Request,
+    path: str,
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+    github_user_id: str = Depends(get_github_user_id),
+):
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, github_user_id,
+        config,
+        user_id,
+        github_user_id,
     )
 
     cwd = await get_cwd(

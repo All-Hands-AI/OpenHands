@@ -12,6 +12,7 @@ from openhands.utils.import_utils import get_impl
 
 class UserAuth(ABC):
     """Extensible class encapsulating user Authentication"""
+
     _settings: Settings | None
 
     @abstractmethod
@@ -28,17 +29,17 @@ class UserAuth(ABC):
 
     @abstractmethod
     async def get_user_settings_store(self) -> SettingsStore | None:
-        """ Get the settings store for the current user."""
+        """Get the settings store for the current user."""
 
     async def get_user_settings(self) -> Settings | None:
-        """ Get the user settings for the current user"""
+        """Get the user settings for the current user"""
         settings = self._settings
         if settings:
             return settings
         settings_store = await self.get_user_settings_store()
-        settings = await settings_store.load()  
-        self._settings = settings   
-        return settings   
+        settings = await settings_store.load()
+        self._settings = settings
+        return settings
 
     @classmethod
     @abstractmethod
@@ -50,7 +51,10 @@ async def get_user_auth(request: Request) -> UserAuth:
     user_auth = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
-    impl_name = os.environ.get('USER_AUTH_CLASS') or "openhands.server.user_auth.default_user_auth.DefaultUserAuth"
+    impl_name = (
+        os.environ.get('USER_AUTH_CLASS')
+        or 'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
+    )
     impl: UserAuth = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
     request.state.user_auth = user_auth
