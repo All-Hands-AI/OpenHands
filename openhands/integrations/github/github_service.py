@@ -118,6 +118,17 @@ class GitHubService(BaseGitService, GitService):
             name=response.get('name'),
             email=response.get('email'),
         )
+    
+    async def verify_access(self) -> bool:
+        """Verify if the token is valid by making a simple request."""
+        url = f'{self.BASE_URL}'
+        try:
+            await self._make_request(url)
+            return True
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                return False
+            raise
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
