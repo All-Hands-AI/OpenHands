@@ -97,7 +97,7 @@ class Settings(BaseModel):
             ),
             'custom_secrets': secrets.custom_secrets_serializer(
                 secrets.custom_secrets, info
-            )
+            ),
         }
 
     @staticmethod
