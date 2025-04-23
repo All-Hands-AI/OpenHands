@@ -1,3 +1,4 @@
+import copy
 import os
 from collections import deque
 from typing import Any
@@ -95,19 +96,21 @@ class CodeActAgent(Agent, LLMCompletionProvider):
         self.response_to_actions_fn = codeact_function_calling.response_to_actions
 
     def _get_tools(self) -> list[ChatCompletionToolParam]:
-        SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+        # For these models, we use short tool descriptions ( < 1024 tokens)
+        # to avoid hitting the OpenAI token limit for tool descriptions.
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
 
-        use_simplified_tool_desc = False
+        use_short_tool_desc = False
         if self.llm is not None:
-            use_simplified_tool_desc = any(
+            use_short_tool_desc = any(
                 model_substr in self.llm.config.model
-                for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
+                for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
             )
 
         tools = []
         if self.config.enable_cmd:
             tools.append(
-                create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc)
+                create_cmd_run_tool(use_short_description=use_short_tool_desc)
             )
         if self.config.enable_think:
             tools.append(ThinkTool)
@@ -123,7 +126,7 @@ class CodeActAgent(Agent, LLMCompletionProvider):
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
-                    use_simplified_description=use_simplified_tool_desc
+                    use_short_description=use_short_tool_desc
                 )
             )
         return tools
@@ -199,8 +202,25 @@ class CodeActAgent(Agent, LLMCompletionProvider):
                 for tool in self.mcp_tools
                 if tool['function']['name'] not in existing_names
             ]
-            params['tools'] += unique_mcp_tools
 
+            if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
+                logger.info(
+                    f'Removing the default fields from the MCP tools for {self.llm.config.model} '
+                    "since it doesn't support them and the request would crash."
+                )
+                # prevent mutation of input tools
+                unique_mcp_tools = copy.deepcopy(unique_mcp_tools)
+                # Strip off default fields that cause errors with gemini-preview
+                for tool in unique_mcp_tools:
+                    if 'function' in tool and 'parameters' in tool['function']:
+                        if 'properties' in tool['function']['parameters']:
+                            for prop_name, prop in tool['function']['parameters'][
+                                'properties'
+                            ].items():
+                                if 'default' in prop:
+                                    del prop['default']
+
+            params['tools'] += unique_mcp_tools
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         return params

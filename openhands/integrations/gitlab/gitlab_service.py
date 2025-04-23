@@ -4,12 +4,12 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
-    AuthenticationError,
+    BaseGitService,
     GitService,
     ProviderType,
     Repository,
+    RequestMethod,
     UnknownException,
     User,
 )
@@ -17,11 +17,12 @@ from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitLabService(GitService):
+class GitLabService(BaseGitService, GitService):
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
     refresh = False
+    
 
     def __init__(
         self,
@@ -30,6 +31,7 @@ class GitLabService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_domain: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
@@ -37,11 +39,19 @@ class GitLabService(GitService):
         if token:
             self.token = token
 
+        if base_domain:
+            self.BASE_URL = f'https://{base_domain}/api/v4'
+            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+
+    @property
+    def provider(self) -> str:
+        return ProviderType.GITLAB.value
+    
     async def _get_gitlab_headers(self) -> dict[str, Any]:
         """
         Retrieve the GitLab Token to construct the headers
         """
-        if self.user_id and not self.token:
+        if not self.token:
             self.token = await self.get_latest_token()
 
         return {
@@ -54,18 +64,35 @@ class GitLabService(GitService):
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
-    async def _fetch_data(
-        self, url: str, params: dict | None = None
+    async def _make_request(
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
                 gitlab_headers = await self._get_gitlab_headers()
-                response = await client.get(url, headers=gitlab_headers, params=params)
+
+                # Make initial request
+                response = await self.execute_request(
+                    client=client,
+                    url=url,
+                    headers=gitlab_headers,
+                    params=params,
+                    method=method,
+                )
+
+                # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     gitlab_headers = await self._get_gitlab_headers()
-                    response = await client.get(
-                        url, headers=gitlab_headers, params=params
+                    response = await self.execute_request(
+                        client=client,
+                        url=url,
+                        headers=gitlab_headers,
+                        params=params,
+                        method=method,
                     )
 
                 response.raise_for_status()
@@ -76,15 +103,9 @@ class GitLabService(GitService):
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid GitLab token')
-
-            logger.warning(f'Status error on GL API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GL API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> Any:
         """
@@ -132,19 +153,13 @@ class GitLabService(GitService):
 
                 return result.get('data')
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid GitLab token')
-
-            logger.warning(f'Status error on GL API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GL API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
 
         return User(
             id=response.get('id'),
@@ -168,7 +183,7 @@ class GitLabService(GitService):
             'visibility': 'public',
         }
 
-        response, _ = await self._fetch_data(url, params)
+        response, _ = await self._make_request(url, params)
         repos = [
             Repository(
                 id=repo.get('id'),
@@ -204,7 +219,7 @@ class GitLabService(GitService):
                 'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
                 'membership': 1,  # Use 1 instead of True
             }
-            response, headers = await self._fetch_data(url, params)
+            response, headers = await self._make_request(url, params)
 
             if not response:  # No more repositories
                 break

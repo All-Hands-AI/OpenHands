@@ -11,7 +11,15 @@ import {
   RecallObservation,
 } from "#/types/core/observations";
 
-type SliceState = { messages: Message[] };
+type SliceState = {
+  messages: Message[];
+  systemMessage: {
+    content: string;
+    tools: Array<Record<string, unknown>> | null;
+    openhands_version: string | null;
+    agent_class: string | null;
+  } | null;
+};
 
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -25,6 +33,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "edit",
   "recall",
   "think",
+  "system",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -43,6 +52,7 @@ function getRiskText(risk: ActionSecurityRisk) {
 
 const initialState: SliceState = {
   messages: [],
+  systemMessage: null,
 };
 
 export const chatSlice = createSlice({
@@ -100,6 +110,18 @@ export const chatSlice = createSlice({
       }
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
+
+      if (actionID === "system") {
+        // Store the system message in the state
+        state.systemMessage = {
+          content: action.payload.args.content,
+          tools: action.payload.args.tools,
+          openhands_version: action.payload.args.openhands_version,
+          agent_class: action.payload.args.agent_class,
+        };
+        // Don't add a message for system actions
+        return;
+      }
       if (actionID === "run") {
         text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
@@ -230,7 +252,13 @@ export const chatSlice = createSlice({
       // Set success property based on observation type
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
-        causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        // If exit_code is -1, it means the command timed out, so we set success to undefined
+        // to not show any status indicator
+        if (commandObs.extras.metadata.exit_code === -1) {
+          causeMessage.success = undefined;
+        } else {
+          causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        }
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
@@ -295,6 +323,7 @@ export const chatSlice = createSlice({
 
     clearMessages(state: SliceState) {
       state.messages = [];
+      state.systemMessage = null;
     },
   },
 });
@@ -307,4 +336,9 @@ export const {
   addErrorMessage,
   clearMessages,
 } = chatSlice.actions;
+
+// Selectors
+export const selectSystemMessage = (state: { chat: SliceState }) =>
+  state.chat.systemMessage;
+
 export default chatSlice.reducer;
