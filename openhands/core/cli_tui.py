@@ -1,11 +1,10 @@
 # CLI TUI input and output functions
 # Handles all input and output to the console
-# CLI Settings are handled seperately in cli_settings.py
+# CLI Settings are handled separately in cli_settings.py
 
 import asyncio
 import sys
 import time
-from typing import List, Optional
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
@@ -501,7 +500,7 @@ async def read_confirmation_input():
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: Optional[List[str]] = None
+    question: str = 'Are you sure?', choices: list[str] | None = None
 ) -> int:
     """
     Display a confirmation prompt with the given question and choices.
