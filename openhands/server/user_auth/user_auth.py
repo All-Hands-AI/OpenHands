@@ -1,11 +1,10 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from functools import lru_cache
 import os
 from fastapi import Request
 from pydantic import SecretStr
 
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.utils.import_utils import get_impl
 
 
@@ -24,8 +23,8 @@ class UserAuth(ABC):
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
         """Get the provider tokens for the current user."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     async def get_instance(cls, request: Request) -> UserAuth:
         """Get an instance of UserAuth from the request given"""
 

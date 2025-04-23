@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.integrations.utils import validate_provider_token
-from openhands.server.auth import get_provider_tokens, get_user_id
+from openhands.server.user_auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode

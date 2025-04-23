@@ -15,7 +15,7 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import Repository
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import (
+from openhands.server.user_auth import (
     get_github_user_id,
     get_provider_tokens,
     get_user_id,
