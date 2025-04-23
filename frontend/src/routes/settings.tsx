@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import React from "react";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
@@ -7,6 +8,8 @@ import { I18nKey } from "#/i18n/declaration";
 
 function SettingsScreen() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
@@ -23,6 +26,23 @@ function SettingsScreen() {
     { to: "/settings/git", text: "Git" },
     { to: "/settings/app", text: "Application" },
   ];
+
+  React.useEffect(() => {
+    if (isSaas) {
+      if (pathname === "/settings") {
+        navigate("/settings/git");
+      }
+    } else {
+      const noEnteringPaths = [
+        "/settings/billing",
+        "/settings/credits",
+        "/settings/api-keys",
+      ];
+      if (noEnteringPaths.includes(pathname)) {
+        navigate("/settings");
+      }
+    }
+  }, [isSaas, pathname]);
 
   const navItems = isSaas ? saasNavItems : ossNavItems;
 

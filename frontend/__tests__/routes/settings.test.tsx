@@ -18,12 +18,34 @@ describe("Settings Screen", () => {
     {
       Component: SettingsScreen,
       path: "/settings",
+      children: [
+        {
+          Component: () => <div data-testid="llm-settings-screen" />,
+          path: "/settings",
+        },
+        {
+          Component: () => <div data-testid="git-settings-screen" />,
+          path: "/settings/git",
+        },
+        {
+          Component: () => <div data-testid="application-settings-screen" />,
+          path: "/settings/app",
+        },
+        {
+          Component: () => <div data-testid="credits-settings-screen" />,
+          path: "/settings/credits",
+        },
+        {
+          Component: () => <div data-testid="api-keys-settings-screen" />,
+          path: "/settings/api-keys",
+        },
+      ],
     },
   ]);
 
-  const renderSettingsScreen = () => {
+  const renderSettingsScreen = (path = "/settings") => {
     const queryClient = new QueryClient();
-    return render(<RouterStub initialEntries={["/settings"]} />, {
+    return render(<RouterStub initialEntries={[path]} />, {
       wrapper: ({ children }) => (
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
@@ -85,4 +107,29 @@ describe("Settings Screen", () => {
       expect(sectionElement).not.toBeInTheDocument();
     });
   });
+
+  it("should not be able to access oss-restricted routes in oss", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return app mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+    });
+
+    const { rerender } = renderSettingsScreen("/settings/credits");
+    expect(
+      screen.queryByTestId("credits-settings-screen"),
+    ).not.toBeInTheDocument();
+
+    rerender(<RouterStub initialEntries={["/settings/api-keys"]} />);
+    expect(
+      screen.queryByTestId("api-keys-settings-screen"),
+    ).not.toBeInTheDocument();
+    rerender(<RouterStub initialEntries={["/settings/billing"]} />);
+    expect(
+      screen.queryByTestId("billing-settings-screen"),
+    ).not.toBeInTheDocument();
+    rerender(<RouterStub initialEntries={["/settings"]} />);
+  });
+
+  it.todo("should not be able to access saas-restricted routes in saas");
 });
