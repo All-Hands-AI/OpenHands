@@ -15,12 +15,15 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
+    CreatePlanAction,
+    MarkTaskAction,
     MessageAction,
 )
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
+from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
@@ -44,6 +47,7 @@ def mock_parent_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+    agent.mcp_tools = []
 
     # Add a proper system message mock
     from openhands.events.action.message import SystemMessageAction
@@ -117,8 +121,108 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
     )
 
+    # create plan action
+    create_plan_action = CreatePlanAction(
+        plan_id='plan_1',
+        title='Test Plan',
+        tasks=['Task 1', 'Task 2'],
+    )
+    create_plan_action._source = EventSource.AGENT
+    create_plan_action.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='tool_call_1',
+        function_name='create_plan',
+        total_calls_in_response=1,
+        model_response={
+            'id': 'chatcmpl-123abc456def',
+            'object': 'chat.completion',
+            'created': 1699896916,
+            'model': 'gpt-4-1106-preview',
+            'choices': [
+                {
+                    'index': 0,
+                    'message': {
+                        'role': 'assistant',
+                        'content': None,
+                        'tool_calls': [
+                            {
+                                'id': 'call_abc123xyz789',
+                                'type': 'function',
+                                'function': {
+                                    'name': 'create_plan',
+                                    'arguments': '{"plan_id": "plan_1", "title": "Test Plan", "tasks": ["Task 1", "Task 2"]}',
+                                },
+                            }
+                        ],
+                    },
+                    'finish_reason': 'tool_calls',
+                }
+            ],
+            'usage': {
+                'prompt_tokens': 82,
+                'completion_tokens': 39,
+                'total_tokens': 121,
+            },
+        },
+    )
+
+    mock_parent_agent.step.return_value = create_plan_action
+
+    # Simulate a user message event to cause parent.step() to run
+    message_action = MessageAction(content='please create a plan')
+    message_action._source = EventSource.USER
+    await parent_controller._on_event(message_action)
+    await asyncio.sleep(1)
+    # Verify that a RecallObservation was added to the event stream
+    events = list(mock_event_stream.get_events())
+    # SystemMessageAction, RecallAction, AgentChangeState, MessageAction, CreatePlanAction, CreatePlanObservation, MarkTaskAction
+    assert mock_event_stream.get_latest_event_id() == 7
+    # a RecallObservation, a CreatePlanAction and a MarkTaskAction should be in the list
+    assert any(isinstance(event, RecallObservation) for event in events)
+    assert any(isinstance(event, CreatePlanAction) for event in events)
+    assert any(isinstance(event, MarkTaskAction) for event in events)
+
     # Setup a delegate action from the parent
-    delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
+    delegate_action = AgentDelegateAction(
+        agent='ChildAgent',
+        inputs={'task': 'Task 1'},
+    )
+    delegate_action.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='tool_call_2',
+        function_name='delegate_task',
+        total_calls_in_response=1,
+        model_response={
+            'id': 'chatcmpl-123abc456def',
+            'object': 'chat.completion',
+            'created': 1699896916,
+            'model': 'gpt-4-1106-preview',
+            'choices': [
+                {
+                    'index': 0,
+                    'message': {
+                        'role': 'assistant',
+                        'content': None,
+                        'tool_calls': [
+                            {
+                                'id': 'call_abc123xyz789',
+                                'type': 'function',
+                                'function': {
+                                    'name': 'delegate_task',
+                                    'arguments': '{"task": "Task 1"}',
+                                },
+                            }
+                        ],
+                    },
+                    'finish_reason': 'tool_calls',
+                }
+            ],
+            'usage': {
+                'prompt_tokens': 82,
+                'completion_tokens': 39,
+                'total_tokens': 121,
+            },
+        },
+    )
+    delegate_action._source = EventSource.AGENT
     mock_parent_agent.step.return_value = delegate_action
 
     # Simulate a user message event to cause parent.step() to run
@@ -132,9 +236,6 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
 
-    # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
-    assert mock_event_stream.get_latest_event_id() == 5
-
     # a RecallObservation and an AgentDelegateAction should be in the list
     assert any(isinstance(event, RecallObservation) for event in events)
     assert any(isinstance(event, AgentDelegateAction) for event in events)
@@ -146,7 +247,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # The parent's iteration should have incremented
     assert (
-        parent_controller.state.iteration == 1
+        parent_controller.state.iteration == 3
     ), 'Parent iteration should be incremented after step.'
 
     # Now simulate that the child increments local iteration and finishes its subtask
@@ -166,7 +267,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # Parent's global iteration is updated from the child
     assert (
-        parent_controller.state.iteration == 6
+        parent_controller.state.iteration == 5
     ), "Parent iteration should be the child's iteration + 1 after child is done."
 
     # Cleanup

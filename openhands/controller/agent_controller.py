@@ -410,9 +410,10 @@ class AgentController:
             else:
                 time.sleep(0.1)
                 # delegate is done or errored, so end it
-                self.end_delegate()
+                asyncio.get_event_loop().run_until_complete(self.end_delegate())
                 return
 
+        time.sleep(0.1)
         # continue parent processing only if there's no active delegate
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
@@ -847,7 +848,7 @@ class AgentController:
         # ensure that delegation is enabled if only one plan is created
         self.agent.enable_delegation = True
 
-    def end_delegate(self) -> None:
+    async def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).
 
         so that this controller can resume normal operation.
@@ -857,49 +858,42 @@ class AgentController:
 
         delegate_state = self.delegate.get_agent_state()
 
-        # update iteration that is shared across agents
+        # Get outputs before closing the delegate
+        delegate_outputs = (
+            self.delegate.state.outputs
+            if hasattr(self.delegate, 'state') and self.delegate.state
+            else {}
+        )
+        delegate_agent_name = self.delegate.agent.name
+
+        # Update iteration that is shared across agents
         self.state.iteration = self.delegate.state.iteration
 
-        # close the delegate controller before adding new events
-        asyncio.get_event_loop().run_until_complete(self.delegate.close())
+        # Close the delegate controller
+        await self.delegate.close()
+
+        # Clear the delegate reference
+        self.delegate = None
 
         if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
-            # retrieve delegate result
-            delegate_outputs = (
-                self.delegate.state.outputs if self.delegate.state else {}
-            )
-
             # prepare delegate result observation
             # TODO: replace this with AI-generated summary (#2395)
             formatted_output = ', '.join(
                 f'{key}: {value}' for key, value in delegate_outputs.items()
             )
-            content = (
-                f'{self.delegate.agent.name} finishes task with {formatted_output}'
-            )
+            content = f'{delegate_agent_name} finishes task with {formatted_output}'
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
             obs.tool_call_metadata = self.delgate_tool_call_metadata
             self.event_stream.add_event(obs, EventSource.AGENT)
         else:
-            # delegate state is ERROR
-            # emit AgentDelegateObservation with error content
-            delegate_outputs = (
-                self.delegate.state.outputs if self.delegate.state else {}
-            )
-            content = (
-                f'{self.delegate.agent.name} encountered an error during execution.'
-            )
+            content = f'{delegate_agent_name} encountered an error during execution.'
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
             obs.tool_call_metadata = self.delgate_tool_call_metadata
             self.event_stream.add_event(obs, EventSource.AGENT)
-
-        # unset delegate so parent can resume normal handling
-        self.delegate = None
-        self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
