@@ -1,12 +1,25 @@
+import copy
 import os
 from collections import deque
 
+from litellm import ChatCompletionToolParam
+
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
+from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+from openhands.agenthub.codeact_agent.tools.finish import FinishTool
+from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
+from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
+from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
+    create_str_replace_editor_tool,
+)
+from openhands.agenthub.codeact_agent.tools.think import ThinkTool
+from openhands.agenthub.codeact_agent.tools.web_read import WebReadTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -62,21 +75,13 @@ class CodeActAgent(Agent):
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
+        self.tools = self._get_tools()
 
-        # Retrieve the enabled tools
-        self.tools = codeact_function_calling.get_tools(
-            codeact_enable_browsing=self.config.codeact_enable_browsing,
-            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            llm=self.llm,
-        )
-        logger.debug(
-            f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
-        )
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
@@ -86,6 +91,42 @@ class CodeActAgent(Agent):
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
+
+        self.response_to_actions_fn = codeact_function_calling.response_to_actions
+
+    def _get_tools(self) -> list[ChatCompletionToolParam]:
+        # For these models, we use short tool descriptions ( < 1024 tokens)
+        # to avoid hitting the OpenAI token limit for tool descriptions.
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
+
+        use_short_tool_desc = False
+        if self.llm is not None:
+            use_short_tool_desc = any(
+                model_substr in self.llm.config.model
+                for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
+            )
+
+        tools = []
+        if self.config.enable_cmd:
+            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
+        if self.config.enable_think:
+            tools.append(ThinkTool)
+        if self.config.enable_finish:
+            tools.append(FinishTool)
+        if self.config.enable_browsing:
+            tools.append(WebReadTool)
+            tools.append(BrowserTool)
+        if self.config.enable_jupyter:
+            tools.append(IPythonTool)
+        if self.config.enable_llm_editor:
+            tools.append(LLMBasedFileEditTool)
+        elif self.config.enable_editor:
+            tools.append(
+                create_str_replace_editor_tool(
+                    use_short_description=use_short_tool_desc
+                )
+            )
+        return tools
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -137,10 +178,40 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+
+        if self.mcp_tools:
+            # Only add tools with unique names
+            existing_names = {tool['function']['name'] for tool in params['tools']}
+            unique_mcp_tools = [
+                tool
+                for tool in self.mcp_tools
+                if tool['function']['name'] not in existing_names
+            ]
+
+            if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
+                logger.info(
+                    f'Removing the default fields from the MCP tools for {self.llm.config.model} '
+                    "since it doesn't support them and the request would crash."
+                )
+                # prevent mutation of input tools
+                unique_mcp_tools = copy.deepcopy(unique_mcp_tools)
+                # Strip off default fields that cause errors with gemini-preview
+                for tool in unique_mcp_tools:
+                    if 'function' in tool and 'parameters' in tool['function']:
+                        if 'properties' in tool['function']['parameters']:
+                            for prop_name, prop in tool['function']['parameters'][
+                                'properties'
+                            ].items():
+                                if 'default' in prop:
+                                    del prop['default']
+
+            params['tools'] += unique_mcp_tools
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
-        actions = codeact_function_calling.response_to_actions(response)
+        logger.debug(f'Response from LLM: {response}')
+        actions = self.response_to_actions_fn(response)
+        logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
@@ -153,8 +224,8 @@ class CodeActAgent(Agent):
         message flow and function-calling scenarios.
 
         The method performs the following steps:
-        1. Initializes with system prompt and optional initial user message
-        2. Processes events (Actions and Observations) into messages
+        1. Checks for SystemMessageAction in events, adds one if missing (legacy support)
+        2. Processes events (Actions and Observations) into messages, including SystemMessageAction
         3. Handles tool calls and their responses in function-calling mode
         4. Manages message role alternation (user/assistant/tool)
         5. Applies caching for specific LLM providers (e.g., Anthropic)
@@ -165,8 +236,7 @@ class CodeActAgent(Agent):
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
-                - System message with prompt
-                - Initial user message (if configured)
+                - System message with prompt (from SystemMessageAction)
                 - Action messages (from both user and assistant)
                 - Observation messages (including tool responses)
                 - Environment reminders (in non-function-calling mode)
@@ -180,58 +250,14 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use ConversationMemory to process initial messages
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
-        )
-
-        # Use ConversationMemory to process events
+        # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
-            initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )
-
-        messages = self._enhance_messages(messages)
 
         if self.llm.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
-
-    def _enhance_messages(self, messages: list[Message]) -> list[Message]:
-        """Enhances the user message with additional context based on keywords matched.
-
-        Args:
-            messages (list[Message]): The list of messages to enhance
-
-        Returns:
-            list[Message]: The enhanced list of messages
-        """
-        assert self.prompt_manager, 'Prompt Manager not instantiated.'
-
-        results: list[Message] = []
-        is_first_message_handled = False
-        prev_role = None
-
-        for msg in messages:
-            if msg.role == 'user' and not is_first_message_handled:
-                is_first_message_handled = True
-                # compose the first user message with examples
-                self.prompt_manager.add_examples_to_initial_message(msg)
-
-            elif msg.role == 'user':
-                # Add double newline between consecutive user messages
-                if prev_role == 'user' and len(msg.content) > 0:
-                    # Find the first TextContent in the message to add newlines
-                    for content_item in msg.content:
-                        if isinstance(content_item, TextContent):
-                            # If the previous message was also from a user, prepend two newlines to ensure separation
-                            content_item.text = '\n\n' + content_item.text
-                            break
-
-            results.append(msg)
-            prev_role = msg.role
-
-        return results

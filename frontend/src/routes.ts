@@ -11,12 +11,15 @@ export default [
     route("settings", "routes/settings.tsx", [
       index("routes/account-settings.tsx"),
       route("billing", "routes/billing.tsx"),
+      route("api-keys", "routes/api-keys.tsx"),
     ]),
     route("conversations/:conversationId", "routes/conversation.tsx", [
-      index("routes/editor-tab.tsx"),
+      index("routes/editor.tsx"),
+      route("workspace", "routes/editor-tab.tsx"),
       route("browser", "routes/browser-tab.tsx"),
       route("jupyter", "routes/jupyter-tab.tsx"),
       route("served", "routes/served-tab.tsx"),
+      route("terminal", "routes/terminal-tab.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;

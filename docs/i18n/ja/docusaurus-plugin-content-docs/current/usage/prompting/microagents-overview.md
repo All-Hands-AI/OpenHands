@@ -21,8 +21,8 @@ OpenHandsがリポジトリで動作する際:
 ```
 ---
 name: <Microagentの名前>
-type: <MicroAgentのタイプ>
-version: <MicroAgentのバージョン>
+type: <Microagentのタイプ>
+version: <Microagentのバージョン>
 agent: <エージェントのタイプ (通常はCodeActAgent)>
 triggers:
 - <オプション: microagentをトリガーするキーワード。トリガーを削除すると、常に含まれるようになります>

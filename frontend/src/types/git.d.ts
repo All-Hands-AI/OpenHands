@@ -19,8 +19,10 @@ interface GitRepository {
   id: number;
   full_name: string;
   git_provider: Provider;
+  is_public: boolean;
   stargazers_count?: number;
   link_header?: string;
+  pushed_at?: string;
 }
 
 interface GitHubCommit {
