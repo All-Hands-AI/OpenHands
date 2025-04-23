@@ -270,7 +270,7 @@ def build_runtime_image(
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
 
-    See https://docs.all-hands.dev/modules/usage/architecture/runtime_refactored for more details.
+    See https://docs.all-hands.dev/modules/usage/architecture/runtime_build for more details.
     """
     # If using the dependencies image approach, first ensure the dependencies image exists
     if deps_image is None:
@@ -319,6 +319,73 @@ def build_runtime_image(
         force_rebuild=force_rebuild,
     )
     return result
+
+
+def prep_build_folder(
+    build_folder: Path,
+    base_image: str,
+    build_from: BuildFromImageType,
+    extra_deps: str | None,
+    deps_image: str | None = None,
+) -> None:
+    """Prepare the build folder with necessary files.
+    
+    Parameters:
+    - build_folder (Path): The directory to use for the build
+    - base_image (str): The base image to use
+    - build_from (BuildFromImageType): The build method to use
+    - extra_deps (str): Extra dependencies to install
+    - deps_image (str): The dependencies image to use (only for DEPS build method)
+    """
+    # Copy the source code to directory. It will end up in build_folder/code
+    openhands_source_dir = Path(openhands.__file__).parent
+    project_root = openhands_source_dir.parent
+    logger.debug(f'Building source distribution using project root: {project_root}')
+
+    # For DEPS build method, we only need to copy the wrapper scripts
+    if build_from == BuildFromImageType.DEPS:
+        # Copy the 'openhands' directory (Source code)
+        os.makedirs(os.path.join(build_folder, 'code', 'openhands'), exist_ok=True)
+        shutil.copytree(
+            openhands_source_dir,
+            Path(build_folder, 'code', 'openhands'),
+            ignore=shutil.ignore_patterns(
+                '.*/',
+                '__pycache__/',
+                '*.pyc',
+                '*.md',
+            ),
+            dirs_exist_ok=True,
+        )
+    else:
+        # Copy the 'openhands' directory (Source code)
+        shutil.copytree(
+            openhands_source_dir,
+            Path(build_folder, 'code', 'openhands'),
+            ignore=shutil.ignore_patterns(
+                '.*/',
+                '__pycache__/',
+                '*.pyc',
+                '*.md',
+            ),
+        )
+
+        # Copy pyproject.toml and poetry.lock files
+        for file in ['pyproject.toml', 'poetry.lock']:
+            src = Path(openhands_source_dir, file)
+            if not src.exists():
+                src = Path(project_root, file)
+            shutil.copy2(src, Path(build_folder, 'code', file))
+
+    # Create a Dockerfile and write it to build_folder
+    dockerfile_content = _generate_dockerfile(
+        base_image,
+        build_from=build_from,
+        extra_deps=extra_deps,
+        deps_image=deps_image,
+    )
+    with open(Path(build_folder, 'Dockerfile'), 'w') as file:
+        file.write(dockerfile_content)
 
 
 def get_hash_for_source_files() -> str:
