@@ -1036,6 +1036,21 @@
         "fr": "Ouvrir dans VS Code",
         "tr": "VS Code'da aç"
     },
+    "VSCODE$TITLE": {
+        "en": "VS Code",
+        "ja": "VS Code",
+        "zh-CN": "VS Code",
+        "zh-TW": "VS Code",
+        "ko-KR": "VS Code",
+        "de": "VS Code",
+        "no": "VS Code",
+        "it": "VS Code",
+        "pt": "VS Code",
+        "es": "VS Code",
+        "ar": "VS Code",
+        "fr": "VS Code",
+        "tr": "VS Code"
+    },
     "INCREASE_TEST_COVERAGE": {
         "en": "Increase test coverage",
         "ja": "テストカバレッジを向上",

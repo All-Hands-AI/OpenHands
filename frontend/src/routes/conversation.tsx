@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
+import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
@@ -157,6 +158,11 @@ function AppContent() {
                 ),
                 to: "browser",
                 icon: <GlobeIcon />,
+              },
+              {
+                label: t(I18nKey.VSCODE$TITLE),
+                to: "vscode",
+                icon: <VscCode className="w-5 h-5" />,
               },
             ]}
           >

@@ -19,6 +19,7 @@ export default [
       route("jupyter", "routes/jupyter-tab.tsx"),
       route("served", "routes/served-tab.tsx"),
       route("terminal", "routes/terminal-tab.tsx"),
+      route("vscode", "routes/vscode-tab.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
