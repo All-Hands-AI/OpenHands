@@ -124,6 +124,11 @@ class AgentSession:
                 selected_branch=selected_branch,
             )
 
+            # NOTE: this needs to happen before controller is created
+            # so MCP tools can be included into the SystemMessageAction
+            if self.runtime and runtime_connected:
+                await add_mcp_tools_to_agent(agent, self.runtime, config.mcp)
+
             if replay_json:
                 initial_message = self._run_replay(
                     initial_message,
@@ -148,9 +153,6 @@ class AgentSession:
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.full_name.split('/')[-1]
-
-            if self.runtime and runtime_connected:
-                await add_mcp_tools_to_agent(agent, self.runtime, config.mcp)
 
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
