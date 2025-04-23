@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any
 
 from openhands.controller.agent import LLMCompletionProvider
 from openhands.controller.state.state import State
@@ -64,7 +64,7 @@ class CachingCondenser(Condenser, ABC):
         return self._do_condensation(view.events, state, agent)
 
     def _do_condensation(
-        self, events: List[Event], state: State, agent: LLMCompletionProvider
+        self, events: list[Event], state: State, agent: LLMCompletionProvider
     ) -> Condensation | View:
         """Do a condensation for the given events.
 
@@ -97,7 +97,7 @@ class CachingCondenser(Condenser, ABC):
 
     @abstractmethod
     def createCondensationPrompt(
-        self, events: List[Event], state: State, base_messages: List[Message]
+        self, events: list[Event], state: State, base_messages: list[Message]
     ) -> Message:
         """Create the prompt for condensation.
 
@@ -113,7 +113,7 @@ class CachingCondenser(Condenser, ABC):
 
     @abstractmethod
     def processResponse(
-        self, events: List[Event], state: State, response: Any, messages: List[Message]
+        self, events: list[Event], state: State, response: Any, messages: list[Message]
     ) -> Condensation | View:
         """Process the LLM response to create a Condensation.
 

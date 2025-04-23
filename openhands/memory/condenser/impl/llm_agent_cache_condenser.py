@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Union
+from typing import Any
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import LLMAgentCacheCondenserConfig
@@ -32,7 +32,7 @@ class LLMAgentCacheCondenser(CachingCondenser):
         super().__init__()
 
     def createCondensationPrompt(
-        self, events: List[Event], state: State, base_messages: List[Message]
+        self, events: list[Event], state: State, base_messages: list[Message]
     ) -> Message:
         """Create the prompt for condensation using a similar approach to LLMSummarizingCondenser.
         This method is required by the CachingCondenser abstract base class.
@@ -95,8 +95,8 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         )
 
     def processResponse(
-        self, events: List[Event], state: State, response: Any, messages: List[Message]
-    ) -> Union[Condensation, View]:
+        self, events: list[Event], state: State, response: Any, messages: list[Message]
+    ) -> Condensation | View:
         # Extract the summary from the response
         summary = response.choices[0].message.content
 
@@ -155,7 +155,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
         return False
 
-    def _contains_trigger_word(self, events: List[Event]) -> bool:
+    def _contains_trigger_word(self, events: list[Event]) -> bool:
         """Check if the most recent user message contains the trigger word.
         Args:
             events: The events to check

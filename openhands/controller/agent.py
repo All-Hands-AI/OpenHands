@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message
@@ -30,7 +30,7 @@ class Agent(ABC):
     It tracks the execution status and maintains a history of interactions.
     """
 
-    _registry: dict[str, Type['Agent']] = {}
+    _registry: dict[str, type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
 
     def __init__(
@@ -46,8 +46,8 @@ class Agent(ABC):
         self.tools: list = []
 
     def get_system_message(self) -> 'SystemMessageAction | None':
-        """
-        Returns a SystemMessageAction containing the system message and tools.
+        """Returns a SystemMessageAction containing the system message and tools.
+
         This will be added to the event stream as the first message.
 
         Returns:
@@ -91,15 +91,16 @@ class Agent(ABC):
 
     @abstractmethod
     def step(self, state: 'State') -> 'Action':
-        """Starts the execution of the assigned instruction. This method should
-        be implemented by subclasses to define the specific execution logic.
+        """Starts the execution of the assigned instruction.
+
+        This method should be implemented by subclasses to define the specific execution logic.
         """
         pass
 
     def reset(self) -> None:
-        """Resets the agent's execution status and clears the history. This method can be used
-        to prepare the agent for restarting the instruction or cleaning up before destruction.
+        """Resets the agent's execution status and clears the history.
 
+        This method can be used to prepare the agent for restarting the instruction or cleaning up before destruction.
         """
         # TODO clear history
         self._complete = False
@@ -112,12 +113,12 @@ class Agent(ABC):
         return self.__class__.__name__
 
     @classmethod
-    def register(cls, name: str, agent_cls: Type['Agent']):
+    def register(cls, name: str, agent_cls: type['Agent']):
         """Registers an agent class in the registry.
 
         Parameters:
         - name (str): The name to register the class under.
-        - agent_cls (Type['Agent']): The class to register.
+        - agent_cls (type['Agent']): The class to register.
 
         Raises:
         - AgentAlreadyRegisteredError: If name already registered
@@ -127,14 +128,14 @@ class Agent(ABC):
         cls._registry[name] = agent_cls
 
     @classmethod
-    def get_cls(cls, name: str) -> Type['Agent']:
+    def get_cls(cls, name: str) -> type['Agent']:
         """Retrieves an agent class from the registry.
 
         Parameters:
         - name (str): The name of the class to retrieve
 
         Returns:
-        - agent_cls (Type['Agent']): The class registered under the specified name.
+        - agent_cls (type['Agent']): The class registered under the specified name.
 
         Raises:
         - AgentNotRegisteredError: If name not registered
@@ -158,16 +159,16 @@ class Agent(ABC):
         """Sets the list of MCP tools for the agent.
 
         Args:
-        - mcp_tools (list[dict]): The list of MCP tools.
+            mcp_tools: The list of MCP tools.
         """
         self.mcp_tools = mcp_tools
 
 
 class LLMCompletionParams(TypedDict, total=False):
-    messages: List[Message]
-    tools: Optional[List[Any]]
-    extra_body: Optional[Dict[str, Any]]
-    extra: Optional[Dict[str, Any]]
+    messages: list[Message]
+    tools: list[Any] | None
+    extra_body: dict[str, Any] | None
+    extra: dict[str, Any] | None
 
 
 class LLMCompletionProvider(ABC):
@@ -186,15 +187,15 @@ class LLMCompletionProvider(ABC):
 
     @abstractmethod
     def build_llm_completion_params(
-        self, condensed_history: List[Event], state: State
+        self, condensed_history: list[Event], state: State
     ) -> dict[str, Any]:
         """Build parameters for LLM completion.
 
         Args:
-            condensed_history: List of events to convert to messages for the LLM
+            condensed_history: list of events to convert to messages for the LLM
             state: Current state
 
         Returns:
-            Dictionary of parameters for LLM completion
+            dict of parameters for LLM completion
         """
         pass
