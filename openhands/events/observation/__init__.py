@@ -44,4 +44,5 @@ __all__ = [
     'AgentCondensationObservation',
     'RecallObservation',
     'RecallType',
+    'MCPObservation',
 ]

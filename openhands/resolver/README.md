@@ -138,18 +138,6 @@ If you've installed the package from source using poetry, you can use:
 poetry run python openhands/resolver/resolve_issue.py --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
-For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
-
-```bash
-python -m openhands.resolver.resolve_all_issues --selected-repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
-```
-
-For example:
-
-```bash
-python -m openhands.resolver.resolve_all_issues --selected-repo all-hands-ai/openhands --issue-numbers 100,101,102
-```
-
 ## Responding to PR Comments
 
 The resolver can also respond to comments on pull requests using:

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 from uuid import uuid4
 
@@ -12,15 +13,19 @@ from openhands.events.stream import EventStream, EventStreamSubscriber
 class SecurityAnalyzer:
     """Security analyzer that receives all events and analyzes agent actions for security risks."""
 
-    def __init__(self, event_stream: EventStream):
+    def __init__(self, event_stream: EventStream) -> None:
         """Initializes a new instance of the SecurityAnalyzer class.
 
         Args:
             event_stream: The event stream to listen for events.
         """
         self.event_stream = event_stream
+
+        def sync_on_event(event: Event) -> None:
+            asyncio.create_task(self.on_event(event))
+
         self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event, str(uuid4())
+            EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
         )
 
     async def on_event(self, event: Event) -> None:
@@ -31,6 +36,7 @@ class SecurityAnalyzer:
             return
 
         try:
+            # Set the security_risk attribute on the event
             event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
             await self.act(event)
         except Exception as e:

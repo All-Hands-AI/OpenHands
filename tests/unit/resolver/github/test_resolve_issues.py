@@ -11,6 +11,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.issue import Issue, ReviewThread
@@ -24,7 +25,6 @@ from openhands.resolver.resolve_issue import (
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
-from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def test_initialize_runtime():
         ),
     ]
 
-    initialize_runtime(mock_runtime, Platform.GITHUB)
+    initialize_runtime(mock_runtime, ProviderType.GITHUB)
 
     assert mock_runtime.run_action.call_count == 2
     mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
@@ -108,10 +108,11 @@ async def test_resolve_issue_no_issues_found():
                 repo='test-repo',
                 token='test-token',
                 username='test-user',
-                platform=Platform.GITHUB,
+                platform=ProviderType.GITHUB,
                 max_iterations=5,
                 output_dir='/tmp',
                 llm_config=LLMConfig(model='test', api_key='test'),
+                base_container_image='test-image',
                 runtime_container_image='test-image',
                 prompt_template='test-template',
                 issue_type='pr',
@@ -157,7 +158,7 @@ def test_download_issues_from_github():
             return mock_comments_response
         return mock_issues_response
 
-    with patch('requests.get', side_effect=get_mock_response):
+    with patch('httpx.get', side_effect=get_mock_response):
         issues = handler.get_converted_issues(issue_numbers=[1, 3])
 
     assert len(issues) == 2
@@ -270,8 +271,8 @@ def test_download_pr_from_github():
             return mock_comments_response
         return mock_pr_response
 
-    with patch('requests.get', side_effect=get_mock_response):
-        with patch('requests.post', return_value=mock_graphql_response):
+    with patch('httpx.get', side_effect=get_mock_response):
+        with patch('httpx.post', return_value=mock_graphql_response):
             issues = handler.get_converted_issues(issue_numbers=[1, 2, 3])
 
     assert len(issues) == 3
@@ -315,7 +316,9 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
-    result = await complete_runtime(mock_runtime, 'base_commit_hash', Platform.GITHUB)
+    result = await complete_runtime(
+        mock_runtime, 'base_commit_hash', ProviderType.GITHUB
+    )
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
@@ -342,6 +345,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
     repo_instruction = 'Resolve this repo'
     max_iterations = 5
     llm_config = LLMConfig(model='test_model', api_key='test_api_key')
+    base_container_image = 'test_image:latest'
     runtime_container_image = 'test_image:latest'
 
     # Test cases for different scenarios
@@ -442,11 +446,12 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             # Call the function
             result = await process_issue(
                 issue,
-                Platform.GITHUB,
+                ProviderType.GITHUB,
                 base_commit,
                 max_iterations,
                 llm_config,
                 mock_output_dir,
+                base_container_image,
                 runtime_container_image,
                 mock_prompt_template,
                 handler_instance,
@@ -877,8 +882,8 @@ def test_download_pr_with_review_comments():
             return mock_comments_response
         return mock_pr_response
 
-    with patch('requests.get', side_effect=get_mock_response):
-        with patch('requests.post', return_value=mock_graphql_response):
+    with patch('httpx.get', side_effect=get_mock_response):
+        with patch('httpx.post', return_value=mock_graphql_response):
             issues = handler.get_converted_issues(issue_numbers=[1])
 
     assert len(issues) == 1
@@ -937,7 +942,7 @@ def test_download_issue_with_specific_comment():
 
         return mock_issue_response
 
-    with patch('requests.get', side_effect=get_mock_response):
+    with patch('httpx.get', side_effect=get_mock_response):
         issues = handler.get_converted_issues(
             issue_numbers=[1], comment_id=specific_comment_id
         )

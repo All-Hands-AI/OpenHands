@@ -1,80 +1,32 @@
-import json
 import logging
 import multiprocessing as mp
 import os
 import re
-from enum import Enum
 from typing import Callable
 
-import pandas as pd
-import requests
+from pydantic import SecretStr
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+from openhands.integrations.service_types import ProviderType
+from openhands.integrations.utils import validate_provider_token
 
 
-class Platform(Enum):
-    INVALID = 0
-    GITHUB = 1
-    GITLAB = 2
-
-
-def identify_token(token: str, selected_repo: str | None = None) -> Platform:
+async def identify_token(token: str, base_domain: str | None) -> ProviderType:
     """
     Identifies whether a token belongs to GitHub or GitLab.
-
     Parameters:
         token (str): The personal access token to check.
-        selected_repo (str): Repository in format "owner/repo" for GitHub Actions token validation.
-
-    Returns:
-        Platform: "GitHub" if the token is valid for GitHub,
-             "GitLab" if the token is valid for GitLab,
-             "Invalid" if the token is not recognized by either.
+        base_domain (str): Custom base domain for provider (e.g GitHub Enterprise)
     """
-    # Try GitHub Actions token format (Bearer) with repo endpoint if repo is provided
-    if selected_repo:
-        github_repo_url = f'https://api.github.com/repos/{selected_repo}'
-        github_bearer_headers = {
-            'Authorization': f'Bearer {token}',
-            'Accept': 'application/vnd.github+json',
-        }
+    provider = await validate_provider_token(SecretStr(token), base_domain)
+    if not provider:
+        raise ValueError('Token is invalid.')
 
-        try:
-            github_repo_response = requests.get(
-                github_repo_url, headers=github_bearer_headers, timeout=5
-            )
-            if github_repo_response.status_code == 200:
-                return Platform.GITHUB
-        except requests.RequestException as e:
-            logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
-
-    # Try GitHub PAT format (token)
-    github_url = 'https://api.github.com/user'
-    github_headers = {'Authorization': f'token {token}'}
-
-    try:
-        github_response = requests.get(github_url, headers=github_headers, timeout=5)
-        if github_response.status_code == 200:
-            return Platform.GITHUB
-    except requests.RequestException as e:
-        logger.error(f'Error connecting to GitHub API: {e}')
-
-    # Try GitLab token
-    gitlab_url = 'https://gitlab.com/api/v4/user'
-    gitlab_headers = {'Authorization': f'Bearer {token}'}
-
-    try:
-        gitlab_response = requests.get(gitlab_url, headers=gitlab_headers, timeout=5)
-        if gitlab_response.status_code == 200:
-            return Platform.GITLAB
-    except requests.RequestException as e:
-        logger.error(f'Error connecting to GitLab API: {e}')
-
-    return Platform.INVALID
+    return provider
 
 
 def codeact_user_response(
@@ -133,43 +85,6 @@ def cleanup() -> None:
         logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
-
-
-def prepare_dataset(
-    dataset: pd.DataFrame, output_file: str, eval_n_limit: int
-) -> pd.DataFrame:
-    assert 'instance_id' in dataset.columns, (
-        "Expected 'instance_id' column in the dataset. You should define your own "
-        "unique identifier for each instance and use it as the 'instance_id' column."
-    )
-    id_column = 'instance_id'
-    logger.info(f'Writing evaluation output to {output_file}')
-    finished_ids = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                finished_ids.add(data[id_column])
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded '
-            f'{len(finished_ids)} finished instances.'
-        )
-
-    if eval_n_limit:
-        dataset = dataset.head(eval_n_limit)
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
-
-    new_dataset = [
-        instance
-        for _, instance in dataset.iterrows()
-        if instance[id_column] not in finished_ids
-    ]
-    logger.info(
-        f'Finished instances: {len(finished_ids)}, '
-        f'Remaining instances: {len(new_dataset)}'
-    )
-
-    return pd.DataFrame(new_dataset)
 
 
 def reset_logger_for_multiprocessing(

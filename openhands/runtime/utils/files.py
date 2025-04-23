@@ -14,7 +14,7 @@ def resolve_path(
     working_directory: str,
     workspace_base: str,
     workspace_mount_path_in_sandbox: str,
-):
+) -> Path:
     """Resolve a file path to a path on the host filesystem.
 
     Args:
@@ -51,7 +51,7 @@ def resolve_path(
     return path_in_host_workspace
 
 
-def read_lines(all_lines: list[str], start=0, end=-1):
+def read_lines(all_lines: list[str], start: int = 0, end: int = -1) -> list[str]:
     start = max(start, 0)
     start = min(start, len(all_lines))
     end = -1 if end == -1 else max(end, 0)
@@ -69,7 +69,12 @@ def read_lines(all_lines: list[str], start=0, end=-1):
 
 
 async def read_file(
-    path, workdir, workspace_base, workspace_mount_path_in_sandbox, start=0, end=-1
+    path: str,
+    workdir: str,
+    workspace_base: str,
+    workspace_mount_path_in_sandbox: str,
+    start: int = 0,
+    end: int = -1,
 ) -> Observation:
     try:
         whole_path = resolve_path(
@@ -81,7 +86,7 @@ async def read_file(
         )
 
     try:
-        with open(whole_path, 'r', encoding='utf-8') as file:
+        with open(whole_path, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
             lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
         return ErrorObservation(f'File not found: {path}')
@@ -95,7 +100,7 @@ async def read_file(
 
 def insert_lines(
     to_insert: list[str], original: list[str], start: int = 0, end: int = -1
-):
+) -> list[str]:
     """Insert the new content to the original content based on start and end"""
     new_lines = [''] if start == 0 else original[:start]
     new_lines += [i + '\n' for i in to_insert]
@@ -104,13 +109,13 @@ def insert_lines(
 
 
 async def write_file(
-    path,
-    workdir,
-    workspace_base,
-    workspace_mount_path_in_sandbox,
-    content,
-    start=0,
-    end=-1,
+    path: str,
+    workdir: str,
+    workspace_base: str,
+    workspace_mount_path_in_sandbox: str,
+    content: str,
+    start: int = 0,
+    end: int = -1,
 ) -> Observation:
     insert = content.split('\n')
 
@@ -122,7 +127,7 @@ async def write_file(
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
         try:
-            with open(whole_path, mode, encoding='utf-8') as file:
+            with open(whole_path, mode, encoding='utf-8') as file:  # noqa: ASYNC101
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, start, end)
