@@ -427,7 +427,7 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
     assert response.status_code == 200
 
     # Verify all settings are still preserved
-    stored_settings = mock_settings_store.store.call_args[0][0]
+    stored_settings = await file_settings_store.load()
     assert stored_settings.language == 'en'
     assert stored_settings.agent == 'test-agent'
     assert stored_settings.max_iterations == 100
@@ -447,7 +447,7 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
     assert response.status_code == 200
 
     # Verify all settings are still preserved
-    stored_settings = mock_settings_store.store.call_args[0][0]
+    stored_settings = await file_settings_store.load()
     assert stored_settings.language == 'en'
     assert stored_settings.agent == 'test-agent'
     assert stored_settings.max_iterations == 100
