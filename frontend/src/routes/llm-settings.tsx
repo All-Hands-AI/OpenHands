@@ -198,161 +198,165 @@ function LlmSettingsScreen() {
   if (!settings) return null;
 
   return (
-    <div
-      data-testid="llm-settings-screen"
-      className="flex flex-col gap-6 px-11 py-9"
-    >
-      <SettingsSwitch
-        testId="advanced-settings-switch"
-        defaultIsToggled={view === "advanced"}
-        onToggle={handleToggleAdvancedSettings}
+    <div data-testid="llm-settings-screen" className="h-full">
+      <form
+        action={view === "basic" ? basicFormAction : advancedFormAction}
+        className="flex flex-col h-full justify-between"
       >
-        {t(I18nKey.SETTINGS$ADVANCED)}
-      </SettingsSwitch>
-
-      <form action={view === "basic" ? basicFormAction : advancedFormAction}>
-        {view === "basic" && (
-          <div
-            data-testid="llm-settings-form-basic"
-            className="flex flex-col gap-6"
+        <div className="px-11 py-9 flex flex-col gap-12">
+          <SettingsSwitch
+            testId="advanced-settings-switch"
+            defaultIsToggled={view === "advanced"}
+            onToggle={handleToggleAdvancedSettings}
           >
-            {!isLoading && !isFetching && (
-              <ModelSelector
-                models={modelsAndProviders}
-                currentModel={
+            {t(I18nKey.SETTINGS$ADVANCED)}
+          </SettingsSwitch>
+
+          {view === "basic" && (
+            <div
+              data-testid="llm-settings-form-basic"
+              className="flex flex-col gap-6"
+            >
+              {!isLoading && !isFetching && (
+                <ModelSelector
+                  models={modelsAndProviders}
+                  currentModel={
+                    settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+                  }
+                  onChange={handleModelIsDirty}
+                />
+              )}
+
+              <SettingsInput
+                testId="llm-api-key-input"
+                name="llm-api-key-input"
+                label={t(I18nKey.SETTINGS_FORM$API_KEY)}
+                type="password"
+                className="w-[680px]"
+                placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
+                onChange={handleApiKeyIsDirty}
+              />
+
+              <HelpLink
+                testId="llm-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+              />
+            </div>
+          )}
+
+          {view === "advanced" && (
+            <div
+              data-testid="llm-settings-form-advanced"
+              className="flex flex-col gap-6"
+            >
+              <SettingsInput
+                testId="llm-custom-model-input"
+                name="llm-custom-model-input"
+                label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
+                defaultValue={
                   settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
                 }
-                onChange={handleModelIsDirty}
+                placeholder="anthropic/claude-3-5-sonnet-20241022"
+                type="text"
+                className="w-[680px]"
+                onChange={handleCustomModelIsDirty}
               />
-            )}
 
-            <SettingsInput
-              testId="llm-api-key-input"
-              name="llm-api-key-input"
-              label={t(I18nKey.SETTINGS_FORM$API_KEY)}
-              type="password"
-              className="w-[680px]"
-              placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
-              onChange={handleApiKeyIsDirty}
-            />
+              <SettingsInput
+                testId="base-url-input"
+                name="base-url-input"
+                label={t(I18nKey.SETTINGS$BASE_URL)}
+                defaultValue={settings.LLM_BASE_URL}
+                placeholder="https://api.openai.com"
+                type="text"
+                className="w-[680px]"
+                onChange={handleBaseUrlIsDirty}
+              />
 
-            <HelpLink
-              testId="llm-api-key-help-anchor"
-              text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-              linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-              href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
-            />
-          </div>
-        )}
+              <SettingsInput
+                testId="llm-api-key-input"
+                name="llm-api-key-input"
+                label={t(I18nKey.SETTINGS_FORM$API_KEY)}
+                type="password"
+                className="w-[680px]"
+                placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
+                onChange={handleApiKeyIsDirty}
+              />
+              <HelpLink
+                testId="llm-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+              />
 
-        {view === "advanced" && (
-          <div
-            data-testid="llm-settings-form-advanced"
-            className="flex flex-col gap-6"
-          >
-            <SettingsInput
-              testId="llm-custom-model-input"
-              name="llm-custom-model-input"
-              label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
-              defaultValue={
-                settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
-              }
-              placeholder="anthropic/claude-3-5-sonnet-20241022"
-              type="text"
-              className="w-[680px]"
-              onChange={handleCustomModelIsDirty}
-            />
-
-            <SettingsInput
-              testId="base-url-input"
-              name="base-url-input"
-              label={t(I18nKey.SETTINGS$BASE_URL)}
-              defaultValue={settings.LLM_BASE_URL}
-              placeholder="https://api.openai.com"
-              type="text"
-              className="w-[680px]"
-              onChange={handleBaseUrlIsDirty}
-            />
-
-            <SettingsInput
-              testId="llm-api-key-input"
-              name="llm-api-key-input"
-              label={t(I18nKey.SETTINGS_FORM$API_KEY)}
-              type="password"
-              className="w-[680px]"
-              placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
-              onChange={handleApiKeyIsDirty}
-            />
-            <HelpLink
-              testId="llm-api-key-help-anchor"
-              text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-              linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-              href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
-            />
-
-            <SettingsDropdownInput
-              testId="agent-input"
-              name="agent-input"
-              label={t(I18nKey.SETTINGS$AGENT)}
-              items={
-                resources?.agents.map((agent) => ({
-                  key: agent,
-                  label: agent,
-                })) || []
-              }
-              defaultSelectedKey={settings.AGENT}
-              isClearable={false}
-              onChange={handleAgentIsDirty}
-            />
-
-            {config?.APP_MODE === "saas" && (
               <SettingsDropdownInput
-                testId="runtime-settings-input"
-                name="runtime-settings-input"
-                label={
-                  <>
-                    {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
-                    <a href="mailto:contact@all-hands.dev">
-                      {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
-                    </a>
-                    )
-                  </>
+                testId="agent-input"
+                name="agent-input"
+                label={t(I18nKey.SETTINGS$AGENT)}
+                items={
+                  resources?.agents.map((agent) => ({
+                    key: agent,
+                    label: agent,
+                  })) || []
                 }
-                items={[]}
-                isDisabled
+                defaultSelectedKey={settings.AGENT}
+                isClearable={false}
+                onChange={handleAgentIsDirty}
               />
-            )}
 
-            <SettingsSwitch
-              testId="enable-confirmation-mode-switch"
-              name="enable-confirmation-mode-switch"
-              onToggle={handleConfirmationModeIsDirty}
-              defaultIsToggled={settings.CONFIRMATION_MODE}
-              isBeta
-            >
-              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-            </SettingsSwitch>
+              {config?.APP_MODE === "saas" && (
+                <SettingsDropdownInput
+                  testId="runtime-settings-input"
+                  name="runtime-settings-input"
+                  label={
+                    <>
+                      {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
+                      <a href="mailto:contact@all-hands.dev">
+                        {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
+                      </a>
+                      )
+                    </>
+                  }
+                  items={[]}
+                  isDisabled
+                />
+              )}
 
-            <SettingsSwitch
-              testId="enable-memory-condenser-switch"
-              name="enable-memory-condenser-switch"
-              defaultIsToggled={settings.ENABLE_DEFAULT_CONDENSER}
-              onToggle={handleEnableDefaultCondenserIsDirty}
-            >
-              {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
-            </SettingsSwitch>
-          </div>
-        )}
+              <SettingsSwitch
+                testId="enable-confirmation-mode-switch"
+                name="enable-confirmation-mode-switch"
+                onToggle={handleConfirmationModeIsDirty}
+                defaultIsToggled={settings.CONFIRMATION_MODE}
+                isBeta
+              >
+                {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+              </SettingsSwitch>
 
-        <BrandButton
-          testId="submit-button"
-          type="submit"
-          variant="primary"
-          isDisabled={!formIsDirty || isPending}
-        >
-          {!isPending && "Save Changes"}
-          {isPending && "Saving..."}
-        </BrandButton>
+              <SettingsSwitch
+                testId="enable-memory-condenser-switch"
+                name="enable-memory-condenser-switch"
+                defaultIsToggled={settings.ENABLE_DEFAULT_CONDENSER}
+                onToggle={handleEnableDefaultCondenserIsDirty}
+              >
+                {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
+              </SettingsSwitch>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+          <BrandButton
+            testId="submit-button"
+            type="submit"
+            variant="primary"
+            isDisabled={!formIsDirty || isPending}
+          >
+            {!isPending && "Save Changes"}
+            {isPending && "Saving..."}
+          </BrandButton>
+        </div>
       </form>
     </div>
   );
