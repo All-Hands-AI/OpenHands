@@ -407,6 +407,7 @@ function LlmSettingsScreen() {
                   isClearable
                   showOptionalTag
                   onInputChange={handleSecurityAnalyzerIsDirty}
+                  wrapperClassName="w-[680px]"
                 />
               )}
             </div>
