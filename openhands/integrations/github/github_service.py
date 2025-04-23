@@ -373,9 +373,7 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-            print("reached tasks")
-        except Exception as e:
-            print(e)
+        except Exception:
             return []
 
 

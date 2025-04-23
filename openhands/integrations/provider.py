@@ -241,7 +241,6 @@ class ProviderHandler:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
 
         return all_repos
-    
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """
@@ -257,7 +256,6 @@ class ProviderHandler:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
 
         return tasks
-
 
     async def search_repositories(
         self,

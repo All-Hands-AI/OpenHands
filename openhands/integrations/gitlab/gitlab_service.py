@@ -108,7 +108,7 @@ class GitLabService(BaseGitService, GitService):
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
 
-    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> Any:
+    async def execute_graphql_query(self, query: str, variables: dict[str, Any] = {}) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
 
@@ -292,13 +292,11 @@ class GitLabService(BaseGitService, GitService):
         }
         """
 
-        variables = {}
-
         try:
             tasks: list[SuggestedTask] = []
             
             # Get merge requests using GraphQL
-            response = await self.execute_graphql_query(query, variables)
+            response = await self.execute_graphql_query(query)
             data = response.get('currentUser', {})
 
             # Process merge requests
@@ -377,9 +375,7 @@ class GitLabService(BaseGitService, GitService):
                 )
 
             return tasks
-        except Exception as e:
-            # Log the exception but return an empty list to avoid breaking the application
-            print(f'Error fetching suggested tasks from GitLab: {e}')
+        except Exception:
             return []
 
 
