@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
@@ -52,6 +53,23 @@ function LlmSettingsScreen() {
     else setView("basic");
   }, [settings]);
 
+  const handleSuccessfulMutation = () => {
+    displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
+    setDirtyInputs({
+      model: false,
+      apiKey: false,
+      baseUrl: false,
+      agent: false,
+      confirmationMode: false,
+      enableDefaultCondenser: false,
+    });
+  };
+
+  const handleErrorMutation = (error: AxiosError) => {
+    const errorMessage = retrieveAxiosErrorMessage(error);
+    displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
+  };
+
   const basicFormAction = (formData: FormData) => {
     const provider = formData.get("llm-provider-input")?.toString();
     const model = formData.get("llm-model-input")?.toString();
@@ -66,21 +84,8 @@ function LlmSettingsScreen() {
         llm_api_key: apiKey,
       },
       {
-        onSuccess: () => {
-          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-          setDirtyInputs({
-            model: false,
-            apiKey: false,
-            baseUrl: false,
-            agent: false,
-            confirmationMode: false,
-            enableDefaultCondenser: false,
-          });
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-        },
+        onSuccess: handleSuccessfulMutation,
+        onError: handleErrorMutation,
       },
     );
   };
@@ -105,21 +110,8 @@ function LlmSettingsScreen() {
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
       },
       {
-        onSuccess: () => {
-          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-          setDirtyInputs({
-            model: false,
-            apiKey: false,
-            baseUrl: false,
-            agent: false,
-            confirmationMode: false,
-            enableDefaultCondenser: false,
-          });
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-        },
+        onSuccess: handleSuccessfulMutation,
+        onError: handleErrorMutation,
       },
     );
   };
@@ -131,6 +123,8 @@ function LlmSettingsScreen() {
         onSettled: () => {
           setResetModalIsVisible(false);
         },
+        onSuccess: handleSuccessfulMutation,
+        onError: handleErrorMutation,
       });
       return;
     }

@@ -637,6 +637,51 @@ describe("Status toasts", () => {
       expect(displayErrorToastSpy).toHaveBeenCalled();
     });
   });
+
+  describe("Reset button", () => {
+    it("should call displaySuccessToast when the settings are reset", async () => {
+      const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
+
+      const displaySuccessToastSpy = vi.spyOn(
+        ToastHandlers,
+        "displaySuccessToast",
+      );
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      const resetButton = screen.getByTestId("reset-button");
+      await userEvent.click(resetButton);
+
+      const modal = screen.getByTestId("reset-settings-modal");
+      const confirmButton = within(modal).getByTestId("confirm-button");
+      await userEvent.click(confirmButton);
+
+      expect(resetSettingsSpy).toHaveBeenCalled();
+      await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
+    });
+
+    it("should call displayErrorToast when the settings fail to reset", async () => {
+      const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
+
+      const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
+
+      resetSettingsSpy.mockRejectedValue(new Error("Failed to reset settings"));
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      const resetButton = screen.getByTestId("reset-button");
+      await userEvent.click(resetButton);
+
+      const modal = screen.getByTestId("reset-settings-modal");
+      const confirmButton = within(modal).getByTestId("confirm-button");
+      await userEvent.click(confirmButton);
+
+      expect(resetSettingsSpy).toHaveBeenCalled();
+      expect(displayErrorToastSpy).toHaveBeenCalled();
+    });
+  });
 });
 
 describe("SaaS mode", () => {
