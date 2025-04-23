@@ -316,10 +316,10 @@ class StandaloneConversationManager(ConversationManager):
                     settings,
                     initial_user_msg,
                     replay_json,
-                    mnemonic,
-                    system_prompt,
-                    user_prompt,
-                    mcp_disable,
+                    mnemonic=mnemonic,
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    mcp_disable=mcp_disable,
                 )
             )
             # This does not get added when resuming an existing conversation

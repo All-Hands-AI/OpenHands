@@ -196,6 +196,7 @@ class Session:
                 selected_branch=selected_branch,
                 initial_message=initial_message,
                 replay_json=replay_json,
+                mnemonic=mnemonic,
             )
             end_time = time.time()
             total_time = end_time - start_time
