@@ -318,14 +318,17 @@ export const chatSlice = createSlice({
         causeMessage.content = content;
       } else if (observationID === "mcp") {
         // For MCP observations, we want to show the content as formatted output
-        let content = causeMessage.content; // Keep the original action content
+        const { content: originalContent } = causeMessage; // Use object destructuring
+        let content = originalContent; // Keep the original action content
         content += `\n\n**Result:**\n\`\`\`\n${observation.payload.content}\n\`\`\``;
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
         // Set success based on whether there's an error message
-        causeMessage.success = !observation.payload.content.toLowerCase().includes("error:");
+        causeMessage.success = !observation.payload.content
+          .toLowerCase()
+          .includes("error:");
       }
     },
 
