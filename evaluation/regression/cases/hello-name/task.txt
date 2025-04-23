@@ -1,1 +1,0 @@
-Rewrite the script so that it prints the user's name, using the first argument. If there's no name, default to "world"
