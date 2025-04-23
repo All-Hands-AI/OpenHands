@@ -12,6 +12,7 @@ import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
+import { ProviderOptions } from "#/types/settings";
 
 const createAxiosNotFoundErrorObject = () =>
   new AxiosError(
@@ -54,7 +55,10 @@ const renderHomeScreen = (initialProvidersAreSet = true) =>
   render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
+        <AuthProvider
+          initialProvidersAreSet={initialProvidersAreSet}
+          initialProviderTokens={[ProviderOptions.github]}
+        >
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>

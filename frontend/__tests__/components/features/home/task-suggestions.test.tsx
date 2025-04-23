@@ -9,8 +9,12 @@ import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestio
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
 import { AuthProvider } from "#/context/auth-context";
+import { ProviderOptions } from "#/types/settings";
 
-const renderTaskSuggestions = (initialProvidersAreSet = true) => {
+const renderTaskSuggestions = (
+  initialProvidersAreSet = true,
+  githubProviderSet = true,
+) => {
   const RouterStub = createRoutesStub([
     {
       Component: TaskSuggestions,
@@ -29,7 +33,14 @@ const renderTaskSuggestions = (initialProvidersAreSet = true) => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
+        <AuthProvider
+          initialProvidersAreSet={initialProvidersAreSet}
+          initialProviderTokens={
+            githubProviderSet
+              ? [ProviderOptions.github]
+              : [ProviderOptions.gitlab]
+          }
+        >
           <QueryClientProvider client={new QueryClient()}>
             {children}
           </QueryClientProvider>
@@ -99,7 +110,7 @@ describe("TaskSuggestions", () => {
   });
 
   it("should display a button to settings if the user needs to sign in with their git provider", async () => {
-    renderTaskSuggestions(false);
+    renderTaskSuggestions(false, false);
 
     expect(getSuggestedTasksSpy).not.toHaveBeenCalled();
     const goToSettingsButton = await screen.findByTestId(
