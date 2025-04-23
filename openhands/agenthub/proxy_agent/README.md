@@ -4,7 +4,7 @@ This folder is an implementation of a Proxy Agent.
 The Proxy Agent delegates a given task to an appropriate agent capable of accomplishing it.
 The list of available agents is defined in agent_list.json, located in this directory.
 
-A key feature of the Proxy Agent is that, in addition to delegating task to different agents available locally within OpenHands, it can also send messages to agents hosted on different OpenHands instances running on separate servers.
+A key feature of the Proxy Agent is that, in addition to delegating task to different agents available locally within OpenHands, it can also send messages to agents hosted on different server, using A2A Protocol.
 
 ## How to run
 ### Set as the initial agent
@@ -21,12 +21,10 @@ flowchart LR
     end
 
     subgraph Server2
-        C["Proxy Agent"]
         D["Other Agents"]
-        C -->|delegate| D
     end
 
-    A --->|Remote Delegation| C
+    A --->|Remote Delegation| D
 
 ```
 
@@ -44,7 +42,8 @@ Place agent_list.json under openhands/agenthub/proxy_agent. Below is an example 
         "FooAgent": {
             "agent_name": "FooAgent",
             "url": "http(s)://IP or FQDN:port",
-            "description": "A brief description of FooAgent."
+            "description": "A brief description of FooAgent.",
+            "protocol": "A2A"
         }
     }
 }
