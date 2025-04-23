@@ -7,27 +7,10 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.events.action import (
-    Action,
-    AgentDelegateAction,
-    AgentFinishAction,
-    CmdRunAction,
-    IPythonRunCellAction,
-    MessageAction,
-    RecallAction,
-)
-from openhands.events.observation import (
-    AgentDelegateObservation,
-    CmdOutputObservation,
-    ErrorObservation,
-    IPythonRunCellObservation,
-    RecallObservation,
-    UserRejectObservation,
-)
-from openhands.events.observation.observation import Observation
-from openhands.events.serialization.event import truncate_content
+from openhands.events.action import Action
+from openhands.events.event import Event
+from openhands.memory.conversation_memory import ConversationMemory
 from openhands.llm.llm import LLM
-from openhands.memory.condenser import Condenser
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -61,8 +44,8 @@ class ProxyAgent(Agent):
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
-        self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f'Using condenser: {self.condenser}')
+        # Create a ConversationMemory instance
+        self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         agent_list_path = os.path.join(os.path.dirname(__file__), 'agent_list.json')
         if not os.path.exists(agent_list_path):
@@ -74,7 +57,8 @@ class ProxyAgent(Agent):
 
     def step(self, state: State) -> Action:
         # Prepare the message to send to the LLM
-        messages = self._get_messages(state)
+        messages = self._get_messages(state.history)
+
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
@@ -87,112 +71,35 @@ class ProxyAgent(Agent):
         action = proxy_function_calling.response_to_action(response)
         return action
 
-    def _get_messages(self, state: State) -> list[Message]:
+    def _get_messages(self, events: list[Event]) -> list[Message]:
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
+        
+        # Use ConversationMemory to process events (including SystemMessageAction)
+        messages = self.conversation_memory.process_events(
+            condensed_history=events,
+            max_message_chars=self.llm.config.max_message_chars,
+            vision_is_active=self.llm.vision_is_active(),
+        )
 
-        messages: list[Message] = [
-            Message(
-                role='system',
-                content=[TextContent(text=self.prompt_manager.get_system_message())],
-            ),
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text='Available agents are the following:'
-                        + json.dumps(self.agent_list)
+        agent_list_message = Message(
+            role='system',
+            content=[
+                TextContent(
+                        text='Available agents are the following:' + json.dumps(self.agent_list)
                     )
-                ],
-            ),
-        ]
+            ]
+        )
+        if len(messages) > 1:
+            messages.insert(1, agent_list_message)
+        else:
+            messages.append(agent_list_message)
 
-        for event in state.history:
-            if isinstance(event, Action):
-                messages.append(self._get_action_message(event))
-            elif isinstance(event, Observation):
-                messages.append(self._get_observation_message(event))
-            else:
-                raise ValueError(f'Unknown event type: {type(event)}')
+        if self.llm.is_caching_prompt_active():
+            self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
 
-    def _get_observation_message(self, observation: Observation) -> Message:
-        message: Message
-        max_message_chars = self.llm.config.max_message_chars
-        if isinstance(observation, IPythonRunCellObservation):
-            message = Message(
-                role='system',
-                content=[TextContent(text=f'IPython Output\n{observation.content}')],
-            )
-        elif isinstance(observation, AgentDelegateObservation):
-            text = observation.content + '\nOutputs: ' + json.dumps(observation.outputs)
-            message = Message(role='system', content=[TextContent(text=text)])
-        elif isinstance(observation, ErrorObservation):
-            text = truncate_content(observation.content, max_message_chars)
-            text += '\n[Error occurred in processing last action]'
-            message = Message(role='system', content=[TextContent(text=text)])
-        elif isinstance(observation, UserRejectObservation):
-            text = 'OBSERVATION:\n' + truncate_content(
-                observation.content, max_message_chars
-            )
-            text += '\n[Last action has been rejected by the user]'
-            message = Message(role='system', content=[TextContent(text=text)])
-        elif isinstance(observation, CmdOutputObservation):
-            # Proxy Agent doesn't issue CmdRunAction. If there is a CmdOutputObservation, it's triggered by a user.
-            text = truncate_content(
-                f'\nObserved result of command executed by user:\n{observation.to_agent_observation()}',
-                max_message_chars,
-            )
-            message = Message(role='system', content=[TextContent(text=text)])
-        elif isinstance(observation, RecallObservation):
-            message = Message(
-                role='system',
-                content=[TextContent(text=str(observation))],
-            )
-        else:
-            raise ValueError(f'Unknown observation type: {type(observation)}')
-
-        return message
-
-    def _get_action_message(self, action: Action) -> Message:
-        message: Message
-        if isinstance(action, IPythonRunCellAction):
-            message = Message(role='system', content=[TextContent(text=str(action))])
-        elif isinstance(action, AgentDelegateAction):
-            text = action.message + '\ninputs: ' + json.dumps(action.inputs)
-            if action.thought:
-                text += '\nthought: ' + action.thought
-            message = Message(role='system', content=[TextContent(text=text)])
-        elif isinstance(action, AgentFinishAction):
-            text = action.message
-            if action.outputs:
-                text += '\noutputs: ' + json.dumps(action.outputs)
-            message = Message(role='system', content=[TextContent(text=text)])
-        elif isinstance(action, MessageAction):
-            role = 'user' if action.source == 'user' else 'assistant'
-            content = [TextContent(text=action.content or '')]
-            message = Message(
-                role=role,
-                content=content,
-            )
-        elif isinstance(action, CmdRunAction):
-            # Proxy Agent doesn't issue CmdRunAction. If there is, it's triggered by a user.
-            message = Message(
-                role='user',
-                content=[
-                    TextContent(text=f'User executed the command:\n{action.command}')
-                ],
-            )
-        elif isinstance(action, RecallAction):
-            text = str(action)
-            if action.thought:
-                text += '\nthought: ' + action.thought
-            message = Message(role='system', content=[TextContent(text=text)])
-        else:
-            raise ValueError(f'Unknown action type: {type(action)}')
-
-        return message
 
     def reset(self) -> None:
         super().reset()
