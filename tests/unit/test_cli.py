@@ -535,6 +535,7 @@ async def test_main_security_check_fails(
 @patch('openhands.core.cli.setup_config_from_args')
 @patch('openhands.core.cli.FileSettingsStore.get_instance')
 @patch('openhands.core.cli.check_folder_security_agreement')
+@patch('openhands.core.cli.read_task')
 @patch('openhands.core.cli.run_session')
 @patch('openhands.core.cli.LLMSummarizingCondenserConfig')
 @patch('openhands.core.cli.NoOpCondenserConfig')
@@ -542,6 +543,7 @@ async def test_config_loading_order(
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
+    mock_read_task,
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
@@ -560,11 +562,17 @@ async def test_config_loading_order(
     mock_args = MagicMock()
     mock_args.agent_cls = 'cmd-line-agent'  # This should override settings
     mock_args.llm_config = None  # This should allow settings to be used
+    # Add a file property to avoid file I/O errors
+    mock_args.file = None
     mock_parse_args.return_value = mock_args
+
+    # Mock read_task to return a dummy task
+    mock_read_task.return_value = 'Test task'
 
     # Mock config with mock methods to track changes
     mock_config = MagicMock()
     mock_config.workspace_base = '/test/dir'
+    mock_config.cli_multiline_input = False
     mock_config.get_llm_config = MagicMock(return_value=MagicMock())
     mock_config.set_llm_config = MagicMock()
     mock_config.get_agent_config = MagicMock(return_value=MagicMock())
@@ -583,13 +591,13 @@ async def test_config_loading_order(
     mock_settings_store.load.return_value = mock_settings
     mock_get_settings_store.return_value = mock_settings_store
 
-    # Mock security check and run_session to succeed
-    mock_check_security.return_value = True
-    mock_run_session.return_value = False  # No new session requested
-
     # Mock condenser configs
     mock_llm_condenser_instance = MagicMock()
     mock_llm_condenser.return_value = mock_llm_condenser_instance
+
+    # Mock security check and run_session to succeed
+    mock_check_security.return_value = True
+    mock_run_session.return_value = False  # No new session requested
 
     # Run the function
     await cli.main(loop)
