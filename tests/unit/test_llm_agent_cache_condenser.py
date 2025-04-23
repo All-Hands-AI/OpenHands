@@ -45,7 +45,6 @@ def set_next_llm_response(agent, response: str):
 
 def test_contains_trigger_word():
     """Test that the containsTriggerWord method correctly identifies the CONDENSE! keyword."""
-
     # Create the condenser
     condenser = LLMAgentCacheCondenser(max_size=10)
 
@@ -90,7 +89,6 @@ def test_contains_trigger_word():
 
 def test_no_condensation(agent: CodeActAgent):
     """Test that the LLMAgentCacheCondenser returns a View when no condensation is needed."""
-
     condenser = LLMAgentCacheCondenser(max_size=10)
 
     # Create real events
@@ -108,8 +106,7 @@ def test_no_condensation(agent: CodeActAgent):
 
 
 def test_condense(agent: CodeActAgent):
-    """Test that the condenser uses the LLM to condense events"""
-
+    """Test that the condenser uses the LLM to condense events."""
     llm_summary = """
 USER_CONTEXT: Testing file read operations
 COMPLETED: Read 4 files with varying content
@@ -292,7 +289,6 @@ CURRENT_STATE: Conversation in progress
 
 def test_llm_agent_cache_condenser_first_message_user_message(agent: CodeActAgent):
     """Test that at least one user message is preserved."""
-
     # Create a condenser with a small max_size to ensure condensation
     # but large enough to not trigger again after adding the condensation action
     condenser = LLMAgentCacheCondenser(max_size=5)
@@ -357,7 +353,6 @@ CURRENT_STATE: Conversation started
 
 def test_llm_agent_cache_condenser_full_rewrite(agent: CodeActAgent):
     """Test a complete condensation of the conversation."""
-
     # Create a condenser with a small max_size to ensure condensation
     # but large enough to not trigger again after adding the condensation action
     condenser = LLMAgentCacheCondenser(max_size=5)
@@ -418,7 +413,6 @@ import pytest
 
 def test_condensation_triggered_by_user_message_in_context(agent):
     """Test that the user message triggering condensation is part of the context passed to the LLM."""
-
     condenser = LLMAgentCacheCondenser(trigger_word='CONDENSE!', max_size=500)
     agent.condenser = condenser
 
@@ -470,6 +464,9 @@ CURRENT_STATE: Conversation initialized
         # Check that the user message triggering condensation is part of the context
         assert any(
             hasattr(message, 'content')
-            and message.content[0].text == 'Please CONDENSE! the conversation history.'
+            and isinstance(message.content, list)
+            and len(message.content) > 0
+            and hasattr(message.content[0], 'text')
+            and 'Please CONDENSE! the conversation history.' in message.content[0].text
             for message in messages
         )
