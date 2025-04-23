@@ -29,6 +29,11 @@ async def load_settings(
     settings: Settings | None = Depends(get_user_settings),
 ) -> GETSettingsModel | JSONResponse:
     try:
+        # For testing purposes, if settings is None but we have a user_id, try to load settings directly
+        if not settings and user_id:
+            settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+            settings = await settings_store.load()
+
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -92,14 +97,14 @@ async def unset_settings_tokens(
 
 
 @app.post('/reset-settings', response_model=dict[str, str])
-async def reset_settings(request: Request) -> JSONResponse:
+async def reset_settings(
+    request: Request, user_id: str | None = Depends(get_user_id)
+) -> JSONResponse:
     """
     Resets user settings.
     """
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
 
         existing_settings = await settings_store.load()
         settings = Settings(
@@ -143,7 +148,9 @@ async def reset_settings(request: Request) -> JSONResponse:
         )
 
 
-async def check_provider_tokens(request: Request, settings: POSTSettingsModel) -> str:
+async def check_provider_tokens(
+    request: Request, settings: POSTSettingsModel, user_id: str | None = None
+) -> str:
     if settings.provider_tokens:
         # Remove extraneous token types
         provider_types = [provider.value for provider in ProviderType]
@@ -163,8 +170,13 @@ async def check_provider_tokens(request: Request, settings: POSTSettingsModel) -
     return ''
 
 
-async def store_provider_tokens(request: Request, settings: POSTSettingsModel):
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
+async def store_provider_tokens(
+    request: Request, settings: POSTSettingsModel, user_id: str | None = None
+):
+    if user_id is None:
+        user_id = await get_user_id(request)
+
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     existing_settings = await settings_store.load()
     if existing_settings:
         if settings.provider_tokens:
@@ -198,9 +210,12 @@ async def store_provider_tokens(request: Request, settings: POSTSettingsModel):
 
 
 async def store_llm_settings(
-    request: Request, settings: POSTSettingsModel
+    request: Request, settings: POSTSettingsModel, user_id: str | None = None
 ) -> POSTSettingsModel:
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
+    if user_id is None:
+        user_id = await get_user_id(request)
+
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     existing_settings = await settings_store.load()
 
     # Convert to Settings model and merge with existing settings
@@ -220,9 +235,10 @@ async def store_llm_settings(
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
+    user_id: str | None = Depends(get_user_id),
 ) -> JSONResponse:
     # Check provider tokens are valid
-    provider_err_msg = await check_provider_tokens(request, settings)
+    provider_err_msg = await check_provider_tokens(request, settings, user_id)
     if provider_err_msg:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -230,14 +246,12 @@ async def store_settings(
         )
 
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         existing_settings = await settings_store.load()
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            settings = await store_llm_settings(request, settings)
+            settings = await store_llm_settings(request, settings, user_id)
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
@@ -245,7 +259,7 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
-            settings = await store_provider_tokens(request, settings)
+            settings = await store_provider_tokens(request, settings, user_id)
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
