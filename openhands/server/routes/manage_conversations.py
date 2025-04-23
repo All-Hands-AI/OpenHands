@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Body, Request, status
+from fastapi import APIRouter, Body, Depends, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -33,6 +33,8 @@ from openhands.server.shared import (
     file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
+from openhands.server.utils import get_conversation_store
+from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
@@ -152,14 +154,13 @@ async def _create_new_conversation(
 
 
 @app.post('/conversations')
-async def new_conversation(request: Request, data: InitSessionRequest):
+async def new_conversation(data: InitSessionRequest, user_id: str = Depends(get_user_id), provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens)):
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    provider_tokens = get_provider_tokens(request)
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
@@ -169,7 +170,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            get_user_id(request),
+            user_id,
             provider_tokens,
             selected_repository,
             selected_branch,
@@ -207,10 +208,9 @@ async def search_conversations(
     request: Request,
     page_id: str | None = None,
     limit: int = 20,
+    user_id: str | None = Depends(get_user_id),
+    conversation_store: ConversationStore = Depends(get_conversation_store)
 ) -> ConversationInfoResultSet:
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
-    )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
     # Filter out conversations older than max_age
@@ -228,7 +228,7 @@ async def search_conversations(
         conversation.conversation_id for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
-        get_user_id(request), set(conversation_ids)
+        user_id, set(conversation_ids)
     )
     result = ConversationInfoResultSet(
         results=await wait_all(
@@ -245,11 +245,9 @@ async def search_conversations(
 
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str, request: Request
+    conversation_id: str,
+    conversation_store: ConversationStore = Depends(get_conversation_store)
 ) -> ConversationInfo | None:
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
-    )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
@@ -340,11 +338,12 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    request: Request, conversation_id: str, title: str = Body(embed=True)
+    conversation_id: str, title: str = Body(embed=True),
+    user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
 ) -> bool:
-    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, get_github_user_id(request)
+        config, user_id, github_user_id
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -366,10 +365,11 @@ async def update_conversation(
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
     conversation_id: str,
-    request: Request,
+    user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, github_user_id
     )
     try:
         await conversation_store.get_metadata(conversation_id)

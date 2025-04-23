@@ -5,23 +5,40 @@ from fastapi import Request
 from pydantic import SecretStr
 
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.server.settings import Settings
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
 
 class UserAuth(ABC):
     """Extensible class encapsulating user Authentication"""
+    _settings: Settings | None
 
     @abstractmethod
     async def get_user_id(self) -> str | None:
         """Get the unique identifier for the current user"""
 
     @abstractmethod
-    async def get_access_token(self) -> SecretStr:
+    async def get_access_token(self) -> SecretStr | None:
         """Get the access token for the current user"""
 
     @abstractmethod
-    async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
+    async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         """Get the provider tokens for the current user."""
+
+    @abstractmethod
+    async def get_user_settings_store(self) -> SettingsStore | None:
+        """ Get the settings store for the current user."""
+
+    async def get_user_settings(self) -> Settings | None:
+        """ Get the user settings for the current user"""
+        settings = self._settings
+        if settings:
+            return settings
+        settings_store = await self.get_user_settings_store()
+        settings = await settings_store.load()  
+        self._settings = settings   
+        return settings   
 
     @classmethod
     @abstractmethod

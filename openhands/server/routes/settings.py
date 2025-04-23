@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken, ProviderType, SecretStore
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.user_auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
@@ -14,9 +14,11 @@ app = APIRouter(prefix='/api')
 
 
 @app.get('/settings', response_model=GETSettingsModel)
-async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
+async def load_settings(
+    user_id: str | None = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+) -> GETSettingsModel | JSONResponse:
     try:
-        user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
         if not settings:
@@ -30,7 +32,6 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         if bool(user_id):
             provider_tokens_set[ProviderType.GITHUB.value] = True
 
-        provider_tokens = get_provider_tokens(request)
         if provider_tokens:
             all_provider_types = [provider.value for provider in ProviderType]
             provider_tokens_types = [provider.value for provider in provider_tokens]
