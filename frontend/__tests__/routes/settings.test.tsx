@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
+import OpenHands from "#/api/open-hands";
 
 describe("Settings Screen", () => {
   const { handleLogoutMock } = vi.hoisted(() => ({
@@ -34,16 +35,54 @@ describe("Settings Screen", () => {
   };
 
   it("should render the navbar", async () => {
-    const sections = ["llm", "git", "application"];
+    const sectionsToInclude = ["llm", "git", "application"];
+    const sectionsToExclude = ["api keys", "credits"];
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return app mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+    });
 
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
-    sections.forEach((section) => {
+    sectionsToInclude.forEach((section) => {
       const sectionElement = within(navbar).getByText(section, {
         exact: false, // case insensitive
       });
       expect(sectionElement).toBeInTheDocument();
+    });
+    sectionsToExclude.forEach((section) => {
+      const sectionElement = within(navbar).queryByText(section, {
+        exact: false, // case insensitive
+      });
+      expect(sectionElement).not.toBeInTheDocument();
+    });
+  });
+
+  it("should render the saas navbar", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return app mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+    const sectionsToInclude = ["git", "application", "credits", "api keys"];
+    const sectionsToExclude = ["llm"];
+
+    renderSettingsScreen();
+
+    const navbar = await screen.findByTestId("settings-navbar");
+    sectionsToInclude.forEach((section) => {
+      const sectionElement = within(navbar).getByText(section, {
+        exact: false, // case insensitive
+      });
+      expect(sectionElement).toBeInTheDocument();
+    });
+    sectionsToExclude.forEach((section) => {
+      const sectionElement = within(navbar).queryByText(section, {
+        exact: false, // case insensitive
+      });
+      expect(sectionElement).not.toBeInTheDocument();
     });
   });
 });

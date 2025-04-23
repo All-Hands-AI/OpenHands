@@ -11,18 +11,20 @@ function SettingsScreen() {
 
   const isSaas = config?.APP_MODE === "saas";
 
-  const navItems = [
+  const saasNavItems = [
+    { to: "/settings/git", text: "Git" },
+    { to: "/settings/app", text: "Application" },
+    { to: "/settings/billing", text: "Credits" },
+    { to: "/settings/api-keys", text: "API Keys" },
+  ];
+
+  const ossNavItems = [
     { to: "/settings", text: "LLM" },
     { to: "/settings/git", text: "Git" },
     { to: "/settings/app", text: "Application" },
-    // Only show Credits tab if the app is in SaaS mode
-    ...(isSaas
-      ? [
-          { to: "/settings/billing", text: "Credits" },
-          { to: "/settings/api-keys", text: "API Keys" },
-        ]
-      : []),
   ];
+
+  const navItems = isSaas ? saasNavItems : ossNavItems;
 
   return (
     <main
