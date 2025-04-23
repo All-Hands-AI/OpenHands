@@ -201,7 +201,6 @@ model = "gpt-4o"
 #native_tool_calling = None
 
 
-
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
@@ -385,6 +384,14 @@ type = "noop"
 #keep_first = 1
 # Maximum size of history before triggering attention mechanism
 #max_size = 100
+
+# 7. LLM Agent Cache Condenser
+#type = "agentcache"
+# Maximum number of events before condensation is triggered
+#max_size = 100
+# Word that triggers condensation when found in user messages
+#trigger_word = "CONDENSE!"
+# Note: This condenser should only be used for LLM models that make use of caching.
 
 # Example of a custom LLM configuration for condensers that require an LLM
 # If not provided, it falls back to the default LLM
