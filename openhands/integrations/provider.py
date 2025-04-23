@@ -66,6 +66,10 @@ class SecretStore(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
+    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
+        default_factory=lambda: MappingProxyType({})
+    )
+
     model_config = {
         'frozen': True,
         'validate_assignment': True,
@@ -97,16 +101,32 @@ class SecretStore(BaseModel):
 
         return tokens
 
+    @field_serializer('custom_secrets')
+    def custom_secrets_serializer(
+        self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
+    ):
+        secrets = {}
+        expose_secrets = info.context and info.context.get('expose_secrets', False)
+
+        if custom_secrets:
+            for secret_name, secret_key in custom_secrets.items():
+                secrets[secret_name] = (
+                    secret_key.get_secret_value()
+                    if expose_secrets
+                    else pydantic_encoder(secret_key)
+                )
+        return secrets
+
     @model_validator(mode='before')
     @classmethod
     def convert_dict_to_mappingproxy(
-        cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
-    ) -> dict[str, MappingProxyType[Any, Any]]:
+        cls, data: dict[str, dict[str, Any] | MappingProxyType] | PROVIDER_TOKEN_TYPE
+    ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
             raise ValueError('SecretStore must be initialized with a dictionary')
 
-        new_data: dict[str, MappingProxyType[Any, Any]] = {}
+        new_data: dict[str, MappingProxyType | None] = {}
 
         if 'provider_tokens' in data:
             tokens = data['provider_tokens']
@@ -128,6 +148,22 @@ class SecretStore(BaseModel):
 
                 # Convert to MappingProxyType
                 new_data['provider_tokens'] = MappingProxyType(converted_tokens)
+            elif isinstance(tokens, MappingProxyType):
+                new_data['provider_tokens'] = tokens
+
+        if 'custom_secrets' in data:
+            secrets = data['custom_secrets']
+            if isinstance(secrets, dict):
+                converted_secrets = {}
+                for key, value in secrets.items():
+                    if isinstance(value, str):
+                        converted_secrets[key] = SecretStr(value)
+                    elif isinstance(value, SecretStr):
+                        converted_secrets[key] = value
+
+                new_data['custom_secrets'] = MappingProxyType(converted_secrets)
+            elif isinstance(secrets, MappingProxyType):
+                new_data['custom_secrets'] = secrets
 
         return new_data
 
