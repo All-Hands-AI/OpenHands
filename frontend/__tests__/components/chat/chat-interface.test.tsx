@@ -45,7 +45,7 @@ describe("Empty state", () => {
   it("should render suggestions if empty", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { 
+        chat: {
           messages: [],
           systemMessage: {
             content: "",
@@ -76,7 +76,7 @@ describe("Empty state", () => {
   it("should render the default suggestions", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { 
+        chat: {
           messages: [],
           systemMessage: {
             content: "",
@@ -114,7 +114,7 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { 
+          chat: {
             messages: [],
             systemMessage: {
               content: "",
@@ -151,7 +151,7 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { 
+          chat: {
             messages: [],
             systemMessage: {
               content: "",
