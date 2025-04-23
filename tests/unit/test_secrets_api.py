@@ -265,52 +265,52 @@ async def test_add_multiple_custom_secrets(
 
 
 @pytest.mark.asyncio
-async def test_delete_custom_secret(
-    test_client, mock_settings_store, mock_convert_to_settings
-):
+async def test_delete_custom_secret(test_client):
     """Test deleting a custom secret."""
-    # Create initial settings with multiple custom secrets
-    custom_secrets = {
-        'API_KEY': SecretStr('api-key-value'),
-        'DB_PASSWORD': SecretStr('db-password-value'),
-    }
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    secret_store = SecretStore(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
-    initial_settings = Settings(
-        language='en',
-        agent='test-agent',
-        llm_api_key=SecretStr('test-llm-key'),
-        secrets_store=secret_store,
-    )
+    with patch_file_settings_store() as file_settings_store:
+        # Create initial settings with multiple custom secrets
+        custom_secrets = {
+            'API_KEY': SecretStr('api-key-value'),
+            'DB_PASSWORD': SecretStr('db-password-value'),
+        }
+        provider_tokens = {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
+        }
+        secret_store = SecretStore(
+            custom_secrets=custom_secrets, provider_tokens=provider_tokens
+        )
+        initial_settings = Settings(
+            language='en',
+            agent='test-agent',
+            llm_api_key=SecretStr('test-llm-key'),
+            secrets_store=secret_store,
+        )
 
-    # Mock the settings store to return our initial settings
-    mock_settings_store.load.return_value = initial_settings
+        # Store the initial settings
+        await file_settings_store.store(initial_settings)
 
-    # Make the DELETE request to delete a custom secret
-    response = test_client.delete('/api/secrets/API_KEY')
-    assert response.status_code == 200
+        # Make the DELETE request to delete a custom secret
+        response = test_client.delete('/api/secrets/API_KEY')
+        assert response.status_code == 200
 
-    # Verify that the settings were stored without the deleted secret
-    stored_settings = mock_settings_store.store.call_args[0][0]
+        # Verify that the settings were stored without the deleted secret
+        stored_settings = await file_settings_store.load()
 
-    # Check that the specified secret was deleted
-    assert 'API_KEY' not in stored_settings.secrets_store.custom_secrets
+        # Check that the specified secret was deleted
+        assert 'API_KEY' not in stored_settings.secrets_store.custom_secrets
 
-    # Check that other secrets were preserved
-    assert 'DB_PASSWORD' in stored_settings.secrets_store.custom_secrets
-    assert (
-        stored_settings.secrets_store.custom_secrets['DB_PASSWORD'].get_secret_value()
-        == 'db-password-value'
-    )
+        # Check that other secrets were preserved
+        assert 'DB_PASSWORD' in stored_settings.secrets_store.custom_secrets
+        assert (
+            stored_settings.secrets_store.custom_secrets['DB_PASSWORD'].get_secret_value()
+            == 'db-password-value'
+        )
 
-    # Check that other settings were preserved
-    assert stored_settings.language == 'en'
-    assert stored_settings.agent == 'test-agent'
-    assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
+        # Check that other settings were preserved
+        assert stored_settings.language == 'en'
+        assert stored_settings.agent == 'test-agent'
+        assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
+        assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
 
 
 @pytest.mark.asyncio
