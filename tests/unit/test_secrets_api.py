@@ -2,20 +2,18 @@
 # flake8: noqa: E501
 
 from contextlib import contextmanager
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.server.routes.settings import app as settings_app
 from openhands.server.settings import Settings
-from openhands.server.user_auth.user_auth import UserAuth
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
-from openhands.storage.settings.settings_store import SettingsStore
 
 
 @pytest.fixture
@@ -29,7 +27,10 @@ def test_client():
 @contextmanager
 def patch_file_settings_store():
     store = FileSettingsStore(InMemoryFileStore())
-    with patch('openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance', AsyncMock(return_value=store)):
+    with patch(
+        'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+        AsyncMock(return_value=store),
+    ):
         yield store
 
 
@@ -69,8 +70,16 @@ async def test_load_custom_secrets_names(test_client):
 
         # Verify that the original settings were not modified
         stored_settings = await file_settings_store.load()
-        assert stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value() == 'api-key-value'
-        assert stored_settings.secrets_store.custom_secrets['DB_PASSWORD'].get_secret_value() == 'db-password-value'
+        assert (
+            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            == 'api-key-value'
+        )
+        assert (
+            stored_settings.secrets_store.custom_secrets[
+                'DB_PASSWORD'
+            ].get_secret_value()
+            == 'db-password-value'
+        )
         assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
 
 
@@ -231,7 +240,9 @@ async def test_add_multiple_custom_secrets(test_client):
         )
         assert 'DB_PASSWORD' in stored_settings.secrets_store.custom_secrets
         assert (
-            stored_settings.secrets_store.custom_secrets['DB_PASSWORD'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'DB_PASSWORD'
+            ].get_secret_value()
             == 'db-password-value'
         )
 
@@ -289,7 +300,9 @@ async def test_delete_custom_secret(test_client):
         # Check that other secrets were preserved
         assert 'DB_PASSWORD' in stored_settings.secrets_store.custom_secrets
         assert (
-            stored_settings.secrets_store.custom_secrets['DB_PASSWORD'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'DB_PASSWORD'
+            ].get_secret_value()
             == 'db-password-value'
         )
 
@@ -397,8 +410,18 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
         assert len(stored_settings.secrets_store.provider_tokens) == 2
         assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
         assert ProviderType.GITLAB in stored_settings.secrets_store.provider_tokens
-        assert stored_settings.secrets_store.custom_secrets['INITIAL_SECRET'].get_secret_value() == 'initial-value'
-        assert stored_settings.secrets_store.custom_secrets['NEW_SECRET'].get_secret_value() == 'new-value'
+        assert (
+            stored_settings.secrets_store.custom_secrets[
+                'INITIAL_SECRET'
+            ].get_secret_value()
+            == 'initial-value'
+        )
+        assert (
+            stored_settings.secrets_store.custom_secrets[
+                'NEW_SECRET'
+            ].get_secret_value()
+            == 'new-value'
+        )
 
     # 2. Test updating an existing custom secret
     update_secret_data = {'custom_secrets': {'INITIAL_SECRET': 'updated-value'}}
