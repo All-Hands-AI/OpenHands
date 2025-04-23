@@ -39,6 +39,8 @@ class UserAuth(ABC):
         if settings:
             return settings
         settings_store = await self.get_user_settings_store()
+        if settings_store is None:
+            return None
         settings = await settings_store.load()
         self._settings = settings
         return settings
@@ -50,14 +52,14 @@ class UserAuth(ABC):
 
 
 async def get_user_auth(request: Request) -> UserAuth:
-    user_auth = getattr(request.state, 'user_auth', None)
+    user_auth: UserAuth = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
     impl_name = (
         os.environ.get('USER_AUTH_CLASS')
         or 'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
     )
-    impl: UserAuth = get_impl(UserAuth, impl_name)
+    impl = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
     request.state.user_auth = user_auth
     return user_auth
