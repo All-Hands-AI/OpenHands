@@ -528,3 +528,95 @@ async def test_main_security_check_fails(
 
     # Since security check fails, no further action should happen
     # (This is an implicit assertion - we don't need to check further function calls)
+
+
+@pytest.mark.asyncio
+@patch('openhands.core.cli.parse_arguments')
+@patch('openhands.core.cli.setup_config_from_args')
+@patch('openhands.core.cli.FileSettingsStore.get_instance')
+@patch('openhands.core.cli.check_folder_security_agreement')
+@patch('openhands.core.cli.run_session')
+@patch('openhands.core.cli.LLMSummarizingCondenserConfig')
+@patch('openhands.core.cli.NoOpCondenserConfig')
+async def test_config_loading_order(
+    mock_noop_condenser,
+    mock_llm_condenser,
+    mock_run_session,
+    mock_check_security,
+    mock_get_settings_store,
+    mock_setup_config,
+    mock_parse_args,
+):
+    """Test the order of configuration loading in the main function.
+
+    This test verifies:
+    1. Command line arguments override settings store values
+    2. Settings from store are used when command line args are not provided
+    3. Default condenser is configured correctly based on settings
+    """
+    loop = asyncio.get_running_loop()
+
+    # Mock arguments with specific agent but no LLM config
+    mock_args = MagicMock()
+    mock_args.agent_cls = 'cmd-line-agent'  # This should override settings
+    mock_args.llm_config = None  # This should allow settings to be used
+    mock_parse_args.return_value = mock_args
+
+    # Mock config with mock methods to track changes
+    mock_config = MagicMock()
+    mock_config.workspace_base = '/test/dir'
+    mock_config.get_llm_config = MagicMock(return_value=MagicMock())
+    mock_config.set_llm_config = MagicMock()
+    mock_config.get_agent_config = MagicMock(return_value=MagicMock())
+    mock_config.set_agent_config = MagicMock()
+    mock_setup_config.return_value = mock_config
+
+    # Mock settings store with specific values
+    mock_settings_store = AsyncMock()
+    mock_settings = MagicMock()
+    mock_settings.agent = 'settings-agent'  # Should be overridden by cmd line
+    mock_settings.llm_model = 'settings-model'  # Should be used (no cmd line)
+    mock_settings.llm_api_key = 'settings-api-key'  # Should be used
+    mock_settings.llm_base_url = 'settings-base-url'  # Should be used
+    mock_settings.confirmation_mode = True
+    mock_settings.enable_default_condenser = True  # Test condenser setup
+    mock_settings_store.load.return_value = mock_settings
+    mock_get_settings_store.return_value = mock_settings_store
+
+    # Mock security check and run_session to succeed
+    mock_check_security.return_value = True
+    mock_run_session.return_value = False  # No new session requested
+
+    # Mock condenser configs
+    mock_llm_condenser_instance = MagicMock()
+    mock_llm_condenser.return_value = mock_llm_condenser_instance
+
+    # Run the function
+    await cli.main(loop)
+
+    # Assertions for argument parsing and config setup
+    mock_parse_args.assert_called_once()
+    mock_setup_config.assert_called_once_with(mock_args)
+    mock_get_settings_store.assert_called_once()
+    mock_settings_store.load.assert_called_once()
+
+    # Verify agent is set from command line args (overriding settings)
+    assert mock_config.default_agent == 'cmd-line-agent'
+
+    # Verify LLM config is set from settings (since no cmd line arg)
+    assert mock_config.set_llm_config.called
+    llm_config_call = mock_config.set_llm_config.call_args[0][0]
+    assert llm_config_call.model == 'settings-model'
+    assert llm_config_call.api_key == 'settings-api-key'
+    assert llm_config_call.base_url == 'settings-base-url'
+
+    # Verify confirmation mode is set from settings
+    assert mock_config.security.confirmation_mode is True
+
+    # Verify default condenser is set up correctly
+    assert mock_config.set_agent_config.called
+    assert mock_llm_condenser.called
+    assert mock_config.enable_default_condenser is True
+
+    # Verify that run_session was called with the correct arguments
+    mock_run_session.assert_called_once()
