@@ -767,11 +767,11 @@ class WindowsPowershellSession:
                          if command == "":
                              # Check active job, returns observation directly
                              # Note: _check_active_job needs modification to update CWD on completion
-                             return self._check_active_job_and_update_cwd(action) # Pass action for command info
+                             return self._check_active_job() # Pass action for command info
                          elif command == "C-c":
                              # Stop active job, returns observation directly
                              # Note: _stop_active_job needs modification to use cached CWD
-                             return self._stop_active_job_and_update_cwd(action) # Pass action for command info
+                             return self._stop_active_job() # Pass action for command info
                          else:
                              # Policy: New command received while job running -> Error? Stop old job?
                              # Current policy: Stop old job first.
