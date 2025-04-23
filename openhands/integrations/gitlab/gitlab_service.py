@@ -261,7 +261,7 @@ class GitLabService(BaseGitService, GitService):
         query = """
         query GetUserTasks($username: String!) {
           currentUser {
-            mergeRequests(state: opened, authorUsername: $username, sort: UPDATED_DESC, first: 100) {
+            authoredMergeRequests(state: opened, sort: UPDATED_DESC, first: 100) {
               nodes {
                 id
                 iid
@@ -310,7 +310,7 @@ class GitLabService(BaseGitService, GitService):
             tasks: list[SuggestedTask] = []
 
             # Process merge requests
-            merge_requests = data.get('mergeRequests', {}).get('nodes', [])
+            merge_requests = data.get('authoredMergeRequests', {}).get('nodes', [])
             for mr in merge_requests:
                 repo_name = mr.get('project', {}).get('fullPath', '')
                 mr_number = mr.get('iid')
