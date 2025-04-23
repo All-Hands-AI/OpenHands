@@ -20,6 +20,7 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
 import { ResetSettingsModal } from "#/components/features/settings/llm-settings/reset-settings-modal";
+import { isCustomModel } from "#/utils/is-custom-model";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -50,12 +51,25 @@ function LlmSettingsScreen() {
   );
 
   React.useEffect(() => {
-    const userSettingsIsAdvanced = hasAdvancedSettingsSet(settings || {});
+    const determineWhetherToToggleAdvancedSettings = () => {
+      if (resources && settings) {
+        return (
+          isCustomModel(resources.models, settings.LLM_MODEL) ||
+          hasAdvancedSettingsSet({
+            ...settings,
+          })
+        );
+      }
+
+      return false;
+    };
+
+    const userSettingsIsAdvanced = determineWhetherToToggleAdvancedSettings();
     if (settings) setSecurityAnalyzerInputIsVisible(settings.CONFIRMATION_MODE);
 
     if (userSettingsIsAdvanced) setView("advanced");
     else setView("basic");
-  }, [settings]);
+  }, [settings, resources]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
@@ -337,6 +351,7 @@ function LlmSettingsScreen() {
                 defaultSelectedKey={settings.AGENT}
                 isClearable={false}
                 onInputChange={handleAgentIsDirty}
+                wrapperClassName="w-[680px]"
               />
 
               {config?.APP_MODE === "saas" && (
