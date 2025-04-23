@@ -21,6 +21,7 @@ import { SettingsDropdownInput } from "#/components/features/settings/settings-d
 import { useConfig } from "#/hooks/query/use-config";
 import { ResetSettingsModal } from "#/components/features/settings/llm-settings/reset-settings-modal";
 import { isCustomModel } from "#/utils/is-custom-model";
+import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -241,7 +242,7 @@ function LlmSettingsScreen() {
 
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
 
-  if (!settings || isFetching) return null;
+  if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
   return (
     <div data-testid="llm-settings-screen" className="h-full">

@@ -14,6 +14,7 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ function GitSettingsScreen() {
   const { mutate: saveSettings, isPending } = useSaveSettings();
   const { mutate: disconnectGitTokens } = useLogout();
 
-  const { data: settings } = useSettings();
+  const { data: settings, isLoading } = useSettings();
   const { data: config } = useConfig();
 
   const [githubTokenInputHasValue, setGithubTokenInputHasValue] =
@@ -76,11 +77,13 @@ function GitSettingsScreen() {
       action={formAction}
       className="flex flex-col h-full justify-between"
     >
+      {isLoading && <GitSettingInputsSkeleton />}
+
       {isSaas && config.APP_SLUG && (
         <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG} />
       )}
 
-      {!isSaas && (
+      {!isSaas && !isLoading && (
         <div className="px-11 py-9 flex flex-col gap-12">
           <GitHubTokenInput
             name="github-token-input"
