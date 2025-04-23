@@ -321,7 +321,6 @@ async def store_provider_tokens(
 async def store_llm_settings(
     settings: POSTSettingsModel, settings_store: SettingsStore
 ) -> POSTSettingsModel:
-
     existing_settings = await settings_store.load()
 
     # Convert to Settings model and merge with existing settings
@@ -340,7 +339,7 @@ async def store_llm_settings(
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     settings: POSTSettingsModel,
-    settings_store: SettingsStore = Depends(get_user_settings_store)
+    settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     # Check provider tokens are valid
     provider_err_msg = await check_provider_tokens(settings)
