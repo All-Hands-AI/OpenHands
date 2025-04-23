@@ -5,6 +5,7 @@ from typing import Any
 
 from openhands.controller.agent import LLMCompletionProvider
 from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.event import Event
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
@@ -83,6 +84,7 @@ class CachingCondenser(Condenser, ABC):
         # Get the LLM response
         response = agent.llm.completion(**params)
         self.add_metadata('response', response.model_dump())
+        logger.info(f'Summarized {len(events)} events. Usage:{response}')
         self.add_metadata('metrics', agent.llm.metrics.get())
 
         # Process the response
