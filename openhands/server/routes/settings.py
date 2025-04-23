@@ -110,7 +110,7 @@ async def add_custom_secret(
     settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     try:
-        existing_settings: Settings = await settings_store.load()
+        existing_settings = await settings_store.load()
         if existing_settings:
             for (
                 secret_name,

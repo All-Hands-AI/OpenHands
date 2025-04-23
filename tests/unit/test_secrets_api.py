@@ -33,7 +33,7 @@ class MockUserAuth(UserAuth):
         return 'test-user'
 
     async def get_access_token(self) -> SecretStr | None:
-        return SecretStr("test-token")
+        return SecretStr('test-token')
 
     async def get_provider_tokens(self) -> dict[ProviderType, ProviderToken] | None:
         return self._provider_tokens
@@ -58,11 +58,11 @@ def test_client():
     # Mock the UserAuth.get_instance method to return our mock instance
     with patch(
         'openhands.server.user_auth.user_auth.UserAuth.get_instance',
-        new=AsyncMock(return_value=mock_auth)
+        new=AsyncMock(return_value=mock_auth),
     ):
         with patch(
             'openhands.server.routes.settings.validate_provider_token',
-            return_value=ProviderType.GITHUB
+            return_value=ProviderType.GITHUB,
         ):
             return TestClient(app)
 
@@ -77,7 +77,7 @@ def mock_settings_store():
     # Patch the UserAuth.get_user_settings_store method to return our mock store
     with patch(
         'openhands.server.user_auth.user_auth.UserAuth.get_user_settings_store',
-        new=AsyncMock(return_value=store)
+        new=AsyncMock(return_value=store),
     ):
         yield store
 
@@ -88,7 +88,6 @@ def mock_convert_to_settings():
     yield None
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_load_custom_secrets_names(test_client, mock_settings_store):
     """Test loading custom secrets names."""
@@ -123,7 +122,6 @@ async def test_load_custom_secrets_names(test_client, mock_settings_store):
     assert sorted(data['custom_secrets']) == ['API_KEY', 'DB_PASSWORD']
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_load_custom_secrets_names_empty(test_client, mock_settings_store):
     """Test loading custom secrets names when there are no custom secrets."""
@@ -152,7 +150,6 @@ async def test_load_custom_secrets_names_empty(test_client, mock_settings_store)
     assert data['custom_secrets'] == []
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_add_custom_secret(
     test_client, mock_settings_store, mock_convert_to_settings
@@ -194,7 +191,6 @@ async def test_add_custom_secret(
     assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_update_existing_custom_secret(
     test_client, mock_settings_store, mock_convert_to_settings
@@ -240,7 +236,6 @@ async def test_update_existing_custom_secret(
     assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_add_multiple_custom_secrets(
     test_client, mock_settings_store, mock_convert_to_settings
@@ -304,7 +299,6 @@ async def test_add_multiple_custom_secrets(
     assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_delete_custom_secret(
     test_client, mock_settings_store, mock_convert_to_settings
@@ -354,7 +348,6 @@ async def test_delete_custom_secret(
     assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_delete_nonexistent_custom_secret(
     test_client, mock_settings_store, mock_convert_to_settings
@@ -398,7 +391,6 @@ async def test_delete_nonexistent_custom_secret(
     assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
 
 
-@pytest.mark.skip(reason="Needs to be updated for the new authentication system")
 @pytest.mark.asyncio
 async def test_custom_secrets_operations_preserve_settings(
     test_client, mock_settings_store, mock_convert_to_settings
