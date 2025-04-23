@@ -17,7 +17,9 @@ from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
     get_user_settings,
+    get_user_settings_store,
 )
+from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
 
@@ -148,9 +150,7 @@ async def reset_settings(
         )
 
 
-async def check_provider_tokens(
-    request: Request, settings: POSTSettingsModel, user_id: str | None = None
-) -> str:
+async def check_provider_tokens(settings: POSTSettingsModel) -> str:
     if settings.provider_tokens:
         # Remove extraneous token types
         provider_types = [provider.value for provider in ProviderType]
@@ -171,12 +171,8 @@ async def check_provider_tokens(
 
 
 async def store_provider_tokens(
-    request: Request, settings: POSTSettingsModel, user_id: str | None = None
+    settings: POSTSettingsModel, settings_store: SettingsStore
 ):
-    if user_id is None:
-        user_id = await get_user_id(request)
-
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     existing_settings = await settings_store.load()
     if existing_settings:
         if settings.provider_tokens:
@@ -210,12 +206,9 @@ async def store_provider_tokens(
 
 
 async def store_llm_settings(
-    request: Request, settings: POSTSettingsModel, user_id: str | None = None
+    request: Request, settings: POSTSettingsModel, settings_store: SettingsStore
 ) -> POSTSettingsModel:
-    if user_id is None:
-        user_id = await get_user_id(request)
 
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     existing_settings = await settings_store.load()
 
     # Convert to Settings model and merge with existing settings
@@ -235,10 +228,10 @@ async def store_llm_settings(
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
-    user_id: str | None = Depends(get_user_id),
+    settings_store: SettingsStore = Depends(get_user_settings_store)
 ) -> JSONResponse:
     # Check provider tokens are valid
-    provider_err_msg = await check_provider_tokens(request, settings, user_id)
+    provider_err_msg = await check_provider_tokens(settings)
     if provider_err_msg:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -246,12 +239,11 @@ async def store_settings(
         )
 
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         existing_settings = await settings_store.load()
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            settings = await store_llm_settings(request, settings, user_id)
+            settings = await store_llm_settings(request, settings_store)
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
@@ -259,7 +251,7 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
-            settings = await store_provider_tokens(request, settings, user_id)
+            settings = await store_provider_tokens(settings, settings_store)
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
