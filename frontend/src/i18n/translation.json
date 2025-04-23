@@ -89,6 +89,36 @@
         "tr": "Yükleniyor...",
         "de": "Wird geladen..."
     },
+    "HOME$LOADING_REPOSITORIES": {
+        "en": "Loading repositories...",
+        "ja": "リポジトリを読み込み中...",
+        "zh-CN": "加载仓库中...",
+        "zh-TW": "載入儲存庫中...",
+        "ko-KR": "저장소 로딩 중...",
+        "no": "Laster repositories...",
+        "it": "Caricamento repository in corso...",
+        "pt": "Carregando repositórios...",
+        "es": "Cargando repositorios...",
+        "ar": "جار تحميل المستودعات...",
+        "fr": "Chargement des dépôts...",
+        "tr": "Depolar yükleniyor...",
+        "de": "Repositories werden geladen..."
+    },
+    "HOME$FAILED_TO_LOAD_REPOSITORIES": {
+        "en": "Failed to load repositories",
+        "ja": "リポジトリの読み込みに失敗しました",
+        "zh-CN": "加载仓库失败",
+        "zh-TW": "載入儲存庫失敗",
+        "ko-KR": "저장소 로딩 실패",
+        "no": "Kunne ikke laste repositories",
+        "it": "Impossibile caricare i repository",
+        "pt": "Falha ao carregar repositórios",
+        "es": "Error al cargar repositorios",
+        "ar": "فشل في تحميل المستودعات",
+        "fr": "Échec du chargement des dépôts",
+        "tr": "Depolar yüklenemedi",
+        "de": "Fehler beim Laden der Repositories"
+    },
     "HOME$OPEN_ISSUE": {
         "en": "Open issue",
         "ja": "オープンな課題",
@@ -3982,6 +4012,69 @@
         "fr": "Paramètres réinitialisés",
         "tr": "Ayarlar sıfırlandı",
         "de": "Einstellungen zurückgesetzt"
+    },
+    "SETTINGS$API_KEYS": {
+        "en": "API Keys"
+    },
+    "SETTINGS$API_KEYS_DESCRIPTION": {
+        "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account."
+    },
+    "SETTINGS$CREATE_API_KEY": {
+        "en": "Create API Key"
+    },
+    "SETTINGS$CREATE_API_KEY_DESCRIPTION": {
+        "en": "Give your API key a descriptive name to help you identify it later."
+    },
+    "SETTINGS$DELETE_API_KEY": {
+        "en": "Delete API Key"
+    },
+    "SETTINGS$DELETE_API_KEY_CONFIRMATION": {
+        "en": "Are you sure you want to delete the API key \"{{name}}\"? This action cannot be undone."
+    },
+    "SETTINGS$NO_API_KEYS": {
+        "en": "You don't have any API keys yet. Create one to get started."
+    },
+    "SETTINGS$NAME": {
+        "en": "Name"
+    },
+    "SETTINGS$KEY_PREFIX": {
+        "en": "Key Prefix"
+    },
+    "SETTINGS$CREATED_AT": {
+        "en": "Created"
+    },
+    "SETTINGS$LAST_USED": {
+        "en": "Last Used"
+    },
+    "SETTINGS$ACTIONS": {
+        "en": "Actions"
+    },
+    "SETTINGS$API_KEY_CREATED": {
+        "en": "API Key Created"
+    },
+    "SETTINGS$API_KEY_DELETED": {
+        "en": "API key deleted successfully"
+    },
+    "SETTINGS$API_KEY_WARNING": {
+        "en": "This is the only time your API key will be displayed. Please copy it now and store it securely."
+    },
+    "SETTINGS$API_KEY_COPIED": {
+        "en": "API key copied to clipboard"
+    },
+    "SETTINGS$API_KEY_NAME_PLACEHOLDER": {
+        "en": "My API Key"
+    },
+    "BUTTON$CREATE": {
+        "en": "Create"
+    },
+    "BUTTON$DELETE": {
+        "en": "Delete"
+    },
+    "BUTTON$COPY_TO_CLIPBOARD": {
+        "en": "Copy to Clipboard"
+    },
+    "ERROR$REQUIRED_FIELD": {
+        "en": "This field is required"
     },
     "PLANNER$EMPTY_MESSAGE": {
         "en": "No plan created.",
