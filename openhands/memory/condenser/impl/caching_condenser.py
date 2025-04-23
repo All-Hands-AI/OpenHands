@@ -49,13 +49,6 @@ class CachingCondenser(Condenser, ABC):
                 'LLMCompletionProvider interface, cannot condense'
             )
 
-        # Check if the agent's LLM supports caching
-        if not agent.llm.is_caching_prompt_active():
-            raise ValueError(
-                "CachingCondenser: Agent's LLM does not support prompt caching. "
-                'This condenser works best with prompt caching enabled.'
-            )
-
         # Check if we should condense
         if not self.should_condense(view):
             return view

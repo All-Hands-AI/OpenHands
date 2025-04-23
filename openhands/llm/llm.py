@@ -40,22 +40,20 @@ __all__ = ['LLM']
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     RateLimitError,
-    litellm.Timeout,
-    litellm.InternalServerError,
+    litellm.Timeout,  # type: ignore
+    litellm.InternalServerError,  # type: ignore
     LLMNoResponseError,
 )
 
-# cache prompt supporting models
-# remove this when we gemini and deepseek are supported
-CACHE_PROMPT_SUPPORTED_MODELS = [
+# these models require special treatment so that caching
+# works
+EXPLICIT_CACHE_MODELS = [
     'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
-    'gpt-4o-mini',  # technically we should list many more penai models here.
-    # they do support caching. but they do not require explicit cache management.
 ]
 
 # function calling supporting models
@@ -531,8 +529,8 @@ class LLM(RetryMixin, DebugMixin):
         return (
             self.config.caching_prompt is True
             and (
-                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
-                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
+                self.config.model in EXPLICIT_CACHE_MODELS
+                or self.config.model.split('/')[-1] in EXPLICIT_CACHE_MODELS
             )
             # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
         )
