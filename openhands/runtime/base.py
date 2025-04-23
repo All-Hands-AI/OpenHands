@@ -317,18 +317,20 @@ class Runtime(FileEditRuntimeMixin):
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
         if not selected_repository:
-            if self.config.workspace_base:
+            # In SaaS mode (indicated by user_id being set), always run git init
+            # In OSS mode, only run git init if workspace_base is not set
+            if self.user_id or not self.config.workspace_base:
+                logger.debug(
+                    'No repository selected. Initializing a new git repository in the workspace.'
+                )
+                action = CmdRunAction(
+                    command='git init',
+                )
+                self.run_action(action)
+            else:
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
                 )
-                return ''
-            logger.debug(
-                'No repository selected. Initializing a new git repository in the workspace.'
-            )
-            action = CmdRunAction(
-                command='git init',
-            )
-            self.run_action(action)
             return ''
 
         provider_domains = {
