@@ -96,31 +96,32 @@ async def test_load_custom_secrets_names(test_client):
 
 
 @pytest.mark.asyncio
-async def test_load_custom_secrets_names_empty(test_client, mock_settings_store):
+async def test_load_custom_secrets_names_empty(test_client):
     """Test loading custom secrets names when there are no custom secrets."""
-    # Create initial settings with no custom secrets
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    secret_store = SecretStore(provider_tokens=provider_tokens)
-    initial_settings = Settings(
-        language='en',
-        agent='test-agent',
-        llm_api_key=SecretStr('test-llm-key'),
-        secrets_store=secret_store,
-    )
+    with patch_file_settings_store() as file_settings_store:
+        # Create initial settings with no custom secrets
+        provider_tokens = {
+            ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
+        }
+        secret_store = SecretStore(provider_tokens=provider_tokens)
+        initial_settings = Settings(
+            language='en',
+            agent='test-agent',
+            llm_api_key=SecretStr('test-llm-key'),
+            secrets_store=secret_store,
+        )
 
-    # Mock the settings store to return our initial settings
-    mock_settings_store.load.return_value = initial_settings
+        # Store the initial settings
+        await file_settings_store.store(initial_settings)
 
-    # Make the GET request
-    response = test_client.get('/api/secrets')
-    assert response.status_code == 200
+        # Make the GET request
+        response = test_client.get('/api/secrets')
+        assert response.status_code == 200
 
-    # Check the response
-    data = response.json()
-    assert 'custom_secrets' in data
-    assert data['custom_secrets'] == []
+        # Check the response
+        data = response.json()
+        assert 'custom_secrets' in data
+        assert data['custom_secrets'] == []
 
 
 @pytest.mark.asyncio
