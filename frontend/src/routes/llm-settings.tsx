@@ -31,6 +31,8 @@ function LlmSettingsScreen() {
   const { data: config } = useConfig();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
+  const [securityAnalyzerInputIsVisible, setSecurityAnalyzerInputIsVisible] =
+    React.useState(false);
   const [resetModalIsVisible, setResetModalIsVisible] = React.useState(false);
 
   const [dirtyInputs, setDirtyInputs] = React.useState({
@@ -40,6 +42,7 @@ function LlmSettingsScreen() {
     agent: false,
     confirmationMode: false,
     enableDefaultCondenser: false,
+    securityAnalyzer: false,
   });
 
   const modelsAndProviders = organizeModelsAndProviders(
@@ -48,6 +51,7 @@ function LlmSettingsScreen() {
 
   React.useEffect(() => {
     const userSettingsIsAdvanced = hasAdvancedSettingsSet(settings || {});
+    if (settings) setSecurityAnalyzerInputIsVisible(settings.CONFIRMATION_MODE);
 
     if (userSettingsIsAdvanced) setView("advanced");
     else setView("basic");
@@ -62,6 +66,7 @@ function LlmSettingsScreen() {
       agent: false,
       confirmationMode: false,
       enableDefaultCondenser: false,
+      securityAnalyzer: false,
     });
   };
 
@@ -99,6 +104,9 @@ function LlmSettingsScreen() {
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const enableDefaultCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
+    const securityAnalyzer = formData
+      .get("security-analyzer-input")
+      ?.toString();
 
     saveSettings(
       {
@@ -108,6 +116,7 @@ function LlmSettingsScreen() {
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
+        SECURITY_ANALYZER: confirmationMode ? securityAnalyzer : undefined,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -134,6 +143,7 @@ function LlmSettingsScreen() {
   };
 
   const handleToggleAdvancedSettings = (isToggled: boolean) => {
+    setSecurityAnalyzerInputIsVisible(!!settings?.CONFIRMATION_MODE);
     setView(isToggled ? "advanced" : "basic");
     setDirtyInputs({
       model: false,
@@ -142,6 +152,7 @@ function LlmSettingsScreen() {
       agent: false,
       confirmationMode: false,
       enableDefaultCondenser: false,
+      securityAnalyzer: false,
     });
   };
 
@@ -188,6 +199,7 @@ function LlmSettingsScreen() {
   };
 
   const handleConfirmationModeIsDirty = (isToggled: boolean) => {
+    setSecurityAnalyzerInputIsVisible(isToggled);
     const confirmationModeIsDirty = isToggled !== settings?.CONFIRMATION_MODE;
     setDirtyInputs((prev) => ({
       ...prev,
@@ -204,9 +216,18 @@ function LlmSettingsScreen() {
     }));
   };
 
+  const handleSecurityAnalyzerIsDirty = (securityAnalyzer: string) => {
+    const securityAnalyzerIsDirty =
+      securityAnalyzer !== settings?.SECURITY_ANALYZER;
+    setDirtyInputs((prev) => ({
+      ...prev,
+      securityAnalyzer: securityAnalyzerIsDirty,
+    }));
+  };
+
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
 
-  if (!settings) return null;
+  if (!settings || isFetching) return null;
 
   return (
     <div data-testid="llm-settings-screen" className="h-full">
@@ -219,6 +240,7 @@ function LlmSettingsScreen() {
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}
             onToggle={handleToggleAdvancedSettings}
+            isToggled={view === "advanced"}
           >
             {t(I18nKey.SETTINGS$ADVANCED)}
           </SettingsSwitch>
@@ -336,6 +358,15 @@ function LlmSettingsScreen() {
               )}
 
               <SettingsSwitch
+                testId="enable-memory-condenser-switch"
+                name="enable-memory-condenser-switch"
+                defaultIsToggled={settings.ENABLE_DEFAULT_CONDENSER}
+                onToggle={handleEnableDefaultCondenserIsDirty}
+              >
+                {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
+              </SettingsSwitch>
+
+              <SettingsSwitch
                 testId="enable-confirmation-mode-switch"
                 name="enable-confirmation-mode-switch"
                 onToggle={handleConfirmationModeIsDirty}
@@ -345,14 +376,23 @@ function LlmSettingsScreen() {
                 {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
               </SettingsSwitch>
 
-              <SettingsSwitch
-                testId="enable-memory-condenser-switch"
-                name="enable-memory-condenser-switch"
-                defaultIsToggled={settings.ENABLE_DEFAULT_CONDENSER}
-                onToggle={handleEnableDefaultCondenserIsDirty}
-              >
-                {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
-              </SettingsSwitch>
+              {securityAnalyzerInputIsVisible && (
+                <SettingsDropdownInput
+                  testId="security-analyzer-input"
+                  name="security-analyzer-input"
+                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+                  items={
+                    resources?.securityAnalyzers.map((analyzer) => ({
+                      key: analyzer,
+                      label: analyzer,
+                    })) || []
+                  }
+                  defaultSelectedKey={settings.SECURITY_ANALYZER}
+                  isClearable
+                  showOptionalTag
+                  onChange={handleSecurityAnalyzerIsDirty}
+                />
+              )}
             </div>
           )}
         </div>

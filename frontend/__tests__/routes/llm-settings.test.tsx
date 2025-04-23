@@ -142,6 +142,13 @@ describe("Content", () => {
       expect(agent).toHaveValue("CodeActAgent");
       expect(confirmation).not.toBeChecked();
       expect(condensor).toBeChecked();
+
+      // check that security analyzer is present
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+      await userEvent.click(confirmation);
+      screen.getByTestId("security-analyzer-input");
     });
 
     it("should render the advanced form if existings settings are advanced", async () => {
@@ -170,6 +177,7 @@ describe("Content", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
+        security_analyzer: "mock-invariant",
       });
 
       renderLlmSettingsScreen();
@@ -183,6 +191,7 @@ describe("Content", () => {
         "enable-confirmation-mode-switch",
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
+      const securityAnalyzer = screen.getByTestId("security-analyzer-input");
 
       await waitFor(() => {
         expect(model).toHaveValue("openai/gpt-4o");
@@ -194,6 +203,7 @@ describe("Content", () => {
         expect(agent).toHaveValue("CoActAgent");
         expect(confirmation).toBeChecked();
         expect(condensor).not.toBeChecked();
+        expect(securityAnalyzer).toHaveValue("mock-invariant");
       });
     });
   });
@@ -280,6 +290,12 @@ describe("Form submission", () => {
     await userEvent.click(agentOption);
     expect(agent).toHaveValue("CoActAgent");
 
+    // select security analyzer
+    const securityAnalyzer = screen.getByTestId("security-analyzer-input");
+    await userEvent.click(securityAnalyzer);
+    const securityAnalyzerOption = screen.getByText("mock-invariant");
+    await userEvent.click(securityAnalyzerOption);
+
     const submitButton = screen.getByTestId("submit-button");
     await userEvent.click(submitButton);
 
@@ -290,6 +306,7 @@ describe("Form submission", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
+        security_analyzer: "mock-invariant",
       }),
     );
   });
@@ -344,6 +361,7 @@ describe("Form submission", () => {
       llm_model: "openai/gpt-4o",
       llm_base_url: "https://api.openai.com/v1/chat/completions",
       llm_api_key_set: true,
+      confirmation_mode: true,
     });
 
     renderLlmSettingsScreen();
@@ -416,10 +434,10 @@ describe("Form submission", () => {
 
     // toggle confirmation mode
     await userEvent.click(confirmation);
-    expect(confirmation).toBeChecked();
+    expect(confirmation).not.toBeChecked();
     expect(submitButton).not.toBeDisabled();
     await userEvent.click(confirmation);
-    expect(confirmation).not.toBeChecked();
+    expect(confirmation).toBeChecked();
     expect(submitButton).toBeDisabled();
 
     // toggle memory condensor
@@ -428,6 +446,19 @@ describe("Form submission", () => {
     expect(submitButton).not.toBeDisabled();
     await userEvent.click(condensor);
     expect(condensor).toBeChecked();
+    expect(submitButton).toBeDisabled();
+
+    // select security analyzer
+    const securityAnalyzer = screen.getByTestId("security-analyzer-input");
+    await userEvent.click(securityAnalyzer);
+    const securityAnalyzerOption = screen.getByText("mock-invariant");
+    await userEvent.click(securityAnalyzerOption);
+    expect(securityAnalyzer).toHaveValue("mock-invariant");
+
+    expect(submitButton).not.toBeDisabled();
+
+    await userEvent.clear(securityAnalyzer);
+    expect(securityAnalyzer).toHaveValue("");
     expect(submitButton).toBeDisabled();
   });
 
