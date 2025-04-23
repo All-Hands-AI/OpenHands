@@ -24,7 +24,9 @@ const notificationStates = [
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState, currentAgentType } = useSelector(
+    (state: RootState) => state.agent,
+  );
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
   const { status } = useWsClient();
   const { notify } = useNotification();
@@ -99,6 +101,10 @@ export function AgentStatusBar() {
     }
   }, [curAgentState, status, notify, t]);
 
+  // Determine agent mode badge color
+  const agentModeBadgeColor =
+    currentAgentType === "ReadOnlyAgent" ? "bg-amber-600" : "bg-blue-600";
+
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center bg-base-secondary px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
@@ -106,6 +112,15 @@ export function AgentStatusBar() {
           className={`w-2 h-2 rounded-full animate-pulse ${indicatorColor}`}
         />
         <span className="text-sm text-stone-400">{t(statusMessage)}</span>
+
+        {/* Agent Mode Badge */}
+        <div
+          className={`ml-2 px-2 py-0.5 rounded-full text-xs text-white ${agentModeBadgeColor}`}
+        >
+          {currentAgentType === "ReadOnlyAgent"
+            ? t(I18nKey.AGENT$MODE_READ_ONLY)
+            : t(I18nKey.AGENT$MODE_EXECUTE)}
+        </div>
       </div>
     </div>
   );

@@ -1,12 +1,19 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useWsClient } from "#/context/ws-client-provider";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { addErrorMessage } from "#/state/chat-slice";
 import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
 import { useEndSession } from "./use-end-session";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+import { setAgentType, setDelegationState } from "#/state/agent-slice";
+import ActionType from "#/types/action-type";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ServerError {
   error: boolean | string;
@@ -23,6 +30,7 @@ export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
   const endSession = useEndSession();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     if (!events.length) {
@@ -61,5 +69,43 @@ export const useHandleWSEvents = () => {
         }),
       );
     }
-  }, [events.length]);
+
+    // Handle agent mode changes
+    // Handle agent delegation events
+    if (
+      "action" in event &&
+      event.action === ActionType.DELEGATE &&
+      "args" in event &&
+      typeof event.args === "object" &&
+      event.args !== null &&
+      "agent" in event.args
+    ) {
+      // A delegation is starting
+      const agentType = event.args.agent as string;
+      dispatch(setDelegationState(true));
+      dispatch(setAgentType(agentType));
+
+      // Show notification
+      if (agentType === "ReadOnlyAgent") {
+        displaySuccessToast(t(I18nKey.AGENT$MODE_READ_ONLY));
+      }
+    }
+    // Handle agent delegate observation (delegation ended)
+    else if (
+      "observation" in event &&
+      event.observation === "delegate" &&
+      "data" in event &&
+      typeof event.data === "object" &&
+      event.data !== null &&
+      "status" in event.data &&
+      event.data.status === "finished"
+    ) {
+      // Delegation has ended, returning to parent agent
+      dispatch(setDelegationState(false));
+      dispatch(setAgentType("CodeActAgent")); // Reset to default agent
+
+      // Show notification
+      displaySuccessToast(t(I18nKey.AGENT$MODE_EXECUTE));
+    }
+  }, [events.length, dispatch, endSession, send, t]);
 };
