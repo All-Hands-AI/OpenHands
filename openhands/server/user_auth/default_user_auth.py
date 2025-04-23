@@ -30,7 +30,7 @@ class DefaultUserAuth(UserAuth):
         if settings_store:
             return settings_store
         user_id = await self.get_user_id()
-        settings_store: SettingsStore = await shared.SettingsStoreImpl.get_instance(
+        settings_store = await shared.SettingsStoreImpl.get_instance(
             shared.config, user_id
         )
         self._settings_store = settings_store
@@ -47,7 +47,7 @@ class DefaultUserAuth(UserAuth):
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         settings = await self.get_user_settings()
-        secrets_store: SecretStore = getattr(settings, 'secrets_store', None)
+        secrets_store = getattr(settings, 'secrets_store', None)
         provider_tokens = getattr(secrets_store, 'provider_tokens', None)
         return provider_tokens
 

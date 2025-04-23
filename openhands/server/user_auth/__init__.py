@@ -29,6 +29,8 @@ async def get_user_id(request: Request) -> str | None:
 
 async def get_github_user_id(request: Request) -> str | None:
     provider_tokens = await get_provider_tokens(request)
+    if not provider_tokens:
+        return None
     github_provider = provider_tokens.get(ProviderType.GITHUB)
     if github_provider:
         return github_provider.user_id
@@ -41,7 +43,7 @@ async def get_user_settings(request: Request) -> Settings | None:
     return user_settings
 
 
-async def get_user_settings_store(request: Request) -> SettingsStore:
+async def get_user_settings_store(request: Request) -> SettingsStore | None:
     user_auth = await get_user_auth(request)
     user_settings_store = await user_auth.get_user_settings_store()
     return user_settings_store

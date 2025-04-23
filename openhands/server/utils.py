@@ -7,7 +7,7 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 
 
 async def get_conversation_store(request: Request) -> ConversationStore:
-    conversation_store: ConversationStore = getattr(
+    conversation_store = getattr(
         request.state, 'conversation_store', None
     )
     if conversation_store:
@@ -15,10 +15,13 @@ async def get_conversation_store(request: Request) -> ConversationStore:
     user_auth = await get_user_auth(request)
     user_id = await user_auth.get_user_id()
     provider_tokens = await user_auth.get_provider_tokens()
+    if not provider_tokens:
+        return None
     github_token = provider_tokens.get(ProviderType.GITHUB)
-    github_user_id = github_token.token.get_secret_value() if github_token else None
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, github_user_id
-    )
+    if github_token and github_token.token:
+        github_user_id = github_token.token.get_secret_value() 
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_id, github_user_id
+        )
     request.state.conversation_store = conversation_store
     return conversation_store

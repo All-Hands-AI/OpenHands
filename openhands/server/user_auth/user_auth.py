@@ -52,7 +52,7 @@ class UserAuth(ABC):
 
 
 async def get_user_auth(request: Request) -> UserAuth:
-    user_auth: UserAuth = getattr(request.state, 'user_auth', None)
+    user_auth = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
     impl_name = (
