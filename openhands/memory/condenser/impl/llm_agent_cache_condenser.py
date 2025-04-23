@@ -110,13 +110,16 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
             if hasattr(event, 'source') and event.source == EventSource.USER
         ]
 
-        # If we would forget all user messages, keep at least one
-        if user_events and all(event in events_to_forget for event in user_events):
-            # Keep the most recent user message
-            for event in reversed(user_events):
-                if event in events_to_forget:
-                    events_to_forget.remove(event)
-                    break
+        # Always keep the first user message to maintain context
+        first_user_message = next((event for event in user_events), None)
+        if first_user_message and first_user_message in events_to_forget:
+            events_to_forget.remove(first_user_message)
+            
+        # Also keep the most recent user message if it's different from the first
+        if len(user_events) > 1:
+            last_user_message = user_events[-1]
+            if last_user_message != first_user_message and last_user_message in events_to_forget:
+                events_to_forget.remove(last_user_message)
 
         # If we have events to forget, create a condensation
         if events_to_forget:

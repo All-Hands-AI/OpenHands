@@ -456,7 +456,18 @@ CURRENT_STATE: Conversation initialized
         params = mock_completion.call_args[1]
         messages = params.get('messages', [])
 
-        # Check that the user message triggering condensation is part of the context
+        # Check that both the first user message and the trigger message are part of the context
+        # First, check for the initial user message with the goal
+        assert any(
+            hasattr(message, 'content')
+            and isinstance(message.content, list)
+            and len(message.content) > 0
+            and hasattr(message.content[0], 'text')
+            and 'I want you to do some things for me.' in message.content[0].text
+            for message in messages
+        ), "First user message should be preserved in the context"
+        
+        # Then, check for the trigger message
         assert any(
             hasattr(message, 'content')
             and isinstance(message.content, list)
@@ -464,4 +475,4 @@ CURRENT_STATE: Conversation initialized
             and hasattr(message.content[0], 'text')
             and 'Please CONDENSE! the conversation history.' in message.content[0].text
             for message in messages
-        )
+        ), "Trigger message should be included in the context"

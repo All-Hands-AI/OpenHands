@@ -81,7 +81,13 @@ class CachingCondenser(Condenser, ABC):
             [self.createCondensationPrompt(events, state, base_messages)]
         )
 
-        # Get the LLM response
+        # Get the LLM response - disable caching for the condensation completion
+        # We don't want to cache this response as it won't be reused
+        if 'cache' not in params:
+            params['cache'] = False
+        else:
+            params['cache'] = False
+            
         response = agent.llm.completion(**params)
         self.add_metadata('response', response.model_dump())
         logger.info(f'Summarized {len(events)} events. Usage:{response}')
