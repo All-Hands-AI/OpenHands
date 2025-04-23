@@ -395,26 +395,17 @@ async def test_process_issue(default_mock_args, mock_output_dir, mock_prompt_tem
         body='This is a test issue',
     )
     base_commit = 'abcdef1234567890'
-    repo_instruction = 'Resolve this repo'
-    max_iterations = 5
-    runtime_container_image = 'test_image:latest'
-
+    
     # Customize the mock args for this test
-    default_mock_args.max_iterations = max_iterations
     default_mock_args.output_dir = mock_output_dir
-    default_mock_args.llm_model = 'gpt-4'
-    default_mock_args.llm_api_key = 'test_api_key'
-    default_mock_args.runtime_container_image = runtime_container_image
     default_mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-    default_mock_args.base_container_image = None
 
     # Create a resolver instance with mocked identify_token
     with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB):
         resolver = IssueResolver(default_mock_args)
 
-    # Set the prompt template and repo instruction directly
+    # Set the prompt template directly
     resolver.prompt_template = mock_prompt_template
-    resolver.repo_instruction = repo_instruction
 
     # Mock the handler
     handler_instance = MagicMock()
