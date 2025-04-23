@@ -346,7 +346,7 @@ class GitLabService(BaseGitService, GitService):
                     )
             
             # Get assigned issues using REST API
-            endpoint = "/api/v4/issues"
+            url = f"{self.base_url}/api/v4/issues"
             params = {
                 "assignee_username": username,
                 "state": "opened",
@@ -355,7 +355,7 @@ class GitLabService(BaseGitService, GitService):
             
             issues_response, _ = await self._make_request(
                 method=RequestMethod.GET,
-                endpoint=endpoint,
+                url=url,
                 params=params
             )
             
