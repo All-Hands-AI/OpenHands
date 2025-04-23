@@ -365,7 +365,7 @@ async def store_settings(
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            settings = await store_llm_settings(request, settings_store)
+            settings = await store_llm_settings(settings, settings_store)
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
