@@ -1,4 +1,5 @@
 """Tests for the custom secrets API endpoints."""
+# flake8: noqa: E501
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -16,30 +17,30 @@ from openhands.storage.settings.settings_store import SettingsStore
 
 class MockUserAuth(UserAuth):
     """Mock implementation of UserAuth for testing"""
-    
+
     def __init__(self):
         self._settings = None
         self._settings_store = MagicMock()
         self._settings_store.load = AsyncMock(return_value=None)
         self._settings_store.store = AsyncMock()
-        
+
         # Create provider tokens
         self._provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-    
+
     async def get_user_id(self) -> str | None:
         return 'test-user'
-    
+
     async def get_access_token(self) -> SecretStr | None:
         return SecretStr("test-token")
-    
+
     async def get_provider_tokens(self) -> dict[ProviderType, ProviderToken] | None:
         return self._provider_tokens
-    
+
     async def get_user_settings_store(self) -> SettingsStore | None:
         return self._settings_store
-    
+
     @classmethod
     async def get_instance(cls, request: Request) -> UserAuth:
         return MockUserAuth()
@@ -50,15 +51,19 @@ def test_client():
     """Create a test client for the settings API."""
     app = FastAPI()
     app.include_router(settings_app)
-    
+
     # Create a mock auth instance
     mock_auth = MockUserAuth()
-    
+
     # Mock the UserAuth.get_instance method to return our mock instance
-    with patch('openhands.server.user_auth.user_auth.UserAuth.get_instance', 
-               new=AsyncMock(return_value=mock_auth)):
-        with patch('openhands.server.routes.settings.validate_provider_token', 
-                  return_value=ProviderType.GITHUB):
+    with patch(
+        'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+        new=AsyncMock(return_value=mock_auth)
+    ):
+        with patch(
+            'openhands.server.routes.settings.validate_provider_token',
+            return_value=ProviderType.GITHUB
+        ):
             return TestClient(app)
 
 
@@ -68,10 +73,12 @@ def mock_settings_store():
     store = MagicMock()
     store.load = AsyncMock()
     store.store = AsyncMock()
-    
+
     # Patch the UserAuth.get_user_settings_store method to return our mock store
-    with patch('openhands.server.user_auth.user_auth.UserAuth.get_user_settings_store', 
-               new=AsyncMock(return_value=store)):
+    with patch(
+        'openhands.server.user_auth.user_auth.UserAuth.get_user_settings_store',
+        new=AsyncMock(return_value=store)
+    ):
         yield store
 
 
