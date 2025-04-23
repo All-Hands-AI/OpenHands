@@ -27,7 +27,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.observation import (
     AgentThinkObservation,
     ErrorObservation,
@@ -344,7 +344,7 @@ class ActionExecutionClient(Runtime):
         )
         return updated_mcp_config
 
-    async def call_tool_mcp(self, action: McpAction) -> Observation:
+    async def call_tool_mcp(self, action: MCPAction) -> Observation:
         if self.mcp_clients is None:
             updated_mcp_config = self.get_updated_mcp_config()
             self.log(

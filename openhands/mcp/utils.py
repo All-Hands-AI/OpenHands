@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 from openhands.core.config.mcp_config import MCPConfig, MCPServerConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
@@ -104,7 +104,7 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     return mcp_tools
 
 
-async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Observation:
+async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Observation:
     """
     Call a tool on an MCP server and return the observation.
 

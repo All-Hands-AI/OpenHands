@@ -199,10 +199,10 @@ def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | Non
                 action = BrowseURLAction(url=arguments['url'])
 
             # ================================================
-            # McpAction (MCP)
+            # MCPAction (MCP)
             # ================================================
             elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
-                action = McpAction(
+                action = MCPAction(
                     name=tool_call.function.name,
                     arguments=tool_call.function.arguments,
                 )
