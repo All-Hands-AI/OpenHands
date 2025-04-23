@@ -48,7 +48,7 @@ To ensure compatibility across different base images, wrapper scripts are provid
 
 ## Usage
 
-To build a runtime image using the refactored approach:
+To build a runtime image:
 
 ```bash
 # Build the dependencies image (only needed once)
@@ -91,7 +91,7 @@ The implementation consists of:
    - Ensure proper environment variables and library paths
    - Handle compatibility issues across different base images
 
-3. Updated build process:
-   - New `BuildFromImageType.DEPS` option
+3. Build process:
+   - `BuildFromImageType.DEPS` option for the two-stage build
    - Functions to build and use the dependencies image
    - CLI options to control the build process
