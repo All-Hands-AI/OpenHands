@@ -16,6 +16,8 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
+import { useConfig } from "#/hooks/query/use-config";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -24,6 +26,7 @@ function LlmSettingsScreen() {
 
   const { data: resources } = useAIConfigOptions();
   const { data: settings, isLoading, isFetching } = useSettings();
+  const { data: config } = useConfig();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -293,6 +296,25 @@ function LlmSettingsScreen() {
               defaultValue={settings.AGENT}
               onChange={handleAgentIsDirty}
             />
+
+            {config?.APP_MODE === "saas" && (
+              <SettingsDropdownInput
+                testId="runtime-settings-input"
+                name="runtime-settings-input"
+                label={
+                  <>
+                    {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
+                    <a href="mailto:contact@all-hands.dev">
+                      {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
+                    </a>
+                    )
+                  </>
+                }
+                items={[]}
+                isDisabled
+              />
+            )}
+
             <SettingsSwitch
               testId="enable-confirmation-mode-switch"
               name="enable-confirmation-mode-switch"

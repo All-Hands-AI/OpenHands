@@ -589,5 +589,58 @@ describe("Status toasts", () => {
 });
 
 describe("SaaS mode", () => {
-  it.todo("should render the runtime settings input");
+  it("should not render the runtime settings input in oss mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+    });
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+
+    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+    await userEvent.click(advancedSwitch);
+    await screen.findByTestId("llm-settings-form-advanced");
+
+    const runtimeSettingsInput = screen.queryByTestId("runtime-settings-input");
+    expect(runtimeSettingsInput).not.toBeInTheDocument();
+  });
+
+  it("should render the runtime settings input in saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+
+    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+    await userEvent.click(advancedSwitch);
+    await screen.findByTestId("llm-settings-form-advanced");
+
+    const runtimeSettingsInput = screen.queryByTestId("runtime-settings-input");
+    expect(runtimeSettingsInput).toBeInTheDocument();
+  });
+
+  it("should always render the runtime settings input as disabled", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+
+    renderLlmSettingsScreen();
+    await screen.findByTestId("llm-settings-screen");
+
+    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+    await userEvent.click(advancedSwitch);
+    await screen.findByTestId("llm-settings-form-advanced");
+
+    const runtimeSettingsInput = screen.queryByTestId("runtime-settings-input");
+    expect(runtimeSettingsInput).toBeInTheDocument();
+    expect(runtimeSettingsInput).toBeDisabled();
+  });
 });
