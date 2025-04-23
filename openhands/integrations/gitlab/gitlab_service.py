@@ -10,6 +10,8 @@ from openhands.integrations.service_types import (
     ProviderType,
     Repository,
     RequestMethod,
+    SuggestedTask,
+    TaskType,
     UnknownException,
     User,
 )
@@ -243,6 +245,135 @@ class GitLabService(BaseGitService, GitService):
             )
             for repo in all_repos
         ]
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """Get suggested tasks for the authenticated user across all repositories.
+
+        Returns:
+        - Merge requests authored by the user.
+        - Issues assigned to the user.
+        """
+        # Get user info to use in queries
+        user = await self.get_user()
+        username = user.login
+
+        # GraphQL query to get merge requests and issues
+        query = """
+        query GetUserTasks($username: String!) {
+          currentUser {
+            mergeRequests(state: opened, authorUsername: $username, sort: UPDATED_DESC, first: 100) {
+              nodes {
+                id
+                iid
+                title
+                project {
+                  fullPath
+                }
+                hasConflicts
+                mergeStatus
+                pipelines(first: 1) {
+                  nodes {
+                    status
+                  }
+                }
+                discussions(first: 100) {
+                  nodes {
+                    notes {
+                      nodes {
+                        resolvable
+                        resolved
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            assignedIssues(state: opened, sort: UPDATED_DESC, first: 100) {
+              nodes {
+                id
+                iid
+                title
+                project {
+                  fullPath
+                }
+              }
+            }
+          }
+        }
+        """
+
+        variables = {'username': username}
+
+        try:
+            response = await self.execute_graphql_query(query, variables)
+            data = response.get('currentUser', {})
+            tasks: list[SuggestedTask] = []
+
+            # Process merge requests
+            merge_requests = data.get('mergeRequests', {}).get('nodes', [])
+            for mr in merge_requests:
+                repo_name = mr.get('project', {}).get('fullPath', '')
+                mr_number = mr.get('iid')
+                title = mr.get('title', '')
+
+                # Start with default task type
+                task_type = TaskType.OPEN_PR
+
+                # Check for specific states
+                if mr.get('hasConflicts'):
+                    task_type = TaskType.MERGE_CONFLICTS
+                elif (
+                    mr.get('pipelines', {}).get('nodes', [])
+                    and mr.get('pipelines', {}).get('nodes', [])[0].get('status')
+                    == 'FAILED'
+                ):
+                    task_type = TaskType.FAILING_CHECKS
+                else:
+                    # Check for unresolved comments
+                    has_unresolved_comments = False
+                    for discussion in mr.get('discussions', {}).get('nodes', []):
+                        for note in discussion.get('notes', {}).get('nodes', []):
+                            if note.get('resolvable') and not note.get('resolved'):
+                                has_unresolved_comments = True
+                                break
+                        if has_unresolved_comments:
+                            break
+
+                    if has_unresolved_comments:
+                        task_type = TaskType.UNRESOLVED_COMMENTS
+
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=mr_number,
+                            title=title,
+                        )
+                    )
+
+            # Process issues
+            issues = data.get('assignedIssues', {}).get('nodes', [])
+            for issue in issues:
+                repo_name = issue.get('project', {}).get('fullPath', '')
+                issue_number = issue.get('iid')
+                title = issue.get('title', '')
+
+                tasks.append(
+                    SuggestedTask(
+                        task_type=TaskType.OPEN_ISSUE,
+                        repo=repo_name,
+                        issue_number=issue_number,
+                        title=title,
+                    )
+                )
+
+            return tasks
+        except Exception as e:
+            # Log the exception but return an empty list to avoid breaking the application
+            print(f'Error fetching suggested tasks from GitLab: {e}')
+            return []
 
 
 gitlab_service_cls = os.environ.get(
