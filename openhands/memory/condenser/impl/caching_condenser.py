@@ -77,7 +77,7 @@ class CachingCondenser(Condenser, ABC):
             A Condensation or View object
         """
         # Convert events to messages using the agent's method
-        base_messages = agent._get_messages(events)
+        base_messages = agent.get_messages(events)
 
         # Use the agent's method to build the parameters
         # This ensures that the parameters are consistent with the agent's LLM

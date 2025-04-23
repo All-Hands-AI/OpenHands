@@ -282,7 +282,7 @@ CURRENT_STATE: Conversation in progress
     assert isinstance(view, View)
 
     # Check that the system prompt is preserved in the messages
-    messages = agent._get_messages(view.events)
+    messages = agent.get_messages(view.events)
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
 
@@ -346,7 +346,7 @@ CURRENT_STATE: Conversation started
     assert len(user_messages) > 0
 
     # Check that the system prompt is preserved in the messages
-    messages = agent._get_messages(view.events)
+    messages = agent.get_messages(view.events)
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
 
@@ -401,7 +401,7 @@ CURRENT_STATE: Conversation initialized
     assert result.action in view.events
 
     # Check that the system prompt is preserved in the messages
-    messages = agent._get_messages(view.events)
+    messages = agent.get_messages(view.events)
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
 

@@ -341,7 +341,7 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
     # 2. The action message
     # 3. The observation message
     mock_state.history = [action, observation]
-    messages = agent._get_messages(mock_state.history)
+    messages = agent.get_messages(mock_state.history)
     assert len(messages) == 3
     assert messages[0].role == 'system'  # First message should be the system message
     assert messages[1].role == 'assistant'  # Second message should be the action
@@ -349,21 +349,21 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
 
     # The same should hold if the events are presented out-of-order
     mock_state.history = [observation, action]
-    messages = agent._get_messages(mock_state.history)
+    messages = agent.get_messages(mock_state.history)
     assert len(messages) == 3
     assert messages[0].role == 'system'  # First message should be the system message
 
     # If only one of the two events is present, then we should just get the system message
     # plus any valid message from the event
     mock_state.history = [action]
-    messages = agent._get_messages(mock_state.history)
+    messages = agent.get_messages(mock_state.history)
     assert (
         len(messages) == 1
     )  # Only system message, action is waiting for its observation
     assert messages[0].role == 'system'
 
     mock_state.history = [observation]
-    messages = agent._get_messages(mock_state.history)
+    messages = agent.get_messages(mock_state.history)
     assert len(messages) == 1  # Only system message, observation has no matching action
     assert messages[0].role == 'system'
 

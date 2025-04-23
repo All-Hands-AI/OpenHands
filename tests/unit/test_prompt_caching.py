@@ -52,7 +52,7 @@ def response_mock(content: str, tool_call_id: str):
     return ModelResponse(**MockModelResponse(content, tool_call_id).model_dump())
 
 
-def test_get_messages(codeact_agent: CodeActAgent):
+def testget_messages(codeact_agent: CodeActAgent):
     # Add some events to history
     history = list()
     # Add system message action
@@ -76,7 +76,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
     history.append(message_action_5)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(history)
+    messages = codeact_agent.get_messages(history)
 
     assert (
         len(messages) == 6
@@ -99,7 +99,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
     assert messages[5].content[0].cache_prompt
 
 
-def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
+def testget_messages_prompt_caching(codeact_agent: CodeActAgent):
     history = list()
     # Add system message action
     system_message_action = codeact_agent.get_system_message()
@@ -115,7 +115,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
         history.append(message_action_agent)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(history)
+    messages = codeact_agent.get_messages(history)
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [

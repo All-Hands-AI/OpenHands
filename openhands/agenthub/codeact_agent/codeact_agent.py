@@ -185,7 +185,7 @@ class CodeActAgent(Agent, LLMCompletionProvider):
     def build_llm_completion_params(
         self, condensed_history: list[Event], state: State
     ) -> dict[str, Any]:
-        messages = self._get_messages(condensed_history)
+        messages = self.get_messages(condensed_history)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
@@ -205,7 +205,7 @@ class CodeActAgent(Agent, LLMCompletionProvider):
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         return params
 
-    def _get_messages(self, events: list[Event]) -> list[Message]:
+    def get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state

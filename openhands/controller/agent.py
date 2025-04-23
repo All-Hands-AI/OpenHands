@@ -181,7 +181,7 @@ class LLMCompletionProvider(ABC):
     llm: LLM
 
     @abstractmethod
-    def _get_messages(self, condensed_history: list[Event]) -> list[Message]:
+    def get_messages(self, condensed_history: list[Event]) -> list[Message]:
         """Convert events to messages for the LLM."""
         pass
 
