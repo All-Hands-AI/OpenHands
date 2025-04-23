@@ -418,7 +418,7 @@ class AgentController:
                 f'Stepping agent after event: {type(event).__name__}',
                 extra={'msg_type': 'STEPPING_AGENT'},
             )
-            self.step()
+            await self._step_with_exception_handling()
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             # If we received a user message but aren't stepping, log why
             self.log(

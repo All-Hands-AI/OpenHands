@@ -214,7 +214,7 @@ In order to run evaluation of the obtained inference results in the SWT-Bench ha
 ```bash
 python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file [output.jsonl] > [output_swt.jsonl]
 
-# Example  
+# Example
 python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file "evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt-4o-2024-11-20_maxiter_100_N_v0.31.0-no-hint-swt-run_1/output.jsonl" > OpenHands-gpt-4o-2024-11-20.jsonl
 ```
 

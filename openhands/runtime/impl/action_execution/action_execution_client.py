@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-from abc import abstractmethod
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -96,7 +95,7 @@ class ActionExecutionClient(Runtime):
 
     @property
     def action_execution_server_url(self) -> str:
-        raise NotImplementedError("Action execution server URL is not implemented")
+        raise NotImplementedError('Action execution server URL is not implemented')
 
     @property
     def runtime_initialized(self) -> bool:
@@ -332,9 +331,9 @@ class ActionExecutionClient(Runtime):
         if self.mcp_clients is None:
             self.log(
                 'debug',
-                f'Creating MCP clients with servers: {self.config.mcp.sse.mcp_servers}',
+                f'Creating MCP clients with servers: {self.config.mcp.mcp_servers}',
             )
-            self.mcp_clients = await create_mcp_clients(self.config.mcp.sse.mcp_servers)
+            self.mcp_clients = await create_mcp_clients(self.config.mcp.mcp_servers)
         return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:

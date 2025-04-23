@@ -6,7 +6,6 @@ This is similar to the functionality of `CodeActResponseParser`.
 import json
 
 from litellm import (
-    ChatCompletionToolParam,
     ModelResponse,
 )
 
@@ -41,7 +40,6 @@ from openhands.events.action import (
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm import LLM
 from openhands.mcp import MCPClientTool
 
 
@@ -201,7 +199,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             elif tool_call.function.name.endswith(MCPClientTool.postfix()):
                 action = McpAction(
-                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    name=tool_call.function.name.removesuffix(MCPClientTool.postfix()),
                     arguments=tool_call.function.arguments,
                 )
             else:
@@ -237,39 +235,3 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
     assert len(actions) >= 1
     return actions
-
-
-def get_tools(
-    enable_browsing: bool = False,
-    enable_llm_editor: bool = False,
-    enable_jupyter: bool = False,
-    llm: LLM | None = None,
-) -> list[ChatCompletionToolParam]:
-    SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
-
-    use_simplified_tool_desc = False
-    if llm is not None:
-        use_simplified_tool_desc = any(
-            model_substr in llm.config.model
-            for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
-        )
-
-    tools = [
-        create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
-        ThinkTool,
-        FinishTool,
-    ]
-    if enable_browsing:
-        tools.append(WebReadTool)
-        tools.append(BrowserTool)
-    if enable_jupyter:
-        tools.append(IPythonTool)
-    if enable_llm_editor:
-        tools.append(LLMBasedFileEditTool)
-    else:
-        tools.append(
-            create_str_replace_editor_tool(
-                use_simplified_description=use_simplified_tool_desc
-            )
-        )
-    return tools
