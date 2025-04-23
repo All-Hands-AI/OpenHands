@@ -172,7 +172,6 @@ async def delete_custom_secret(
                 update={'secrets_store': updated_secret_store}
             )
 
-            updated_settings = convert_to_settings(updated_settings)
             await settings_store.store(updated_settings)
 
         return JSONResponse(
