@@ -70,31 +70,47 @@ class CachingCondenser(Condenser, ABC):
         Returns:
             A Condensation or View object
         """
-        # Convert events to messages using the agent's method
-        base_messages = agent.get_messages(events)
 
         # Use the agent's method to build the parameters
         # This ensures that the parameters are consistent with the agent's LLM
         params = agent.build_llm_completion_params(events, state)
-        # Now we add our own prompt at the end
-        params['messages'] += agent.llm.format_messages_for_llm(
-            [self.createCondensationPrompt(events, state, base_messages)]
-        )
 
-        # Get the LLM response - disable caching for the condensation completion
-        # We don't want to cache this response as it won't be reused
-        if 'cache' not in params:
-            params['cache'] = False
-        else:
-            params['cache'] = False
-            
+        # Convert events to messages using the agent's method
+        messages = agent.get_messages(events)
+
+        # Now we add our own prompt at the end
+        messages.append(self.createCondensationPrompt(events, state, messages))
+
+        params['messages'] = agent.llm.format_messages_for_llm(messages)
+        self._disable_cache(params['messages'])
+
+        # Get the LLM response
         response = agent.llm.completion(**params)
         self.add_metadata('response', response.model_dump())
         logger.info(f'Summarized {len(events)} events. Usage:{response}')
         self.add_metadata('metrics', agent.llm.metrics.get())
 
         # Process the response
-        return self.processResponse(events, state, response, base_messages)
+        return self.processResponse(events, state, response, messages)
+
+    def _disable_cache(self, messages: list[dict]) -> None:
+        """Disable the cache for the given messages. We need to do this because
+        this conversation will not continue as we are just doing a condensation. So there
+        is no way to cache could be used, so we save a little money this way.
+        Effectively reversing ConversationMemory.apply_prompt_caching
+        """
+        if len(messages) == 0:
+            return
+
+        # only disable the cache for the last message(our new prompt), so
+        # we can have a cache read for rest of the conversation.
+        content = messages[-1]['content']
+
+        if content is not None:
+            if isinstance(content, list):
+                content = content[-1]
+            if isinstance(content, dict) and content.get('cache_control') is not None:
+                content['cache_control'] = None
 
     @abstractmethod
     def createCondensationPrompt(

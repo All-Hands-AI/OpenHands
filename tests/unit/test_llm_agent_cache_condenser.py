@@ -7,6 +7,7 @@ from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.message import Message
 from openhands.events.action.files import FileReadAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import Event, EventSource, RecallType
@@ -22,6 +23,12 @@ from openhands.memory.condenser.impl.llm_agent_cache_condenser import (
 )
 
 
+def format_messages_for_llm(messages: Message | list[Message]) -> list[dict]:
+    if isinstance(messages, Message):
+        messages = [messages]
+    return [message.model_dump() for message in messages]
+
+
 @pytest.fixture
 def agent() -> CodeActAgent:
     config = AgentConfig()
@@ -30,7 +37,7 @@ def agent() -> CodeActAgent:
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 1000
     agent.llm.is_caching_prompt_active.return_value = True
-    agent.llm.format_messages_for_llm = lambda messages: messages
+    agent.llm.format_messages_for_llm = format_messages_for_llm
     agent.llm.metrics = Metrics()
     return agent
 
@@ -459,20 +466,12 @@ CURRENT_STATE: Conversation initialized
         # Check that both the first user message and the trigger message are part of the context
         # First, check for the initial user message with the goal
         assert any(
-            hasattr(message, 'content')
-            and isinstance(message.content, list)
-            and len(message.content) > 0
-            and hasattr(message.content[0], 'text')
-            and 'I want you to do some things for me.' in message.content[0].text
+            'I want you to do some things for me.' in message['content']
             for message in messages
-        ), "First user message should be preserved in the context"
-        
+        ), 'First user message should be preserved in the context'
+
         # Then, check for the trigger message
         assert any(
-            hasattr(message, 'content')
-            and isinstance(message.content, list)
-            and len(message.content) > 0
-            and hasattr(message.content[0], 'text')
-            and 'Please CONDENSE! the conversation history.' in message.content[0].text
+            'Please CONDENSE! the conversation history.' in message['content']
             for message in messages
-        ), "Trigger message should be included in the context"
+        ), 'Trigger message should be included in the context'
