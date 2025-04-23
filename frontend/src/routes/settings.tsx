@@ -10,15 +10,17 @@ function SettingsScreen() {
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
-  const billingIsEnabled = config?.FEATURE_FLAGS.ENABLE_BILLING;
 
   const navItems = [
     { to: "/settings", text: "LLM" },
     { to: "/settings/git", text: "Git" },
     { to: "/settings/app", text: "Application" },
     // Only show Credits tab if the app is in SaaS mode
-    ...(isSaas && billingIsEnabled
-      ? [{ to: "/settings/billing", text: "Credits" }]
+    ...(isSaas
+      ? [
+          { to: "/settings/billing", text: "Credits" },
+          { to: "/settings/api-keys", text: "API Keys" },
+        ]
       : []),
   ];
 

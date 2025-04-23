@@ -1,9 +1,11 @@
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Protocol
+from typing import Any, Protocol
 
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPError, HTTPStatusError
 from pydantic import BaseModel, SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.types import AppMode
 
 
@@ -58,12 +60,31 @@ class UnknownException(ValueError):
     pass
 
 
+class RateLimitError(ValueError):
+    """Raised when the git provider's API rate limits are exceeded."""
+
+    pass
+
+
 class RequestMethod(Enum):
     POST = 'post'
     GET = 'get'
 
 
-class BaseGitService:
+class BaseGitService(ABC):
+    @property
+    def provider(self) -> str:
+        raise NotImplementedError('Subclasses must implement the provider property')
+
+    # Method used to satisfy mypy for abstract class definition
+    @abstractmethod
+    async def _make_request(
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
+    ) -> tuple[Any, dict]: ...
+
     async def execute_request(
         self,
         client: AsyncClient,
@@ -75,6 +96,22 @@ class BaseGitService:
         if method == RequestMethod.POST:
             return await client.post(url, headers=headers, json=params)
         return await client.get(url, headers=headers, params=params)
+
+    def handle_http_status_error(
+        self, e: HTTPStatusError
+    ) -> AuthenticationError | RateLimitError | UnknownException:
+        if e.response.status_code == 401:
+            return AuthenticationError(f'Invalid {self.provider} token')
+        elif e.response.status_code == 429:
+            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
+            return RateLimitError('GitHub API rate limit exceeded')
+
+        logger.warning(f'Status error on {self.provider} API: {e}')
+        return UnknownException('Unknown error')
+
+    def handle_http_error(self, e: HTTPError) -> UnknownException:
+        logger.warning(f'HTTP error on {self.provider} API: {e}')
+        return UnknownException('Unknown error')
 
 
 class GitService(Protocol):

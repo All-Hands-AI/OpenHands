@@ -336,7 +336,7 @@ function LlmSettingsScreen() {
                 }
                 defaultSelectedKey={settings.AGENT}
                 isClearable={false}
-                onChange={handleAgentIsDirty}
+                onInputChange={handleAgentIsDirty}
               />
 
               {config?.APP_MODE === "saas" && (
@@ -390,7 +390,7 @@ function LlmSettingsScreen() {
                   defaultSelectedKey={settings.SECURITY_ANALYZER}
                   isClearable
                   showOptionalTag
-                  onChange={handleSecurityAnalyzerIsDirty}
+                  onInputChange={handleSecurityAnalyzerIsDirty}
                 />
               )}
             </div>
