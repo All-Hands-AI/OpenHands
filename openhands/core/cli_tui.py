@@ -151,6 +151,18 @@ def display_welcome_message():
     )
 
 
+def display_initial_user_prompt(prompt: str):
+    print_formatted_text(
+        FormattedText(
+            [
+                ('', '\n'),
+                (COLOR_GOLD, '> '),
+                ('', prompt),
+            ]
+        )
+    )
+
+
 # Prompt output display functions
 def display_event(event: Event, config: AppConfig) -> None:
     if isinstance(event, Action):

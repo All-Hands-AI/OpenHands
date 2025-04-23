@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from typing import Optional
 from uuid import uuid4
 
 from prompt_toolkit.shortcuts import clear
@@ -17,6 +16,7 @@ from openhands.core.cli_tui import (
     UsageMetrics,
     display_banner,
     display_event,
+    display_initial_user_prompt,
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
@@ -44,7 +44,6 @@ from openhands.core.setup import (
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
-    Action,
     ChangeAgentStateAction,
     MessageAction,
 )
@@ -93,7 +92,7 @@ async def run_session(
     config: AppConfig,
     settings_store: FileSettingsStore,
     current_dir: str,
-    initial_user_action: Optional[Action] = None,
+    initial_user_action: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
@@ -220,7 +219,10 @@ async def run_session(
 
     if initial_user_action:
         # If there's an initial user action, enqueue it and do not prompt again
-        event_stream.add_event(initial_user_action, EventSource.USER)
+        display_initial_user_prompt(initial_user_action)
+        event_stream.add_event(
+            MessageAction(content=initial_user_action), EventSource.USER
+        )
     else:
         # Otherwise prompt for the user's first message right away
         asyncio.create_task(prompt_for_next_task())
@@ -291,12 +293,9 @@ async def main(loop: asyncio.AbstractEventLoop):
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
 
-    # If we have a task, create initial user action
-    initial_user_action = MessageAction(content=task_str) if task_str else None
-
     # Run the first session
     new_session_requested = await run_session(
-        loop, config, settings_store, current_dir, initial_user_action
+        loop, config, settings_store, current_dir, task_str
     )
 
     # If a new session was requested, run it
