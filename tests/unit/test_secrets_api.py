@@ -33,27 +33,6 @@ def patch_file_settings_store():
         yield store
 
 
-@pytest.fixture
-def mock_settings_store():
-    """Create a mock settings store for testing"""
-    store = MagicMock()
-    store.load = AsyncMock()
-    store.store = AsyncMock()
-
-    # Patch the UserAuth.get_user_settings_store method to return our mock store
-    with patch(
-        'openhands.server.user_auth.user_auth.UserAuth.get_user_settings_store',
-        new=AsyncMock(return_value=store),
-    ):
-        yield store
-
-
-@pytest.fixture
-def mock_convert_to_settings():
-    """This fixture is no longer needed with the new auth system, but we keep it for compatibility"""
-    yield None
-
-
 @pytest.mark.asyncio
 async def test_load_custom_secrets_names(test_client):
     """Test loading custom secrets names."""
