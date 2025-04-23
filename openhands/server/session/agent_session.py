@@ -90,6 +90,7 @@ class AgentSession:
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
+        mnemonic: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -136,6 +137,7 @@ class AgentSession:
                 git_provider_tokens=git_provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
+                mnemonic=mnemonic,
             )
             end_time = time.time()
             total_time = end_time - start_time
@@ -280,6 +282,7 @@ class AgentSession:
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: Repository | None = None,
         selected_branch: str | None = None,
+        mnemonic: str | None = None,
     ) -> bool:
         """Creates a runtime instance
 
@@ -329,6 +332,7 @@ class AgentSession:
                 attach_to_existing=False,
                 a2a_manager=agent.a2a_manager,
                 env_vars=env_vars,
+                mnemonic=mnemonic,
             )
             end_time = time.time()
             total_time = end_time - start_time
