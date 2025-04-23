@@ -53,8 +53,15 @@ export function TaskCard({ task }: TaskCardProps) {
     });
   };
 
-  const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
-  const href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
+  // Determine the correct URL format based on git provider
+  let href: string;
+  if (task.git_provider === "gitlab") {
+    const issueType = task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
+    href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
+  } else {
+    const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
+    href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
+  }
 
   return (
     <li className="py-3 border-b border-[#717888] flex items-center pr-6">
