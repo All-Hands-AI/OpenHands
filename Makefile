@@ -45,130 +45,130 @@ endif
 check-system:
 	@echo "$(YELLOW)Checking system...$(RESET)"
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-	        echo "$(BLUE)macOS detected.$(RESET)"; \
+		echo "$(BLUE)macOS detected.$(RESET)"; \
 	elif [ "$(shell uname)" = "Linux" ]; then \
-	        if [ -f "/etc/manjaro-release" ]; then \
-	                echo "$(BLUE)Manjaro Linux detected.$(RESET)"; \
-	        else \
-	                echo "$(BLUE)Linux detected.$(RESET)"; \
-	        fi; \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Manjaro Linux detected.$(RESET)"; \
+		else \
+			echo "$(BLUE)Linux detected.$(RESET)"; \
+		fi; \
 	elif [ "$$(uname -r | grep -i microsoft)" ]; then \
-	        echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
+		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
 	else \
-	        echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
-	        exit 1; \
+		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
+		exit 1; \
 	fi
 
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
-	        echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
+		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
-	        echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
-	        exit 1; \
+		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
+		exit 1; \
 	fi
 
 check-npm:
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
 	@if command -v npm > /dev/null; then \
-	        echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
+		echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
 	else \
-	        echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
-	        exit 1; \
+		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
+		exit 1; \
 	fi
 
 check-nodejs:
 	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
 	@if command -v node > /dev/null; then \
-	        NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
-	        IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
-	        if [ "$${NODE_VERSION_ARRAY[0]}" -ge 22 ]; then \
-	                echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
-	        else \
-	                echo "$(RED)Node.js 22.x or later is required. Please install Node.js 22.x or later to continue.$(RESET)"; \
-	                exit 1; \
-	        fi; \
+		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
+		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
+		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 22 ]; then \
+			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Node.js 22.x or later is required. Please install Node.js 22.x or later to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
-	        echo "$(RED)Node.js is not installed. Please install Node.js to continue.$(RESET)"; \
-	        exit 1; \
+		echo "$(RED)Node.js is not installed. Please install Node.js to continue.$(RESET)"; \
+		exit 1; \
 	fi
 
 check-docker:
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
-	        echo "$(BLUE)$(shell docker --version) is already installed.$(RESET)"; \
+		echo "$(BLUE)$(shell docker --version) is already installed.$(RESET)"; \
 	else \
-	        echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
-	        exit 1; \
+		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
+		exit 1; \
 	fi
 
 check-tmux:
 	@echo "$(YELLOW)Checking tmux installation...$(RESET)"
 	@if command -v tmux > /dev/null; then \
-	        echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
+		echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
 	else \
-	        echo "$(YELLOW)╔════════════════════════════════════════════════════════════════════════════╗$(RESET)"; \
-	        echo "$(YELLOW)║ OPTIONAL: tmux is not installed.                                          ║$(RESET)"; \
-	        echo "$(YELLOW)║ Some advanced terminal features may not work without tmux.                ║$(RESET)"; \
-	        echo "$(YELLOW)║ You can install it if needed, but it's not required for development.      ║$(RESET)"; \
-	        echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
+		echo "$(YELLOW)╔════════════════════════════════════════════════════════════════════════════╗$(RESET)"; \
+		echo "$(YELLOW)║ OPTIONAL: tmux is not installed.                                          ║$(RESET)"; \
+		echo "$(YELLOW)║ Some advanced terminal features may not work without tmux.                ║$(RESET)"; \
+		echo "$(YELLOW)║ You can install it if needed, but it's not required for development.      ║$(RESET)"; \
+		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
 	fi
 
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
-	        POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
-	        IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
-	        if [ $${POETRY_VERSION_ARRAY[0]} -gt 1 ] || ([ $${POETRY_VERSION_ARRAY[0]} -eq 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]); then \
-	                echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
-	        else \
-	                echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-	                echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
-	                echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
-	                exit 1; \
-	        fi; \
+		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
+		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
+		if [ $${POETRY_VERSION_ARRAY[0]} -gt 1 ] || ([ $${POETRY_VERSION_ARRAY[0]} -eq 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]); then \
+			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+			echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
+			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
-	        echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-	        echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
-	        echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
-	        exit 1; \
+		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+		echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
+		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+		exit 1; \
 	fi
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
 	@if [ -z "${TZ}" ]; then \
-	        echo "Defaulting TZ (timezone) to UTC"; \
-	        export TZ="UTC"; \
+		echo "Defaulting TZ (timezone) to UTC"; \
+		export TZ="UTC"; \
 	fi
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-	        echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
-	        export HNSWLIB_NO_NATIVE=1; \
-	        poetry run pip install chroma-hnswlib; \
+		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
+		export HNSWLIB_NO_NATIVE=1; \
+		poetry run pip install chroma-hnswlib; \
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
-	        echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-	        poetry install --only $${POETRY_GROUP}; \
+		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		poetry install --only $${POETRY_GROUP}; \
 	else \
-	        poetry install; \
+		poetry install; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
-	        if [ -f "/etc/manjaro-release" ]; then \
-	                echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-	                poetry run pip install playwright; \
-	                poetry run playwright install chromium; \
-	        else \
-	                if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
-	                        echo "Running playwright install --with-deps chromium..."; \
-	                        poetry run playwright install --with-deps chromium; \
-	                        mkdir -p cache; \
-	                        touch cache/playwright_chromium_is_installed.txt; \
-	                else \
-	                        echo "Setup already done. Skipping playwright installation."; \
-	                fi \
-	        fi \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			poetry run pip install playwright; \
+			poetry run playwright install chromium; \
+		else \
+			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+				echo "Running playwright install --with-deps chromium..."; \
+				poetry run playwright install --with-deps chromium; \
+				mkdir -p cache; \
+				touch cache/playwright_chromium_is_installed.txt; \
+			else \
+				echo "Setup already done. Skipping playwright installation."; \
+			fi \
+		fi \
 	else \
-	        echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
+		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -219,18 +219,18 @@ start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && \
 	if grep -qi microsoft /proc/version 2>/dev/null; then \
-	        echo "Detected WSL environment. Using 'dev_wsl'"; \
-	        SCRIPT=dev_wsl; \
+		echo "Detected WSL environment. Using 'dev_wsl'"; \
+		SCRIPT=dev_wsl; \
 	else \
-	        SCRIPT=dev; \
+		SCRIPT=dev; \
 	fi; \
 	VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run $$SCRIPT -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
 
 # Common setup for running the app (non-callable)
 _run_setup:
 	@if [ "$(OS)" = "Windows_NT" ]; then \
-	        echo "$(RED) Windows is not supported, use WSL instead!$(RESET)"; \
-	        exit 1; \
+		echo "$(RED) Windows is not supported, use WSL instead!$(RESET)"; \
+		exit 1; \
 	fi
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
@@ -250,14 +250,14 @@ run:
 docker-run: WORKSPACE_BASE ?= $(PWD)/workspace
 docker-run:
 	@if [ -f /.dockerenv ]; then \
-	        echo "Running inside a Docker container. Exiting..."; \
-	        exit 0; \
+		echo "Running inside a Docker container. Exiting..."; \
+		exit 0; \
 	else \
-	        echo "$(YELLOW)Running the app in Docker $(OPTIONS)...$(RESET)"; \
-	        export WORKSPACE_BASE=${WORKSPACE_BASE}; \
-	        export SANDBOX_USER_ID=$(shell id -u); \
-	        export DATE=$(shell date +%Y%m%d%H%M%S); \
-	        docker compose up $(OPTIONS); \
+		echo "$(YELLOW)Running the app in Docker $(OPTIONS)...$(RESET)"; \
+		export WORKSPACE_BASE=${WORKSPACE_BASE}; \
+		export SANDBOX_USER_ID=$(shell id -u); \
+		export DATE=$(shell date +%Y%m%d%H%M%S); \
+		docker compose up $(OPTIONS); \
 	fi
 
 
@@ -292,11 +292,11 @@ setup-config-prompts:
 # Develop in container
 docker-dev:
 	@if [ -f /.dockerenv ]; then \
-	        echo "Running inside a Docker container. Exiting..."; \
-	        exit 0; \
+		echo "Running inside a Docker container. Exiting..."; \
+		exit 0; \
 	else \
-	        echo "$(YELLOW)Build and run in Docker $(OPTIONS)...$(RESET)"; \
-	        ./containers/dev/dev.sh $(OPTIONS); \
+		echo "$(YELLOW)Build and run in Docker $(OPTIONS)...$(RESET)"; \
+		./containers/dev/dev.sh $(OPTIONS); \
 	fi
 
 # Clean up all caches
