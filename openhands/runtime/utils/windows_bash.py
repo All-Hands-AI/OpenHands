@@ -795,8 +795,11 @@ class WindowsPowershellSession:
                 current_cwd = self._get_current_cwd() # Queries runspace and updates self._cwd
                 python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
                 metadata = CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
-                metadata.suffix = f"\\n[Empty command received. No active job. CWD: {metadata.working_dir}]"
-                return CmdOutputObservation(content="", command="", metadata=metadata)
+                # Match the expected error message from the test
+                error_content = "ERROR: No previous running command to retrieve logs from."
+                logger.warning(f"Returning specific error message for empty command: {error_content}")
+                metadata.suffix = f"\\n[Empty command received (no active job). Returning error message. CWD: {metadata.working_dir}]"
+                return CmdOutputObservation(content=error_content, command="", metadata=metadata)
 
             if command.startswith("C-"): # Handle C-* when NO job is active/relevant
                 logger.warning(f"Received control character command: {command}. Not supported when no job active.")
