@@ -154,7 +154,7 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).not.toHaveBeenCalled();
 
     // select a repository from the dropdown
-    const dropdown = await waitFor(() => 
+    const dropdown = await waitFor(() =>
       within(repoConnector).getByTestId("repo-dropdown")
     );
     await userEvent.click(dropdown);
