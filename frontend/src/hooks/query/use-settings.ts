@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
+import { useLocation } from "react-router";
 import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
@@ -29,6 +30,8 @@ const getSettingsQueryFn = async () => {
 export const useSettings = () => {
   const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
     useAuth();
+  const { pathname } = useLocation();
+  const isOnTosPage = pathname === "/accept-tos";
 
   const query = useQuery({
     queryKey: ["settings", providerTokensSet],
@@ -39,6 +42,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
+    enabled: !isOnTosPage,
     meta: {
       disableToast: true,
     },
