@@ -92,8 +92,8 @@ async def load_custom_secrets_names(
 
 
 @app.post('/secrets', response_model=dict[str, str])
-async def add_custom_secret(
-    request: Request, incoming_secrets: POSTSettingsCustomSecrets
+async def create_custom_secret(
+    request: Request, incoming_secret: POSTSettingsCustomSecrets
 ) -> JSONResponse:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
@@ -101,18 +101,16 @@ async def add_custom_secret(
         )
         existing_settings: Settings = await settings_store.load()
         if existing_settings:
-            for (
-                secret_name,
-                secret_value,
-            ) in existing_settings.secrets_store.custom_secrets.items():
-                if (
-                    secret_name not in incoming_secrets.custom_secrets
-                ):  # Allow incoming values to override existing ones
-                    incoming_secrets.custom_secrets[secret_name] = secret_value
+            # Get existing custom secrets
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
+
+            # Add the new secret
+            for secret_name, secret_value in incoming_secret.custom_secrets.items():
+                custom_secrets[secret_name] = secret_value
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
-                custom_secrets=incoming_secrets.custom_secrets,
+                custom_secrets=custom_secrets,
                 provider_tokens=existing_settings.secrets_store.provider_tokens,
             )
 
@@ -126,13 +124,66 @@ async def add_custom_secret(
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
+            content={'message': 'Secret created successfully'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong storing settings: {e}')
+        logger.warning(f'Something went wrong creating secret: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Something went wrong storing settings'},
+            content={'error': 'Something went wrong creating secret'},
+        )
+
+
+@app.put('/secrets/{secret_id}', response_model=dict[str, str])
+async def update_custom_secret(
+    request: Request, secret_id: str, incoming_secret: POSTSettingsCustomSecrets
+) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        existing_settings: Settings = await settings_store.load()
+        if existing_settings:
+            # Get existing custom secrets
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
+
+            # Check if the secret to update exists
+            if secret_id not in custom_secrets:
+                return JSONResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    content={'error': f'Secret with ID {secret_id} not found'},
+                )
+
+            # Remove the old secret
+            custom_secrets.pop(secret_id)
+
+            # Add the updated secret with potentially new name
+            for secret_name, secret_value in incoming_secret.custom_secrets.items():
+                custom_secrets[secret_name] = secret_value
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            # Only update SecretStore in Settings
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            updated_settings = convert_to_settings(updated_settings)
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Secret updated successfully'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong updating secret: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong updating secret'},
         )
 
 
@@ -143,14 +194,19 @@ async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse
             config, get_user_id(request)
         )
         existing_settings: Settings | None = await settings_store.load()
-        custom_secrets = {}
         if existing_settings:
-            for (
-                secret_name,
-                secret_value,
-            ) in existing_settings.secrets_store.custom_secrets.items():
-                if secret_name != secret_id:
-                    custom_secrets[secret_name] = secret_value
+            # Get existing custom secrets
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
+
+            # Check if the secret to delete exists
+            if secret_id not in custom_secrets:
+                return JSONResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    content={'error': f'Secret with ID {secret_id} not found'},
+                )
+
+            # Remove the secret
+            custom_secrets.pop(secret_id)
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
@@ -167,13 +223,13 @@ async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
+            content={'message': 'Secret deleted successfully'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong storing settings: {e}')
+        logger.warning(f'Something went wrong deleting secret: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Something went wrong storing settings'},
+            content={'error': 'Something went wrong deleting secret'},
         )
 
 
