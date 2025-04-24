@@ -1,36 +1,55 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
+import { toast } from "react-toastify";
 import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { openHandsAxios } from "#/api/open-hands-axios";
 
 export default function AcceptTOS() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Get the return URL from the query parameters
-  const returnUrl = searchParams.get("returnUrl") || "/";
+  // Get the redirect URL from the query parameters
+  const redirectUrl = searchParams.get("redirect_url") || "/";
 
-  const handleAcceptTOS = () => {
-    if (isTosAccepted) {
-      // Set consent for analytics
-      handleCaptureConsent(true);
+  const handleAcceptTOS = async () => {
+    if (isTosAccepted && !isSubmitting) {
+      try {
+        setIsSubmitting(true);
 
-      // Store TOS acceptance in localStorage to remember it
-      localStorage.setItem("tosAccepted", "true");
+        // Set consent for analytics
+        handleCaptureConsent(true);
 
-      // Check if the return URL is an external URL (starts with http or https)
-      if (returnUrl.startsWith("http://") || returnUrl.startsWith("https://")) {
-        // For external URLs, redirect using window.location
-        window.location.href = returnUrl;
-      } else {
-        // For internal routes, use navigate
-        navigate(returnUrl);
+        // Call the API to record TOS acceptance in the database
+        const response = await openHandsAxios.post("/api/accept_tos", {
+          redirect_url: redirectUrl,
+        });
+
+        // Get the redirect URL from the response
+        const finalRedirectUrl = response.data.redirect_url || redirectUrl;
+
+        // Check if the redirect URL is an external URL (starts with http or https)
+        if (
+          finalRedirectUrl.startsWith("http://") ||
+          finalRedirectUrl.startsWith("https://")
+        ) {
+          // For external URLs, redirect using window.location
+          window.location.href = finalRedirectUrl;
+        } else {
+          // For internal routes, use navigate
+          navigate(finalRedirectUrl);
+        }
+      } catch (error) {
+        console.error(t(I18nKey.TOS$ERROR_ACCEPTING), error);
+        toast.error(t(I18nKey.ERROR$GENERIC));
+        setIsSubmitting(false);
       }
     }
   };
@@ -52,11 +71,12 @@ export default function AcceptTOS() {
         <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
 
         <BrandButton
-          isDisabled={!isTosAccepted}
+          isDisabled={!isTosAccepted || isSubmitting}
           type="button"
           variant="primary"
           onClick={handleAcceptTOS}
           className="w-full"
+          isLoading={isSubmitting}
         >
           {t(I18nKey.TOS$CONTINUE)}
         </BrandButton>

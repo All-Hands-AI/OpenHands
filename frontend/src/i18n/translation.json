@@ -6622,5 +6622,17 @@
         "de": "Fortfahren",
         "it": "Continua",
         "pt": "Continuar"
+    },
+    "TOS$ERROR_ACCEPTING": {
+        "en": "Error accepting Terms of Service",
+        "ja": "利用規約の承諾中にエラーが発生しました",
+        "zh-CN": "接受服务条款时出错",
+        "zh-TW": "接受服務條款時出錯",
+        "ko-KR": "서비스 약관 수락 중 오류 발생",
+        "fr": "Erreur lors de l'acceptation des conditions d'utilisation",
+        "es": "Error al aceptar los Términos de Servicio",
+        "de": "Fehler beim Akzeptieren der Nutzungsbedingungen",
+        "it": "Errore nell'accettazione dei Termini di Servizio",
+        "pt": "Erro ao aceitar os Termos de Serviço"
     }
 }

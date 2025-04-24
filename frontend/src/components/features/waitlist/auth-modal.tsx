@@ -31,9 +31,9 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
       if (tosAccepted) {
         window.location.href = githubAuthUrl;
       } else {
-        // Redirect to the TOS page with a return URL that will redirect to GitHub auth
+        // Redirect to the TOS page with a redirect URL that will redirect to GitHub auth
         const encodedGithubUrl = encodeURIComponent(githubAuthUrl);
-        navigate(`/accept-tos?returnUrl=${encodedGithubUrl}`);
+        navigate(`/accept-tos?redirect_url=${encodedGithubUrl}`);
       }
     }
   };
@@ -43,9 +43,9 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
       if (tosAccepted) {
         window.location.href = gitlabAuthUrl;
       } else {
-        // Redirect to the TOS page with a return URL that will redirect to GitLab auth
+        // Redirect to the TOS page with a redirect URL that will redirect to GitLab auth
         const encodedGitlabUrl = encodeURIComponent(gitlabAuthUrl);
-        navigate(`/accept-tos?returnUrl=${encodedGitlabUrl}`);
+        navigate(`/accept-tos?redirect_url=${encodedGitlabUrl}`);
       }
     }
   };
