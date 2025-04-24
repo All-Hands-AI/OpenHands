@@ -131,10 +131,10 @@ class ConversationModule:
             if not existing_record:
                 return 'Conversation not found', None
             await database.execute(
-                Conversation.delete().where(
+                Conversation.update().where(
                     (Conversation.c.conversation_id == conversation_id)
                     & (Conversation.c.user_id == user_id)
-                )
+                ).values(status='deleted')
             )
             return True
         except Exception as e:

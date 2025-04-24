@@ -180,30 +180,49 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('Failed to join conversation')
     async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
     async for event in async_store:
-        logger.debug(f'oh_event: {event.__class__.__name__}')
-        if isinstance(
-            event,
-            (NullAction, NullObservation, RecallAction),
-        ):
-            continue
-        elif isinstance(event, AgentStateChangedObservation):
-            agent_state_changed = event
-        else:
-            event_dict = event_to_dict(event)
-            new_event_dict = {**event_dict, 'initialize_conversation': True}
-            if (
-                mode == 'shared'
-                and new_event_dict.get('source') == 'user'
-                and conversation_configs is not None
+        try:
+            logger.debug(f'oh_event: {event.__class__.__name__}')
+            if isinstance(
+                event,
+                (NullAction, NullObservation, RecallAction),
             ):
-                new_event_dict['hidden_prompt'] = conversation_configs['hidden_prompt']
-                if conversation_configs['hidden_prompt']:
-                    content = 'The creator of this prompt has chosen to keep it private, so it cannot be viewed by others unless its privacy settings are changed.'
-                    new_event_dict['args']['content'] = content
-                    new_event_dict['message'] = content
-            await sio.emit('oh_event', new_event_dict, to=connection_id)
+                continue
+            elif isinstance(event, AgentStateChangedObservation):
+                agent_state_changed = event
+            else:
+                event_dict = event_to_dict(event)
+                logger.info(
+                    f'Processing event: {event.__class__.__name__}, source: {event_dict.get("source")} in conversation {conversation_id}'
+                )
+
+                new_event_dict = {**event_dict, 'initialize_conversation': True}
+                if (
+                    mode == 'shared'
+                    and new_event_dict.get('source') == 'user'
+                    and conversation_configs is not None
+                ):
+                    hidden_prompt = conversation_configs.get('hidden_prompt', True)
+                    new_event_dict['hidden_prompt'] = hidden_prompt
+                    if hidden_prompt:
+                        content = 'The creator of this prompt has chosen to keep it private, so it cannot be viewed by others unless its privacy settings are changed.'
+                        new_event_dict.setdefault('args', {})['content'] = content
+                        new_event_dict['message'] = content
+                await sio.emit('oh_event', new_event_dict, to=connection_id)
+        except Exception as e:
+            logger.error(
+                f'Error emitting event {event.__class__.__name__}: {str(e)} {conversation_id}'
+            )
+            continue
+
     if agent_state_changed:
-        await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
+        try:
+            await sio.emit(
+                'oh_event', event_to_dict(agent_state_changed), to=connection_id
+            )
+        except Exception as e:
+            logger.error(
+                f'Error emitting agent state change: {str(e)} {conversation_id}'
+            )
     logger.info(f'Finished replaying event stream for conversation {conversation_id}')
 
 

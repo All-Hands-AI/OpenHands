@@ -35,6 +35,7 @@ Conversation = Table(
     Column('configs', JSON, nullable=False),
     Column('title', String, nullable=False),
     Column('short_description', String, nullable=False),
+    Column('status', String, nullable=False, default='available'),
 )
 
 ResearchView = Table(

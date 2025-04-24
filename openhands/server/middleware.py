@@ -327,10 +327,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 ) = await conversation_module._get_conversation_visibility_info(
                     conversation_id
                 )
-                print(
-                    f'error: {error}, conversation_id: {conversation_id}, JWT Middleware'
-                )
-                if not error:
+                if error is None:
                     request.state.sid = conversation_id
                     request.state.user_id = visibility_info['user_id']
                     return await call_next(request)
