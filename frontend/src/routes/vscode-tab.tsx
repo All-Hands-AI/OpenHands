@@ -44,30 +44,24 @@ function VSCodeTab() {
 
   if (isRuntimeInactive) {
     return (
-      <div className="flex items-center justify-center w-full h-full p-10">
-        <span className="text-neutral-400 font-bold">
-          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-        </span>
+      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
+        {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center w-full h-full p-10">
-        <span className="text-neutral-400 font-bold">
-          {t(I18nKey.VSCODE$LOADING)}
-        </span>
+      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
+        {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
       </div>
     );
   }
 
   if (error || !vsCodeUrl) {
     return (
-      <div className="flex items-center justify-center w-full h-full p-10">
-        <span className="text-neutral-400 font-bold">
-          {error || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
-        </span>
+      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
+        {error || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
       </div>
     );
   }

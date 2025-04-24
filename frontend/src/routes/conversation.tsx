@@ -167,18 +167,30 @@ function AppContent() {
                 ),
                 to: "vscode",
                 icon: <VscCode className="w-5 h-5" />,
-                rightContent: (
-                  <FaExternalLinkAlt 
-                    className="w-3 h-3 text-neutral-400 cursor-pointer" 
-                    onClick={(e) => {
+                rightContent: !RUNTIME_INACTIVE_STATES.includes(
+                  curAgentState,
+                ) ? (
+                  <FaExternalLinkAlt
+                    className="w-3 h-3 text-neutral-400 cursor-pointer"
+                    onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       if (conversationId) {
-                        window.open(`/conversations/${conversationId}/vscode`, "_blank");
+                        try {
+                          const response = await fetch(
+                            `/api/conversations/${conversationId}/vscode-url`,
+                          );
+                          const data = await response.json();
+                          if (data.vscode_url) {
+                            window.open(data.vscode_url, "_blank");
+                          }
+                        } catch (err) {
+                          // Silently handle the error
+                        }
                       }
                     }}
                   />
-                ),
+                ) : null,
               },
             ]}
           >
