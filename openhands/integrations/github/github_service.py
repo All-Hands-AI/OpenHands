@@ -122,8 +122,7 @@ class GitHubService(BaseGitService, GitService):
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
-        """
-        Fetch repositories with pagination support.
+        """Fetch repositories with pagination support.
 
         Args:
             url: The API endpoint URL
@@ -159,8 +158,7 @@ class GitHubService(BaseGitService, GitService):
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
-        PER_PAGE = 100  # Maximum allowed by GitHub API
-        all_repos: list[dict] = []
+        all_repos: list[Repository] = []
 
         if app_mode == AppMode.SAAS:
             # Get all installation IDs and fetch repos for each one
@@ -168,14 +166,11 @@ class GitHubService(BaseGitService, GitService):
 
             # Iterate through each installation ID
             for installation_id in installation_ids:
-                params = {'per_page': str(PER_PAGE)}
-                url = (
-                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-                )
-
-                # Fetch repositories for this installation
-                installation_repos = await self._fetch_paginated_repos(
-                    url, params, MAX_REPOS - len(all_repos), extract_key='repositories'
+                # Fetch repositories for this installation using GraphQL
+                installation_repos = (
+                    await self._get_installation_repositories_with_graphql(
+                        installation_id, MAX_REPOS - len(all_repos)
+                    )
                 )
 
                 all_repos.extend(installation_repos)
@@ -183,24 +178,137 @@ class GitHubService(BaseGitService, GitService):
                 # If we've already reached MAX_REPOS, no need to check other installations
                 if len(all_repos) >= MAX_REPOS:
                     break
-        else:
-            # Original behavior for non-SaaS mode
-            params = {'per_page': str(PER_PAGE), 'sort': sort}
-            url = f'{self.BASE_URL}/user/repos'
 
-            # Fetch user repositories
-            all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
+            # Sort all repositories by pushed_at date (most recent first)
+            all_repos.sort(key=lambda repo: repo.pushed_at or '', reverse=True)
+        else:
+            # Use GraphQL for non-SaaS mode
+            all_repos = await self._get_user_repositories_with_graphql(MAX_REPOS)
+
+        return all_repos[:MAX_REPOS]  # Trim to max_repos if needed
+
+    async def _get_installation_repositories_with_graphql(
+        self, installation_id: int, max_repos: int
+    ) -> list[Repository]:
+        """Fetch repositories for a specific installation using GraphQL.
+
+        Args:
+            installation_id: The installation ID
+            max_repos: Maximum number of repositories to fetch
+
+        Returns:
+            List of Repository objects sorted by last pushed activity
+        """
+        # First, get an installation token
+        url = f'{self.BASE_URL}/app/installations/{installation_id}/access_tokens'
+        response, _ = await self._make_request(url, method=RequestMethod.POST)
+        installation_token = response.get('token')
+
+        if not installation_token:
+            return []
+
+        # Use the installation token for GraphQL query
+        original_token = self.token
+        self.token = SecretStr(installation_token)
+
+        try:
+            # GraphQL query to get repositories sorted by pushed_at
+            query = """
+            query GetInstallationRepositories($first: Int!) {
+              viewer {
+                repositories(first: $first, orderBy: {field: PUSHED_AT, direction: DESC}) {
+                  nodes {
+                    id
+                    nameWithOwner
+                    stargazerCount
+                    isPrivate
+                    pushedAt
+                  }
+                }
+              }
+            }
+            """
+
+            variables = {'first': max_repos}
+
+            response = await self.execute_graphql_query(query, variables)
+            repos_data = (
+                response.get('data', {})
+                .get('viewer', {})
+                .get('repositories', {})
+                .get('nodes', [])
+            )
+
+            # Convert to Repository objects
+            repos = [
+                Repository(
+                    id=int(repo.get('id').split('_')[-1])
+                    if repo.get('id')
+                    else 0,  # Convert from GraphQL ID format
+                    full_name=repo.get('nameWithOwner'),
+                    stargazers_count=repo.get('stargazerCount'),
+                    git_provider=ProviderType.GITHUB,
+                    is_public=not repo.get('isPrivate', True),
+                    pushed_at=repo.get('pushedAt'),
+                )
+                for repo in repos_data
+            ]
+
+            return repos
+        finally:
+            # Restore original token
+            self.token = original_token
+
+    async def _get_user_repositories_with_graphql(
+        self, max_repos: int
+    ) -> list[Repository]:
+        """Fetch user repositories using GraphQL.
+
+        Args:
+            max_repos: Maximum number of repositories to fetch
+
+        Returns:
+            List of Repository objects sorted by last pushed activity
+        """
+        query = """
+        query GetUserRepositories($first: Int!) {
+          viewer {
+            repositories(first: $first, orderBy: {field: PUSHED_AT, direction: DESC}) {
+              nodes {
+                id
+                nameWithOwner
+                stargazerCount
+                isPrivate
+                pushedAt
+              }
+            }
+          }
+        }
+        """
+
+        variables = {'first': max_repos}
+
+        response = await self.execute_graphql_query(query, variables)
+        repos_data = (
+            response.get('data', {})
+            .get('viewer', {})
+            .get('repositories', {})
+            .get('nodes', [])
+        )
 
         # Convert to Repository objects
         return [
             Repository(
-                id=repo.get('id'),
-                full_name=repo.get('full_name'),
-                stargazers_count=repo.get('stargazers_count'),
+                id=int(repo.get('id').split('_')[-1])
+                if repo.get('id')
+                else 0,  # Convert from GraphQL ID format
+                full_name=repo.get('nameWithOwner'),
+                stargazers_count=repo.get('stargazerCount'),
                 git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', True),
+                is_public=not repo.get('isPrivate', True),
+                pushed_at=repo.get('pushedAt'),
             )
-            for repo in all_repos
+            for repo in repos_data
         ]
 
     async def get_installation_ids(self) -> list[int]:
