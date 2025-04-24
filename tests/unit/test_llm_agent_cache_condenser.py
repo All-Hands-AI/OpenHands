@@ -565,3 +565,48 @@ CURRENT_STATE: Conversation initialized
         ]
         assert condensation.action.summary == mock_response.choices[0].message.content
         assert condensation.action.summary_offset is None
+
+
+def test_keep_first_functionality(agent: CodeActAgent):
+    """Test that the LLMAgentCacheCondenser keeps the first `keep_first` events."""
+    condenser = LLMAgentCacheCondenser(max_size=5, keep_first=2)
+    agent.condenser = condenser
+
+    # Create events exceeding max_size
+    events = []
+    for i in range(10):
+        event = MessageAction(f'Message {i}')
+        event._source = 'user' if i % 2 == 0 else 'agent'  # type: ignore [attr-defined]
+        event._id = i + 1  # type: ignore [attr-defined]
+        events.append(event)
+
+    state = State(history=cast(list[Event], events))
+
+    set_next_llm_response(
+        agent,
+        """
+USER_CONTEXT: Simple greeting
+COMPLETED: User and AI greeted each other
+PENDING: None
+CURRENT_STATE: Conversation initialized
+        """,
+    )
+
+    result = condenser.condensed_history(state, agent)
+
+    # Verify that a Condensation is returned
+    assert isinstance(result, Condensation)
+    result.action._id = 20  # type: ignore [attr-defined]
+
+    # Check that the first `keep_first` events are preserved
+    preserved_event_ids = [event._id for event in events[:2]]  # type: ignore [attr-defined]
+    assert (
+        all(
+            event_id in preserved_event_ids
+            for event_id in result.action.forgotten_event_ids
+        )
+        is False
+    )
+
+    # Check that the summary contains the greeting information
+    assert 'User and AI greeted each other' in result.action.summary

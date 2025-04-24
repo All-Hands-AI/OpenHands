@@ -22,13 +22,22 @@ class LLMAgentCacheCondenser(CachingCondenser):
         max_size: int = 100,
         trigger_word: str = 'CONDENSE!',
         keep_user_messages: bool = False,
+        keep_first: int = 1,
     ):
         """Initialize the condenser.
         Args:
             max_size: Maximum number of events before condensation is triggered
             trigger_word: Word that triggers condensation when found in user messages
-            max_event_length: Maximum length of event representations to be passed to the LLM
+            keep_first: Number of initial events to always retain
         """
+        if keep_first >= max_size:
+            raise ValueError(
+                f'keep_first ({keep_first}) must be less than max_size ({max_size})'
+            )
+        if keep_first < 0:
+            raise ValueError(f'keep_first ({keep_first}) cannot be negative')
+
+        self.keep_first = keep_first
         self.max_size = max_size
         self.trigger_word = trigger_word
         self.keep_user_messages = keep_user_messages
@@ -103,8 +112,9 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         # Extract the summary from the response
         summary = response.choices[0].message.content
 
-        # keep system message
-        events_to_forget = events[1:]
+        # Keep the first `keep_first` events (e.g., system messages)
+        events_to_keep = events[: self.keep_first]
+        events_to_forget = events[self.keep_first :]
 
         # Ensure essential user messages are not forgotten
         if self.keep_user_messages:
@@ -120,8 +130,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
                 )
             )
         else:
-            # If we don't have any events to forget, just return the original view
-            return View.from_events(events)
+            return View(events=events_to_keep + events_to_forget)
 
     def should_condense(self, view: View) -> bool:
         """Determine if the view should be condensed.
@@ -201,6 +210,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         return LLMAgentCacheCondenser(
             max_size=config.max_size,
             trigger_word=config.trigger_word,
+            keep_first=config.keep_first,
         )
 
 

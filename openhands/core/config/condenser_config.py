@@ -71,6 +71,11 @@ class LLMAgentCacheCondenserConfig(BaseModel):
         default='CONDENSE!',
         description='Word that triggers condensation when found in user messages.',
     )
+    keep_first: int = Field(
+        default=1,
+        description='Number of initial events to always keep in history.',
+        ge=0,
+    )
 
     model_config = {'extra': 'forbid'}
 
