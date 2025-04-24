@@ -38,6 +38,7 @@ check-dependencies:
 ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
+	@$(MAKE) -s check-tmux
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
@@ -98,6 +99,15 @@ check-docker:
 		echo "$(BLUE)$(shell docker --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
+		exit 1; \
+	fi
+
+check-tmux:
+	@echo "$(YELLOW)Checking tmux installation...$(RESET)"
+	@if command -v tmux > /dev/null; then \
+		echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
+	else \
+		echo "$(RED)tmux is not installed. Please install tmux to continue.$(RESET)"; \
 		exit 1; \
 	fi
 

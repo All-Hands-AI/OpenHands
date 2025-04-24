@@ -63,11 +63,29 @@ class Settings(BaseModel):
         if not isinstance(secrets_store, dict):
             return data
 
+        custom_secrets = secrets_store.get('custom_secrets')
         tokens = secrets_store.get('provider_tokens')
-        if not isinstance(tokens, dict):
-            return data
 
-        data['secrets_store'] = SecretStore(provider_tokens=tokens)
+        secret_store = SecretStore(provider_tokens={}, custom_secrets={})
+
+        if isinstance(tokens, dict):
+            converted_store = SecretStore(provider_tokens=tokens)
+            secret_store = secret_store.model_copy(
+                update={'provider_tokens': converted_store.provider_tokens}
+            )
+        else:
+            secret_store.model_copy(update={'provider_tokens': tokens})
+
+        if isinstance(custom_secrets, dict):
+            converted_store = SecretStore(custom_secrets=custom_secrets)
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': converted_store.custom_secrets}
+            )
+        else:
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': custom_secrets}
+            )
+        data['secret_store'] = secret_store
         return data
 
     @field_serializer('secrets_store')
@@ -109,6 +127,14 @@ class POSTSettingsModel(Settings):
     provider_tokens: dict[str, str] = {}
 
 
+class POSTSettingsCustomSecrets(BaseModel):
+    """
+    Adding new custom secret
+    """
+
+    custom_secrets: dict[str, str | SecretStr] = {}
+
+
 class GETSettingsModel(Settings):
     """
     Settings with additional token data for the frontend
@@ -116,3 +142,11 @@ class GETSettingsModel(Settings):
 
     provider_tokens_set: dict[str, bool] | None = None
     llm_api_key_set: bool
+
+
+class GETSettingsCustomSecrets(BaseModel):
+    """
+    Custom secrets names
+    """
+
+    custom_secrets: list[str] | None = None
