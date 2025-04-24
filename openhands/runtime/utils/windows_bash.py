@@ -808,8 +808,7 @@ class WindowsPowershellSession:
                 python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
                 metadata = CmdOutputMetadata(exit_code=1, working_dir=python_safe_cwd) # Indicate error, use cached CWD
                 return ErrorObservation(
-                    content=f"Control commands like {command} are not supported or relevant when no job is active.",
-                    metadata=metadata # Add metadata for context
+                    content=f"Control commands like {command} are not supported or relevant when no job is active." 
                  )
 
         # --- Start the command as a new asynchronous job ---
@@ -911,8 +910,7 @@ class WindowsPowershellSession:
             python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
             metadata = CmdOutputMetadata(exit_code=1, working_dir=python_safe_cwd)
             return ErrorObservation(
-                content=f"Failed to start PowerShell job.\\n[ERRORS]\\n" + "\\n".join(all_errors),
-                metadata=metadata # Include CWD context
+                content=f"Failed to start PowerShell job.\\n[ERRORS]\\n" + "\\n".join(all_errors)
             )
 
         # --- Monitor the Job ---
