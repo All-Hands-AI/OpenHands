@@ -31,7 +31,7 @@ from openhands.server.shared import (
     config,
     conversation_manager,
 )
-from openhands.server.user_auth import get_github_user_id, get_user_id
+from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -193,13 +193,11 @@ async def git_changes(
     request: Request,
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-    github_user_id: str = Depends(get_github_user_id),
 ):
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
         config,
         user_id,
-        github_user_id,
     )
 
     cwd = await get_cwd(

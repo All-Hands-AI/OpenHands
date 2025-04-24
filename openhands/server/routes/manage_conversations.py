@@ -29,7 +29,6 @@ from openhands.server.shared import (
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
-    get_github_user_id,
     get_provider_tokens,
     get_user_id,
 )
@@ -97,7 +96,7 @@ async def _create_new_conversation(
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
@@ -344,10 +343,9 @@ async def update_conversation(
     conversation_id: str,
     title: str = Body(embed=True),
     user_id: str | None = Depends(get_user_id),
-    github_user_id: str | None = Depends(get_github_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, github_user_id
+        config, user_id
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -370,10 +368,9 @@ async def update_conversation(
 async def delete_conversation(
     conversation_id: str,
     user_id: str | None = Depends(get_user_id),
-    github_user_id: str | None = Depends(get_github_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, github_user_id
+        config, user_id
     )
     try:
         await conversation_store.get_metadata(conversation_id)
