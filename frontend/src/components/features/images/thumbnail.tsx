@@ -10,7 +10,7 @@ export function Thumbnail({ src, size = "small" }: ThumbnailProps) {
     <img
       role="img"
       alt=""
-      src={src}
+      src={src.startsWith("blob:") ? src : ""}
       className={cn(
         "rounded object-cover",
         size === "small" && "w-[62px] h-[62px]",
