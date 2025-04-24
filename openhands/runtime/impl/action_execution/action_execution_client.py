@@ -362,15 +362,15 @@ class ActionExecutionClient(Runtime):
         )
         return updated_mcp_config
 
-    def call_tool_mcp(self, action: MCPAction) -> Observation:
+    async def call_tool_mcp(self, action: MCPAction) -> Observation:
         if self.mcp_clients is None:
             updated_mcp_config = self.get_updated_mcp_config()
             self.log(
                 'debug',
                 f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
             )
-            self.mcp_clients = call_async_from_sync(create_mcp_clients, updated_mcp_config.sse_servers)
-        return call_async_from_sync(call_tool_mcp_handler, self.mcp_clients, action)
+            self.mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
+        return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:
         if self.mcp_clients:

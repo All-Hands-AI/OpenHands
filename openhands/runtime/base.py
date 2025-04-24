@@ -568,7 +568,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    def call_tool_mcp(self, action: MCPAction) -> Observation:
+    async def call_tool_mcp(self, action: MCPAction) -> Observation:
         pass
 
     # ====================================================================
