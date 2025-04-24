@@ -2,7 +2,7 @@ import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { FaServer } from "react-icons/fa";
+import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
 import { VscCode } from "react-icons/vsc";
@@ -160,9 +160,25 @@ function AppContent() {
                 icon: <GlobeIcon />,
               },
               {
-                label: t(I18nKey.VSCODE$TITLE),
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.VSCODE$TITLE)}
+                  </div>
+                ),
                 to: "vscode",
                 icon: <VscCode className="w-5 h-5" />,
+                rightContent: (
+                  <FaExternalLinkAlt 
+                    className="w-3 h-3 text-neutral-400 cursor-pointer" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (conversationId) {
+                        window.open(`/conversations/${conversationId}/vscode`, "_blank");
+                      }
+                    }}
+                  />
+                ),
               },
             ]}
           >
