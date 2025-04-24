@@ -76,6 +76,9 @@ mcp = "1.6.0"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
+pydantic = "^2.11.3"
+httpx = "^0.28.1"
+httpx-sse = "^0.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.6"
