@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
 import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import {
   ConversationProvider,
   useConversation,
@@ -51,6 +52,7 @@ function AppContent() {
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
