@@ -100,13 +100,19 @@ async def create_custom_secret(
             config, get_user_id(request)
         )
         existing_settings: Settings = await settings_store.load()
+
         if existing_settings:
-            # Get existing custom secrets
             custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
 
-            # Add the new secret
             for secret_name, secret_value in incoming_secret.custom_secrets.items():
+                if secret_name in custom_secrets:
+                    return JSONResponse(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        content={'message': f'Secret {secret_name} already exists'},
+                    )
+            
                 custom_secrets[secret_name] = secret_value
+        
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
@@ -144,22 +150,19 @@ async def update_custom_secret(
         )
         existing_settings: Settings = await settings_store.load()
         if existing_settings:
-            # Get existing custom secrets
-            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
-
             # Check if the secret to update exists
-            if secret_id not in custom_secrets:
+            if secret_id not in existing_settings.secrets_store.custom_secrets:
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
                     content={'error': f'Secret with ID {secret_id} not found'},
                 )
 
-            # Remove the old secret
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
             custom_secrets.pop(secret_id)
 
-            # Add the updated secret with potentially new name
             for secret_name, secret_value in incoming_secret.custom_secrets.items():
                 custom_secrets[secret_name] = secret_value
+
 
             # Create a new SecretStore that preserves provider tokens
             updated_secret_store = SecretStore(
