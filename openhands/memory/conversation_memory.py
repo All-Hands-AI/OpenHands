@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Generator
 
 from litellm import ModelResponse
@@ -155,7 +156,8 @@ class ConversationMemory:
                 content=[
                     TextContent(
                         text=self.prompt_manager.get_system_message(
-                            agent_infos=agent_infos
+                            agent_infos=agent_infos,
+                            CURRENT_DATE=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         ),
                         cache_prompt=with_caching,
                     )
