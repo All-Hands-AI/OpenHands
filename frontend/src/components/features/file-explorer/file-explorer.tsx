@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { cn } from "#/utils/utils";
 import { FileExplorerHeader } from "./file-explorer-header";
@@ -15,7 +14,7 @@ interface FileExplorerProps {
 }
 
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
-  const { t } = useTranslation();
+  useTranslation(); // Keep the import but don't use the variable
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 

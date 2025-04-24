@@ -29,18 +29,18 @@ function VSCodeTab() {
         if (data.vscode_url) {
           setVsCodeUrl(data.vscode_url);
         } else {
-          setError("VS Code URL not available");
+          setError(t(I18nKey.VSCODE$URL_NOT_AVAILABLE));
         }
       } catch (err) {
-        setError("Failed to fetch VS Code URL");
-        console.error("Error fetching VS Code URL:", err);
+        setError(t(I18nKey.VSCODE$FETCH_ERROR));
+        // Error is handled by setting the error state
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchVSCodeUrl();
-  }, [conversationId, isRuntimeInactive]);
+  }, [conversationId, isRuntimeInactive, t]);
 
   if (isRuntimeInactive) {
     return (
@@ -55,7 +55,9 @@ function VSCodeTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center w-full h-full p-10">
-        <span className="text-neutral-400 font-bold">Loading VS Code...</span>
+        <span className="text-neutral-400 font-bold">
+          {t(I18nKey.VSCODE$LOADING)}
+        </span>
       </div>
     );
   }
@@ -64,7 +66,7 @@ function VSCodeTab() {
     return (
       <div className="flex items-center justify-center w-full h-full p-10">
         <span className="text-neutral-400 font-bold">
-          {error || "VS Code URL not available"}
+          {error || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
         </span>
       </div>
     );
@@ -73,10 +75,10 @@ function VSCodeTab() {
   return (
     <div className="h-full w-full">
       <iframe
-        title={t(I18nKey.VSCODE$TITLE) || "VS Code"}
+        title={t(I18nKey.VSCODE$TITLE)}
         src={vsCodeUrl}
         className="w-full h-full border-0"
-        allow="clipboard-read; clipboard-write"
+        allow={t(I18nKey.VSCODE$IFRAME_PERMISSIONS)}
       />
     </div>
   );
