@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
@@ -8,7 +8,7 @@ from openhands.events.action.action import Action, ActionSecurityRisk
 @dataclass
 class MCPAction(Action):
     name: str
-    arguments: str | None = None
+    arguments: dict[str, Any]
     thought: str = ''
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True

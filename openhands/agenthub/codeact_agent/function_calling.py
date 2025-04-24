@@ -200,7 +200,7 @@ def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | Non
             elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
                 action = MCPAction(
                     name=tool_call.function.name,
-                    arguments=tool_call.function.arguments,
+                    arguments=arguments,
                 )
             else:
                 raise FunctionCallNotExistsError(
