@@ -16,12 +16,12 @@ import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import CodeIcon from "#/icons/code.svg?react";
+
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
-import { FilesProvider } from "#/context/files";
+
 import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
@@ -170,11 +170,6 @@ function AppContent() {
                 ) : null,
               },
               {
-                label: t(I18nKey.WORKSPACE$TITLE),
-                to: "workspace",
-                icon: <CodeIcon />,
-              },
-              {
                 label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
                 to: "terminal",
                 icon: <TerminalIcon />,
@@ -196,9 +191,7 @@ function AppContent() {
               },
             ]}
           >
-            <FilesProvider>
-              <Outlet />
-            </FilesProvider>
+            <Outlet />
           </Container>
         }
       />
