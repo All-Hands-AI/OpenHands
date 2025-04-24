@@ -123,7 +123,7 @@ class BaseGitService(ABC):
         if hasattr(e, 'response') and hasattr(e.response, 'text'):
             response_text = f" Response: {e.response.text}"
         
-        logger.warning(f'HTTP error on {self.provider} API: {error_details}{response_text}')
+        logger.warning(f'HTTP error on {self.provider} API: {error_details}{response_text} {type(e).__name__} {e.request.url}')
         return UnknownException(f'HTTP error: {error_details}')
 
 
