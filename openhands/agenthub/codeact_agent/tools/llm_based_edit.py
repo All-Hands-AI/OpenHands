@@ -12,6 +12,8 @@ _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * IMPORTANT: Make sure you include all the required indentations for each line of code in the draft, otherwise the editted code will be incorrectly indented.
 * IMPORTANT: Make sure that the first line of the draft is also properly indented and has the required whitespaces.
 * IMPORTANT: NEVER include or make references to lines from outside the `start` and `end` range in the draft.
+* IMPORTANT: Start the content with a comment in the format: #EDIT: Reason for edit
+* IMPORTANT: If you are not appending to the file, avoid setting `start` and `end` to the same value.
 
 **Example 1: general edit for short files**
 For example, given an existing file `/path/to/file.py` that looks like this:
@@ -39,6 +41,7 @@ The assistant wants to edit the file to look like this:
 The assistant may produce an edit action like this:
 path="/path/to/file.txt" start=1 end=-1
 content=```
+#EDIT: I want to change the value of y to 2
 class MyClass:
     def __init__(self):
         # ... existing code ...
@@ -62,6 +65,7 @@ For example, given an existing file `/path/to/file.py` that looks like this:
 
 To append the following lines to the file:
 ```python
+#EDIT: I want to print the value of y
 print(MyClass().y)
 ```
 
@@ -99,6 +103,7 @@ The assistant wants to edit the file to look like this:
 The assistant may produce an edit action like this:
 path="/path/to/file.txt" start=1002 end=1008
 content=```
+#EDIT: I want to change the value of y to 2
     def __init__(self):
         # no changes before
         self.y = 2
