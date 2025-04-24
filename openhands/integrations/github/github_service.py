@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Any
 
@@ -18,6 +19,8 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
+
+logger = logging.getLogger(__name__)
 
 
 class GitHubService(BaseGitService, GitService):
@@ -205,11 +208,10 @@ class GitHubService(BaseGitService, GitService):
         installation_token = response.get('token')
 
         if not installation_token:
+            logger.warning(
+                f'Failed to get installation token for installation {installation_id}'
+            )
             return []
-
-        # Use the installation token for GraphQL query
-        original_token = self.token
-        self.token = SecretStr(installation_token)
 
         try:
             # GraphQL query to get repositories sorted by pushed_at
@@ -231,7 +233,10 @@ class GitHubService(BaseGitService, GitService):
 
             variables = {'first': max_repos}
 
-            response = await self.execute_graphql_query(query, variables)
+            # Pass the installation token directly to the GraphQL query
+            response = await self.execute_graphql_query(
+                query, variables, custom_token=installation_token
+            )
             repos_data = (
                 response.get('data', {})
                 .get('viewer', {})
@@ -255,9 +260,11 @@ class GitHubService(BaseGitService, GitService):
             ]
 
             return repos
-        finally:
-            # Restore original token
-            self.token = original_token
+        except Exception as e:
+            logger.error(
+                f'Error fetching repositories for installation {installation_id}: {str(e)}'
+            )
+            return []
 
     async def _get_user_repositories_with_graphql(
         self, max_repos: int
@@ -346,12 +353,30 @@ class GitHubService(BaseGitService, GitService):
         return repos
 
     async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any]
+        self, query: str, variables: dict[str, Any], custom_token: str | None = None
     ) -> dict[str, Any]:
-        """Execute a GraphQL query against the GitHub API."""
+        """Execute a GraphQL query against the GitHub API.
+
+        Args:
+            query: The GraphQL query string
+            variables: Variables for the GraphQL query
+            custom_token: Optional custom token to use for this request
+
+        Returns:
+            The GraphQL response data
+        """
         try:
             async with httpx.AsyncClient() as client:
-                github_headers = await self._get_github_headers()
+                if custom_token:
+                    # Use custom token if provided
+                    github_headers = {
+                        'Authorization': f'Bearer {custom_token}',
+                        'Accept': 'application/vnd.github.v3+json',
+                    }
+                else:
+                    # Use default token
+                    github_headers = await self._get_github_headers()
+
                 response = await client.post(
                     f'{self.BASE_URL}/graphql',
                     headers=github_headers,
@@ -361,9 +386,8 @@ class GitHubService(BaseGitService, GitService):
 
                 result = response.json()
                 if 'errors' in result:
-                    raise UnknownException(
-                        f"GraphQL query error: {json.dumps(result['errors'])}"
-                    )
+                    error_msg = json.dumps(result.get('errors', []))
+                    raise UnknownException(f'GraphQL query error: {error_msg}')
 
                 return dict(result)
 
