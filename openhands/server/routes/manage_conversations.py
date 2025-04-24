@@ -51,6 +51,7 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     system_prompt: str | None = None
     user_prompt: str | None = None
+    mcp_disable: dict[str, bool] | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -75,6 +76,7 @@ async def _create_new_conversation(
     user_prompt: str | None = None,
     attach_convo_id: bool = False,
     mnemonic: str | None = None,
+    mcp_disable: dict[str, bool] | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -168,6 +170,7 @@ async def _create_new_conversation(
         user_prompt=user_prompt,
         github_user_id=None,
         mnemonic=mnemonic,
+        mcp_disable=mcp_disable,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -205,6 +208,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             mnemonic=mnemonic,
+            mcp_disable=data.mcp_disable,
         )
         if conversation_id and user_id is not None:
             await conversation_module._update_conversation_visibility(
