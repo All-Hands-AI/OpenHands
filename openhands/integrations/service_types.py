@@ -23,6 +23,7 @@ class TaskType(str, Enum):
 
 
 class SuggestedTask(BaseModel):
+    git_provider: ProviderType
     task_type: TaskType
     repo: str
     issue_number: int
@@ -148,4 +149,8 @@ class GitService(Protocol):
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user"""
+        ...
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """Get suggested tasks for the authenticated user across all repositories"""
         ...
