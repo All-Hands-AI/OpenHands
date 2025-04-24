@@ -84,11 +84,9 @@ RUN apt-get update && \
     apt-get install -y \
     sqlite3 \
     postgresql-client \
-    mysql-client \
     redis-tools \
     libsqlite3-dev \
     libpq-dev \
-    libmysqlclient-dev \
     libssl-dev \
     zlib1g-dev \
     libbz2-dev \
@@ -102,6 +100,13 @@ RUN apt-get update && \
     freetds-dev \
     protobuf-compiler \
     && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Install MySQL client packages - try different package names based on distribution
+    apt-get update && \
+    (apt-get install -y default-mysql-client default-libmysqlclient-dev || \
+     apt-get install -y mysql-client libmysqlclient-dev || \
+     apt-get install -y mariadb-client libmariadb-dev) && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install common Python packages globally
