@@ -141,6 +141,7 @@ class Session:
                     LLMAgentCacheCondenserConfig(
                         max_size=100,  # Default max size
                         trigger_word='CONDENSE!',  # Default trigger word
+                        keep_first=4,
                     ),
                 ]
             )
