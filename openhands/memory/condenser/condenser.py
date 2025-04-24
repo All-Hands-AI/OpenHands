@@ -165,7 +165,7 @@ class RollingCondenser(Condenser, ABC):
     """
 
     @abstractmethod
-    def should_condense(self, view: View) -> bool:
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
         """Determine if a view should be condensed."""
 
     @abstractmethod
@@ -175,7 +175,7 @@ class RollingCondenser(Condenser, ABC):
     def condense(self, view: View, state: State, agent=None) -> View | Condensation:
         # If we trigger the condenser-specific condensation threshold, compute and return
         # the condensation.
-        if self.should_condense(view):
+        if self.should_condense(view, state, agent):
             return self.get_condensation(view, state, agent)
 
         # Otherwise we're safe to just return the view.

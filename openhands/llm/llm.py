@@ -661,6 +661,35 @@ class LLM(RetryMixin, DebugMixin):
             )
             return 0
 
+    def get_token_count_params(self, params: dict[str, Any]) -> int:
+        """Get the number of tokens for a llm-call
+
+        Args:
+            params: The parameters for the LLM call. Same as the return value of LLMCompletionProvider.build_llm_completion_params.
+        Returns:
+            int: The number of tokens.
+        """
+        try:
+            return int(
+                litellm.token_counter(
+                    model=self.config.model,
+                    messages=params['messages'],
+                    tools=params.get('tools', None),
+                    custom_tokenizer=self.tokenizer,
+                )
+            )
+        except Exception as e:
+            # limit logspam in case token count is not supported
+            logger.error(
+                f'Error getting token count for\n model {self.config.model}\n{e}'
+                + (
+                    f'\ncustom_tokenizer: {self.config.custom_tokenizer}'
+                    if self.config.custom_tokenizer is not None
+                    else ''
+                )
+            )
+            return 0
+
     def _is_local(self) -> bool:
         """Determines if the system is using a locally running LLM.
 

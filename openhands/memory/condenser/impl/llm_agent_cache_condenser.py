@@ -4,14 +4,17 @@ from typing import Any
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import LLMAgentCacheCondenserConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.core.schema.action import ActionType
 from openhands.events.action.agent import CondensationAction
 from openhands.events.action.message import MessageAction
-from openhands.events.event import Event, EventSource
+from openhands.events.event import Event
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.condenser.impl.caching_condenser import CachingCondenser
+from openhands.memory.condenser.trigger import (
+    ConversationTokenTrigger,
+    EventCountTrigger,
+    KeywordTrigger,
+)
 
 
 class LLMAgentCacheCondenser(CachingCondenser):
@@ -20,6 +23,7 @@ class LLMAgentCacheCondenser(CachingCondenser):
     def __init__(
         self,
         max_size: int = 100,
+        max_tokens: int = 100_000,
         trigger_word: str = 'CONDENSE!',
         keep_user_messages: bool = False,
         keep_first: int = 1,
@@ -38,8 +42,12 @@ class LLMAgentCacheCondenser(CachingCondenser):
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
 
         self.keep_first = keep_first
-        self.max_size = max_size
-        self.trigger_word = trigger_word
+        self.trigger = (
+            KeywordTrigger(trigger_word)
+            | EventCountTrigger(max_size)
+            | ConversationTokenTrigger(max_tokens)
+        )
+
         self.keep_user_messages = keep_user_messages
         super().__init__()
 
@@ -132,56 +140,8 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         else:
             return View(events=events_to_keep + events_to_forget)
 
-    def should_condense(self, view: View) -> bool:
-        """Determine if the view should be condensed.
-        Condensation is triggered in two cases:
-        1. When the number of events exceeds max_size
-        2. When the last event is from the user and contains the trigger word
-        Args:
-            view: The view to check
-        Returns:
-            True if the view should be condensed, False otherwise
-        """
-        events = view.events
-
-        # Check if the number of events exceeds max_size
-        if len(events) > self.max_size:
-            logger.info(f'Condensing events due to max size({self.max_size}) limit.')
-            return True
-
-        # Check if any recent user message contains the trigger word
-        if self._contains_trigger_word(events):
-            logger.info(f"Condensing events due to trigger word '{self.trigger_word}'.")
-            return True
-
-        return False
-
-    def _contains_trigger_word(self, events: list[Event]) -> bool:
-        """Check if the most recent user message contains the trigger word.
-        Args:
-            events: The events to check
-        Returns:
-            True if the most recent user message contains the trigger word, False otherwise
-        """
-        if not events or len(events) < 2:  # Need at least 2 events to condense
-            return False
-
-        # Iterate through events in reverse order to find the last user message
-        for event in reversed(events):
-            if (
-                hasattr(event, 'source')
-                and event.source == EventSource.USER
-                and hasattr(event, 'action')
-                and event.action == ActionType.MESSAGE
-                and event.message is not None
-            ):
-                return self.trigger_word in event.message
-
-            # If we did a condensation, stop looking
-            if hasattr(event, 'action') and event.action == ActionType.CONDENSATION:
-                return False
-
-        return False
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
+        return self.trigger.should_condense(view, state, agent)
 
     def _filter_user_messages_to_keep(
         self, events: list[Event], events_to_forget: list[Event]

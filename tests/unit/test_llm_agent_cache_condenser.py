@@ -39,6 +39,8 @@ def agent() -> CodeActAgent:
     agent.llm.config.max_message_chars = 1000
     agent.llm.is_caching_prompt_active.return_value = True
     agent.llm.format_messages_for_llm = format_messages_for_llm
+    agent.llm.get_token_count.return_value = 50_000
+
     agent.llm.metrics = Metrics()
     return agent
 
@@ -51,28 +53,30 @@ def set_next_llm_response(agent, response: str):
     agent.llm.completion.return_value = mock_response
 
 
-def test_contains_trigger_word():
+def test_should_condense():
     """Test that the containsTriggerWord method correctly identifies the CONDENSE! keyword."""
     # Create the condenser
     condenser = LLMAgentCacheCondenser(max_size=10)
 
     # Test case 1: Empty events list
-    assert not condenser._contains_trigger_word([])
+    assert not condenser.should_condense(View(events=[]), State())
 
     # Test case 2: Single event (not enough events)
     event = MessageAction('Please CONDENSE! the conversation history.')
-    assert not condenser._contains_trigger_word([event])
+    assert not condenser.should_condense(View(events=[event]), State())
 
     # Test case 3: User message with CONDENSE! keyword
     user_event = MessageAction('Please CONDENSE! the conversation history.')
     user_event._source = 'user'  # type: ignore [attr-defined]
     agent_event = MessageAction('Agent response')
     agent_event._source = 'agent'  # type: ignore [attr-defined]
-    assert condenser._contains_trigger_word([user_event, agent_event])
+    assert condenser.should_condense(View(events=[user_event, agent_event]), State())
 
     # Test case 4: User message without CONDENSE! keyword
     user_event.content = 'Please summarize the conversation history.'
-    assert not condenser._contains_trigger_word([user_event, agent_event])
+    assert not condenser.should_condense(
+        View(events=[user_event, agent_event]), State()
+    )
 
     # Test case 5: RecallObservation followed by user message with CONDENSE! keyword
     user_event.content = 'Please CONDENSE! the conversation history.'
@@ -80,7 +84,7 @@ def test_contains_trigger_word():
         recall_type=RecallType.KNOWLEDGE, content='saw a thing'
     )
     events = [agent_event, user_event, recall_event]
-    assert condenser._contains_trigger_word(events)
+    assert condenser.should_condense(View(events=events), State())
 
     # Test case 6: Multiple user messages, only the most recent one matters
     user_event1 = MessageAction('First message without keyword')
@@ -88,11 +92,11 @@ def test_contains_trigger_word():
     user_event2 = MessageAction('Please CONDENSE! the conversation history.')
     user_event2._source = 'user'  # type: ignore [attr-defined]
     events = [user_event1, agent_event, user_event2]
-    assert condenser._contains_trigger_word(events)
+    assert condenser.should_condense(View(events=events), State())
 
     # Test case 7: Multiple user messages, most recent one doesn't have keyword
-    events = [user_event2, agent_event, user_event1]
-    assert not condenser._contains_trigger_word(events)
+    events: list[Event] = [user_event2, agent_event, user_event1]
+    assert not condenser.should_condense(View(events=events), State())
 
 
 def test_no_condensation(agent: CodeActAgent):
@@ -110,7 +114,7 @@ def test_no_condensation(agent: CodeActAgent):
 
     # Verify that a View is returned
     assert isinstance(result, View)
-    assert len(result.events) == 5
+    assert len(result.events) == 6
 
 
 def test_condense(agent: CodeActAgent):
@@ -187,14 +191,14 @@ def test_should_condense_max_size():
     condenser = LLMAgentCacheCondenser(max_size=10)
 
     # Create mock events
-    events_small = [MessageAction(f'Message {i}') for i in range(5)]
-    events_large = [MessageAction(f'Message {i}') for i in range(11)]
+    events_small: list[Event] = [MessageAction(f'Message {i}') for i in range(5)]
+    events_large: list[Event] = [MessageAction(f'Message {i}') for i in range(11)]
 
     # Test should_condense with small number of events
-    assert not condenser.should_condense(View(events=events_small))
+    assert not condenser.should_condense(View(events=events_small), State())
 
     # Test should_condense with large number of events
-    assert condenser.should_condense(View(events=events_large))
+    assert condenser.should_condense(View(events=events_large), State())
 
 
 def test_llm_agent_cache_condenser_simulated_mixed_condensation(agent: CodeActAgent):

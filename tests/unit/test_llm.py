@@ -9,11 +9,18 @@ from litellm.exceptions import (
     RateLimitError,
 )
 
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
+from openhands.events.action.files import FileReadAction
+from openhands.events.action.message import MessageAction
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from tests.unit.testing_utils import create_tool_call_metadata
 
 
 @pytest.fixture(autouse=True)
@@ -324,7 +331,9 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         wait_time = mock_sleep.call_args[0][0]
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        ), (
+            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -524,9 +533,9 @@ def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
         config = LLMConfig(model=model_name, api_key='test_key')
         llm = LLM(config)
 
-        assert (
-            llm.is_function_calling_active() == expected_support
-        ), f'Expected function calling support to be {expected_support} for model {model_name}'
+        assert llm.is_function_calling_active() == expected_support, (
+            f'Expected function calling support to be {expected_support} for model {model_name}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -964,3 +973,112 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
     called_url = mock_get.call_args[0][0]
     assert called_url.startswith('http://') or called_url.startswith('https://')
+
+
+def test_get_token_count_with_content_json(default_config):
+    """Test LLM.get_token_count with actual content from content.json."""
+    # Load content.json
+    content_json_path = Path('tests/unit/content.json')
+    with content_json_path.open('r') as f:
+        content_data = json.load(f)
+
+    # Initialize LLM instance
+    llm = LLM(default_config)
+
+    # Extract the "content" field from each entry and convert to list[dict]
+    messages = []
+    previous_token_count = 0
+    for entry in content_data:
+        messages.append(entry)
+        # Calculate token count
+        token_count = llm.get_token_count(messages)
+
+        # Assert token count is greater than the previous count
+        assert token_count > previous_token_count
+        previous_token_count = token_count
+
+    # Final assertion to ensure token count is valid
+    assert previous_token_count > 0
+    print(f'Final token count for content.json: {previous_token_count}')
+
+
+def test_get_token_count_with_tool(default_config):
+    # Initialize LLM instance
+    llm = LLM(default_config)
+
+    content_data = [
+        {
+            'content': [
+                {
+                    'type': 'text',
+                    'text': "\n\n<RUNTIME_INFORMATION>\n\nThe user has access to the following hosts for accessing a web application,\neach of which has a corresponding port:\n* http://localhost:53184 (port 53184)\n* http://localhost:56546 (port 56546)\n\nWhen starting a web server, use the corresponding ports. You should also\nset any options to allow iframes and CORS requests, and allow the server to\nbe accessed from any host (e.g. 0.0.0.0).\nFor example, if you are using vite.config.js, you should set server.host and server.allowedHosts to true\n\n\n\nToday's date is 2025-04-25 (UTC).\n\n</RUNTIME_INFORMATION>",
+                }
+            ],
+            'role': 'user',
+        },
+        {
+            'content': [
+                {
+                    'type': 'text',
+                    'text': "I'll explore the codebase to give you an overview of what we're working with. Let's start by looking at the root directory structure.",
+                }
+            ],
+            'role': 'assistant',
+            'tool_calls': [
+                {
+                    'id': 'toolu_01NZjJ3e6fzhhbYYcb5k1k4d',
+                    'type': 'function',
+                    'function': {
+                        'name': 'str_replace_editor',
+                        'arguments': '{"command": "view","path": "/workspace"}',
+                    },
+                }
+            ],
+        },
+    ]
+    messages = []
+    previous_token_count = 0
+    for entry in content_data:
+        messages.append(entry)
+        # Calculate token count
+        token_count = llm.get_token_count(messages)
+
+        # Assert token count is greater than the previous count
+        assert token_count > previous_token_count
+        previous_token_count = token_count
+
+    # Final assertion to ensure token count is valid
+    assert previous_token_count > 0
+    print(f'Final token count for content.json: {previous_token_count}')
+
+
+def test_get_token_count_with_agent():
+    events: list[Event] = [MessageAction('Hi!')]
+    assert do_count(events) > 0
+
+
+def test_get_token_count_with_agent_fileread():
+    msg = MessageAction('Hi!')
+    fileread = FileReadAction('file.txt')
+    fileread.tool_call_metadata = create_tool_call_metadata()
+
+    msg_tokens = do_count([msg])
+    assert msg_tokens > 0
+
+    fileread_tokens = do_count([fileread])
+    assert fileread_tokens > 0
+
+    both_tokens = do_count([msg, fileread])
+    assert both_tokens > msg_tokens
+    assert both_tokens > fileread_tokens
+
+
+def do_count(events: list[Event]):
+    llm = LLM(
+        LLMConfig(
+            model='gpt-4o',
+        )
+    )
+    agent = CodeActAgent(llm, AgentConfig())
+    params = agent.build_llm_completion_params(events, State())
+    return llm.get_token_count_params(params)

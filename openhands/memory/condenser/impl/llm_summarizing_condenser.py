@@ -150,7 +150,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
             )
         )
 
-    def should_condense(self, view: View) -> bool:
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
         return len(view) > self.max_size
 
     @classmethod

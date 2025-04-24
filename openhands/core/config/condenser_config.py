@@ -76,6 +76,11 @@ class LLMAgentCacheCondenserConfig(BaseModel):
         description='Number of initial events to always keep in history.',
         ge=0,
     )
+    max_tokens: int = Field(
+        default=100_000,
+        description='Maximum number of tokens before condensation is triggered.',
+        ge=1,
+    )
 
     model_config = {'extra': 'forbid'}
 

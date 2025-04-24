@@ -51,7 +51,7 @@ class CachingCondenser(Condenser, ABC):
             )
 
         # Check if we should condense
-        if not self.should_condense(view):
+        if not self.should_condense(view, state, agent):
             return view
 
         # Do the condensation
@@ -146,7 +146,7 @@ class CachingCondenser(Condenser, ABC):
         pass
 
     @abstractmethod
-    def should_condense(self, view: View) -> bool:
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
         """Determine if a view should be condensed.
 
         Args:

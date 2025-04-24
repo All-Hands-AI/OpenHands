@@ -138,7 +138,8 @@ class Session:
                 condensers=[
                     BrowserOutputCondenserConfig(),
                     LLMAgentCacheCondenserConfig(
-                        max_size=100,  # Default max size
+                        max_size=80,  # Default max size
+                        max_tokens=100_000,  # Default max tokens
                         trigger_word='CONDENSE!',  # Default trigger word
                         keep_first=4,
                     ),
