@@ -31,17 +31,19 @@ export function Container({
     >
       {labels && (
         <div className="flex text-xs h-[36px]">
-          {labels.map(({ label: l, to, icon, isBeta, isLoading, rightContent }) => (
-            <NavTab
-              key={to}
-              to={to}
-              label={l}
-              icon={icon}
-              isBeta={isBeta}
-              isLoading={isLoading}
-              rightContent={rightContent}
-            />
-          ))}
+          {labels.map(
+            ({ label: l, to, icon, isBeta, isLoading, rightContent }) => (
+              <NavTab
+                key={to}
+                to={to}
+                label={l}
+                icon={icon}
+                isBeta={isBeta}
+                isLoading={isLoading}
+                rightContent={rightContent}
+              />
+            ),
+          )}
         </div>
       )}
       {!labels && label && (
