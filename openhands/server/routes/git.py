@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -157,8 +158,10 @@ async def get_suggested_tasks(
             )
 
         except UnknownException as e:
+            error_message = str(e)
+            logger.warning(f"Unknown exception in suggested-tasks route: {error_message}")
             return JSONResponse(
-                content=str(e),
+                content={"error": error_message},
                 status_code=500,
             )
 

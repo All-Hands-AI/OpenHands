@@ -100,18 +100,24 @@ class BaseGitService(ABC):
     def handle_http_status_error(
         self, e: HTTPStatusError
     ) -> AuthenticationError | RateLimitError | UnknownException:
-        if e.response.status_code == 401:
-            return AuthenticationError(f'Invalid {self.provider} token')
-        elif e.response.status_code == 429:
-            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
-            return RateLimitError('GitHub API rate limit exceeded')
+        error_details = str(e)
+        status_code = e.response.status_code
+        response_text = e.response.text if hasattr(e.response, 'text') else 'No response text'
+        
+        if status_code == 401:
+            logger.warning(f'Authentication error on {self.provider} API: {error_details}')
+            return AuthenticationError(f'Invalid {self.provider} token: {error_details}')
+        elif status_code == 429:
+            logger.warning(f'Rate limit exceeded on {self.provider} API: {error_details}')
+            return RateLimitError(f'GitHub API rate limit exceeded: {error_details}')
 
-        logger.warning(f'Status error on {self.provider} API: {e}')
-        return UnknownException('Unknown error')
+        logger.warning(f'Status error {status_code} on {self.provider} API: {error_details}. Response: {response_text}')
+        return UnknownException(f'HTTP status {status_code}: {error_details}')
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
-        logger.warning(f'HTTP error on {self.provider} API: {e}')
-        return UnknownException('Unknown error')
+        error_details = str(e)
+        logger.warning(f'HTTP error on {self.provider} API: {error_details}')
+        return UnknownException(f'HTTP error: {error_details}')
 
 
 class GitService(Protocol):

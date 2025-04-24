@@ -6,9 +6,11 @@ import httpx
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
+    AuthenticationError,
     BaseGitService,
     GitService,
     ProviderType,
+    RateLimitError,
     Repository,
     RequestMethod,
     SuggestedTask,
@@ -253,8 +255,10 @@ class GitHubService(BaseGitService, GitService):
 
                 result = response.json()
                 if 'errors' in result:
+                    error_details = json.dumps(result['errors'])
+                    logger.warning(f"GitHub GraphQL query error: {error_details}")
                     raise UnknownException(
-                        f"GraphQL query error: {json.dumps(result['errors'])}"
+                        f"GitHub GraphQL query error: {error_details}"
                     )
 
                 return dict(result)
@@ -371,8 +375,15 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
+        except UnknownException as e:
+            # This is already logged by handle_http_error or handle_http_status_error
+            logger.warning(f"Error fetching tasks due to API error: {e}")
+            return []
+        except AuthenticationError as e:
+            logger.warning(f"Authentication error fetching tasks: {e}")
+            return []
         except Exception as e:
-            logger.warning(f"Error fetching tasks: {e}")
+            logger.warning(f"Unexpected error fetching tasks: {type(e).__name__}: {e}")
             return []
 
 
