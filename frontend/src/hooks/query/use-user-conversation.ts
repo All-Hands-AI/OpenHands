@@ -7,6 +7,6 @@ export const useUserConversation = (cid: string | null) =>
     queryFn: () => OpenHands.getConversation(cid!),
     enabled: !!cid,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 30, // 30 seconds - reduced from 5 minutes for more responsive title updates
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

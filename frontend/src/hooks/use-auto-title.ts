@@ -48,6 +48,7 @@ export function useAutoTitle() {
       return;
     }
 
+    // Request title generation from the backend
     updateConversation(
       {
         id: conversationId,
@@ -56,13 +57,30 @@ export function useAutoTitle() {
       {
         onSuccess: async () => {
           try {
-            const updatedConversation =
-              await OpenHands.getConversation(conversationId);
+            // Add a small delay to allow the backend to generate the title
+            // This helps avoid race conditions where we fetch before the title is ready
+            setTimeout(async () => {
+              try {
+                const updatedConversation =
+                  await OpenHands.getConversation(conversationId);
 
-            queryClient.setQueryData(
-              ["user", "conversation", conversationId],
-              updatedConversation,
-            );
+                if (updatedConversation && updatedConversation.title) {
+                  queryClient.setQueryData(
+                    ["user", "conversation", conversationId],
+                    updatedConversation,
+                  );
+                } else {
+                  // If we still don't have a title, invalidate the query to trigger a refetch
+                  queryClient.invalidateQueries({
+                    queryKey: ["user", "conversation", conversationId],
+                  });
+                }
+              } catch (error) {
+                queryClient.invalidateQueries({
+                  queryKey: ["user", "conversation", conversationId],
+                });
+              }
+            }, 1000); // 1 second delay
           } catch (error) {
             queryClient.invalidateQueries({
               queryKey: ["user", "conversation", conversationId],

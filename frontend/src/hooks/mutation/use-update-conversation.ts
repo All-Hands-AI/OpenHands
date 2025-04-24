@@ -11,8 +11,14 @@ export const useUpdateConversation = () => {
       conversation: Partial<Omit<Conversation, "id">>;
     }) =>
       OpenHands.updateUserConversation(variables.id, variables.conversation),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate the conversations list
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
+      
+      // Also invalidate the specific conversation to ensure title updates are reflected
+      queryClient.invalidateQueries({ 
+        queryKey: ["user", "conversation", variables.id] 
+      });
     },
   });
 };
