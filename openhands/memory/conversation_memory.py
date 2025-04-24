@@ -1,5 +1,4 @@
 from typing import Generator
-import json
 
 from litellm import ModelResponse
 
@@ -15,12 +14,12 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    CreatePlanAction,
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
+    MarkTaskAction,
     MessageAction,
-    CreatePlanAction,
-    MarkTaskAction
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import SystemMessageAction
@@ -31,11 +30,11 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    CreatePlanObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
     UserRejectObservation,
-    CreatePlanObservation
 )
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
@@ -46,7 +45,6 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
-from openhands.controller.state.plan import Plan
 
 
 class ConversationMemory:
@@ -213,7 +211,7 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 McpAction,
-                CreatePlanAction
+                CreatePlanAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -300,7 +298,7 @@ class ConversationMemory:
                     content=[TextContent(text=action.message)],
                 )
             ]
-        
+
         elif isinstance(action, SystemMessageAction):
             # Convert SystemMessageAction to a system message
             return [
@@ -425,7 +423,7 @@ class ConversationMemory:
                 )
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
-            content = "\n\n".join(list(obs.outputs.values()))
+            content = '\n\n'.join(list(obs.outputs.values()))
             text = truncate_content(
                 content,
                 max_message_chars,
@@ -511,7 +509,9 @@ class ConversationMemory:
                         )
                     )
                     if formatted_workspace_text.strip():
-                        message_content.append(TextContent(text=formatted_workspace_text))
+                        message_content.append(
+                            TextContent(text=formatted_workspace_text)
+                        )
 
                 # Add microagent knowledge if present
                 if has_microagent_knowledge:
@@ -521,7 +521,9 @@ class ConversationMemory:
                         )
                     )
                     if formatted_microagent_text.strip():
-                        message_content.append(TextContent(text=formatted_microagent_text))
+                        message_content.append(
+                            TextContent(text=formatted_microagent_text)
+                        )
 
                 # Return the combined message if we have any content
                 if message_content:
