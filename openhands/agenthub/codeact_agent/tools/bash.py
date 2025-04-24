@@ -32,9 +32,7 @@ def create_cmd_run_tool(
     use_short_description: bool = False,
 ) -> ChatCompletionToolParam:
     description = (
-        _SHORT_BASH_DESCRIPTION
-        if use_short_description
-        else _DETAILED_BASH_DESCRIPTION
+        _SHORT_BASH_DESCRIPTION if use_short_description else _DETAILED_BASH_DESCRIPTION
     )
     return ChatCompletionToolParam(
         type='function',

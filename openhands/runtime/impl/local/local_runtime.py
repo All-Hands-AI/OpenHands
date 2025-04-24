@@ -68,7 +68,10 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
     import libtmux
 
     server = libtmux.Server()
-    session = server.new_session(session_name='test-session')
+    try:
+        session = server.new_session(session_name='test-session')
+    except Exception:
+        raise ValueError('tmux is not properly installed or available on the path.')
     pane = session.attached_pane
     pane.send_keys('echo "test"')
     pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
