@@ -140,12 +140,9 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
-
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
@@ -154,18 +151,18 @@ async def get_suggested_tasks(
         except AuthenticationError as e:
             return JSONResponse(
                 content=str(e),
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         except UnknownException as e:
             error_message = str(e)
             logger.warning(f"Unknown exception in suggested-tasks route: {error_message}")
             return JSONResponse(
-                content={"error": error_message},
-                status_code=500,
+                content=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='No providers set.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )

@@ -38,8 +38,8 @@ check-dependencies:
 ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
-	@$(MAKE) -s check-tmux
 	@$(MAKE) -s check-poetry
+	@$(MAKE) -s check-tmux
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
 check-system:
@@ -107,8 +107,11 @@ check-tmux:
 	@if command -v tmux > /dev/null; then \
 		echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)tmux is not installed. Please install tmux to continue.$(RESET)"; \
-		exit 1; \
+		echo "$(YELLOW)╔════════════════════════════════════════════════════════════════════════════╗$(RESET)"; \
+		echo "$(YELLOW)║ OPTIONAL: tmux is not installed.                                          ║$(RESET)"; \
+		echo "$(YELLOW)║ Some advanced terminal features may not work without tmux.                ║$(RESET)"; \
+		echo "$(YELLOW)║ You can install it if needed, but it's not required for development.      ║$(RESET)"; \
+		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
 	fi
 
 check-poetry:
