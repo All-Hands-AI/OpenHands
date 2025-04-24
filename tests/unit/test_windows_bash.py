@@ -421,7 +421,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     sub_dir_path = Path(abs_temp_work_dir) / sub_dir_name
     
     # Use PowerShell to create directory
-    create_dir_action = CmdRunAction(command=f"New-Item -Path '{sub_dir_name}' -ItemType Directory")
+    create_dir_action = CmdRunAction(command=f'New-Item -Path "{sub_dir_name}" -ItemType Directory')
     result = windows_bash_session.execute(create_dir_action)
     assert result.exit_code == 0
     
@@ -437,7 +437,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     # 3. Create a file in the current directory (which should be the subdirectory)
     test_content = "This is a test file created by PowerShell"
     create_file_action = CmdRunAction(
-        command=f"Set-Content -Path 'test_file.txt' -Value '{test_content}'"
+        command=f'Set-Content -Path "test_file.txt" -Value "{test_content}"'
     )
     result = windows_bash_session.execute(create_file_action)
     assert result.exit_code == 0
@@ -447,7 +447,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     assert expected_file_path.exists() and expected_file_path.is_file()
     
     # 5. Read file contents using PowerShell and verify
-    read_file_action = CmdRunAction(command="Get-Content -Path 'test_file.txt'")
+    read_file_action = CmdRunAction(command=f'Get-Content -Path "test_file.txt"')
     result = windows_bash_session.execute(read_file_action)
     assert result.exit_code == 0
     assert test_content in result.content
@@ -460,7 +460,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     
     # 7. Read the file using relative path
     read_from_parent_action = CmdRunAction(
-        command=f"Get-Content -Path '{sub_dir_name}/test_file.txt'"
+        command=f'Get-Content -Path "{sub_dir_name}/test_file.txt"'
     )
     result = windows_bash_session.execute(read_from_parent_action)
     assert result.exit_code == 0
@@ -468,12 +468,11 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     
     # 8. Clean up
     remove_file_action = CmdRunAction(
-        command=f"Remove-Item -Path '{sub_dir_name}/test_file.txt' -Force"
+        command=f'Remove-Item -Path "{sub_dir_name}/test_file.txt" -Force'
     )
     result = windows_bash_session.execute(remove_file_action)
     assert result.exit_code == 0
 
-# Add tests similar to test_bash.py for command output continuation
 
 def test_command_output_continuation(windows_bash_session):
     """Test retrieving continued output using empty command after timeout."""
