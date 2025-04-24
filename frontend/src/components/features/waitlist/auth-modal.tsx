@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
@@ -18,8 +17,6 @@ interface AuthModalProps {
 
 export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const tosAccepted = localStorage.getItem("tosAccepted") === "true";
 
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
@@ -28,25 +25,15 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
-      if (tosAccepted) {
-        window.location.href = githubAuthUrl;
-      } else {
-        // Redirect to the TOS page with a redirect URL that will redirect to GitHub auth
-        const encodedGithubUrl = encodeURIComponent(githubAuthUrl);
-        navigate(`/accept-tos?redirect_url=${encodedGithubUrl}`);
-      }
+      // Always start the OIDC flow, let the backend handle TOS check
+      window.location.href = githubAuthUrl;
     }
   };
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
-      if (tosAccepted) {
-        window.location.href = gitlabAuthUrl;
-      } else {
-        // Redirect to the TOS page with a redirect URL that will redirect to GitLab auth
-        const encodedGitlabUrl = encodeURIComponent(gitlabAuthUrl);
-        navigate(`/accept-tos?redirect_url=${encodedGitlabUrl}`);
-      }
+      // Always start the OIDC flow, let the backend handle TOS check
+      window.location.href = gitlabAuthUrl;
     }
   };
 
