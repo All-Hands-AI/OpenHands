@@ -9,7 +9,7 @@ export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const validFiles = Array.from(event.target.files).filter((file) =>
-        file.type.startsWith("image/")
+        file.type.startsWith("image/"),
       );
       onUpload(validFiles);
     }
