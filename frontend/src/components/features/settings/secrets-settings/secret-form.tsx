@@ -1,6 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateSecret } from "#/hooks/mutation/use-create-secret";
 import { useUpdateSecret } from "#/hooks/mutation/use-update-secret";
+import { SettingsInput } from "../settings-input";
+import { cn } from "#/utils/utils";
+import { BrandButton } from "../brand-button";
 
 interface SecretFormProps {
   mode: "add" | "edit";
@@ -67,18 +70,39 @@ export function SecretForm({
   const formTestId = mode === "add" ? "add-secret-form" : "edit-secret-form";
 
   return (
-    <form data-testid={formTestId} action={formAction}>
-      <input data-testid="name-input" name="secret-name" type="text" required />
-      <input
-        data-testid="value-input"
-        name="secret-value"
+    <form
+      data-testid={formTestId}
+      action={formAction}
+      className="flex flex-col items-start gap-6"
+    >
+      <SettingsInput
+        testId="name-input"
+        name="secret-name"
         type="text"
+        label="Name"
+        className="w-[350px]"
         required
       />
 
-      <button data-testid="submit-button" type="submit">
-        Add new secret
-      </button>
+      <label className="flex flex-col gap-2.5 w-fit">
+        <span className="text-sm">Value</span>
+        <textarea
+          data-testid="value-input"
+          name="secret-value"
+          required
+          className={cn(
+            "resize-none w-[680px]",
+            "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+            "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+          )}
+          rows={8}
+        />
+      </label>
+
+      <BrandButton testId="submit-button" type="submit" variant="primary">
+        {mode === "add" && "Add secret"}
+        {mode === "edit" && "Edit secret"}
+      </BrandButton>
     </form>
   );
 }

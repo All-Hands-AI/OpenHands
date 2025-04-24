@@ -14,6 +14,7 @@ interface SettingsInputProps {
   startContent?: React.ReactNode;
   className?: string;
   onChange?: (value: string) => void;
+  required?: boolean;
   min?: number;
   max?: number;
   step?: number;
@@ -32,6 +33,7 @@ export function SettingsInput({
   startContent,
   className,
   onChange,
+  required,
   min,
   max,
   step,
@@ -55,6 +57,7 @@ export function SettingsInput({
         min={min}
         max={max}
         step={step}
+        required={required}
         className={cn(
           "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
