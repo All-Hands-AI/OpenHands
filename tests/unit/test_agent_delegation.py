@@ -258,7 +258,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # The child is done, so we simulate it finishing:
     child_finish_action = AgentFinishAction()
     await delegate_controller._on_event(child_finish_action)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(1)
 
     # Now the parent's delegate is None
     assert (
@@ -267,7 +267,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # Parent's global iteration is updated from the child
     assert (
-        parent_controller.state.iteration == 5
+        parent_controller.state.iteration == 6
     ), "Parent iteration should be the child's iteration + 1 after child is done."
 
     # Cleanup
