@@ -181,7 +181,7 @@ async def test_update_existing_custom_secret_with_put(
 
     # Check that the old secret was removed
     assert 'API_KEY' not in stored_settings.secrets_store.custom_secrets
-    
+
     # Check that the new secret was added
     assert 'NEW_API_KEY' in stored_settings.secrets_store.custom_secrets
     assert (
@@ -457,11 +457,10 @@ async def test_custom_secrets_operations_preserve_settings(
     # Reset the mock to include the new secrets from previous operations
     updated_custom_secrets = {
         'UPDATED_SECRET': SecretStr('updated-value'),
-        'NEW_SECRET': SecretStr('new-value')
+        'NEW_SECRET': SecretStr('new-value'),
     }
     updated_secret_store = SecretStore(
-        custom_secrets=updated_custom_secrets, 
-        provider_tokens=provider_tokens
+        custom_secrets=updated_custom_secrets, provider_tokens=provider_tokens
     )
     updated_settings = Settings(
         language='en',
@@ -479,7 +478,7 @@ async def test_custom_secrets_operations_preserve_settings(
         secrets_store=updated_secret_store,
     )
     mock_settings_store.load.return_value = updated_settings
-    
+
     # 3. Test deleting a custom secret
     response = test_client.delete('/api/secrets/NEW_SECRET')
     assert response.status_code == 200
