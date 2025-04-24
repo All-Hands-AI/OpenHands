@@ -207,54 +207,15 @@ async def unset_settings_tokens(request: Request) -> JSONResponse:
 @app.post('/reset-settings', response_model=dict[str, str])
 async def reset_settings(request: Request) -> JSONResponse:
     """
-    Resets user settings.
+    Resets user settings. (Deprecated)
     """
-    try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
-
-        existing_settings: Settings = await settings_store.load()
-        settings = Settings(
-            language='en',
-            agent='CodeActAgent',
-            security_analyzer='',
-            confirmation_mode=False,
-            llm_model='anthropic/claude-3-5-sonnet-20241022',
-            llm_api_key=SecretStr(''),
-            llm_base_url=None,
-            remote_runtime_resource_factor=1,
-            enable_default_condenser=True,
-            enable_sound_notifications=False,
-            user_consents_to_analytics=existing_settings.user_consents_to_analytics
-            if existing_settings
-            else False,
-            secrets_store=existing_settings.secrets_store
-        )
-
-        server_config_values = server_config.get_config()
-        is_hide_llm_settings_enabled = server_config_values.get(
-            'FEATURE_FLAGS', {}
-        ).get('HIDE_LLM_SETTINGS', False)
-        # We don't want the user to be able to modify these settings in SaaS
-        if server_config.app_mode == AppMode.SAAS and is_hide_llm_settings_enabled:
-            if existing_settings:
-                settings.llm_api_key = existing_settings.llm_api_key
-                settings.llm_base_url = existing_settings.llm_base_url
-                settings.llm_model = existing_settings.llm_model
-
-        await settings_store.store(settings)
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
-        )
-
-    except Exception as e:
-        logger.warning(f'Something went wrong resetting settings: {e}')
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Something went wrong resetting settings'},
-        )
+    logger.warning(
+        f"Deprecated endpoint /api/reset-settings called by user"
+    )
+    return JSONResponse(
+        status_code=status.HTTP_410_GONE,
+        content={'error': 'Reset settings functionality has been removed.'},
+    )
 
 
 async def check_provider_tokens(request: Request, settings: POSTSettingsModel) -> str:
