@@ -49,6 +49,8 @@ class InitSessionRequest(BaseModel):
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
     replay_json: str | None = None
+    system_prompt: str | None = None
+    user_prompt: str | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -69,6 +71,8 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
+    system_prompt: str | None = None,
+    user_prompt: str | None = None,
     attach_convo_id: bool = False,
     mnemonic: str | None = None,
 ):
@@ -153,7 +157,6 @@ async def _create_new_conversation(
             content=user_msg or '',
             image_urls=image_urls or [],
         )
-        
 
     await conversation_manager.maybe_start_agent_loop(
         conversation_id,
@@ -161,6 +164,8 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
         github_user_id=None,
         mnemonic=mnemonic,
     )
@@ -183,6 +188,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
     replay_json = data.replay_json
+    system_prompt = data.system_prompt
+    user_prompt = data.user_prompt
     user_id = get_user_id(request)
     mnemonic = request.state.user.mnemonic
     try:
@@ -195,15 +202,13 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             initial_user_msg,
             image_urls,
             replay_json,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
             mnemonic=mnemonic,
         )
         if conversation_id and user_id is not None:
             await conversation_module._update_conversation_visibility(
-                conversation_id,
-                False,
-                user_id,
-                {'hidden_prompt': True},
-                ''
+                conversation_id, False, user_id, {'hidden_prompt': True}, ''
             )
 
         return JSONResponse(
@@ -443,7 +448,7 @@ async def change_visibility(
         data.is_published,
         str(user_id),
         {'hidden_prompt': data.hidden_prompt},
-        metadata.title,
+        metadata.title if metadata.title else '',
     )
 
 

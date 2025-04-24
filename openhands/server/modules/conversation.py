@@ -1,4 +1,7 @@
 import asyncio
+from datetime import datetime
+
+from sqlalchemy import desc, func, select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
@@ -7,14 +10,10 @@ from openhands.server.shared import (
     ConversationStoreImpl,
     config,
 )
-from sqlalchemy import select, join, desc, func, text
-from datetime import datetime
-
 from openhands.server.static import SortBy
 
 
 class ConversationModule:
-
     def get_view_count(self, conversation: dict, sort_by=None):
         if not sort_by:
             return 0
@@ -261,11 +260,12 @@ class ConversationModule:
                     Conversation,
                     ResearchTrending.c.total_view_24h,
                     ResearchTrending.c.total_view_7d,
-                    ResearchTrending.c.total_view_30d
+                    ResearchTrending.c.total_view_30d,
                 ).select_from(
                     Conversation.outerjoin(
                         ResearchTrending,
-                        Conversation.c.conversation_id == ResearchTrending.c.conversation_id
+                        Conversation.c.conversation_id
+                        == ResearchTrending.c.conversation_id,
                     )
                 )
             else:
@@ -303,11 +303,17 @@ class ConversationModule:
                 }
 
             if sort_by == SortBy.total_view_24h:
-                query = query.order_by(desc(func.coalesce(ResearchTrending.c.total_view_24h, 0)))
+                query = query.order_by(
+                    desc(func.coalesce(ResearchTrending.c.total_view_24h, 0))
+                )
             elif sort_by == SortBy.total_view_7d:
-                query = query.order_by(desc(func.coalesce(ResearchTrending.c.total_view_7d, 0)))
+                query = query.order_by(
+                    desc(func.coalesce(ResearchTrending.c.total_view_7d, 0))
+                )
             elif sort_by == SortBy.total_view_30d:
-                query = query.order_by(desc(func.coalesce(ResearchTrending.c.total_view_30d, 0)))
+                query = query.order_by(
+                    desc(func.coalesce(ResearchTrending.c.total_view_30d, 0))
+                )
 
             # Normal pagination for other pages
             query = query.offset(offset).limit(limit)

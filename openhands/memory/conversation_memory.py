@@ -146,7 +146,7 @@ class ConversationMemory:
         return messages
 
     def process_initial_messages(
-        self, with_caching: bool = False, agent_infos=list | None
+        self, with_caching: bool = False, agent_infos: list | None = None
     ) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
