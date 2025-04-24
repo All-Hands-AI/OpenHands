@@ -185,6 +185,7 @@ class LocalRuntime(ActionExecutionClient):
         self.status_callback = status_callback
         self.server_process: subprocess.Popen[str] | None = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
+        self._log_thread_exit_event = threading.Event()  # Add exit event
 
         # Update env vars
         if self.config.sandbox.runtime_startup_env_vars:
@@ -278,18 +279,29 @@ class LocalRuntime(ActionExecutionClient):
             try:
                 # Read lines while the process is running and stdout is available
                 while self.server_process.poll() is None:
+                    if self._log_thread_exit_event.is_set():  # Check exit event
+                        self.log('info', 'Log thread received exit signal.')
+                        break  # Exit loop if signaled
                     line = self.server_process.stdout.readline()
                     if not line:
                         # Process might have exited between poll() and readline()
                         break
                     self.log('info', f'Server: {line.strip()}')
 
-                # Capture any remaining output after the process exits
-                for line in self.server_process.stdout:
-                    self.log('info', f'Server (remaining): {line.strip()}')
+                # Capture any remaining output after the process exits OR if signaled
+                if not self._log_thread_exit_event.is_set():  # Check again before reading remaining
+                    self.log('info', 'Server process exited, reading remaining output.')
+                    for line in self.server_process.stdout:
+                        if self._log_thread_exit_event.is_set():  # Check inside loop too
+                            self.log('info', 'Log thread received exit signal while reading remaining output.')
+                            break
+                        self.log('info', f'Server (remaining): {line.strip()}')
 
             except Exception as e:
-                self.log('info', f'Error reading server output: {e}')
+                # Log the error, but don't prevent the thread from potentially exiting
+                self.log('error', f'Error reading server output: {e}')
+            finally:
+                self.log('info', 'Log output thread finished.')  # Add log for thread exit
 
         self._log_thread = threading.Thread(target=log_output, daemon=True)
         self._log_thread.start()
@@ -359,6 +371,8 @@ class LocalRuntime(ActionExecutionClient):
 
     def close(self):
         """Stop the server process."""
+        self._log_thread_exit_event.set()  # Signal the log thread to exit
+
         if self.server_process:
             self.server_process.terminate()
             try:
@@ -366,7 +380,7 @@ class LocalRuntime(ActionExecutionClient):
             except subprocess.TimeoutExpired:
                 self.server_process.kill()
             self.server_process = None
-            self._log_thread.join()
+            self._log_thread.join(timeout=5)  # Add timeout to join
 
         if self._temp_workspace:
             shutil.rmtree(self._temp_workspace)

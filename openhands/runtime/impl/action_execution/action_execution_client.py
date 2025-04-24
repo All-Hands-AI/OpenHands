@@ -136,7 +136,7 @@ class ActionExecutionClient(Runtime):
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
-
+        self.log('debug', f"Entering copy_from: path={path}") # Add entry log
         try:
             params = {'path': path}
             with self._send_action_server_request(
@@ -146,17 +146,58 @@ class ActionExecutionClient(Runtime):
                 stream=True,
                 timeout=30,
             ) as response:
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_file:
-                    shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
-                    return Path(temp_file.name)
+                # Ensure the request was successful before proceeding
+                response.raise_for_status() # Check for HTTP errors
+                self.log('debug', f"copy_from: Received response status {response.status_code} for path={path}")
+                temp_file_path = None
+                temp_fd = None
+                temp_f = None
+                try:
+                    # Get file descriptor and path
+                    temp_fd, temp_file_path = tempfile.mkstemp(suffix='.zip')
+                    self.log('debug', f"copy_from: Writing stream to temporary file {temp_file_path} (fd: {temp_fd})")
+                    bytes_written = 0
+                    # Open file descriptor for writing in binary mode
+                    temp_f = os.fdopen(temp_fd, 'wb')
+                    # Read chunk by chunk
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk: # filter out keep-alive new chunks
+                            temp_f.write(chunk)
+                            bytes_written += len(chunk)
+                    self.log('debug', f"copy_from: Finished writing stream. Total bytes: {bytes_written}. Temporary file: {temp_file_path}")
+                finally:
+                    # Ensure file handle is closed FIRST
+                    if temp_f:
+                        temp_f.close()
+                        self.log('debug', "copy_from: Explicitly closed temporary file handle.")
+                    elif temp_fd:
+                         # If fdopen failed, still need to close the raw descriptor
+                         os.close(temp_fd)
+                         self.log('debug', "copy_from: Explicitly closed raw temporary file descriptor.")
+                    # Then, explicitly close the response stream
+                    response.close()
+                    self.log('debug', "copy_from: Explicitly closed response content stream.")
+
+                if temp_file_path is None:
+                     raise RuntimeError("Failed to create temporary file path in copy_from")
+
+                final_path = Path(temp_file_path) # Use the stored path
+                self.log('debug', f"Exiting copy_from: returning path {final_path}") # Add exit log
+                return final_path
         except requests.Timeout:
+            self.log('error', f"copy_from: Timeout occurred for path={path}")
             raise TimeoutError('Copy operation timed out')
+        except requests.exceptions.RequestException as e:
+            self.log('error', f"copy_from: RequestException occurred for path={path}: {e}")
+            raise # Re-raise other request-related errors
+        except Exception as e:
+             self.log('error', f"copy_from: Unexpected error occurred for path={path}: {e}")
+             raise # Re-raise unexpected errors
 
     def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ) -> None:
+        self.log('debug', f"Entering copy_to: host_src={host_src}, sandbox_dest={sandbox_dest}, recursive={recursive}")
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
@@ -227,6 +268,7 @@ class ActionExecutionClient(Runtime):
                 except Exception as e:
                     self.log('error', f'Failed to delete temporary zip file {temp_zip_path}: {e}')
             self.log('debug', f'Exiting finally block for copy_to for host:{host_src}.')
+        self.log('debug', f"Exiting copy_to: host_src={host_src}")
 
     def get_vscode_token(self) -> str:
         if self.vscode_enabled and self._runtime_initialized:

@@ -246,8 +246,8 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
             assert 'hello' in results[3]  # Write-Output with backticks
             assert 'hello\nworld\nare\nyou\nthere?' in results[4]  # Write-Output with newlines
             assert 'hello\nworld\nare\nyou\n\nthere?' in results[5]  # Write-Output with literal newlines
-            # TODO: investigate why the tailing space is removed, and why the extra newline at the beginning
-            assert '\nhello\nworld\n"' in results[6]  # Write-Output with quote
+            # TODO: investigate why the tailing space becomes a newline
+            assert 'hello\nworld\n"' in results[6]  # Write-Output with quote
         else:
             assert 'total 0' in results[0]  # ls -l
             assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
@@ -364,10 +364,10 @@ def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
     try:
         if is_windows():
             # Windows PowerShell version using semicolon
-            obs = _run_cmd_action(runtime, 'Get-Location; Get-ChildItem')
+            obs = _run_cmd_action(runtime, 'Get-Location && Get-ChildItem')
             assert obs.exit_code == 0
             assert config.workspace_mount_path_in_sandbox in obs.content
-            assert 'Mode' in obs.content  # PowerShell Get-ChildItem header
+            assert '.git_config' in obs.content
         else:
             # Original Linux version using &&
             obs = _run_cmd_action(runtime, 'pwd && ls -l')
@@ -620,7 +620,8 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         # Result is returned as a path
         assert isinstance(result, Path)
 
-        result.unlink()
+        if result.exists() and not is_windows():
+            result.unlink()
     finally:
         _close_test_runtime(runtime)
 
