@@ -142,8 +142,9 @@ class TestGitHandler(unittest.TestCase):
             )
         )
 
-    def test_get_valid_ref(self):
-        """Test that _get_valid_ref returns the highest priority valid ref."""
+    def test_get_valid_ref_with_origin_current_branch(self):
+        """Test that _get_valid_ref returns the current branch in origin when it exists."""
+        # This test uses the setup from setUp where the current branch exists in origin
         ref = self.git_handler._get_valid_ref()
         self.assertIsNotNone(ref)
 
@@ -162,6 +163,92 @@ class TestGitHandler(unittest.TestCase):
 
         # Verify the ref exists
         result = self._execute_command(f'git rev-parse --verify {ref}', self.local_dir)
+        self.assertEqual(result.exit_code, 0)
+
+    def test_get_valid_ref_without_origin_current_branch(self):
+        """Test that _get_valid_ref falls back to default branch when current branch doesn't exist in origin."""
+        # Create a new branch that doesn't exist in origin
+        self._execute_command('git checkout -b new-local-branch', self.local_dir)
+
+        # Clear the executed commands to start fresh
+        self.executed_commands = []
+
+        ref = self.git_handler._get_valid_ref()
+        self.assertIsNotNone(ref)
+
+        # Check that the refs were checked in the correct order
+        verify_commands = [
+            cmd
+            for cmd, _ in self.executed_commands
+            if cmd.startswith('git rev-parse --verify')
+        ]
+
+        # Should have tried origin/new-local-branch first (which doesn't exist)
+        self.assertTrue(
+            any('origin/new-local-branch' in cmd for cmd in verify_commands)
+        )
+
+        # Should have found a valid ref (origin/main or merge-base)
+        self.assertNotEqual(ref, 'origin/new-local-branch')
+        self.assertTrue(ref == 'origin/main' or 'merge-base' in ref)
+
+        # Verify the ref exists
+        result = self._execute_command(f'git rev-parse --verify {ref}', self.local_dir)
+        self.assertEqual(result.exit_code, 0)
+
+    def test_get_valid_ref_without_origin(self):
+        """Test that _get_valid_ref falls back to empty tree ref when there's no origin."""
+        # Create a new directory with a git repo but no origin
+        no_origin_dir = os.path.join(self.test_dir, 'no-origin')
+        os.makedirs(no_origin_dir, exist_ok=True)
+
+        # Initialize git repo without origin
+        self._execute_command('git init', no_origin_dir)
+        self._execute_command("git config user.email 'test@example.com'", no_origin_dir)
+        self._execute_command("git config user.name 'Test User'", no_origin_dir)
+
+        # Create a file and commit it
+        with open(os.path.join(no_origin_dir, 'file1.txt'), 'w') as f:
+            f.write('Content in repo without origin')
+        self._execute_command('git add file1.txt', no_origin_dir)
+        self._execute_command("git commit -m 'Initial commit'", no_origin_dir)
+
+        # Create a custom GitHandler with a modified _get_default_branch method for this test
+        class TestGitHandler(GitHandler):
+            def _get_default_branch(self) -> str:
+                # Override to handle repos without origin
+                try:
+                    return super()._get_default_branch()
+                except IndexError:
+                    return 'main'  # Default fallback
+
+        # Create a new GitHandler for this repo
+        no_origin_handler = TestGitHandler(self._execute_command)
+        no_origin_handler.set_cwd(no_origin_dir)
+
+        # Clear the executed commands to start fresh
+        self.executed_commands = []
+
+        ref = no_origin_handler._get_valid_ref()
+
+        # Verify that git commands were executed
+        self.assertTrue(
+            any(
+                cmd.startswith('git rev-parse --verify')
+                for cmd, _ in self.executed_commands
+            )
+        )
+
+        # Should have fallen back to the empty tree ref
+        self.assertEqual(
+            ref, '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'
+        )
+
+        # Verify the ref exists (the empty tree ref always exists)
+        result = self._execute_command(
+            'git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904',
+            no_origin_dir,
+        )
         self.assertEqual(result.exit_code, 0)
 
     def test_get_ref_content(self):
