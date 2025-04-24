@@ -36,6 +36,7 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
+  plugins: [],
   presets: [
     [
       'classic',
@@ -74,6 +75,11 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'User Guides',
+        },
+        {
+          href: 'https://docs.all-hands.dev/swagger-ui/', // FIXME: this should be a relative path, but docusarus steals the click
+          label: 'API',
+          position: 'left',
         },
         {
           type: 'localeDropdown',

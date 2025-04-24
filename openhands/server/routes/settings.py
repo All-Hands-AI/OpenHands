@@ -37,11 +37,6 @@ async def load_settings(
     settings: Settings | None = Depends(get_user_settings),
 ) -> GETSettingsModel | JSONResponse:
     try:
-        # For testing purposes, if settings is None but we have a user_id, try to load settings directly
-        if not settings and user_id:
-            settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-            settings = await settings_store.load()
-
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -64,7 +59,7 @@ async def load_settings(
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
-            llm_api_key_set=settings.llm_api_key is not None,
+            llm_api_key_set=settings.llm_api_key is not None and bool(settings.llm_api_key),
             provider_tokens_set=provider_tokens_set,
         )
         settings_with_token_data.llm_api_key = None
@@ -214,26 +209,27 @@ async def unset_settings_tokens(
 @app.post('/reset-settings', response_model=dict[str, str])
 async def reset_settings(
     settings_store: SettingsStore = Depends(get_user_settings_store),
+    existing_settings: Settings = Depends(get_user_settings),
 ) -> JSONResponse:
     """
     Resets user settings.
     """
     try:
-        existing_settings = await settings_store.load()
         settings = Settings(
             language='en',
             agent='CodeActAgent',
             security_analyzer='',
             confirmation_mode=False,
             llm_model='anthropic/claude-3-5-sonnet-20241022',
-            llm_api_key='',
-            llm_base_url='',
+            llm_api_key=SecretStr(''),
+            llm_base_url=None,
             remote_runtime_resource_factor=1,
             enable_default_condenser=True,
             enable_sound_notifications=False,
             user_consents_to_analytics=existing_settings.user_consents_to_analytics
             if existing_settings
             else False,
+            secrets_store=existing_settings.secrets_store
         )
 
         server_config_values = server_config.get_config()
