@@ -18,7 +18,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-
+from openhands.integrations.github.github_queries import suggested_task_pr_graphql_query, suggested_task_issue_graphql_query
 
 class GitHubService(BaseGitService, GitService):
     BASE_URL = 'https://api.github.com'
@@ -278,44 +278,18 @@ class GitHubService(BaseGitService, GitService):
         login = user.login
         tasks: list[SuggestedTask] = []
 
+
+        
+
         # Split into two separate queries: one for PRs and one for issues
         try:
-            # First query: Get pull requests (reduced from 100 to 50 to help with timeout issues)
-            pr_query = """
-            query GetUserPRs($login: String!) {
-              user(login: $login) {
-                pullRequests(first: 50, states: [OPEN], orderBy: {field: UPDATED_AT, direction: DESC}) {
-                  nodes {
-                    number
-                    title
-                    repository {
-                      nameWithOwner
-                    }
-                    mergeable
-                    commits(last: 1) {
-                      nodes {
-                        commit {
-                          statusCheckRollup {
-                            state
-                          }
-                        }
-                      }
-                    }
-                    reviews(first: 50, states: [CHANGES_REQUESTED, COMMENTED]) {
-                      nodes {
-                        state
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            """
+           
+            
             
             variables = {'login': login}
             
             # Execute PR query
-            pr_response = await self.execute_graphql_query(pr_query, variables)
+            pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
             pr_data = pr_response['data']['user']
             
             # Process pull requests
@@ -354,26 +328,9 @@ class GitHubService(BaseGitService, GitService):
                             title=pr['title'],
                         )
                     )
-                    
-            # Second query: Get issues (reduced from 100 to 50 to help with timeout issues)
-            issue_query = """
-            query GetUserIssues($login: String!) {
-              user(login: $login) {
-                issues(first: 50, states: [OPEN], filterBy: {assignee: $login}, orderBy: {field: UPDATED_AT, direction: DESC}) {
-                  nodes {
-                    number
-                    title
-                    repository {
-                      nameWithOwner
-                    }
-                  }
-                }
-              }
-            }
-            """
             
             # Execute issue query
-            issue_response = await self.execute_graphql_query(issue_query, variables)
+            issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
             issue_data = issue_response['data']['user']
             
             # Process issues
@@ -391,7 +348,6 @@ class GitHubService(BaseGitService, GitService):
 
             return tasks
         except Exception as e:
-            logger.warning(f"Error fetching suggested tasks: {type(e).__name__}: {str(e)}")
             return []
 
 
