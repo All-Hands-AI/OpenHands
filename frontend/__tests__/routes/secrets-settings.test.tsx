@@ -53,6 +53,7 @@ describe("Secret actions", () => {
     const secretForm = screen.getByTestId("add-secret-form");
     const secrets = screen.queryAllByTestId("secret-item");
 
+    expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
     expect(secretForm).toBeInTheDocument();
     expect(secrets).toHaveLength(0);
 
@@ -92,6 +93,7 @@ describe("Secret actions", () => {
     // render edit form
     const editForm = screen.getByTestId("edit-secret-form");
 
+    expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
     expect(editForm).toBeInTheDocument();
     expect(screen.queryAllByTestId("secret-item")).toHaveLength(0);
 
@@ -219,5 +221,20 @@ describe("Secret actions", () => {
     // optimistic update
     expect(screen.queryAllByTestId("secret-item")).toHaveLength(2);
     expect(screen.queryByText("My Secret 2")).toBeInTheDocument();
+  });
+
+  it("should hide the no items message when in form view", async () => {
+    const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
+    getSecretsSpy.mockResolvedValue([]);
+    renderSecretsSettings();
+
+    // render form & hide items
+    expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
+    const button = screen.getByTestId("add-secret-button");
+    await userEvent.click(button);
+
+    const secretForm = screen.getByTestId("add-secret-form");
+    expect(secretForm).toBeInTheDocument();
+    expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
   });
 });

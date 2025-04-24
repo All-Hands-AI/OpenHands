@@ -4,6 +4,7 @@ import { useGetSecrets } from "#/hooks/query/use-get-secrets";
 import { useDeleteSecret } from "#/hooks/mutation/use-delete-secret";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
 import { SecretListItem } from "#/components/features/settings/secrets-settings/secret-list-item";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
 interface ConfirmationModalProps {
   onConfirm: () => void;
@@ -63,25 +64,43 @@ function SecretsSettingsScreen() {
   };
 
   return (
-    <div data-testid="secrets-settings-screen">
-      {secrets?.length === 0 && (
+    <div
+      data-testid="secrets-settings-screen"
+      className="px-11 py-9 flex flex-col gap-5"
+    >
+      {secrets?.length === 0 && view === "list" && (
         <p data-testid="no-secrets-message">No secrets found</p>
       )}
-      {view === "list" &&
-        secrets?.map((secret) => (
-          <SecretListItem
-            key={secret}
-            title={secret}
-            onEdit={() => {
-              setView("edit-secret-form");
-              setSelectedSecret(secret);
-            }}
-            onDelete={() => {
-              setConfirmationModalIsVisible(true);
-              setSelectedSecret(secret);
-            }}
-          />
-        ))}
+
+      {view === "list" && (
+        <ul>
+          {secrets?.map((secret) => (
+            <SecretListItem
+              key={secret}
+              title={secret}
+              onEdit={() => {
+                setView("edit-secret-form");
+                setSelectedSecret(secret);
+              }}
+              onDelete={() => {
+                setConfirmationModalIsVisible(true);
+                setSelectedSecret(secret);
+              }}
+            />
+          ))}
+        </ul>
+      )}
+
+      {view === "list" && (
+        <BrandButton
+          testId="add-secret-button"
+          type="button"
+          variant="primary"
+          onClick={() => setView("add-secret-form")}
+        >
+          Add a new secret
+        </BrandButton>
+      )}
 
       {(view === "add-secret-form" || view === "edit-secret-form") && (
         <SecretForm
@@ -90,14 +109,6 @@ function SecretsSettingsScreen() {
           onSettled={() => setView("list")}
         />
       )}
-
-      <button
-        data-testid="add-secret-button"
-        type="button"
-        onClick={() => setView("add-secret-form")}
-      >
-        Add New Secret
-      </button>
 
       {confirmationModalIsVisible && (
         <ConfirmationModal onConfirm={onConfirmDeleteSecret} />
