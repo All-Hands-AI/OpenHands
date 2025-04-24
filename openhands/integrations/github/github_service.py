@@ -277,17 +277,12 @@ class GitHubService(BaseGitService, GitService):
         user = await self.get_user()
         login = user.login
         tasks: list[SuggestedTask] = []
-
+        variables = {'login': login}
 
         
 
         # Split into two separate queries: one for PRs and one for issues
         try:
-           
-            
-            
-            variables = {'login': login}
-            
             # Execute PR query
             pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
             pr_data = pr_response['data']['user']
@@ -329,6 +324,11 @@ class GitHubService(BaseGitService, GitService):
                         )
                     )
             
+        except Exception:
+            pass
+
+
+        try:
             # Execute issue query
             issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
             issue_data = issue_response['data']['user']
@@ -347,8 +347,11 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-        except Exception as e:
-            return []
+        except Exception:
+            pass
+
+
+        return tasks
 
 
 github_service_cls = os.environ.get(
