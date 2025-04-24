@@ -79,7 +79,7 @@ function GitSettingsScreen() {
     >
       {isLoading && <GitSettingInputsSkeleton />}
 
-      {isSaas && config.APP_SLUG && (
+      {isSaas && config.APP_SLUG && !isLoading && (
         <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG} />
       )}
 
