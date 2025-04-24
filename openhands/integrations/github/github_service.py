@@ -270,60 +270,56 @@ class GitHubService(BaseGitService, GitService):
         Returns:
         - PRs authored by the user.
         - Issues assigned to the user.
+        
+        Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
         user = await self.get_user()
         login = user.login
+        tasks: list[SuggestedTask] = []
 
-        query = """
-        query GetUserTasks($login: String!) {
-          user(login: $login) {
-            pullRequests(first: 100, states: [OPEN], orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-                mergeable
-                commits(last: 1) {
+        # Split into two separate queries: one for PRs and one for issues
+        try:
+            # First query: Get pull requests (reduced from 100 to 50 to help with timeout issues)
+            pr_query = """
+            query GetUserPRs($login: String!) {
+              user(login: $login) {
+                pullRequests(first: 50, states: [OPEN], orderBy: {field: UPDATED_AT, direction: DESC}) {
                   nodes {
-                    commit {
-                      statusCheckRollup {
+                    number
+                    title
+                    repository {
+                      nameWithOwner
+                    }
+                    mergeable
+                    commits(last: 1) {
+                      nodes {
+                        commit {
+                          statusCheckRollup {
+                            state
+                          }
+                        }
+                      }
+                    }
+                    reviews(first: 50, states: [CHANGES_REQUESTED, COMMENTED]) {
+                      nodes {
                         state
                       }
                     }
                   }
                 }
-                reviews(first: 100, states: [CHANGES_REQUESTED, COMMENTED]) {
-                  nodes {
-                    state
-                  }
-                }
               }
             }
-            issues(first: 100, states: [OPEN], filterBy: {assignee: $login}, orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-              }
-            }
-          }
-        }
-        """
-
-        variables = {'login': login}
-
-        try:
-            response = await self.execute_graphql_query(query, variables)
-            data = response['data']['user']
-            tasks: list[SuggestedTask] = []
-
+            """
+            
+            variables = {'login': login}
+            
+            # Execute PR query
+            pr_response = await self.execute_graphql_query(pr_query, variables)
+            pr_data = pr_response['data']['user']
+            
             # Process pull requests
-            for pr in data['pullRequests']['nodes']:
+            for pr in pr_data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
 
                 # Start with default task type
@@ -358,9 +354,30 @@ class GitHubService(BaseGitService, GitService):
                             title=pr['title'],
                         )
                     )
-
+                    
+            # Second query: Get issues (reduced from 100 to 50 to help with timeout issues)
+            issue_query = """
+            query GetUserIssues($login: String!) {
+              user(login: $login) {
+                issues(first: 50, states: [OPEN], filterBy: {assignee: $login}, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                  nodes {
+                    number
+                    title
+                    repository {
+                      nameWithOwner
+                    }
+                  }
+                }
+              }
+            }
+            """
+            
+            # Execute issue query
+            issue_response = await self.execute_graphql_query(issue_query, variables)
+            issue_data = issue_response['data']['user']
+            
             # Process issues
-            for issue in data['issues']['nodes']:
+            for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
@@ -373,7 +390,8 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error fetching suggested tasks: {type(e).__name__}: {str(e)}")
             return []
 
 
