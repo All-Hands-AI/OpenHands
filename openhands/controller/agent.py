@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, TypedDict
 
@@ -109,11 +111,11 @@ class Agent(ABC):
             self.llm.reset()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__
 
     @classmethod
-    def register(cls, name: str, agent_cls: type['Agent']):
+    def register(cls, name: str, agent_cls: type['Agent']) -> None:
         """Registers an agent class in the registry.
 
         Parameters:
