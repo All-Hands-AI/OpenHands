@@ -63,5 +63,14 @@ BEGIN
         ALTER TABLE conversations
         ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
     END IF;
+
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'conversations'
+        AND column_name = 'status'
+    ) THEN
+        ALTER TABLE conversations
+        ADD COLUMN status VARCHAR DEFAULT 'available';
+    END IF;
 END;
 $$;
