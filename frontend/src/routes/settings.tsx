@@ -18,6 +18,7 @@ function SettingsScreen() {
     { to: "/settings/git", text: "Git" },
     { to: "/settings/app", text: "Application" },
     { to: "/settings/billing", text: "Credits" },
+    { to: "/settings/secrets", text: "Secrets" },
     { to: "/settings/api-keys", text: "API Keys" },
   ];
 
@@ -25,6 +26,7 @@ function SettingsScreen() {
     { to: "/settings", text: "LLM" },
     { to: "/settings/git", text: "Git" },
     { to: "/settings/app", text: "Application" },
+    { to: "/settings/secrets", text: "Secrets" },
   ];
 
   React.useEffect(() => {

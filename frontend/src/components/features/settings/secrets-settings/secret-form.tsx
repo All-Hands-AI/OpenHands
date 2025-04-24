@@ -68,8 +68,13 @@ export function SecretForm({
 
   return (
     <form data-testid={formTestId} action={formAction}>
-      <input data-testid="name-input" name="secret-name" type="text" />
-      <input data-testid="value-input" name="secret-value" type="text" />
+      <input data-testid="name-input" name="secret-name" type="text" required />
+      <input
+        data-testid="value-input"
+        name="secret-value"
+        type="text"
+        required
+      />
 
       <button data-testid="submit-button" type="submit">
         Add new secret

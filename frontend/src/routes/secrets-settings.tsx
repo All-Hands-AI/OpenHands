@@ -5,6 +5,20 @@ import { useDeleteSecret } from "#/hooks/mutation/use-delete-secret";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
 import { SecretListItem } from "#/components/features/settings/secrets-settings/secret-list-item";
 
+interface ConfirmationModalProps {
+  onConfirm: () => void;
+}
+
+function ConfirmationModal({ onConfirm }: ConfirmationModalProps) {
+  return (
+    <div data-testid="confirmation-modal">
+      <button data-testid="confirm-button" type="button" onClick={onConfirm}>
+        Confirm
+      </button>
+    </div>
+  );
+}
+
 function SecretsSettingsScreen() {
   const queryClient = useQueryClient();
 
@@ -45,9 +59,7 @@ function SecretsSettingsScreen() {
   };
 
   const onConfirmDeleteSecret = () => {
-    if (selectedSecret) {
-      handleDeleteSecret(selectedSecret);
-    }
+    if (selectedSecret) handleDeleteSecret(selectedSecret);
   };
 
   return (
@@ -88,15 +100,7 @@ function SecretsSettingsScreen() {
       </button>
 
       {confirmationModalIsVisible && (
-        <div data-testid="confirmation-modal">
-          <button
-            data-testid="confirm-button"
-            type="button"
-            onClick={onConfirmDeleteSecret}
-          >
-            Confirm
-          </button>
-        </div>
+        <ConfirmationModal onConfirm={onConfirmDeleteSecret} />
       )}
     </div>
   );
