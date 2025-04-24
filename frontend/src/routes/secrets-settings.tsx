@@ -166,6 +166,7 @@ function SecretsSettingsScreen() {
                   onSettled: () => {
                     setConfirmationModalIsVisible(false);
                   },
+                  onError: revertOptimisticUpdate,
                 });
               }
             }}
