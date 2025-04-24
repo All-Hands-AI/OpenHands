@@ -126,6 +126,14 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
+        # add proxy build args
+        proxy_build_args = []
+        if os.getenv('HTTP_PROXY'):
+            proxy_build_args.append(f'--build-arg=http_proxy={os.getenv('http_proxy')}')
+        if os.getenv('HTTPS_PROXY'):
+            proxy_build_args.append(f'--build-arg=https_proxy={os.getenv('https_proxy')}')
+            
+
         buildx_cmd = [
             'docker' if not self.is_podman else 'podman',
             'buildx',
@@ -133,6 +141,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             '--progress=plain',
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
+            *proxy_build_args,
             f'--tag={target_image_hash_name}',
             '--load',
         ]
