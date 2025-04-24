@@ -82,8 +82,8 @@ class GitHandler:
         Returns:
             str | None: A valid Git reference or None if no valid reference is found.
         """
-        current_branch = self.get_current_branch()
-        default_branch = self.get_default_branch()
+        current_branch = self._get_current_branch()
+        default_branch = self._get_default_branch()
 
         ref_current_branch = f'origin/{current_branch}'
         ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{default_branch})")'
@@ -120,7 +120,7 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 
-    def get_default_branch(self) -> str:
+    def _get_default_branch(self) -> str:
         """
         Retrieves the primary Git branch name of the repository.
 
@@ -131,7 +131,7 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.content.split()[-1].strip()
 
-    def get_current_branch(self) -> str:
+    def _get_current_branch(self) -> str:
         """
         Retrieves the currently selected Git branch.
 
