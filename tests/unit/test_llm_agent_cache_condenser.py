@@ -8,6 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.message import Message
+from openhands.events.action.agent import ChangeAgentStateAction, RecallAction
 from openhands.events.action.files import FileReadAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import Event, EventSource, RecallType
@@ -122,8 +123,7 @@ CURRENT_STATE: Files read: 0.txt, 1.txt, 2.txt, 3.txt
     """
     set_next_llm_response(agent, llm_summary)
 
-    condenser = LLMAgentCacheCondenser()
-    condenser.max_size = 5
+    condenser = LLMAgentCacheCondenser(max_size=5, keep_user_messages=True)
     agent.condenser = condenser
 
     system_message = SystemMessageAction(content='System Message')
@@ -298,7 +298,7 @@ def test_llm_agent_cache_condenser_first_message_user_message(agent: CodeActAgen
     """Test that at least one user message is preserved."""
     # Create a condenser with a small max_size to ensure condensation
     # but large enough to not trigger again after adding the condensation action
-    condenser = LLMAgentCacheCondenser(max_size=5)
+    condenser = LLMAgentCacheCondenser(max_size=5, keep_user_messages=True)
     agent.condenser = condenser
 
     # Create events with only one user message
@@ -475,3 +475,93 @@ CURRENT_STATE: Conversation initialized
             'Please CONDENSE! the conversation history.' in message['content']
             for message in messages
         ), 'Trigger message should be included in the context'
+
+
+def test_condensation_with_followup_events(agent):
+    """Test that the user message triggering condensation and follow-up events are part of the context passed to the LLM."""
+    condenser = LLMAgentCacheCondenser(
+        trigger_word='CONDENSE!', max_size=500, keep_user_messages=True
+    )
+    agent.condenser = condenser
+
+    # Create events with a user message containing a goal
+    user_message_goal = MessageAction('I want you to do some things for me.')
+    user_message_goal._source = EventSource.USER  # type: ignore [attr-defined]
+    user_message_goal._id = 1  # type: ignore [attr-defined]
+
+    # Add agent messages
+    agent_messages = []
+    for i in range(3):
+        event = MessageAction(f'Agent response {i}')
+        event._source = EventSource.AGENT  # type: ignore [attr-defined]
+        event._id = i + 2  # type: ignore [attr-defined]
+        agent_messages.append(event)
+
+    # Add a user message containing the trigger word
+    user_message_trigger = MessageAction('Please CONDENSE! the conversation history.')
+    user_message_trigger._source = EventSource.USER  # type: ignore [attr-defined]
+    user_message_trigger._id = 5  # type: ignore [attr-defined]
+
+    # Add follow-up events
+    followup_event_1 = ChangeAgentStateAction(
+        agent_state='running',
+        thought='',
+    )
+    followup_event_1._id = 6  # type: ignore [attr-defined]
+    followup_event_1._source = EventSource.ENVIRONMENT  # type: ignore [attr-defined]
+
+    followup_event_2 = RecallAction(
+        recall_type=RecallType.WORKSPACE_CONTEXT,
+        query='hi',
+        thought='',
+    )
+    followup_event_2._id = 7  # type: ignore [attr-defined]
+    followup_event_2._source = EventSource.USER  # type: ignore [attr-defined]
+
+    # Combine all events
+    events = [
+        user_message_goal,
+        *agent_messages,
+        user_message_trigger,
+        followup_event_1,
+        followup_event_2,
+    ]
+
+    state = State(history=cast(list[Event], events))
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = """
+USER_CONTEXT: Simple greeting
+COMPLETED: User and AI greeted each other
+PENDING: None
+CURRENT_STATE: Conversation initialized
+    """
+
+    with patch.object(
+        agent.llm, 'completion', return_value=mock_response
+    ) as mock_completion:
+        # Perform condensation
+        condensation = condenser.condensed_history(state, agent)
+
+        # Verify that the LLM completion was called
+        mock_completion.assert_called_once()
+
+        # Extract the parameters passed to the LLM
+        params = mock_completion.call_args[1]
+        messages = params.get('messages', [])
+
+        # Check that the trigger message is included in the context
+        assert any(
+            'Please CONDENSE! the conversation history.' in message['content']
+            for message in messages
+        ), 'Trigger message should be included in the context'
+
+        assert isinstance(condensation, Condensation)
+        assert hasattr(condensation, 'action')
+        # only agent messages forgotten
+        assert condensation.action.forgotten_event_ids == [
+            e.id for e in agent_messages + [followup_event_1, followup_event_2]
+        ]
+        assert condensation.action.summary == mock_response.choices[0].message.content
+        assert condensation.action.summary_offset is None

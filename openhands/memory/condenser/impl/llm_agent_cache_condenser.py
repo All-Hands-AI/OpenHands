@@ -8,6 +8,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType
 from openhands.events.action.agent import CondensationAction
+from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.condenser.impl.caching_condenser import CachingCondenser
@@ -20,6 +21,7 @@ class LLMAgentCacheCondenser(CachingCondenser):
         self,
         max_size: int = 100,
         trigger_word: str = 'CONDENSE!',
+        keep_user_messages: bool = False,
     ):
         """Initialize the condenser.
         Args:
@@ -29,6 +31,7 @@ class LLMAgentCacheCondenser(CachingCondenser):
         """
         self.max_size = max_size
         self.trigger_word = trigger_word
+        self.keep_user_messages = keep_user_messages
         super().__init__()
 
     def createCondensationPrompt(
@@ -103,23 +106,9 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         # keep system message
         events_to_forget = events[1:]
 
-        # Make sure we're not forgetting all user messages
-        user_events = [
-            event
-            for event in events
-            if hasattr(event, 'source') and event.source == EventSource.USER
-        ]
-
-        # Always keep the first user message to maintain context
-        first_user_message = next((event for event in user_events), None)
-        if first_user_message and first_user_message in events_to_forget:
-            events_to_forget.remove(first_user_message)
-            
-        # Also keep the most recent user message if it's different from the first
-        if len(user_events) > 1:
-            last_user_message = user_events[-1]
-            if last_user_message != first_user_message and last_user_message in events_to_forget:
-                events_to_forget.remove(last_user_message)
+        # Ensure essential user messages are not forgotten
+        if self.keep_user_messages:
+            self._filter_user_messages_to_keep(events, events_to_forget)
 
         # If we have events to forget, create a condensation
         if events_to_forget:
@@ -184,6 +173,26 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
                 return False
 
         return False
+
+    def _filter_user_messages_to_keep(
+        self, events: list[Event], events_to_forget: list[Event]
+    ) -> None:
+        """Ensure essential user messages are not forgotten."""
+        user_events = [event for event in events if isinstance(event, MessageAction)]
+
+        # Always keep the first user message to maintain context
+        first_user_message = next((event for event in user_events), None)
+        if first_user_message and first_user_message in events_to_forget:
+            events_to_forget.remove(first_user_message)
+
+        # Also keep the most recent user message if it's different from the first
+        if len(user_events) > 1:
+            last_user_message = user_events[-1]
+            if (
+                last_user_message != first_user_message
+                and last_user_message in events_to_forget
+            ):
+                events_to_forget.remove(last_user_message)
 
     @classmethod
     def from_config(
