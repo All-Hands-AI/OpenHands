@@ -15,10 +15,10 @@ type TabType =
 
 const AllTabs = [
   TabOption.CODE,
+  TabOption.VSCODE,
   TabOption.BROWSER,
   TabOption.PLANNER,
   TabOption.JUPYTER,
-  TabOption.VSCODE,
 ];
 
 export { AllTabs, TabOption, type TabType };

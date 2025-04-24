@@ -137,31 +137,6 @@ function AppContent() {
                 icon: <DiGit className="w-6 h-6" />,
               },
               {
-                label: t(I18nKey.WORKSPACE$TITLE),
-                to: "workspace",
-                icon: <CodeIcon />,
-              },
-              {
-                label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
-                to: "terminal",
-                icon: <TerminalIcon />,
-              },
-              { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
-              {
-                label: <ServedAppLabel />,
-                to: "served",
-                icon: <FaServer />,
-              },
-              {
-                label: (
-                  <div className="flex items-center gap-1">
-                    {t(I18nKey.BROWSER$TITLE)}
-                  </div>
-                ),
-                to: "browser",
-                icon: <GlobeIcon />,
-              },
-              {
                 label: (
                   <div className="flex items-center gap-1">
                     {t(I18nKey.VSCODE$TITLE)}
@@ -193,6 +168,31 @@ function AppContent() {
                     }}
                   />
                 ) : null,
+              },
+              {
+                label: t(I18nKey.WORKSPACE$TITLE),
+                to: "workspace",
+                icon: <CodeIcon />,
+              },
+              {
+                label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
+                to: "terminal",
+                icon: <TerminalIcon />,
+              },
+              { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
+              {
+                label: <ServedAppLabel />,
+                to: "served",
+                icon: <FaServer />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.BROWSER$TITLE)}
+                  </div>
+                ),
+                to: "browser",
+                icon: <GlobeIcon />,
               },
             ]}
           >
