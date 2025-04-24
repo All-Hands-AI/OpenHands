@@ -35,7 +35,7 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
-from openhands.core.config.mcp_config import MCPConfig, MCPServerConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
@@ -331,9 +331,27 @@ class ActionExecutionClient(Runtime):
     def get_updated_mcp_config(self) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
+        # Send a request to the action execution server to updated MCP config
+        stdio_tools = [
+            server.model_dump(mode='json')
+            for server in updated_mcp_config.stdio_servers
+        ]
+        self.log(
+            'debug',
+            f'Updating MCP server to: {stdio_tools}'
+        )
+        response = self._send_action_server_request(
+            'POST',
+            f'{self.action_execution_server_url}/update_mcp_server',
+            json=stdio_tools,
+            timeout=10,
+        )
+        if response.status_code != 200:
+            raise RuntimeError(f'Failed to update MCP server: {response.text}')
+
         # No API key by default. Child runtime can override this when appropriate 
-        updated_mcp_config.mcp_servers.append(
-            MCPServerConfig(
+        updated_mcp_config.sse_servers.append(
+            MCPSSEServerConfig(
                 url=self.action_execution_server_url.rstrip('/') + '/sse',
                 api_key=None
             )
@@ -349,9 +367,9 @@ class ActionExecutionClient(Runtime):
             updated_mcp_config = self.get_updated_mcp_config()
             self.log(
                 'debug',
-                f'Creating MCP clients with servers: {updated_mcp_config.mcp_servers}',
+                f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
             )
-            self.mcp_clients = await create_mcp_clients(updated_mcp_config.mcp_servers)
+            self.mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
         return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:

@@ -8,6 +8,7 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
 import mimetypes
 import os
 import shutil
@@ -573,6 +574,7 @@ if __name__ == '__main__':
 
     client: ActionExecutor | None = None
     mcp_router: MCPRouter | None = None
+    MCP_ROUTER_PROFILE_PATH = os.path.join(os.path.dirname(__file__), "mcp", "config.json")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -591,8 +593,8 @@ if __name__ == '__main__':
         # Initialize and mount MCP Router
         logger.info('Initializing MCP Router...')
         mcp_router = MCPRouter(
-            profile_path=os.path.join(os.path.dirname(__file__), "mcp", "config.json"),
-            api_key=SESSION_API_KEY,
+            profile_path=MCP_ROUTER_PROFILE_PATH,
+            api_key=SESSION_API_KEY
 
         )
         allowed_origins = ["*"]
@@ -720,6 +722,33 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
+        
+    @app.post('/update_mcp_server')
+    async def update_mcp_server(request: Request):
+        assert mcp_router is not None
+        assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
+        with open(MCP_ROUTER_PROFILE_PATH, 'r') as f:
+            current_profile = json.load(f)
+        assert 'default' in current_profile
+        assert isinstance(current_profile['default'], list)
+
+        # Get the request body
+        mcp_tools_to_sync = await request.json()
+        if not isinstance(mcp_tools_to_sync, list):
+            raise HTTPException(status_code=400, detail='Request must be a list of MCP tools to sync')
+        
+        logger.info(f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious profile: {json.dumps(current_profile, indent=2)}')
+        current_profile['default'] = mcp_tools_to_sync
+        with open(MCP_ROUTER_PROFILE_PATH, 'w') as f:
+            json.dump(current_profile, f)
+
+        # Manually reload the profile and update the servers
+        mcp_router.profile_manager.reload()
+        servers_wait_for_update = mcp_router.get_unique_servers()
+        await mcp_router.update_servers(servers_wait_for_update)
+        logger.info(f'MCP router updated successfully with unique servers: {servers_wait_for_update}')
+
+        return JSONResponse(status_code=200, content={'detail': 'MCP server updated successfully'})
 
     @app.post('/upload_file')
     async def upload_file(

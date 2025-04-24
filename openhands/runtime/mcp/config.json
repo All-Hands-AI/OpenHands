@@ -1,9 +1,3 @@
 {
-    "default": [
-        {
-            "name": "fetch",
-            "command": "uvx",
-            "args": ["mcp-server-fetch"]
-        }
-    ]
+    "default": []
 }
