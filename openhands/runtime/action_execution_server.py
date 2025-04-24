@@ -555,7 +555,7 @@ if __name__ == '__main__':
     # Start the file viewer server in a separate thread
     logger.info('Starting file viewer server')
     _file_viewer_port = find_available_tcp_port(
-        min_port=args.port + 1, max_port=args.port + 10000
+        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
     )
     server_url, _ = start_file_viewer_server(port=_file_viewer_port)
     logger.info(f'File viewer server started at {server_url}')
