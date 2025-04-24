@@ -11,8 +11,6 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
         return conversation_store
     user_auth = await get_user_auth(request)
     user_id = await user_auth.get_user_id()
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id
-    )
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     request.state.conversation_store = conversation_store
     return conversation_store
