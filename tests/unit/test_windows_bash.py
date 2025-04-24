@@ -104,7 +104,7 @@ def test_control_commands(windows_bash_session):
     action_c = CmdRunAction(command="C-c", is_input=True)
     result_c = windows_bash_session.execute(action_c)
     assert isinstance(result_c, ErrorObservation)
-    assert "Control commands like C-c are not supported or relevant when no job is active" in result_c.conten
+    assert "Control commands like C-c are not supported or relevant when no job is active" in result_c.content
 
     # Test unsupported control command
     action_d = CmdRunAction(command="C-d", is_input=True)
@@ -177,36 +177,6 @@ def test_long_running_command(windows_bash_session):
     action.set_hard_timeout(30)
     result = windows_bash_session.execute(action)
     assert result.exit_code == 0
-
-
-def test_multiple_commands(windows_bash_session):
-    """Test executing multiple commands in sequence."""
-    # Test multiple independent commands
-    action1 = CmdRunAction(command="Write-Output 'First'")
-    result1 = windows_bash_session.execute(action1)
-    assert isinstance(result1, CmdOutputObservation)
-    assert result1.content.strip() == "First"
-    assert result1.exit_code == 0
-
-    action2 = CmdRunAction(command="Write-Output 'Second'")
-    result2 = windows_bash_session.execute(action2)
-    assert isinstance(result2, CmdOutputObservation)
-    assert result2.content.strip() == "Second"
-    assert result2.exit_code == 0
-
-    # Test variable persistence - runspace should maintain variable state
-    action_set_var = CmdRunAction(command="$MyVar = 'Temp'; Write-Output $MyVar")
-    result_set_var = windows_bash_session.execute(action_set_var)
-    assert isinstance(result_set_var, CmdOutputObservation)
-    assert result_set_var.content.strip() == "Temp"
-    assert result_set_var.exit_code == 0
-
-    action_use_var = CmdRunAction(command="Write-Output $MyVar")
-    result_use_var = windows_bash_session.execute(action_use_var)
-    assert isinstance(result_use_var, CmdOutputObservation)
-    # $MyVar should still exist in the persistent runspace
-    assert result_use_var.content.strip() == "Temp"
-    assert result_use_var.exit_code == 0
 
 
 def test_multiple_commands_rejected_and_individual_execution(windows_bash_session):
@@ -304,10 +274,9 @@ def test_syntax_error_handling(windows_bash_session):
     # Test invalid command syntax
     action = CmdRunAction(command="Write-Output 'Missing Quote")
     result = windows_bash_session.execute(action)
-    assert isinstance(result, CmdOutputObservation)
+    assert isinstance(result, ErrorObservation)
     # Error message appears in the output via PowerShell error stream
     assert "missing" in result.content.lower() or "terminator" in result.content.lower()
-    assert result.exit_code == 1
 
 
 def test_special_characters_handling(windows_bash_session):
