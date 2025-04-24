@@ -21,12 +21,27 @@ export function TooltipButton({
   testId,
   className,
 }: TooltipButtonProps) {
+  // Handle click with support for cmd/ctrl+click to open in new tab
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      // If cmd/ctrl key is pressed, let the default behavior happen (open in new tab)
+      if (e.metaKey || e.ctrlKey) {
+        // Don't prevent default to allow browser to handle opening in new tab
+        return;
+      }
+
+      // Otherwise, call the onClick handler
+      onClick();
+      e.preventDefault();
+    }
+  };
+
   const buttonContent = (
     <button
       type="button"
       aria-label={ariaLabel}
       data-testid={testId}
-      onClick={onClick}
+      onClick={handleClick}
       className={cn("hover:opacity-80", className)}
     >
       {children}

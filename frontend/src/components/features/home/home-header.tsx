@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { NavLink } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
@@ -18,22 +19,35 @@ export function HomeHeader() {
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
+  // Handle click with support for cmd/ctrl+click to open in new tab
+  const handleCreateConversation = (e: React.MouseEvent) => {
+    // If cmd/ctrl key is pressed, let the default behavior happen (open in new tab)
+    if (e.metaKey || e.ctrlKey) {
+      return; // Don't prevent default to allow browser to handle opening in new tab
+    }
+
+    // Otherwise, call the createConversation function
+    createConversation({});
+    e.preventDefault();
+  };
+
   return (
     <header className="flex flex-col gap-5">
       <AllHandsLogo />
 
       <div className="flex items-center justify-between">
         <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
-        <BrandButton
-          testId="header-launch-button"
-          variant="primary"
-          type="button"
-          onClick={() => createConversation({})}
-          isDisabled={isCreatingConversation}
-        >
-          {!isCreatingConversation && "Launch from Scratch"}
-          {isCreatingConversation && t("HOME$LOADING")}
-        </BrandButton>
+        <NavLink to="/" onClick={handleCreateConversation}>
+          <BrandButton
+            testId="header-launch-button"
+            variant="primary"
+            type="button"
+            isDisabled={isCreatingConversation}
+          >
+            {!isCreatingConversation && "Launch from Scratch"}
+            {isCreatingConversation && t("HOME$LOADING")}
+          </BrandButton>
+        </NavLink>
       </div>
 
       <div className="flex items-center justify-between">
