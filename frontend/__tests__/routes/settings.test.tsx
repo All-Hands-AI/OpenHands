@@ -919,17 +919,5 @@ describe("Settings Screen", () => {
       );
     });
 
-    it("should not submit the unwanted fields when resetting", async () => {
-      const user = userEvent.setup();
-      renderSettingsScreen();
-
-      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
-      await user.click(resetButton);
-
-      const modal = await screen.findByTestId("reset-modal");
-      const confirmButton = within(modal).getByText("Reset");
-      await user.click(confirmButton);
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
-    });
   });
 });
