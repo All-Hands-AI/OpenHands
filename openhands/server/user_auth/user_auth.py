@@ -8,6 +8,7 @@ from pydantic import SecretStr
 
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
+from openhands.server.shared import server_config
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
@@ -55,10 +56,7 @@ async def get_user_auth(request: Request) -> UserAuth:
     user_auth = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
-    impl_name = (
-        os.environ.get('USER_AUTH_CLASS')
-        or 'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
-    )
+    impl_name = server_config.user_auth_class
     impl = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
     request.state.user_auth = user_auth
