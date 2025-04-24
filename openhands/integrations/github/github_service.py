@@ -18,7 +18,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-
+from openhands.core.logger import openhands_logger as logger
 
 class GitHubService(BaseGitService, GitService):
     BASE_URL = 'https://api.github.com'
@@ -371,7 +371,8 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error fetching tasks: {e}")
             return []
 
 
