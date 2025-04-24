@@ -108,10 +108,10 @@ async def test_load_custom_secrets_names_empty(test_client, mock_settings_store)
 
 
 @pytest.mark.asyncio
-async def test_add_custom_secret(
+async def test_create_custom_secret(
     test_client, mock_settings_store, mock_convert_to_settings
 ):
-    """Test adding a new custom secret."""
+    """Test creating a new custom secret."""
     # Create initial settings with provider tokens but no custom secrets
     provider_tokens = {
         ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
@@ -127,7 +127,7 @@ async def test_add_custom_secret(
     # Mock the settings store to return our initial settings
     mock_settings_store.load.return_value = initial_settings
 
-    # Make the POST request to add a custom secret
+    # Make the POST request to create a custom secret
     add_secret_data = {'custom_secrets': {'API_KEY': 'api-key-value'}}
     response = test_client.post('/api/secrets', json=add_secret_data)
     assert response.status_code == 200
@@ -149,10 +149,10 @@ async def test_add_custom_secret(
 
 
 @pytest.mark.asyncio
-async def test_update_existing_custom_secret(
+async def test_update_existing_custom_secret_with_put(
     test_client, mock_settings_store, mock_convert_to_settings
 ):
-    """Test updating an existing custom secret."""
+    """Test updating an existing custom secret using the PUT endpoint."""
     # Create initial settings with a custom secret
     custom_secrets = {'API_KEY': SecretStr('old-api-key')}
     provider_tokens = {
@@ -171,18 +171,21 @@ async def test_update_existing_custom_secret(
     # Mock the settings store to return our initial settings
     mock_settings_store.load.return_value = initial_settings
 
-    # Make the POST request to update the custom secret
-    update_secret_data = {'custom_secrets': {'API_KEY': 'new-api-key'}}
-    response = test_client.post('/api/secrets', json=update_secret_data)
+    # Make the PUT request to update the custom secret
+    update_secret_data = {'custom_secrets': {'NEW_API_KEY': 'new-api-key'}}
+    response = test_client.put('/api/secrets/API_KEY', json=update_secret_data)
     assert response.status_code == 200
 
     # Verify that the settings were stored with the updated secret
     stored_settings: Settings = mock_settings_store.store.call_args[0][0]
 
-    # Check that the secret was updated
-    assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
+    # Check that the old secret was removed
+    assert 'API_KEY' not in stored_settings.secrets_store.custom_secrets
+    
+    # Check that the new secret was added
+    assert 'NEW_API_KEY' in stored_settings.secrets_store.custom_secrets
     assert (
-        stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+        stored_settings.secrets_store.custom_secrets['NEW_API_KEY'].get_secret_value()
         == 'new-api-key'
     )
 
@@ -191,6 +194,37 @@ async def test_update_existing_custom_secret(
     assert stored_settings.agent == 'test-agent'
     assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
     assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
+
+
+@pytest.mark.asyncio
+async def test_update_nonexistent_secret_with_put(
+    test_client, mock_settings_store, mock_convert_to_settings
+):
+    """Test updating a nonexistent secret using the PUT endpoint."""
+    # Create initial settings with a custom secret
+    custom_secrets = {'API_KEY': SecretStr('old-api-key')}
+    provider_tokens = {
+        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
+    }
+    secret_store = SecretStore(
+        custom_secrets=custom_secrets, provider_tokens=provider_tokens
+    )
+    initial_settings = Settings(
+        language='en',
+        agent='test-agent',
+        llm_api_key=SecretStr('test-llm-key'),
+        secrets_store=secret_store,
+    )
+
+    # Mock the settings store to return our initial settings
+    mock_settings_store.load.return_value = initial_settings
+
+    # Make the PUT request to update a nonexistent secret
+    update_secret_data = {'custom_secrets': {'NEW_SECRET': 'new-value'}}
+    response = test_client.put('/api/secrets/NONEXISTENT_KEY', json=update_secret_data)
+    assert response.status_code == 404
+    assert 'error' in response.json()
+    assert 'not found' in response.json()['error']
 
 
 @pytest.mark.asyncio
@@ -330,22 +364,19 @@ async def test_delete_nonexistent_custom_secret(
 
     # Make the DELETE request to delete a nonexistent custom secret
     response = test_client.delete('/api/secrets/NONEXISTENT_KEY')
+    assert response.status_code == 404
+    assert 'error' in response.json()
+    assert 'not found' in response.json()['error']
+
+    # Verify that no settings were stored (store should not be called)
+    assert mock_settings_store.store.call_count == 0
+
+    # Make a GET request to verify the existing secrets are still there
+    response = test_client.get('/api/secrets')
     assert response.status_code == 200
-
-    # Verify that the settings were stored without changes to existing secrets
-    stored_settings = mock_settings_store.store.call_args[0][0]
-
-    # Check that the existing secret was preserved
-    assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
-    assert (
-        stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
-        == 'api-key-value'
-    )
-
-    # Check that other settings were preserved
-    assert stored_settings.language == 'en'
-    assert stored_settings.agent == 'test-agent'
-    assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
+    data = response.json()
+    assert 'custom_secrets' in data
+    assert 'API_KEY' in data['custom_secrets']
 
 
 @pytest.mark.asyncio
@@ -403,8 +434,8 @@ async def test_custom_secrets_operations_preserve_settings(
     assert len(stored_settings.secrets_store.provider_tokens) == 2
 
     # 2. Test updating an existing custom secret
-    update_secret_data = {'custom_secrets': {'INITIAL_SECRET': 'updated-value'}}
-    response = test_client.post('/api/secrets', json=update_secret_data)
+    update_secret_data = {'custom_secrets': {'UPDATED_SECRET': 'updated-value'}}
+    response = test_client.put('/api/secrets/INITIAL_SECRET', json=update_secret_data)
     assert response.status_code == 200
 
     # Verify all settings are still preserved
@@ -423,6 +454,32 @@ async def test_custom_secrets_operations_preserve_settings(
     assert stored_settings.user_consents_to_analytics is True
     assert len(stored_settings.secrets_store.provider_tokens) == 2
 
+    # Reset the mock to include the new secrets from previous operations
+    updated_custom_secrets = {
+        'UPDATED_SECRET': SecretStr('updated-value'),
+        'NEW_SECRET': SecretStr('new-value')
+    }
+    updated_secret_store = SecretStore(
+        custom_secrets=updated_custom_secrets, 
+        provider_tokens=provider_tokens
+    )
+    updated_settings = Settings(
+        language='en',
+        agent='test-agent',
+        max_iterations=100,
+        security_analyzer='default',
+        confirmation_mode=True,
+        llm_model='test-model',
+        llm_api_key=SecretStr('test-llm-key'),
+        llm_base_url='https://test.com',
+        remote_runtime_resource_factor=2,
+        enable_default_condenser=True,
+        enable_sound_notifications=False,
+        user_consents_to_analytics=True,
+        secrets_store=updated_secret_store,
+    )
+    mock_settings_store.load.return_value = updated_settings
+    
     # 3. Test deleting a custom secret
     response = test_client.delete('/api/secrets/NEW_SECRET')
     assert response.status_code == 200
