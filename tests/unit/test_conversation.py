@@ -207,7 +207,6 @@ async def test_update_conversation():
                 'some_conversation_id',
                 'New Title',
                 user_id='12345',
-                github_user_id=None,
             )
 
             # Verify the result
@@ -262,7 +261,7 @@ async def test_delete_conversation():
 
                     # Call delete_conversation
                     result = await delete_conversation(
-                        'some_conversation_id', user_id='12345', github_user_id=None
+                        'some_conversation_id', user_id='12345'
                     )
 
                     # Verify the result
