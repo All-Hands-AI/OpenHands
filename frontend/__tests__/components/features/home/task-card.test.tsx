@@ -23,6 +23,7 @@ const MOCK_TASK_1: SuggestedTask = {
   repo: "repo1",
   title: "Task 1",
   task_type: "MERGE_CONFLICTS",
+  git_provider: "github",
 };
 
 const MOCK_TASK_2: SuggestedTask = {
@@ -30,6 +31,7 @@ const MOCK_TASK_2: SuggestedTask = {
   repo: "repo2",
   title: "Task 2",
   task_type: "FAILING_CHECKS",
+  git_provider: "github",
 };
 
 const MOCK_TASK_3: SuggestedTask = {
@@ -37,6 +39,7 @@ const MOCK_TASK_3: SuggestedTask = {
   repo: "repo3",
   title: "Task 3",
   task_type: "UNRESOLVED_COMMENTS",
+  git_provider: "gitlab",
 };
 
 const MOCK_TASK_4: SuggestedTask = {
@@ -44,6 +47,7 @@ const MOCK_TASK_4: SuggestedTask = {
   repo: "repo4",
   title: "Task 4",
   task_type: "OPEN_ISSUE",
+  git_provider: "gitlab",
 };
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
@@ -119,7 +123,11 @@ describe("TaskCard", () => {
 
       expect(createConversationSpy).toHaveBeenCalledWith(
         MOCK_RESPOSITORIES[0],
-        getMergeConflictPrompt(MOCK_TASK_1.issue_number, MOCK_TASK_1.repo),
+        getMergeConflictPrompt(
+          MOCK_TASK_1.git_provider,
+          MOCK_TASK_1.issue_number,
+          MOCK_TASK_1.repo,
+        ),
         [],
         undefined,
       );
@@ -135,7 +143,11 @@ describe("TaskCard", () => {
 
       expect(createConversationSpy).toHaveBeenCalledWith(
         MOCK_RESPOSITORIES[1],
-        getFailingChecksPrompt(MOCK_TASK_2.issue_number, MOCK_TASK_2.repo),
+        getFailingChecksPrompt(
+          MOCK_TASK_2.git_provider,
+          MOCK_TASK_2.issue_number,
+          MOCK_TASK_2.repo,
+        ),
         [],
         undefined,
       );
@@ -151,7 +163,11 @@ describe("TaskCard", () => {
 
       expect(createConversationSpy).toHaveBeenCalledWith(
         MOCK_RESPOSITORIES[2],
-        getUnresolvedCommentsPrompt(MOCK_TASK_3.issue_number, MOCK_TASK_3.repo),
+        getUnresolvedCommentsPrompt(
+          MOCK_TASK_3.git_provider,
+          MOCK_TASK_3.issue_number,
+          MOCK_TASK_3.repo,
+        ),
         [],
         undefined,
       );
@@ -167,7 +183,11 @@ describe("TaskCard", () => {
 
       expect(createConversationSpy).toHaveBeenCalledWith(
         MOCK_RESPOSITORIES[3],
-        getOpenIssuePrompt(MOCK_TASK_4.issue_number, MOCK_TASK_4.repo),
+        getOpenIssuePrompt(
+          MOCK_TASK_4.git_provider,
+          MOCK_TASK_4.issue_number,
+          MOCK_TASK_4.repo,
+        ),
         [],
         undefined,
       );
