@@ -116,7 +116,13 @@ class BaseGitService(ABC):
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
         error_details = str(e)
-        logger.warning(f'HTTP error on {self.provider} API: {error_details}')
+        response_text = ""
+        
+        # Safely try to get response text if available
+        if hasattr(e, 'response') and hasattr(e.response, 'text'):
+            response_text = f" Response: {e.response.text}"
+        
+        logger.warning(f'HTTP error on {self.provider} API: {error_details}{response_text}')
         return UnknownException(f'HTTP error: {error_details}')
 
 
