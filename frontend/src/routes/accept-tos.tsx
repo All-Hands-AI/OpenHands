@@ -7,7 +7,7 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
-import { openHandsAxios } from "#/api/open-hands-axios";
+import { openHands } from "#/api/open-hands-axios";
 
 export default function AcceptTOS() {
   const { t } = useTranslation();
@@ -28,7 +28,7 @@ export default function AcceptTOS() {
         handleCaptureConsent(true);
 
         // Call the API to record TOS acceptance in the database
-        const response = await openHandsAxios.post("/api/accept_tos", {
+        const response = await openHands.post("/api/accept_tos", {
           redirect_url: redirectUrl,
         });
 
