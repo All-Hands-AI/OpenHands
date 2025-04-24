@@ -7,10 +7,10 @@ from openhands.agenthub import (  # noqa: E402
     browsing_agent,
     codeact_agent,
     dummy_agent,
-    readonly_agent,
-    visualbrowsing_agent,
     planning_agent,
-    task_solving_agent
+    readonly_agent,
+    task_solving_agent,
+    visualbrowsing_agent,
 )
 from openhands.controller.agent import Agent  # noqa: E402
 

@@ -20,10 +20,10 @@ from openhands.agenthub.codeact_agent.tools import (
     create_str_replace_editor_tool,
 )
 from openhands.agenthub.planning_agent.tools import (
-    FinishTool,
-    PlanningTool,
     DelegateToCodeActAgentTool,
     DelegateToTaskSolvingAgentTool,
+    FinishTool,
+    PlanningTool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -38,16 +38,15 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    CreatePlanAction,
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
-    CreatePlanAction
 )
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm import LLM
 from openhands.mcp import MCPClientTool
 
 
@@ -212,12 +211,18 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     tasks=arguments.get('tasks', []),
                 )
 
-            elif tool_call.function.name == DelegateToCodeActAgentTool['function']['name']:
+            elif (
+                tool_call.function.name
+                == DelegateToCodeActAgentTool['function']['name']
+            ):
                 action = AgentDelegateAction(
                     agent='CodeActAgent',
                     inputs=arguments,
                 )
-            elif tool_call.function.name == DelegateToTaskSolvingAgentTool['function']['name']:
+            elif (
+                tool_call.function.name
+                == DelegateToTaskSolvingAgentTool['function']['name']
+            ):
                 action = AgentDelegateAction(
                     agent='TaskSolvingAgent',
                     inputs=arguments,
@@ -268,6 +273,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 def get_tools() -> list[ChatCompletionToolParam]:
     return [PlanningTool, FinishTool]
+
 
 def get_delegation_tools() -> list[ChatCompletionToolParam]:
     return [
