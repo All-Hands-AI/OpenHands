@@ -1,7 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { useConversation } from "#/context/conversation-context";
 import { I18nKey } from "#/i18n/declaration";
+import { RootState } from "#/store";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 function VSCodeTab() {
   const { t } = useTranslation();
@@ -9,10 +12,12 @@ function VSCodeTab() {
   const [vsCodeUrl, setVsCodeUrl] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   React.useEffect(() => {
     async function fetchVSCodeUrl() {
-      if (!conversationId) return;
+      if (!conversationId || isRuntimeInactive) return;
 
       try {
         setIsLoading(true);
@@ -35,7 +40,17 @@ function VSCodeTab() {
     }
 
     fetchVSCodeUrl();
-  }, [conversationId]);
+  }, [conversationId, isRuntimeInactive]);
+
+  if (isRuntimeInactive) {
+    return (
+      <div className="flex items-center justify-center w-full h-full p-10">
+        <span className="text-neutral-400 font-bold">
+          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
+        </span>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
