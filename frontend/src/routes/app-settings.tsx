@@ -95,14 +95,16 @@ function AppSettingsScreen() {
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged;
 
+  const shouldBeLoading = !settings || isLoading || isPending;
+
   return (
     <form
       data-testid="app-settings-screen"
       action={formAction}
       className="flex flex-col h-full justify-between"
     >
-      {!settings && isLoading && <AppSettingsInputsSkeleton />}
-      {settings && (
+      {shouldBeLoading && <AppSettingsInputsSkeleton />}
+      {!shouldBeLoading && (
         <div className="px-11 py-9 flex flex-col gap-6">
           <LanguageInput
             name="language-input"

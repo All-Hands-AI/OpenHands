@@ -183,6 +183,9 @@ describe("Content", () => {
     let button = screen.queryByTestId("configure-github-repositories-button");
     expect(button).not.toBeInTheDocument();
 
+    expect(screen.getByTestId("submit-button")).toBeInTheDocument();
+    expect(screen.getByTestId("disconnect-tokens-button")).toBeInTheDocument();
+
     getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
     rerender();
@@ -204,6 +207,10 @@ describe("Content", () => {
     await waitFor(() => {
       button = screen.getByTestId("configure-github-repositories-button");
       expect(button).toBeInTheDocument();
+      expect(screen.queryByTestId("submit-button")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("disconnect-tokens-button"),
+      ).not.toBeInTheDocument();
     });
   });
 });

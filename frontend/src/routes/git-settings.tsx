@@ -70,6 +70,7 @@ function GitSettingsScreen() {
   };
 
   const formIsClean = !githubTokenInputHasValue && !gitlabTokenInputHasValue;
+  const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
 
   return (
     <form
@@ -79,8 +80,8 @@ function GitSettingsScreen() {
     >
       {isLoading && <GitSettingInputsSkeleton />}
 
-      {isSaas && config.APP_SLUG && !isLoading && (
-        <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG} />
+      {shouldRenderExternalConfigureButtons && !isLoading && (
+        <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
       )}
 
       {!isSaas && !isLoading && (
@@ -103,27 +104,29 @@ function GitSettingsScreen() {
         </div>
       )}
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
-        <BrandButton
-          testId="disconnect-tokens-button"
-          name="disconnect-tokens-button"
-          type="submit"
-          variant="secondary"
-          isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
-        >
-          Disconnect Tokens
-        </BrandButton>
+      {!shouldRenderExternalConfigureButtons && (
+        <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+          <BrandButton
+            testId="disconnect-tokens-button"
+            name="disconnect-tokens-button"
+            type="submit"
+            variant="secondary"
+            isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+          >
+            Disconnect Tokens
+          </BrandButton>
 
-        <BrandButton
-          testId="submit-button"
-          type="submit"
-          variant="primary"
-          isDisabled={isPending || formIsClean}
-        >
-          {!isPending && "Save Changes"}
-          {isPending && "Saving..."}
-        </BrandButton>
-      </div>
+          <BrandButton
+            testId="submit-button"
+            type="submit"
+            variant="primary"
+            isDisabled={isPending || formIsClean}
+          >
+            {!isPending && "Save Changes"}
+            {isPending && "Saving..."}
+          </BrandButton>
+        </div>
+      )}
     </form>
   );
 }
