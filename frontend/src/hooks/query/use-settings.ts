@@ -5,6 +5,16 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
+// Instead of directly using useLocation, we'll check the current path manually
+// This avoids the Router context requirement
+const isOnTosPage = () => {
+  // Only run this check in browser environment
+  if (typeof window !== "undefined") {
+    return window.location.pathname === "/accept-tos";
+  }
+  return false;
+};
+
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
 
@@ -39,6 +49,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
+    enabled: !isOnTosPage(),
     meta: {
       disableToast: true,
     },
