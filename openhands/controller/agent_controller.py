@@ -858,6 +858,9 @@ class AgentController:
             limit_type (str): The type of limit that was hit.
             current_value (float): The current value of the limit.
             max_value (float): The maximum value of the limit.
+
+        Returns:
+            bool: True if the agent should stop its step, False otherwise.
         """
         stop_step = False
         if self.state.traffic_control_state == TrafficControlState.PAUSED:
@@ -866,30 +869,109 @@ class AgentController:
             )
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
-            self.state.traffic_control_state = TrafficControlState.THROTTLING
-            # Format values as integers for iterations, keep decimals for budget
             if limit_type == 'iteration':
                 current_str = str(int(current_value))
                 max_str = str(int(max_value))
-            else:
+                finish_reason = f'maximum iterations ({max_str})'
+                log_message = f'Agent reached maximum iterations: {current_str}/{max_str}. Generating conclusion and finishing task.'
+            elif limit_type == 'budget':
                 current_str = f'{current_value:.2f}'
                 max_str = f'{max_value:.2f}'
+                finish_reason = f'maximum budget (${max_str})'
+                log_message = f'Agent reached maximum budget: ${current_str}/${max_str}. Generating conclusion and finishing task.'
+            else:
+                # Should not happen, but handle defensively
+                self.log(
+                    'error',
+                    f'Unknown limit_type in _handle_traffic_control: {limit_type}',
+                )
+                finish_reason = f'an unknown limit ({limit_type}: {max_value})'
+                log_message = f'Agent reached {finish_reason}. Finishing task abruptly.'
 
             if self.headless_mode:
+                self.state.traffic_control_state = TrafficControlState.THROTTLING
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
                     f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
                 )
                 await self._react_to_exception(e)
-            else:
-                e = RuntimeError(
-                    f'Agent reached maximum {limit_type}. '
-                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
+                stop_step = True
+                return stop_step
+
+            if self.state.traffic_control_state == TrafficControlState.THROTTLING:
+                # If already throttling, just stop the step without further action
+                self.log(
+                    'debug',
+                    'Already throttling due to limit, stopping step without action.',
                 )
-                # FIXME: this isn't really an exception--we should have a different path
-                await self._react_to_exception(e)
+                stop_step = True
+                return stop_step
+
+            # Only enter throttling state once
+            self.state.traffic_control_state = TrafficControlState.THROTTLING
+            finish_reason = ''
+
+            # Determine limit type and format strings
+
+            self.log('warning', log_message)
+
+            await self.force_finish(finish_reason)
             stop_step = True
+
         return stop_step
+
+    async def force_finish(self, finish_reason: str) -> None:
+        """
+        Finishes the agent with a given reason.
+        """
+        conclusion = ''
+
+        formatted_history = '\n---\n'.join([str(event) for event in self.state.history])
+        prompt = (
+            f'The task execution limit ({finish_reason}) has been reached. '
+            f'Based on the following task history, please provide a concise summary '
+            f'of the progress made and conclude the task. Only use given history to generate the conclusion.\n\n'
+            f'Task History:\n{formatted_history}\n\n'
+            f'Conclusion Summary:'
+        )
+
+        try:
+            llm_response = self.agent.llm.completion(
+                messages=[{'role': 'user', 'content': prompt}]
+            )
+            conclusion_raw = llm_response['choices'][0]['message']['content']
+            conclusion = (
+                conclusion_raw.strip().removeprefix('Conclusion Summary:').strip()
+            )
+            if not conclusion:
+                conclusion = f'Task finished due to reaching {finish_reason}. No specific conclusion generated.'
+            self.log('info', f'Generated conclusion: {conclusion}')
+        except Exception as llm_error:
+            self.log(
+                'error',
+                f'Failed to generate conclusion via LLM when {finish_reason} limit was reached: {llm_error}',
+            )
+            conclusion = (
+                f'Task finished due to reaching {finish_reason}. '
+                f'Failed to generate automatic conclusion due to error: {llm_error}'
+            )
+
+        # Emit conclusion as a MessageAction
+        self.event_stream.add_event(
+            MessageAction(content=conclusion),
+            EventSource.AGENT,
+        )
+
+        # Create and emit AgentFinishAction
+        finish_action = AgentFinishAction(
+            outputs={
+                'conclusion': conclusion,  # Keep conclusion in outputs for state completeness
+                'status': f'Finished due to {finish_reason}',
+            }
+        )
+        self.state.outputs = finish_action.outputs  # Update state
+        self.event_stream.add_event(finish_action, EventSource.AGENT)
+        await self.set_agent_state_to(AgentState.FINISHED)
 
     def get_state(self) -> State:
         """Returns the current running state object.

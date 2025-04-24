@@ -16,4 +16,7 @@ async def get_user_setting(user_id: str | None, useDefaultSettings: bool = True)
         # if not settings:
         settings = Settings.from_config()
 
+    if settings:
+        settings.enable_default_condenser = config.enable_default_condenser
+
     return settings
