@@ -1,3 +1,4 @@
+import httpx
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GitHubService
@@ -25,7 +26,15 @@ async def validate_provider_token(
         github_service = GitHubService(token=token, base_domain=base_domain)
         await github_service.get_user()
         return ProviderType.GITHUB
-    except Exception:
+    except Exception as e:
+        # Check if this is an SSO error
+        if isinstance(e, httpx.HTTPStatusError):
+            response = e.response
+            # Check for SSO-related error codes and headers
+            if response.status_code == 403:
+                # If we get a 403 with SSO headers, it's a valid token that just needs SSO authorization
+                if 'X-GitHub-SSO' in response.headers:
+                    return ProviderType.GITHUB
         pass
 
     # Try GitLab next
