@@ -21,6 +21,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { isOnTosPage } from "#/utils/is-on-tos-page";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -58,7 +59,7 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isOnTosPage = pathname === "/accept-tos";
+  const tosPageStatus = isOnTosPage(pathname);
   const [searchParams] = useSearchParams();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
@@ -79,30 +80,30 @@ export default function MainApp() {
   });
 
   // When on TOS page, we don't use the GitHub auth URL
-  const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
+  const effectiveGitHubAuthUrl = tosPageStatus ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     // Don't change language when on TOS page
-    if (!isOnTosPage && settings?.LANGUAGE) {
+    if (!tosPageStatus && settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings?.LANGUAGE, isOnTosPage]);
+  }, [settings?.LANGUAGE, tosPageStatus]);
 
   React.useEffect(() => {
     // Don't show consent form when on TOS page
-    if (!isOnTosPage) {
+    if (!tosPageStatus) {
       const consentFormModalIsOpen =
         settings?.USER_CONSENTS_TO_ANALYTICS === null;
 
       setConsentFormIsOpen(consentFormModalIsOpen);
     }
-  }, [settings, isOnTosPage]);
+  }, [settings, tosPageStatus]);
 
   React.useEffect(() => {
     // Don't migrate user consent when on TOS page
-    if (!isOnTosPage) {
+    if (!tosPageStatus) {
       // Migrate user consent to the server if it was previously stored in localStorage
       migrateUserConsent({
         handleAnalyticsWasPresentInLocalStorage: () => {
@@ -110,11 +111,11 @@ export default function MainApp() {
         },
       });
     }
-  }, [isOnTosPage]);
+  }, [tosPageStatus]);
 
   React.useEffect(() => {
     // Don't do any redirects when on TOS page
-    if (!isOnTosPage) {
+    if (!tosPageStatus) {
       // Don't allow users to use the app if it 402s
       if (error?.status === 402 && pathname !== "/") {
         navigate("/");
@@ -127,10 +128,10 @@ export default function MainApp() {
         navigate("/");
       }
     }
-  }, [error?.status, pathname, isFetching, isOnTosPage]);
+  }, [error?.status, pathname, isFetching, tosPageStatus]);
 
   // When on TOS page, we don't make any API calls, so we need to handle this case
-  const userIsAuthed = isOnTosPage ? false : !!isAuthed && !authError;
+  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
 
   // Only show the auth modal if:
   // 1. User is not authenticated
@@ -139,7 +140,7 @@ export default function MainApp() {
   const renderAuthModal =
     !isFetchingAuth &&
     !userIsAuthed &&
-    !isOnTosPage &&
+    !tosPageStatus &&
     config.data?.APP_MODE === "saas";
 
   return (

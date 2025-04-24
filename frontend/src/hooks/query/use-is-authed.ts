@@ -3,16 +3,7 @@ import React from "react";
 import OpenHands from "#/api/open-hands";
 import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
-
-// Instead of directly using useLocation, we'll check the current path manually
-// This avoids the Router context requirement
-const isOnTosPage = () => {
-  // Only run this check in browser environment
-  if (typeof window !== "undefined") {
-    return window.location.pathname === "/accept-tos";
-  }
-  return false;
-};
+import { isOnTosPage } from "#/utils/is-on-tos-page";
 
 export const useIsAuthed = () => {
   const { providersAreSet } = useAuth();
