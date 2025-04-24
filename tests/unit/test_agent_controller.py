@@ -372,7 +372,7 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Trigger throttling by calling _step() when we hit max_iterations
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller.state.agent_state == AgentState.ERROR
+    assert controller.state.agent_state == AgentState.FINISHED
 
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
@@ -436,7 +436,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller.state.agent_state == AgentState.ERROR
+    assert controller.state.agent_state == AgentState.FINISHED
     await controller.close()
 
 
