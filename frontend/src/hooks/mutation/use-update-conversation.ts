@@ -14,10 +14,10 @@ export const useUpdateConversation = () => {
     onSuccess: (_, variables) => {
       // Invalidate the conversations list
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
-      
+
       // Also invalidate the specific conversation to ensure title updates are reflected
-      queryClient.invalidateQueries({ 
-        queryKey: ["user", "conversation", variables.id] 
+      queryClient.invalidateQueries({
+        queryKey: ["user", "conversation", variables.id],
       });
     },
   });
