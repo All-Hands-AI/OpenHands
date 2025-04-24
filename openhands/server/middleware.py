@@ -247,7 +247,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
+                remaining = request.url.path[len(pattern):]
                 logger.info(f'Remaining path: {remaining}')
                 if remaining and '/' not in remaining:
                     return await call_next(request)
@@ -311,7 +311,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
 
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
-                remaining = request.url.path[len(pattern) :]
+                remaining = request.url.path[len(pattern):]
                 if remaining and '/' not in remaining:
                     return await call_next(request)
         if '/api/conversations/' in request.url.path:
@@ -327,9 +327,12 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 ) = await conversation_module._get_conversation_visibility_info(
                     conversation_id
                 )
-                print(
-                    f'error: {error}, conversation_id: {conversation_id}, JWT Middleware'
-                )
+                if error is not None:
+                    logger.error(f'Error getting conversation visibility info: {error} {conversation_id}')
+                    return JSONResponse(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        content={'detail': 'Conversation not found'},
+                    )
                 if not error:
                     request.state.sid = conversation_id
                     request.state.user_id = visibility_info['user_id']
