@@ -14,9 +14,7 @@ export type OpenHandsEventType =
   | "think"
   | "finish"
   | "error"
-  | "recall"
-  | "mcp"
-  | "call_tool_mcp";
+  | "recall";
 
 interface OpenHandsBaseEvent {
   id: number;

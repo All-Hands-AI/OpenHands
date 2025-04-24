@@ -129,13 +129,6 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
   };
 }
 
-export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
-  source: "agent";
-  extras: {
-    // Add any specific fields for MCP observations
-  };
-}
-
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -148,5 +141,4 @@ export type OpenHandsObservation =
   | ReadObservation
   | EditObservation
   | ErrorObservation
-  | RecallObservation
-  | MCPObservation;
+  | RecallObservation;

@@ -34,8 +34,6 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "recall",
   "think",
   "system",
-  "call_tool_mcp",
-  "mcp",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -142,16 +140,6 @@ export const chatSlice = createSlice({
       } else if (actionID === "recall") {
         // skip recall actions
         return;
-      } else if (actionID === "call_tool_mcp") {
-        // Format MCP action with name and arguments
-        const name = action.payload.args.name || "";
-        const args = action.payload.args.arguments || {};
-        text = `**MCP Tool Call:** ${name}\n\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
-
-        // Include thought if available
-        if (action.payload.args.thought) {
-          text += `\n\n**Thought:**\n${action.payload.args.thought}`;
-        }
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -316,19 +304,6 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
-      } else if (observationID === "mcp") {
-        // For MCP observations, we want to show the content as formatted output
-        const { content: originalContent } = causeMessage; // Use object destructuring
-        let content = originalContent; // Keep the original action content
-        content += `\n\n**Result:**\n\`\`\`\n${observation.payload.content}\n\`\`\``;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
-        }
-        causeMessage.content = content;
-        // Set success based on whether there's an error message
-        causeMessage.success = !observation.payload.content
-          .toLowerCase()
-          .includes("error:");
       }
     },
 

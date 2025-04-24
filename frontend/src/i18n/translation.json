@@ -4944,21 +4944,6 @@
         "es": "Ejecutando un comando Python",
         "tr": "Python komutu çalıştırılıyor"
     },
-    "ACTION_MESSAGE$CALL_TOOL_MCP": {
-        "en": "Calling MCP Tool: {{action.payload.args.name}}",
-        "zh-CN": "调用 MCP 工具: {{action.payload.args.name}}",
-        "zh-TW": "呼叫 MCP 工具: {{action.payload.args.name}}",
-        "ko-KR": "MCP 도구 호출: {{action.payload.args.name}}",
-        "ja": "MCP ツール呼び出し: {{action.payload.args.name}}",
-        "no": "Kaller MCP-verktøy: {{action.payload.args.name}}",
-        "ar": "استدعاء أداة MCP: {{action.payload.args.name}}",
-        "de": "Ruft MCP-Tool auf: {{action.payload.args.name}}",
-        "fr": "Appel de l'outil MCP: {{action.payload.args.name}}",
-        "it": "Chiamata allo strumento MCP: {{action.payload.args.name}}",
-        "pt": "Chamando ferramenta MCP: {{action.payload.args.name}}",
-        "es": "Llamando a la herramienta MCP: {{action.payload.args.name}}",
-        "tr": "MCP Aracı çağrılıyor: {{action.payload.args.name}}"
-    },
     "ACTION_MESSAGE$READ": {
         "en": "Reading <path>{{action.payload.args.path}}</path>",
         "zh-CN": "读取 <path>{{action.payload.args.path}}</path>",
@@ -5153,21 +5138,6 @@
         "pt": "Navegação concluída",
         "es": "Navegación completada",
         "tr": "Gezinme tamamlandı"
-    },
-    "OBSERVATION_MESSAGE$MCP": {
-        "en": "MCP Tool Result",
-        "zh-CN": "MCP 工具结果",
-        "zh-TW": "MCP 工具結果",
-        "ko-KR": "MCP 도구 결과",
-        "ja": "MCP ツール結果",
-        "no": "MCP verktøyresultat",
-        "ar": "نتيجة أداة MCP",
-        "de": "MCP-Tool-Ergebnis",
-        "fr": "Résultat de l'outil MCP",
-        "it": "Risultato dello strumento MCP",
-        "pt": "Resultado da ferramenta MCP",
-        "es": "Resultado de la herramienta MCP",
-        "tr": "MCP Aracı Sonucu"
     },
     "OBSERVATION_MESSAGE$RECALL": {
         "en": "Microagent Activated",
