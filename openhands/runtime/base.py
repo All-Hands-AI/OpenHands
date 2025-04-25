@@ -97,7 +97,7 @@ class Runtime(FileEditRuntimeMixin):
     config: AppConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
-    status_callback: Callable | None
+    status_callback: Callable[[str, str, str], None] | None
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class Runtime(FileEditRuntimeMixin):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
+        status_callback: Callable[[str, str, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
@@ -409,8 +409,11 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
+        
+        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}', blocking=True)
+        logger.error(f'Running setup script: {setup_script}')
         obs = self.run_action(action)
+        logger.error(f'Done running setup script: {obs}')
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
