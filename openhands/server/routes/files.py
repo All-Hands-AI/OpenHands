@@ -2,6 +2,7 @@ import os
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Request,
     status,
@@ -21,7 +22,6 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
-from openhands.server.auth import get_github_user_id, get_user_id
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
@@ -31,6 +31,8 @@ from openhands.server.shared import (
     config,
     conversation_manager,
 )
+from openhands.server.user_auth import get_user_id
+from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -187,10 +189,15 @@ def zip_current_workspace(request: Request):
 
 
 @app.get('/git/changes')
-async def git_changes(request: Request, conversation_id: str):
+async def git_changes(
+    request: Request,
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+):
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config,
+        user_id,
     )
 
     cwd = await get_cwd(
@@ -204,7 +211,7 @@ async def git_changes(request: Request, conversation_id: str):
         changes = await call_sync_from_async(runtime.get_git_changes, cwd)
         if changes is None:
             return JSONResponse(
-                status_code=500,
+                status_code=404,
                 content={'error': 'Not a git repository'},
             )
         return changes
@@ -223,11 +230,13 @@ async def git_changes(request: Request, conversation_id: str):
 
 
 @app.get('/git/diff')
-async def git_diff(request: Request, path: str, conversation_id: str):
+async def git_diff(
+    request: Request,
+    path: str,
+    conversation_id: str,
+    conversation_store = Depends(get_conversation_store),
+):
     runtime: Runtime = request.state.conversation.runtime
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
-    )
 
     cwd = await get_cwd(
         conversation_store,

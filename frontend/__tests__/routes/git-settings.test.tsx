@@ -112,7 +112,7 @@ describe("Content", () => {
     });
   });
 
-  it("should set '<hidden>' placeholder if the GitHub token is set", async () => {
+  it("should set '<hidden>' placeholder and indicator if the GitHub token is set", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
@@ -130,9 +130,15 @@ describe("Content", () => {
     await waitFor(() => {
       const githubInput = screen.getByTestId("github-token-input");
       expect(githubInput).toHaveProperty("placeholder", "");
+      expect(
+        screen.queryByTestId("gh-set-token-indicator"),
+      ).not.toBeInTheDocument();
 
       const gitlabInput = screen.getByTestId("gitlab-token-input");
       expect(gitlabInput).toHaveProperty("placeholder", "");
+      expect(
+        screen.queryByTestId("gl-set-token-indicator"),
+      ).not.toBeInTheDocument();
     });
 
     getSettingsSpy.mockResolvedValue({
@@ -149,9 +155,15 @@ describe("Content", () => {
     await waitFor(() => {
       const githubInput = screen.getByTestId("github-token-input");
       expect(githubInput).toHaveProperty("placeholder", "<hidden>");
+      expect(
+        screen.queryByTestId("gh-set-token-indicator"),
+      ).toBeInTheDocument();
 
       const gitlabInput = screen.getByTestId("gitlab-token-input");
       expect(gitlabInput).toHaveProperty("placeholder", "<hidden>");
+      expect(
+        screen.queryByTestId("gl-set-token-indicator"),
+      ).toBeInTheDocument();
     });
 
     getSettingsSpy.mockResolvedValue({
@@ -168,9 +180,15 @@ describe("Content", () => {
     await waitFor(() => {
       const githubInput = screen.getByTestId("github-token-input");
       expect(githubInput).toHaveProperty("placeholder", "");
+      expect(
+        screen.queryByTestId("gh-set-token-indicator"),
+      ).not.toBeInTheDocument();
 
       const gitlabInput = screen.getByTestId("gitlab-token-input");
       expect(gitlabInput).toHaveProperty("placeholder", "<hidden>");
+      expect(
+        screen.queryByTestId("gl-set-token-indicator"),
+      ).toBeInTheDocument();
     });
   });
 
