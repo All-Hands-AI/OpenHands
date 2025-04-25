@@ -1,31 +1,26 @@
 import React from "react";
-import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { useLocation } from "react-router";
-import { useTranslation } from "react-i18next";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
+import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
-import { cn } from "#/utils/utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { I18nKey } from "#/i18n/declaration";
 
 export function Sidebar() {
-  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
@@ -92,19 +87,10 @@ export function Sidebar() {
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
             <NewProjectButton onClick={handleEndSession} />
-            <TooltipButton
-              testId="toggle-conversation-panel"
-              tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
-              ariaLabel={t(I18nKey.SIDEBAR$CONVERSATIONS)}
+            <ConversationPanelButton
+              isOpen={conversationPanelIsOpen}
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            >
-              <FaListUl
-                size={22}
-                className={cn(
-                  conversationPanelIsOpen ? "text-white" : "text-[#9099AC]",
-                )}
-              />
-            </TooltipButton>
+            />
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
