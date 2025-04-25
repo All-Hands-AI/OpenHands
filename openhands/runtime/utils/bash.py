@@ -462,6 +462,8 @@ class BashSession:
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
             combined_output += output_segment + '\n'
+        # Add the content after the last PS1 prompt
+        combined_output += pane_content[ps1_matches[-1].end() + 1 :]
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
@@ -574,6 +576,7 @@ class BashSession:
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
+            logger.debug(f'CUR PANE CONTENT: {cur_pane_output}')
             logger.debug(f"BEGIN OF PANE CONTENT: {cur_pane_output.split('\n')[:10]}")
             logger.debug(f"END OF PANE CONTENT: {cur_pane_output.split('\n')[-10:]}")
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
