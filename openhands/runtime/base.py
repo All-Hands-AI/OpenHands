@@ -112,6 +112,7 @@ class Runtime(FileEditRuntimeMixin):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
+        # GitHandler will be initialized with an async function
         self.git_handler = GitHandler(
             execute_shell_fn=self._execute_shell_fn_git_handler
         )
@@ -612,13 +613,15 @@ class Runtime(FileEditRuntimeMixin):
     # Git
     # ====================================================================
 
-    def _execute_shell_fn_git_handler(
+    async def _execute_shell_fn_git_handler(
         self, command: str, cwd: str | None
     ) -> CommandResult:
         """
         This function is used by the GitHandler to execute shell commands.
         """
-        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        obs = await call_sync_from_async(
+            self.run, CmdRunAction(command=command, is_static=True, cwd=cwd)
+        )
         exit_code = 0
         content = ''
 
@@ -629,13 +632,13 @@ class Runtime(FileEditRuntimeMixin):
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
+    async def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)
-        return self.git_handler.get_git_changes()
+        return await call_sync_from_async(self.git_handler.get_git_changes)
 
-    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
+    async def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
-        return self.git_handler.get_git_diff(file_path)
+        return await call_sync_from_async(self.git_handler.get_git_diff, file_path)
 
     @property
     def additional_agent_instructions(self) -> str:

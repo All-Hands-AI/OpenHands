@@ -1,5 +1,6 @@
+import asyncio
 from dataclasses import dataclass
-from typing import Callable
+from typing import Awaitable, Callable, Union
 
 
 @dataclass
@@ -23,10 +24,14 @@ class GitHandler:
 
     def __init__(
         self,
-        execute_shell_fn: Callable[[str, str | None], CommandResult],
+        execute_shell_fn: Union[
+            Callable[[str, str | None], CommandResult],
+            Callable[[str, str | None], Awaitable[CommandResult]],
+        ],
     ):
         self.execute = execute_shell_fn
         self.cwd: str | None = None
+        self._is_async = asyncio.iscoroutinefunction(execute_shell_fn)
 
     def set_cwd(self, cwd: str):
         """
@@ -37,7 +42,16 @@ class GitHandler:
         """
         self.cwd = cwd
 
-    def _is_git_repo(self) -> bool:
+    async def _execute_async(self, cmd: str, cwd: str | None) -> CommandResult:
+        """Execute the command asynchronously if the execute function is async."""
+        if self._is_async:
+            # Cast to Awaitable[CommandResult] to satisfy mypy
+            return await self.execute(cmd, cwd)  # type: ignore
+        else:
+            # Cast to CommandResult to satisfy mypy
+            return self.execute(cmd, cwd)  # type: ignore
+
+    async def _is_git_repo(self) -> bool:
         """
         Checks if the current directory is a Git repository.
 
@@ -45,10 +59,10 @@ class GitHandler:
             bool: True if inside a Git repository, otherwise False.
         """
         cmd = 'git rev-parse --is-inside-work-tree'
-        output = self.execute(cmd, self.cwd)
+        output = await self._execute_async(cmd, self.cwd)
         return output.content.strip() == 'true'
 
-    def _get_current_file_content(self, file_path: str) -> str:
+    async def _get_current_file_content(self, file_path: str) -> str:
         """
         Retrieves the current content of a given file.
 
@@ -58,10 +72,10 @@ class GitHandler:
         Returns:
             str: The file content.
         """
-        output = self.execute(f'cat {file_path}', self.cwd)
+        output = await self._execute_async(f'cat {file_path}', self.cwd)
         return output.content
 
-    def _verify_ref_exists(self, ref: str) -> bool:
+    async def _verify_ref_exists(self, ref: str) -> bool:
         """
         Verifies whether a specific Git reference exists.
 
@@ -72,18 +86,18 @@ class GitHandler:
             bool: True if the reference exists, otherwise False.
         """
         cmd = f'git rev-parse --verify {ref}'
-        output = self.execute(cmd, self.cwd)
+        output = await self._execute_async(cmd, self.cwd)
         return output.exit_code == 0
 
-    def _get_valid_ref(self) -> str | None:
+    async def _get_valid_ref(self) -> str | None:
         """
         Determines a valid Git reference for comparison.
 
         Returns:
             str | None: A valid Git reference or None if no valid reference is found.
         """
-        current_branch = self._get_current_branch()
-        default_branch = self._get_default_branch()
+        current_branch = await self._get_current_branch()
+        default_branch = await self._get_default_branch()
 
         ref_current_branch = f'origin/{current_branch}'
         ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{default_branch})")'
@@ -97,12 +111,12 @@ class GitHandler:
             ref_new_repo,
         ]
         for ref in refs:
-            if self._verify_ref_exists(ref):
+            if await self._verify_ref_exists(ref):
                 return ref
 
         return None
 
-    def _get_ref_content(self, file_path: str) -> str:
+    async def _get_ref_content(self, file_path: str) -> str:
         """
         Retrieves the content of a file from a valid Git reference.
 
@@ -112,15 +126,15 @@ class GitHandler:
         Returns:
             str: The content of the file from the reference, or an empty string if unavailable.
         """
-        ref = self._get_valid_ref()
+        ref = await self._get_valid_ref()
         if not ref:
             return ''
 
         cmd = f'git show {ref}:{file_path}'
-        output = self.execute(cmd, self.cwd)
+        output = await self._execute_async(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 
-    def _get_default_branch(self) -> str:
+    async def _get_default_branch(self) -> str:
         """
         Retrieves the primary Git branch name of the repository.
 
@@ -128,10 +142,10 @@ class GitHandler:
             str: The name of the primary branch.
         """
         cmd = 'git remote show origin | grep "HEAD branch"'
-        output = self.execute(cmd, self.cwd)
+        output = await self._execute_async(cmd, self.cwd)
         return output.content.split()[-1].strip()
 
-    def _get_current_branch(self) -> str:
+    async def _get_current_branch(self) -> str:
         """
         Retrieves the currently selected Git branch.
 
@@ -139,25 +153,25 @@ class GitHandler:
             str: The name of the current branch.
         """
         cmd = 'git rev-parse --abbrev-ref HEAD'
-        output = self.execute(cmd, self.cwd)
+        output = await self._execute_async(cmd, self.cwd)
         return output.content.strip()
 
-    def _get_changed_files(self) -> list[str]:
+    async def _get_changed_files(self) -> list[str]:
         """
         Retrieves a list of changed files compared to a valid Git reference.
 
         Returns:
             list[str]: A list of changed file paths.
         """
-        ref = self._get_valid_ref()
+        ref = await self._get_valid_ref()
         if not ref:
             return []
 
         diff_cmd = f'git diff --name-status {ref}'
-        output = self.execute(diff_cmd, self.cwd)
+        output = await self._execute_async(diff_cmd, self.cwd)
         return output.content.splitlines()
 
-    def _get_untracked_files(self) -> list[dict[str, str]]:
+    async def _get_untracked_files(self) -> list[dict[str, str]]:
         """
         Retrieves a list of untracked files in the repository. This is useful for detecting new files.
 
@@ -165,7 +179,7 @@ class GitHandler:
             list[dict[str, str]]: A list of dictionaries containing file paths and statuses.
         """
         cmd = 'git ls-files --others --exclude-standard'
-        output = self.execute(cmd, self.cwd)
+        output = await self._execute_async(cmd, self.cwd)
         obs_list = output.content.splitlines()
         return (
             [{'status': 'A', 'path': path} for path in obs_list]
@@ -173,24 +187,24 @@ class GitHandler:
             else []
         )
 
-    def get_git_changes(self) -> list[dict[str, str]] | None:
+    async def get_git_changes(self) -> list[dict[str, str]] | None:
         """
         Retrieves the list of changed files in the Git repository.
 
         Returns:
             list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if not a git repository.
         """
-        if not self._is_git_repo():
+        if not await self._is_git_repo():
             return None
 
-        changes_list = self._get_changed_files()
+        changes_list = await self._get_changed_files()
         result = parse_git_changes(changes_list)
 
         # join with any untracked files
-        result += self._get_untracked_files()
+        result += await self._get_untracked_files()
         return result
 
-    def get_git_diff(self, file_path: str) -> dict[str, str]:
+    async def get_git_diff(self, file_path: str) -> dict[str, str]:
         """
         Retrieves the original and modified content of a file in the repository.
 
@@ -200,8 +214,8 @@ class GitHandler:
         Returns:
             dict[str, str]: A dictionary containing the original and modified content.
         """
-        modified = self._get_current_file_content(file_path)
-        original = self._get_ref_content(file_path)
+        modified = await self._get_current_file_content(file_path)
+        original = await self._get_ref_content(file_path)
 
         return {
             'modified': modified,
