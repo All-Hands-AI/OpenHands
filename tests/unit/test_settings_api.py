@@ -53,8 +53,8 @@ def test_client():
         ),
         patch(
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
-            AsyncMock(return_value=FileSettingsStore(InMemoryFileStore()))
-        )
+            AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
+        ),
     ):
         client = TestClient(app)
         yield client
