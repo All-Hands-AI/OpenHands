@@ -46,7 +46,7 @@ class GitHubService(BaseGitService, GitService):
     @property
     def provider(self) -> str:
         return ProviderType.GITHUB.value
-    
+
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
         if not self.token:
@@ -362,6 +362,7 @@ class GitHubService(BaseGitService, GitService):
                 if task_type != TaskType.OPEN_PR:
                     tasks.append(
                         SuggestedTask(
+                            git_provider=ProviderType.GITHUB,
                             task_type=task_type,
                             repo=repo_name,
                             issue_number=pr['number'],
@@ -374,6 +375,7 @@ class GitHubService(BaseGitService, GitService):
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
                         task_type=TaskType.OPEN_ISSUE,
                         repo=repo_name,
                         issue_number=issue['number'],
