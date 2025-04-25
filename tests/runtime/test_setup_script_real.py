@@ -28,15 +28,15 @@ def test_setup_script_execution_in_docker_runtime(temp_dir, runtime_cls):
     openhands_dir = os.path.join(test_dir, ".openhands")
     os.makedirs(openhands_dir, exist_ok=True)
     
-    # Create a setup.sh script that creates a marker file and sleeps for a few seconds
+    # Create a setup.sh script that creates a marker file and sleeps for 20 seconds
     setup_script_path = os.path.join(openhands_dir, "setup.sh")
     with open(setup_script_path, "w") as f:
         f.write("""#!/bin/bash
 echo "Starting setup script"
 touch /workspace/setup_script_executed
 echo "Current directory: $(pwd)"
-echo "Sleeping for 5 seconds to simulate work..."
-sleep 5
+echo "Sleeping for 20 seconds to simulate work..."
+sleep 20
 echo "Setup script completed"
 """)
     
@@ -96,9 +96,9 @@ echo "Setup script completed"
         # Restore the original add_event method
         runtime.event_stream.add_event = original_add_event
         
-        # Verify the script execution time was at least 5 seconds
+        # Verify the script execution time was at least 20 seconds
         execution_time = end_time - start_time
-        assert execution_time >= 5, f"Setup script didn't run for the expected duration. Actual: {execution_time}s"
+        assert execution_time >= 20, f"Setup script didn't run for the expected duration. Actual: {execution_time}s"
         
         # Verify the marker file was created
         action = CmdRunAction(command='ls -la /workspace/setup_script_executed')
@@ -120,7 +120,7 @@ echo "Setup script completed"
         
         # The time difference should be at least as long as our simulated script execution
         state_duration = loading_time - setting_up_time
-        assert state_duration >= 5, f"SETTING_UP state duration was {state_duration}s, expected at least 5s"
+        assert state_duration >= 20, f"SETTING_UP state duration was {state_duration}s, expected at least 20s"
         
         # Verify no other agent states were set during script execution
         for state, timestamp in state_changes:
