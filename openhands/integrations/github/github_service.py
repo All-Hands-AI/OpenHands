@@ -218,9 +218,6 @@ class GitHubService(BaseGitService, GitService):
             for repo in all_repos
         ]
 
-    
-
-
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
         response, _ = await self._make_request(url)
