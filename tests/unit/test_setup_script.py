@@ -1,7 +1,9 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
-from openhands.events import EventStream
+from openhands.core.schema.agent import AgentState
+from openhands.events import EventStream, EventSource
+from openhands.events.action import ChangeAgentStateAction
 from openhands.runtime.base import Runtime
 from openhands.events.observation import ErrorObservation, CmdOutputObservation
 
@@ -31,8 +33,26 @@ def test_maybe_run_setup_script_when_script_exists(mock_runtime):
     # Call the method
     Runtime.maybe_run_setup_script(mock_runtime)
     
-    # Verify that add_event was called at least twice (once for SETTING_UP and once for LOADING)
-    assert mock_runtime.event_stream.add_event.call_count >= 2
+    # Verify that add_event was called exactly twice
+    assert mock_runtime.event_stream.add_event.call_count == 2
+    
+    # Verify the first call sets the state to SETTING_UP before running the script
+    first_call = mock_runtime.event_stream.add_event.call_args_list[0]
+    assert isinstance(first_call[0][0], ChangeAgentStateAction)
+    assert first_call[0][0].agent_state == AgentState.SETTING_UP
+    assert first_call[0][1] == EventSource.ENVIRONMENT
+    
+    # Verify the second call sets the state back to LOADING after running the script
+    second_call = mock_runtime.event_stream.add_event.call_args_list[1]
+    assert isinstance(second_call[0][0], ChangeAgentStateAction)
+    assert second_call[0][0].agent_state == AgentState.LOADING
+    assert second_call[0][1] == EventSource.ENVIRONMENT
+    
+    # Verify the order of operations: set SETTING_UP, run script, set LOADING
+    mock_runtime.event_stream.add_event.assert_has_calls([
+        call(ChangeAgentStateAction(agent_state=AgentState.SETTING_UP), EventSource.ENVIRONMENT),
+        call(ChangeAgentStateAction(agent_state=AgentState.LOADING), EventSource.ENVIRONMENT)
+    ])
 
 
 def test_maybe_run_setup_script_when_script_does_not_exist(mock_runtime):
