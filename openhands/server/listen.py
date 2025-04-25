@@ -7,7 +7,6 @@ from openhands.server.middleware import (
     CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
-    ProviderTokenMiddleware,
     RateLimitMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
@@ -29,6 +28,5 @@ base_app.add_middleware(
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
-base_app.middleware('http')(ProviderTokenMiddleware(base_app))
 
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
