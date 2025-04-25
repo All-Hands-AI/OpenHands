@@ -7,6 +7,30 @@ import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
 
+// Mock the i18next hook
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => {
+        const translations: Record<string, string> = {
+          "SETTINGS$NAV_GIT": "Git",
+          "SETTINGS$NAV_APPLICATION": "Application",
+          "SETTINGS$NAV_CREDITS": "Credits",
+          "SETTINGS$NAV_API_KEYS": "API Keys",
+          "SETTINGS$NAV_LLM": "LLM",
+          "SETTINGS$TITLE": "Settings"
+        };
+        return translations[key] || key;
+      },
+      i18n: {
+        changeLanguage: vi.fn(),
+      },
+    }),
+  };
+});
+
 describe("Settings Billing", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 
