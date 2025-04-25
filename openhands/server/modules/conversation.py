@@ -54,10 +54,13 @@ class ConversationModule:
                 'hidden_prompt': existing_record.configs.get('hidden_prompt', True)
                 if existing_record
                 else True,
+                'thumbnail_url': existing_record.configs.get('thumbnail_url', None)
+                if existing_record
+                else None,
             }
         except Exception as e:
             logger.error(f'Error getting conversation visibility: {str(e)}')
-            return {'is_published': False, 'hidden_prompt': False}
+            return {'is_published': False, 'hidden_prompt': False, 'thumbnail_url': None}
 
     async def _update_conversation_visibility(
         self,
@@ -81,7 +84,7 @@ class ConversationModule:
                         (Conversation.c.conversation_id == conversation_id)
                         & (Conversation.c.user_id == user_id)
                     )
-                    .values(published=is_published, configs=configs, title=title)
+                    .values(published=is_published, configs={**existing_record.configs, **configs}, title=title)
                 )
             else:
                 await database.execute(
@@ -109,6 +112,8 @@ class ConversationModule:
             existing_record = await database.fetch_one(query)
             if not existing_record:
                 return 'Conversation not found', None
+            if existing_record.status and existing_record.status == 'deleted':
+                return 'Conversation deleted', None
             if not existing_record.published:
                 return 'Conversation not published', None
             user_id = existing_record.user_id
@@ -228,6 +233,7 @@ class ConversationModule:
                     'short_description': conversation.get('short_description'),
                     'published': conversation.get('published'),
                     'view_count': self.get_view_count(conversation, sort_by),
+                    'thumbnail_url': conversation.get('configs', {}).get('thumbnail_url', None),
                 }
                 for conversation in conversations
             ]
@@ -242,6 +248,7 @@ class ConversationModule:
                     'short_description': conversation.get('short_description'),
                     'published': conversation.get('published'),
                     'view_count': self.get_view_count(conversation, sort_by),
+                    'thumbnail_url': conversation.get('configs', {}).get('thumbnail_url', None),
                 }
                 for conversation in conversations
             ]

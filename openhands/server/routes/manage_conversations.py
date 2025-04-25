@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Body, HTTPException, Request, status
+from fastapi import APIRouter, Body, HTTPException, Request, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from typing import Optional
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -39,6 +40,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
+from openhands.server.shared import s3_handler
 
 app = APIRouter(prefix='/api')
 
@@ -55,8 +57,8 @@ class InitSessionRequest(BaseModel):
 
 
 class ChangeVisibilityRequest(BaseModel):
-    is_published: bool = True
-    hidden_prompt: bool = True
+    is_published: bool
+    hidden_prompt: bool
 
 
 class ConversationVisibility(BaseModel):
@@ -438,7 +440,9 @@ async def delete_conversation(
 async def change_visibility(
     conversation_id: str,
     request: Request,
-    data: ChangeVisibilityRequest,
+    is_published: bool = Form(...),
+    hidden_prompt: bool = Form(...),
+    file: Optional[UploadFile] = File(None),
 ) -> bool:
     user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
@@ -447,11 +451,24 @@ async def change_visibility(
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
+
+    # Handle file upload if provided
+    extra_data = {
+        'hidden_prompt': hidden_prompt,
+    }
+
+    if file and s3_handler is not None:
+        print("processing file:", file)
+        folder_path = f"conversations/{conversation_id}"
+        file_url = await s3_handler.upload_file(file, folder_path)
+        if file_url:
+            extra_data['thumbnail_url'] = file_url
+
     return await conversation_module._update_conversation_visibility(
         conversation_id,
-        data.is_published,
+        is_published,
         str(user_id),
-        {'hidden_prompt': data.hidden_prompt},
+        extra_data,
         metadata.title if metadata.title else '',
     )
 

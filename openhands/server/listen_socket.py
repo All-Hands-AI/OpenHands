@@ -141,7 +141,15 @@ async def connect(connection_id: str, environ):
                 raise ConnectionRefusedError('User not activated')
 
             # TODO: if the user is whitelisted, check if the conversation is belong to the user
-            if (
+            conversation_store = await ConversationStoreImpl.get_instance(
+                config, user_id, None
+            )
+            if not conversation_store:
+                raise ConnectionRefusedError('Conversation store not found')
+            conversation_metadata_result_set = await conversation_store.get_metadata(
+                conversation_id
+            )
+            if not conversation_metadata_result_set or (
                 conversation_metadata_result_set
                 and conversation_metadata_result_set.user_id != user_id
             ):
