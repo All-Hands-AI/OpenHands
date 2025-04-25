@@ -1,5 +1,8 @@
 import os
+import re
+from datetime import datetime, timezone
 from enum import Enum
+from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -11,14 +14,17 @@ from fastapi import (
 from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
+    CmdRunAction,
     FileReadAction,
 )
 from openhands.events.observation import (
+    CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
 )
@@ -43,6 +49,15 @@ class CommitState(str, Enum):
     """Enum representing the state of git commits in a repository."""
     CLEAN = "CLEAN"  # No changes, current commit matches origin commit for the same branch
     IN_PROGRESS = "IN_PROGRESS"  # There are uncommitted changes or local commits not in origin
+
+
+class GitInfoResponse(BaseModel):
+    """Response model for git information."""
+    branch: Optional[str] = None
+    repository: Optional[str] = None
+    commit_state: Optional[CommitState] = None
+    error: Optional[str] = None
+
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
@@ -317,6 +332,140 @@ async def git_branch(
             status_code=500,
             content={'error': str(e)},
         )
+
+
+@app.post('/git/update-info')
+async def update_git_info(
+    request: Request,
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+):
+    """Update and retrieve git information for the conversation's repository.
+    
+    This endpoint:
+    1. Retrieves the current branch
+    2. Retrieves the remote repository URL
+    3. Determines the commit state (CLEAN or IN_PROGRESS)
+    4. Updates the conversation metadata with the branch and repository
+    5. Returns all the information as JSON
+    
+    Returns:
+        GitInfoResponse: A JSON object containing branch, repository, and commit state information.
+        
+    Raises:
+        HTTPException: If there's an error retrieving git information or if not a git repository.
+    """
+    runtime: Runtime = request.state.conversation.runtime
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config,
+        user_id,
+    )
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    
+    response = GitInfoResponse()
+    
+    try:
+        # Check if it's a git repository first
+        cmd_action = CmdRunAction(command='git rev-parse --is-inside-work-tree', cwd=cwd)
+        result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(result, CmdOutputObservation) or result.exit_code != 0 or result.content.strip() != 'true':
+            response.error = 'Not a git repository'
+            return response
+        
+        # Get current branch
+        cmd_action = CmdRunAction(command='git rev-parse --abbrev-ref HEAD', cwd=cwd)
+        branch_result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(branch_result, CmdOutputObservation) or branch_result.exit_code != 0:
+            response.error = 'Failed to get current branch'
+            return response
+        
+        current_branch = branch_result.content.strip()
+        response.branch = current_branch
+        
+        # Get remote repository URL
+        cmd_action = CmdRunAction(command='git remote -v', cwd=cwd)
+        remote_result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        repository = None
+        if isinstance(remote_result, CmdOutputObservation) and remote_result.exit_code == 0:
+            # Parse the remote URL to extract the repository
+            remote_output = remote_result.content.strip()
+            if remote_output:
+                # Look for GitHub or GitLab URLs
+                match = re.search(r'(github\.com|gitlab\.com)[:/]([^/\s]+/[^/\s]+)(?:\.git|\s)', remote_output)
+                if match:
+                    repository = match.group(2)
+                    response.repository = repository
+        
+        # Check for uncommitted changes
+        cmd_action = CmdRunAction(command='git status --porcelain', cwd=cwd)
+        status_result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(status_result, CmdOutputObservation) or status_result.exit_code != 0:
+            response.error = 'Failed to check git status'
+            return response
+        
+        # If there are uncommitted changes, set state to IN_PROGRESS
+        if status_result.content.strip():
+            response.commit_state = CommitState.IN_PROGRESS
+        else:
+            # Check if there are commits not pushed to origin
+            cmd_action = CmdRunAction(
+                command=f'git rev-list HEAD...origin/{current_branch} --count 2>/dev/null || echo "0"', 
+                cwd=cwd
+            )
+            unpushed_result = await call_sync_from_async(runtime.run_action, cmd_action)
+            
+            if not isinstance(unpushed_result, CmdOutputObservation):
+                response.error = 'Failed to check unpushed commits'
+                return response
+            
+            # If there are unpushed commits, set state to IN_PROGRESS
+            if unpushed_result.content.strip() != '0':
+                response.commit_state = CommitState.IN_PROGRESS
+            else:
+                # If we got here, everything is clean
+                response.commit_state = CommitState.CLEAN
+        
+        # Update the conversation metadata with the branch and repository
+        try:
+            metadata = await conversation_store.get_metadata(conversation_id)
+            
+            # Only update if we have new information
+            updated = False
+            if current_branch and metadata.selected_branch != current_branch:
+                metadata.selected_branch = current_branch
+                updated = True
+                
+            if repository and metadata.selected_repository != repository:
+                metadata.selected_repository = repository
+                updated = True
+                
+            if updated:
+                metadata.last_updated_at = datetime.now(timezone.utc)
+                await conversation_store.save_metadata(metadata)
+                logger.info(f"Updated metadata for conversation {conversation_id} with branch={current_branch}, repository={repository}")
+        except Exception as e:
+            logger.error(f"Failed to update conversation metadata: {e}")
+            # Don't fail the request if metadata update fails
+            response.error = f"Retrieved git info but failed to update metadata: {str(e)}"
+        
+        return response
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable: {e}')
+        response.error = f'Error getting git info: {e}'
+        return response
+    except Exception as e:
+        logger.error(f'Error getting git info: {e}')
+        response.error = str(e)
+        return response
 
 
 @app.get('/git/commit-state')
