@@ -202,9 +202,7 @@ class StandaloneConversationManager(ConversationManager):
                 ConversationStore,  # type: ignore
                 self.server_config.conversation_store_class,
             )
-        store = await conversation_store_class.get_instance(
-            self.config, user_id, github_user_id
-        )
+        store = await conversation_store_class.get_instance(self.config, user_id)
         return store
 
     async def get_running_agent_loops(
