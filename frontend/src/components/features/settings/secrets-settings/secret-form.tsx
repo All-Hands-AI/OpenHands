@@ -8,13 +8,13 @@ import { BrandButton } from "../brand-button";
 interface SecretFormProps {
   mode: "add" | "edit";
   selectedSecret: string | null;
-  onSettled?: () => void;
+  onCancel: () => void;
 }
 
 export function SecretForm({
   mode,
   selectedSecret,
-  onSettled,
+  onCancel,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
 
@@ -22,7 +22,15 @@ export function SecretForm({
   const { mutate: updateSecret } = useUpdateSecret();
 
   const handleCreateSecret = (name: string, value: string) => {
-    createSecret({ name, value }, { onSettled });
+    createSecret(
+      { name, value },
+      {
+        onSettled: onCancel,
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({ queryKey: ["secrets"] });
+        },
+      },
+    );
   };
 
   const updateSecretOptimistically = (oldName: string, name: string) => {
@@ -48,7 +56,7 @@ export function SecretForm({
     updateSecret(
       { secretToEdit, name, value },
       {
-        onSettled,
+        onSettled: onCancel,
         onError: revertOptimisticUpdate,
       },
     );
@@ -82,6 +90,8 @@ export function SecretForm({
         label="Name"
         className="w-[350px]"
         required
+        defaultValue={mode === "edit" && selectedSecret ? selectedSecret : ""}
+        placeholder="e.g. OpenAI API Key"
       />
 
       <label className="flex flex-col gap-2.5 w-fit">
@@ -99,10 +109,20 @@ export function SecretForm({
         />
       </label>
 
-      <BrandButton testId="submit-button" type="submit" variant="primary">
-        {mode === "add" && "Add secret"}
-        {mode === "edit" && "Edit secret"}
-      </BrandButton>
+      <div className="flex items-center gap-4">
+        <BrandButton
+          testId="cancel-button"
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+        >
+          Cancel
+        </BrandButton>
+        <BrandButton testId="submit-button" type="submit" variant="primary">
+          {mode === "add" && "Add secret"}
+          {mode === "edit" && "Edit secret"}
+        </BrandButton>
+      </div>
     </form>
   );
 }

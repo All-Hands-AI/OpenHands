@@ -29,6 +29,7 @@ export const SECRETS_HANDLERS = [
     if (typeof id === "string" && typeof body === "object") {
       const secret = secrets.get(id);
       if (secret && body?.name && body.value) {
+        secrets.delete(id);
         secrets.set(body.name, body.value);
         return HttpResponse.json(true);
       }

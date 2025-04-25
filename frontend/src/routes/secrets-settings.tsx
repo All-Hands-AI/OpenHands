@@ -106,7 +106,7 @@ function SecretsSettingsScreen() {
         <SecretForm
           mode={view === "add-secret-form" ? "add" : "edit"}
           selectedSecret={selectedSecret}
-          onSettled={() => setView("list")}
+          onCancel={() => setView("list")}
         />
       )}
 
