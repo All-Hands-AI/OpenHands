@@ -78,7 +78,7 @@ playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.11.6"
+ruff = "0.11.7"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
