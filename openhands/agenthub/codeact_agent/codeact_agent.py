@@ -1,7 +1,20 @@
+import copy
 import os
 from collections import deque
 
+from litellm import ChatCompletionToolParam
+
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
+from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+from openhands.agenthub.codeact_agent.tools.finish import FinishTool
+from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
+from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
+from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
+    create_str_replace_editor_tool,
+)
+from openhands.agenthub.codeact_agent.tools.think import ThinkTool
+from openhands.agenthub.codeact_agent.tools.web_read import WebReadTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -67,15 +80,7 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
-
-        built_in_tools = codeact_function_calling.get_tools(
-            enable_browsing=self.config.enable_browsing,
-            enable_jupyter=self.config.enable_jupyter,
-            enable_llm_editor=self.config.enable_llm_editor,
-            llm=self.llm,
-        )
-
-        self.tools = built_in_tools
+        self.tools = self._get_tools()
 
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -88,6 +93,40 @@ class CodeActAgent(Agent):
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
         self.response_to_actions_fn = codeact_function_calling.response_to_actions
+
+    def _get_tools(self) -> list[ChatCompletionToolParam]:
+        # For these models, we use short tool descriptions ( < 1024 tokens)
+        # to avoid hitting the OpenAI token limit for tool descriptions.
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
+
+        use_short_tool_desc = False
+        if self.llm is not None:
+            use_short_tool_desc = any(
+                model_substr in self.llm.config.model
+                for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
+            )
+
+        tools = []
+        if self.config.enable_cmd:
+            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
+        if self.config.enable_think:
+            tools.append(ThinkTool)
+        if self.config.enable_finish:
+            tools.append(FinishTool)
+        if self.config.enable_browsing:
+            tools.append(WebReadTool)
+            tools.append(BrowserTool)
+        if self.config.enable_jupyter:
+            tools.append(IPythonTool)
+        if self.config.enable_llm_editor:
+            tools.append(LLMBasedFileEditTool)
+        elif self.config.enable_editor:
+            tools.append(
+                create_str_replace_editor_tool(
+                    use_short_description=use_short_tool_desc
+                )
+            )
+        return tools
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -148,8 +187,25 @@ class CodeActAgent(Agent):
                 for tool in self.mcp_tools
                 if tool['function']['name'] not in existing_names
             ]
-            params['tools'] += unique_mcp_tools
 
+            if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
+                logger.info(
+                    f'Removing the default fields from the MCP tools for {self.llm.config.model} '
+                    "since it doesn't support them and the request would crash."
+                )
+                # prevent mutation of input tools
+                unique_mcp_tools = copy.deepcopy(unique_mcp_tools)
+                # Strip off default fields that cause errors with gemini-preview
+                for tool in unique_mcp_tools:
+                    if 'function' in tool and 'parameters' in tool['function']:
+                        if 'properties' in tool['function']['parameters']:
+                            for prop_name, prop in tool['function']['parameters'][
+                                'properties'
+                            ].items():
+                                if 'default' in prop:
+                                    del prop['default']
+
+            params['tools'] += unique_mcp_tools
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)

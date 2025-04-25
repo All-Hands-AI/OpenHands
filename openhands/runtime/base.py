@@ -309,13 +309,30 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    async def clone_repo(
+    async def clone_or_init_repo(
         self,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE,
-        selected_repository: str | Repository,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        selected_repository: str | Repository | None,
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
+        if not selected_repository:
+            # In SaaS mode (indicated by user_id being set), always run git init
+            # In OSS mode, only run git init if workspace_base is not set
+            if self.user_id or not self.config.workspace_base:
+                logger.debug(
+                    'No repository selected. Initializing a new git repository in the workspace.'
+                )
+                action = CmdRunAction(
+                    command='git init',
+                )
+                self.run_action(action)
+            else:
+                logger.info(
+                    'In workspace mount mode, not initializing a new git repository.'
+                )
+            return ''
+
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
@@ -327,9 +344,11 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.git_provider
         )
 
+        if not git_provider_tokens:
+            raise RuntimeError('Need git provider tokens to clone repo')
         git_token = git_provider_tokens[chosen_provider].token
         if not git_token:
-            raise RuntimeError('Require valid git token to clone repo')
+            raise RuntimeError('Need a valid git token to clone repo')
 
         domain = provider_domains[chosen_provider]
         repository = (
@@ -610,7 +629,7 @@ class Runtime(FileEditRuntimeMixin):
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    def get_git_changes(self, cwd: str) -> list[dict[str, str]]:
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_changes()
 

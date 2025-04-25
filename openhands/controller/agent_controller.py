@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import copy
 import os
@@ -190,7 +192,7 @@ class AgentController:
             self.event_stream.add_event(system_message, EventSource.AGENT)
             logger.debug(f'System message added to event stream: {system_message}')
 
-    async def close(self, set_stop_state=True) -> None:
+    async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
         Note that it's fairly important that this closes properly, otherwise the state is incomplete.
@@ -242,18 +244,18 @@ class AgentController:
         extra_merged = {'session_id': self.id, **extra}
         getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
 
-    def update_state_before_step(self):
+    def update_state_before_step(self) -> None:
         self.state.iteration += 1
         self.state.local_iteration += 1
 
-    async def update_state_after_step(self):
+    async def update_state_after_step(self) -> None:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
     async def _react_to_exception(
         self,
         e: Exception,
-    ):
+    ) -> None:
         """React to an exception by setting the agent state to error and sending a status message."""
         # Store the error reason before setting the agent state
         self.state.last_error = f'{type(e).__name__}: {str(e)}'
@@ -293,10 +295,10 @@ class AgentController:
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
 
-    def step(self):
+    def step(self) -> None:
         asyncio.create_task(self._step_with_exception_handling())
 
-    async def _step_with_exception_handling(self):
+    async def _step_with_exception_handling(self) -> None:
         try:
             await self._step()
         except Exception as e:
@@ -412,11 +414,11 @@ class AgentController:
         should_step = self.should_step(event)
         if should_step:
             self.log(
-                'info',
+                'debug',
                 f'Stepping agent after event: {type(event).__name__}',
                 extra={'msg_type': 'STEPPING_AGENT'},
             )
-            self.step()
+            await self._step_with_exception_handling()
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             # If we received a user message but aren't stepping, log why
             self.log(
@@ -777,7 +779,7 @@ class AgentController:
             return
 
         self.log(
-            'info',
+            'debug',
             f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
@@ -966,7 +968,7 @@ class AgentController:
                 action_type = type(prev_action).__name__
                 elapsed_time = time.time() - timestamp
                 self.log(
-                    'info',
+                    'debug',
                     f'Cleared pending action after {elapsed_time:.2f}s: {action_type} (id={action_id})',
                     extra={'msg_type': 'PENDING_ACTION_CLEARED'},
                 )
@@ -975,7 +977,7 @@ class AgentController:
             action_id = getattr(action, 'id', 'unknown')
             action_type = type(action).__name__
             self.log(
-                'info',
+                'debug',
                 f'Set pending action: {action_type} (id={action_id})',
                 extra={'msg_type': 'PENDING_ACTION_SET'},
             )
@@ -1280,7 +1282,7 @@ class AgentController:
             extra={'msg_type': 'METRICS'},
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         pending_action_info = '<none>'
         if (
             hasattr(self, '_pending_action_info')
@@ -1303,7 +1305,7 @@ class AgentController:
             f'_pending_action={pending_action_info})'
         )
 
-    def _is_awaiting_observation(self):
+    def _is_awaiting_observation(self) -> bool:
         events = self.event_stream.get_events(reverse=True)
         for event in events:
             if isinstance(event, AgentStateChangedObservation):
