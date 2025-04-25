@@ -1,8 +1,8 @@
-import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router";
-import { I18nKey } from "#/i18n/declaration";
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { Tooltip } from "@heroui/react";
+import { NavLink } from "react-router";
+import { useTranslation } from "react-i18next";
+import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
+import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 
 interface AllHandsLogoButtonProps {
@@ -25,7 +25,11 @@ export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
   };
 
   return (
-    <Tooltip content={t(I18nKey.BRANDING$ALL_HANDS_AI)} closeDelay={100} placement="right">
+    <Tooltip
+      content={t(I18nKey.BRANDING$ALL_HANDS_AI)}
+      closeDelay={100}
+      placement="right"
+    >
       <NavLink
         to="/"
         onClick={handleClick}
