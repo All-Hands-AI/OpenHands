@@ -18,6 +18,8 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
+from datetime import datetime
+
 
 
 class GitHubService(BaseGitService, GitService):
@@ -157,6 +159,13 @@ class GitHubService(BaseGitService, GitService):
 
         return repos[:max_repos]  # Trim to max_repos if needed
 
+
+    def parse_pushed_at_date(self, repo):
+        ts = repo.get("pushed_at")
+        return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ") if ts else datetime.min
+
+
+
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
@@ -191,6 +200,13 @@ class GitHubService(BaseGitService, GitService):
             # Fetch user repositories
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
 
+
+        if app_mode == AppMode.SAAS:
+            if sort == "pushed":
+                all_repos.sort(
+                    key=self.parse_pushed_at_date, reverse=True
+                )
+        
         # Convert to Repository objects
         return [
             Repository(
@@ -202,6 +218,9 @@ class GitHubService(BaseGitService, GitService):
             )
             for repo in all_repos
         ]
+
+    
+
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
