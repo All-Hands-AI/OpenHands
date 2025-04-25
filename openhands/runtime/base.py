@@ -98,6 +98,7 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable | None
+    git_dir: str | None
 
     def __init__(
         self,
@@ -116,6 +117,7 @@ class Runtime(FileEditRuntimeMixin):
         self.git_handler = GitHandler(
             execute_shell_fn=self._execute_shell_fn_git_handler
         )
+        self.git_dir = None
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -317,6 +319,9 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
         repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
+        # Set the git_dir to the workspace mount path by default
+        self.git_dir = self.config.workspace_mount_path_in_sandbox
+
         if not selected_repository:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
@@ -328,6 +333,7 @@ class Runtime(FileEditRuntimeMixin):
                     command='git init',
                 )
                 self.run_action(action)
+                # git_dir is already set to workspace mount path
             else:
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
@@ -396,6 +402,13 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
+
+        # Update git_dir to point to the cloned repository directory
+        self.git_dir = os.path.join(
+            self.config.workspace_mount_path_in_sandbox, dir_name
+        )
+        self.git_handler.set_cwd(self.git_dir)
+
         return dir_name
 
     def maybe_run_setup_script(self):
@@ -632,12 +645,14 @@ class Runtime(FileEditRuntimeMixin):
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    async def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
-        self.git_handler.set_cwd(cwd)
+    async def get_git_changes(self) -> list[dict[str, str]] | None:
+        if self.git_dir:
+            self.git_handler.set_cwd(self.git_dir)
         return await call_sync_from_async(self.git_handler.get_git_changes)
 
-    async def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
-        self.git_handler.set_cwd(cwd)
+    async def get_git_diff(self, file_path: str) -> dict[str, str]:
+        if self.git_dir:
+            self.git_handler.set_cwd(self.git_dir)
         return await call_sync_from_async(self.git_handler.get_git_diff, file_path)
 
     @property
