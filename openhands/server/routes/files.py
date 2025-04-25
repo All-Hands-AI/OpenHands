@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 from fastapi import (
     APIRouter,
@@ -37,6 +38,11 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
+
+class CommitState(str, Enum):
+    """Enum representing the state of git commits in a repository."""
+    CLEAN = "CLEAN"  # No changes, current commit matches origin commit for the same branch
+    IN_PROGRESS = "IN_PROGRESS"  # There are uncommitted changes or local commits not in origin
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
@@ -252,6 +258,156 @@ async def git_diff(
         return JSONResponse(
             status_code=500,
             content={'error': f'Error getting diff: {e}'},
+        )
+
+
+@app.get('/git/branch')
+async def git_branch(
+    request: Request,
+    conversation_id: str,
+    conversation_store = Depends(get_conversation_store),
+):
+    """Get the current git branch for the conversation's repository.
+    
+    Returns:
+        dict: A dictionary containing the current branch name.
+        
+    Raises:
+        HTTPException: If there's an error getting the branch or if not a git repository.
+    """
+    runtime: Runtime = request.state.conversation.runtime
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    
+    try:
+        # Check if it's a git repository first
+        cmd_action = CmdRunAction(command='git rev-parse --is-inside-work-tree', cwd=cwd)
+        result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(result, CmdOutputObservation) or result.exit_code != 0 or result.content.strip() != 'true':
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Not a git repository'},
+            )
+            
+        # Get the current branch
+        cmd_action = CmdRunAction(command='git rev-parse --abbrev-ref HEAD', cwd=cwd)
+        result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(result, CmdOutputObservation) or result.exit_code != 0:
+            return JSONResponse(
+                status_code=500,
+                content={'error': 'Failed to get current branch'},
+            )
+            
+        return {'branch': result.content.strip()}
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting branch: {e}'},
+        )
+    except Exception as e:
+        logger.error(f'Error getting branch: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)},
+        )
+
+
+@app.get('/git/commit-state')
+async def git_commit_state(
+    request: Request,
+    conversation_id: str,
+    conversation_store = Depends(get_conversation_store),
+):
+    """Get the commit state for the conversation's repository.
+    
+    Returns:
+        dict: A dictionary containing the commit state (CLEAN or IN_PROGRESS).
+        
+    Raises:
+        HTTPException: If there's an error getting the commit state or if not a git repository.
+    """
+    runtime: Runtime = request.state.conversation.runtime
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    
+    try:
+        # Check if it's a git repository first
+        cmd_action = CmdRunAction(command='git rev-parse --is-inside-work-tree', cwd=cwd)
+        result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(result, CmdOutputObservation) or result.exit_code != 0 or result.content.strip() != 'true':
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Not a git repository'},
+            )
+            
+        # Check for uncommitted changes
+        cmd_action = CmdRunAction(command='git status --porcelain', cwd=cwd)
+        result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(result, CmdOutputObservation) or result.exit_code != 0:
+            return JSONResponse(
+                status_code=500,
+                content={'error': 'Failed to check git status'},
+            )
+            
+        # If there are uncommitted changes, return IN_PROGRESS
+        if result.content.strip():
+            return {'state': CommitState.IN_PROGRESS}
+            
+        # Get current branch
+        cmd_action = CmdRunAction(command='git rev-parse --abbrev-ref HEAD', cwd=cwd)
+        branch_result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(branch_result, CmdOutputObservation) or branch_result.exit_code != 0:
+            return JSONResponse(
+                status_code=500,
+                content={'error': 'Failed to get current branch'},
+            )
+        
+        current_branch = branch_result.content.strip()
+        
+        # Check if there are commits not pushed to origin
+        cmd_action = CmdRunAction(
+            command=f'git rev-list HEAD...origin/{current_branch} --count 2>/dev/null || echo "0"', 
+            cwd=cwd
+        )
+        result = await call_sync_from_async(runtime.run_action, cmd_action)
+        
+        if not isinstance(result, CmdOutputObservation):
+            return JSONResponse(
+                status_code=500,
+                content={'error': 'Failed to check unpushed commits'},
+            )
+        
+        # If there are unpushed commits, return IN_PROGRESS
+        if result.content.strip() != '0':
+            return {'state': CommitState.IN_PROGRESS}
+            
+        # If we got here, everything is clean
+        return {'state': CommitState.CLEAN}
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting commit state: {e}'},
+        )
+    except Exception as e:
+        logger.error(f'Error getting commit state: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)},
         )
 
 
