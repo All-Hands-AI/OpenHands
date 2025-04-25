@@ -344,9 +344,7 @@ async def update_conversation(
     title: str = Body(embed=True),
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id
-    )
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
@@ -369,9 +367,7 @@ async def delete_conversation(
     conversation_id: str,
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id
-    )
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:

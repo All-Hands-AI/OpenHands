@@ -18,6 +18,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.integrations.service_types import Repository
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
@@ -27,7 +28,7 @@ from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
-from openhands.mcp import add_mcp_tools_to_agent
+
 WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 

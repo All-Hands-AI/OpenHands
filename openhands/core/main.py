@@ -30,10 +30,11 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
-from openhands.mcp import add_mcp_tools_to_agent
+
 
 class FakeUserResponseFunc(Protocol):
     def __call__(

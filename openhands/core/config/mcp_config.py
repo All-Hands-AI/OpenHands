@@ -5,27 +5,31 @@ from pydantic import BaseModel, Field, ValidationError
 
 class MCPSSEServerConfig(BaseModel):
     """Configuration for a single MCP server.
-    
+
     Attributes:
         url: The server URL
         api_key: Optional API key for authentication
     """
+
     url: str
     api_key: str | None = None
 
+
 class MCPStdioServerConfig(BaseModel):
     """Configuration for a MCP server that uses stdio.
-    
+
     Attributes:
         name: The name of the server
         command: The command to run the server
         args: The arguments to pass to the server
         env: The environment variables to set for the server
     """
+
     name: str
     command: str
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
+
 
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
@@ -34,6 +38,7 @@ class MCPConfig(BaseModel):
         sse_servers: List of MCP SSE server configs
         stdio_servers: List of MCP stdio server configs. These servers will be added to the MCP Router running inside runtime container.
     """
+
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
 
@@ -92,7 +97,10 @@ class MCPConfig(BaseModel):
             mcp_config = MCPConfig.model_validate(data)
             mcp_config.validate_servers()
             # Create the main MCP config
-            mcp_mapping['mcp'] = cls(sse_servers=mcp_config.sse_servers, stdio_servers=mcp_config.stdio_servers)
+            mcp_mapping['mcp'] = cls(
+                sse_servers=mcp_config.sse_servers,
+                stdio_servers=mcp_config.stdio_servers,
+            )
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
 

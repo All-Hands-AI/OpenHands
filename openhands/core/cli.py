@@ -55,9 +55,8 @@ from openhands.events.observation import (
 )
 from openhands.io import read_task
 from openhands.llm.metrics import Metrics
-from openhands.mcp import fetch_mcp_tools_from_config
-from openhands.microagent.microagent import BaseMicroagent
 from openhands.mcp import add_mcp_tools_to_agent
+from openhands.microagent.microagent import BaseMicroagent
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
