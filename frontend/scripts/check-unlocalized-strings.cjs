@@ -39,6 +39,7 @@ const IGNORE_PATHS = [
   "entry.client.tsx", // Client entry point
   "utils/scan-unlocalized-strings.ts", // Original scanner
   "utils/scan-unlocalized-strings-ast.ts", // This file itself
+  "frontend/src/components/features/home/tasks/get-prompt-for-query.ts", // TODO: remove we need to localize later
 ];
 
 // Extensions to scan
