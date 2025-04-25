@@ -1,5 +1,6 @@
 export enum AgentState {
   LOADING = "loading",
+  SETTING_UP = "setting_up",
   INIT = "init",
   RUNNING = "running",
   AWAITING_USER_INPUT = "awaiting_user_input",
@@ -16,6 +17,7 @@ export enum AgentState {
 
 export const RUNTIME_INACTIVE_STATES = [
   AgentState.LOADING,
+  AgentState.SETTING_UP,
   AgentState.STOPPED,
   AgentState.ERROR,
 ];

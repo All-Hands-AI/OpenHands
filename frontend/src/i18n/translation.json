@@ -44,6 +44,21 @@
         "tr": "OpenHands, yapay zeka destekli geliştirme kullanarak yazılım oluşturmayı ve sürdürmeyi kolaylaştırır.",
         "de": "OpenHands macht es einfach, Software mit KI-gesteuerter Entwicklung zu erstellen und zu warten."
     },
+    "STATUS$SETTING_UP_WORKSPACE": {
+        "en": "Setting up workspace...",
+        "ja": "ワークスペースを設定中...",
+        "zh-CN": "正在设置工作区...",
+        "zh-TW": "正在設置工作區...",
+        "ko-KR": "작업 공간 설정 중...",
+        "no": "Setter opp arbeidsområde...",
+        "it": "Configurazione dell'area di lavoro in corso...",
+        "pt": "Configurando espaço de trabalho...",
+        "es": "Configurando espacio de trabajo...",
+        "ar": "جاري إعداد مساحة العمل...",
+        "fr": "Configuration de l'espace de travail...",
+        "tr": "Çalışma alanı ayarlanıyor...",
+        "de": "Arbeitsbereich wird eingerichtet..."
+    },
     "HOME$NOT_SURE_HOW_TO_START": {
         "en": "Not sure how to start?",
         "ja": "始め方がわからない？",

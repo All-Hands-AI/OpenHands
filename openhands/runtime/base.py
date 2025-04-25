@@ -404,6 +404,16 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(read_obs, ErrorObservation):
             return
 
+        # Import here to avoid circular imports
+        from openhands.core.schema.agent import AgentState
+        from openhands.events.action import ChangeAgentStateAction
+
+        # Set agent state to SETTING_UP
+        self.event_stream.add_event(
+            ChangeAgentStateAction(agent_state=AgentState.SETTING_UP),
+            EventSource.ENVIRONMENT,
+        )
+
         if self.status_callback:
             self.status_callback(
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
@@ -411,6 +421,13 @@ class Runtime(FileEditRuntimeMixin):
 
         action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
         obs = self.run_action(action)
+
+        # Set agent state back to LOADING after setup.sh completes
+        self.event_stream.add_event(
+            ChangeAgentStateAction(agent_state=AgentState.LOADING),
+            EventSource.ENVIRONMENT,
+        )
+
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 

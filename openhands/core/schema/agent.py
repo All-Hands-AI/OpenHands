@@ -6,6 +6,10 @@ class AgentState(str, Enum):
     """The agent is loading.
     """
 
+    SETTING_UP = 'setting_up'
+    """The agent is running setup.sh script.
+    """
+
     RUNNING = 'running'
     """The agent is running.
     """
