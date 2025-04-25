@@ -10,7 +10,7 @@ OpenHands' logging behavior can be customized through several environment variab
 
 - `LOG_LEVEL`: Sets the logging level (default: 'INFO')
   - Valid values: DEBUG, INFO, WARNING, ERROR, CRITICAL
-  - Can also be enabled by setting `DEBUG=true`
+  - Debug level can also be enabled by setting `DEBUG=true` or `DEBUG=1`
 
 - `LOG_TO_FILE`: Enables file-based logging (default: false)
   - When enabled, logs are written to `logs/openhands_YYYY-MM-DD.log`
