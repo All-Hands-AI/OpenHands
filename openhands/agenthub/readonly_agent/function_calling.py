@@ -36,8 +36,8 @@ from openhands.events.action import (
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
+    MCPAction,
     MessageAction,
-    MCPAction
 )
 from openhands.events.event import FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -103,7 +103,9 @@ def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
     return echo_cmd + complete_cmd
 
 
-def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | None = None) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse, mcp_tool_names: list[str] | None = None
+) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]

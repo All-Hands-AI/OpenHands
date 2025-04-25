@@ -9,13 +9,13 @@ import argparse
 import asyncio
 import base64
 import json
+import logging
 import mimetypes
 import os
 import shutil
 import tempfile
 import time
 import traceback
-import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -25,6 +25,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from mcpm.router.router import MCPRouter
+from mcpm.router.router import logger as mcp_router_logger
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -69,10 +71,10 @@ from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
-from mcpm.router.router import MCPRouter, logger as mcp_router_logger
 
 # Set MCP router logger to the same level as the main logger
 mcp_router_logger.setLevel(logger.getEffectiveLevel())
+
 
 class ActionRequest(BaseModel):
     action: dict
@@ -574,7 +576,9 @@ if __name__ == '__main__':
 
     client: ActionExecutor | None = None
     mcp_router: MCPRouter | None = None
-    MCP_ROUTER_PROFILE_PATH = os.path.join(os.path.dirname(__file__), "mcp", "config.json")
+    MCP_ROUTER_PROFILE_PATH = os.path.join(
+        os.path.dirname(__file__), 'mcp', 'config.json'
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -593,60 +597,61 @@ if __name__ == '__main__':
         # Initialize and mount MCP Router
         logger.info('Initializing MCP Router...')
         mcp_router = MCPRouter(
-            profile_path=MCP_ROUTER_PROFILE_PATH,
-            api_key=SESSION_API_KEY
-
+            profile_path=MCP_ROUTER_PROFILE_PATH, api_key=SESSION_API_KEY
         )
-        allowed_origins = ["*"]
+        allowed_origins = ['*']
         sse_app = await mcp_router.get_sse_server_app(
-            allow_origins=allowed_origins,
-            include_lifespan=False
+            allow_origins=allowed_origins, include_lifespan=False
         )
 
         # Check for route conflicts before mounting
         main_app_routes = {route.path for route in app.routes}
         sse_app_routes = {route.path for route in sse_app.routes}
         conflicting_routes = main_app_routes.intersection(sse_app_routes)
-        
-        if conflicting_routes:
-            logger.error(f"Route conflicts detected: {conflicting_routes}")
-            raise RuntimeError(f"Cannot mount SSE app - conflicting routes found: {conflicting_routes}")
 
-        app.mount("/", sse_app)
-        logger.info(f"Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}")
+        if conflicting_routes:
+            logger.error(f'Route conflicts detected: {conflicting_routes}')
+            raise RuntimeError(
+                f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+            )
+
+        app.mount('/', sse_app)
+        logger.info(
+            f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
+        )
 
         # Additional debug logging
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Main app routes:")
+            logger.debug('Main app routes:')
             for route in main_app_routes:
-                logger.debug(f"  {route}")
-            logger.debug("MCP SSE server app routes:")
+                logger.debug(f'  {route}')
+            logger.debug('MCP SSE server app routes:')
             for route in sse_app_routes:
-                logger.debug(f"  {route}")
+                logger.debug(f'  {route}')
 
         yield
 
         # Clean up & release the resources
-        logger.info("Shutting down MCP Router...")
+        logger.info('Shutting down MCP Router...')
         if mcp_router:
             try:
                 await mcp_router.shutdown()
-                logger.info("MCP Router shutdown successfully.")
+                logger.info('MCP Router shutdown successfully.')
             except Exception as e:
-                logger.error(f"Error shutting down MCP Router: {e}", exc_info=True)
+                logger.error(f'Error shutting down MCP Router: {e}', exc_info=True)
         else:
-            logger.info("MCP Router instance not found for shutdown.")
+            logger.info('MCP Router instance not found for shutdown.')
 
-        logger.info("Closing ActionExecutor...")
+        logger.info('Closing ActionExecutor...')
         if client:
             try:
                 client.close()
-                logger.info("ActionExecutor closed successfully.")
+                logger.info('ActionExecutor closed successfully.')
             except Exception as e:
-                logger.error(f"Error closing ActionExecutor: {e}", exc_info=True)
+                logger.error(f'Error closing ActionExecutor: {e}', exc_info=True)
         else:
-            logger.info("ActionExecutor instance not found for closing.")
-        logger.info("Shutdown complete.")
+            logger.info('ActionExecutor instance not found for closing.')
+        logger.info('Shutdown complete.')
 
     app = FastAPI(lifespan=lifespan)
 
@@ -722,33 +727,51 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
-        
+
     @app.post('/update_mcp_server')
     async def update_mcp_server(request: Request):
         assert mcp_router is not None
         assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
-        with open(MCP_ROUTER_PROFILE_PATH, 'r') as f:
-            current_profile = json.load(f)
+
+        # Use synchronous file operations outside of async function
+        def read_profile():
+            with open(MCP_ROUTER_PROFILE_PATH, 'r') as f:
+                return json.load(f)
+
+        current_profile = read_profile()
         assert 'default' in current_profile
         assert isinstance(current_profile['default'], list)
 
         # Get the request body
         mcp_tools_to_sync = await request.json()
         if not isinstance(mcp_tools_to_sync, list):
-            raise HTTPException(status_code=400, detail='Request must be a list of MCP tools to sync')
-        
-        logger.info(f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious profile: {json.dumps(current_profile, indent=2)}')
+            raise HTTPException(
+                status_code=400, detail='Request must be a list of MCP tools to sync'
+            )
+
+        logger.info(
+            f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious profile: {json.dumps(current_profile, indent=2)}'
+        )
         current_profile['default'] = mcp_tools_to_sync
-        with open(MCP_ROUTER_PROFILE_PATH, 'w') as f:
-            json.dump(current_profile, f)
+
+        # Use synchronous file operations outside of async function
+        def write_profile(profile):
+            with open(MCP_ROUTER_PROFILE_PATH, 'w') as f:
+                json.dump(profile, f)
+
+        write_profile(current_profile)
 
         # Manually reload the profile and update the servers
         mcp_router.profile_manager.reload()
         servers_wait_for_update = mcp_router.get_unique_servers()
         await mcp_router.update_servers(servers_wait_for_update)
-        logger.info(f'MCP router updated successfully with unique servers: {servers_wait_for_update}')
+        logger.info(
+            f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
+        )
 
-        return JSONResponse(status_code=200, content={'detail': 'MCP server updated successfully'})
+        return JSONResponse(
+            status_code=200, content={'detail': 'MCP server updated successfully'}
+        )
 
     @app.post('/upload_file')
     async def upload_file(

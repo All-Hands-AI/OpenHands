@@ -10,6 +10,7 @@ import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.core.config import AppConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )
@@ -35,7 +36,6 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
@@ -336,10 +336,7 @@ class ActionExecutionClient(Runtime):
             server.model_dump(mode='json')
             for server in updated_mcp_config.stdio_servers
         ]
-        self.log(
-            'debug',
-            f'Updating MCP server to: {stdio_tools}'
-        )
+        self.log('debug', f'Updating MCP server to: {stdio_tools}')
         response = self._send_action_server_request(
             'POST',
             f'{self.action_execution_server_url}/update_mcp_server',
@@ -349,16 +346,15 @@ class ActionExecutionClient(Runtime):
         if response.status_code != 200:
             raise RuntimeError(f'Failed to update MCP server: {response.text}')
 
-        # No API key by default. Child runtime can override this when appropriate 
+        # No API key by default. Child runtime can override this when appropriate
         updated_mcp_config.sse_servers.append(
             MCPSSEServerConfig(
-                url=self.action_execution_server_url.rstrip('/') + '/sse',
-                api_key=None
+                url=self.action_execution_server_url.rstrip('/') + '/sse', api_key=None
             )
         )
         self.log(
             'debug',
-            f'Updated MCP config by adding runtime as another server: {updated_mcp_config}'
+            f'Updated MCP config by adding runtime as another server: {updated_mcp_config}',
         )
         return updated_mcp_config
 

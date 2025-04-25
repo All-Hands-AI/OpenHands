@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from openhands.core.config import AgentConfig
     from openhands.events.action import Action
     from openhands.events.action.message import SystemMessageAction
+from litellm import ChatCompletionToolParam
+
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
@@ -16,7 +18,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import EventSource
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
-from litellm import ChatCompletionToolParam
 
 if TYPE_CHECKING:
     from openhands.utils.prompt import PromptManager
@@ -161,12 +162,18 @@ class Agent(ABC):
         Args:
         - mcp_tools (list[dict]): The list of MCP tools.
         """
-        logger.info(f"Setting {len(mcp_tools)} MCP tools for agent {self.name}: {[tool['function']['name'] for tool in mcp_tools]}")
+        logger.info(
+            f"Setting {len(mcp_tools)} MCP tools for agent {self.name}: {[tool['function']['name'] for tool in mcp_tools]}"
+        )
         for tool in mcp_tools:
             _tool = ChatCompletionToolParam(**tool)
             if _tool['function']['name'] in self.mcp_tools:
-                logger.warning(f"Tool {_tool['function']['name']} already exists, skipping")
+                logger.warning(
+                    f"Tool {_tool['function']['name']} already exists, skipping"
+                )
                 continue
             self.mcp_tools[_tool['function']['name']] = _tool
             self.tools.append(_tool)
-        logger.info(f"Tools updated for agent {self.name}, total {len(self.tools)}: {[tool['function']['name'] for tool in self.tools]}")
+        logger.info(
+            f"Tools updated for agent {self.name}, total {len(self.tools)}: {[tool['function']['name'] for tool in self.tools]}"
+        )

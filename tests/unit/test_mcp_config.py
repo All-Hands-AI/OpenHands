@@ -1,12 +1,21 @@
 import pytest
 from pydantic import ValidationError
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig, MCPStdioServerConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 
 
 def test_valid_sse_config():
     """Test a valid SSE configuration."""
-    config = MCPConfig(sse_servers=[MCPSSEServerConfig(url='http://server1:8080'), MCPSSEServerConfig(url='http://server2:8080')])
+    config = MCPConfig(
+        sse_servers=[
+            MCPSSEServerConfig(url='http://server1:8080'),
+            MCPSSEServerConfig(url='http://server2:8080'),
+        ]
+    )
     config.validate_servers()  # Should not raise any exception
 
 
@@ -26,7 +35,12 @@ def test_invalid_sse_url():
 
 def test_duplicate_sse_urls():
     """Test SSE configuration with duplicate server URLs."""
-    config = MCPConfig(sse_servers=[MCPSSEServerConfig(url='http://server1:8080'), MCPSSEServerConfig(url='http://server1:8080')])
+    config = MCPConfig(
+        sse_servers=[
+            MCPSSEServerConfig(url='http://server1:8080'),
+            MCPSSEServerConfig(url='http://server1:8080'),
+        ]
+    )
     with pytest.raises(ValueError) as exc_info:
         config.validate_servers()
     assert 'Duplicate MCP server URLs are not allowed' in str(exc_info.value)
@@ -94,7 +108,7 @@ def test_mcp_stdio_server_config_with_args_and_env():
         name='test-server',
         command='python',
         args=['-m', 'server'],
-        env={'DEBUG': 'true', 'PORT': '8080'}
+        env={'DEBUG': 'true', 'PORT': '8080'},
     )
     assert config.name == 'test-server'
     assert config.command == 'python'
@@ -108,7 +122,7 @@ def test_mcp_config_with_stdio_servers():
         name='test-server',
         command='python',
         args=['-m', 'server'],
-        env={'DEBUG': 'true'}
+        env={'DEBUG': 'true'},
     )
     config = MCPConfig(stdio_servers=[stdio_server])
     assert len(config.stdio_servers) == 1
@@ -127,9 +141,9 @@ def test_from_toml_section_with_stdio_servers():
                 'name': 'test-server',
                 'command': 'python',
                 'args': ['-m', 'server'],
-                'env': {'DEBUG': 'true'}
+                'env': {'DEBUG': 'true'},
             }
-        ]
+        ],
     }
     result = MCPConfig.from_toml_section(data)
     assert 'mcp' in result
@@ -149,7 +163,7 @@ def test_mcp_config_with_both_server_types():
         name='test-server',
         command='python',
         args=['-m', 'server'],
-        env={'DEBUG': 'true'}
+        env={'DEBUG': 'true'},
     )
     config = MCPConfig(sse_servers=[sse_server], stdio_servers=[stdio_server])
     assert len(config.sse_servers) == 1
@@ -165,7 +179,7 @@ def test_mcp_config_model_validation_error():
     with pytest.raises(ValidationError):
         # Missing required 'url' field
         MCPSSEServerConfig()
-    
+
     with pytest.raises(ValidationError):
         # Missing required 'name' and 'command' fields
         MCPStdioServerConfig()
@@ -175,6 +189,6 @@ def test_mcp_config_extra_fields_forbidden():
     """Test that extra fields are forbidden in MCPConfig."""
     with pytest.raises(ValidationError):
         MCPConfig(extra_field='value')
-    
+
     # Note: The nested models don't have 'extra': 'forbid' set, so they allow extra fields
     # We're only testing the main MCPConfig class here
