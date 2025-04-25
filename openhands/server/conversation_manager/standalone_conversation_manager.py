@@ -1,5 +1,4 @@
 import asyncio
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -13,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.event_store import EventStore
+from openhands.events.observation import CmdOutputObservation
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
@@ -463,50 +463,34 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.total_tokens = (
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
-        
-        # Check for git-related command observations to update repository and branch info
-        if event and hasattr(event, 'command') and hasattr(event, 'content') and hasattr(event, 'exit_code'):
-            # Only process successful commands (exit code 0)
-            if event.exit_code == 0:
-                command = event.command.strip() if event.command else ""
-                
-                # Check for git commands that might change the repository state
-                if "git " in command:
-                    print('GIT OBSERVATION')  # Placeholder as requested
-                    
-                    # Get the conversation to access the runtime
-                    try:
-                        # Find the active conversation
-                        if conversation_id in self._active_conversations:
-                            conv, _ = self._active_conversations[conversation_id]
-                            runtime = conv.runtime
-                            
-                            # Get the working directory
-                            cwd = runtime.config.workspace_mount_path_in_sandbox
-                            if conversation.selected_repository:
-                                repo_dir = conversation.selected_repository.split('/')[-1]
-                                cwd = os.path.join(cwd, repo_dir)
-                            
-                            # Update branch information
-                            branch = runtime.get_git_branch(cwd)
-                            if branch and branch != conversation.selected_branch:
-                                conversation.selected_branch = branch
-                                logger.info(f"Updated branch for conversation {conversation_id}: {branch}")
-                            
-                            # Update repository information
-                            repository = runtime.get_git_repository(cwd)
-                            if repository and repository != conversation.selected_repository:
-                                conversation.selected_repository = repository
-                                logger.info(f"Updated repository for conversation {conversation_id}: {repository}")
-                            
-                            # Update commit state
-                            commit_state = runtime.get_git_commit_state(cwd)
-                            if commit_state is not None:
-                                conversation.commit_state = commit_state
-                                logger.info(f"Updated commit state for conversation {conversation_id}: {commit_state}")
-                    except Exception as e:
-                        logger.error(f"Error updating git information: {e}")
-                        # Don't fail the event processing if we can't update git info
+
+        if isinstance(event, CmdOutputObservation) and 'git ' in event.command:
+            print('GIT OBSERVATION')
+            convo = await self.attach_to_conversation(conversation_id, user_id)
+            if convo:
+                runtime = convo.runtime
+                cwd = ''  # FIXME, use runtime.git_dir once it's implemented
+
+                branch = runtime.get_git_branch(cwd)
+                if branch and branch != conversation.selected_branch:
+                    conversation.selected_branch = branch
+                    logger.info(
+                        f'Updated branch for conversation {conversation_id}: {branch}'
+                    )
+
+                repository = runtime.get_git_repository(cwd)
+                if repository and repository != conversation.selected_repository:
+                    conversation.selected_repository = repository
+                    logger.info(
+                        f'Updated repository for conversation {conversation_id}: {repository}'
+                    )
+
+                commit_state = runtime.get_git_commit_state(cwd)
+                if commit_state is not None:
+                    # conversation.commit_state = str(commit_state)
+                    logger.info(
+                        f'Updated commit state for conversation {conversation_id}: {commit_state}'
+                    )
 
         await conversation_store.save_metadata(conversation)
 
