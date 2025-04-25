@@ -2,7 +2,7 @@ import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import { NavLink, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
@@ -91,14 +91,7 @@ export function Sidebar() {
             <div className="flex items-center justify-center">
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `${isActive ? "text-white" : "text-[#9099AC]"} mt-0.5 md:mt-0`
-              }
-            >
-              <NewProjectButton />
-            </NavLink>
+            <NewProjectButton onClick={handleEndSession} />
             <TooltipButton
               testId="toggle-conversation-panel"
               tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
@@ -116,14 +109,7 @@ export function Sidebar() {
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
             <DocsButton />
-            <NavLink
-              to="/settings"
-              className={({ isActive }) =>
-                `${isActive ? "text-white" : "text-[#9099AC]"} mt-0.5 md:mt-0`
-              }
-            >
-              <SettingsButton />
-            </NavLink>
+            <SettingsButton />
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined

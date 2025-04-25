@@ -1,12 +1,14 @@
 import { Tooltip } from "@heroui/react";
 import React, { ReactNode } from "react";
+import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 
-interface TooltipButtonProps {
+export interface TooltipButtonProps {
   children: ReactNode;
   tooltip: string;
   onClick?: () => void;
   href?: string;
+  navLinkTo?: string;
   ariaLabel: string;
   testId?: string;
   className?: React.HTMLAttributes<HTMLButtonElement>["className"];
@@ -17,6 +19,7 @@ export function TooltipButton({
   tooltip,
   onClick,
   href,
+  navLinkTo,
   ariaLabel,
   testId,
   className,
@@ -48,19 +51,42 @@ export function TooltipButton({
     </button>
   );
 
-  const content = href ? (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer noopener"
-      className={cn("hover:opacity-80", className)}
-      aria-label={ariaLabel}
-    >
-      {children}
-    </a>
-  ) : (
-    buttonContent
-  );
+  let content;
+
+  if (navLinkTo) {
+    content = (
+      <NavLink
+        to={navLinkTo}
+        onClick={handleClick}
+        className={({ isActive }) =>
+          cn(
+            "hover:opacity-80",
+            isActive ? "text-white" : "text-[#9099AC]",
+            className,
+          )
+        }
+        aria-label={ariaLabel}
+        data-testid={testId}
+      >
+        {children}
+      </NavLink>
+    );
+  } else if (href) {
+    content = (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer noopener"
+        className={cn("hover:opacity-80", className)}
+        aria-label={ariaLabel}
+        data-testid={testId}
+      >
+        {children}
+      </a>
+    );
+  } else {
+    content = buttonContent;
+  }
 
   return (
     <Tooltip content={tooltip} closeDelay={100} placement="right">

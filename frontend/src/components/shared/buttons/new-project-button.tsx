@@ -4,10 +4,10 @@ import PlusIcon from "#/icons/plus.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
 interface NewProjectButtonProps {
-  onClick: () => void;
+  onClick?: () => void;
 }
 
-export function NewProjectButton({ onClick }: ExitProjectButtonProps) {
+export function NewProjectButton({ onClick }: NewProjectButtonProps) {
   const { t } = useTranslation();
   const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
   return (
@@ -15,9 +15,10 @@ export function NewProjectButton({ onClick }: ExitProjectButtonProps) {
       tooltip={startNewProject}
       ariaLabel={startNewProject}
       onClick={onClick}
+      navLinkTo="/"
       testId="new-project-button"
     >
-      <PlusIcon width={28} height={28} className="text-[#9099AC]" />
+      <PlusIcon width={28} height={28} />
     </TooltipButton>
   );
 }

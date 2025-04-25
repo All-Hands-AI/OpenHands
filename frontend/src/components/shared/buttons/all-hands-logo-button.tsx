@@ -1,9 +1,7 @@
-import { Tooltip } from "@heroui/react";
-import { NavLink } from "react-router";
 import { useTranslation } from "react-i18next";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { I18nKey } from "#/i18n/declaration";
-import { cn } from "#/utils/utils";
+import { TooltipButton } from "./tooltip-button";
 
 interface AllHandsLogoButtonProps {
   onClick: () => void;
@@ -12,32 +10,14 @@ interface AllHandsLogoButtonProps {
 export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
   const { t } = useTranslation();
 
-  // Handle click with support for cmd/ctrl+click to open in new tab
-  const handleClick = (e: React.MouseEvent) => {
-    // If cmd/ctrl key is pressed, let the default behavior happen (open in new tab)
-    if (e.metaKey || e.ctrlKey) {
-      return; // Don't prevent default to allow browser to handle opening in new tab
-    }
-
-    // Otherwise, call the onClick handler
-    onClick();
-    e.preventDefault();
-  };
-
   return (
-    <Tooltip
-      content={t(I18nKey.BRANDING$ALL_HANDS_AI)}
-      closeDelay={100}
-      placement="right"
+    <TooltipButton
+      tooltip={t(I18nKey.BRANDING$ALL_HANDS_AI)}
+      ariaLabel={t(I18nKey.BRANDING$ALL_HANDS_LOGO)}
+      navLinkTo="/"
+      onClick={onClick}
     >
-      <NavLink
-        to="/"
-        onClick={handleClick}
-        className={cn("hover:opacity-80")}
-        aria-label={t(I18nKey.BRANDING$ALL_HANDS_LOGO)}
-      >
-        <AllHandsLogo width={34} height={34} />
-      </NavLink>
-    </Tooltip>
+      <AllHandsLogo width={34} height={34} />
+    </TooltipButton>
   );
 }
