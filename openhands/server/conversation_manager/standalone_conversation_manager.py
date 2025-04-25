@@ -202,9 +202,7 @@ class StandaloneConversationManager(ConversationManager):
                 ConversationStore,  # type: ignore
                 self.server_config.conversation_store_class,
             )
-        store = await conversation_store_class.get_instance(
-            self.config, user_id, github_user_id
-        )
+        store = await conversation_store_class.get_instance(self.config, user_id)
         return store
 
     async def get_running_agent_loops(
@@ -306,9 +304,13 @@ class StandaloneConversationManager(ConversationManager):
                     'status_update': True,
                     'type': 'error',
                     'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
-                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue'
+                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
                 }
-                await self.sio.emit('oh_event', status_update_dict, to=ROOM_KEY.format(sid=oldest_conversation_id))
+                await self.sio.emit(
+                    'oh_event',
+                    status_update_dict,
+                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                )
                 await self.close_session(oldest_conversation_id)
 
         session = Session(
