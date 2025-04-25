@@ -1,6 +1,5 @@
-import asyncio
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Union
+from typing import Awaitable, Callable
 
 
 @dataclass
@@ -24,14 +23,10 @@ class GitHandler:
 
     def __init__(
         self,
-        execute_shell_fn: Union[
-            Callable[[str, str | None], CommandResult],
-            Callable[[str, str | None], Awaitable[CommandResult]],
-        ],
+        execute_shell_fn: Callable[[str, str | None], Awaitable[CommandResult]],
     ):
         self.execute = execute_shell_fn
         self.cwd: str | None = None
-        self._is_async = asyncio.iscoroutinefunction(execute_shell_fn)
 
     def set_cwd(self, cwd: str):
         """
@@ -43,13 +38,8 @@ class GitHandler:
         self.cwd = cwd
 
     async def _execute_async(self, cmd: str, cwd: str | None) -> CommandResult:
-        """Execute the command asynchronously if the execute function is async."""
-        if self._is_async:
-            # Cast to Awaitable[CommandResult] to satisfy mypy
-            return await self.execute(cmd, cwd)  # type: ignore
-        else:
-            # Cast to CommandResult to satisfy mypy
-            return self.execute(cmd, cwd)  # type: ignore
+        """Execute the command asynchronously."""
+        return await self.execute(cmd, cwd)
 
     async def _is_git_repo(self) -> bool:
         """
