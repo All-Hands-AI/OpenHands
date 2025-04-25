@@ -1,4 +1,34 @@
 {
+    "AGENTS$ACTIVE_AGENTS": {
+        "en": "Active Agents",
+        "ja": "アクティブなエージェント",
+        "zh-CN": "活跃的代理",
+        "zh-TW": "活躍的代理",
+        "ko-KR": "활성 에이전트",
+        "no": "Aktive agenter",
+        "it": "Agenti attivi",
+        "pt": "Agentes ativos",
+        "es": "Agentes activos",
+        "ar": "العملاء النشطين",
+        "fr": "Agents actifs",
+        "tr": "Aktif Ajanlar",
+        "de": "Aktive Agenten"
+    },
+    "AGENTS$NO_ACTIVE_AGENTS": {
+        "en": "No active agents found",
+        "ja": "アクティブなエージェントが見つかりません",
+        "zh-CN": "未找到活跃的代理",
+        "zh-TW": "未找到活躍的代理",
+        "ko-KR": "활성 에이전트를 찾을 수 없습니다",
+        "no": "Ingen aktive agenter funnet",
+        "it": "Nessun agente attivo trovato",
+        "pt": "Nenhum agente ativo encontrado",
+        "es": "No se encontraron agentes activos",
+        "ar": "لم يتم العثور على عملاء نشطين",
+        "fr": "Aucun agent actif trouvé",
+        "tr": "Aktif ajan bulunamadı",
+        "de": "Keine aktiven Agenten gefunden"
+    },
     "HOME$CONNECT_PROVIDER_MESSAGE": {
         "en": "To get started with suggested tasks, please connect your GitHub or GitLab account.",
         "ja": "提案されたタスクを始めるには、GitHubまたはGitLabアカウントを接続してください。",

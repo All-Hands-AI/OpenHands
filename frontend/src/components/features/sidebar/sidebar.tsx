@@ -1,5 +1,5 @@
 import React from "react";
-import { FaListUl } from "react-icons/fa";
+import { FaListUl, FaRobot } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { NavLink, useLocation } from "react-router";
@@ -105,6 +105,20 @@ export function Sidebar() {
                 )}
               />
             </TooltipButton>
+            <NavLink
+              to="/agents"
+              className={({ isActive }) =>
+                `${isActive ? "text-white" : "text-[#9099AC]"}`
+              }
+            >
+              <TooltipButton
+                testId="agents-page"
+                tooltip={t(I18nKey.AGENTS$ACTIVE_AGENTS)}
+                ariaLabel={t(I18nKey.AGENTS$ACTIVE_AGENTS)}
+              >
+                <FaRobot size={22} />
+              </TooltipButton>
+            </NavLink>
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
