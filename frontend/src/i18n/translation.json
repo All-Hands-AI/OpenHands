@@ -1231,21 +1231,6 @@
         "tr": "Kapat",
         "de": "Schließen"
     },
-    "BUTTON$RESET_TO_DEFAULTS": {
-        "en": "Reset to defaults",
-        "ja": "デフォルトにリセット",
-        "zh-CN": "重置为默认值",
-        "zh-TW": "還原為預設值",
-        "ko-KR": "기본값으로 재설정",
-        "no": "Tilbakestill til standard",
-        "it": "Ripristina valori predefiniti",
-        "pt": "Restaurar padrões",
-        "es": "Restablecer valores predeterminados",
-        "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
-        "fr": "Réinitialiser aux valeurs par défaut",
-        "tr": "Varsayılanlara sıfırla",
-        "de": "Auf Standardwerte zurücksetzen"
-    },
     "MODAL$CONFIRM_RESET_TITLE": {
         "en": "Are you sure?",
         "ja": "本当によろしいですか？",
@@ -4541,21 +4526,6 @@
         "pt": "Fechar",
         "tr": "Kapat"
     },
-    "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
-        "en": "Reset to defaults",
-        "es": "Reiniciar valores por defect",
-        "zh-CN": "重置为默认值",
-        "zh-TW": "還原為預設值",
-        "ko-KR": "기본값으로 재설정",
-        "ja": "デフォルトに戻す",
-        "no": "Tilbakestill til standardverdier",
-        "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
-        "de": "Auf Standardwerte zurücksetzen",
-        "fr": "Réinitialiser aux valeurs par défaut",
-        "it": "Ripristina valori predefiniti",
-        "pt": "Restaurar padrões",
-        "tr": "Varsayılanlara sıfırla"
-    },
     "SETTINGS_FORM$CANCEL_LABEL": {
         "en": "Cancel",
         "es": "Cancelar",
@@ -4825,6 +4795,9 @@
         "pt": "Ação expirou",
         "es": "La acción expiró",
         "tr": "İşlem zaman aşımına uğradı"
+    },
+    "AGENT_ERROR$TOO_MANY_CONVERSATIONS": {
+        "en": "Too many conversations at once."
     },
     "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
         "en": "Connect to GitHub",

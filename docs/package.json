@@ -4,16 +4,18 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
+    "start": "node generate-swagger-ui.js && docusaurus start",
+    "build": "node generate-swagger-ui.js && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "generate-swagger-ui": "node generate-swagger-ui.js"
   },
+  "// Note": "The OpenAPI spec is stored in docs/static/openapi.json so it's accessible at /openapi.json in the deployed site",
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
     "@docusaurus/plugin-content-pages": "^3.7.0",
@@ -31,6 +33,8 @@
     "@docusaurus/module-type-aliases": "^3.5.1",
     "@docusaurus/tsconfig": "^3.7.0",
     "@docusaurus/types": "^3.5.1",
+    "swagger-cli": "^4.0.4",
+    "swagger-ui-dist": "^5.21.0",
     "typescript": "~5.8.3"
   },
   "browserslist": {
@@ -47,5 +51,6 @@
   },
   "engines": {
     "node": ">=18.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

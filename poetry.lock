@@ -1763,14 +1763,14 @@ vision = ["Pillow (>=9.4.0)"]
 
 [[package]]
 name = "daytona-api-client"
-version = "0.16.0"
+version = "0.17.1"
 description = "Daytona Workspaces"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "daytona_api_client-0.16.0-py3-none-any.whl", hash = "sha256:31d31409102aa009517d2a0e1ba85f47aadf41b84b7b3732c15cf1ad4c30f19b"},
-    {file = "daytona_api_client-0.16.0.tar.gz", hash = "sha256:0a4ad32934144402b5a47bd5c3a3b1450674e85584623386a3d6c2560ea146b2"},
+    {file = "daytona_api_client-0.17.1-py3-none-any.whl", hash = "sha256:ad0a22248e6892a73c9e4804c175f939d9eba558eff22692df8fe596ccc4e423"},
+    {file = "daytona_api_client-0.17.1.tar.gz", hash = "sha256:ad7340436347a4e1bd28b8cca789d07a2a0c6ccc8517a0b4bd12e07beac147d1"},
 ]
 
 [package.dependencies]
@@ -1781,18 +1781,18 @@ urllib3 = ">=1.25.3,<3.0.0"
 
 [[package]]
 name = "daytona-sdk"
-version = "0.14.0"
+version = "0.15.0"
 description = "Python SDK for Daytona"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "daytona_sdk-0.14.0-py3-none-any.whl", hash = "sha256:a6e5c8d56b8d2342a1a630de93b7346ce2a6bc81cb21a928988964a7b3ce7b0d"},
-    {file = "daytona_sdk-0.14.0.tar.gz", hash = "sha256:1df3eaa664dc793a33690a2361cf5262713ca5ff1f1c5730eb00b4940f11b6e8"},
+    {file = "daytona_sdk-0.15.0-py3-none-any.whl", hash = "sha256:3d377e5c40e93173bc73c85916038f8e8b451f2588bf4cc8cce0c53fa8ab3996"},
+    {file = "daytona_sdk-0.15.0.tar.gz", hash = "sha256:332cc08a3732085f26a277967e4fd4593325dc82e3b5470d3d64d60a7cb8f94b"},
 ]
 
 [package.dependencies]
-daytona_api_client = ">=0.16.0,<1.0.0"
+daytona_api_client = ">=0.17.1,<1.0.0"
 Deprecated = ">=1.2.18,<2.0.0"
 environs = ">=9.5.0,<10.0.0"
 httpx = ">=0.28.0,<0.29.0"
@@ -7775,6 +7775,7 @@ python-versions = "<4,>=3.7"
 groups = ["test"]
 files = [
     {file = "reportlab-4.4.0-py3-none-any.whl", hash = "sha256:0a993f1d4a765fcbdf4e26adc96b3351004ebf4d27583340595ba7edafebec32"},
+    {file = "reportlab-4.4.0.tar.gz", hash = "sha256:a64d85513910e246c21dc97ccc3c9054a1d44370bf8fc1fab80af937814354d5"},
 ]
 
 [package.dependencies]
@@ -10420,4 +10421,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "a43741be7824b70f5f8720b1587f7b14de99be2ce8771e954db09c5a4d743bfe"
+content-hash = "edc1a58b72ca7e16c16b2344e91068dc46bc3ea6732764a19a4deea4d76060e0"
