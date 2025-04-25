@@ -101,14 +101,31 @@ class MCPClient(BaseModel):
         """Disconnect from the MCP server and clean up resources."""
         if self.session:
             try:
-                # Close the session first
+                # Close the session first with a timeout
                 if hasattr(self.session, 'close'):
-                    await self.session.close()
-                # Then close the exit stack
-                await self.exit_stack.aclose()
+                    try:
+                        # Use asyncio.wait_for to prevent hanging
+                        await asyncio.wait_for(self.session.close(), timeout=5.0)
+                    except asyncio.TimeoutError:
+                        logger.warning('Session close timed out after 5 seconds')
+                    except Exception as e:
+                        logger.error(f'Error closing session: {str(e)}')
+                
+                # Then close the exit stack with a timeout
+                try:
+                    # Use asyncio.wait_for to prevent hanging
+                    await asyncio.wait_for(self.exit_stack.aclose(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    logger.warning('Exit stack aclose timed out after 5 seconds')
+                except Exception as e:
+                    logger.error(f'Error closing exit stack: {str(e)}')
+                
+                # Create a new exit stack for future connections
+                self.exit_stack = AsyncExitStack()
             except Exception as e:
                 logger.error(f'Error during disconnect: {str(e)}')
             finally:
                 self.session = None
                 self.tools = []
+                self.tool_map = {}
                 logger.info('Disconnected from MCP server')

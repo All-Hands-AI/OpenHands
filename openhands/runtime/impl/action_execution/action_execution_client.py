@@ -1,3 +1,4 @@
+import asyncio
 import os
 import tempfile
 import threading
@@ -380,8 +381,16 @@ class ActionExecutionClient(Runtime):
 
     async def aclose(self) -> None:
         if self.mcp_clients:
+            self.log('debug', f'Disconnecting {len(self.mcp_clients)} MCP clients')
             for client in self.mcp_clients:
-                await client.disconnect()
+                try:
+                    # Use asyncio.wait_for to prevent hanging
+                    await asyncio.wait_for(client.disconnect(), timeout=10.0)
+                    self.log('debug', f'Disconnected from MCP client: {client}')
+                except asyncio.TimeoutError:
+                    self.log('warning', f'Disconnect timed out for MCP client: {client}')
+                except Exception as e:
+                    self.log('error', f'Error disconnecting MCP client: {str(e)}')
 
     def close(self) -> None:
         # Make sure we don't close the session multiple times
