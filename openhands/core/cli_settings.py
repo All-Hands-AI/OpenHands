@@ -137,7 +137,7 @@ async def get_validated_input(
 def save_settings_confirmation() -> bool:
     return (
         cli_confirm(
-            '\nSave new settings? (Restart CLI to take effect)',
+            '\nSave new settings? (They will take effect after restart)',
             ['Yes, save', 'No, discard'],
         )
         == 0
