@@ -13,7 +13,7 @@ OpenHands' logging behavior can be customized through several environment variab
   - Debug level can also be enabled by setting `DEBUG=true` or `DEBUG=1`
 
 - `LOG_TO_FILE`: Enables file-based logging (default: false)
-  - When enabled, logs are written to `logs/openhands_YYYY-MM-DD.log`
+  - When enabled, logs are written to `logs/openhands_YYYY-MM-DD.log` in the project directory
   - Automatically enabled when in DEBUG mode
 
 ### JSON Logging
