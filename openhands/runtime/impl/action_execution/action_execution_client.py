@@ -39,8 +39,11 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.mcp import MCPClient, create_mcp_clients
-from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
+# Import only the client to avoid circular imports
+from openhands.mcp.client import MCPClient
+# Defer these imports to the function level to avoid circular imports
+# from openhands.mcp import create_mcp_clients
+# from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
@@ -360,12 +363,19 @@ class ActionExecutionClient(Runtime):
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         if self.mcp_clients is None:
+            # Import here to avoid circular imports
+            from openhands.mcp.utils import create_mcp_clients
+            
             updated_mcp_config = self.get_updated_mcp_config()
             self.log(
                 'debug',
                 f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
             )
             self.mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
+        
+        # Import here to avoid circular imports
+        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+        
         return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:

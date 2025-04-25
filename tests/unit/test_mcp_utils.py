@@ -136,7 +136,9 @@ async def test_call_tool_mcp_success():
     """Test successful MCP tool call."""
     # Create mock client with the requested tool
     mock_client = MagicMock()
-    mock_tool = MagicMock(name="test_tool")
+    mock_tool = MagicMock()
+    # Set the name attribute properly for the tool
+    mock_tool.name = "test_tool"
     mock_client.tools = [mock_tool]
     
     # Setup response
