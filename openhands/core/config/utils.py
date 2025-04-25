@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 import pathlib
 import platform
 import sys
@@ -9,6 +10,7 @@ from typing import MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
+import tomlkit
 from dotenv import load_dotenv
 from pydantic import BaseModel, SecretStr, ValidationError
 
@@ -30,6 +32,8 @@ from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
 
 JWT_SECRET = '.jwt_secret'
+USER_CONFIG_DIR = Path.home() / '.openhands'
+USER_CONFIG_PATH = USER_CONFIG_DIR / 'config.toml'
 load_dotenv()
 
 
@@ -572,31 +576,60 @@ def parse_arguments() -> argparse.Namespace:
 def load_app_config(
     set_logging_levels: bool = True, config_file: str = 'config.toml'
 ) -> AppConfig:
-    """Load the configuration from the specified config file and environment variables.
+    """Load the configuration from TOML files and environment variables.
+
+    Stores a snapshot within the AppConfig instance after loading TOML files
+    but before environment variables are applied.
 
     Args:
         set_logging_levels: Whether to set the global variables for logging levels.
-        config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
+        config_file: Path to the project config file. Defaults to 'config.toml'.
+
+    Returns:
+        The final AppConfig object with all layers applied (TOMLs, Env) and
+        the TOML snapshot stored internally.
     """
     config = AppConfig()
+
+    # Load project config
+    logger.openhands_logger.info(f'Loading project config from: {config_file}')
     load_from_toml(config, config_file)
+
+    # Load user config
+    logger.openhands_logger.info(f'Loading user config from: {USER_CONFIG_PATH}')
+    load_from_toml(config, str(USER_CONFIG_PATH))
+
+    # Create and store snapshot after TOMLs are loaded
+    toml_config_snapshot = config.model_copy(deep=True)
+    config.set_toml_snapshot(toml_config_snapshot)
+    logger.openhands_logger.info('Stored TOML config snapshot internally.')
+
+    # Load environment variables (overrides TOMLs)
+    logger.openhands_logger.info('Loading config from environment variables.')
     load_from_env(config, os.environ)
+
+    # Final adjustments
     finalize_config(config)
+
     if set_logging_levels:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
+
+    logger.openhands_logger.info('Config loading complete.')
     return config
 
 
 def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
-    """Load config from toml and override with command line arguments.
+    """Load config from toml/env and override with command line arguments.
 
+    The returned config object contains the TOML snapshot internally.
     Common setup used by both CLI and main.py entry points.
     """
-    # Load base config from toml and env vars
+    # Load base config from toml and env vars, snapshot is stored internally
     config = load_app_config(config_file=args.config_file)
 
     # Override with command line arguments if provided
+    # Note: These CLI overrides affect the final 'config' but not the internal snapshot
     if args.llm_config:
         # if we didn't already load it, get it from the toml file
         if args.llm_config not in config.llms:
@@ -606,19 +639,34 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
+        logger.openhands_logger.info(
+            f'Overriding LLM config with CLI argument: [{args.llm_config}]'
+        )
 
     # Override default agent if provided
     if args.agent_cls:
         config.default_agent = args.agent_cls
+        logger.openhands_logger.info(
+            f'Overriding default agent with CLI argument: {args.agent_cls}'
+        )
 
     # Set max iterations and max budget per task if provided, otherwise fall back to config values
     if args.max_iterations is not None:
         config.max_iterations = args.max_iterations
+        logger.openhands_logger.info(
+            f'Overriding max iterations with CLI argument: {args.max_iterations}'
+        )
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
+        logger.openhands_logger.info(
+            f'Overriding max budget per task with CLI argument: {args.max_budget_per_task}'
+        )
 
     # Read selected repository in config for use by CLI and main.py
     if args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
+        logger.openhands_logger.info(
+            f'Setting selected repo from CLI argument: {args.selected_repo}'
+        )
 
     return config

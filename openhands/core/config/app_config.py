@@ -1,6 +1,6 @@
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, PrivateAttr, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -92,9 +92,22 @@ class AppConfig(BaseModel):
     )  # Maximum number of concurrent agent loops allowed per user
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
+    # Private attribute to store the configuration state after loading TOML files
+    # but before environment variables and CLI args are applied.
+    # Used to determine the source of a setting when saving back to user TOML.
+    _toml_snapshot: Optional['AppConfig'] = PrivateAttr(default=None)
+
     defaults_dict: ClassVar[dict] = {}
 
     model_config = {'extra': 'forbid'}
+
+    def set_toml_snapshot(self, snapshot: 'AppConfig'):
+        """Stores a deep copy of the config state after TOML loading."""
+        self._toml_snapshot = snapshot
+
+    def get_toml_snapshot(self) -> Optional['AppConfig']:
+        """Retrieves the stored TOML snapshot."""
+        return self._toml_snapshot
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
