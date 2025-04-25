@@ -306,7 +306,7 @@ class StandaloneConversationManager(ConversationManager):
                     'status_update': True,
                     'type': 'error',
                     'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
-                    'message': 'Too many conversations at once'
+                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue'
                 }
                 await self.sio.emit('oh_event', status_update_dict, to=ROOM_KEY.format(sid=oldest_conversation_id))
                 await self.close_session(oldest_conversation_id)

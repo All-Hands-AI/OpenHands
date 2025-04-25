@@ -4827,7 +4827,7 @@
         "tr": "İşlem zaman aşımına uğradı"
     },
     "AGENT_ERROR$TOO_MANY_CONVERSATIONS": {
-        "en": "Too many convesations at once."
+        "en": "Too many conversations at once."
     },
     "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
         "en": "Connect to GitHub",
