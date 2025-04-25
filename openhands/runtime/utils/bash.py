@@ -361,7 +361,6 @@ class BashSession:
         pane_content: str,
         ps1_matches: list[re.Match],
     ) -> CmdOutputObservation:
-        raise RuntimeError('No change timeout detected')
         self.prev_status = BashCommandStatus.NO_CHANGE_TIMEOUT
         if len(ps1_matches) != 1:
             logger.warning(

@@ -410,7 +410,8 @@ class Runtime(FileEditRuntimeMixin):
             )
         
         # setup scripts time out after 10 minutes
-        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}', blocking=True, timeout=600)
+        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}', blocking=True)
+        action.set_hard_timeout(600)
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
