@@ -13,6 +13,9 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import CmdRunAction, ChangeAgentStateAction
 from openhands.events import EventSource
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.core.setup import initialize_repository_for_runtime
+from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from pydantic import SecretStr
 
 
 def test_setup_script_execution_in_docker_runtime(temp_dir, runtime_cls):
@@ -78,9 +81,16 @@ echo "Setup script completed"
         # Replace the add_event method with our wrapper
         runtime.event_stream.add_event = add_event_wrapper
         
-        # Run the setup script
+        # Create a mock repository path for the test
+        repo_path = os.path.join(test_dir, "repo")
+        
+        # Run the repository initialization function that calls maybe_run_setup_script
         start_time = time.time()
-        call_sync_from_async(runtime.maybe_run_setup_script)
+        initialize_repository_for_runtime(
+            runtime=runtime,
+            selected_repository=repo_path,
+            github_token=None
+        )
         end_time = time.time()
         
         # Restore the original add_event method
