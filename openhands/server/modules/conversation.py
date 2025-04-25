@@ -274,9 +274,9 @@ class ConversationModule:
                         Conversation.c.conversation_id
                         == ResearchTrending.c.conversation_id,
                     )
-                )
+                ).where(Conversation.c.status != 'deleted')
             else:
-                query = select(Conversation)
+                query = select(Conversation).where(Conversation.c.status != 'deleted')
 
             if published is not None:
                 query = query.where(Conversation.c.published == published)
