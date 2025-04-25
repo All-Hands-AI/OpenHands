@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -468,44 +469,44 @@ class StandaloneConversationManager(ConversationManager):
             # Only process successful commands (exit code 0)
             if event.exit_code == 0:
                 command = event.command.strip() if event.command else ""
-                content = event.content.strip() if event.content else ""
                 
-                # Check for git branch commands
-                if "git rev-parse --abbrev-ref HEAD" in command:
-                    # This is the current branch command
-                    if content and content != "HEAD":
-                        conversation.selected_branch = content
-                        logger.info(f"Updated branch for conversation {conversation_id}: {content}")
-                
-                # Check for git remote commands
-                elif "git remote -v" in command:
-                    # Parse the remote URL to extract the repository
-                    if content:
-                        import re
-                        match = re.search(r'(github\.com|gitlab\.com)[:/]([^/\s]+/[^/\s]+)(?:\.git|\s)', content)
-                        if match:
-                            repository = match.group(2)
-                            if repository != conversation.selected_repository:
+                # Check for git commands that might change the repository state
+                if "git " in command:
+                    print('GIT OBSERVATION')  # Placeholder as requested
+                    
+                    # Get the conversation to access the runtime
+                    try:
+                        # Find the active conversation
+                        if conversation_id in self._active_conversations:
+                            conv, _ = self._active_conversations[conversation_id]
+                            runtime = conv.runtime
+                            
+                            # Get the working directory
+                            cwd = runtime.config.workspace_mount_path_in_sandbox
+                            if conversation.selected_repository:
+                                repo_dir = conversation.selected_repository.split('/')[-1]
+                                cwd = os.path.join(cwd, repo_dir)
+                            
+                            # Update branch information
+                            branch = runtime.get_git_branch(cwd)
+                            if branch and branch != conversation.selected_branch:
+                                conversation.selected_branch = branch
+                                logger.info(f"Updated branch for conversation {conversation_id}: {branch}")
+                            
+                            # Update repository information
+                            repository = runtime.get_git_repository(cwd)
+                            if repository and repository != conversation.selected_repository:
                                 conversation.selected_repository = repository
                                 logger.info(f"Updated repository for conversation {conversation_id}: {repository}")
-                
-                # Check for git status commands
-                elif "git status --porcelain" in command:
-                    # If there are uncommitted changes, set state to IN_PROGRESS
-                    from openhands.storage.data_models.conversation_metadata import CommitState
-                    if content:
-                        conversation.commit_state = CommitState.IN_PROGRESS
-                    else:
-                        # Check if we need to check for unpushed commits
-                        # For now, we'll just set it to CLEAN if there are no uncommitted changes
-                        # A more complete implementation would check for unpushed commits too
-                        conversation.commit_state = CommitState.CLEAN
-                
-                # Check for git commands that might change the commit state
-                elif any(cmd in command for cmd in ["git commit", "git push", "git pull", "git merge", "git rebase", "git checkout", "git reset", "git stash"]):
-                    # These commands might change the commit state, so we'll mark it as unknown (None)
-                    # A more complete implementation would check the actual state
-                    conversation.commit_state = None
+                            
+                            # Update commit state
+                            commit_state = runtime.get_git_commit_state(cwd)
+                            if commit_state is not None:
+                                conversation.commit_state = commit_state
+                                logger.info(f"Updated commit state for conversation {conversation_id}: {commit_state}")
+                    except Exception as e:
+                        logger.error(f"Error updating git information: {e}")
+                        # Don't fail the event processing if we can't update git info
 
         await conversation_store.save_metadata(conversation)
 

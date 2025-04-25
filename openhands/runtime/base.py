@@ -636,6 +636,99 @@ class Runtime(FileEditRuntimeMixin):
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
+        
+    def get_git_branch(self, cwd: str) -> str | None:
+        """
+        Get the current git branch for the repository.
+        
+        Args:
+            cwd (str): The current working directory.
+            
+        Returns:
+            str | None: The current branch name or None if not a git repository.
+        """
+        self.git_handler.set_cwd(cwd)
+        
+        # Check if it's a git repository
+        if not self.git_handler._is_git_repo():
+            return None
+            
+        return self.git_handler._get_current_branch()
+        
+    def get_git_repository(self, cwd: str) -> str | None:
+        """
+        Get the remote repository URL for the git repository.
+        
+        Args:
+            cwd (str): The current working directory.
+            
+        Returns:
+            str | None: The repository name in the format "owner/repo" or None if not found.
+        """
+        self.git_handler.set_cwd(cwd)
+        
+        # Check if it's a git repository
+        if not self.git_handler._is_git_repo():
+            return None
+            
+        # Get the remote URL
+        cmd = 'git remote -v'
+        output = self.git_handler.execute(cmd, self.git_handler.cwd)
+        
+        if output.exit_code != 0 or not output.content.strip():
+            return None
+            
+        # Parse the remote URL to extract the repository
+        import re
+        match = re.search(r'(github\.com|gitlab\.com)[:/]([^/\s]+/[^/\s]+)(?:\.git|\s)', output.content)
+        if match:
+            return match.group(2)
+            
+        return None
+        
+    def get_git_commit_state(self, cwd: str) -> str | None:
+        """
+        Get the commit state for the git repository.
+        
+        Args:
+            cwd (str): The current working directory.
+            
+        Returns:
+            str | None: "CLEAN" if no changes, "IN_PROGRESS" if there are uncommitted changes
+                        or unpushed commits, None if not a git repository.
+        """
+        from openhands.storage.data_models.conversation_metadata import CommitState
+        
+        self.git_handler.set_cwd(cwd)
+        
+        # Check if it's a git repository
+        if not self.git_handler._is_git_repo():
+            return None
+            
+        # Check for uncommitted changes
+        cmd = 'git status --porcelain'
+        output = self.git_handler.execute(cmd, self.git_handler.cwd)
+        
+        if output.exit_code != 0:
+            return None
+            
+        # If there are uncommitted changes, return IN_PROGRESS
+        if output.content.strip():
+            return CommitState.IN_PROGRESS
+            
+        # Get current branch
+        current_branch = self.git_handler._get_current_branch()
+        
+        # Check if there are commits not pushed to origin
+        cmd = f'git rev-list HEAD...origin/{current_branch} --count 2>/dev/null || echo "0"'
+        output = self.git_handler.execute(cmd, self.git_handler.cwd)
+        
+        # If there are unpushed commits, return IN_PROGRESS
+        if output.content.strip() != '0':
+            return CommitState.IN_PROGRESS
+            
+        # If we got here, everything is clean
+        return CommitState.CLEAN
 
     @property
     def additional_agent_instructions(self) -> str:
