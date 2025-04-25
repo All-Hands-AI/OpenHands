@@ -6,7 +6,13 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_provider_tokens, get_user_id
-from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
+from openhands.server.settings import (
+    GETSettingsCustomSecrets,
+    GETSettingsModel,
+    POSTSettingsCustomSecrets,
+    POSTSettingsModel,
+    Settings,
+)
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
 
@@ -52,6 +58,122 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
+        )
+
+
+@app.get('/secrets', response_model=GETSettingsCustomSecrets)
+async def load_custom_secrets_names(
+    request: Request,
+) -> GETSettingsCustomSecrets | JSONResponse:
+    try:
+        user_id = get_user_id(request)
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+        settings = await settings_store.load()
+        if not settings:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+
+        custom_secrets = []
+        if settings.secrets_store.custom_secrets:
+            for secret_name, _ in settings.secrets_store.custom_secrets.items():
+                custom_secrets.append(secret_name)
+
+        secret_names = GETSettingsCustomSecrets(custom_secrets=custom_secrets)
+        return secret_names
+
+    except Exception as e:
+        logger.warning(f'Invalid token: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Invalid token'},
+        )
+
+
+@app.post('/secrets', response_model=dict[str, str])
+async def add_custom_secret(
+    request: Request, incoming_secrets: POSTSettingsCustomSecrets
+) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        existing_settings: Settings = await settings_store.load()
+        if existing_settings:
+            for (
+                secret_name,
+                secret_value,
+            ) in existing_settings.secrets_store.custom_secrets.items():
+                if (
+                    secret_name not in incoming_secrets.custom_secrets
+                ):  # Allow incoming values to override existing ones
+                    incoming_secrets.custom_secrets[secret_name] = secret_value
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=incoming_secrets.custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            # Only update SecretStore in Settings
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            updated_settings = convert_to_settings(updated_settings)
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong storing settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
+        )
+
+
+@app.delete('/secrets/{secret_id}')
+async def delete_custom_secret(request: Request, secret_id: str) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        existing_settings: Settings | None = await settings_store.load()
+        custom_secrets = {}
+        if existing_settings:
+            for (
+                secret_name,
+                secret_value,
+            ) in existing_settings.secrets_store.custom_secrets.items():
+                if secret_name != secret_id:
+                    custom_secrets[secret_name] = secret_value
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            updated_settings = convert_to_settings(updated_settings)
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong storing settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
         )
 
 

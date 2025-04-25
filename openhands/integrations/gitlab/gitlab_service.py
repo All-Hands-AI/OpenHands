@@ -22,7 +22,6 @@ class GitLabService(BaseGitService, GitService):
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
     refresh = False
-    
 
     def __init__(
         self,
@@ -46,7 +45,7 @@ class GitLabService(BaseGitService, GitService):
     @property
     def provider(self) -> str:
         return ProviderType.GITLAB.value
-    
+
     async def _get_gitlab_headers(self) -> dict[str, Any]:
         """
         Retrieve the GitLab Token to construct the headers
