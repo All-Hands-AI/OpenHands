@@ -295,6 +295,7 @@ async def store_llm_settings(
 
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
+    request: Request,
     settings: POSTSettingsModel,
     settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:    

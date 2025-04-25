@@ -196,6 +196,7 @@ class AzureDevOpsService(GitService):
                         git_provider=ProviderType.AZUREDEVOPS,
                         stargazers_count=None,
                         pushed_at=None,
+                        is_public=False,
                     )
                 )
 
@@ -248,6 +249,7 @@ class AzureDevOpsService(GitService):
                         git_provider=ProviderType.AZUREDEVOPS,
                         stargazers_count=None,
                         pushed_at=None,
+                        is_public=False,
                     )
                 )
 
