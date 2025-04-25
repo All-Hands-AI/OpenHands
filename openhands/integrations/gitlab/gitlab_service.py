@@ -131,7 +131,7 @@ class GitLabService(BaseGitService, GitService):
 
                 payload = {
                     'query': query,
-                    'variables': variables,
+                    'variables': variables if variables is not None else {},
                 }
 
                 response = await client.post(
