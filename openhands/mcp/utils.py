@@ -109,8 +109,8 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     Call a tool on an MCP server and return the observation.
 
     Args:
+        mcp_clients: The list of MCP clients to execute the action on
         action: The MCP action to execute
-        sse_sse_servers: List of SSE MCP server URLs
 
     Returns:
         The observation from the MCP server
