@@ -211,7 +211,7 @@ async def git_changes(
         changes = await call_sync_from_async(runtime.get_git_changes, cwd)
         if changes is None:
             return JSONResponse(
-                status_code=500,
+                status_code=404,
                 content={'error': 'Not a git repository'},
             )
         return changes

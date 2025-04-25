@@ -4796,6 +4796,9 @@
         "es": "La acción expiró",
         "tr": "İşlem zaman aşımına uğradı"
     },
+    "AGENT_ERROR$TOO_MANY_CONVERSATIONS": {
+        "en": "Too many conversations at once."
+    },
     "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
         "en": "Connect to GitHub",
         "es": "Conectar a GitHub",
