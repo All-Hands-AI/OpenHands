@@ -165,7 +165,11 @@ export function ChatInterface() {
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}
-            {curAgentState === AgentState.SETTING_UP && <div className="text-sm text-gray-500">{t('STATUS$SETTING_UP_WORKSPACE')}</div>}
+            {curAgentState === AgentState.SETTING_UP && (
+              <div className="text-sm text-gray-500">
+                {t("STATUS$SETTING_UP_WORKSPACE")}
+              </div>
+            )}
           </div>
 
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
