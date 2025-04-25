@@ -74,7 +74,8 @@ describe("RepoConnector", () => {
 
     renderRepoConnector();
 
-    const dropdown = screen.getByTestId("repo-dropdown");
+    // Wait for the loading state to be replaced with the dropdown
+    const dropdown = await waitFor(() => screen.getByTestId("repo-dropdown"));
     await userEvent.click(dropdown);
 
     await waitFor(() => {
@@ -98,7 +99,8 @@ describe("RepoConnector", () => {
     const launchButton = screen.getByTestId("repo-launch-button");
     expect(launchButton).toBeDisabled();
 
-    const dropdown = screen.getByTestId("repo-dropdown");
+    // Wait for the loading state to be replaced with the dropdown
+    const dropdown = await waitFor(() => screen.getByTestId("repo-dropdown"));
     await userEvent.click(dropdown);
     await userEvent.click(screen.getByText("rbren/polaris"));
 
@@ -132,6 +134,14 @@ describe("RepoConnector", () => {
 
   it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      GitService,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
 
     renderRepoConnector();
 
@@ -144,7 +154,9 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).not.toHaveBeenCalled();
 
     // select a repository from the dropdown
-    const dropdown = within(repoConnector).getByTestId("repo-dropdown");
+    const dropdown = await waitFor(() =>
+      within(repoConnector).getByTestId("repo-dropdown")
+    );
     await userEvent.click(dropdown);
 
     const repoOption = screen.getByText("rbren/polaris");
@@ -178,7 +190,8 @@ describe("RepoConnector", () => {
 
     const launchButton = screen.getByTestId("repo-launch-button");
 
-    const dropdown = screen.getByTestId("repo-dropdown");
+    // Wait for the loading state to be replaced with the dropdown
+    const dropdown = await waitFor(() => screen.getByTestId("repo-dropdown"));
     await userEvent.click(dropdown);
     await userEvent.click(screen.getByText("rbren/polaris"));
 

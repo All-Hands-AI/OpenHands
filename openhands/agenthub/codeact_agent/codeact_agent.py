@@ -108,9 +108,7 @@ class CodeActAgent(Agent):
 
         tools = []
         if self.config.enable_cmd:
-            tools.append(
-                create_cmd_run_tool(use_short_description=use_short_tool_desc)
-            )
+            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
         if self.config.enable_think:
             tools.append(ThinkTool)
         if self.config.enable_finish:

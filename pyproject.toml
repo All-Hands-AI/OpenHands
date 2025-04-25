@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.33.0"
+version = "0.34.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -71,14 +71,14 @@ stripe = ">=11.5,<13.0"
 ipywidgets = "^8.1.5"
 qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
-daytona-sdk = "0.14.0"
+daytona-sdk = "0.15.0"
 mcp = "1.6.0"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.11.6"
+ruff = "0.11.7"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
