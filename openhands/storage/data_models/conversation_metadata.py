@@ -8,6 +8,12 @@ class ConversationTrigger(Enum):
     GUI = 'gui'
 
 
+class CommitState(str, Enum):
+    """Enum representing the state of git commits in a repository."""
+    CLEAN = "CLEAN"  # No changes, current commit matches origin commit for the same branch
+    IN_PROGRESS = "IN_PROGRESS"  # There are uncommitted changes or local commits not in origin
+
+
 @dataclass
 class ConversationMetadata:
     conversation_id: str
@@ -19,6 +25,8 @@ class ConversationMetadata:
     last_updated_at: datetime | None = None
     trigger: ConversationTrigger | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    # Git state
+    commit_state: CommitState | None = None
     # Cost and token metrics
     accumulated_cost: float = 0.0
     prompt_tokens: int = 0
