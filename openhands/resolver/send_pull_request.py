@@ -406,7 +406,7 @@ def update_existing_pull_request(
             explanations = json.loads(additional_message)
             if explanations:
                 comment_message = (
-                    'OpenHands made the following changes to resolve the issues:\n\n'
+                    'Thesis made the following changes to resolve the issues:\n\n'
                 )
                 for explanation in explanations:
                     comment_message += f'- {explanation}\n'

@@ -36,7 +36,7 @@ async def generate_conversation_title(
         messages = [
             {
                 'role': 'system',
-                'content': 'You are a helpful assistant that generates concise, descriptive titles for conversations with OpenHands. OpenHands is a helpful AI agent that can interact with a computer to solve tasks using bash terminal, file editor, and browser. Given a user message (which may be truncated), generate a concise, descriptive title for the conversation. Return only the title, with no additional text, quotes, or explanations.',
+                'content': 'You are a helpful assistant that generates concise, descriptive titles for conversations with Thesis. Thesis is an AI research agent that helps users gather information, analyse data, and deliver clear, well-supported insights. Given a user message (which may be truncated), generate a concise, descriptive title for the conversation. Return only the title, with no additional text, quotes, or explanations.',
             },
             {
                 'role': 'user',
