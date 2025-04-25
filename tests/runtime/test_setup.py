@@ -44,10 +44,10 @@ def test_maybe_run_setup_script(temp_dir, runtime_cls, run_as_openhands):
 
 def test_maybe_run_setup_script_with_long_timeout(temp_dir, runtime_cls, run_as_openhands):
     """Test that setup script is executed when it exists."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands, runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'})
     
     setup_script = '.openhands/setup.sh'
-    write_obs = runtime.write(FileWriteAction(path=setup_script, content="#!/bin/bash\nsleep 15 && echo 'Hello World' >> README.md\n"))
+    write_obs = runtime.write(FileWriteAction(path=setup_script, content="#!/bin/bash\nsleep 3 && echo 'Hello World' >> README.md\n"))
     assert isinstance(write_obs, FileWriteObservation)
     
     # Run setup script

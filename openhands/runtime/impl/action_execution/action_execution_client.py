@@ -253,6 +253,8 @@ class ActionExecutionClient(Runtime):
 
         # set timeout to default if not set
         if action.timeout is None:
+            if isinstance(action, CmdRunAction) and action.blocking:
+                raise RuntimeError('Blocking command with no timeout set')
             # We don't block the command if this is a default timeout action
             action.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
 
