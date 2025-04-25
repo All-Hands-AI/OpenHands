@@ -19,9 +19,9 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
-import { ResetSettingsModal } from "#/components/features/settings/llm-settings/reset-settings-modal";
 import { isCustomModel } from "#/utils/is-custom-model";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -35,7 +35,6 @@ function LlmSettingsScreen() {
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
   const [securityAnalyzerInputIsVisible, setSecurityAnalyzerInputIsVisible] =
     React.useState(false);
-  const [resetModalIsVisible, setResetModalIsVisible] = React.useState(false);
 
   const [dirtyInputs, setDirtyInputs] = React.useState({
     model: false,
@@ -141,18 +140,6 @@ function LlmSettingsScreen() {
   };
 
   const formAction = (formData: FormData) => {
-    const isReset = formData.get("reset-settings") !== null;
-    if (isReset) {
-      saveSettings(null, {
-        onSettled: () => {
-          setResetModalIsVisible(false);
-        },
-        onSuccess: handleSuccessfulMutation,
-        onError: handleErrorMutation,
-      });
-      return;
-    }
-
     if (view === "basic") basicFormAction(formData);
     else advancedFormAction(formData);
   };
@@ -283,6 +270,11 @@ function LlmSettingsScreen() {
                 className="w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
+                startContent={
+                  settings.LLM_API_KEY_SET && (
+                    <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
+                  )
+                }
               />
 
               <HelpLink
@@ -331,6 +323,11 @@ function LlmSettingsScreen() {
                 className="w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
+                startContent={
+                  settings.LLM_API_KEY_SET && (
+                    <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
+                  )
+                }
               />
               <HelpLink
                 testId="llm-api-key-help-anchor"
@@ -416,15 +413,6 @@ function LlmSettingsScreen() {
 
         <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
           <BrandButton
-            testId="reset-button"
-            type="button"
-            variant="secondary"
-            onClick={() => setResetModalIsVisible(true)}
-          >
-            Reset Settings
-          </BrandButton>
-
-          <BrandButton
             testId="submit-button"
             type="submit"
             variant="primary"
@@ -434,10 +422,6 @@ function LlmSettingsScreen() {
             {isPending && "Saving..."}
           </BrandButton>
         </div>
-
-        {resetModalIsVisible && (
-          <ResetSettingsModal onReset={() => setResetModalIsVisible(false)} />
-        )}
       </form>
     </div>
   );

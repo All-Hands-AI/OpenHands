@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "../settings-input";
 import { GitHubTokenHelpAnchor } from "./github-token-help-anchor";
+import { KeyStatusIcon } from "../key-status-icon";
 
 interface GitHubTokenInputProps {
   onChange: (value: string) => void;
@@ -26,6 +27,14 @@ export function GitHubTokenInput({
         type="password"
         className="w-[680px]"
         placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+        startContent={
+          isGitHubTokenSet && (
+            <KeyStatusIcon
+              testId="gh-set-token-indicator"
+              isSet={isGitHubTokenSet}
+            />
+          )
+        }
       />
 
       <GitHubTokenHelpAnchor />

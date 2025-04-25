@@ -77,6 +77,7 @@ describe("Content", () => {
 
         expect(apiKey).toHaveValue("");
         expect(apiKey).toHaveProperty("placeholder", "<hidden>");
+        expect(screen.getByTestId("set-indicator")).toBeInTheDocument();
       });
     });
   });
@@ -515,62 +516,6 @@ describe("Form submission", () => {
       expect(submitButton).toBeDisabled();
     });
   });
-
-  describe("Reset button", () => {
-    it("should reset the settings when the reset button is clicked and confirmed via modal", async () => {
-      const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
-
-      expect(
-        screen.queryByTestId("reset-settings-modal"),
-      ).not.toBeInTheDocument();
-
-      const apiKey = screen.getByTestId("llm-api-key-input");
-      await userEvent.type(apiKey, "test-api-key");
-
-      const resetButton = screen.getByTestId("reset-button");
-      await userEvent.click(resetButton);
-
-      const modal = screen.getByTestId("reset-settings-modal");
-      const confirmButton = within(modal).getByTestId("confirm-button");
-      await userEvent.click(confirmButton);
-
-      expect(resetSettingsSpy).toHaveBeenCalled();
-      await waitFor(() =>
-        expect(
-          screen.queryByTestId("reset-settings-modal"),
-        ).not.toBeInTheDocument(),
-      );
-    });
-
-    it("should not reset the settings when the reset button is clicked and cancelled via modal", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
-
-      expect(
-        screen.queryByTestId("reset-settings-modal"),
-      ).not.toBeInTheDocument();
-
-      const apiKey = screen.getByTestId("llm-api-key-input");
-      await userEvent.type(apiKey, "test-api-key");
-
-      const resetButton = screen.getByTestId("reset-button");
-      await userEvent.click(resetButton);
-
-      const modal = screen.getByTestId("reset-settings-modal");
-      const cancelButton = within(modal).getByTestId("cancel-button");
-      await userEvent.click(cancelButton);
-
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
-      expect(
-        screen.queryByTestId("reset-settings-modal"),
-      ).not.toBeInTheDocument();
-    });
-  });
 });
 
 describe("Status toasts", () => {
@@ -666,51 +611,6 @@ describe("Status toasts", () => {
       await userEvent.click(submit);
 
       expect(saveSettingsSpy).toHaveBeenCalled();
-      expect(displayErrorToastSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe("Reset button", () => {
-    it("should call displaySuccessToast when the settings are reset", async () => {
-      const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
-
-      const displaySuccessToastSpy = vi.spyOn(
-        ToastHandlers,
-        "displaySuccessToast",
-      );
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
-
-      const resetButton = screen.getByTestId("reset-button");
-      await userEvent.click(resetButton);
-
-      const modal = screen.getByTestId("reset-settings-modal");
-      const confirmButton = within(modal).getByTestId("confirm-button");
-      await userEvent.click(confirmButton);
-
-      expect(resetSettingsSpy).toHaveBeenCalled();
-      await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
-    });
-
-    it("should call displayErrorToast when the settings fail to reset", async () => {
-      const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
-
-      const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
-
-      resetSettingsSpy.mockRejectedValue(new Error("Failed to reset settings"));
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
-
-      const resetButton = screen.getByTestId("reset-button");
-      await userEvent.click(resetButton);
-
-      const modal = screen.getByTestId("reset-settings-modal");
-      const confirmButton = within(modal).getByTestId("confirm-button");
-      await userEvent.click(confirmButton);
-
-      expect(resetSettingsSpy).toHaveBeenCalled();
       expect(displayErrorToastSpy).toHaveBeenCalled();
     });
   });
