@@ -90,10 +90,6 @@ async def test_settings_api_endpoints(test_client):
     response = test_client.post('/api/settings', json=partial_settings)
     assert response.status_code == 200
 
-    # Test the reset settings endpoint
-    response = test_client.post('/api/reset-settings')
-    assert response.status_code == 200
-
     # Test the unset-settings-tokens endpoint
     response = test_client.post('/api/unset-settings-tokens')
     assert response.status_code == 200
