@@ -134,9 +134,19 @@ async def get_validated_input(
     return value
 
 
+def save_settings_confirmation() -> bool:
+    return (
+        cli_confirm(
+            '\nSave new settings? (Restart CLI to take effect)',
+            ['Yes, save', 'No, discard'],
+        )
+        == 0
+    )
+
+
 async def modify_llm_settings_basic(
     config: AppConfig, settings_store: FileSettingsStore
-) -> bool:
+):
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
 
@@ -189,23 +199,17 @@ async def modify_llm_settings_basic(
         KeyboardInterrupt,
         EOFError,
     ):
-        return False  # Return False on exception
+        return  # Return on exception
 
     # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
     if provider is None or model is None or api_key is None:
-        return False
+        return
 
-    save_settings = (
-        cli_confirm(
-            '\nSave new settings? Current session will be terminated!',
-            ['Yes, proceed', 'No, dismiss'],
-        )
-        == 0
-    )
+    save_settings = save_settings_confirmation()
 
     if not save_settings:
-        return False
+        return
 
     llm_config = config.get_llm_config()
     llm_config.model = provider + organized_models[provider]['separator'] + model
@@ -237,12 +241,10 @@ async def modify_llm_settings_basic(
 
     await settings_store.store(settings)
 
-    return True
-
 
 async def modify_llm_settings_advanced(
     config: AppConfig, settings_store: FileSettingsStore
-) -> bool:
+):
     session = PromptSession(key_bindings=kb_cancel())
 
     custom_model = None
@@ -300,23 +302,17 @@ async def modify_llm_settings_advanced(
         KeyboardInterrupt,
         EOFError,
     ):
-        return False  # Return False on exception
+        return  # Return on exception
 
     # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
     if custom_model is None or base_url is None or api_key is None or agent is None:
-        return False
+        return
 
-    save_settings = (
-        cli_confirm(
-            '\nSave new settings? Current session will be terminated!',
-            ['Yes, proceed', 'No, dismiss'],
-        )
-        == 0
-    )
+    save_settings = save_settings_confirmation()
 
     if not save_settings:
-        return False
+        return
 
     llm_config = config.get_llm_config()
     llm_config.model = custom_model
@@ -350,5 +346,3 @@ async def modify_llm_settings_advanced(
     settings.enable_default_condenser = enable_memory_condensation
 
     await settings_store.store(settings)
-
-    return True

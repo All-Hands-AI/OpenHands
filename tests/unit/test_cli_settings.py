@@ -182,10 +182,7 @@ class TestModifyLLMSettingsBasic:
         mock_confirm.return_value = 0  # User selects "Yes, proceed"
 
         # Call the function
-        result = await modify_llm_settings_basic(app_config, settings_store)
-
-        # Verify the result
-        assert result is True
+        await modify_llm_settings_basic(app_config, settings_store)
 
         # Verify LLM config was updated
         app_config.set_llm_config.assert_called_once()
@@ -231,10 +228,7 @@ class TestModifyLLMSettingsBasic:
         mock_session.return_value = session_instance
 
         # Call the function
-        result = await modify_llm_settings_basic(app_config, settings_store)
-
-        # Verify the result
-        assert result is False
+        await modify_llm_settings_basic(app_config, settings_store)
 
         # Verify settings were not changed
         app_config.set_llm_config.assert_not_called()
@@ -282,7 +276,7 @@ class TestModifyLLMSettingsBasic:
         mock_confirm.return_value = 0  # "Yes, proceed"
 
         # Call the function
-        result = await modify_llm_settings_basic(app_config, settings_store)
+        await modify_llm_settings_basic(app_config, settings_store)
 
         # Verify error messages were shown for invalid inputs
         assert (
@@ -303,9 +297,6 @@ class TestModifyLLMSettingsBasic:
 
         assert provider_error_found, 'No error message for invalid provider'
         assert model_error_found, 'No error message for invalid model'
-
-        # Verify the result is True (settings were saved successfully)
-        assert result is True
 
         # Verify LLM config was updated with correct values
         app_config.set_llm_config.assert_called_once()
@@ -382,10 +373,7 @@ class TestModifyLLMSettingsAdvanced:
         ]
 
         # Call the function
-        result = await modify_llm_settings_advanced(app_config, settings_store)
-
-        # Verify the result
-        assert result is True
+        await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify LLM config was updated
         app_config.set_llm_config.assert_called_once()
@@ -425,10 +413,7 @@ class TestModifyLLMSettingsAdvanced:
         mock_session.return_value = session_instance
 
         # Call the function
-        result = await modify_llm_settings_advanced(app_config, settings_store)
-
-        # Verify the result
-        assert result is False
+        await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify settings were not changed
         app_config.set_llm_config.assert_not_called()
@@ -469,10 +454,7 @@ class TestModifyLLMSettingsAdvanced:
         mock_session.return_value = session_instance
 
         # Call the function
-        result = await modify_llm_settings_advanced(app_config, settings_store)
-
-        # Verify the result
-        assert result is False
+        await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify error message was shown
         assert (
@@ -523,10 +505,7 @@ class TestModifyLLMSettingsAdvanced:
         ]
 
         # Call the function
-        result = await modify_llm_settings_advanced(app_config, settings_store)
-
-        # Verify the result
-        assert result is False
+        await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify settings were not changed
         app_config.set_llm_config.assert_not_called()

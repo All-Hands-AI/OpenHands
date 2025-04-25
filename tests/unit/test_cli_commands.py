@@ -128,8 +128,6 @@ class TestHandleCommands:
     async def test_handle_settings_command(
         self, mock_handle_settings, mock_dependencies
     ):
-        mock_handle_settings.return_value = (True, True)
-
         close_repl, reload_microagents, new_session = await handle_commands(
             '/settings', **mock_dependencies
         )
@@ -137,13 +135,10 @@ class TestHandleCommands:
         mock_handle_settings.assert_called_once_with(
             mock_dependencies['config'],
             mock_dependencies['settings_store'],
-            mock_dependencies['event_stream'],
-            mock_dependencies['usage_metrics'],
-            mock_dependencies['sid'],
         )
-        assert close_repl is True
+        assert close_repl is False
         assert reload_microagents is False
-        assert new_session is True
+        assert new_session is False
 
     @pytest.mark.asyncio
     async def test_handle_unknown_command(self, mock_dependencies):
@@ -358,153 +353,97 @@ class TestHandleSettingsCommand:
     @patch('openhands.core.cli_commands.display_settings')
     @patch('openhands.core.cli_commands.cli_confirm')
     @patch('openhands.core.cli_commands.modify_llm_settings_basic')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
     async def test_settings_basic_with_changes(
         self,
-        mock_display_shutdown,
         mock_modify_basic,
         mock_cli_confirm,
         mock_display_settings,
     ):
         config = MagicMock(spec=AppConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
-        event_stream = MagicMock(spec=EventStream)
-        usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
 
         # Mock user selecting "Basic" settings
         mock_cli_confirm.return_value = 0
-        # Mock settings modification that requires restart
-        mock_modify_basic.return_value = True
 
         # Call the function under test
-        close_repl, new_session = await handle_settings_command(
-            config, settings_store, event_stream, usage_metrics, sid
-        )
+        await handle_settings_command(config, settings_store)
 
         # Verify correct behavior
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_basic.assert_called_once_with(config, settings_store)
-        event_stream.add_event.assert_called_once()
-        mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
-
-        assert close_repl is True
-        assert new_session is True
 
     @pytest.mark.asyncio
     @patch('openhands.core.cli_commands.display_settings')
     @patch('openhands.core.cli_commands.cli_confirm')
     @patch('openhands.core.cli_commands.modify_llm_settings_basic')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
     async def test_settings_basic_without_changes(
         self,
-        mock_display_shutdown,
         mock_modify_basic,
         mock_cli_confirm,
         mock_display_settings,
     ):
         config = MagicMock(spec=AppConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
-        event_stream = MagicMock(spec=EventStream)
-        usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
 
         # Mock user selecting "Basic" settings
         mock_cli_confirm.return_value = 0
-        # Mock settings modification that doesn't require restart
-        mock_modify_basic.return_value = False
 
         # Call the function under test
-        close_repl, new_session = await handle_settings_command(
-            config, settings_store, event_stream, usage_metrics, sid
-        )
+        await handle_settings_command(config, settings_store)
 
         # Verify correct behavior
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_basic.assert_called_once_with(config, settings_store)
-        event_stream.add_event.assert_not_called()
-        mock_display_shutdown.assert_not_called()
-
-        assert close_repl is False
-        assert new_session is False
 
     @pytest.mark.asyncio
     @patch('openhands.core.cli_commands.display_settings')
     @patch('openhands.core.cli_commands.cli_confirm')
     @patch('openhands.core.cli_commands.modify_llm_settings_advanced')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
     async def test_settings_advanced_with_changes(
         self,
-        mock_display_shutdown,
         mock_modify_advanced,
         mock_cli_confirm,
         mock_display_settings,
     ):
         config = MagicMock(spec=AppConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
-        event_stream = MagicMock(spec=EventStream)
-        usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
 
         # Mock user selecting "Advanced" settings
         mock_cli_confirm.return_value = 1
-        # Mock settings modification that requires restart
-        mock_modify_advanced.return_value = True
 
         # Call the function under test
-        close_repl, new_session = await handle_settings_command(
-            config, settings_store, event_stream, usage_metrics, sid
-        )
+        await handle_settings_command(config, settings_store)
 
         # Verify correct behavior
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_advanced.assert_called_once_with(config, settings_store)
-        event_stream.add_event.assert_called_once()
-        mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
-
-        assert close_repl is True
-        assert new_session is True
 
     @pytest.mark.asyncio
     @patch('openhands.core.cli_commands.display_settings')
     @patch('openhands.core.cli_commands.cli_confirm')
     @patch('openhands.core.cli_commands.modify_llm_settings_advanced')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
     async def test_settings_advanced_without_changes(
         self,
-        mock_display_shutdown,
         mock_modify_advanced,
         mock_cli_confirm,
         mock_display_settings,
     ):
         config = MagicMock(spec=AppConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
-        event_stream = MagicMock(spec=EventStream)
-        usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
 
         # Mock user selecting "Advanced" settings
         mock_cli_confirm.return_value = 1
-        # Mock settings modification that doesn't require restart
-        mock_modify_advanced.return_value = False
 
         # Call the function under test
-        close_repl, new_session = await handle_settings_command(
-            config, settings_store, event_stream, usage_metrics, sid
-        )
+        await handle_settings_command(config, settings_store)
 
         # Verify correct behavior
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_advanced.assert_called_once_with(config, settings_store)
-        event_stream.add_event.assert_not_called()
-        mock_display_shutdown.assert_not_called()
-
-        assert close_repl is False
-        assert new_session is False
 
     @pytest.mark.asyncio
     @patch('openhands.core.cli_commands.display_settings')
@@ -512,21 +451,13 @@ class TestHandleSettingsCommand:
     async def test_settings_go_back(self, mock_cli_confirm, mock_display_settings):
         config = MagicMock(spec=AppConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
-        event_stream = MagicMock(spec=EventStream)
-        usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
 
         # Mock user selecting "Go back"
         mock_cli_confirm.return_value = 2
 
         # Call the function under test
-        close_repl, new_session = await handle_settings_command(
-            config, settings_store, event_stream, usage_metrics, sid
-        )
+        await handle_settings_command(config, settings_store)
 
         # Verify correct behavior
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
-
-        assert close_repl is False
-        assert new_session is False

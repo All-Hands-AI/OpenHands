@@ -68,9 +68,7 @@ async def handle_commands(
             event_stream, usage_metrics, sid
         )
     elif command == '/settings':
-        close_repl, new_session_requested = await handle_settings_command(
-            config, settings_store, event_stream, usage_metrics, sid
-        )
+        await handle_settings_command(config, settings_store)
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -167,13 +165,7 @@ def handle_new_command(
 async def handle_settings_command(
     config: AppConfig,
     settings_store: FileSettingsStore,
-    event_stream: EventStream,
-    usage_metrics: UsageMetrics,
-    sid: str,
-) -> tuple[bool, bool]:
-    close_repl = False
-    new_session_requested = False
-
+):
     display_settings(config)
     modify_settings = cli_confirm(
         '\nWhich settings would you like to modify?',
@@ -185,22 +177,9 @@ async def handle_settings_command(
     )
 
     if modify_settings == 0:
-        new_session_requested = await modify_llm_settings_basic(config, settings_store)
+        await modify_llm_settings_basic(config, settings_store)
     elif modify_settings == 1:
-        new_session_requested = await modify_llm_settings_advanced(
-            config, settings_store
-        )
-
-    if new_session_requested:
-        close_repl = True
-        new_session_requested = True
-        event_stream.add_event(
-            ChangeAgentStateAction(AgentState.STOPPED),
-            EventSource.ENVIRONMENT,
-        )
-        display_shutdown_message(usage_metrics, sid)
-
-    return close_repl, new_session_requested
+        await modify_llm_settings_advanced(config, settings_store)
 
 
 async def init_repository(current_dir: str) -> bool:
