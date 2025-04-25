@@ -457,7 +457,7 @@ async def change_visibility(
         'hidden_prompt': hidden_prompt,
     }
 
-    if file:
+    if file and s3_handler is not None:
         print("processing file:", file)
         folder_path = f"conversations/{conversation_id}"
         file_url = await s3_handler.upload_file(file, folder_path)

@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 import socketio
 from dotenv import load_dotenv
@@ -59,4 +60,16 @@ ConversationStoreImpl: ConversationStore = get_impl(
     server_config.conversation_store_class,
 )
 
-s3_handler = S3Handler()
+
+@lru_cache
+def get_s3_handler():
+    if (
+        not os.getenv('S3_ACCESS_KEY_ID')
+        or not os.getenv('S3_SECRET_ACCESS_KEY')
+        or not os.getenv('S3_BUCKET')
+    ):
+        return None
+    return S3Handler()
+
+
+s3_handler = get_s3_handler()

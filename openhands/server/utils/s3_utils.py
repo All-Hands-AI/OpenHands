@@ -1,4 +1,5 @@
 import boto3
+from botocore.endpoint import uuid
 from botocore.exceptions import ClientError
 import logging
 from typing import Optional, BinaryIO
@@ -38,7 +39,7 @@ class S3Handler:
         """
         try:
             if not filename:
-                filename = file.filename
+                filename = file.filename or f"{uuid.uuid4().hex}.png"
 
             # Ensure folder path doesn't start with /
             folder_path = folder_path.lstrip('/')
