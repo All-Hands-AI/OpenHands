@@ -79,7 +79,7 @@ prompt-toolkit = "^3.0.50"
 mcpm = { git = "https://github.com/xingyaoww/mcpm.sh.git", rev = "a719bef3bce5ca344271be9e9ed4c23a17f6eb0a"}
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.11.6"
+ruff = "0.11.7"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"

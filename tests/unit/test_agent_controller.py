@@ -29,6 +29,7 @@ from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -80,8 +81,9 @@ def test_event_stream():
 
 @pytest.fixture
 def mock_runtime() -> Runtime:
+    from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
     runtime = MagicMock(
-        spec=Runtime,
+        spec=ActionExecutionClient,
         event_stream=test_event_stream,
     )
     return runtime
@@ -230,7 +232,7 @@ async def test_run_controller_with_fatal_error(
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
@@ -295,7 +297,7 @@ async def test_run_controller_stop_with_stuck(
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
@@ -654,7 +656,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     mock_agent.step = agent_step_fn
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
@@ -1052,7 +1054,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
 
     mock_agent.step = agent_step_fn
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Create a real Memory instance

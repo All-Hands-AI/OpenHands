@@ -107,7 +107,8 @@ def mock_read_task():
 @pytest.fixture
 def mock_runtime():
     with patch('openhands.core.cli.create_runtime') as mock_create_runtime:
-        mock_runtime_instance = AsyncMock()
+        from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
+        mock_runtime_instance = AsyncMock(spec=ActionExecutionClient)
 
         mock_event_stream = MockEventStream()
         mock_runtime_instance.event_stream = mock_event_stream
