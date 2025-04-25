@@ -443,8 +443,37 @@ class Runtime(FileEditRuntimeMixin):
             )
             return
 
-        # Create the pre-commit hook that calls our script
+        # Check if there's an existing pre-commit hook
         pre_commit_hook = '.git/hooks/pre-commit'
+        pre_commit_local = '.git/hooks/pre-commit.local'
+        
+        # Read the existing pre-commit hook if it exists
+        read_obs = self.read(FileReadAction(path=pre_commit_hook))
+        if not isinstance(read_obs, ErrorObservation):
+            # If the existing hook wasn't created by OpenHands, preserve it
+            if "This hook was installed by OpenHands" not in read_obs.content:
+                self.log('info', 'Preserving existing pre-commit hook')
+                # Move the existing hook to pre-commit.local
+                action = CmdRunAction(f'mv {pre_commit_hook} {pre_commit_local}')
+                obs = self.run_action(action)
+                if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+                    self.log(
+                        'error', 
+                        f'Failed to preserve existing pre-commit hook: {obs.content}'
+                    )
+                    return
+                
+                # Make it executable
+                action = CmdRunAction(f'chmod +x {pre_commit_local}')
+                obs = self.run_action(action)
+                if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+                    self.log(
+                        'error', 
+                        f'Failed to make preserved hook executable: {obs.content}'
+                    )
+                    return
+
+        # Create the pre-commit hook that calls our script
         pre_commit_hook_content = f"""#!/bin/bash
 # This hook was installed by OpenHands
 # It calls the pre-commit script in the .openhands directory
