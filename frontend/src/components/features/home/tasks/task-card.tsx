@@ -6,6 +6,7 @@ import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { getPromptForQuery } from "./get-prompt-for-query";
 import { TaskIssueNumber } from "./task-issue-number";
+import { Provider } from "#/types/settings";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -26,18 +27,21 @@ export function TaskCard({ task }: TaskCardProps) {
   const isCreatingConversation = useIsCreatingConversation();
   const { t } = useTranslation();
 
-  const getRepo = (repo: string) => {
+  const getRepo = (repo: string, git_provider: Provider) => {
     const repositoriesList = repositories?.pages.flatMap((page) => page.data);
     const selectedRepo = repositoriesList?.find(
-      (repository) => repository.full_name === repo,
+      (repository) =>
+        repository.full_name === repo &&
+        repository.git_provider === git_provider,
     );
 
     return selectedRepo;
   };
 
   const handleLaunchConversation = () => {
-    const repo = getRepo(task.repo);
+    const repo = getRepo(task.repo, task.git_provider);
     const query = getPromptForQuery(
+      task.git_provider,
       task.task_type,
       task.issue_number,
       task.repo,
@@ -49,8 +53,16 @@ export function TaskCard({ task }: TaskCardProps) {
     });
   };
 
-  const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
-  const href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
+  // Determine the correct URL format based on git provider
+  let href: string;
+  if (task.git_provider === "gitlab") {
+    const issueType =
+      task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
+    href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
+  } else {
+    const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
+    href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
+  }
 
   return (
     <li className="py-3 border-b border-[#717888] flex items-center pr-6">

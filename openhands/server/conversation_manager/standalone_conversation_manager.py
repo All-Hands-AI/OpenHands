@@ -202,9 +202,7 @@ class StandaloneConversationManager(ConversationManager):
                 ConversationStore,  # type: ignore
                 self.server_config.conversation_store_class,
             )
-        store = await conversation_store_class.get_instance(
-            self.config, user_id, github_user_id
-        )
+        store = await conversation_store_class.get_instance(self.config, user_id)
         return store
 
     async def get_running_agent_loops(
@@ -285,7 +283,7 @@ class StandaloneConversationManager(ConversationManager):
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
-                'too_many_sessions_for:{user_id}',
+                f'too_many_sessions_for:{user_id or ''}',
                 extra={'session_id': sid, 'user_id': user_id},
             )
             # Get the conversations sorted (oldest first)
@@ -297,6 +295,22 @@ class StandaloneConversationManager(ConversationManager):
 
             while len(conversations) >= self.config.max_concurrent_conversations:
                 oldest_conversation_id = conversations.pop().conversation_id
+                logger.debug(
+                    f'closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}',
+                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+                )
+                # Send status message to client and close session.
+                status_update_dict = {
+                    'status_update': True,
+                    'type': 'error',
+                    'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
+                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
+                }
+                await self.sio.emit(
+                    'oh_event',
+                    status_update_dict,
+                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                )
                 await self.close_session(oldest_conversation_id)
 
         session = Session(
@@ -381,8 +395,8 @@ class StandaloneConversationManager(ConversationManager):
             f'removing connections: {connection_ids_to_remove}',
             extra={'session_id': sid},
         )
-        for connnnection_id in connection_ids_to_remove:
-            self._local_connection_id_to_session_id.pop(connnnection_id, None)
+        for connection_id in connection_ids_to_remove:
+            self._local_connection_id_to_session_id.pop(connection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:

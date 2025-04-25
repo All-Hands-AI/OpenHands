@@ -46,7 +46,7 @@ class GitHubService(BaseGitService, GitService):
     @property
     def provider(self) -> str:
         return ProviderType.GITHUB.value
-    
+
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
         if not self.token:
@@ -118,17 +118,15 @@ class GitHubService(BaseGitService, GitService):
             name=response.get('name'),
             email=response.get('email'),
         )
-    
+
     async def verify_access(self) -> bool:
         """Verify if the token is valid by making a simple request."""
         url = f'{self.BASE_URL}'
         try:
             await self._make_request(url)
             return True
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                return False
-            raise
+        except Exception:
+            return False
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
@@ -362,6 +360,7 @@ class GitHubService(BaseGitService, GitService):
                 if task_type != TaskType.OPEN_PR:
                     tasks.append(
                         SuggestedTask(
+                            git_provider=ProviderType.GITHUB,
                             task_type=task_type,
                             repo=repo_name,
                             issue_number=pr['number'],
@@ -374,6 +373,7 @@ class GitHubService(BaseGitService, GitService):
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
                         task_type=TaskType.OPEN_ISSUE,
                         repo=repo_name,
                         issue_number=issue['number'],
