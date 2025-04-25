@@ -342,7 +342,8 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         # token = auth_header.split(' ')[1]
         try:
             user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
-                request.headers.get('Authorization')
+                request.headers.get('Authorization'),
+                request.headers.get('x-device-id'),
             )
             if not user:
                 return JSONResponse(

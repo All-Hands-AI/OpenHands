@@ -58,6 +58,7 @@ async def connect(connection_id: str, environ):
     system_prompt = query_params.get('system_prompt', [None])[0]
     user_prompt = query_params.get('user_prompt', [None])[0]
     mcp_disable = query_params.get('mcp_disable', [None])[0]
+    x_device_id = query_params.get('x-device-id', [None])[0]
     # providers_raw: list[str] = query_params.get('providers_set', [])
     # providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
 
@@ -123,7 +124,7 @@ async def connect(connection_id: str, environ):
                 raise jwt.InvalidTokenError('No JWT token provided')
 
             user: ThesisUser | None = await get_user_detail_from_thesis_auth_server(
-                'Bearer ' + jwt_token
+                'Bearer ' + jwt_token, x_device_id
             )
             if not user:
                 logger.error(f'User not found in database: {user_id}')
