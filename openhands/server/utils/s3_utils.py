@@ -38,8 +38,11 @@ class S3Handler:
             str: The S3 URL of the uploaded file if successful, None otherwise
         """
         try:
+
             if not filename:
-                filename = file.filename or f"{uuid.uuid4().hex}.png"
+                # check ext of file
+                extension = os.path.splitext(file.filename)[1]
+                filename = f"{uuid.uuid4().hex}{extension}"
 
             # Ensure folder path doesn't start with /
             folder_path = folder_path.lstrip('/')
