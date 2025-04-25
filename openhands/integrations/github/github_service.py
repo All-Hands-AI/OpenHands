@@ -192,6 +192,11 @@ class GitHubService(BaseGitService, GitService):
                 # If we've already reached MAX_REPOS, no need to check other installations
                 if len(all_repos) >= MAX_REPOS:
                     break
+            
+            if sort == "pushed":
+                all_repos.sort(
+                    key=self.parse_pushed_at_date, reverse=True
+                )
         else:
             # Original behavior for non-SaaS mode
             params = {'per_page': str(PER_PAGE), 'sort': sort}
@@ -201,12 +206,6 @@ class GitHubService(BaseGitService, GitService):
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
 
 
-        if app_mode == AppMode.SAAS:
-            if sort == "pushed":
-                all_repos.sort(
-                    key=self.parse_pushed_at_date, reverse=True
-                )
-        
         # Convert to Repository objects
         return [
             Repository(
