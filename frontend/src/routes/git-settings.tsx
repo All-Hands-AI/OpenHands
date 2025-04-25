@@ -122,8 +122,8 @@ function GitSettingsScreen() {
             variant="primary"
             isDisabled={isPending || formIsClean}
           >
-            {!isPending && "Save Changes"}
-            {isPending && "Saving..."}
+            {!isPending && t("SETTINGS$SAVE_CHANGES")}
+            {isPending && t("SETTINGS$SAVING")}
           </BrandButton>
         </div>
       )}
