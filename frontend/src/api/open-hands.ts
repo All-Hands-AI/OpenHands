@@ -1,16 +1,15 @@
 import {
-  SaveFileSuccessResponse,
-  FileUploadSuccessResponse,
   Feedback,
   FeedbackResponse,
   GitHubAccessTokenResponse,
-  ErrorResponse,
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GitChangeDiff,
+  GitChange,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -50,80 +49,6 @@ class OpenHands {
     const { data } = await openHands.get<GetConfigResponse>(
       "/api/options/config",
     );
-    return data;
-  }
-
-  /**
-   * Retrieve the list of files available in the workspace
-   * @param path Path to list files from
-   * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
-   */
-  static async getFiles(
-    conversationId: string,
-    path?: string,
-  ): Promise<string[]> {
-    const url = `/api/conversations/${conversationId}/list-files`;
-    const { data } = await openHands.get<string[]>(url, {
-      params: { path },
-    });
-    return data;
-  }
-
-  /**
-   * Retrieve the content of a file
-   * @param path Full path of the file to retrieve
-   * @returns Content of the file
-   */
-  static async getFile(conversationId: string, path: string): Promise<string> {
-    const url = `/api/conversations/${conversationId}/select-file`;
-    const { data } = await openHands.get<{ code: string }>(url, {
-      params: { file: path },
-    });
-
-    return data.code;
-  }
-
-  /**
-   * Save the content of a file
-   * @param path Full path of the file to save
-   * @param content Content to save in the file
-   * @returns Success message or error message
-   */
-  static async saveFile(
-    conversationId: string,
-    path: string,
-    content: string,
-  ): Promise<SaveFileSuccessResponse> {
-    const url = `/api/conversations/${conversationId}/save-file`;
-    const { data } = await openHands.post<
-      SaveFileSuccessResponse | ErrorResponse
-    >(url, {
-      filePath: path,
-      content,
-    });
-
-    if ("error" in data) throw new Error(data.error);
-    return data;
-  }
-
-  /**
-   * Upload a file to the workspace
-   * @param file File to upload
-   * @returns Success message or error message
-   */
-  static async uploadFiles(
-    conversationId: string,
-    files: File[],
-  ): Promise<FileUploadSuccessResponse> {
-    const url = `/api/conversations/${conversationId}/upload-files`;
-    const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
-
-    const { data } = await openHands.post<
-      FileUploadSuccessResponse | ErrorResponse
-    >(url, formData);
-
-    if ("error" in data) throw new Error(data.error);
     return data;
   }
 
@@ -274,14 +199,6 @@ class OpenHands {
     return data.status === 200;
   }
 
-  /**
-   * Reset user settings in server
-   */
-  static async resetSettings(): Promise<boolean> {
-    const response = await openHands.post("/api/reset-settings");
-    return response.status === 200;
-  }
-
   static async createCheckoutSession(amount: number): Promise<string> {
     const { data } = await openHands.post(
       "/api/billing/create-checkout-session",
@@ -353,6 +270,26 @@ class OpenHands {
     const endpoint =
       appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
     await openHands.post(endpoint);
+  }
+
+  static async getGitChanges(conversationId: string): Promise<GitChange[]> {
+    const { data } = await openHands.get<GitChange[]>(
+      `/api/conversations/${conversationId}/git/changes`,
+    );
+    return data;
+  }
+
+  static async getGitChangeDiff(
+    conversationId: string,
+    path: string,
+  ): Promise<GitChangeDiff> {
+    const { data } = await openHands.get<GitChangeDiff>(
+      `/api/conversations/${conversationId}/git/diff`,
+      {
+        params: { path },
+      },
+    );
+    return data;
   }
 }
 

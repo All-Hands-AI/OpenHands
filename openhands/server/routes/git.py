@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
-from openhands.server.shared import server_config
+
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -15,8 +15,12 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_access_token, get_provider_tokens
-from openhands.server.types import AppMode
+from openhands.server.shared import server_config
+from openhands.server.user_auth import (
+    get_access_token,
+    get_provider_tokens,
+    get_user_id,
+)
 
 app = APIRouter(prefix='/api/user')
 
@@ -26,14 +30,19 @@ async def get_user_repositories(
     sort: str = 'pushed',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
 ):
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(sort, server_config.app_mode)
+            repos: list[Repository] = await client.get_repositories(
+                sort, server_config.app_mode
+            )
             return repos
 
         except AuthenticationError as e:
@@ -86,39 +95,6 @@ async def get_user(
     )
 
 
-@app.get('/installations', response_model=list[int])
-async def get_github_installation_ids(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-):
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
-        )
-        try:
-            installations_ids: list[int] = await client.get_installation_ids()
-            return installations_ids
-
-        except AuthenticationError as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        except UnknownException as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    return JSONResponse(
-        content='GitHub token required.',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
-
-
 @app.get('/search/repositories', response_model=list[Repository])
 async def search_repositories(
     query: str,
@@ -167,12 +143,9 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
-
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
@@ -181,16 +154,16 @@ async def get_suggested_tasks(
         except AuthenticationError as e:
             return JSONResponse(
                 content=str(e),
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         except UnknownException as e:
             return JSONResponse(
                 content=str(e),
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='No providers set.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )

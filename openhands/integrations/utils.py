@@ -6,7 +6,9 @@ from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
 
 
-async def validate_provider_token(token: SecretStr) -> ProviderType | None:
+async def validate_provider_token(
+    token: SecretStr, base_domain: str | None = None
+) -> ProviderType | None:
     """
     Determine whether a token is for GitHub, GitLab, or Azure DevOps by attempting
     to get user info from all services.
@@ -22,7 +24,7 @@ async def validate_provider_token(token: SecretStr) -> ProviderType | None:
     """
     # Try GitHub first
     try:
-        github_service = GitHubService(token=token)
+        github_service = GitHubService(token=token, base_domain=base_domain)
         await github_service.get_user()
         return ProviderType.GITHUB
     except Exception:
@@ -30,7 +32,7 @@ async def validate_provider_token(token: SecretStr) -> ProviderType | None:
 
     # Try GitLab next
     try:
-        gitlab_service = GitLabService(token=token)
+        gitlab_service = GitLabService(token=token, base_domain=base_domain)
         await gitlab_service.get_user()
         return ProviderType.GITLAB
     except Exception:

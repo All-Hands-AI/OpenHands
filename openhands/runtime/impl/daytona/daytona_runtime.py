@@ -127,7 +127,8 @@ class DaytonaRuntime(ActionExecutionClient):
         ]
         return f'https://{port}-{self.workspace.id}.{node_domain}'
 
-    def _get_action_execution_server_host(self) -> str:
+    @property
+    def action_execution_server_url(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:

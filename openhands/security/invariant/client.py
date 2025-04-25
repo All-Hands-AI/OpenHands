@@ -1,5 +1,5 @@
 import time
-from typing import Any, Union
+from typing import Any
 
 import httpx
 
@@ -7,7 +7,7 @@ import httpx
 class InvariantClient:
     timeout: int = 120
 
-    def __init__(self, server_url: str, session_id: str | None = None):
+    def __init__(self, server_url: str, session_id: str | None = None) -> None:
         self.server = server_url
         self.session_id, err = self._create_session(session_id)
         if err:
@@ -38,7 +38,7 @@ class InvariantClient:
                 return None, err
         return None, ConnectionError('Connection timed out')
 
-    def close_session(self) -> Union[None, Exception]:
+    def close_session(self) -> Exception | None:
         try:
             response = httpx.delete(
                 f'{self.server}/session/?session_id={self.session_id}', timeout=60
@@ -52,6 +52,7 @@ class InvariantClient:
         def __init__(self, invariant: 'InvariantClient') -> None:
             self.server = invariant.server
             self.session_id = invariant.session_id
+            self.policy_id: str | None = None
 
         def _create_policy(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
@@ -83,7 +84,7 @@ class InvariantClient:
             self.policy_id = policy_id
             return self
 
-        def analyze(self, trace: list[dict]) -> Union[Any, Exception]:
+        def analyze(self, trace: list[dict[str, Any]]) -> tuple[Any, Exception | None]:
             try:
                 response = httpx.post(
                     f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
@@ -100,6 +101,7 @@ class InvariantClient:
             self.server = invariant.server
             self.session_id = invariant.session_id
             self.policy = ''
+            self.monitor_id: str | None = None
 
         def _create_monitor(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
@@ -122,8 +124,10 @@ class InvariantClient:
             return self
 
         def check(
-            self, past_events: list[dict], pending_events: list[dict]
-        ) -> Union[Any, Exception]:
+            self,
+            past_events: list[dict[str, Any]],
+            pending_events: list[dict[str, Any]],
+        ) -> tuple[Any, Exception | None]:
             try:
                 response = httpx.post(
                     f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',

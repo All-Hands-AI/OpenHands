@@ -30,7 +30,7 @@ class Settings(BaseModel):
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
     secrets_store: SecretStore = Field(default_factory=SecretStore, frozen=True)
-    enable_default_condenser: bool = False
+    enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
@@ -65,11 +65,29 @@ class Settings(BaseModel):
         if not isinstance(secrets_store, dict):
             return data
 
+        custom_secrets = secrets_store.get('custom_secrets')
         tokens = secrets_store.get('provider_tokens')
-        if not isinstance(tokens, dict):
-            return data
 
-        data['secrets_store'] = SecretStore(provider_tokens=tokens)
+        secret_store = SecretStore(provider_tokens={}, custom_secrets={})
+
+        if isinstance(tokens, dict):
+            converted_store = SecretStore(provider_tokens=tokens)
+            secret_store = secret_store.model_copy(
+                update={'provider_tokens': converted_store.provider_tokens}
+            )
+        else:
+            secret_store.model_copy(update={'provider_tokens': tokens})
+
+        if isinstance(custom_secrets, dict):
+            converted_store = SecretStore(custom_secrets=custom_secrets)
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': converted_store.custom_secrets}
+            )
+        else:
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': custom_secrets}
+            )
+        data['secret_store'] = secret_store
         return data
 
     @field_serializer('secrets_store')
@@ -78,7 +96,10 @@ class Settings(BaseModel):
         return {
             'provider_tokens': secrets.provider_tokens_serializer(
                 secrets.provider_tokens, info
-            )
+            ),
+            'custom_secrets': secrets.custom_secrets_serializer(
+                secrets.custom_secrets, info
+            ),
         }
 
     @staticmethod
@@ -99,7 +120,6 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
-            provider_tokens={},
         )
         return settings
 
@@ -109,12 +129,15 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
 
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
-        return provider_tokens
+
+class POSTSettingsCustomSecrets(BaseModel):
+    """
+    Adding new custom secret
+    """
+
+    custom_secrets: dict[str, str | SecretStr] = {}
 
 
 class GETSettingsModel(Settings):
@@ -124,3 +147,11 @@ class GETSettingsModel(Settings):
 
     provider_tokens_set: dict[str, bool] | None = None
     llm_api_key_set: bool
+
+
+class GETSettingsCustomSecrets(BaseModel):
+    """
+    Custom secrets names
+    """
+
+    custom_secrets: list[str] | None = None

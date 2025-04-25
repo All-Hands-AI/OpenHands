@@ -1,4 +1,214 @@
 {
+    "HOME$CONNECT_PROVIDER_MESSAGE": {
+        "en": "To get started with suggested tasks, please connect your GitHub or GitLab account.",
+        "ja": "提案されたタスクを始めるには、GitHubまたはGitLabアカウントを接続してください。",
+        "zh-CN": "要开始使用建议的任务，请连接您的GitHub或GitLab账户。",
+        "zh-TW": "要開始使用建議的任務，請連接您的GitHub或GitLab帳戶。",
+        "ko-KR": "제안된 작업을 시작하려면 GitHub 또는 GitLab 계정을 연결하세요.",
+        "no": "For å komme i gang med foreslåtte oppgaver, vennligst koble til GitHub eller GitLab-kontoen din.",
+        "it": "Per iniziare con le attività suggerite, collega il tuo account GitHub o GitLab.",
+        "pt": "Para começar com tarefas sugeridas, conecte sua conta GitHub ou GitLab.",
+        "es": "Para comenzar con las tareas sugeridas, conecte su cuenta de GitHub o GitLab.",
+        "ar": "للبدء بالمهام المقترحة، يرجى ربط حساب GitHub أو GitLab الخاص بك.",
+        "fr": "Pour commencer avec les tâches suggérées, veuillez connecter votre compte GitHub ou GitLab.",
+        "tr": "Önerilen görevlerle başlamak için lütfen GitHub veya GitLab hesabınızı bağlayın.",
+        "de": "Um mit vorgeschlagenen Aufgaben zu beginnen, verbinden Sie bitte Ihr GitHub- oder GitLab-Konto."
+    },
+    "HOME$LETS_START_BUILDING": {
+        "en": "Let's Start Building!",
+        "ja": "構築を始めましょう！",
+        "zh-CN": "让我们开始构建！",
+        "zh-TW": "讓我們開始構建！",
+        "ko-KR": "구축을 시작합시다!",
+        "no": "La oss begynne å bygge!",
+        "it": "Iniziamo a costruire!",
+        "pt": "Vamos começar a construir!",
+        "es": "¡Comencemos a construir!",
+        "ar": "لنبدأ البناء!",
+        "fr": "Commençons à construire !",
+        "tr": "Hadi İnşa Etmeye Başlayalım!",
+        "de": "Lass uns anfangen zu bauen!"
+    },
+    "HOME$OPENHANDS_DESCRIPTION": {
+        "en": "OpenHands makes it easy to build and maintain software using AI-driven development.",
+        "ja": "OpenHandsはAI駆動の開発を使用してソフトウェアの構築と維持を容易にします。",
+        "zh-CN": "OpenHands使用AI驱动的开发方式，轻松构建和维护软件。",
+        "zh-TW": "OpenHands使用AI驅動的開發方式，輕鬆構建和維護軟件。",
+        "ko-KR": "OpenHands는 AI 기반 개발을 사용하여 소프트웨어를 쉽게 구축하고 유지할 수 있게 합니다.",
+        "no": "OpenHands gjør det enkelt å bygge og vedlikeholde programvare ved hjelp av AI-drevet utvikling.",
+        "it": "OpenHands rende facile costruire e mantenere software utilizzando lo sviluppo guidato dall'IA.",
+        "pt": "OpenHands facilita a construção e manutenção de software usando desenvolvimento orientado por IA.",
+        "es": "OpenHands facilita la construcción y el mantenimiento de software utilizando desarrollo impulsado por IA.",
+        "ar": "يجعل OpenHands من السهل بناء وصيانة البرمجيات باستخدام التطوير المدعوم بالذكاء الاصطناعي.",
+        "fr": "OpenHands facilite la création et la maintenance de logiciels grâce au développement piloté par l'IA.",
+        "tr": "OpenHands, yapay zeka destekli geliştirme kullanarak yazılım oluşturmayı ve sürdürmeyi kolaylaştırır.",
+        "de": "OpenHands macht es einfach, Software mit KI-gesteuerter Entwicklung zu erstellen und zu warten."
+    },
+    "HOME$NOT_SURE_HOW_TO_START": {
+        "en": "Not sure how to start?",
+        "ja": "始め方がわからない？",
+        "zh-CN": "不确定如何开始？",
+        "zh-TW": "不確定如何開始？",
+        "ko-KR": "시작 방법을 모르시나요?",
+        "no": "Usikker på hvordan du skal starte?",
+        "it": "Non sei sicuro di come iniziare?",
+        "pt": "Não tem certeza de como começar?",
+        "es": "¿No está seguro de cómo empezar?",
+        "ar": "غير متأكد من كيفية البدء؟",
+        "fr": "Vous ne savez pas par où commencer ?",
+        "tr": "Nasıl başlayacağınızdan emin değil misiniz?",
+        "de": "Nicht sicher, wie man anfängt?"
+    },
+    "HOME$CONNECT_TO_REPOSITORY": {
+        "en": "Connect to a Repository",
+        "ja": "リポジトリに接続",
+        "zh-CN": "连接到仓库",
+        "zh-TW": "連接到存儲庫",
+        "ko-KR": "저장소에 연결",
+        "no": "Koble til et repository",
+        "it": "Connetti a un repository",
+        "pt": "Conectar a um repositório",
+        "es": "Conectar a un repositorio",
+        "ar": "الاتصال بمستودع",
+        "fr": "Se connecter à un dépôt",
+        "tr": "Bir Depoya Bağlan",
+        "de": "Mit einem Repository verbinden"
+    },
+    "HOME$LOADING": {
+        "en": "Loading...",
+        "ja": "読み込み中...",
+        "zh-CN": "加载中...",
+        "zh-TW": "載入中...",
+        "ko-KR": "로딩 중...",
+        "no": "Laster...",
+        "it": "Caricamento in corso...",
+        "pt": "Carregando...",
+        "es": "Cargando...",
+        "ar": "جار التحميل...",
+        "fr": "Chargement...",
+        "tr": "Yükleniyor...",
+        "de": "Wird geladen..."
+    },
+    "HOME$LOADING_REPOSITORIES": {
+        "en": "Loading repositories...",
+        "ja": "リポジトリを読み込み中...",
+        "zh-CN": "加载仓库中...",
+        "zh-TW": "載入儲存庫中...",
+        "ko-KR": "저장소 로딩 중...",
+        "no": "Laster repositories...",
+        "it": "Caricamento repository in corso...",
+        "pt": "Carregando repositórios...",
+        "es": "Cargando repositorios...",
+        "ar": "جار تحميل المستودعات...",
+        "fr": "Chargement des dépôts...",
+        "tr": "Depolar yükleniyor...",
+        "de": "Repositories werden geladen..."
+    },
+    "HOME$FAILED_TO_LOAD_REPOSITORIES": {
+        "en": "Failed to load repositories",
+        "ja": "リポジトリの読み込みに失敗しました",
+        "zh-CN": "加载仓库失败",
+        "zh-TW": "載入儲存庫失敗",
+        "ko-KR": "저장소 로딩 실패",
+        "no": "Kunne ikke laste repositories",
+        "it": "Impossibile caricare i repository",
+        "pt": "Falha ao carregar repositórios",
+        "es": "Error al cargar repositorios",
+        "ar": "فشل في تحميل المستودعات",
+        "fr": "Échec du chargement des dépôts",
+        "tr": "Depolar yüklenemedi",
+        "de": "Fehler beim Laden der Repositories"
+    },
+    "HOME$OPEN_ISSUE": {
+        "en": "Open issue",
+        "ja": "オープンな課題",
+        "zh-CN": "打开问题",
+        "zh-TW": "開放議題",
+        "ko-KR": "열린 이슈",
+        "no": "Åpent problem",
+        "it": "Problema aperto",
+        "pt": "Problema aberto",
+        "es": "Problema abierto",
+        "ar": "مشكلة مفتوحة",
+        "fr": "Problème ouvert",
+        "tr": "Açık sorun",
+        "de": "Offenes Problem"
+    },
+    "HOME$FIX_FAILING_CHECKS": {
+        "en": "Fix failing checks",
+        "ja": "失敗したチェックを修正",
+        "zh-CN": "修复失败的检查",
+        "zh-TW": "修復失敗的檢查",
+        "ko-KR": "실패한 검사 수정",
+        "no": "Fikse mislykkede kontroller",
+        "it": "Correggere i controlli falliti",
+        "pt": "Corrigir verificações com falha",
+        "es": "Corregir comprobaciones fallidas",
+        "ar": "إصلاح الفحوصات الفاشلة",
+        "fr": "Corriger les vérifications échouées",
+        "tr": "Başarısız kontrolleri düzelt",
+        "de": "Fehlgeschlagene Prüfungen beheben"
+    },
+    "HOME$RESOLVE_MERGE_CONFLICTS": {
+        "en": "Resolve merge conflicts",
+        "ja": "マージ競合を解決",
+        "zh-CN": "解决合并冲突",
+        "zh-TW": "解決合併衝突",
+        "ko-KR": "병합 충돌 해결",
+        "no": "Løse fletteproblemer",
+        "it": "Risolvere i conflitti di unione",
+        "pt": "Resolver conflitos de mesclagem",
+        "es": "Resolver conflictos de fusión",
+        "ar": "حل تعارضات الدمج",
+        "fr": "Résoudre les conflits de fusion",
+        "tr": "Birleştirme çakışmalarını çöz",
+        "de": "Merge-Konflikte lösen"
+    },
+    "HOME$RESOLVE_UNRESOLVED_COMMENTS": {
+        "en": "Resolve unresolved comments",
+        "ja": "未解決のコメントを解決",
+        "zh-CN": "解决未解决的评论",
+        "zh-TW": "解決未解決的評論",
+        "ko-KR": "미해결 댓글 해결",
+        "no": "Løse uløste kommentarer",
+        "it": "Risolvere i commenti non risolti",
+        "pt": "Resolver comentários não resolvidos",
+        "es": "Resolver comentarios no resueltos",
+        "ar": "حل التعليقات غير المحلولة",
+        "fr": "Résoudre les commentaires non résolus",
+        "tr": "Çözülmemiş yorumları çöz",
+        "de": "Ungelöste Kommentare beheben"
+    },
+    "HOME$LAUNCH": {
+        "en": "Launch",
+        "ja": "起動",
+        "zh-CN": "启动",
+        "zh-TW": "啟動",
+        "ko-KR": "실행",
+        "no": "Start",
+        "it": "Avvia",
+        "pt": "Iniciar",
+        "es": "Iniciar",
+        "ar": "تشغيل",
+        "fr": "Lancer",
+        "tr": "Başlat",
+        "de": "Starten"
+    },
+    "CHAT$RESOLVER_INSTRUCTIONS": {
+        "en": "Resolver Instructions",
+        "ja": "リゾルバの指示",
+        "zh-CN": "解析器指令",
+        "zh-TW": "解析器指令",
+        "ko-KR": "리졸버 지침",
+        "no": "Resolver-instruksjoner",
+        "it": "Istruzioni del resolver",
+        "pt": "Instruções do resolvedor",
+        "es": "Instrucciones del resolvedor",
+        "ar": "تعليمات المحلل",
+        "fr": "Instructions du résolveur",
+        "tr": "Çözümleyici Talimatları",
+        "de": "Resolver-Anweisungen"
+    },
     "SETTINGS$ADVANCED": {
         "en": "Advanced",
         "ja": "詳細設定",
@@ -271,35 +481,20 @@
         "tr": "Ayarlar",
         "de": "Einstellungen"
     },
-    "PROJECT$START_NEW": {
-        "en": "Start new project",
-        "ja": "新規プロジェクトを開始",
-        "zh-CN": "开始新项目",
-        "zh-TW": "開始新專案",
-        "ko-KR": "새 프로젝트 시작",
-        "no": "Start nytt prosjekt",
-        "it": "Avvia nuovo progetto",
-        "pt": "Iniciar novo projeto",
-        "es": "Iniciar nuevo proyecto",
-        "ar": "بدء مشروع جديد",
-        "fr": "Démarrer un nouveau projet",
-        "tr": "Yeni proje başlat",
-        "de": "Neues Projekt starten"
-    },
-    "PROJECT$NEW": {
-        "en": "New Project",
-        "ja": "新規プロジェクト",
-        "zh-CN": "新项目",
-        "zh-TW": "新專案",
-        "ko-KR": "새 프로젝트",
-        "no": "Nytt prosjekt",
-        "it": "Nuovo progetto",
-        "pt": "Novo projeto",
-        "es": "Nuevo proyecto",
-        "ar": "مشروع جديد",
-        "fr": "Nouveau projet",
-        "tr": "Yeni proje",
-        "de": "Neues Projekt"
+    "CONVERSATION$START_NEW": {
+        "en": "Start new conversation",
+        "ja": "新規会話を開始",
+        "zh-CN": "开始新对话",
+        "zh-TW": "開始新對話",
+        "ko-KR": "새 대화 시작",
+        "no": "Start ny samtale",
+        "it": "Avvia nuova conversazione",
+        "pt": "Iniciar nova conversa",
+        "es": "Iniciar nueva conversación",
+        "ar": "بدء محادثة جديدة",
+        "fr": "Démarrer une nouvelle conversation",
+        "tr": "Yeni sohbet başlat",
+        "de": "Neue Unterhaltung starten"
     },
     "ACCOUNT_SETTINGS$TITLE": {
         "en": "Account Settings",
@@ -586,20 +781,20 @@
         "fr": "Paramètres LLM",
         "tr": "LLM Ayarları"
     },
-    "SETTINGS$GITHUB_SETTINGS": {
-        "en": "GitHub Settings",
-        "ja": "GitHub設定",
-        "zh-CN": "GitHub设置",
-        "zh-TW": "GitHub設定",
-        "ko-KR": "GitHub 설정",
-        "de": "GitHub-Einstellungen",
-        "no": "GitHub-innstillinger",
-        "it": "Impostazioni GitHub",
-        "pt": "Configurações GitHub",
-        "es": "Configuración GitHub",
-        "ar": "إعدادات GitHub",
-        "fr": "Paramètres GitHub",
-        "tr": "GitHub Ayarları"
+    "SETTINGS$GIT_SETTINGS": {
+        "en": "Git Settings",
+        "ja": "Git設定",
+        "zh-CN": "Git设置",
+        "zh-TW": "Git設定",
+        "ko-KR": "Git 설정",
+        "de": "Git-Einstellungen",
+        "no": "Git-innstillinger",
+        "it": "Impostazioni Git",
+        "pt": "Configurações Git",
+        "es": "Configuración Git",
+        "ar": "إعدادات Git",
+        "fr": "Paramètres Git",
+        "tr": "Git Ayarları"
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
@@ -1035,21 +1230,6 @@
         "fr": "Fermer",
         "tr": "Kapat",
         "de": "Schließen"
-    },
-    "BUTTON$RESET_TO_DEFAULTS": {
-        "en": "Reset to defaults",
-        "ja": "デフォルトにリセット",
-        "zh-CN": "重置为默认值",
-        "zh-TW": "還原為預設值",
-        "ko-KR": "기본값으로 재설정",
-        "no": "Tilbakestill til standard",
-        "it": "Ripristina valori predefiniti",
-        "pt": "Restaurar padrões",
-        "es": "Restablecer valores predeterminados",
-        "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
-        "fr": "Réinitialiser aux valeurs par défaut",
-        "tr": "Varsayılanlara sıfırla",
-        "de": "Auf Standardwerte zurücksetzen"
     },
     "MODAL$CONFIRM_RESET_TITLE": {
         "en": "Are you sure?",
@@ -2530,7 +2710,6 @@
         "tr": "Ajan hız sınırına ulaştı",
         "ja": "エージェントがレート制限中"
     },
-
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
@@ -3819,6 +3998,69 @@
         "tr": "Ayarlar sıfırlandı",
         "de": "Einstellungen zurückgesetzt"
     },
+    "SETTINGS$API_KEYS": {
+        "en": "API Keys"
+    },
+    "SETTINGS$API_KEYS_DESCRIPTION": {
+        "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account."
+    },
+    "SETTINGS$CREATE_API_KEY": {
+        "en": "Create API Key"
+    },
+    "SETTINGS$CREATE_API_KEY_DESCRIPTION": {
+        "en": "Give your API key a descriptive name to help you identify it later."
+    },
+    "SETTINGS$DELETE_API_KEY": {
+        "en": "Delete API Key"
+    },
+    "SETTINGS$DELETE_API_KEY_CONFIRMATION": {
+        "en": "Are you sure you want to delete the API key \"{{name}}\"? This action cannot be undone."
+    },
+    "SETTINGS$NO_API_KEYS": {
+        "en": "You don't have any API keys yet. Create one to get started."
+    },
+    "SETTINGS$NAME": {
+        "en": "Name"
+    },
+    "SETTINGS$KEY_PREFIX": {
+        "en": "Key Prefix"
+    },
+    "SETTINGS$CREATED_AT": {
+        "en": "Created"
+    },
+    "SETTINGS$LAST_USED": {
+        "en": "Last Used"
+    },
+    "SETTINGS$ACTIONS": {
+        "en": "Actions"
+    },
+    "SETTINGS$API_KEY_CREATED": {
+        "en": "API Key Created"
+    },
+    "SETTINGS$API_KEY_DELETED": {
+        "en": "API key deleted successfully"
+    },
+    "SETTINGS$API_KEY_WARNING": {
+        "en": "This is the only time your API key will be displayed. Please copy it now and store it securely."
+    },
+    "SETTINGS$API_KEY_COPIED": {
+        "en": "API key copied to clipboard"
+    },
+    "SETTINGS$API_KEY_NAME_PLACEHOLDER": {
+        "en": "My API Key"
+    },
+    "BUTTON$CREATE": {
+        "en": "Create"
+    },
+    "BUTTON$DELETE": {
+        "en": "Delete"
+    },
+    "BUTTON$COPY_TO_CLIPBOARD": {
+        "en": "Copy to Clipboard"
+    },
+    "ERROR$REQUIRED_FIELD": {
+        "en": "This field is required"
+    },
     "PLANNER$EMPTY_MESSAGE": {
         "en": "No plan created.",
         "zh-CN": "计划未创建",
@@ -4284,21 +4526,6 @@
         "pt": "Fechar",
         "tr": "Kapat"
     },
-    "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
-        "en": "Reset to defaults",
-        "es": "Reiniciar valores por defect",
-        "zh-CN": "重置为默认值",
-        "zh-TW": "還原為預設值",
-        "ko-KR": "기본값으로 재설정",
-        "ja": "デフォルトに戻す",
-        "no": "Tilbakestill til standardverdier",
-        "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
-        "de": "Auf Standardwerte zurücksetzen",
-        "fr": "Réinitialiser aux valeurs par défaut",
-        "it": "Ripristina valori predefiniti",
-        "pt": "Restaurar padrões",
-        "tr": "Varsayılanlara sıfırla"
-    },
     "SETTINGS_FORM$CANCEL_LABEL": {
         "en": "Cancel",
         "es": "Cancelar",
@@ -4569,6 +4796,9 @@
         "es": "La acción expiró",
         "tr": "İşlem zaman aşımına uğradı"
     },
+    "AGENT_ERROR$TOO_MANY_CONVERSATIONS": {
+        "en": "Too many conversations at once."
+    },
     "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
         "en": "Connect to GitHub",
         "es": "Conectar a GitHub",
@@ -4751,19 +4981,19 @@
         "tr": "Çalışma alanını kapat"
     },
     "ACTION_MESSAGE$RUN": {
-        "en": "Running a bash command",
-        "zh-CN": "运行",
-        "zh-TW": "執行",
-        "ko-KR": "실행",
-        "ja": "実行",
-        "no": "Kjører en bash-kommando",
-        "ar": "تشغيل أمر باش",
-        "de": "Führt einen Bash-Befehl aus",
-        "fr": "Exécution d'une commande bash",
-        "it": "Esecuzione di un comando bash",
-        "pt": "Executando um comando bash",
-        "es": "Ejecutando un comando bash",
-        "tr": "Bash komutu çalıştırılıyor"
+        "en": "Running <cmd>{{action.payload.args.command}}</cmd>",
+        "zh-CN": "运行 <cmd>{{action.payload.args.command}}</cmd>",
+        "zh-TW": "執行 <cmd>{{action.payload.args.command}}</cmd>",
+        "ko-KR": "실행 <cmd>{{action.payload.args.command}}</cmd>",
+        "ja": "実行 <cmd>{{action.payload.args.command}}</cmd>",
+        "no": "Kjører <cmd>{{action.payload.args.command}}</cmd>",
+        "ar": "تشغيل <cmd>{{action.payload.args.command}}</cmd>",
+        "de": "Führt <cmd>{{action.payload.args.command}}</cmd> aus",
+        "fr": "Exécution de <cmd>{{action.payload.args.command}}</cmd>",
+        "it": "Esecuzione di <cmd>{{action.payload.args.command}}</cmd>",
+        "pt": "Executando <cmd>{{action.payload.args.command}}</cmd>",
+        "es": "Ejecutando <cmd>{{action.payload.args.command}}</cmd>",
+        "tr": "<cmd>{{action.payload.args.command}}</cmd> çalıştırılıyor"
     },
     "ACTION_MESSAGE$RUN_IPYTHON": {
         "en": "Running a Python command",
@@ -4781,49 +5011,49 @@
         "tr": "Python komutu çalıştırılıyor"
     },
     "ACTION_MESSAGE$READ": {
-        "en": "Reading the contents of a file",
-        "zh-CN": "读取",
-        "zh-TW": "讀取",
-        "ko-KR": "읽기",
-        "ja": "読み取り",
-        "no": "Leser innholdet i en fil",
-        "ar": "قراءة محتويات ملف",
-        "de": "Liest den Inhalt einer Datei",
-        "fr": "Lecture du contenu d'un fichier",
-        "it": "Lettura del contenuto di un file",
-        "pt": "Lendo o conteúdo de um arquivo",
-        "es": "Leyendo el contenido de un archivo",
-        "tr": "Dosya içeriği okunuyor"
+        "en": "Reading <path>{{action.payload.args.path}}</path>",
+        "zh-CN": "读取 <path>{{action.payload.args.path}}</path>",
+        "zh-TW": "讀取 <path>{{action.payload.args.path}}</path>",
+        "ko-KR": "읽기 <path>{{action.payload.args.path}}</path>",
+        "ja": "読み取り <path>{{action.payload.args.path}}</path>",
+        "no": "Leser <path>{{action.payload.args.path}}</path>",
+        "ar": "قراءة <path>{{action.payload.args.path}}</path>",
+        "de": "Liest <path>{{action.payload.args.path}}</path>",
+        "fr": "Lecture de <path>{{action.payload.args.path}}</path>",
+        "it": "Lettura di <path>{{action.payload.args.path}}</path>",
+        "pt": "Lendo <path>{{action.payload.args.path}}</path>",
+        "es": "Leyendo <path>{{action.payload.args.path}}</path>",
+        "tr": "<path>{{action.payload.args.path}}</path> okunuyor"
     },
     "ACTION_MESSAGE$EDIT": {
-        "en": "Editing the contents of a file",
-        "zh-CN": "编辑",
-        "zh-TW": "編輯",
-        "ko-KR": "편집",
-        "ja": "編集",
-        "no": "Redigerer innholdet i en fil",
-        "ar": "تحرير محتويات ملف",
-        "de": "Bearbeitet den Inhalt einer Datei",
-        "fr": "Modification du contenu d'un fichier",
-        "it": "Modifica del contenuto di un file",
-        "pt": "Editando o conteúdo de um arquivo",
-        "es": "Editando el contenido de un archivo",
-        "tr": "Dosya içeriği düzenleniyor"
+        "en": "Editing <path>{{action.payload.args.path}}</path>",
+        "zh-CN": "编辑 <path>{{action.payload.args.path}}</path>",
+        "zh-TW": "編輯 <path>{{action.payload.args.path}}</path>",
+        "ko-KR": "편집 <path>{{action.payload.args.path}}</path>",
+        "ja": "編集 <path>{{action.payload.args.path}}</path>",
+        "no": "Redigerer <path>{{action.payload.args.path}}</path>",
+        "ar": "تحرير <path>{{action.payload.args.path}}</path>",
+        "de": "Bearbeitet <path>{{action.payload.args.path}}</path>",
+        "fr": "Modification de <path>{{action.payload.args.path}}</path>",
+        "it": "Modifica di <path>{{action.payload.args.path}}</path>",
+        "pt": "Editando <path>{{action.payload.args.path}}</path>",
+        "es": "Editando <path>{{action.payload.args.path}}</path>",
+        "tr": "<path>{{action.payload.args.path}}</path> düzenleniyor"
     },
     "ACTION_MESSAGE$WRITE": {
-        "en": "Writing to a file",
-        "zh-CN": "写入",
-        "zh-TW": "寫入",
-        "ko-KR": "쓰기",
-        "ja": "書き込み",
-        "no": "Skriver til en fil",
-        "ar": "الكتابة إلى ملف",
-        "de": "Schreibt in eine Datei",
-        "fr": "Écriture dans un fichier",
-        "it": "Scrittura su file",
-        "pt": "Escrevendo em um arquivo",
-        "es": "Escribiendo en un archivo",
-        "tr": "Dosyaya yazılıyor"
+        "en": "Writing to <path>{{action.payload.args.path}}</path>",
+        "zh-CN": "写入 <path>{{action.payload.args.path}}</path>",
+        "zh-TW": "寫入 <path>{{action.payload.args.path}}</path>",
+        "ko-KR": "쓰기 <path>{{action.payload.args.path}}</path>",
+        "ja": "書き込み <path>{{action.payload.args.path}}</path>",
+        "no": "Skriver til <path>{{action.payload.args.path}}</path>",
+        "ar": "الكتابة إلى <path>{{action.payload.args.path}}</path>",
+        "de": "Schreibt in <path>{{action.payload.args.path}}</path>",
+        "fr": "Écriture dans <path>{{action.payload.args.path}}</path>",
+        "it": "Scrittura su <path>{{action.payload.args.path}}</path>",
+        "pt": "Escrevendo em <path>{{action.payload.args.path}}</path>",
+        "es": "Escribiendo en <path>{{action.payload.args.path}}</path>",
+        "tr": "<path>{{action.payload.args.path}}</path> dosyasına yazılıyor"
     },
     "ACTION_MESSAGE$BROWSE": {
         "en": "Browsing the web",
@@ -4870,20 +5100,35 @@
         "es": "Pensando",
         "tr": "Düşünüyor"
     },
+    "ACTION_MESSAGE$SYSTEM": {
+        "en": "System Message",
+        "zh-CN": "系统消息",
+        "zh-TW": "系統訊息",
+        "ko-KR": "시스템 메시지",
+        "ja": "システムメッセージ",
+        "no": "Systemmelding",
+        "ar": "رسالة النظام",
+        "de": "Systemnachricht",
+        "fr": "Message Système",
+        "it": "Messaggio di Sistema",
+        "pt": "Mensagem do Sistema",
+        "es": "Mensaje del Sistema",
+        "tr": "Sistem Mesajı"
+    },
     "OBSERVATION_MESSAGE$RUN": {
-        "en": "Ran a bash command",
-        "zh-CN": "运行",
-        "zh-TW": "執行",
-        "ko-KR": "실행",
-        "ja": "実行",
-        "no": "Kjørte en bash-kommando",
-        "ar": "تم تشغيل أمر باش",
-        "de": "Führte einen Bash-Befehl aus",
-        "fr": "A exécuté une commande bash",
-        "it": "Ha eseguito un comando bash",
-        "pt": "Executou um comando bash",
-        "es": "Ejecutó un comando bash",
-        "tr": "Bash komutu çalıştırıldı"
+        "en": "Ran <cmd>{{observation.payload.extras.command}}</cmd>",
+        "zh-CN": "运行 <cmd>{{observation.payload.extras.command}}</cmd>",
+        "zh-TW": "執行 <cmd>{{observation.payload.extras.command}}</cmd>",
+        "ko-KR": "실행 <cmd>{{observation.payload.extras.command}}</cmd>",
+        "ja": "実行 <cmd>{{observation.payload.extras.command}}</cmd>",
+        "no": "Kjørte <cmd>{{observation.payload.extras.command}}</cmd>",
+        "ar": "تم تشغيل <cmd>{{observation.payload.extras.command}}</cmd>",
+        "de": "Führte <cmd>{{observation.payload.extras.command}}</cmd> aus",
+        "fr": "A exécuté <cmd>{{observation.payload.extras.command}}</cmd>",
+        "it": "Ha eseguito <cmd>{{observation.payload.extras.command}}</cmd>",
+        "pt": "Executou <cmd>{{observation.payload.extras.command}}</cmd>",
+        "es": "Ejecutó <cmd>{{observation.payload.extras.command}}</cmd>",
+        "tr": "<cmd>{{observation.payload.extras.command}}</cmd> çalıştırıldı"
     },
     "OBSERVATION_MESSAGE$RUN_IPYTHON": {
         "en": "Ran a Python command",
@@ -4901,49 +5146,49 @@
         "tr": "Python komutu çalıştırıldı"
     },
     "OBSERVATION_MESSAGE$READ": {
-        "en": "Read the contents of a file",
-        "zh-CN": "读取",
-        "zh-TW": "讀取",
-        "ko-KR": "읽기",
-        "ja": "読み取り",
-        "no": "Leste innholdet i en fil",
-        "ar": "تمت قراءة محتويات ملف",
-        "de": "Las den Inhalt einer Datei",
-        "fr": "A lu le contenu d'un fichier",
-        "it": "Ha letto il contenuto di un file",
-        "pt": "Leu o conteúdo de um arquivo",
-        "es": "Leyó el contenido de un archivo",
-        "tr": "Dosya içeriği okundu"
+        "en": "Read <path>{{observation.payload.extras.path}}</path>",
+        "zh-CN": "读取 <path>{{observation.payload.extras.path}}</path>",
+        "zh-TW": "讀取 <path>{{observation.payload.extras.path}}</path>",
+        "ko-KR": "읽기 <path>{{observation.payload.extras.path}}</path>",
+        "ja": "読み取り <path>{{observation.payload.extras.path}}</path>",
+        "no": "Leste <path>{{observation.payload.extras.path}}</path>",
+        "ar": "تمت قراءة <path>{{observation.payload.extras.path}}</path>",
+        "de": "Las <path>{{observation.payload.extras.path}}</path>",
+        "fr": "A lu <path>{{observation.payload.extras.path}}</path>",
+        "it": "Ha letto <path>{{observation.payload.extras.path}}</path>",
+        "pt": "Leu <path>{{observation.payload.extras.path}}</path>",
+        "es": "Leyó <path>{{observation.payload.extras.path}}</path>",
+        "tr": "<path>{{observation.payload.extras.path}}</path> okundu"
     },
     "OBSERVATION_MESSAGE$EDIT": {
-        "en": "Edited the contents of a file",
-        "zh-CN": "编辑",
-        "zh-TW": "編輯",
-        "ko-KR": "편집",
-        "ja": "編集",
-        "no": "Redigerte innholdet i en fil",
-        "ar": "تم تحرير محتويات ملف",
-        "de": "Hat den Inhalt einer Datei bearbeitet",
-        "fr": "A modifié le contenu d'un fichier",
-        "it": "Ha modificato il contenuto di un file",
-        "pt": "Editou o conteúdo de um arquivo",
-        "es": "Editó el contenido de un archivo",
-        "tr": "Dosya içeriği düzenlendi"
+        "en": "Edited <path>{{observation.payload.extras.path}}</path>",
+        "zh-CN": "编辑 <path>{{observation.payload.extras.path}}</path>",
+        "zh-TW": "編輯 <path>{{observation.payload.extras.path}}</path>",
+        "ko-KR": "편집 <path>{{observation.payload.extras.path}}</path>",
+        "ja": "編集 <path>{{observation.payload.extras.path}}</path>",
+        "no": "Redigerte <path>{{observation.payload.extras.path}}</path>",
+        "ar": "تم تحرير <path>{{observation.payload.extras.path}}</path>",
+        "de": "Hat <path>{{observation.payload.extras.path}}</path> bearbeitet",
+        "fr": "A modifié <path>{{observation.payload.extras.path}}</path>",
+        "it": "Ha modificato <path>{{observation.payload.extras.path}}</path>",
+        "pt": "Editou <path>{{observation.payload.extras.path}}</path>",
+        "es": "Editó <path>{{observation.payload.extras.path}}</path>",
+        "tr": "<path>{{observation.payload.extras.path}}</path> düzenlendi"
     },
     "OBSERVATION_MESSAGE$WRITE": {
-        "en": "Wrote to a file",
-        "zh-CN": "写入",
-        "zh-TW": "寫入",
-        "ko-KR": "쓰기",
-        "ja": "書き込み",
-        "no": "Skrev til en fil",
-        "ar": "تمت الكتابة إلى ملف",
-        "de": "Hat in eine Datei geschrieben",
-        "fr": "A écrit dans un fichier",
-        "it": "Ha scritto su un file",
-        "pt": "Escreveu em um arquivo",
-        "es": "Escribió en un archivo",
-        "tr": "Dosyaya yazıldı"
+        "en": "Wrote to <path>{{observation.payload.extras.path}}</path>",
+        "zh-CN": "写入 <path>{{observation.payload.extras.path}}</path>",
+        "zh-TW": "寫入 <path>{{observation.payload.extras.path}}</path>",
+        "ko-KR": "쓰기 <path>{{observation.payload.extras.path}}</path>",
+        "ja": "書き込み <path>{{observation.payload.extras.path}}</path>",
+        "no": "Skrev til <path>{{observation.payload.extras.path}}</path>",
+        "ar": "تمت الكتابة إلى <path>{{observation.payload.extras.path}}</path>",
+        "de": "Hat in <path>{{observation.payload.extras.path}}</path> geschrieben",
+        "fr": "A écrit dans <path>{{observation.payload.extras.path}}</path>",
+        "it": "Ha scritto su <path>{{observation.payload.extras.path}}</path>",
+        "pt": "Escreveu em <path>{{observation.payload.extras.path}}</path>",
+        "es": "Escribió en <path>{{observation.payload.extras.path}}</path>",
+        "tr": "<path>{{observation.payload.extras.path}}</path> dosyasına yazıldı"
     },
     "OBSERVATION_MESSAGE$BROWSE": {
         "en": "Browsing completed",
@@ -4961,19 +5206,19 @@
         "tr": "Gezinme tamamlandı"
     },
     "OBSERVATION_MESSAGE$RECALL": {
-        "en": "MicroAgent Activated",
+        "en": "Microagent Activated",
         "ja": "マイクロエージェントが有効化されました",
         "zh-CN": "微代理已激活",
         "zh-TW": "微代理已啟動",
         "ko-KR": "마이크로에이전트 활성화됨",
         "no": "MikroAgent aktivert",
-        "it": "MicroAgent attivato",
-        "pt": "MicroAgent ativado",
-        "es": "MicroAgent activado",
+        "it": "Microagent attivato",
+        "pt": "Microagent ativado",
+        "es": "Microagent activado",
         "ar": "تم تنشيط الوكيل المصغر",
-        "fr": "MicroAgent activé",
+        "fr": "Microagent activé",
         "tr": "MikroAjan Etkinleştirildi",
-        "de": "MicroAgent aktiviert"
+        "de": "Microagent aktiviert"
     },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
@@ -5880,7 +6125,7 @@
         "tr": "Temel URL"
     },
     "GITHUB$CONNECT_TO_GITHUB": {
-        "en": "Connect to GitHub",
+        "en": "Log in with GitHub",
         "ja": "GitHubに接続",
         "zh-CN": "连接到GitHub",
         "zh-TW": "連接到GitHub",
@@ -5893,6 +6138,36 @@
         "ar": "الاتصال بـ GitHub",
         "fr": "Se connecter à GitHub",
         "tr": "GitHub'a bağlan"
+    },
+    "GITLAB$CONNECT_TO_GITLAB": {
+        "en": "Log in with GitLab",
+        "ja": "GitLabに接続",
+        "zh-CN": "连接到GitLab",
+        "zh-TW": "連接到GitLab",
+        "ko-KR": "GitLab에 연결",
+        "de": "Mit GitLab verbinden",
+        "no": "Koble til GitLab",
+        "it": "Connetti a GitLab",
+        "pt": "Conectar ao GitLab",
+        "es": "Conectar a GitLab",
+        "ar": "الاتصال بـ GitLab",
+        "fr": "Se connecter à GitLab",
+        "tr": "GitLab'a bağlan"
+    },
+    "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
+        "en": "Log in to OpenHands",
+        "ja": "IDプロバイダーでサインイン",
+        "zh-CN": "使用您的身份提供商登录",
+        "zh-TW": "使用您的身份提供商登入",
+        "ko-KR": "ID 제공자로 로그인",
+        "no": "Logg inn med din identitetsleverandør",
+        "it": "Accedi con il tuo provider di identità",
+        "pt": "Entre com seu provedor de identidade",
+        "es": "Inicie sesión con su proveedor de identidad",
+        "ar": "تسجيل الدخول باستخدام مزود الهوية الخاص بك",
+        "fr": "Connectez-vous avec votre fournisseur d'identité",
+        "tr": "Kimlik sağlayıcınızla giriş yapın",
+        "de": "Melden Sie sich mit Ihrem Identitätsanbieter an"
     },
     "WAITLIST$JOIN_WAITLIST": {
         "en": "Join Waitlist",
@@ -6163,5 +6438,199 @@
         "fr": "Projet",
         "tr": "Proje",
         "de": "Projekt"
+    "DIFF_VIEWER$LOADING": {
+        "en": "Loading...",
+        "ja": "読み込み中...",
+        "zh-CN": "加载中...",
+        "zh-TW": "加載中...",
+        "ko-KR": "로딩 중...",
+        "no": "Laster inn...",
+        "it": "Caricamento in corso...",
+        "pt": "Carregando...",
+        "es": "Cargando...",
+        "ar": "جار التحميل...",
+        "fr": "Chargement...",
+        "tr": "Yükleniyor...",
+        "de": "Wird geladen..."
+    },
+    "DIFF_VIEWER$GETTING_LATEST_CHANGES": {
+        "en": "Getting latest changes...",
+        "ja": "最新の変更を取得中...",
+        "zh-CN": "获取最新更改中...",
+        "zh-TW": "獲取最新更改中...",
+        "ko-KR": "최신 변경 사항 가져오는 중...",
+        "no": "Henter de nyeste endringene...",
+        "it": "Ottenendo le ultime modifiche...",
+        "pt": "Obtendo as últimas alterações...",
+        "es": "Obteniendo los últimos cambios...",
+        "ar": "جارٍ الحصول على أحدث التغييرات...",
+        "fr": "Obtention des dernières modifications...",
+        "tr": "Son değişiklikleri alıyor...",
+        "de": "Aktuellste Änderungen abrufen..."
+    },
+    "DIFF_VIEWER$NOT_A_GIT_REPO": {
+        "en": "Your current workspace is not a git repository.",
+        "ja": "現在のワークスペースはgitリポジトリではありません。",
+        "zh-CN": "您当前的工作区不是git存储库。",
+        "zh-TW": "您當前的工作區不是git存儲庫。",
+        "ko-KR": "현재 작업 공간은 git 리포지토리가 아닙니다.",
+        "no": "Nåværende arbeidsområde er ikke et git-repositorium.",
+        "it": "L'area di lavoro corrente non è un repository git.",
+        "pt": "Seu espaço de trabalho atual não é um repositório git.",
+        "es": "Su espacio de trabajo actual no es un repositorio git.",
+        "ar": "مساحة العمل الحالية الخاصة بك ليست مستودع git.",
+        "fr": "Votre espace de travail actuel n'est pas un dépôt git.",
+        "tr": "Mevcut çalışma alanınız bir git deposu değil.",
+        "de": "Ihr aktueller Arbeitsbereich ist kein git-Repository."
+    },
+    "DIFF_VIEWER$ASK_OH": {
+        "en": "Ask OpenHands to initialize a git repo to activate this UI.",
+        "ja": "このUIを有効にするために、OpenHandsにgitリポジトリを初期化するよう依頼します。",
+        "zh-CN": "请OpenHands初始化git存储库以激活此UI。",
+        "zh-TW": "請OpenHands初始化git存儲庫以啟用此UI。",
+        "ko-KR": "이 UI를 활성화하려면 OpenHands에 git 리포지토리를 초기화하도록 요청하세요.",
+        "no": "Be OpenHands om å initialisere et git-repositorium for å aktivere dette brukergrensesnittet.",
+        "it": "Chiedi a OpenHands di inizializzare un repository git per attivare questa interfaccia utente.",
+        "pt": "Peça ao OpenHands para inicializar um repositório git para ativar esta interface.",
+        "es": "Pida a OpenHands que inicialice un repositorio git para activar esta interfaz.",
+        "ar": "اطلب من OpenHands تهيئة مستودع git لتنشيط واجهة المستخدم هذه.",
+        "fr": "Demandez à OpenHands d'initialiser un dépôt git pour activer cette interface utilisateur.",
+        "tr": "Bu UI'yi etkinleştirmek için OpenHands'tan bir git deposunu başlatmasını isteyin.",
+        "de": "Bitten Sie OpenHands, ein git-Repository zu initialisieren, um diese Benutzeroberfläche zu aktivieren."
+    },
+    "DIFF_VIEWER$NO_CHANGES": {
+        "en": "OpenHands hasn't made any changes yet...",
+        "ja": "OpenHandsはまだ変更を加えていません...",
+        "zh-CN": "OpenHands尚未进行任何更改...",
+        "zh-TW": "OpenHands尚未進行任何更改...",
+        "ko-KR": "OpenHands는 아직 변경하지 않았습니다...",
+        "no": "OpenHands har ikke gjort noen endringer ennå...",
+        "it": "OpenHands non ha ancora apportato modifiche...",
+        "pt": "O OpenHands ainda não fez nenhuma alteração...",
+        "es": "OpenHands aún no ha realizado ningún cambio...",
+        "ar": "لم يقم OpenHands بإجراء أي تغييرات بعد ...",
+        "fr": "OpenHands n'a pas encore apporté de modifications ...",
+        "tr": "OpenHands henüz herhangi bir değişiklik yapmadı ...",
+        "de": "OpenHands hat noch keine Änderungen vorgenommen..."
+    },
+    "DIFF_VIEWER$WAITING_FOR_RUNTIME": {
+        "en": "Waiting for runtime to start...",
+        "ja": "ランタイムの起動を待っています...",
+        "zh-CN": "等待运行时启动...",
+        "zh-TW": "等待運行時啟動...",
+        "ko-KR": "런타임 시작 대기 중...",
+        "no": "Venter på at kjøretid skal starte...",
+        "it": "In attesa dell'avvio del runtime...",
+        "pt": "Aguardando o tempo de execução para iniciar...",
+        "es": "Esperando a que se inicie el tiempo de ejecución...",
+        "ar": "في انتظار بدء وقت التشغيل...",
+        "fr": "En attente du démarrage de l'exécution...",
+        "tr": "Çalışma zamanının başlamasını bekliyor...",
+        "de": "Warten auf den Start der Laufzeit..."
+    },
+    "SYSTEM_MESSAGE_MODAL$TITLE": {
+        "en": "Agent Tools & Metadata",
+        "zh-CN": "代理工具和元数据",
+        "zh-TW": "代理工具和元數據",
+        "ko-KR": "에이전트 도구 및 메타데이터",
+        "ja": "エージェントツールとメタデータ",
+        "no": "Agent-verktøy og metadata",
+        "ar": "أدوات الوكيل والبيانات الوصفية",
+        "de": "Agent-Tools und Metadaten",
+        "fr": "Outils d'agent et métadonnées",
+        "it": "Strumenti e metadati dell'agente",
+        "pt": "Ferramentas e metadados do agente",
+        "es": "Herramientas y metadatos del agente",
+        "tr": "Ajan Araçları ve Meta Verileri"
+    },
+    "SYSTEM_MESSAGE_MODAL$AGENT_CLASS": {
+        "en": "Agent Class:",
+        "zh-CN": "代理类别：",
+        "zh-TW": "代理類別：",
+        "ko-KR": "에이전트 클래스:",
+        "ja": "エージェントクラス：",
+        "no": "Agent-klasse:",
+        "ar": "فئة الوكيل:",
+        "de": "Agent-Klasse:",
+        "fr": "Classe d'agent :",
+        "it": "Classe agente:",
+        "pt": "Classe do agente:",
+        "es": "Clase de agente:",
+        "tr": "Ajan Sınıfı:"
+    },
+    "SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION": {
+        "en": "OpenHands Version:",
+        "zh-CN": "OpenHands 版本：",
+        "zh-TW": "OpenHands 版本：",
+        "ko-KR": "OpenHands 버전:",
+        "ja": "OpenHands バージョン：",
+        "no": "OpenHands-versjon:",
+        "ar": "إصدار OpenHands:",
+        "de": "OpenHands-Version:",
+        "fr": "Version OpenHands :",
+        "it": "Versione OpenHands:",
+        "pt": "Versão OpenHands:",
+        "es": "Versión de OpenHands:",
+        "tr": "OpenHands Sürümü:"
+    },
+    "SYSTEM_MESSAGE_MODAL$SYSTEM_MESSAGE_TAB": {
+        "en": "System Message",
+        "zh-CN": "系统消息",
+        "zh-TW": "系統訊息",
+        "ko-KR": "시스템 메시지",
+        "ja": "システムメッセージ",
+        "no": "Systemmelding",
+        "ar": "رسالة النظام",
+        "de": "Systemnachricht",
+        "fr": "Message système",
+        "it": "Messaggio di sistema",
+        "pt": "Mensagem do sistema",
+        "es": "Mensaje del sistema",
+        "tr": "Sistem Mesajı"
+    },
+    "SYSTEM_MESSAGE_MODAL$TOOLS_TAB": {
+        "en": "Available Tools",
+        "zh-CN": "可用工具",
+        "zh-TW": "可用工具",
+        "ko-KR": "사용 가능한 도구",
+        "ja": "利用可能なツール",
+        "no": "Tilgjengelige verktøy",
+        "ar": "الأدوات المتاحة",
+        "de": "Verfügbare Tools",
+        "fr": "Outils disponibles",
+        "it": "Strumenti disponibili",
+        "pt": "Ferramentas disponíveis",
+        "es": "Herramientas disponibles",
+        "tr": "Kullanılabilir Araçlar"
+    },
+    "SYSTEM_MESSAGE_MODAL$PARAMETERS": {
+        "en": "Parameters:",
+        "zh-CN": "参数：",
+        "zh-TW": "參數：",
+        "ko-KR": "매개변수:",
+        "ja": "パラメータ：",
+        "no": "Parametere:",
+        "ar": "المعلمات:",
+        "de": "Parameter:",
+        "fr": "Paramètres :",
+        "it": "Parametri:",
+        "pt": "Parâmetros:",
+        "es": "Parámetros:",
+        "tr": "Parametreler:"
+    },
+    "SYSTEM_MESSAGE_MODAL$NO_TOOLS": {
+        "en": "No tools available for this agent",
+        "zh-CN": "此代理没有可用的工具",
+        "zh-TW": "此代理沒有可用的工具",
+        "ko-KR": "이 에이전트에 사용 가능한 도구가 없습니다",
+        "ja": "このエージェントで利用可能なツールはありません",
+        "no": "Ingen verktøy tilgjengelig for denne agenten",
+        "ar": "لا توجد أدوات متاحة لهذا الوكيل",
+        "de": "Keine Tools für diesen Agenten verfügbar",
+        "fr": "Aucun outil disponible pour cet agent",
+        "it": "Nessuno strumento disponibile per questo agente",
+        "pt": "Nenhuma ferramenta disponível para este agente",
+        "es": "No hay herramientas disponibles para este agente",
+        "tr": "Bu ajan için kullanılabilir araç yok"
     }
 }

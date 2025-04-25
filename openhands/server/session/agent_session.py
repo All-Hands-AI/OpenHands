@@ -19,7 +19,7 @@ from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.integrations.service_types import Repository
 from openhands.memory.memory import Memory
-from openhands.microagent.microagent import BaseMicroAgent
+from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -323,11 +323,10 @@ class AgentSession:
                 )
             return False
 
-        if selected_repository and git_provider_tokens:
-            await self.runtime.clone_repo(
-                git_provider_tokens, selected_repository, selected_branch
-            )
-            await call_sync_from_async(self.runtime.maybe_run_setup_script)
+        await self.runtime.clone_or_init_repo(
+            git_provider_tokens, selected_repository, selected_branch
+        )
+        await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -407,7 +406,7 @@ class AgentSession:
             memory.set_runtime_info(self.runtime)
 
             # loads microagents from repo/.openhands/microagents
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+            microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
                 selected_repository.full_name if selected_repository else None,
             )
