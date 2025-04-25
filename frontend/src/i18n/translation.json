@@ -511,21 +511,7 @@
         "tr": "Hesap ayarları",
         "de": "Kontoeinstellungen"
     },
-    "WORKSPACE$TITLE": {
-        "en": "Workspace",
-        "zh-CN": "工作区",
-        "de": "Arbeitsbereich",
-        "ko-KR": "워크스페이스",
-        "no": "Arbeidsområde",
-        "zh-TW": "工作區",
-        "ar": "مساحة العمل",
-        "fr": "Espace de travail",
-        "it": "Area di lavoro",
-        "pt": "Espaço de trabalho",
-        "es": "Espacio de trabajo",
-        "ja": "ワークスペース",
-        "tr": "Çalışma Alanı"
-    },
+
     "WORKSPACE$TERMINAL_TAB_LABEL": {
         "en": "Terminal",
         "zh-CN": "终端",
@@ -540,6 +526,66 @@
         "fr": "Terminal",
         "tr": "Terminal",
         "ja": "ターミナル"
+    },
+    "WORKSPACE$BROWSER_TAB_LABEL": {
+        "en": "Browser",
+        "zh-CN": "浏览器",
+        "de": "Browser",
+        "ko-KR": "브라우저",
+        "no": "Nettleser",
+        "zh-TW": "瀏覽器",
+        "it": "Browser",
+        "pt": "Navegador",
+        "es": "Navegador",
+        "ar": "المتصفح",
+        "fr": "Navigateur",
+        "tr": "Tarayıcı",
+        "ja": "ブラウザ"
+    },
+    "WORKSPACE$JUPYTER_TAB_LABEL": {
+        "en": "Jupyter",
+        "zh-CN": "Jupyter",
+        "de": "Jupyter",
+        "ko-KR": "Jupyter",
+        "no": "Jupyter",
+        "zh-TW": "Jupyter",
+        "it": "Jupyter",
+        "pt": "Jupyter",
+        "es": "Jupyter",
+        "ar": "Jupyter",
+        "fr": "Jupyter",
+        "tr": "Jupyter",
+        "ja": "Jupyter"
+    },
+    "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
+        "en": "Code Editor",
+        "zh-CN": "代码编辑器",
+        "de": "Code-Editor",
+        "ko-KR": "코드 에디터",
+        "no": "Kodeeditor",
+        "zh-TW": "程式碼編輯器",
+        "it": "Editor di codice",
+        "pt": "Editor de código",
+        "es": "Editor de código",
+        "ar": "محرر الكود",
+        "fr": "Éditeur de code",
+        "tr": "Kod Düzenleyici",
+        "ja": "コードエディタ"
+    },
+    "WORKSPACE$TITLE": {
+        "en": "Workspace",
+        "zh-CN": "工作区",
+        "de": "Arbeitsbereich",
+        "ko-KR": "작업 공간",
+        "no": "Arbeidsområde",
+        "zh-TW": "工作區",
+        "it": "Area di lavoro",
+        "pt": "Espaço de trabalho",
+        "es": "Espacio de trabajo",
+        "ar": "مساحة العمل",
+        "fr": "Espace de travail",
+        "tr": "Çalışma Alanı",
+        "ja": "ワークスペース"
     },
     "TERMINAL$WAITING_FOR_CLIENT": {
         "en": "Waiting for client to become ready...",
@@ -946,111 +992,13 @@
         "tr": "Geçersiz dosya yolu. Lütfen dosya adını kontrol edin ve tekrar deneyin.",
         "ja": "ファイルパスが無効です。ファイル名を確認して、もう一度お試しください。"
     },
-    "WORKSPACE$PLANNER_TAB_LABEL": {
-        "en": "Planner",
-        "zh-CN": "规划器",
-        "de": "Planer",
-        "ko-KR": "플래너",
-        "no": "Planlegger",
-        "zh-TW": "規劃工具",
-        "ar": "المخطط",
-        "fr": "Planificateur",
-        "it": "Pianificatore",
-        "pt": "Planejador",
-        "es": "Planificador",
-        "ja": "プランナー",
-        "tr": "Planlayıcı"
-    },
-    "WORKSPACE$JUPYTER_TAB_LABEL": {
-        "en": "Jupyter",
-        "zh-CN": "Jupyter",
-        "de": "Jupyter",
-        "ko-KR": "Jupyter",
-        "no": "Jupyter",
-        "zh-TW": "Jupyter",
-        "ar": "Jupyter",
-        "fr": "Jupyter",
-        "it": "Jupyter",
-        "pt": "Jupyter",
-        "es": "Jupyter",
-        "ja": "Jupyter",
-        "tr": "Jupyter"
-    },
-    "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
-        "en": "Code Editor",
-        "zh-CN": "代码编辑器",
-        "de": "Code-Editor",
-        "ko-KR": "코드 편집기",
-        "no": "Kode editor",
-        "zh-TW": "程式碼編輯器",
-        "ar": "محرر الكود",
-        "fr": "Éditeur de code",
-        "it": "Editor di codice",
-        "pt": "Editor de código",
-        "es": "Editor de código",
-        "ja": "コードエディタ",
-        "tr": "Kod Editörü"
-    },
-    "WORKSPACE$BROWSER_TAB_LABEL": {
-        "en": "Browser",
-        "zh-CN": "浏览器",
-        "de": "Browser",
-        "ko-KR": "브라우저",
-        "no": "Nettleser",
-        "zh-TW": "瀏覽器",
-        "it": "Browser",
-        "pt": "Navegador",
-        "es": "Navegador",
-        "ar": "المتصفح",
-        "fr": "Navigateur",
-        "tr": "Tarayıcı",
-        "ja": "ブラウザ"
-    },
-    "WORKSPACE$REFRESH": {
-        "en": "Refresh",
-        "de": "Aktualisieren",
-        "zh-CN": "刷新",
-        "zh-TW": "重新整理",
-        "ko-KR": "새로고침",
-        "no": "Oppdater",
-        "it": "Aggiorna",
-        "pt": "Atualizar",
-        "es": "Actualizar",
-        "ar": "تحديث",
-        "fr": "Rafraîchir",
-        "tr": "Yenile",
-        "ja": "更新"
-    },
-    "WORKSPACE$OPEN": {
-        "en": "Open workspace",
-        "de": "Arbeitsbereich öffnen",
-        "zh-CN": "打开工作区",
-        "zh-TW": "開啟工作區",
-        "ko-KR": "작업 공간 열기",
-        "no": "Åpne arbeidsområde",
-        "it": "Apri area di lavoro",
-        "pt": "Abrir espaço de trabalho",
-        "es": "Abrir espacio de trabajo",
-        "ar": "فتح مساحة العمل",
-        "fr": "Ouvrir l'espace de travail",
-        "tr": "Çalışma alanını aç",
-        "ja": "ワークスペースを開く"
-    },
-    "WORKSPACE$CLOSE": {
-        "en": "Close workspace",
-        "de": "Arbeitsbereich schließen",
-        "zh-CN": "关闭工作区",
-        "zh-TW": "關閉工作區",
-        "ko-KR": "작업 공간 닫기",
-        "no": "Lukk arbeidsområde",
-        "it": "Chiudi area di lavoro",
-        "pt": "Fechar espaço de trabalho",
-        "es": "Cerrar espacio de trabajo",
-        "ar": "إغلاق مساحة العمل",
-        "fr": "Fermer l'espace de travail",
-        "tr": "Çalışma alanını kapat",
-        "ja": "ワークスペースを閉じる"
-    },
+
+
+
+
+
+
+
     "VSCODE$OPEN": {
         "en": "Open in VS Code",
         "ja": "VS Codeで開く",
@@ -1065,6 +1013,81 @@
         "ar": "فتح في VS Code",
         "fr": "Ouvrir dans VS Code",
         "tr": "VS Code'da aç"
+    },
+    "VSCODE$TITLE": {
+        "en": "VS Code",
+        "ja": "VS Code",
+        "zh-CN": "VS Code",
+        "zh-TW": "VS Code",
+        "ko-KR": "VS Code",
+        "de": "VS Code",
+        "no": "VS Code",
+        "it": "VS Code",
+        "pt": "VS Code",
+        "es": "VS Code",
+        "ar": "VS Code",
+        "fr": "VS Code",
+        "tr": "VS Code"
+    },
+    "VSCODE$LOADING": {
+        "en": "Loading VS Code...",
+        "ja": "VS Codeを読み込み中...",
+        "zh-CN": "正在加载VS Code...",
+        "zh-TW": "正在加載VS Code...",
+        "ko-KR": "VS Code 로딩 중...",
+        "de": "VS Code wird geladen...",
+        "no": "Laster VS Code...",
+        "it": "Caricamento di VS Code...",
+        "pt": "Carregando VS Code...",
+        "es": "Cargando VS Code...",
+        "ar": "جاري تحميل VS Code...",
+        "fr": "Chargement de VS Code...",
+        "tr": "VS Code yükleniyor..."
+    },
+    "VSCODE$URL_NOT_AVAILABLE": {
+        "en": "VS Code URL not available",
+        "ja": "VS Code URLが利用できません",
+        "zh-CN": "VS Code URL不可用",
+        "zh-TW": "VS Code URL不可用",
+        "ko-KR": "VS Code URL을 사용할 수 없습니다",
+        "de": "VS Code URL nicht verfügbar",
+        "no": "VS Code URL ikke tilgjengelig",
+        "it": "URL di VS Code non disponibile",
+        "pt": "URL do VS Code não disponível",
+        "es": "URL de VS Code no disponible",
+        "ar": "رابط VS Code غير متوفر",
+        "fr": "URL VS Code non disponible",
+        "tr": "VS Code URL'si mevcut değil"
+    },
+    "VSCODE$FETCH_ERROR": {
+        "en": "Failed to fetch VS Code URL",
+        "ja": "VS Code URLの取得に失敗しました",
+        "zh-CN": "获取VS Code URL失败",
+        "zh-TW": "獲取VS Code URL失敗",
+        "ko-KR": "VS Code URL을 가져오지 못했습니다",
+        "de": "Fehler beim Abrufen der VS Code URL",
+        "no": "Kunne ikke hente VS Code URL",
+        "it": "Impossibile recuperare l'URL di VS Code",
+        "pt": "Falha ao buscar URL do VS Code",
+        "es": "Error al obtener la URL de VS Code",
+        "ar": "فشل في جلب رابط VS Code",
+        "fr": "Échec de la récupération de l'URL VS Code",
+        "tr": "VS Code URL'si alınamadı"
+    },
+    "VSCODE$IFRAME_PERMISSIONS": {
+        "en": "clipboard-read; clipboard-write",
+        "ja": "clipboard-read; clipboard-write",
+        "zh-CN": "clipboard-read; clipboard-write",
+        "zh-TW": "clipboard-read; clipboard-write",
+        "ko-KR": "clipboard-read; clipboard-write",
+        "de": "clipboard-read; clipboard-write",
+        "no": "clipboard-read; clipboard-write",
+        "it": "clipboard-read; clipboard-write",
+        "pt": "clipboard-read; clipboard-write",
+        "es": "clipboard-read; clipboard-write",
+        "ar": "clipboard-read; clipboard-write",
+        "fr": "clipboard-read; clipboard-write",
+        "tr": "clipboard-read; clipboard-write"
     },
     "INCREASE_TEST_COVERAGE": {
         "en": "Increase test coverage",
@@ -1990,66 +2013,10 @@
         "tr": "Dosyaları buraya bırakın",
         "ja": "ここにファイルをドロップ"
     },
-    "EXPLORER$LABEL_WORKSPACE": {
-        "en": "Workspace",
-        "zh-CN": "工作区",
-        "de": "Arbeitsbereich",
-        "zh-TW": "工作區",
-        "es": "Espacio de trabajo",
-        "fr": "Espace de travail",
-        "it": "Area di lavoro",
-        "pt": "Espaço de trabalho",
-        "ko-KR": "워크스페이스",
-        "ar": "مساحة العمل",
-        "tr": "Çalışma alanı",
-        "no": "Arbeidsområde",
-        "ja": "ワークスペース"
-    },
-    "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
-        "en": "No files in workspace",
-        "zh-CN": "工作区为空",
-        "de": "Keine Dateien im Arbeitsbereich",
-        "zh-TW": "工作區為空",
-        "es": "No hay archivos en el espacio de trabajo",
-        "fr": "Aucun fichier dans l'espace de travail",
-        "it": "Nessun file nell'area di lavoro",
-        "pt": "Nenhum arquivo no espaço de trabalho",
-        "ko-KR": "워크스페이스가 비어 있습니다",
-        "ar": "لا توجد ملفات في مساحة العمل",
-        "tr": "Çalışma alanında dosya yok",
-        "no": "Ingen filer i arbeidsområdet",
-        "ja": "ワークスペースにファイルがありません"
-    },
-    "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
-        "en": "Loading workspace...",
-        "zh-CN": "加载工作区中...",
-        "de": "Arbeitsbereich wird geladen...",
-        "zh-TW": "載入工作區中...",
-        "es": "Cargando espacio de trabajo...",
-        "fr": "Chargement de l'espace de travail...",
-        "it": "Caricamento dell'area di lavoro...",
-        "pt": "Carregando espaço de trabalho...",
-        "ko-KR": "워크스페이스 로딩 중...",
-        "ar": "جارٍ تحميل مساحة العمل...",
-        "tr": "Çalışma alanı yükleniyor...",
-        "no": "Laster arbeidsområde...",
-        "ja": "ワークスペースを読み込み中..."
-    },
-    "EXPLORER$REFRESH_ERROR_MESSAGE": {
-        "en": "Error refreshing workspace",
-        "zh-CN": "刷新时出错",
-        "de": "Fehler beim Aktualisieren des Arbeitsbereichs",
-        "zh-TW": "重新整理時發生錯誤",
-        "es": "Error al actualizar el espacio de trabajo",
-        "fr": "Erreur lors de l'actualisation de l'espace de travail",
-        "it": "Errore durante l'aggiornamento dell'area di lavoro",
-        "pt": "Erro ao atualizar o espaço de trabalho",
-        "ko-KR": "새로고침 중 오류 발생",
-        "ar": "خطأ في تحديث مساحة العمل",
-        "tr": "Çalışma alanı yenilenirken hata oluştu",
-        "no": "Feil ved oppdatering av arbeidsområde",
-        "ja": "ワークスペースの更新中にエラーが発生しました"
-    },
+
+
+
+
     "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
         "en": "Successfully uploaded {{count}} file(s)",
         "zh-CN": "上传成功",
@@ -4058,6 +4025,21 @@
     "BUTTON$COPY_TO_CLIPBOARD": {
         "en": "Copy to Clipboard"
     },
+    "BUTTON$REFRESH": {
+        "en": "Refresh",
+        "ja": "更新",
+        "zh-CN": "刷新",
+        "zh-TW": "重新整理",
+        "ko-KR": "새로고침",
+        "no": "Oppdater",
+        "it": "Aggiorna",
+        "pt": "Atualizar",
+        "es": "Actualizar",
+        "ar": "تحديث",
+        "fr": "Rafraîchir",
+        "tr": "Yenile",
+        "de": "Aktualisieren"
+    },
     "ERROR$REQUIRED_FIELD": {
         "en": "This field is required"
     },
@@ -4935,51 +4917,9 @@
         "es": "Subir archivo",
         "tr": "Dosya yükle"
     },
-    "FILE_EXPLORER$REFRESH_WORKSPACE": {
-        "en": "Refresh workspace",
-        "zh-CN": "刷新工作区",
-        "zh-TW": "重新整理工作區",
-        "ko-KR": "워크스페이스 새로고침",
-        "ja": "ワークスペースを更新",
-        "no": "Oppdater arbeidsområde",
-        "ar": "تحديث مساحة العمل",
-        "de": "Arbeitsbereich aktualisieren",
-        "fr": "Actualiser l'espace de travail",
-        "it": "Aggiorna area di lavoro",
-        "pt": "Atualizar área de trabalho",
-        "es": "Actualizar espacio de trabajo",
-        "tr": "Çalışma alanını yenile"
-    },
-    "FILE_EXPLORER$OPEN_WORKSPACE": {
-        "en": "Open workspace",
-        "zh-CN": "打开工作区",
-        "zh-TW": "開啟工作區",
-        "ko-KR": "워크스페이스 열기",
-        "ja": "ワークスペースを開く",
-        "no": "Åpne arbeidsområde",
-        "ar": "فتح مساحة العمل",
-        "de": "Arbeitsbereich öffnen",
-        "fr": "Ouvrir l'espace de travail",
-        "it": "Apri area di lavoro",
-        "pt": "Abrir área de trabalho",
-        "es": "Abrir espacio de trabajo",
-        "tr": "Çalışma alanını aç"
-    },
-    "FILE_EXPLORER$CLOSE_WORKSPACE": {
-        "en": "Close workspace",
-        "zh-CN": "关闭工作区",
-        "zh-TW": "關閉工作區",
-        "ko-KR": "워크스페이스 닫기",
-        "ja": "ワークスペースを閉じる",
-        "no": "Lukk arbeidsområde",
-        "ar": "إغلاق مساحة العمل",
-        "de": "Arbeitsbereich schließen",
-        "fr": "Fermer l'espace de travail",
-        "it": "Chiudi area di lavoro",
-        "pt": "Fechar área de trabalho",
-        "es": "Cerrar espacio de trabajo",
-        "tr": "Çalışma alanını kapat"
-    },
+
+
+
     "ACTION_MESSAGE$RUN": {
         "en": "Running <cmd>{{action.payload.args.command}}</cmd>",
         "zh-CN": "运行 <cmd>{{action.payload.args.command}}</cmd>",
