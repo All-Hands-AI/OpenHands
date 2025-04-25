@@ -73,7 +73,6 @@ async def test_init_new_local_session():
                     'new-session-id',
                     'new-session-id',
                     ConversationInitData(),
-                    1,
                     '12345',
                 )
     assert session_instance.initialize_agent.call_count == 1
