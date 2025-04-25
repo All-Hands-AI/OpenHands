@@ -1,3 +1,4 @@
+import json
 import os
 from types import MappingProxyType
 from urllib.parse import parse_qs
@@ -65,6 +66,10 @@ async def connect(connection_id: str, environ):
     conversation_configs = None
     conversation_metadata_result_set: ConversationMetadata | None = None
     conversation_store: ConversationStore | None = None
+
+    if mcp_disable:
+        mcp_disable = json.loads(mcp_disable)
+
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
