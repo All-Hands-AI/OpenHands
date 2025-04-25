@@ -1,3 +1,4 @@
+from types import MappingProxyType
 from urllib.parse import parse_qs
 
 from socketio.exceptions import ConnectionRefusedError
@@ -7,15 +8,17 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.action.agent import RecallAction
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.observation.agent import (
     AgentStateChangedObservation,
-    RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.service_types import ProviderType
+from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     SettingsStoreImpl,
     config,
@@ -23,8 +26,19 @@ from openhands.server.shared import (
     sio,
 )
 from openhands.storage.conversation.conversation_validator import (
-    ConversationValidatorImpl,
+    create_conversation_validator,
 )
+
+
+def create_provider_tokens_object(
+    providers_set: list[ProviderType],
+) -> PROVIDER_TOKEN_TYPE:
+    provider_information = {}
+
+    for provider in providers_set:
+        provider_information[provider] = ProviderToken(token=None, user_id=None)
+
+    return MappingProxyType(provider_information)
 
 
 @sio.event
@@ -33,12 +47,19 @@ async def connect(connection_id: str, environ):
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
     conversation_id = query_params.get('conversation_id', [None])[0]
+    raw_list = query_params.get('providers_set', [])
+    providers_list = []
+    for item in raw_list:
+        providers_list.extend(item.split(',') if isinstance(item, str) else [])
+    providers_list = [p for p in providers_list if p]
+    providers_set = [ProviderType(p) for p in providers_list]
+
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
     cookies_str = environ.get('HTTP_COOKIE', '')
-    conversation_validator = ConversationValidatorImpl()
+    conversation_validator = create_conversation_validator()
     user_id, github_user_id = await conversation_validator.validate(
         conversation_id, cookies_str
     )
@@ -50,9 +71,17 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
+    session_init_args: dict = {}
+    if settings:
+        session_init_args = {**settings.__dict__, **session_init_args}
+
+    session_init_args['git_provider_tokens'] = create_provider_tokens_object(
+        providers_set
+    )
+    conversation_init_data = ConversationInitData(**session_init_args)
 
     event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id, github_user_id
+        conversation_id, connection_id, conversation_init_data, user_id, github_user_id
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
@@ -60,12 +89,12 @@ async def connect(connection_id: str, environ):
     agent_state_changed = None
     if event_stream is None:
         raise ConnectionRefusedError('Failed to join conversation')
-    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
-    async for event in async_stream:
-        logger.info(f'oh_event: {event.__class__.__name__}')
+    async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+    async for event in async_store:
+        logger.debug(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,
-            (NullAction, NullObservation, RecallAction, RecallObservation),
+            (NullAction, NullObservation, RecallAction),
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):

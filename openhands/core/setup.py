@@ -18,11 +18,12 @@ from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.llm.llm import LLM
 from openhands.memory.memory import Memory
-from openhands.microagent.microagent import BaseMicroAgent
+from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
@@ -114,16 +115,16 @@ def initialize_repository_for_runtime(
     )
     provider_tokens = secret_store.provider_tokens if secret_store else None
 
-    repo_directory = None
-    if selected_repository and provider_tokens:
-        logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = runtime.clone_repo(
-            provider_tokens,
-            selected_repository,
-            None,
-        )
-        # Run setup script if it exists
-        runtime.maybe_run_setup_script()
+    logger.debug(f'Selected repository {selected_repository}.')
+    repo_directory = call_async_from_sync(
+        runtime.clone_or_init_repo,
+        GENERAL_TIMEOUT,
+        provider_tokens,
+        selected_repository,
+        None,
+    )
+    # Run setup script if it exists
+    runtime.maybe_run_setup_script()
 
     return repo_directory
 
@@ -157,7 +158,7 @@ def create_memory(
         memory.set_runtime_info(runtime)
 
         # loads microagents from repo/.openhands/microagents
-        microagents: list[BaseMicroAgent] = runtime.get_microagents_from_selected_repo(
+        microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
             selected_repository
         )
         memory.load_user_workspace_microagents(microagents)
@@ -172,6 +173,7 @@ def create_agent(config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
+
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,

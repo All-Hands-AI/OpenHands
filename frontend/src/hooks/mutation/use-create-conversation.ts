@@ -5,9 +5,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { ConversationService } from "#/api/conversation-service/conversation-service.api";
+import { GitRepository } from "#/types/git";
 
 const conversationMutationFn = async (
-  selectedRepository: string | undefined,
+  selectedRepository: string | GitRepository | undefined,
   initialUserMsg: string | undefined,
   imageUrls: string[],
   replayJson: string | undefined,
@@ -49,9 +50,15 @@ export const useCreateConversation = () => {
   };
 
   return useMutation({
-    mutationFn: async (variables: { q?: string }) =>
-      conversationMutationFn(
-        selectedRepository || undefined,
+    mutationKey: ["create-conversation"],
+    mutationFn: async (variables: {
+      q?: string;
+      selectedRepository?: GitRepository | null;
+    }) => {
+      if (variables.q) dispatch(setInitialPrompt(variables.q));
+
+      return conversationMutationFn(
+        variables.selectedRepository || selectedRepository || undefined,
         variables.q,
         files,
         replayJson || undefined,

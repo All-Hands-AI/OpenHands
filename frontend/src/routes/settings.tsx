@@ -1,12 +1,14 @@
 import { NavLink, Outlet } from "react-router";
+import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
+import { I18nKey } from "#/i18n/declaration";
 
 function SettingsScreen() {
+  const { t } = useTranslation();
   const { data: config } = useConfig();
   const isSaas = config?.APP_MODE === "saas";
-  const billingIsEnabled = config?.FEATURE_FLAGS.ENABLE_BILLING;
 
   return (
     <main
@@ -15,10 +17,10 @@ function SettingsScreen() {
     >
       <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
         <SettingsIcon width={16} height={16} />
-        <h1 className="text-sm leading-6">Settings</h1>
+        <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
       </header>
 
-      {isSaas && billingIsEnabled && (
+      {isSaas && (
         <nav
           data-testid="settings-navbar"
           className="flex items-end gap-12 px-11 border-b border-tertiary"
@@ -26,6 +28,7 @@ function SettingsScreen() {
           {[
             { to: "/settings", text: "Account" },
             { to: "/settings/billing", text: "Credits" },
+            { to: "/settings/api-keys", text: "API Keys" },
           ].map(({ to, text }) => (
             <NavLink
               end

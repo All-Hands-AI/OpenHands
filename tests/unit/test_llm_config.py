@@ -212,3 +212,45 @@ unknown_attr = "should_not_exist"
     assert custom_invalid.model == 'base-model'
     assert custom_invalid.api_key.get_secret_value() == 'base-api-key'
     assert custom_invalid.num_retries == 3  # default value
+
+
+def test_azure_model_api_version(
+    default_config: AppConfig, tmp_path: pathlib.Path
+) -> None:
+    """Test that Azure models get the correct API version by default."""
+    toml_content = """
+[core]
+workspace_base = "./workspace"
+
+[llm]
+model = "azure/o3-mini"
+api_key = "test-api-key"
+    """
+    toml_file = tmp_path / 'azure_llm.toml'
+    toml_file.write_text(toml_content)
+
+    load_from_toml(default_config, str(toml_file))
+
+    # Verify Azure model gets default API version
+    azure_llm = default_config.get_llm_config('llm')
+    assert azure_llm.model == 'azure/o3-mini'
+    assert azure_llm.api_version == '2024-12-01-preview'
+
+    # Test that non-Azure models don't get default API version
+    toml_content = """
+[core]
+workspace_base = "./workspace"
+
+[llm]
+model = "anthropic/claude-3-sonnet"
+api_key = "test-api-key"
+    """
+    toml_file = tmp_path / 'non_azure_llm.toml'
+    toml_file.write_text(toml_content)
+
+    load_from_toml(default_config, str(toml_file))
+
+    # Verify non-Azure model doesn't get default API version
+    non_azure_llm = default_config.get_llm_config('llm')
+    assert non_azure_llm.model == 'anthropic/claude-3-sonnet'
+    assert non_azure_llm.api_version is None

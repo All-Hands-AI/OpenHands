@@ -35,7 +35,7 @@ To run OpenHands in CLI mode with Docker:
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.30-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.34-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -45,52 +45,11 @@ docker run -it \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.30 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.34 \
     python -m openhands.core.cli
 ```
 
 This command will start an interactive session in Docker where you can input tasks and receive responses from OpenHands.
 
-## Examples of CLI Commands and Expected Outputs
-
-Here are some examples of CLI commands and their expected outputs:
-
-### Example 1: Simple Task
-
-```bash
->> Write a Python script that prints "Hello, World!"
-```
-
-Expected Output:
-
-```bash
-🤖 Sure! Here is a Python script that prints "Hello, World!":
-
-❯ print("Hello, World!")
-```
-
-### Example 2: Bash Command
-
-```bash
->> Create a directory named "test_dir"
-```
-
-Expected Output:
-
-```bash
-🤖 Creating a directory named "test_dir":
-
-❯ mkdir test_dir
-```
-
-### Example 3: Error Handling
-
-```bash
->> Delete a non-existent file
-```
-
-Expected Output:
-
-```bash
-🤖 An error occurred. Please try again.
-```
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.

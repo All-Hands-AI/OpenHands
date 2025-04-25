@@ -14,7 +14,6 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
-from pydantic import SecretStr
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
@@ -31,6 +30,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -47,8 +47,9 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
+from openhands.integrations.service_types import Repository
 from openhands.microagent import (
-    BaseMicroAgent,
+    BaseMicroagent,
     load_microagents_from_dir,
 )
 from openhands.runtime.plugins import (
@@ -57,6 +58,7 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -110,6 +112,9 @@ class Runtime(FileEditRuntimeMixin):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
+        self.git_handler = GitHandler(
+            execute_shell_fn=self._execute_shell_fn_git_handler
+        )
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -149,13 +154,11 @@ class Runtime(FileEditRuntimeMixin):
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
         )
 
         self.user_id = user_id
-
-        # TODO: remove once done debugging expired github token
-        self.prev_token: SecretStr | None = None
+        self.git_provider_tokens = git_provider_tokens
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -254,30 +257,13 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f'Fetching latest github token for runtime: {self.sid}')
+        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
         env_vars = await self.provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
 
-        # This statement is to debug expired github tokens, and will be removed later
-        if ProviderType.GITHUB not in env_vars:
-            logger.error(f'Failed to refresh github token for runtime: {self.sid}')
-            return
-
         if len(env_vars) == 0:
             return
-
-        raw_token = env_vars[ProviderType.GITHUB].get_secret_value()
-        if not self.prev_token:
-            logger.info(
-                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-            )
-        elif self.prev_token.get_secret_value() != raw_token:
-            logger.info(
-                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-            )
-
-        self.prev_token = SecretStr(raw_token)
 
         try:
             await self.provider_handler.set_event_stream_secrets(
@@ -296,9 +282,11 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            if isinstance(event, McpAction):
+                # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
+                observation: Observation = await getattr(self, McpAction.action)(event)
+            else:
+                observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
             err_id = ''
             if isinstance(e, httpx.NetworkError) or isinstance(
@@ -321,29 +309,70 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(
+    async def clone_or_init_repo(
         self,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE,
-        selected_repository: str,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        selected_repository: str | Repository | None,
         selected_branch: str | None,
+        repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
-        if (
-            ProviderType.GITHUB not in git_provider_tokens
-            or not git_provider_tokens[ProviderType.GITHUB].token
-            or not selected_repository
-        ):
-            raise ValueError(
-                'github_token and selected_repository must be provided to clone a repository'
+        if not selected_repository:
+            # In SaaS mode (indicated by user_id being set), always run git init
+            # In OSS mode, only run git init if workspace_base is not set
+            if self.user_id or not self.config.workspace_base:
+                logger.debug(
+                    'No repository selected. Initializing a new git repository in the workspace.'
+                )
+                action = CmdRunAction(
+                    command='git init',
+                )
+                self.run_action(action)
+            else:
+                logger.info(
+                    'In workspace mount mode, not initializing a new git repository.'
+                )
+            return ''
+
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+        }
+
+        chosen_provider = (
+            repository_provider
+            if isinstance(selected_repository, str)
+            else selected_repository.git_provider
+        )
+
+        if not git_provider_tokens:
+            raise RuntimeError('Need git provider tokens to clone repo')
+        git_token = git_provider_tokens[chosen_provider].token
+        if not git_token:
+            raise RuntimeError('Need a valid git token to clone repo')
+
+        domain = provider_domains[chosen_provider]
+        repository = (
+            selected_repository
+            if isinstance(selected_repository, str)
+            else selected_repository.full_name
+        )
+
+        if chosen_provider == ProviderType.GITLAB:
+            remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+        else:
+            remote_repo_url = (
+                f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
             )
+
+        if not remote_repo_url:
+            raise ValueError('Missing either Git token or valid repository')
 
         if self.status_callback:
             self.status_callback(
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        github_token: SecretStr = git_provider_tokens[ProviderType.GITHUB].token
-        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[-1]
+        dir_name = repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -352,7 +381,7 @@ class Runtime(FileEditRuntimeMixin):
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
-        clone_command = f'git clone {url} {dir_name}'
+        clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
         checkout_command = (
@@ -387,13 +416,13 @@ class Runtime(FileEditRuntimeMixin):
 
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
-    ) -> list[BaseMicroAgent]:
+    ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
         If selected_repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
         """
 
-        loaded_microagents: list[BaseMicroAgent] = []
+        loaded_microagents: list[BaseMicroagent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
@@ -423,7 +452,7 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(obs, FileReadObservation):
             self.log('info', 'openhands_instructions microagent loaded.')
             loaded_microagents.append(
-                BaseMicroAgent.load(
+                BaseMicroagent.load(
                     path='.openhands_instructions', file_content=obs.content
                 )
             )
@@ -538,6 +567,10 @@ class Runtime(FileEditRuntimeMixin):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
 
+    @abstractmethod
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
+        pass
+
     # ====================================================================
     # File operations
     # ====================================================================
@@ -574,6 +607,35 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    # ====================================================================
+    # Git
+    # ====================================================================
+
+    def _execute_shell_fn_git_handler(
+        self, command: str, cwd: str | None
+    ) -> CommandResult:
+        """
+        This function is used by the GitHandler to execute shell commands.
+        """
+        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        exit_code = 0
+        content = ''
+
+        if hasattr(obs, 'exit_code'):
+            exit_code = obs.exit_code
+        if hasattr(obs, 'content'):
+            content = obs.content
+
+        return CommandResult(content=content, exit_code=exit_code)
+
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_changes()
+
+    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_diff(file_path)
 
     @property
     def additional_agent_instructions(self) -> str:

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from enum import Enum
 from types import MappingProxyType
-from typing import Any, Coroutine, Literal, overload
+from typing import Annotated, Any, Coroutine, Literal, overload
 
 from pydantic import (
     BaseModel,
     Field,
     SecretStr,
     SerializationInfo,
+    WithJsonSchema,
     field_serializer,
     model_validator,
 )
@@ -23,14 +23,12 @@ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    ProviderType,
     Repository,
+    SuggestedTask,
     User,
 )
-
-
-class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
+from openhands.server.types import AppMode
 
 
 class ProviderToken(BaseModel):
@@ -58,10 +56,18 @@ class ProviderToken(BaseModel):
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
+PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
+    PROVIDER_TOKEN_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(
+    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
+        default_factory=lambda: MappingProxyType({})
+    )
+
+    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
@@ -74,7 +80,7 @@ class SecretStore(BaseModel):
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
         self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
-    ):
+    ) -> dict[str, dict[str, str | Any]]:
         tokens = {}
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
@@ -96,16 +102,32 @@ class SecretStore(BaseModel):
 
         return tokens
 
+    @field_serializer('custom_secrets')
+    def custom_secrets_serializer(
+        self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
+    ):
+        secrets = {}
+        expose_secrets = info.context and info.context.get('expose_secrets', False)
+
+        if custom_secrets:
+            for secret_name, secret_key in custom_secrets.items():
+                secrets[secret_name] = (
+                    secret_key.get_secret_value()
+                    if expose_secrets
+                    else pydantic_encoder(secret_key)
+                )
+        return secrets
+
     @model_validator(mode='before')
     @classmethod
     def convert_dict_to_mappingproxy(
-        cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
-    ) -> dict[str, MappingProxyType]:
+        cls, data: dict[str, dict[str, Any] | MappingProxyType] | PROVIDER_TOKEN_TYPE
+    ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
             raise ValueError('SecretStore must be initialized with a dictionary')
 
-        new_data = {}
+        new_data: dict[str, MappingProxyType | None] = {}
 
         if 'provider_tokens' in data:
             tokens = data['provider_tokens']
@@ -127,6 +149,22 @@ class SecretStore(BaseModel):
 
                 # Convert to MappingProxyType
                 new_data['provider_tokens'] = MappingProxyType(converted_tokens)
+            elif isinstance(tokens, MappingProxyType):
+                new_data['provider_tokens'] = tokens
+
+        if 'custom_secrets' in data:
+            secrets = data['custom_secrets']
+            if isinstance(secrets, dict):
+                converted_secrets = {}
+                for key, value in secrets.items():
+                    if isinstance(value, str):
+                        converted_secrets[key] = SecretStr(value)
+                    elif isinstance(value, SecretStr):
+                        converted_secrets[key] = value
+
+                new_data['custom_secrets'] = MappingProxyType(converted_secrets)
+            elif isinstance(secrets, MappingProxyType):
+                new_data['custom_secrets'] = secrets
 
         return new_data
 
@@ -188,27 +226,62 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
-    async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        """Get repositories from all available providers"""
-        all_repos = []
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        """
+        Get repositories from providers
+        """
+
+        all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                repos = await service.get_repositories(
-                    page, per_page, sort, installation_id
+                service_repos = await service.get_repositories(sort, app_mode)
+                all_repos.extend(service_repos)
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {provider}: {e}')
+
+        return all_repos
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """
+        Get suggested tasks from providers
+        """
+        tasks: list[SuggestedTask] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.get_suggested_tasks()
+                tasks.extend(service_repos)
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {provider}: {e}')
+
+        return tasks
+
+    async def search_repositories(
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+    ) -> list[Repository]:
+        all_repos: list[Repository] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.search_repositories(
+                    query, per_page, sort, order
                 )
-                all_repos.extend(repos)
+                all_repos.extend(service_repos)
             except Exception:
                 continue
+
         return all_repos
 
     async def set_event_stream_secrets(
         self,
         event_stream: EventStream,
         env_vars: dict[ProviderType, SecretStr] | None = None,
-    ):
+    ) -> None:
         """
         This ensures that the latest provider tokens are masked from the event stream
         It is called when the provider tokens are first initialized in the runtime or when tokens are re-exported with the latest working ones
@@ -269,9 +342,7 @@ class ProviderHandler:
             get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
         """
 
-        # TODO: We should remove `not get_latest` in the future. More
-        # details about the error this fixes is in the next comment below
-        if not self.provider_tokens and not get_latest:
+        if not self.provider_tokens:
             return {}
 
         env_vars: dict[ProviderType, SecretStr] = {}
@@ -291,20 +362,6 @@ class ProviderHandler:
 
                 if token:
                     env_vars[provider] = token
-
-        # TODO: we have an error where reinitializing the runtime doesn't happen with
-        # the provider tokens; thus the code above believes that github isn't a provider
-        # when it really is. We need to share information about current providers set
-        # for the user when the socket event for connect is sent
-        if ProviderType.GITHUB not in env_vars and get_latest:
-            logger.info(
-                f'Force refresh runtime token for user: {self.external_auth_id}'
-            )
-            service = GithubServiceImpl(
-                external_auth_id=self.external_auth_id,
-                external_token_manager=self.external_token_manager,
-            )
-            env_vars[ProviderType.GITHUB] = await service.get_latest_token()
 
         if not expose_secrets:
             return env_vars

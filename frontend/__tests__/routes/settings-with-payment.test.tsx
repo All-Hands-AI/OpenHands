@@ -43,10 +43,12 @@ describe("Settings Billing", () => {
 
     renderSettingsScreen();
 
-    await waitFor(() => {
-      const navbar = screen.queryByTestId("settings-navbar");
-      expect(navbar).not.toBeInTheDocument();
-    });
+    // Wait for the settings screen to be rendered
+    await screen.findByTestId("settings-screen");
+
+    // Then check that the navbar is not present
+    const navbar = screen.queryByTestId("settings-navbar");
+    expect(navbar).not.toBeInTheDocument();
   });
 
   it("should render the navbar if SaaS mode", async () => {
@@ -88,6 +90,6 @@ describe("Settings Billing", () => {
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
-    within(billingSection).getByText("Manage Credits");
+    within(billingSection).getByText("PAYMENT$MANAGE_CREDITS");
   });
 });

@@ -8,6 +8,7 @@ from openhands.events.action.agent import (
     AgentRejectAction,
     AgentThinkAction,
     ChangeAgentStateAction,
+    CondensationAction,
     RecallAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -21,7 +22,8 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
-from openhands.events.action.message import MessageAction
+from openhands.events.action.mcp import McpAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 
 actions = (
     NullAction,
@@ -39,6 +41,9 @@ actions = (
     RecallAction,
     ChangeAgentStateAction,
     MessageAction,
+    SystemMessageAction,
+    CondensationAction,
+    McpAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

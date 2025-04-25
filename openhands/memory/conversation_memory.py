@@ -1,3 +1,5 @@
+from typing import Generator
+
 from litellm import ModelResponse
 
 from openhands.core.config.agent_config import AgentConfig
@@ -17,6 +19,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.mcp import McpAction
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -34,6 +38,7 @@ from openhands.events.observation.agent import (
     RecallObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
@@ -49,7 +54,6 @@ class ConversationMemory:
     def process_events(
         self,
         condensed_history: list[Event],
-        initial_messages: list[Message],
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -59,7 +63,6 @@ class ConversationMemory:
 
         Args:
             condensed_history: The condensed history of events to convert
-            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
@@ -67,11 +70,14 @@ class ConversationMemory:
 
         events = condensed_history
 
+        # Ensure the system message exists (handles legacy cases)
+        self._ensure_system_message(events)
+
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
-        # Process special events first (system prompts, etc.)
-        messages = initial_messages
+        # Initialize empty messages list
+        messages = []
 
         # Process regular events
         pending_tool_call_action_messages: dict[str, Message] = {}
@@ -126,21 +132,31 @@ class ConversationMemory:
 
             messages += messages_to_add
 
+        # Apply final filtering so that the messages in context don't have unmatched tool calls
+        # and tool responses, for example
+        messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
+
+        # Apply final formatting
+        messages = self._apply_user_message_formatting(messages)
+
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
-        """Create the initial messages for the conversation."""
-        return [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=with_caching,
-                    )
-                ],
-            )
-        ]
+    def _apply_user_message_formatting(self, messages: list[Message]) -> list[Message]:
+        """Applies formatting rules, such as adding newlines between consecutive user messages."""
+        formatted_messages = []
+        prev_role = None
+        for msg in messages:
+            # Add double newline between consecutive user messages
+            if msg.role == 'user' and prev_role == 'user' and len(msg.content) > 0:
+                # Find the first TextContent in the message to add newlines
+                for content_item in msg.content:
+                    if isinstance(content_item, TextContent):
+                        # Prepend two newlines to ensure visual separation
+                        content_item.text = '\n\n' + content_item.text
+                        break
+            formatted_messages.append(msg)
+            prev_role = msg.role  # Update prev_role after processing each message
+        return formatted_messages
 
     def _process_action(
         self,
@@ -165,7 +181,7 @@ class ConversationMemory:
                 - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
-
+                - McpAction: For interacting with the MCP server
             pending_tool_call_action_messages: Dictionary mapping response IDs to their corresponding messages.
                 Used in function calling mode to track tool calls that are waiting for their results.
 
@@ -191,6 +207,7 @@ class ConversationMemory:
                 FileReadAction,
                 BrowseInteractiveAction,
                 BrowseURLAction,
+                McpAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -270,6 +287,16 @@ class ConversationMemory:
                     content=content,
                 )
             ]
+        elif isinstance(action, SystemMessageAction):
+            # Convert SystemMessageAction to a system message
+            return [
+                Message(
+                    role='system',
+                    content=[TextContent(text=action.content)],
+                    # Include tools if function calling is enabled
+                    tool_calls=None,
+                )
+            ]
         return []
 
     def _process_observation(
@@ -324,6 +351,10 @@ class ConversationMemory:
             else:
                 text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, MCPObservation):
+            # logger.warning(f'MCPObservation: {obs}')
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
@@ -347,8 +378,6 @@ class ConversationMemory:
             text = obs.get_agent_obs_text()
             if (
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
-                and obs.set_of_marks is not None
-                and len(obs.set_of_marks) > 0
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
@@ -357,14 +386,27 @@ class ConversationMemory:
                     role='user',
                     content=[
                         TextContent(text=text),
-                        ImageContent(image_urls=[obs.set_of_marks]),
+                        ImageContent(
+                            image_urls=[
+                                # show set of marks if it exists
+                                # otherwise, show raw screenshot when using vision-supported model
+                                obs.set_of_marks
+                                if obs.set_of_marks is not None
+                                and len(obs.set_of_marks) > 0
+                                else obs.screenshot
+                            ]
+                        ),
                     ],
+                )
+                logger.debug(
+                    f'Vision enabled for browsing, showing {"set of marks" if obs.set_of_marks and len(obs.set_of_marks) > 0 else "screenshot"}'
                 )
             else:
                 message = Message(
                     role='user',
                     content=[TextContent(text=text)],
                 )
+                logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -526,6 +568,8 @@ class ConversationMemory:
 
         For new Anthropic API, we only need to mark the last user or tool message as cacheable.
         """
+        if len(messages) > 0 and messages[0].role == 'system':
+            messages[0].content[-1].cache_prompt = True
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
             if message.role in ('user', 'tool'):
@@ -581,3 +625,80 @@ class ConversationMemory:
                 ):
                     return True
         return False
+
+    @staticmethod
+    def _filter_unmatched_tool_calls(
+        messages: list[Message],
+    ) -> Generator[Message, None, None]:
+        """Filter out tool calls that don't have matching tool responses and vice versa.
+
+        This ensures that every tool_call_id in a tool message has a corresponding tool_calls[].id
+        in an assistant message, and vice versa. The original list is unmodified, when tool_calls is
+        updated the message is copied.
+
+        This does not remove items with id set to None.
+        """
+        tool_call_ids = {
+            tool_call.id
+            for message in messages
+            if message.tool_calls
+            for tool_call in message.tool_calls
+            if message.role == 'assistant' and tool_call.id
+        }
+        tool_response_ids = {
+            message.tool_call_id
+            for message in messages
+            if message.role == 'tool' and message.tool_call_id
+        }
+
+        for message in messages:
+            # Remove tool messages with no matching assistant tool call
+            if message.role == 'tool' and message.tool_call_id:
+                if message.tool_call_id in tool_call_ids:
+                    yield message
+
+            # Remove assistant tool calls with no matching tool response
+            elif message.role == 'assistant' and message.tool_calls:
+                all_tool_calls_match = all(
+                    tool_call.id in tool_response_ids
+                    for tool_call in message.tool_calls
+                )
+                if all_tool_calls_match:
+                    yield message
+                else:
+                    matched_tool_calls = [
+                        tool_call
+                        for tool_call in message.tool_calls
+                        if tool_call.id in tool_response_ids
+                    ]
+
+                    if matched_tool_calls:
+                        # Keep an updated message if there are tools calls left
+                        yield message.model_copy(
+                            update={'tool_calls': matched_tool_calls}
+                        )
+            else:
+                # Any other case is kept
+                yield message
+
+    def _ensure_system_message(self, events: list[Event]) -> None:
+        """Checks if a SystemMessageAction exists and adds one if not (for legacy compatibility)."""
+        # Check if there's a SystemMessageAction in the events
+        has_system_message = any(
+            isinstance(event, SystemMessageAction) for event in events
+        )
+
+        # Legacy behavior: If no SystemMessageAction is found, add one
+        if not has_system_message:
+            logger.debug(
+                '[ConversationMemory] No SystemMessageAction found in events. '
+                'Adding one for backward compatibility. '
+            )
+            system_prompt = self.prompt_manager.get_system_message()
+            if system_prompt:
+                system_message = SystemMessageAction(content=system_prompt)
+                # Insert the system message directly at the beginning of the events list
+                events.insert(0, system_message)
+                logger.debug(
+                    '[ConversationMemory] Added SystemMessageAction for backward compatibility'
+                )
