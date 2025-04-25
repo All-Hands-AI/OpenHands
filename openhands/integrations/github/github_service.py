@@ -203,9 +203,12 @@ class GitHubService(BaseGitService, GitService):
 
         if app_mode == AppMode.SAAS:
             if sort == "pushed":
+                print("repos fetchd", all_repos)
                 all_repos.sort(
                     key=self.parse_pushed_at_date, reverse=True
                 )
+
+                print("sorted repos", all_repos)
         
         # Convert to Repository objects
         return [
