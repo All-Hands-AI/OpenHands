@@ -2,7 +2,7 @@ import { cn } from "#/utils/utils";
 
 interface BrandButtonProps {
   testId?: string;
-  variant: "primary" | "secondary";
+  variant: "primary" | "secondary" | "danger";
   type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
   isDisabled?: boolean;
   className?: string;
@@ -29,9 +29,10 @@ export function BrandButton({
       type={type}
       onClick={onClick}
       className={cn(
-        "w-fit p-2 rounded disabled:opacity-30 disabled:cursor-not-allowed",
+        "w-fit p-2 text-sm rounded disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80",
         variant === "primary" && "bg-primary text-[#0D0F11]",
         variant === "secondary" && "border border-primary text-primary",
+        variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
         startContent && "flex items-center justify-center gap-2",
         className,
       )}

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Type
 
@@ -68,7 +70,7 @@ class Agent(ABC):
             tools = getattr(self, 'tools', None)
 
             system_message_action = SystemMessageAction(
-                content=system_message, tools=tools
+                content=system_message, tools=tools, agent_class=self.name
             )
             # Set the source attribute
             system_message_action._source = EventSource.AGENT  # type: ignore
@@ -106,11 +108,11 @@ class Agent(ABC):
             self.llm.reset()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__
 
     @classmethod
-    def register(cls, name: str, agent_cls: Type['Agent']):
+    def register(cls, name: str, agent_cls: Type['Agent']) -> None:
         """Registers an agent class in the registry.
 
         Parameters:

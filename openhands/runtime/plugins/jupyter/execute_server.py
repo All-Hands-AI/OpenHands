@@ -7,6 +7,7 @@ import re
 from uuid import uuid4
 
 import tornado
+import tornado.websocket
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tornado.escape import json_decode, json_encode, url_escape
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
@@ -139,7 +140,7 @@ class JupyterKernel:
         wait=wait_fixed(2),
     )
     async def execute(self, code: str, timeout: int = 120) -> str:
-        if not self.ws:
+        if not self.ws or self.ws.stream.closed():
             await self._connect()
 
         msg_id = uuid4().hex

@@ -713,7 +713,7 @@ class LLM(RetryMixin, DebugMixin):
                         completion_response=response, **extra_kwargs
                     )
                 except Exception as e:
-                    logger.error(f'Error getting cost from litellm: {e}')
+                    logger.debug(f'Error getting cost from litellm: {e}')
 
             if cost is None:
                 _model_name = '/'.join(self.config.model.split('/')[1:])

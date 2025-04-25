@@ -42,6 +42,7 @@ from openhands.resolver.utils import (
     reset_logger_for_multiprocessing,
 )
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 # Don't make this confgurable for now, unless we have other competitive agents
 AGENT_CLASS = 'CodeActAgent'
@@ -167,6 +168,7 @@ async def process_issue(
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
+    base_container_image: str | None,
     runtime_container_image: str | None,
     prompt_template: str,
     issue_handler: ServiceContextIssue | ServiceContextPR,
@@ -195,6 +197,7 @@ async def process_issue(
     # they're set by default if nothing else overrides them
     # FIXME we should remove them here
     sandbox_config = SandboxConfig(
+        base_container_image=base_container_image,
         runtime_container_image=runtime_container_image,
         enable_auto_lint=False,
         use_host_network=False,
@@ -360,6 +363,7 @@ async def resolve_issue(
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
+    base_container_image: str | None,
     runtime_container_image: str | None,
     prompt_template: str,
     issue_type: str,
@@ -525,6 +529,7 @@ async def resolve_issue(
             max_iterations,
             llm_config,
             output_dir,
+            base_container_image,
             runtime_container_image,
             prompt_template,
             issue_handler,
@@ -566,6 +571,12 @@ def main() -> None:
         type=str,
         default=None,
         help='username to access the repository.',
+    )
+    parser.add_argument(
+        '--base-container-image',
+        type=str,
+        default=None,
+        help='base container image to use.',
     )
     parser.add_argument(
         '--runtime-container-image',
@@ -649,8 +660,18 @@ def main() -> None:
 
     my_args = parser.parse_args()
 
+    base_container_image = my_args.base_container_image
+
     runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None and not my_args.is_experimental:
+
+    if runtime_container_image is not None and base_container_image is not None:
+        raise ValueError('Cannot provide both runtime and base container images.')
+
+    if (
+        runtime_container_image is None
+        and base_container_image is None
+        and not my_args.is_experimental
+    ):
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
@@ -668,7 +689,12 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token, my_args.selected_repo, my_args.base_domain)
+    platform = call_async_from_sync(
+        identify_token,
+        GENERAL_TIMEOUT,
+        token,
+        my_args.base_domain,
+    )
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     model = my_args.llm_model or os.environ['LLM_MODEL']
@@ -714,6 +740,7 @@ def main() -> None:
             token=token,
             username=username,
             platform=platform,
+            base_container_image=base_container_image,
             runtime_container_image=runtime_container_image,
             max_iterations=my_args.max_iterations,
             output_dir=my_args.output_dir,
