@@ -3,11 +3,11 @@ import { I18nKey } from "#/i18n/declaration";
 import PlusIcon from "#/icons/plus.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
-interface ExitProjectButtonProps {
+interface NewProjectButtonProps {
   onClick: () => void;
 }
 
-export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
+export function NewProjectButton({ onClick }: ExitProjectButtonProps) {
   const { t } = useTranslation();
   const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
   return (

@@ -8,7 +8,7 @@ import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
-import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
+import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -91,7 +91,14 @@ export function Sidebar() {
             <div className="flex items-center justify-center">
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
-            <ExitProjectButton onClick={handleEndSession} />
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `${isActive ? "text-white" : "text-[#9099AC]"} mt-0.5 md:mt-0`
+              }
+            >
+              <NewProjectButton />
+            </NavLink>
             <TooltipButton
               testId="toggle-conversation-panel"
               tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
