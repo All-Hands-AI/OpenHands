@@ -19,7 +19,7 @@ export function RefreshIconButton({ onClick }: RefreshIconButtonProps) {
         />
       }
       testId="refresh"
-      ariaLabel="Refresh"
+      ariaLabel={t("BUTTON$REFRESH" as I18nKey)}
       onClick={onClick}
     />
   );

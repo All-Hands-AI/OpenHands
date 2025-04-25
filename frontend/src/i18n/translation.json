@@ -3980,6 +3980,21 @@
     "BUTTON$COPY_TO_CLIPBOARD": {
         "en": "Copy to Clipboard"
     },
+    "BUTTON$REFRESH": {
+        "en": "Refresh",
+        "ja": "更新",
+        "zh-CN": "刷新",
+        "zh-TW": "重新整理",
+        "ko-KR": "새로고침",
+        "no": "Oppdater",
+        "it": "Aggiorna",
+        "pt": "Atualizar",
+        "es": "Actualizar",
+        "ar": "تحديث",
+        "fr": "Rafraîchir",
+        "tr": "Yenile",
+        "de": "Aktualisieren"
+    },
     "ERROR$REQUIRED_FIELD": {
         "en": "This field is required"
     },
