@@ -9,6 +9,7 @@ from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.utils.s3_utils import S3Handler
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -57,3 +58,5 @@ ConversationStoreImpl: ConversationStore = get_impl(
     ConversationStore,  # type: ignore
     server_config.conversation_store_class,
 )
+
+s3_handler = S3Handler()
