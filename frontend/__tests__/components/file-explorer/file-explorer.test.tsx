@@ -17,6 +17,8 @@ const renderFileExplorerWithRunningAgentState = () =>
     preloadedState: {
       agent: {
         curAgentState: AgentState.RUNNING,
+        currentAgentType: "CodeActAgent",
+        isDelegated: false,
       },
     },
   });

@@ -59,7 +59,11 @@ describe("useTerminal", () => {
   it("should render", () => {
     renderWithProviders(<TestTerminalComponent commands={[]} />, {
       preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
+        agent: { 
+          curAgentState: AgentState.RUNNING,
+          currentAgentType: "CodeActAgent",
+          isDelegated: false
+        },
         cmd: { commands: [] },
       },
     });
@@ -73,7 +77,11 @@ describe("useTerminal", () => {
 
     renderWithProviders(<TestTerminalComponent commands={commands} />, {
       preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
+        agent: { 
+          curAgentState: AgentState.RUNNING,
+          currentAgentType: "CodeActAgent",
+          isDelegated: false
+        },
         cmd: { commands },
       },
     });
@@ -100,7 +108,11 @@ describe("useTerminal", () => {
       />,
       {
         preloadedState: {
-          agent: { curAgentState: AgentState.RUNNING },
+          agent: { 
+            curAgentState: AgentState.RUNNING,
+            currentAgentType: "CodeActAgent",
+            isDelegated: false
+          },
           cmd: { commands },
         },
       },
