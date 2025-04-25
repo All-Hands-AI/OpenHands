@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -16,6 +17,8 @@ JWT_ALGORITHM = 'HS256'
 class SignupRequest(BaseModel):
     publicAddress: str
     signature: str
+    publicKey: Optional[str] = None  # public key of the user
+    deviceId: Optional[str] = None  # device id of the user
 
 
 class SignupResponse(BaseModel):
@@ -27,7 +30,13 @@ class SignupResponse(BaseModel):
 async def signup(request: SignupRequest) -> SignupResponse:
     """Sign up with Ethereum wallet."""
     url = f"{os.getenv('THESIS_AUTH_SERVER_URL')}/api/users/login"
-    payload = {'signature': request.signature, 'publicAddress': request.publicAddress}
+    payload = {
+        'signature': request.signature,
+        'publicAddress': request.publicAddress,
+        'publicKey': request.publicKey,
+        'deviceId': request.deviceId,
+    }
+
     headers = {'Content-Type': 'application/json'}
 
     # TODO: bypass auth server for dev mode
