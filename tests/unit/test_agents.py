@@ -44,6 +44,7 @@ from openhands.events.observation.commands import (
 )
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
+from openhands.memory.condenser import View
 
 
 @pytest.fixture(params=['CodeActAgent', 'ReadOnlyAgent'])
@@ -470,3 +471,19 @@ def test_get_system_message():
     assert len(result.tools) > 0
     assert any(tool['function']['name'] == 'execute_bash' for tool in result.tools)
     assert result._source == EventSource.AGENT
+
+
+def test_step_raises_error_if_no_initial_user_message(
+    agent: CodeActAgent, mock_state: State
+):
+    """Tests that step raises ValueError if the initial user message is not found."""
+    # Ensure history does NOT contain a user MessageAction
+    mock_state.history = [
+        MessageAction(content='Assistant message', source='assistant')
+    ]
+    # Mock the condenser to return the history as is
+    agent.condenser = Mock()
+    agent.condenser.condensed_history.return_value = View(events=mock_state.history)
+
+    with pytest.raises(ValueError, match='Initial user message not found'):
+        agent.step(mock_state)
