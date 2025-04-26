@@ -730,20 +730,8 @@ class ConversationMemory:
             logger.info(
                 'Second event was not the initial user message action. Inserting correct one at index 1.'
             )
-            # Check if the *correct* initial action is already present somewhere else *after* index 1
-            # If so, log it, and proceed with insertion at index 1.
-            try:
-                # Find the first occurrence *after* index 0
-                existing_index = events.index(initial_user_action, 1)
-                logger.info(
-                    f'Provided initial user message action was also found later in history at index {existing_index}. '
-                    'Proceeding to insert it at index 1.'
-                )
-                # Do not remove the duplicate for now: del events[existing_index]
-            except ValueError:
-                pass
 
-            # Insert the correct one at index 1. This will be the second message as LLM APIs expect
+            # Insert the user message event at index 1. This will be the second message as LLM APIs expect
             # but something was wrong with the history, so log all we can.
             events.insert(1, initial_user_action)
 
