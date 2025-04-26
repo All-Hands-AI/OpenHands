@@ -64,6 +64,7 @@ export const extractSettings = (
   // Extract provider tokens
   const githubToken = formData.get("github-token")?.toString();
   const gitlabToken = formData.get("gitlab-token")?.toString();
+  const azuredevopsToken = formData.get("azuredevops-token")?.toString();
   const providerTokens: Record<string, string> = {};
 
   if (githubToken) {
@@ -71,6 +72,9 @@ export const extractSettings = (
   }
   if (gitlabToken) {
     providerTokens.gitlab = gitlabToken;
+  }
+  if (azuredevopsToken) {
+    providerTokens.azuredevops = azuredevopsToken;
   }
 
   return {

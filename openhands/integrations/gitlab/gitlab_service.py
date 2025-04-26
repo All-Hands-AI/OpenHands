@@ -246,6 +246,9 @@ class GitLabService(BaseGitService, GitService):
             for repo in all_repos
         ]
 
+    async def get_repo_url(self, repository: str) -> str:
+        return f'https://oauth2:{await self.get_latest_token()}@gitlab.com/{repository}.git'
+        
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
 

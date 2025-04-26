@@ -21,6 +21,8 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
     provider_tokens: settings.provider_tokens,
+    azure_devops_org: settings.AZURE_DEVOPS_ORG,
+    azure_devops_project: settings.AZURE_DEVOPS_PROJECT,
   };
 
   await OpenHands.saveSettings(apiSettings);

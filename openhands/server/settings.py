@@ -35,6 +35,8 @@ class Settings(BaseModel):
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
+    azure_devops_org: str | None = None
+    azure_devops_project: str | None = None
 
     model_config = {
         'validate_assignment': True,

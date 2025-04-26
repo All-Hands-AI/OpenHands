@@ -331,12 +331,7 @@ class Runtime(FileEditRuntimeMixin):
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
                 )
-            return ''
-
-        provider_domains = {
-            ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
-        }
+            return ''       
 
         chosen_provider = (
             repository_provider
@@ -344,25 +339,22 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.git_provider
         )
 
-        if not git_provider_tokens:
-            raise RuntimeError('Need git provider tokens to clone repo')
+        provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+
         git_token = git_provider_tokens[chosen_provider].token
         if not git_token:
-            raise RuntimeError('Need a valid git token to clone repo')
-
-        domain = provider_domains[chosen_provider]
+            raise RuntimeError('Require valid git token to clone repo')
+        
         repository = (
             selected_repository
             if isinstance(selected_repository, str)
             else selected_repository.full_name
         )
 
-        if chosen_provider == ProviderType.GITLAB:
-            remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
-        else:
-            remote_repo_url = (
-                f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
-            )
+        remote_repo_url = await provider_handler.get_repo_url(
+            repository=repository,
+            provider=chosen_provider,
+        )       
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')

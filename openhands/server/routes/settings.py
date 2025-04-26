@@ -295,9 +295,21 @@ async def store_llm_settings(
 
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
+    request: Request,
     settings: POSTSettingsModel,
     settings_store: SettingsStore = Depends(get_user_settings_store),
-) -> JSONResponse:
+) -> JSONResponse:    
+    settings_store = await SettingsStoreImpl.get_instance(
+        config, get_user_id(request)
+    )
+    existing_settings = await settings_store.load()    
+
+    if settings.azure_devops_org and settings.azure_devops_project:
+        existing_settings.azure_devops_org = settings.azure_devops_org
+        existing_settings.azure_devops_project = settings.azure_devops_project
+
+        await settings_store.store(existing_settings)
+
     # Check provider tokens are valid
     provider_err_msg = await check_provider_tokens(settings)
     if provider_err_msg:
