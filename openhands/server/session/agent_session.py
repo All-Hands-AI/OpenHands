@@ -155,8 +155,7 @@ class AgentSession:
 
             # TODO: mask custom secrets as well
             if secrets_store:
-                provider_handler = ProviderHandler(provider_tokens=secrets_store.provider_tokens)
-                await provider_handler.set_event_stream_secrets(self.event_stream)
+                await secrets_store.set_event_stream_secrets(event_stream=self.event_stream)
 
             if not self._closed:
                 if initial_message:

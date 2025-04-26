@@ -77,6 +77,21 @@ class SecretStore(BaseModel):
         'arbitrary_types_allowed': True,
     }
 
+    async def set_event_stream_secrets(self, event_stream: EventStream) -> None:
+        """
+        This ensures that provider tokens and custom secrets masked from the event stream
+
+        Args:
+            event_stream: Agent session's event stream
+        """
+
+        secret_store = self.model_dump(context={'expose_secrets': True})
+        custom_secrets = secret_store.get('custom_secrets', {})
+        provider_handler = ProviderHandler(provider_tokens=self.provider_tokens)
+        exposed_env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        merged_secrets = {**custom_secrets, **exposed_env_vars}
+        event_stream.set_secrets(merged_secrets)
+
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
         self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
