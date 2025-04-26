@@ -743,8 +743,8 @@ class ConversationMemory:
             except ValueError:
                 pass
 
-            # Insert the correct one at index 1. This will be the second message
-            # as LLM APIs expect, but something was wrong with the history, so log all we can.
+            # Insert the correct one at index 1. This will be the second message as LLM APIs expect
+            # but something was wrong with the history, so log all we can.
             events.insert(1, initial_user_action)
 
         # Else: events[1] is already a user MessageAction.

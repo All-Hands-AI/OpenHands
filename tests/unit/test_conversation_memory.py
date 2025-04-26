@@ -164,10 +164,12 @@ def test_ensure_initial_user_message_correct_already_present(
 ):
     """Test that nothing changes if the correct initial user message is at index 1."""
     system_message = SystemMessageAction(content='System')
+    agent_message = MessageAction(content='Assistant')
+    agent_message._source = EventSource.USER
     events = [
         system_message,
         initial_user_action,
-        MessageAction(content='Assistant', source='assistant'),
+        agent_message,
     ]
     original_events = list(events)
     conversation_memory._ensure_initial_user_message(events, initial_user_action)
@@ -179,7 +181,8 @@ def test_ensure_initial_user_message_incorrect_at_index_1(
 ):
     """Test inserting the correct initial user message when an incorrect message is at index 1."""
     system_message = SystemMessageAction(content='System')
-    incorrect_second_message = MessageAction(content='Assistant', source='assistant')
+    incorrect_second_message = MessageAction(content='Assistant')
+    incorrect_second_message._source = EventSource.AGENT
     events = [system_message, incorrect_second_message]
     conversation_memory._ensure_initial_user_message(events, initial_user_action)
     assert len(events) == 3
@@ -193,9 +196,11 @@ def test_ensure_initial_user_message_correct_present_later(
 ):
     """Test inserting the correct initial user message at index 1 even if it exists later."""
     system_message = SystemMessageAction(content='System')
-    incorrect_second_message = MessageAction(content='Assistant', source='assistant')
+    incorrect_second_message = MessageAction(content='Assistant')
+    incorrect_second_message._source = EventSource.AGENT
     # Correct initial message is present, but later in the list
-    events = [system_message, incorrect_second_message, initial_user_action]
+    events = [system_message, incorrect_second_message]
+    conversation_memory._ensure_system_message(events)
     conversation_memory._ensure_initial_user_message(events, initial_user_action)
     assert len(events) == 3  # Should still insert at index 1, not remove the later one
     assert events[0] == system_message
@@ -209,15 +214,13 @@ def test_ensure_initial_user_message_different_user_msg_at_index_1(
 ):
     """Test inserting the correct initial user message when a *different* user message is at index 1."""
     system_message = SystemMessageAction(content='System')
-    different_user_message = MessageAction(
-        content='Different User Message', source='user'
-    )
+    different_user_message = MessageAction(content='Different User Message')
+    different_user_message._source = EventSource.USER
     events = [system_message, different_user_message]
     conversation_memory._ensure_initial_user_message(events, initial_user_action)
-    assert len(events) == 3
+    assert len(events) == 2
     assert events[0] == system_message
-    assert events[1] == initial_user_action  # Correct one inserted
-    assert events[2] == different_user_message  # Original second message shifted
+    assert events[1] == different_user_message  # Original second message remains
 
 
 def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_obs(
@@ -230,14 +233,19 @@ def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_
             The orphaned observation should be filtered out.
     """
     system_message = SystemMessageAction(content='System')
-    different_user_message = MessageAction(
-        content='Different User Message', source='user'
-    )
+    different_user_message = MessageAction(content='Different User Message')
+    different_user_message._source = EventSource.USER
 
     # Create an orphaned observation (no matching action/tool call request will exist)
-    mock_response = Mock(
-        id='mock_response_id', choices=[Mock(message=Mock())]
-    )  # Simplified mock
+    # Use a dictionary that mimics ModelResponse structure to satisfy Pydantic
+    mock_response = {
+        'id': 'mock_response_id',
+        'choices': [{'message': {'content': None, 'tool_calls': []}}],
+        'created': 0,
+        'model': '',
+        'object': '',
+        'usage': {'completion_tokens': 0, 'prompt_tokens': 0, 'total_tokens': 0},
+    }
     orphaned_obs = CmdOutputObservation(
         command='orphan_cmd',
         content='Orphaned output',
@@ -386,10 +394,13 @@ def test_process_events_with_error_observation(conversation_memory):
 def test_process_events_with_unknown_observation(conversation_memory):
     # Create a mock that inherits from Event but not Action or Observation
     obs = Mock(spec=Event)
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
 
     with pytest.raises(ValueError, match='Unknown event type'):
         conversation_memory.process_events(
             condensed_history=[obs],
+            initial_user_action=initial_user_message,
             max_message_chars=None,
             vision_is_active=False,
         )
@@ -443,7 +454,7 @@ def test_process_events_with_file_read_observation(conversation_memory):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert result.content[0].text == 'File content'
+    assert result.content[0].text == '\n\nFile content'
 
 
 def test_process_events_with_browser_output_observation(conversation_memory):
@@ -542,14 +553,20 @@ def test_process_events_with_function_calling_observation(conversation_memory):
         model_response=mock_response,
         total_calls_in_response=1,
     )
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # No direct message when using function calling
-    assert len(messages) == 1  # should be no messages except system message
+    assert (
+        len(messages) == 2
+    )  # should be no messages except system message and initial user message
 
 
 def test_process_events_with_message_action_with_image(conversation_memory):
@@ -559,14 +576,18 @@ def test_process_events_with_message_action_with_image(conversation_memory):
     )
     action._source = EventSource.AGENT
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[action],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=True,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'assistant'
     assert len(result.content) == 2
     assert isinstance(result.content[0], TextContent)
@@ -579,14 +600,18 @@ def test_process_events_with_user_cmd_action(conversation_memory):
     action = CmdRunAction(command='ls -l')
     action._source = EventSource.USER
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[action],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -612,14 +637,18 @@ def test_process_events_with_agent_finish_action_with_tool_metadata(
         total_calls_in_response=1,
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[action],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'assistant'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -655,18 +684,22 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
         content='Retrieved environment info',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert result.content[0].text == 'Formatted repository and runtime info'
+    assert result.content[0].text == '\n\nFormatted repository and runtime info'
 
     # Verify the prompt_manager was called with the correct parameters
     conversation_memory.prompt_manager.build_workspace_context.assert_called_once()
@@ -710,14 +743,18 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
         content='Retrieved knowledge from microagents',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + Initial User + Result
+    result = messages[2]  # Result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -753,14 +790,18 @@ def test_process_events_with_microagent_observation_extensions_disabled(
         content='Retrieved environment info',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # When prompt extensions are disabled, the RecallObservation should be ignored
-    assert len(messages) == 1  # should be no messages except system message
+    assert len(messages) == 2  # System + Initial User
 
     # Verify the prompt_manager was not called
     conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
@@ -775,14 +816,18 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
         content='Retrieved knowledge from microagents',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # The implementation returns an empty string and it doesn't creates a message
-    assert len(messages) == 1  # should be no messages except system message
+    assert len(messages) == 2  # System + Initial User
 
     # When there are no triggered agents, build_microagent_info is not called
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
@@ -987,19 +1032,23 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
         content='Third retrieval',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs1, obs2, obs3],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Verify that only the first occurrence of content for each agent is included
-    assert len(messages) == 2  # with system message
-
+    assert len(messages) == 3  # System + Initial User + Result
+    # Result is now at index 2
     # First microagent should include all agents since they appear here first
-    assert 'Image best practices v1' in messages[1].content[0].text
-    assert 'Git best practices v1' in messages[1].content[0].text
-    assert 'Python best practices v1' in messages[1].content[0].text
+    assert 'Image best practices v1' in messages[2].content[0].text
+    assert 'Git best practices v1' in messages[2].content[0].text
+    assert 'Python best practices v1' in messages[2].content[0].text
 
 
 def test_process_events_with_microagent_observation_deduplication_disabled_agents(
@@ -1036,18 +1085,22 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
         content='Second retrieval',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs1, obs2],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Verify that disabled agents are filtered out and only the first occurrence of enabled agents is included
-    assert len(messages) == 2
-
+    assert len(messages) == 3  # System + Initial User + Result
+    # Result is now at index 2
     # First microagent should include enabled_agent but not disabled_agent
-    assert 'Disabled agent content' not in messages[1].content[0].text
-    assert 'Enabled agent content v1' in messages[1].content[0].text
+    assert 'Disabled agent content' not in messages[2].content[0].text
+    assert 'Enabled agent content v1' in messages[2].content[0].text
 
 
 def test_process_events_with_microagent_observation_deduplication_empty(
@@ -1060,17 +1113,22 @@ def test_process_events_with_microagent_observation_deduplication_empty(
         content='Empty retrieval',
     )
 
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[obs],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Verify that empty RecallObservations are handled gracefully
     assert (
-        len(messages) == 1
-    )  # an empty microagent is not added to Messages, only system message is found
+        len(messages) == 2  # System + Initial User
+    )  # an empty microagent is not added to Messages
     assert messages[0].role == 'system'
+    assert messages[1].role == 'user'  # Initial user message
 
 
 def test_has_agent_in_earlier_events(conversation_memory):
@@ -1282,13 +1340,18 @@ def test_system_message_in_events(conversation_memory):
     system_message._source = EventSource.AGENT
 
     # Process events with the system message in condensed_history
+    # Define initial user action
+    initial_user_action = MessageAction(content='Initial user message')
+    initial_user_action._source = EventSource.USER
     messages = conversation_memory.process_events(
         condensed_history=[system_message],
+        initial_user_action=initial_user_action,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Check that the system message was processed correctly
-    assert len(messages) == 1
+    assert len(messages) == 2  # System + Initial User
     assert messages[0].role == 'system'
     assert messages[0].content[0].text == 'System message'
+    assert messages[1].role == 'user'  # Initial user message
