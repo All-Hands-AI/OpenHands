@@ -232,7 +232,9 @@ class CodeActAgent(Agent):
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_messages(self, events: list[Event], initial_user_message: MessageAction) -> list[Message]:
+    def _get_messages(
+        self, events: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state

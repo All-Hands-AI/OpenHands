@@ -366,7 +366,9 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
     messages = agent._get_messages(mock_state.history)
     assert len(messages) == 4  # System + initial user + action + observation
     assert messages[0].role == 'system'  # First message should be the system message
-    assert messages[1].role == 'user'  # Second message should be the initial user message
+    assert (
+        messages[1].role == 'user'
+    )  # Second message should be the initial user message
     assert messages[2].role == 'assistant'  # Third message should be the action
     assert messages[3].role == 'tool'  # Fourth message should be the observation
 
@@ -375,19 +377,25 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
     messages = agent._get_messages(mock_state.history)
     assert len(messages) == 4
     assert messages[0].role == 'system'  # First message should be the system message
-    assert messages[1].role == 'user'  # Second message should be the initial user message
+    assert (
+        messages[1].role == 'user'
+    )  # Second message should be the initial user message
 
     # If only one of the two events is present, then we should just get the system message
     # plus any valid message from the event
     mock_state.history = [initial_user_message, action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 2  # System + initial user message, action is waiting for its observation
+    assert (
+        len(messages) == 2
+    )  # System + initial user message, action is waiting for its observation
     assert messages[0].role == 'system'
     assert messages[1].role == 'user'
 
     mock_state.history = [initial_user_message, observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 2  # System + initial user message, observation has no matching action
+    assert (
+        len(messages) == 2
+    )  # System + initial user message, observation has no matching action
     assert messages[0].role == 'system'
     assert messages[1].role == 'user'
 
