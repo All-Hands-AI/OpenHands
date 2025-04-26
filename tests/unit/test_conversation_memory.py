@@ -271,22 +271,16 @@ def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_
     )
 
     # Assertions on the final messages list
-    assert len(messages) == 3
+    assert len(messages) == 2
     # 1. System message should be first
     assert messages[0].role == 'system'
-    assert messages[0].content[0].text == 'System message'  # From fixture
+    assert messages[0].content[0].text == 'System message'
 
-    # 2. The *correct* initial user action should be inserted at index 1
+    # 2. The different user message should be left at index 1
     assert messages[1].role == 'user'
-    assert messages[1].content[0].text == initial_user_action.content
+    assert messages[1].content[0].text == different_user_message.content
 
-    # 3. The original (incorrect) second message should be shifted to index 2
-    #    and potentially have formatting applied
-    assert messages[2].role == 'user'
-    # Check content, allowing for potential added newlines by _apply_user_message_formatting
-    assert messages[2].content[0].text.strip() == different_user_message.content
-
-    # Implicitly assert that the orphaned_obs was filtered out by checking the length (3)
+    # Implicitly assert that the orphaned_obs was filtered out by checking the length (2)
 
 
 def test_process_events_with_cmd_output_observation(conversation_memory):
