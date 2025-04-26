@@ -14,11 +14,6 @@ async def get_provider_tokens(request: Request) -> PROVIDER_TOKEN_TYPE | None:
     return provider_tokens
 
 
-async def get_secret_store(request: Request) -> SecretStore:
-    user_auth = await get_user_auth(request)
-    secret_store = await user_auth.get_secret_store()
-    return secret_store
-
 async def get_access_token(request: Request) -> SecretStr | None:
     user_auth = await get_user_auth(request)
     access_token = await user_auth.get_access_token()

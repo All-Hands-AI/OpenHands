@@ -151,11 +151,11 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
         agent.set_mcp_tools(mcp_tools)
 
-        git_provider_tokens = None
+        secrets_store = None
         selected_repository = None
         selected_branch = None
         if isinstance(settings, ConversationInitData):
-            git_provider_tokens = settings.git_provider_tokens
+            secrets_store = settings.secrets_store
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
 
@@ -168,7 +168,7 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                git_provider_tokens=git_provider_tokens,
+                secrets_store=secrets_store,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,

@@ -16,7 +16,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, SecretStore
 from openhands.integrations.service_types import Repository
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -81,7 +81,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         max_iterations: int,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        secrets_store: SecretStore | None = None,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
@@ -119,7 +119,7 @@ class AgentSession:
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
-                git_provider_tokens=git_provider_tokens,
+                secrets_store=secrets_store,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
@@ -153,8 +153,9 @@ class AgentSession:
                 repo_directory=repo_directory,
             )
 
-            if git_provider_tokens:
-                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+            # TODO: mask custom secrets as well
+            if secrets_store:
+                provider_handler = ProviderHandler(provider_tokens=secrets_store.provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
 
             if not self._closed:
@@ -257,7 +258,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        secrets_store: SecretStore | None = None,
         selected_repository: Repository | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -287,13 +288,14 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=git_provider_tokens,
+                git_provider_tokens=secrets_store.provider_tokens if secrets_store else None,
                 user_id=self.user_id,
             )
         else:
+            # TODO: mask custom secrets as well
             provider_handler = ProviderHandler(
-                provider_tokens=git_provider_tokens
-                or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+                provider_tokens=secrets_store.provider_tokens if secrets_store else
+                 cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
             env_vars = await provider_handler.get_env_vars(expose_secrets=True)
 
@@ -323,9 +325,10 @@ class AgentSession:
                 )
             return False
 
-        await self.runtime.clone_or_init_repo(
-            git_provider_tokens, selected_repository, selected_branch
-        )
+        if secrets_store:
+            await self.runtime.clone_or_init_repo(
+                secrets_store.provider_tokens, selected_repository, selected_branch
+            )
         await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(

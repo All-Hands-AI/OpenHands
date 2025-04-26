@@ -12,6 +12,7 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
+    SecretStore,
 )
 from openhands.integrations.service_types import Repository
 from openhands.runtime import get_runtime_cls
@@ -20,6 +21,7 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.settings import Settings
 from openhands.server.shared import (
     ConversationStoreImpl,
     SettingsStoreImpl,
@@ -31,6 +33,7 @@ from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
+    get_user_settings,
 )
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -55,7 +58,6 @@ class InitSessionRequest(BaseModel):
 
 async def _create_new_conversation(
     user_id: str | None,
-    git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
     selected_repository: Repository | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
@@ -70,7 +72,7 @@ async def _create_new_conversation(
     )
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    settings = await settings_store.load()
+    settings: Settings = await settings_store.load()
     logger.info('Settings loaded')
 
     session_init_args: dict = {}
@@ -91,10 +93,9 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['git_provider_tokens'] = git_provider_tokens
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
-    conversation_init_data = ConversationInitData(**session_init_args)
+    conversation_init_data = ConversationInitData(**session_init_args, secrets_store=settings.secrets_store)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('Conversation store loaded')
@@ -156,7 +157,6 @@ async def _create_new_conversation(
 async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
-    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
 ):
     """Initialize a new session or join an existing one.
 
@@ -174,7 +174,6 @@ async def new_conversation(
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             user_id,
-            provider_tokens,
             selected_repository,
             selected_branch,
             initial_user_msg,

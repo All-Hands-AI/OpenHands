@@ -45,13 +45,14 @@ class DefaultUserAuth(UserAuth):
         self._settings = settings
         return settings
     
-    async def get_secret_store(self) -> SecretStore | None: 
+    async def get_secrets_store(self) -> SecretStore | None: 
         settings = await self.get_user_settings()
         secrets_store = getattr(settings, 'secrets_store', None)
         return secrets_store
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
-        secrets_store = await self.get_secret_store()
+        settings = await self.get_user_settings()
+        secrets_store = getattr(settings, 'secrets_store', None)
         provider_tokens = getattr(secrets_store, 'provider_tokens', None)
         return provider_tokens
 
