@@ -98,6 +98,12 @@ def test_reset(agent):
     action._source = EventSource.AGENT
     agent.pending_actions.append(action)
 
+    # Create a mock state with initial user message
+    mock_state = Mock(spec=State)
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+    mock_state.history = [initial_user_message]
+
     # Reset
     agent.reset()
 
@@ -111,8 +117,14 @@ def test_step_with_pending_actions(agent):
     pending_action._source = EventSource.AGENT
     agent.pending_actions.append(pending_action)
 
+    # Create a mock state with initial user message
+    mock_state = Mock(spec=State)
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+    mock_state.history = [initial_user_message]
+
     # Step should return the pending action
-    result = agent.step(Mock())
+    result = agent.step(mock_state)
     assert result == pending_action
     assert len(agent.pending_actions) == 0
 
@@ -261,6 +273,11 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_state.latest_user_message_llm_metrics = None
     mock_state.latest_user_message_tool_call_metadata = None
 
+    # Add initial user message to history
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+    mock_state.history = [initial_user_message]
+
     action = agent.step(mock_state)
     assert isinstance(action, MessageAction)
     assert action.content == 'Task completed'
@@ -331,42 +348,48 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
     )
 
     action = CmdRunAction('foo')
-    action._source = 'agent'
+    action._source = EventSource.AGENT
     action.tool_call_metadata = tool_call_metadata
 
     observation = CmdOutputObservation(content='', command_id=0, command='foo')
     observation.tool_call_metadata = tool_call_metadata
 
+    # Add initial user message
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+
     # When both events are provided, the agent should get three messages:
     # 1. The system message (added automatically for backward compatibility)
     # 2. The action message
     # 3. The observation message
-    mock_state.history = [action, observation]
+    mock_state.history = [initial_user_message, action, observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 3
+    assert len(messages) == 4  # System + initial user + action + observation
     assert messages[0].role == 'system'  # First message should be the system message
-    assert messages[1].role == 'assistant'  # Second message should be the action
-    assert messages[2].role == 'tool'  # Third message should be the observation
+    assert messages[1].role == 'user'  # Second message should be the initial user message
+    assert messages[2].role == 'assistant'  # Third message should be the action
+    assert messages[3].role == 'tool'  # Fourth message should be the observation
 
     # The same should hold if the events are presented out-of-order
-    mock_state.history = [observation, action]
+    mock_state.history = [initial_user_message, observation, action]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 3
+    assert len(messages) == 4
     assert messages[0].role == 'system'  # First message should be the system message
+    assert messages[1].role == 'user'  # Second message should be the initial user message
 
     # If only one of the two events is present, then we should just get the system message
     # plus any valid message from the event
-    mock_state.history = [action]
+    mock_state.history = [initial_user_message, action]
     messages = agent._get_messages(mock_state.history)
-    assert (
-        len(messages) == 1
-    )  # Only system message, action is waiting for its observation
+    assert len(messages) == 2  # System + initial user message, action is waiting for its observation
     assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
 
-    mock_state.history = [observation]
+    mock_state.history = [initial_user_message, observation]
     messages = agent._get_messages(mock_state.history)
-    assert len(messages) == 1  # Only system message, observation has no matching action
+    assert len(messages) == 2  # System + initial user message, observation has no matching action
     assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
 
 
 def test_grep_tool():
@@ -478,9 +501,9 @@ def test_step_raises_error_if_no_initial_user_message(
 ):
     """Tests that step raises ValueError if the initial user message is not found."""
     # Ensure history does NOT contain a user MessageAction
-    mock_state.history = [
-        MessageAction(content='Assistant message', source='assistant')
-    ]
+    assistant_message = MessageAction(content='Assistant message')
+    assistant_message._source = EventSource.AGENT
+    mock_state.history = [assistant_message]
     # Mock the condenser to return the history as is
     agent.condenser = Mock()
     agent.condenser.condensed_history.return_value = View(events=mock_state.history)
