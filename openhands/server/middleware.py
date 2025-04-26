@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 from typing import Callable
 from urllib.parse import urlparse
 
-import jwt
-from fastapi import Request, status
+from fastapi import HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -356,19 +355,12 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             request.state.user = user
 
             return await call_next(request)
-
-        except jwt.ExpiredSignatureError:
+        except HTTPException as e:
             return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'detail': 'Token has expired'},
+                status_code=e.status_code,
+                content={'detail': e.detail},
             )
-        except jwt.InvalidTokenError:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'detail': 'Invalid token'},
-            )
-        except Exception as e:
-            logger.error(f'Error processing JWT token: {str(e)}')
+        except Exception:
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={'detail': 'Internal server error'},

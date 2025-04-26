@@ -3,7 +3,7 @@ import time
 from enum import IntEnum
 
 import httpx
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
@@ -61,13 +61,22 @@ async def get_user_detail_from_thesis_auth_server(
         logger.error(f'Request error while getting user detail: {exc}')
         raise HTTPException(status_code=500, detail='Unable to reach auth server')
 
-    if response.status_code != 200:
+    if response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
         logger.error(
             f'Failed to get user detail: {response.status_code} - {response.text}'
         )
         raise HTTPException(
             status_code=response.status_code,
             detail=response.json().get('error', 'Unknown error'),
+        )
+
+    if response.status_code == status.HTTP_401_UNAUTHORIZED:
+        logger.error(
+            f'Failed to get user detail: {response.status_code} - {response.text}'
+        )
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.json().get('error', f'Unauthorized : {response.text}'),
         )
     user_data = response.json().get('user')
     if not user_data:
