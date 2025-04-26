@@ -190,7 +190,7 @@ class AgentController:
         logger.debug(f'System message got from agent: {system_message}')
         if system_message:
             self.event_stream.add_event(system_message, EventSource.AGENT)
-            logger.debug(f'System message added to event stream: {system_message}')
+            logger.info(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -1020,7 +1020,7 @@ class AgentController:
             self.state.start_id = 0
 
             self.log(
-                'debug',
+                'info',
                 f'AgentController {self.id} - created new state. start_id: {self.state.start_id}',
             )
         else:
@@ -1030,7 +1030,7 @@ class AgentController:
                 self.state.start_id = 0
 
             self.log(
-                'debug',
+                'info',
                 f'AgentController {self.id} initializing history from event {self.state.start_id}',
             )
 
@@ -1146,6 +1146,11 @@ class AgentController:
         kept_event_ids = {
             e.id for e in self._apply_conversation_window(self.state.history)
         }
+        self.log(
+            'info',
+            f'Context window exceeded. Keeping events with IDs: {kept_event_ids}',
+        )
+        # Remove events that are not in the kept set
         forgotten_event_ids = {e.id for e in self.state.history} - kept_event_ids
 
         # Save the ID of the first event in our truncated history for future reloading
