@@ -183,7 +183,6 @@ class CodeActAgent(Agent):
                 f'CRITICAL: Could not find the initial user MessageAction in the full {len(state.history)} events history.'
             )
             # Depending on desired robustness, could raise error or create a dummy action
-            # For now, let's create a dummy action to avoid crashing
             # and log the error
             raise ValueError(
                 'Initial user message not found in history. Please report this issue.'
