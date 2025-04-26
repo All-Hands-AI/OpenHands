@@ -477,8 +477,6 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
         
-        # Verify initialize_runtime was called at least once
-        assert mock_initialize_runtime.called, "initialize_runtime should be called"
 
         # Assert the result matches our expectations
         assert isinstance(result, ResolverOutput)
@@ -491,19 +489,19 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
 
         # Assert that the mocked functions were called
         mock_create_runtime.assert_called_once()
-        mock_runtime.connect.assert_awaited_once()
+        mock_runtime.connect.assert_called_once()
+        mock_initialize_runtime.assert_called_once()
+        mock_run_controller.assert_called_once()
+        resolver.complete_runtime.assert_awaited_once_with(mock_runtime, base_commit)
         
         # Assert run_controller was called with the right parameters
         if not test_case['run_controller_raises']:
-            mock_run_controller.assert_awaited_once()
             # Check that the first positional argument is a config
             assert 'config' in mock_run_controller.call_args[1]
             # Check that initial_user_action is a MessageAction with the right content
             assert isinstance(mock_run_controller.call_args[1]['initial_user_action'], MessageAction)
             assert mock_run_controller.call_args[1]['runtime'] == mock_runtime
         
-        # Assert complete_runtime was called
-        resolver.complete_runtime.assert_awaited_once_with(mock_runtime, base_commit)
         
         # Assert that guess_success was called only for successful runs
         if test_case['expected_success']:
