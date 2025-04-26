@@ -33,7 +33,7 @@ async def save_prompt(request: Request, data: SavePromptRequest):
         '/api/prompts',
         bearer_token,
         data.model_dump(),
-        request.headers.get('x-device-id'),
+        x_device_id=request.headers.get('x-device-id'),
     )
 
 
