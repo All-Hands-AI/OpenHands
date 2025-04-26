@@ -1,6 +1,7 @@
 """Test function calling module."""
 
 import json
+from unittest.mock import patch
 
 import pytest
 from litellm import ModelResponse
@@ -57,16 +58,19 @@ def test_execute_bash_valid():
     assert actions[0].is_input is False
 
     # Test with timeout parameter
-    response_with_timeout = create_mock_response(
-        'execute_bash', {'command': 'ls', 'is_input': 'false', 'timeout': 30}
-    )
-    actions_with_timeout = response_to_actions(response_with_timeout)
-    assert len(actions_with_timeout) == 1
-    assert isinstance(actions_with_timeout[0], CmdRunAction)
-    assert actions_with_timeout[0].command == 'ls'
-    assert actions_with_timeout[0].is_input is False
-    assert hasattr(actions_with_timeout[0], '_timeout')
-    assert actions_with_timeout[0]._timeout == 30.0
+    with patch.object(CmdRunAction, 'set_hard_timeout') as mock_set_hard_timeout:
+        response_with_timeout = create_mock_response(
+            'execute_bash', {'command': 'ls', 'is_input': 'false', 'timeout': 30}
+        )
+        actions_with_timeout = response_to_actions(response_with_timeout)
+
+        # Verify set_hard_timeout was called with the correct value
+        mock_set_hard_timeout.assert_called_once_with(30.0)
+
+        assert len(actions_with_timeout) == 1
+        assert isinstance(actions_with_timeout[0], CmdRunAction)
+        assert actions_with_timeout[0].command == 'ls'
+        assert actions_with_timeout[0].is_input is False
 
 
 def test_execute_bash_missing_command():
