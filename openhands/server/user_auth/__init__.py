@@ -1,7 +1,7 @@
 from fastapi import Request
 from pydantic import SecretStr
 
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, SecretStore
 from openhands.integrations.service_types import ProviderType
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import get_user_auth
@@ -13,6 +13,11 @@ async def get_provider_tokens(request: Request) -> PROVIDER_TOKEN_TYPE | None:
     provider_tokens = await user_auth.get_provider_tokens()
     return provider_tokens
 
+
+async def get_secret_store(request: Request) -> SecretStore:
+    user_auth = await get_user_auth(request)
+    secret_store = await user_auth.get_secret_store()
+    return secret_store
 
 async def get_access_token(request: Request) -> SecretStr | None:
     user_auth = await get_user_auth(request)
