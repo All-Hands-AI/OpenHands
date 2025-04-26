@@ -12,7 +12,6 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
-    SecretStore,
 )
 from openhands.integrations.service_types import Repository
 from openhands.runtime import get_runtime_cls
@@ -33,7 +32,6 @@ from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
-    get_user_settings,
 )
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -58,6 +56,7 @@ class InitSessionRequest(BaseModel):
 
 async def _create_new_conversation(
     user_id: str | None,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None,
     selected_repository: Repository | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
@@ -95,6 +94,11 @@ async def _create_new_conversation(
 
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
+    settings.secrets_store.model_copy(
+        update={'provider_tokens': provider_tokens}
+    )
+   
+
     conversation_init_data = ConversationInitData(**session_init_args, secrets_store=settings.secrets_store)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -157,6 +161,7 @@ async def _create_new_conversation(
 async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
 ):
     """Initialize a new session or join an existing one.
 
@@ -174,6 +179,7 @@ async def new_conversation(
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             user_id,
+            provider_tokens,
             selected_repository,
             selected_branch,
             initial_user_msg,
