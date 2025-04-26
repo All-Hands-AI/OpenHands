@@ -48,7 +48,6 @@ class MCPClient(BaseModel):
             timeout = self.connection_timeout
             
         exit_stack = AsyncExitStack()
-        session = None
         
         try:
             # Create streams context with timeout
@@ -59,31 +58,20 @@ class MCPClient(BaseModel):
                 headers=headers,
             )
             
-            # Use asyncio.wait_for to enforce overall timeout
-            async def setup_session():
-                nonlocal session
-                streams = await exit_stack.enter_async_context(streams_context)
-                session = await exit_stack.enter_async_context(ClientSession(*streams))
-                return session
-                
-            session = await asyncio.wait_for(setup_session(), timeout=timeout)
+            # Set up the session
+            streams = await exit_stack.enter_async_context(streams_context)
+            session = await exit_stack.enter_async_context(ClientSession(*streams))
+            
+            # Yield the session for use
             yield session
             
-        except asyncio.TimeoutError:
-            logger.error(f'Connection to {self.server_url} timed out after {timeout} seconds')
-            raise
         except Exception as e:
-            logger.error(f'Error connecting to {self.server_url}: {str(e)}')
+            logger.error(f'Error with MCP session: {str(e)}')
             raise
         finally:
-            # Clean up resources with timeout
-            if exit_stack:
-                try:
-                    await asyncio.wait_for(exit_stack.aclose(), timeout=5.0)
-                except asyncio.TimeoutError:
-                    logger.warning('Exit stack cleanup timed out after 5 seconds')
-                except Exception as e:
-                    logger.error(f'Error during exit stack cleanup: {str(e)}')
+            # The AsyncExitStack context manager will automatically clean up
+            # all resources when exiting this context
+            await exit_stack.aclose()
 
     async def connect_sse(
         self, server_url: str, timeout: float = 30.0, api_key: str | None = None

@@ -48,7 +48,6 @@ from openhands.mcp.client import MCPClient
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
-from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -375,21 +374,15 @@ class ActionExecutionClient(Runtime):
         # Create clients for this specific operation
         mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
         
-        try:
-            # Call the tool
-            result = await call_tool_mcp_handler(mcp_clients, action)
-            return result
-        finally:
-            # Clean up clients after use
-            for client in mcp_clients:
-                try:
-                    await asyncio.wait_for(client.disconnect(), timeout=5.0)
-                except (asyncio.TimeoutError, Exception) as e:
-                    self.log('warning', f'Error during MCP client cleanup: {str(e)}')
-
-    async def aclose(self) -> None:
-        # No need to disconnect MCP clients as they're created and cleaned up per operation
-        pass
+        # Call the tool and return the result
+        # No need for try/finally since disconnect() is now just resetting state
+        result = await call_tool_mcp_handler(mcp_clients, action)
+        
+        # Reset client state (no active connections to worry about)
+        for client in mcp_clients:
+            await client.disconnect()
+            
+        return result
 
     def close(self) -> None:
         # Make sure we don't close the session multiple times
@@ -398,4 +391,4 @@ class ActionExecutionClient(Runtime):
             return
         self._runtime_closed = True
         self.session.close()
-        call_async_from_sync(self.aclose)
+        # No need to call aclose() as we're not maintaining persistent MCP clients
