@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, select, or_
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
@@ -69,6 +69,7 @@ class ConversationModule:
         user_id: str,
         configs: dict,
         title: str,
+        status: str = 'available',
     ):
         try:
             query = Conversation.select().where(
@@ -84,7 +85,7 @@ class ConversationModule:
                         (Conversation.c.conversation_id == conversation_id)
                         & (Conversation.c.user_id == user_id)
                     )
-                    .values(published=is_published, configs={**existing_record.configs, **configs}, title=title)
+                    .values(published=is_published, configs={**existing_record.configs, **configs}, title=title, status=status)
                 )
             else:
                 await database.execute(
@@ -274,9 +275,9 @@ class ConversationModule:
                         Conversation.c.conversation_id
                         == ResearchTrending.c.conversation_id,
                     )
-                ).where(Conversation.c.status != 'deleted')
+                ).where(or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None)))
             else:
-                query = select(Conversation).where(Conversation.c.status != 'deleted')
+                query = select(Conversation).where(or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None)))
 
             if published is not None:
                 query = query.where(Conversation.c.published == published)
