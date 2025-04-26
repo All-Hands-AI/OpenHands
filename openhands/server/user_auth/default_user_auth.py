@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from fastapi import Request
 from pydantic import SecretStr
 
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, SecretStore
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import UserAuth
@@ -44,18 +44,12 @@ class DefaultUserAuth(UserAuth):
         settings = await settings_store.load()
         self._settings = settings
         return settings
-    
-    async def get_secrets_store(self) -> SecretStore | None: 
-        settings = await self.get_user_settings()
-        secrets_store = getattr(settings, 'secrets_store', None)
-        return secrets_store
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         settings = await self.get_user_settings()
         secrets_store = getattr(settings, 'secrets_store', None)
         provider_tokens = getattr(secrets_store, 'provider_tokens', None)
         return provider_tokens
-
 
     @classmethod
     async def get_instance(cls, request: Request) -> UserAuth:

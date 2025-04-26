@@ -1,6 +1,5 @@
 from pydantic import Field
 
-from openhands.integrations.provider import SecretStore
 from openhands.integrations.service_types import Repository
 from openhands.server.settings import Settings
 

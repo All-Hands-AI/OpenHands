@@ -2,7 +2,6 @@ import asyncio
 import json
 import time
 from logging import LoggerAdapter
-from types import MappingProxyType
 from typing import Callable, cast
 
 from openhands.controller import AgentController
@@ -16,7 +15,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, SecretStore
+from openhands.integrations.provider import SecretStore
 from openhands.integrations.service_types import Repository
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
