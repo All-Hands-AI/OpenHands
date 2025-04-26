@@ -39,6 +39,10 @@ on:
         required: false
       LLM_API_KEY:
         required: true
+      APP_ID:
+        required: false
+      APP_PRIVATE_KEY:
+        required: false
       LLM_BASE_URL:
         required: false
       PAT_TOKEN:
@@ -89,6 +93,28 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Generate GitHub App Token
+        id: generate-token
+        # Only run if App ID and Key are provided via secrets
+        if: secrets.APP_ID && secrets.APP_PRIVATE_KEY
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Determine Auth Token
+        id: determine-auth-token
+        run: |
+          if [ -n "${{ steps.generate-token.outputs.token }}" ]; then
+            echo "Using GitHub App Token"
+            echo "AUTH_TOKEN=${{ steps.generate-token.outputs.token }}" >> $GITHUB_ENV
+          elif [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+            echo "Using PAT Token"
+            echo "AUTH_TOKEN=${{ secrets.PAT_TOKEN }}" >> $GITHUB_ENV
+          else
+            echo "Using default GITHUB_TOKEN"
+            echo "AUTH_TOKEN=${{ github.token }}" >> $GITHUB_ENV
+          fi
       - name: Get latest versions and create requirements.txt
         run: |
           python -m pip index versions openhands-ai > openhands_versions.txt
@@ -126,7 +152,7 @@ jobs:
           LLM_API_VERSION: ${{ inputs.LLM_API_VERSION }}
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
           PAT_USERNAME: ${{ secrets.PAT_USERNAME }}
-          GITHUB_TOKEN: ${{ github.token }}
+          APP_TOKEN_GENERATED: ${{ steps.generate-token.outputs.token && 'true' || 'false' }}
         run: |
           required_vars=("LLM_API_KEY")
           for var in "${required_vars[@]}"; do
@@ -141,8 +167,13 @@ jobs:
             echo "Warning: LLM_BASE_URL is not set, will use default API endpoint"
           fi
 
-          if [ -z "$PAT_TOKEN" ]; then
-            echo "Warning: PAT_TOKEN is not set, falling back to GITHUB_TOKEN"
+          # Check auth token source
+          if [ "$APP_TOKEN_GENERATED" == "true" ]; then
+            echo "Info: Using GitHub App Token for authentication."
+          elif [ -n "$PAT_TOKEN" ]; then
+            echo "Info: Using PAT_TOKEN for authentication."
+          else
+            echo "Warning: Neither App Token nor PAT_TOKEN is set, falling back to default GITHUB_TOKEN. This may have insufficient permissions."
           fi
 
           if [ -z "$PAT_USERNAME" ]; then
@@ -178,8 +209,8 @@ jobs:
           fi
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
-          echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.PAT_TOKEN || github.token }}" >> $GITHUB_ENV
-          echo "SANDBOX_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
+          echo "SANDBOX_ENV_GITHUB_TOKEN=${{ env.AUTH_TOKEN }}" >> $GITHUB_ENV
+          echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
           echo "TARGET_BRANCH=${{ inputs.target_branch || 'main' }}" >> $GITHUB_ENV
@@ -187,7 +218,7 @@ jobs:
       - name: Comment on issue with start message
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.PAT_TOKEN || github.token }}
+          github-token: ${{ env.AUTH_TOKEN }}
           script: |
             const issueType = process.env.ISSUE_TYPE;
             github.rest.issues.createComment({
@@ -235,7 +266,7 @@ jobs:
 
       - name: Attempt to resolve issue
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ env.AUTH_TOKEN }}
           GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
           GIT_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
@@ -272,7 +303,7 @@ jobs:
       - name: Create draft PR or push branch
         if: always() # Create PR or branch even if the previous steps fail
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ env.AUTH_TOKEN }}
           GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
           GIT_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
@@ -304,7 +335,7 @@ jobs:
           AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
           ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         with:
-          github-token: ${{ secrets.PAT_TOKEN || github.token }}
+          github-token: ${{ env.AUTH_TOKEN }}
           script: |
             const fs = require('fs');
             const issueNumber = process.env.ISSUE_NUMBER;
@@ -341,7 +372,7 @@ jobs:
           ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
           RESOLUTION_SUCCESS: ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}
         with:
-          github-token: ${{ secrets.PAT_TOKEN || github.token }}
+          github-token: ${{ env.AUTH_TOKEN }}
           script: |
             const fs = require('fs');
             const path = require('path');
@@ -414,7 +445,7 @@ jobs:
         env:
           ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         with:
-          github-token: ${{ secrets.PAT_TOKEN || github.token }}
+          github-token: ${{ env.AUTH_TOKEN }}
           script: |
             const issueNumber = process.env.ISSUE_NUMBER;
 
