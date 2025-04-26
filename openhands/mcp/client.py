@@ -1,6 +1,6 @@
 import asyncio
-from contextlib import AsyncExitStack, asynccontextmanager
-from typing import Dict, List, Optional, AsyncGenerator, Tuple
+from contextlib import asynccontextmanager
+from typing import Dict, List, Optional, AsyncGenerator
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -47,31 +47,22 @@ class MCPClient(BaseModel):
         if timeout is None:
             timeout = self.connection_timeout
             
-        exit_stack = AsyncExitStack()
+        # Create streams context with timeout
+        headers = {'Authorization': f'Bearer {self.api_key}'} if self.api_key else None
         
         try:
-            # Create streams context with timeout
-            headers = {'Authorization': f'Bearer {self.api_key}'} if self.api_key else None
-            streams_context = sse_client(
+            # Use nested async with statements to automatically handle cleanup
+            async with sse_client(
                 url=self.server_url,
                 timeout=timeout,
                 headers=headers,
-            )
-            
-            # Set up the session
-            streams = await exit_stack.enter_async_context(streams_context)
-            session = await exit_stack.enter_async_context(ClientSession(*streams))
-            
-            # Yield the session for use
-            yield session
-            
+            ) as streams:
+                async with ClientSession(*streams) as session:
+                    # Yield the session for use
+                    yield session
         except Exception as e:
             logger.error(f'Error with MCP session: {str(e)}')
             raise
-        finally:
-            # The AsyncExitStack context manager will automatically clean up
-            # all resources when exiting this context
-            await exit_stack.aclose()
 
     async def connect_sse(
         self, server_url: str, timeout: float = 30.0, api_key: str | None = None
@@ -109,7 +100,8 @@ class MCPClient(BaseModel):
         """
         if not self.server_url:
             raise ValueError('Server URL is not set. Call connect_sse first.')
-            
+        
+        # Use our context manager to create a session    
         async with self._create_session(timeout) as session:
             # Initialize the session
             await session.initialize()
@@ -123,7 +115,6 @@ class MCPClient(BaseModel):
             
             # Create tool objects for each server tool
             for tool in response.tools:
-                # Note: We don't store the session in the tool anymore
                 server_tool = MCPClientTool(
                     name=tool.name,
                     description=tool.description,
