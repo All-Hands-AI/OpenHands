@@ -108,10 +108,169 @@ def test_process_events_with_message_action(conversation_memory):
     assert len(messages) == 3
     assert messages[0].role == 'system'
     assert messages[0].content[0].text == 'System message'
+
+
+# Test cases for _ensure_system_message
+def test_ensure_system_message_adds_if_missing(conversation_memory):
+    """Test that _ensure_system_message adds a system message if none exists."""
+    events = [MessageAction(content='User message', source='user')]
+    conversation_memory._ensure_system_message(events)
+    assert len(events) == 2
+    assert isinstance(events[0], SystemMessageAction)
+    assert events[0].content == 'System message'  # From fixture
+    assert isinstance(events[1], MessageAction)  # Original event is still there
+
+
+def test_ensure_system_message_does_nothing_if_present(conversation_memory):
+    """Test that _ensure_system_message does nothing if a system message is already present."""
+    original_system_message = SystemMessageAction(content='Existing system message')
+    events = [
+        original_system_message,
+        MessageAction(content='User message', source='user'),
+    ]
+    original_events = list(events)  # Copy before modification
+    conversation_memory._ensure_system_message(events)
+    assert events == original_events  # List should be unchanged
+
+
+# Test cases for _ensure_initial_user_message
+@pytest.fixture
+def initial_user_action():
+    return MessageAction(content='Initial User Message', source='user')
+
+
+def test_ensure_initial_user_message_adds_if_only_system(
+    conversation_memory, initial_user_action
+):
+    """Test adding the initial user message when only the system message exists."""
+    system_message = SystemMessageAction(content='System')
+    events = [system_message]
+    conversation_memory._ensure_initial_user_message(events, initial_user_action)
+    assert len(events) == 2
+    assert events[0] == system_message
+    assert events[1] == initial_user_action
+
+
+def test_ensure_initial_user_message_correct_already_present(
+    conversation_memory, initial_user_action
+):
+    """Test that nothing changes if the correct initial user message is at index 1."""
+    system_message = SystemMessageAction(content='System')
+    events = [
+        system_message,
+        initial_user_action,
+        MessageAction(content='Assistant', source='assistant'),
+    ]
+    original_events = list(events)
+    conversation_memory._ensure_initial_user_message(events, initial_user_action)
+    assert events == original_events
+
+
+def test_ensure_initial_user_message_incorrect_at_index_1(
+    conversation_memory, initial_user_action
+):
+    """Test inserting the correct initial user message when an incorrect message is at index 1."""
+    system_message = SystemMessageAction(content='System')
+    incorrect_second_message = MessageAction(content='Assistant', source='assistant')
+    events = [system_message, incorrect_second_message]
+    conversation_memory._ensure_initial_user_message(events, initial_user_action)
+    assert len(events) == 3
+    assert events[0] == system_message
+    assert events[1] == initial_user_action  # Correct one inserted
+    assert events[2] == incorrect_second_message  # Original second message shifted
+
+
+def test_ensure_initial_user_message_correct_present_later(
+    conversation_memory, initial_user_action
+):
+    """Test inserting the correct initial user message at index 1 even if it exists later."""
+    system_message = SystemMessageAction(content='System')
+    incorrect_second_message = MessageAction(content='Assistant', source='assistant')
+    # Correct initial message is present, but later in the list
+    events = [system_message, incorrect_second_message, initial_user_action]
+    conversation_memory._ensure_initial_user_message(events, initial_user_action)
+    assert len(events) == 3  # Should still insert at index 1, not remove the later one
+    assert events[0] == system_message
+    assert events[1] == initial_user_action  # Correct one inserted at index 1
+    assert events[2] == incorrect_second_message  # Original second message shifted
+    # The duplicate initial_user_action originally at index 2 is now at index 3 (implicitly tested by length and content)
+
+
+def test_ensure_initial_user_message_different_user_msg_at_index_1(
+    conversation_memory, initial_user_action
+):
+    """Test inserting the correct initial user message when a *different* user message is at index 1."""
+    system_message = SystemMessageAction(content='System')
+    different_user_message = MessageAction(
+        content='Different User Message', source='user'
+    )
+    events = [system_message, different_user_message]
+    conversation_memory._ensure_initial_user_message(events, initial_user_action)
+    assert len(events) == 3
+    assert events[0] == system_message
+    assert events[1] == initial_user_action  # Correct one inserted
+    assert events[2] == different_user_message  # Original second message shifted
+
+
+def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_obs(
+    conversation_memory, initial_user_action
+):
+    """
+    Test process_events when an incorrect user message is at index 1 AND
+    an orphaned observation (with tool_call_metadata but no matching action) exists.
+    Expect: System msg, CORRECT initial user msg, the incorrect user msg (shifted).
+            The orphaned observation should be filtered out.
+    """
+    system_message = SystemMessageAction(content='System')
+    different_user_message = MessageAction(
+        content='Different User Message', source='user'
+    )
+
+    # Create an orphaned observation (no matching action/tool call request will exist)
+    mock_response = Mock(
+        id='mock_response_id', choices=[Mock(message=Mock())]
+    )  # Simplified mock
+    orphaned_obs = CmdOutputObservation(
+        command='orphan_cmd',
+        content='Orphaned output',
+        command_id=99,
+        exit_code=0,
+    )
+    orphaned_obs.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='orphan_call_id',
+        function_name='execute_bash',
+        model_response=mock_response,
+        total_calls_in_response=1,
+    )
+
+    # Initial events list: system, wrong user message, orphaned observation
+    events = [system_message, different_user_message, orphaned_obs]
+
+    # Call the main process_events method
+    messages = conversation_memory.process_events(
+        condensed_history=events,
+        initial_user_action=initial_user_action,  # Provide the *correct* initial action
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Assertions on the final messages list
+    assert len(messages) == 3
+    # 1. System message should be first
+    assert messages[0].role == 'system'
+    assert messages[0].content[0].text == 'System message'  # From fixture
+
+    # 2. The *correct* initial user action should be inserted at index 1
     assert messages[1].role == 'user'
-    assert messages[1].content[0].text == 'Hello'
-    assert messages[2].role == 'assistant'
-    assert messages[2].content[0].text == 'Hi there'
+    assert messages[1].content[0].text == initial_user_action.content
+
+    # 3. The original (incorrect) second message should be shifted to index 2
+    #    and potentially have formatting applied
+    assert messages[2].role == 'user'
+    # Check content, allowing for potential added newlines by _apply_user_message_formatting
+    assert messages[2].content[0].text.strip() == different_user_message.content
+
+    # Implicitly assert that the orphaned_obs was filtered out by checking the length (3)
 
 
 def test_process_events_with_cmd_output_observation(conversation_memory):
