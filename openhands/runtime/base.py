@@ -344,12 +344,6 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.git_provider
         )
 
-        if not git_provider_tokens:
-            raise RuntimeError('Need git provider tokens to clone repo')
-        git_token = git_provider_tokens[chosen_provider].token
-        if not git_token:
-            raise RuntimeError('Need a valid git token to clone repo')
-
         domain = provider_domains[chosen_provider]
         repository = (
             selected_repository
@@ -357,12 +351,18 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.full_name
         )
 
-        if chosen_provider == ProviderType.GITLAB:
-            remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+        # Try to use token if available, otherwise use public URL
+        if git_provider_tokens and chosen_provider in git_provider_tokens:
+            git_token = git_provider_tokens[chosen_provider].token
+            if git_token:
+                if chosen_provider == ProviderType.GITLAB:
+                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+                else:
+                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+            else:
+                remote_repo_url = f'https://{domain}/{repository}.git'
         else:
-            remote_repo_url = (
-                f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
-            )
+            remote_repo_url = f'https://{domain}/{repository}.git'
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
@@ -408,9 +408,11 @@ class Runtime(FileEditRuntimeMixin):
             self.status_callback(
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
-        
+
         # setup scripts time out after 10 minutes
-        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}', blocking=True)
+        action = CmdRunAction(
+            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+        )
         action.set_hard_timeout(600)
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
