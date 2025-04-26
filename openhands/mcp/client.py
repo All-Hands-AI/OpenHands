@@ -30,7 +30,7 @@ class MCPClient(BaseModel):
         arbitrary_types_allowed = True
 
     @asynccontextmanager
-    async def _create_session(self, timeout: float = None) -> AsyncGenerator[ClientSession, None]:
+    async def _create_session(self, timeout: float | None = None) -> AsyncGenerator[ClientSession, None]:
         """Create a new session for a single operation and clean it up afterward.
         
         This context manager handles all the connection setup and teardown.
@@ -152,9 +152,12 @@ class MCPClient(BaseModel):
             )
             
         try:
+            logger.debug(f"Before creating session")
             async with self._create_session() as session:
+                logger.debug(f"After creating session")
                 # Call the tool directly with the session
                 result = await session.call_tool(tool_name, args)
+                logger.debug(f"Tool {tool_name} result: {result}. Returning...")
                 return result
         except Exception as e:
             logger.error(f"Error calling tool {tool_name}: {str(e)}")
