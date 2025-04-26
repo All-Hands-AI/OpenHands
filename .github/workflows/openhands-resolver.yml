@@ -96,7 +96,10 @@ jobs:
       - name: Generate GitHub App Token
         id: generate-token
         # Only run if App ID and Key are provided via secrets
-        if: secrets.APP_ID && secrets.APP_PRIVATE_KEY
+        env:
+          APP_ID_PRESENT: ${{ secrets.APP_ID != '' }}
+          APP_PRIVATE_KEY_PRESENT: ${{ secrets.APP_PRIVATE_KEY != '' }}
+        if: env.APP_ID_PRESENT == 'true' && env.APP_PRIVATE_KEY_PRESENT == 'true'
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
