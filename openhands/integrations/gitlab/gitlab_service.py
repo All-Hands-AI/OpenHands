@@ -4,14 +4,14 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
-    AuthenticationError,
     BaseGitService,
     GitService,
     ProviderType,
     Repository,
     RequestMethod,
+    SuggestedTask,
+    TaskType,
     UnknownException,
     User,
 )
@@ -44,11 +44,15 @@ class GitLabService(BaseGitService, GitService):
             self.BASE_URL = f'https://{base_domain}/api/v4'
             self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
+    @property
+    def provider(self) -> str:
+        return ProviderType.GITLAB.value
+
     async def _get_gitlab_headers(self) -> dict[str, Any]:
         """
         Retrieve the GitLab Token to construct the headers
         """
-        if self.user_id and not self.token:
+        if not self.token:
             self.token = await self.get_latest_token()
 
         return {
@@ -100,17 +104,11 @@ class GitLabService(BaseGitService, GitService):
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid GitLab token')
-
-            logger.warning(f'Status error on GL API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GL API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
-    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> Any:
+    async def execute_graphql_query(self, query: str, variables: dict[str, Any] = {}) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
 
@@ -156,15 +154,9 @@ class GitLabService(BaseGitService, GitService):
 
                 return result.get('data')
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid GitLab token')
-
-            logger.warning(f'Status error on GL API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GL API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
@@ -253,6 +245,138 @@ class GitLabService(BaseGitService, GitService):
             )
             for repo in all_repos
         ]
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """Get suggested tasks for the authenticated user across all repositories.
+
+        Returns:
+        - Merge requests authored by the user.
+        - Issues assigned to the user.
+        """
+        # Get user info to use in queries
+        user = await self.get_user()
+        username = user.login
+
+        # GraphQL query to get merge requests
+        query = """
+        query GetUserTasks {
+          currentUser {
+            authoredMergeRequests(state: opened, sort: UPDATED_DESC, first: 100) {
+              nodes {
+                id
+                iid
+                title
+                project {
+                  fullPath
+                }
+                conflicts
+                mergeStatus
+                pipelines(first: 1) {
+                  nodes {
+                    status
+                  }
+                }
+                discussions(first: 100) {
+                  nodes {
+                    notes {
+                      nodes {
+                        resolvable
+                        resolved
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+
+        try:
+            tasks: list[SuggestedTask] = []
+            
+            # Get merge requests using GraphQL
+            response = await self.execute_graphql_query(query)
+            data = response.get('currentUser', {})
+
+            # Process merge requests
+            merge_requests = data.get('authoredMergeRequests', {}).get('nodes', [])
+            for mr in merge_requests:
+                repo_name = mr.get('project', {}).get('fullPath', '')
+                mr_number = mr.get('iid')
+                title = mr.get('title', '')
+
+                # Start with default task type
+                task_type = TaskType.OPEN_PR
+
+                # Check for specific states
+                if mr.get('conflicts'):
+                    task_type = TaskType.MERGE_CONFLICTS
+                elif (
+                    mr.get('pipelines', {}).get('nodes', [])
+                    and mr.get('pipelines', {}).get('nodes', [])[0].get('status')
+                    == 'FAILED'
+                ):
+                    task_type = TaskType.FAILING_CHECKS
+                else:
+                    # Check for unresolved comments
+                    has_unresolved_comments = False
+                    for discussion in mr.get('discussions', {}).get('nodes', []):
+                        for note in discussion.get('notes', {}).get('nodes', []):
+                            if note.get('resolvable') and not note.get('resolved'):
+                                has_unresolved_comments = True
+                                break
+                        if has_unresolved_comments:
+                            break
+
+                    if has_unresolved_comments:
+                        task_type = TaskType.UNRESOLVED_COMMENTS
+
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            git_provider=ProviderType.GITLAB,
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=mr_number,
+                            title=title,
+                        )
+                    )
+            
+            # Get assigned issues using REST API
+            url = f"{self.BASE_URL}/issues"
+            params = {
+                "assignee_username": username,
+                "state": "opened",
+                "scope": "assigned_to_me"
+            }
+            
+            issues_response, _ = await self._make_request(
+                method=RequestMethod.GET,
+                url=url,
+                params=params
+            )
+            
+            # Process issues
+            for issue in issues_response:
+                repo_name = issue.get('references', {}).get('full', '').split('#')[0].strip()
+                issue_number = issue.get('iid')
+                title = issue.get('title', '')
+                
+                tasks.append(
+                    SuggestedTask(
+                        git_provider=ProviderType.GITLAB,
+                        task_type=TaskType.OPEN_ISSUE,
+                        repo=repo_name,
+                        issue_number=issue_number,
+                        title=title,
+                    )
+                )
+
+            return tasks
+        except Exception:
+            return []
 
 
 gitlab_service_cls = os.environ.get(

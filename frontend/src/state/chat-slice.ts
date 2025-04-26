@@ -252,7 +252,13 @@ export const chatSlice = createSlice({
       // Set success property based on observation type
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
-        causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        // If exit_code is -1, it means the command timed out, so we set success to undefined
+        // to not show any status indicator
+        if (commandObs.extras.metadata.exit_code === -1) {
+          causeMessage.success = undefined;
+        } else {
+          causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        }
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
