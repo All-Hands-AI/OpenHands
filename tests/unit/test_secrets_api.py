@@ -442,31 +442,32 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
             == 'new-value'
         )
 
-    # 2. Test updating an existing custom secret
-    with patch(
-        'openhands.server.routes.settings.convert_to_settings', side_effect=lambda x: x
-    ):
-        update_secret_data = {'custom_secrets': {'UPDATED_SECRET': 'updated-value'}}
-        response = test_client.put(
-            '/api/secrets/INITIAL_SECRET', json=update_secret_data
-        )
-        assert response.status_code == 200
+        # 2. Test updating an existing custom secret
+        with patch(
+            'openhands.server.routes.settings.convert_to_settings',
+            side_effect=lambda x: x,
+        ):
+            update_secret_data = {'custom_secrets': {'UPDATED_SECRET': 'updated-value'}}
+            response = test_client.put(
+                '/api/secrets/INITIAL_SECRET', json=update_secret_data
+            )
+            assert response.status_code == 200
 
-    # Verify all settings are still preserved
-    stored_settings = await file_settings_store.load()
-    assert stored_settings.language == 'en'
-    assert stored_settings.agent == 'test-agent'
-    assert stored_settings.max_iterations == 100
-    assert stored_settings.security_analyzer == 'default'
-    assert stored_settings.confirmation_mode is True
-    assert stored_settings.llm_model == 'test-model'
-    assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
-    assert stored_settings.llm_base_url == 'https://test.com'
-    assert stored_settings.remote_runtime_resource_factor == 2
-    assert stored_settings.enable_default_condenser is True
-    assert stored_settings.enable_sound_notifications is False
-    assert stored_settings.user_consents_to_analytics is True
-    assert len(stored_settings.secrets_store.provider_tokens) == 2
+        # Verify all settings are still preserved
+        stored_settings = await file_settings_store.load()
+        assert stored_settings.language == 'en'
+        assert stored_settings.agent == 'test-agent'
+        assert stored_settings.max_iterations == 100
+        assert stored_settings.security_analyzer == 'default'
+        assert stored_settings.confirmation_mode is True
+        assert stored_settings.llm_model == 'test-model'
+        assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
+        assert stored_settings.llm_base_url == 'https://test.com'
+        assert stored_settings.remote_runtime_resource_factor == 2
+        assert stored_settings.enable_default_condenser is True
+        assert stored_settings.enable_sound_notifications is False
+        assert stored_settings.user_consents_to_analytics is True
+        assert len(stored_settings.secrets_store.provider_tokens) == 2
 
     # Create a new patch_file_settings_store context with updated settings
     with patch_file_settings_store() as file_settings_store:
@@ -497,22 +498,22 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
         # Store the updated settings
         await file_settings_store.store(updated_settings)
 
-    # 3. Test deleting a custom secret
-    response = test_client.delete('/api/secrets/NEW_SECRET')
-    assert response.status_code == 200
+        # 3. Test deleting a custom secret
+        response = test_client.delete('/api/secrets/NEW_SECRET')
+        assert response.status_code == 200
 
-    # Verify all settings are still preserved
-    stored_settings = await file_settings_store.load()
-    assert stored_settings.language == 'en'
-    assert stored_settings.agent == 'test-agent'
-    assert stored_settings.max_iterations == 100
-    assert stored_settings.security_analyzer == 'default'
-    assert stored_settings.confirmation_mode is True
-    assert stored_settings.llm_model == 'test-model'
-    assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
-    assert stored_settings.llm_base_url == 'https://test.com'
-    assert stored_settings.remote_runtime_resource_factor == 2
-    assert stored_settings.enable_default_condenser is True
-    assert stored_settings.enable_sound_notifications is False
-    assert stored_settings.user_consents_to_analytics is True
-    assert len(stored_settings.secrets_store.provider_tokens) == 2
+        # Verify all settings are still preserved
+        stored_settings = await file_settings_store.load()
+        assert stored_settings.language == 'en'
+        assert stored_settings.agent == 'test-agent'
+        assert stored_settings.max_iterations == 100
+        assert stored_settings.security_analyzer == 'default'
+        assert stored_settings.confirmation_mode is True
+        assert stored_settings.llm_model == 'test-model'
+        assert stored_settings.llm_api_key.get_secret_value() == 'test-llm-key'
+        assert stored_settings.llm_base_url == 'https://test.com'
+        assert stored_settings.remote_runtime_resource_factor == 2
+        assert stored_settings.enable_default_condenser is True
+        assert stored_settings.enable_sound_notifications is False
+        assert stored_settings.user_consents_to_analytics is True
+        assert len(stored_settings.secrets_store.provider_tokens) == 2
