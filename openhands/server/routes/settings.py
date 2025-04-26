@@ -146,13 +146,10 @@ async def create_custom_secret(
 
 @app.put('/secrets/{secret_id}', response_model=dict[str, str])
 async def update_custom_secret(
-    request: Request, secret_id: str, incoming_secret: POSTSettingsCustomSecrets
+    secret_id: str, incoming_secret: POSTSettingsCustomSecrets, settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
-        existing_settings: Settings = await settings_store.load()
+        existing_settings: Settings | None = await settings_store.load()
         if existing_settings:
             # Check if the secret to update exists
             if secret_id not in existing_settings.secrets_store.custom_secrets:
