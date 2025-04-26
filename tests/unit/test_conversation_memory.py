@@ -274,7 +274,7 @@ def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_
     assert len(messages) == 2
     # 1. System message should be first
     assert messages[0].role == 'system'
-    assert messages[0].content[0].text == 'System message'
+    assert messages[0].content[0].text == 'System'
 
     # 2. The different user message should be left at index 1
     assert messages[1].role == 'user'
@@ -1349,3 +1349,168 @@ def test_system_message_in_events(conversation_memory):
     assert messages[0].role == 'system'
     assert messages[0].content[0].text == 'System message'
     assert messages[1].role == 'user'  # Initial user message
+
+
+# Helper function to create mock tool call metadata
+def _create_mock_tool_call_metadata(
+    tool_call_id: str, function_name: str, response_id: str = 'mock_response_id'
+) -> ToolCallMetadata:
+    # Use a dictionary that mimics ModelResponse structure to satisfy Pydantic
+    mock_response = {
+        'id': response_id,
+        'choices': [
+            {
+                'message': {
+                    'role': 'assistant',
+                    'content': None,  # Content is None for tool calls
+                    'tool_calls': [
+                        {
+                            'id': tool_call_id,
+                            'type': 'function',
+                            'function': {
+                                'name': function_name,
+                                'arguments': '{}',
+                            },  # Args don't matter for this test
+                        }
+                    ],
+                }
+            }
+        ],
+        'created': 0,
+        'model': 'mock_model',
+        'object': 'chat.completion',
+        'usage': {'completion_tokens': 0, 'prompt_tokens': 0, 'total_tokens': 0},
+    }
+    return ToolCallMetadata(
+        tool_call_id=tool_call_id,
+        function_name=function_name,
+        model_response=mock_response,
+        total_calls_in_response=1,
+    )
+
+
+def test_process_events_partial_history(conversation_memory):
+    """
+    Tests process_events with full and partial histories to verify
+    _ensure_system_message, _ensure_initial_user_message, and tool call matching logic.
+    """
+    # --- Define Common Events ---
+    system_message = SystemMessageAction(content='System message')
+    system_message._source = EventSource.AGENT
+
+    user_message = MessageAction(
+        content='Initial user query'
+    )  # This is the crucial initial_user_action
+    user_message._source = EventSource.USER
+
+    recall_obs = RecallObservation(
+        recall_type=RecallType.WORKSPACE_CONTEXT,
+        repo_name='test-repo',
+        repo_directory='/path/to/repo',
+        content='Retrieved environment info',
+    )
+    recall_obs._source = EventSource.AGENT
+
+    cmd_action = CmdRunAction(command='ls', thought='Running ls')
+    cmd_action._source = EventSource.AGENT
+    cmd_action.tool_call_metadata = _create_mock_tool_call_metadata(
+        tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'
+    )
+
+    cmd_obs = CmdOutputObservation(
+        command_id=1, command='ls', content='file1.txt\nfile2.py', exit_code=0
+    )
+    cmd_obs._source = EventSource.AGENT
+    cmd_obs.tool_call_metadata = _create_mock_tool_call_metadata(
+        tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'
+    )
+
+    # --- Scenario 1: Full History ---
+    full_history: list[Event] = [
+        system_message,
+        user_message,  # Correct initial user message at index 1
+        recall_obs,
+        cmd_action,
+        cmd_obs,
+    ]
+    messages_full = conversation_memory.process_events(
+        condensed_history=list(full_history),  # Pass a copy
+        initial_user_action=user_message,  # Provide the initial action
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Expected: System, User, Recall (formatted), Assistant (tool call), Tool Response
+    assert len(messages_full) == 5
+    assert messages_full[0].role == 'system'
+    assert messages_full[0].content[0].text == 'System message'
+    assert messages_full[1].role == 'user'
+    assert messages_full[1].content[0].text == 'Initial user query'
+    assert messages_full[2].role == 'user'  # Recall obs becomes user message
+    assert (
+        'Formatted repository and runtime info' in messages_full[2].content[0].text
+    )  # From fixture mock
+    assert messages_full[3].role == 'assistant'
+    assert messages_full[3].tool_calls is not None
+    assert len(messages_full[3].tool_calls) == 1
+    assert messages_full[3].tool_calls[0].id == 'call_ls_1'
+    assert messages_full[4].role == 'tool'
+    assert messages_full[4].tool_call_id == 'call_ls_1'
+    assert 'file1.txt' in messages_full[4].content[0].text
+
+    # --- Scenario 2: Partial History (Action + Observation) ---
+    # Simulates processing only the last action/observation pair
+    partial_history_action_obs: list[Event] = [
+        cmd_action,
+        cmd_obs,
+    ]
+    messages_partial_action_obs = conversation_memory.process_events(
+        condensed_history=list(partial_history_action_obs),  # Pass a copy
+        initial_user_action=user_message,  # Provide the initial action
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Expected: System (added), Initial User (added), Assistant (tool call), Tool Response
+    assert len(messages_partial_action_obs) == 4
+    assert (
+        messages_partial_action_obs[0].role == 'system'
+    )  # Added by _ensure_system_message
+    assert messages_partial_action_obs[0].content[0].text == 'System message'
+    assert (
+        messages_partial_action_obs[1].role == 'user'
+    )  # Added by _ensure_initial_user_message
+    assert messages_partial_action_obs[1].content[0].text == 'Initial user query'
+    assert messages_partial_action_obs[2].role == 'assistant'
+    assert messages_partial_action_obs[2].tool_calls is not None
+    assert len(messages_partial_action_obs[2].tool_calls) == 1
+    assert messages_partial_action_obs[2].tool_calls[0].id == 'call_ls_1'
+    assert messages_partial_action_obs[3].role == 'tool'
+    assert messages_partial_action_obs[3].tool_call_id == 'call_ls_1'
+    assert 'file1.txt' in messages_partial_action_obs[3].content[0].text
+
+    # --- Scenario 3: Partial History (Observation Only) ---
+    # Simulates processing only the last observation
+    partial_history_obs_only: list[Event] = [
+        cmd_obs,
+    ]
+    messages_partial_obs_only = conversation_memory.process_events(
+        condensed_history=list(partial_history_obs_only),  # Pass a copy
+        initial_user_action=user_message,  # Provide the initial action
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Expected: System (added), Initial User (added).
+    # The CmdOutputObservation has tool_call_metadata, but there's no corresponding
+    # assistant message (from CmdRunAction) with the matching tool_call.id in the input history.
+    # Therefore, _filter_unmatched_tool_calls should remove the tool response message.
+    assert len(messages_partial_obs_only) == 2
+    assert (
+        messages_partial_obs_only[0].role == 'system'
+    )  # Added by _ensure_system_message
+    assert messages_partial_obs_only[0].content[0].text == 'System message'
+    assert (
+        messages_partial_obs_only[1].role == 'user'
+    )  # Added by _ensure_initial_user_message
+    assert messages_partial_obs_only[1].content[0].text == 'Initial user query'
