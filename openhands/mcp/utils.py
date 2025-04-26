@@ -82,6 +82,7 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     mcp_tools = []
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
+        # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
             mcp_config.sse_servers,
         )
@@ -90,14 +91,11 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
             logger.debug('No MCP clients were successfully connected')
             return []
 
+        # Convert tools to the format expected by the agent
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-
-        # Always disconnect clients to clean up resources
-        for mcp_client in mcp_clients:
-            try:
-                await mcp_client.disconnect()
-            except Exception as disconnect_error:
-                logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
+        
+        # No need to explicitly disconnect since we're not maintaining active connections
+        
     except Exception as e:
         logger.error(f'Error fetching MCP tools: {str(e)}')
         return []
@@ -121,18 +119,24 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
         raise ValueError('No MCP clients found')
 
     logger.debug(f'MCP action received: {action}')
-    # Find the MCP agent that has the matching tool name
+    
+    # Find the MCP client that has the matching tool name
     matching_client = None
     logger.debug(f'MCP clients: {mcp_clients}')
     logger.debug(f'MCP action name: {action.name}')
+    
     for client in mcp_clients:
         logger.debug(f'MCP client tools: {client.tools}')
         if action.name in [tool.name for tool in client.tools]:
             matching_client = client
             break
+            
     if matching_client is None:
         raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
+        
     logger.debug(f'Matching client: {matching_client}')
+    
+    # Call the tool - this will create a new connection internally
     response = await matching_client.call_tool(action.name, action.arguments)
     logger.debug(f'MCP response: {response}')
 

@@ -1,9 +1,10 @@
 import asyncio
-from contextlib import AsyncExitStack
-from typing import Dict, List, Optional
+from contextlib import AsyncExitStack, asynccontextmanager
+from typing import Dict, List, Optional, AsyncGenerator, Tuple
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
+from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
@@ -13,119 +14,185 @@ from openhands.mcp.tool import MCPClientTool
 class MCPClient(BaseModel):
     """
     A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
+    
+    This client uses a stateless approach where a new connection is created for each operation
+    and automatically cleaned up afterward using context managers.
     """
 
-    session: Optional[ClientSession] = None
-    exit_stack: AsyncExitStack = AsyncExitStack()
+    server_url: str = ""
+    api_key: Optional[str] = None
     description: str = 'MCP client tools for server interaction'
     tools: List[MCPClientTool] = Field(default_factory=list)
     tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
+    connection_timeout: float = 30.0
 
     class Config:
         arbitrary_types_allowed = True
 
+    @asynccontextmanager
+    async def _create_session(self, timeout: float = None) -> AsyncGenerator[ClientSession, None]:
+        """Create a new session for a single operation and clean it up afterward.
+        
+        This context manager handles all the connection setup and teardown.
+        
+        Args:
+            timeout: Connection timeout in seconds. Default is the client's connection_timeout.
+            
+        Yields:
+            A connected ClientSession that will be automatically cleaned up.
+        """
+        if not self.server_url:
+            raise ValueError('Server URL is required.')
+            
+        if timeout is None:
+            timeout = self.connection_timeout
+            
+        exit_stack = AsyncExitStack()
+        session = None
+        
+        try:
+            # Create streams context with timeout
+            headers = {'Authorization': f'Bearer {self.api_key}'} if self.api_key else None
+            streams_context = sse_client(
+                url=self.server_url,
+                timeout=timeout,
+                headers=headers,
+            )
+            
+            # Use asyncio.wait_for to enforce overall timeout
+            async def setup_session():
+                nonlocal session
+                streams = await exit_stack.enter_async_context(streams_context)
+                session = await exit_stack.enter_async_context(ClientSession(*streams))
+                return session
+                
+            session = await asyncio.wait_for(setup_session(), timeout=timeout)
+            yield session
+            
+        except asyncio.TimeoutError:
+            logger.error(f'Connection to {self.server_url} timed out after {timeout} seconds')
+            raise
+        except Exception as e:
+            logger.error(f'Error connecting to {self.server_url}: {str(e)}')
+            raise
+        finally:
+            # Clean up resources with timeout
+            if exit_stack:
+                try:
+                    await asyncio.wait_for(exit_stack.aclose(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    logger.warning('Exit stack cleanup timed out after 5 seconds')
+                except Exception as e:
+                    logger.error(f'Error during exit stack cleanup: {str(e)}')
+
     async def connect_sse(
         self, server_url: str, timeout: float = 30.0, api_key: str | None = None
     ) -> None:
-        """Connect to an MCP server using SSE transport.
-
+        """Connect to an MCP server using SSE transport and fetch available tools.
+        
+        This method stores the connection parameters and fetches the available tools,
+        but doesn't maintain an active connection.
+        
         Args:
             server_url: The URL of the SSE server to connect to.
             timeout: Connection timeout in seconds. Default is 30 seconds.
+            api_key: Optional API key for authentication.
         """
         if not server_url:
             raise ValueError('Server URL is required.')
-        if self.session:
-            await self.disconnect()
-
-        try:
-            # Use asyncio.wait_for to enforce the timeout
-            async def connect_with_timeout():
-                streams_context = sse_client(
-                    url=server_url,
-                    timeout=timeout,  # Pass the timeout to sse_client
-                    headers={'Authorization': f'Bearer {api_key}'} if api_key else None,
-                )
-                streams = await self.exit_stack.enter_async_context(streams_context)
-                self.session = await self.exit_stack.enter_async_context(
-                    ClientSession(*streams)
-                )
-                await self._initialize_and_list_tools()
-
-            # Apply timeout to the entire connection process
-            await asyncio.wait_for(connect_with_timeout(), timeout=timeout)
-        except asyncio.TimeoutError:
-            logger.error(
-                f'Connection to {server_url} timed out after {timeout} seconds'
-            )
-            await self.disconnect()  # Clean up resources
-            raise  # Re-raise the TimeoutError
-        except Exception as e:
-            logger.error(f'Error connecting to {server_url}: {str(e)}')
-            await self.disconnect()  # Clean up resources
-            raise
-
-    async def _initialize_and_list_tools(self) -> None:
-        """Initialize session and populate tool map."""
-        if not self.session:
-            raise RuntimeError('Session not initialized.')
-
-        await self.session.initialize()
-        response = await self.session.list_tools()
-
+            
+        # Store connection parameters
+        self.server_url = server_url
+        self.api_key = api_key
+        self.connection_timeout = timeout
+        
         # Clear existing tools
         self.tools = []
+        self.tool_map = {}
+        
+        # Fetch available tools using a temporary connection
+        await self._fetch_tools(timeout)
 
-        # Create proper tool objects for each server tool
-        for tool in response.tools:
-            server_tool = MCPClientTool(
-                name=tool.name,
-                description=tool.description,
-                inputSchema=tool.inputSchema,
-                session=self.session,
+    async def _fetch_tools(self, timeout: float = None) -> None:
+        """Fetch available tools from the server.
+        
+        Args:
+            timeout: Connection timeout in seconds.
+        """
+        if not self.server_url:
+            raise ValueError('Server URL is not set. Call connect_sse first.')
+            
+        async with self._create_session(timeout) as session:
+            # Initialize the session
+            await session.initialize()
+            
+            # Get available tools
+            response = await session.list_tools()
+            
+            # Clear existing tools
+            self.tools = []
+            self.tool_map = {}
+            
+            # Create tool objects for each server tool
+            for tool in response.tools:
+                # Note: We don't store the session in the tool anymore
+                server_tool = MCPClientTool(
+                    name=tool.name,
+                    description=tool.description,
+                    inputSchema=tool.inputSchema,
+                )
+                self.tool_map[tool.name] = server_tool
+                self.tools.append(server_tool)
+                
+            logger.info(
+                f'Connected to server with tools: {[tool.name for tool in response.tools]}'
             )
-            self.tool_map[tool.name] = server_tool
-            self.tools.append(server_tool)
 
-        logger.info(
-            f'Connected to server with tools: {[tool.name for tool in response.tools]}'
-        )
-
-    async def call_tool(self, tool_name: str, args: Dict):
-        """Call a tool on the MCP server."""
+    async def call_tool(self, tool_name: str, args: Dict) -> CallToolResult:
+        """Call a tool on the MCP server.
+        
+        Creates a new connection for this specific call and cleans it up afterward.
+        
+        Args:
+            tool_name: The name of the tool to call.
+            args: The arguments to pass to the tool.
+            
+        Returns:
+            The result of the tool execution.
+        """
+        if not self.server_url:
+            return CallToolResult(
+                content=[{"text": "Not connected to MCP server", "type": "text"}],
+                isError=True,
+            )
+            
         if tool_name not in self.tool_map:
-            raise ValueError(f'Tool {tool_name} not found.')
-        return await self.tool_map[tool_name].execute(**args)
+            return CallToolResult(
+                content=[{"text": f"Tool {tool_name} not found", "type": "text"}],
+                isError=True,
+            )
+            
+        try:
+            async with self._create_session() as session:
+                # Call the tool directly with the session
+                result = await session.call_tool(tool_name, args)
+                return result
+        except Exception as e:
+            logger.error(f"Error calling tool {tool_name}: {str(e)}")
+            return CallToolResult(
+                content=[{"text": f"Error executing tool: {str(e)}", "type": "text"}],
+                isError=True,
+            )
 
     async def disconnect(self) -> None:
-        """Disconnect from the MCP server and clean up resources."""
-        if self.session:
-            try:
-                # Close the session first with a timeout
-                if hasattr(self.session, 'close'):
-                    try:
-                        # Use asyncio.wait_for to prevent hanging
-                        await asyncio.wait_for(self.session.close(), timeout=5.0)
-                    except asyncio.TimeoutError:
-                        logger.warning('Session close timed out after 5 seconds')
-                    except Exception as e:
-                        logger.error(f'Error closing session: {str(e)}')
-                
-                # Then close the exit stack with a timeout
-                try:
-                    # Use asyncio.wait_for to prevent hanging
-                    await asyncio.wait_for(self.exit_stack.aclose(), timeout=5.0)
-                except asyncio.TimeoutError:
-                    logger.warning('Exit stack aclose timed out after 5 seconds')
-                except Exception as e:
-                    logger.error(f'Error closing exit stack: {str(e)}')
-                
-                # Create a new exit stack for future connections
-                self.exit_stack = AsyncExitStack()
-            except Exception as e:
-                logger.error(f'Error during disconnect: {str(e)}')
-            finally:
-                self.session = None
-                self.tools = []
-                self.tool_map = {}
-                logger.info('Disconnected from MCP server')
+        """
+        Reset the client state.
+        
+        Since we're not maintaining persistent connections anymore, this just clears
+        the stored tools and connection parameters.
+        """
+        self.server_url = ""
+        self.api_key = None
+        self.tools = []
+        self.tool_map = {}
+        logger.info('MCP client state reset')

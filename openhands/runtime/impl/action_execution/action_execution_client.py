@@ -84,7 +84,6 @@ class ActionExecutionClient(Runtime):
         self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
-        self.mcp_clients: list[MCPClient] | None = None
         super().__init__(
             config,
             event_stream,
@@ -363,34 +362,34 @@ class ActionExecutionClient(Runtime):
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
-        if self.mcp_clients is None:
-            # Import here to avoid circular imports
-            from openhands.mcp.utils import create_mcp_clients
-            
-            updated_mcp_config = self.get_updated_mcp_config()
-            self.log(
-                'debug',
-                f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
-            )
-            self.mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
-        
         # Import here to avoid circular imports
-        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+        from openhands.mcp.utils import create_mcp_clients, call_tool_mcp as call_tool_mcp_handler
         
-        return await call_tool_mcp_handler(self.mcp_clients, action)
+        # Get the updated MCP config
+        updated_mcp_config = self.get_updated_mcp_config()
+        self.log(
+            'debug',
+            f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
+        )
+        
+        # Create clients for this specific operation
+        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
+        
+        try:
+            # Call the tool
+            result = await call_tool_mcp_handler(mcp_clients, action)
+            return result
+        finally:
+            # Clean up clients after use
+            for client in mcp_clients:
+                try:
+                    await asyncio.wait_for(client.disconnect(), timeout=5.0)
+                except (asyncio.TimeoutError, Exception) as e:
+                    self.log('warning', f'Error during MCP client cleanup: {str(e)}')
 
     async def aclose(self) -> None:
-        if self.mcp_clients:
-            self.log('debug', f'Disconnecting {len(self.mcp_clients)} MCP clients')
-            for client in self.mcp_clients:
-                try:
-                    # Use asyncio.wait_for to prevent hanging
-                    await asyncio.wait_for(client.disconnect(), timeout=10.0)
-                    self.log('debug', f'Disconnected from MCP client: {client}')
-                except asyncio.TimeoutError:
-                    self.log('warning', f'Disconnect timed out for MCP client: {client}')
-                except Exception as e:
-                    self.log('error', f'Error disconnecting MCP client: {str(e)}')
+        # No need to disconnect MCP clients as they're created and cleaned up per operation
+        pass
 
     def close(self) -> None:
         # Make sure we don't close the session multiple times
