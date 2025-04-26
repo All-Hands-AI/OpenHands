@@ -54,8 +54,31 @@ class ProviderToken(BaseModel):
             raise ValueError('Unsupport Provider token type')
 
 
+class CustomSecret(BaseModel):
+    secret: SecretStr = Field(default_factory=lambda: SecretStr(''))
+    description: str = Field(default='')
+
+    model_config = {
+        'frozen': True,  # Makes the entire model immutable
+        'validate_assignment': True,
+    }
+
+    @classmethod
+    def from_value(cls, secret_value: CustomSecret | dict[str, str]) -> CustomSecret:
+        """Factory method to create a ProviderToken from various input types"""
+        if isinstance(secret_value, CustomSecret):
+            return secret_value
+        elif isinstance(secret_value, dict):
+            secret = secret_value.get('secret')
+            description = secret_value.get('description')
+            return cls(secret=SecretStr(secret), description=description)
+
+        else:
+            raise ValueError('Unsupport Provider token type')
+
+
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
+CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
 PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
@@ -110,12 +133,14 @@ class SecretStore(BaseModel):
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
         if custom_secrets:
-            for secret_name, secret_key in custom_secrets.items():
-                secrets[secret_name] = (
-                    secret_key.get_secret_value()
+            for secret_name, secret_value in custom_secrets.items():
+                secrets[secret_name] = {
+                    'secret': secret_value.secret.get_secret_value()
                     if expose_secrets
-                    else pydantic_encoder(secret_key)
-                )
+                    else pydantic_encoder(secret_value.secret),
+                    'description': secret_value.description,
+                }
+
         return secrets
 
     @model_validator(mode='before')
@@ -157,10 +182,10 @@ class SecretStore(BaseModel):
             if isinstance(secrets, dict):
                 converted_secrets = {}
                 for key, value in secrets.items():
-                    if isinstance(value, str):
-                        converted_secrets[key] = SecretStr(value)
-                    elif isinstance(value, SecretStr):
-                        converted_secrets[key] = value
+                    try:
+                        converted_secrets[key] = CustomSecret.from_value(value)
+                    except ValueError:
+                        continue
 
                 new_data['custom_secrets'] = MappingProxyType(converted_secrets)
             elif isinstance(secrets, MappingProxyType):

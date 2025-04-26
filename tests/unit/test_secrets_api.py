@@ -9,7 +9,12 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import (
+    CustomSecret,
+    ProviderToken,
+    ProviderType,
+    SecretStore,
+)
 from openhands.server.routes.settings import app as settings_app
 from openhands.server.settings import Settings
 from openhands.storage.memory import InMemoryFileStore
@@ -52,8 +57,13 @@ async def test_load_custom_secrets_names(test_client):
     with patch_file_settings_store() as file_settings_store:
         # Create initial settings with custom secrets
         custom_secrets = {
-            'API_KEY': SecretStr('api-key-value'),
-            'DB_PASSWORD': SecretStr('db-password-value'),
+            'API_KEY': CustomSecret(
+                secret=SecretStr('api-key-value'), description='api key'
+            ),
+            'DB_PASSWORD': CustomSecret(
+                secret=SecretStr('db-password-value'),
+                description='password for postgres db',
+            ),
         }
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
@@ -83,13 +93,15 @@ async def test_load_custom_secrets_names(test_client):
         # Verify that the original settings were not modified
         stored_settings = await file_settings_store.load()
         assert (
-            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'API_KEY'
+            ].secret.get_secret_value()
             == 'api-key-value'
         )
         assert (
             stored_settings.secrets_store.custom_secrets[
                 'DB_PASSWORD'
-            ].get_secret_value()
+            ].secret.get_secret_value()
             == 'db-password-value'
         )
         assert ProviderType.GITHUB in stored_settings.secrets_store.provider_tokens
@@ -145,7 +157,11 @@ async def test_add_custom_secret(test_client):
         await file_settings_store.store(initial_settings)
 
         # Make the POST request to add a custom secret
-        add_secret_data = {'custom_secrets': {'API_KEY': 'api-key-value'}}
+        add_secret_data = {
+            'custom_secrets': {
+                'API_KEY': {'secret': 'api-key-value', 'description': 'api-key-value'}
+            }
+        }
         response = test_client.post('/api/secrets', json=add_secret_data)
         assert response.status_code == 200
 
@@ -155,7 +171,9 @@ async def test_add_custom_secret(test_client):
         # Check that the secret was added
         assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
         assert (
-            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'API_KEY'
+            ].secret.get_secret_value()
             == 'api-key-value'
         )
 
@@ -170,7 +188,11 @@ async def test_update_existing_custom_secret(test_client):
     """Test updating an existing custom secret."""
     with patch_file_settings_store() as file_settings_store:
         # Create initial settings with a custom secret
-        custom_secrets = {'API_KEY': SecretStr('old-api-key')}
+        custom_secrets = {
+            'API_KEY': CustomSecret(
+                secret=SecretStr('old-api-key'), description='old key'
+            )
+        }
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
@@ -193,7 +215,11 @@ async def test_update_existing_custom_secret(test_client):
             side_effect=lambda x: x,
         ):
             # Make the PUT request to update the custom secret
-            update_secret_data = {'custom_secrets': {'API_KEY': 'new-api-key'}}
+            update_secret_data = {
+                'custom_secrets': {
+                    'API_KEY': {'secret': 'new-api-key', 'desciption': 'my new key'}
+                }
+            }
             response = test_client.put('/api/secrets/API_KEY', json=update_secret_data)
             assert response.status_code == 200
 
@@ -203,7 +229,9 @@ async def test_update_existing_custom_secret(test_client):
         # Check that the secret was updated
         assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
         assert (
-            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'API_KEY'
+            ].secret.get_secret_value()
             == 'new-api-key'
         )
 
@@ -219,7 +247,11 @@ async def test_add_multiple_custom_secrets(test_client):
     """Test adding multiple custom secrets at once."""
     with patch_file_settings_store() as file_settings_store:
         # Create initial settings with one custom secret
-        custom_secrets = {'EXISTING_SECRET': SecretStr('existing-value')}
+        custom_secrets = {
+            'EXISTING_SECRET': CustomSecret(
+                secret=SecretStr('existing-value'), description='existing secret'
+            )
+        }
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
@@ -239,8 +271,11 @@ async def test_add_multiple_custom_secrets(test_client):
         # Make the POST request to add multiple custom secrets
         add_secrets_data = {
             'custom_secrets': {
-                'API_KEY': 'api-key-value',
-                'DB_PASSWORD': 'db-password-value',
+                'API_KEY': {'secret': 'api-key-value', 'description': 'addition key'},
+                'DB_PASSWORD': {
+                    'secret': 'db-password-value',
+                    'description': 'db password access',
+                },
             }
         }
         response = test_client.post('/api/secrets', json=add_secrets_data)
@@ -252,14 +287,16 @@ async def test_add_multiple_custom_secrets(test_client):
         # Check that the new secrets were added
         assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
         assert (
-            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'API_KEY'
+            ].secret.get_secret_value()
             == 'api-key-value'
         )
         assert 'DB_PASSWORD' in stored_settings.secrets_store.custom_secrets
         assert (
             stored_settings.secrets_store.custom_secrets[
                 'DB_PASSWORD'
-            ].get_secret_value()
+            ].secret.get_secret_value()
             == 'db-password-value'
         )
 
@@ -268,7 +305,7 @@ async def test_add_multiple_custom_secrets(test_client):
         assert (
             stored_settings.secrets_store.custom_secrets[
                 'EXISTING_SECRET'
-            ].get_secret_value()
+            ].secret.get_secret_value()
             == 'existing-value'
         )
 
@@ -285,8 +322,12 @@ async def test_delete_custom_secret(test_client):
     with patch_file_settings_store() as file_settings_store:
         # Create initial settings with multiple custom secrets
         custom_secrets = {
-            'API_KEY': SecretStr('api-key-value'),
-            'DB_PASSWORD': SecretStr('db-password-value'),
+            'API_KEY': CustomSecret(
+                secret=SecretStr('api-key-value'), description='api key value'
+            ),
+            'DB_PASSWORD': CustomSecret(
+                secret=SecretStr('db-password-value'), description='db access'
+            ),
         }
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
@@ -319,7 +360,7 @@ async def test_delete_custom_secret(test_client):
         assert (
             stored_settings.secrets_store.custom_secrets[
                 'DB_PASSWORD'
-            ].get_secret_value()
+            ].secret.get_secret_value()
             == 'db-password-value'
         )
 
@@ -335,7 +376,11 @@ async def test_delete_nonexistent_custom_secret(test_client):
     """Test deleting a custom secret that doesn't exist."""
     with patch_file_settings_store() as file_settings_store:
         # Create initial settings with a custom secret
-        custom_secrets = {'API_KEY': SecretStr('api-key-value')}
+        custom_secrets = {
+            'API_KEY': CustomSecret(
+                secret=SecretStr('api-key-value'), description='api key value'
+            )
+        }
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
@@ -364,7 +409,9 @@ async def test_delete_nonexistent_custom_secret(test_client):
         # Check that the existing secret was preserved
         assert 'API_KEY' in stored_settings.secrets_store.custom_secrets
         assert (
-            stored_settings.secrets_store.custom_secrets['API_KEY'].get_secret_value()
+            stored_settings.secrets_store.custom_secrets[
+                'API_KEY'
+            ].secret.get_secret_value()
             == 'api-key-value'
         )
 
@@ -380,7 +427,11 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
     """Test that operations on custom secrets preserve all other settings."""
     with patch_file_settings_store() as file_settings_store:
         # Create initial settings with comprehensive data
-        custom_secrets = {'INITIAL_SECRET': SecretStr('initial-value')}
+        custom_secrets = {
+            'INITIAL_SECRET': CustomSecret(
+                secret=SecretStr('initial-value'), description='initial env'
+            )
+        }
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab-token')),
@@ -408,7 +459,14 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
         await file_settings_store.store(initial_settings)
 
         # 1. Test adding a new custom secret
-        add_secret_data = {'custom_secrets': {'NEW_SECRET': 'new-value'}}
+        add_secret_data = {
+            'custom_secrets': {
+                'NEW_SECRET': {
+                    'secret': 'new-value',
+                    'description': 'new value description',
+                }
+            }
+        }
         response = test_client.post('/api/secrets', json=add_secret_data)
         assert response.status_code == 200
 
@@ -432,13 +490,13 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
         assert (
             stored_settings.secrets_store.custom_secrets[
                 'INITIAL_SECRET'
-            ].get_secret_value()
+            ].secret.get_secret_value()
             == 'initial-value'
         )
         assert (
             stored_settings.secrets_store.custom_secrets[
                 'NEW_SECRET'
-            ].get_secret_value()
+            ].secret.get_secret_value()
             == 'new-value'
         )
 
@@ -447,7 +505,14 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
             'openhands.server.routes.settings.convert_to_settings',
             side_effect=lambda x: x,
         ):
-            update_secret_data = {'custom_secrets': {'UPDATED_SECRET': 'updated-value'}}
+            update_secret_data = {
+                'custom_secrets': {
+                    'UPDATED_SECRET': {
+                        'secret': 'updated-value',
+                        'description': 'updated desc',
+                    }
+                }
+            }
             response = test_client.put(
                 '/api/secrets/INITIAL_SECRET', json=update_secret_data
             )
@@ -473,8 +538,12 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
     with patch_file_settings_store() as file_settings_store:
         # Set up the updated settings
         updated_custom_secrets = {
-            'UPDATED_SECRET': SecretStr('updated-value'),
-            'NEW_SECRET': SecretStr('new-value'),
+            'UPDATED_SECRET': CustomSecret(
+                secret=SecretStr('updated-value'), description='updated secret'
+            ),
+            'NEW_SECRET': CustomSecret(
+                secret=SecretStr('new-value'), description='new secret'
+            ),
         }
         updated_secret_store = SecretStore(
             custom_secrets=updated_custom_secrets, provider_tokens=provider_tokens

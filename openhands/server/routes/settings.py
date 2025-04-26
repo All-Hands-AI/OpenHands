@@ -5,6 +5,7 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
+    CustomSecret,
     ProviderToken,
     ProviderType,
     SecretStore,
@@ -116,7 +117,7 @@ async def create_custom_secret(
                         content={'message': f'Secret {secret_name} already exists'},
                     )
             
-                custom_secrets[secret_name] = secret_value
+                custom_secrets[secret_name] = CustomSecret(**secret_value)
         
 
             # Create a new SecretStore that preserves provider tokens
@@ -162,7 +163,7 @@ async def update_custom_secret(
             custom_secrets.pop(secret_id)
 
             for secret_name, secret_value in incoming_secret.custom_secrets.items():
-                custom_secrets[secret_name] = secret_value
+                custom_secrets[secret_name] = CustomSecret(**secret_value)
 
 
             # Create a new SecretStore that preserves provider tokens
