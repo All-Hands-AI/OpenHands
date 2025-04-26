@@ -5,14 +5,13 @@ from contextlib import contextmanager
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.server.routes.settings import app as settings_app
 from openhands.server.settings import Settings
-from openhands.server.user_auth import get_provider_tokens, get_user_id, get_user_settings, get_user_settings_store
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -28,7 +27,7 @@ def test_client():
 @contextmanager
 def patch_file_settings_store():
     store = FileSettingsStore(InMemoryFileStore())
-    
+
     # Create a mock for the settings store
     with patch(
         'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
@@ -37,12 +36,12 @@ def patch_file_settings_store():
         # Create a mock for the get_user_settings_store dependency
         with patch(
             'openhands.server.user_auth.get_user_settings_store',
-            new=AsyncMock(return_value=store)
+            new=AsyncMock(return_value=store),
         ):
             # Create a mock for the get_user_settings dependency
             with patch(
                 'openhands.server.user_auth.get_user_settings',
-                new=AsyncMock(side_effect=lambda request=None: store.load())
+                new=AsyncMock(side_effect=lambda request=None: store.load()),
             ):
                 yield store
 
@@ -189,7 +188,10 @@ async def test_update_existing_custom_secret(test_client):
         await file_settings_store.store(initial_settings)
 
         # Patch the convert_to_settings function to handle Settings objects
-        with patch('openhands.server.routes.settings.convert_to_settings', side_effect=lambda x: x):
+        with patch(
+            'openhands.server.routes.settings.convert_to_settings',
+            side_effect=lambda x: x,
+        ):
             # Make the PUT request to update the custom secret
             update_secret_data = {'custom_secrets': {'API_KEY': 'new-api-key'}}
             response = test_client.put('/api/secrets/API_KEY', json=update_secret_data)
@@ -441,9 +443,13 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
         )
 
     # 2. Test updating an existing custom secret
-    with patch('openhands.server.routes.settings.convert_to_settings', side_effect=lambda x: x):
+    with patch(
+        'openhands.server.routes.settings.convert_to_settings', side_effect=lambda x: x
+    ):
         update_secret_data = {'custom_secrets': {'UPDATED_SECRET': 'updated-value'}}
-        response = test_client.put('/api/secrets/INITIAL_SECRET', json=update_secret_data)
+        response = test_client.put(
+            '/api/secrets/INITIAL_SECRET', json=update_secret_data
+        )
         assert response.status_code == 200
 
     # Verify all settings are still preserved
@@ -487,7 +493,7 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
             user_consents_to_analytics=True,
             secrets_store=updated_secret_store,
         )
-        
+
         # Store the updated settings
         await file_settings_store.store(updated_settings)
 
