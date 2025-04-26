@@ -29,7 +29,11 @@ async def save_prompt(request: Request, data: SavePromptRequest):
     """Save a interested prompt"""
     bearer_token = request.headers.get('Authorization')
     return await handle_thesis_auth_request(
-        'POST', '/api/prompts', bearer_token, data.model_dump()
+        'POST',
+        '/api/prompts',
+        bearer_token,
+        data.model_dump(),
+        request.headers.get('x-device-id'),
     )
 
 
@@ -40,7 +44,11 @@ async def get_prompts(
     """Get all prompts"""
     bearer_token = request.headers.get('Authorization')
     return await handle_thesis_auth_request(
-        'GET', '/api/prompts', bearer_token, params=filter_query.model_dump()
+        'GET',
+        '/api/prompts',
+        bearer_token,
+        params=filter_query.model_dump(),
+        x_device_id=request.headers.get('x-device-id'),
     )
 
 
@@ -48,7 +56,10 @@ async def get_prompts(
 async def delete_prompt(request: Request, prompt_id: str):
     bearer_token = request.headers.get('Authorization')
     return await handle_thesis_auth_request(
-        'DELETE', f'/api/prompts/{prompt_id}', bearer_token
+        'DELETE',
+        f'/api/prompts/{prompt_id}',
+        bearer_token,
+        x_device_id=request.headers.get('x-device-id'),
     )
 
 
@@ -56,5 +67,9 @@ async def delete_prompt(request: Request, prompt_id: str):
 async def remove_batch(request: Request, data: RemoveBatchRequest):
     bearer_token = request.headers.get('Authorization')
     return await handle_thesis_auth_request(
-        'POST', '/api/prompts/remove-ids', bearer_token, data.model_dump()
+        'POST',
+        '/api/prompts/remove-ids',
+        bearer_token,
+        data.model_dump(),
+        x_device_id=request.headers.get('x-device-id'),
     )
