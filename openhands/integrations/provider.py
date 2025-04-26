@@ -91,6 +91,8 @@ class SecretStore(BaseModel):
     async def get_env_vars(self):
         secret_store = self.model_dump(context={'expose_secrets': True})
         custom_secrets = secret_store.get('custom_secrets', {})
+
+        # Use provider handler to expose secrets so that ProviderType is converted to the appropriate env name
         provider_handler = ProviderHandler(provider_tokens=self.provider_tokens)
         exposed_env_vars = await provider_handler.get_env_vars(expose_secrets=True)
         merged_secrets = {**custom_secrets, **exposed_env_vars}
