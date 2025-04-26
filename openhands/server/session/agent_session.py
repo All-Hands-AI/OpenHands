@@ -153,7 +153,6 @@ class AgentSession:
                 repo_directory=repo_directory,
             )
 
-            # TODO: mask custom secrets as well
             if secrets_store:
                 await secrets_store.set_event_stream_secrets(event_stream=self.event_stream)
 
@@ -291,7 +290,6 @@ class AgentSession:
                 user_id=self.user_id,
             )
         else:
-            # TODO: mask custom secrets as well
             env_vars = await secrets_store.get_env_vars() if secrets_store else {}
             self.runtime = runtime_cls(
                 config=config,
