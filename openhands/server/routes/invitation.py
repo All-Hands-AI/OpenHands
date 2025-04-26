@@ -26,7 +26,9 @@ async def validate_invitation_code(
     try:
         # The middleware already checked whitelist status
         await add_invite_code_to_user(
-            invitation.code, request.headers.get('Authorization')
+            invitation.code,
+            request.headers.get('Authorization'),
+            request.headers.get('x-device-id'),
         )
         return {'valid': True, 'reason': 'Invitation code activated successfully'}
     except Exception as e:

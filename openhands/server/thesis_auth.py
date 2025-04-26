@@ -85,11 +85,14 @@ async def get_user_detail_from_thesis_auth_server(
     return ThesisUser(**user_data)
 
 
-async def add_invite_code_to_user(code: str, bearer_token: str) -> dict | None:
+async def add_invite_code_to_user(
+    code: str, bearer_token: str, x_device_id: str | None = None
+) -> dict | None:
     url = '/api/users/add-invite-code'
     payload = {'code': code}
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
-
+    if x_device_id:
+        headers['x-device-id'] = x_device_id
     try:
         response = await thesis_auth_client.post(url, headers=headers, json=payload)
         if response.status_code != 200:
@@ -117,10 +120,12 @@ async def handle_thesis_auth_request(
     bearer_token: str,
     payload: dict | None = None,
     params: dict | None = None,
+    x_device_id: str | None = None,
 ) -> dict:
     url = f'{endpoint}'
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
-
+    if x_device_id:
+        headers['x-device-id'] = x_device_id
     try:
         response = await thesis_auth_client.request(
             method=method.upper(),
