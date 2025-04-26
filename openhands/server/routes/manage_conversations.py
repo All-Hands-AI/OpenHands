@@ -214,7 +214,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
         if conversation_id and user_id is not None:
             await conversation_module._update_conversation_visibility(
-                conversation_id, False, user_id, {'hidden_prompt': True}, ''
+                conversation_id, False, user_id, {'hidden_prompt': True}, '', 'available'
             )
 
         return JSONResponse(
