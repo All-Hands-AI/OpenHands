@@ -292,12 +292,7 @@ class AgentSession:
             )
         else:
             # TODO: mask custom secrets as well
-            provider_handler = ProviderHandler(
-                provider_tokens=secrets_store.provider_tokens if secrets_store else
-                 cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
-            )
-            env_vars = await provider_handler.get_env_vars(expose_secrets=True)
-
+            env_vars = await secrets_store.get_env_vars() if secrets_store else {}
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,

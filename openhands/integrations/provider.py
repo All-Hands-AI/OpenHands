@@ -85,12 +85,16 @@ class SecretStore(BaseModel):
             event_stream: Agent session's event stream
         """
 
+        secrets = await self.get_env_vars()
+        event_stream.set_secrets(secrets)
+
+    async def get_env_vars(self):
         secret_store = self.model_dump(context={'expose_secrets': True})
         custom_secrets = secret_store.get('custom_secrets', {})
         provider_handler = ProviderHandler(provider_tokens=self.provider_tokens)
         exposed_env_vars = await provider_handler.get_env_vars(expose_secrets=True)
         merged_secrets = {**custom_secrets, **exposed_env_vars}
-        event_stream.set_secrets(merged_secrets)
+        return merged_secrets
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
