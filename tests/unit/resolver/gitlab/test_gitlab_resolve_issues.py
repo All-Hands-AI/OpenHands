@@ -399,7 +399,7 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
         {
             'name': 'successful_run',
             'run_controller_return': MagicMock(
-                history=[NullObservation(content='')],  # Add a proper dataclass instance
+                history=[NullObservation(content='')],
                 metrics=MagicMock(
                     get=MagicMock(return_value={'test_result': 'passed'})
                 ),
@@ -433,7 +433,7 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
         {
             'name': 'json_decode_error',
             'run_controller_return': MagicMock(
-                history=[NullObservation(content='')],  # Add a proper dataclass instance
+                history=[NullObservation(content='')],
                 metrics=MagicMock(
                     get=MagicMock(return_value={'test_result': 'passed'})
                 ),
@@ -444,7 +444,7 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
             'expected_error': None,
             'expected_explanation': 'Non-JSON explanation',
             'is_pr': True,
-            'comment_success': [True, False],  # To trigger the PR success logging code path
+            'comment_success': [True, False],
         },
     ],
 )
@@ -466,8 +466,6 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
 
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
-
-    # Set the prompt template directly
     resolver.prompt_template = mock_prompt_template
 
     # Mock the handler
@@ -503,8 +501,11 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
         
-        # Verify initialize_runtime was called at least once
-        assert mock_initialize_runtime.called, "initialize_runtime should be called"
+        mock_create_runtime.assert_called_once()
+        mock_runtime.connect.assert_called_once()
+        mock_initialize_runtime.assert_called_once()
+        mock_run_controller.assert_called_once()
+        resolver.complete_runtime.assert_awaited_once_with(mock_runtime, base_commit)
 
         # Assert the result matches our expectations
         assert isinstance(result, ResolverOutput)
@@ -515,9 +516,11 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
         assert result.result_explanation == test_case['expected_explanation']
         assert result.error == test_case['expected_error']
 
-        # Assert that the mocked functions were called
-        mock_create_runtime.assert_called_once()
-        mock_runtime.connect.assert_awaited_once()
+        if test_case['expected_success']:
+            handler_instance.guess_success.assert_called_once()
+        else:
+            handler_instance.guess_success.assert_not_called()
+
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     issue = Issue(
         owner='test_owner',
@@ -919,3 +922,5 @@ def test_download_issue_with_specific_comment():
     assert issues[0].thread_comments == ['Specific comment body']
 
 
+if __name__ == '__main__':
+    pytest.main()

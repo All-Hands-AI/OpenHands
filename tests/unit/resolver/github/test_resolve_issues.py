@@ -363,7 +363,7 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
         {
             'name': 'successful_run',
             'run_controller_return': MagicMock(
-                history=[NullObservation(content='')],  # Add a proper dataclass instance
+                history=[NullObservation(content='')],
                 metrics=MagicMock(
                     get=MagicMock(return_value={'test_result': 'passed'})
                 ),
@@ -399,7 +399,7 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
         {
             'name': 'json_decode_error',
             'run_controller_return': MagicMock(
-                history=[NullObservation(content='')],  # Add a proper dataclass instance
+                history=[NullObservation(content='')],
                 metrics=MagicMock(
                     get=MagicMock(return_value={'test_result': 'passed'})
                 ),
@@ -430,12 +430,9 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
     # Customize the mock args for this test
     default_mock_args.output_dir = mock_output_dir
     default_mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-    default_mock_args.max_iterations = 5
 
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
-
-    # Set the prompt template directly
     resolver.prompt_template = mock_prompt_template
 
     # Mock the handler
