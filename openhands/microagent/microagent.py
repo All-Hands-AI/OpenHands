@@ -73,11 +73,15 @@ class BaseMicroagent(BaseModel):
             MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
         }
 
-        # Infer the agent type based on metadata (triggers)
+        # Infer the agent type:
+        # 1. If triggers exist -> KNOWLEDGE
+        # 2. Else (no triggers) -> REPO
         inferred_type: MicroagentType
         if metadata.triggers:
             inferred_type = MicroagentType.KNOWLEDGE
         else:
+            # No triggers, default to REPO unless metadata explicitly says otherwise (which it shouldn't for REPO)
+            # This handles cases where 'type' might be missing or defaulted by Pydantic
             inferred_type = MicroagentType.REPO_KNOWLEDGE
 
         if inferred_type not in subclass_map:
