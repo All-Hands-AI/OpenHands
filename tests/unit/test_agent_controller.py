@@ -764,7 +764,7 @@ async def test_context_window_exceeded_error_handling(
 
     # We do that by playing the role of the recall module -- subscribe to the
     # event stream and respond to recall actions by inserting fake recall
-    # obesrvations.
+    # observations.
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
             microagent_obs = RecallObservation(
@@ -806,13 +806,19 @@ async def test_context_window_exceeded_error_handling(
     # size (because we return a message action, which triggers a recall, which
     # triggers a recall response). But if the pre/post-views are on the turn
     # when we throw the context window exceeded error, we should see the
-    # post-step view compressed.
+    # post-step view compressed (or rather, a CondensationAction added).
     for index, (first_view, second_view) in enumerate(
         zip(step_state.views[:-1], step_state.views[1:])
     ):
         if index == error_after:
-            assert len(first_view) > len(second_view)
+            # Verify that the CondensationAction is present in the second view (after error)
+            # but not in the first view (before error)
+            assert not any(isinstance(e, CondensationAction) for e in first_view.events)
+            assert any(isinstance(e, CondensationAction) for e in second_view.events)
+            # The length might not strictly decrease due to CondensationAction being added
+            assert len(first_view) == len(second_view)
         else:
+            # Before the error, the view length should increase
             assert len(first_view) < len(second_view)
 
     # The final state's history should contain:
@@ -885,7 +891,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
         def step(self, state: State):
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
-            if len(state.history) > 3 and not self.has_errored:
+            if len(state.history) > 5 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
                     model='',

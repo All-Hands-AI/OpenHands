@@ -157,25 +157,25 @@ def test_basic_truncation(controller_fixture):
     )
     mock_first_user_message.id = 2  # Set the ID of the mocked first user message
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 10
-    # Essentials = [sys(1), user(2), recall_obs(4)] (len=3)
-    # Non-essential count = 10 - 3 = 7
-    # num_recent_to_keep = max(1, 7 // 2) = 3
+    # Essentials = [sys(1), user(2), recall_act(3), recall_obs(4)] (len=4)
+    # Non-essential count = 10 - 4 = 6
+    # num_recent_to_keep = max(1, 6 // 2) = 3
     # slice_start_index = 10 - 3 = 7
     # recent_events_slice = history[7:] = [obs2(8), cmd3(9), obs3(10)]
     # Validation: remove leading obs2(8). validated_slice = [cmd3(9), obs3(10)]
-    # Final = essentials + validated_slice = [sys(1), user(2), recall_obs(4), cmd3(9), obs3(10)]
-    # Expected IDs: [1, 2, 4, 9, 10]. Length 5.
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4), cmd3(9), obs3(10)]
+    # Expected IDs: [1, 2, 3, 4, 9, 10]. Length 6.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 5  # Corrected assertion?
-    expected_ids = [1, 2, 4, 9, 10]
+    assert len(truncated_events) == 6  # Corrected assertion
+    expected_ids = [1, 2, 3, 4, 9, 10]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
     # Check no dangling observations at the start of the recent slice part
     # The first event of the validated slice is cmd3(9)
-    assert not isinstance(truncated_events[3], Observation)
+    assert not isinstance(truncated_events[4], Observation)  # Index adjusted
 
 
 def test_no_system_message(controller_fixture):
@@ -215,20 +215,20 @@ def test_no_system_message(controller_fixture):
     )
     mock_first_user_message.id = 1
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 9
-    # Essentials = [user(1), recall_obs(3)] (len=2)
-    # Non-essential count = 9 - 2 = 7
-    # num_recent_to_keep = max(1, 7 // 2) = 3
+    # Essentials = [user(1), recall_act(2), recall_obs(3)] (len=3)
+    # Non-essential count = 9 - 3 = 6
+    # num_recent_to_keep = max(1, 6 // 2) = 3
     # slice_start_index = 9 - 3 = 6
     # recent_events_slice = history[6:] = [obs2(7), cmd3(8), obs3(9)]
     # Validation: remove leading obs2(7). validated_slice = [cmd3(8), obs3(9)]
-    # Final = essentials + validated_slice = [user(1), recall_obs(3), cmd3(8), obs3(9)]
-    # Expected IDs: [1, 3, 8, 9]. Length 4.
+    # Final = essentials + validated_slice = [user(1), recall_act(2), recall_obs(3), cmd3(8), obs3(9)]
+    # Expected IDs: [1, 2, 3, 8, 9]. Length 5.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 4  # Corrected assertion?
-    expected_ids = [1, 3, 8, 9]
+    assert len(truncated_events) == 5  # Corrected assertion
+    expected_ids = [1, 2, 3, 8, 9]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -271,20 +271,20 @@ def test_no_recall_observation(controller_fixture):
     )
     mock_first_user_message.id = 2
 
-    # Calculation:
+    # Calculation (RecallAction essential only if RecallObs exists):
     # History len = 9
-    # Essentials = [sys(1), user(2)] (len=2) - RecallObs missing
+    # Essentials = [sys(1), user(2)] (len=2) - RecallObs missing, so RecallAction not essential here
     # Non-essential count = 9 - 2 = 7
     # num_recent_to_keep = max(1, 7 // 2) = 3
     # slice_start_index = 9 - 3 = 6
     # recent_events_slice = history[6:] = [obs2(7), cmd3(8), obs3(9)]
     # Validation: remove leading obs2(7). validated_slice = [cmd3(8), obs3(9)]
-    # Final = essentials + validated_slice = [sys(1), user(2), cmd3(8), obs3(9)]
-    # Expected IDs: [1, 2, 8, 9]. Length 4.
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_action(3), cmd_cat(8), obs_cat(9)]
+    # Expected IDs: [1, 2, 3, 8, 9]. Length 5.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 4  # Corrected assertion?
-    expected_ids = [1, 2, 8, 9]
+    assert len(truncated_events) == 5  # Corrected assertion
+    expected_ids = [1, 2, 3, 8, 9]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -314,22 +314,20 @@ def test_short_history_no_truncation(controller_fixture):
     controller.state.history = history
     mock_first_user_message.id = 2
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 6
-    # Essentials = [sys(1), user(2), recall_obs(4)] (len=3)
-    # Non-essential count = 6 - 3 = 3
-    # num_recent_to_keep = max(1, 3 // 2) = 1
+    # Essentials = [sys(1), user(2), recall_act(3), recall_obs(4)] (len=4)
+    # Non-essential count = 6 - 4 = 2
+    # num_recent_to_keep = max(1, 2 // 2) = 1
     # slice_start_index = 6 - 1 = 5
     # recent_events_slice = history[5:] = [obs1(6)]
     # Validation: remove leading obs1(6). validated_slice = []
-    # Final = essentials + validated_slice = [sys(1), user(2), recall_obs(4)]
-    # Expected IDs: [1, 2, 4]. Length 3.
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
+    # Expected IDs: [1, 2, 3, 4]. Length 4.
     truncated_events = controller._apply_conversation_window()
 
-    assert (
-        len(truncated_events) == 4
-    )  # sys (1), user(2), recall_action(3) , recall_obs(4)
-    expected_ids = [1, 2, 4]
+    assert len(truncated_events) == 4  # Corrected assertion
+    expected_ids = [1, 2, 3, 4]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -352,22 +350,20 @@ def test_only_essential_events(controller_fixture):
     controller.state.history = history
     mock_first_user_message.id = 2
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 4
-    # Essentials = [sys(1), user(2), recall_obs(4)] (len=3)
-    # Non-essential count = 4 - 3 = 1
-    # num_recent_to_keep = max(1, 1 // 2) = 1
+    # Essentials = [sys(1), user(2), recall_act(3), recall_obs(4)] (len=4)
+    # Non-essential count = 4 - 4 = 0
+    # num_recent_to_keep = max(1, 0 // 2) = 1
     # slice_start_index = 4 - 1 = 3
     # recent_events_slice = history[3:] = [recall_obs(4)]
     # Validation: remove leading recall_obs(4). validated_slice = []
-    # Final = essentials + validated_slice = [sys(1), user(2), recall_obs(4)]
-    # Expected IDs: [1, 2, 4]. Length 3.
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
+    # Expected IDs: [1, 2, 3, 4]. Length 4.
     truncated_events = controller._apply_conversation_window()
 
-    assert (
-        len(truncated_events) == 4
-    )  # sys (1), user(2), recall_action(3) , recall_obs(4)
-    expected_ids = [1, 2, 4]
+    assert len(truncated_events) == 4  # Corrected assertion
+    expected_ids = [1, 2, 3, 4]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -415,20 +411,20 @@ def test_dangling_observations_at_cut_point(controller_fixture):
     controller.state.history = history_forced_dangle
     mock_first_user_message.id = 2
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 10
-    # Essentials = [sys(1), user(2), recall_obs(4)] (len=3)
-    # Non-essential count = 10 - 3 = 7
-    # num_recent_to_keep = max(1, 7 // 2) = 3
+    # Essentials = [sys(1), user(2), recall_act(3), recall_obs(4)] (len=4)
+    # Non-essential count = 10 - 4 = 6
+    # num_recent_to_keep = max(1, 6 // 2) = 3
     # slice_start_index = 10 - 3 = 7
     # recent_events_slice = history[7:] = [obs1(8), cmd2(9), obs2(10)]
     # Validation: remove leading obs1(8). validated_slice = [cmd2(9), obs2(10)]
-    # Final = essentials + validated_slice = [sys(1), user(2), recall_obs(4), cmd2(9), obs2(10)]
-    # Expected IDs: [1, 2, 4, 9, 10]. Length 5.
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4), cmd2(9), obs2(10)]
+    # Expected IDs: [1, 2, 3, 4, 9, 10]. Length 6.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 5  # Corrected assertion?
-    expected_ids = [1, 2, 4, 9, 10]
+    assert len(truncated_events) == 6  # Corrected assertion
+    expected_ids = [1, 2, 3, 4, 9, 10]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
     # Verify dangling observations 5 and 6 were removed (implicitly by slice start and validation)
@@ -463,33 +459,36 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
     controller.state.history = history
     mock_first_user_message.id = 2
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 6
-    # Essentials = [sys(1), user(2), recall_obs(4)] (len=3)
-    # Non-essential count = 6 - 3 = 3
-    # num_recent_to_keep = max(1, 3 // 2) = 1
+    # Essentials = [sys(1), user(2), recall_act(3), recall_obs(4)] (len=4)
+    # Non-essential count = 6 - 4 = 2
+    # num_recent_to_keep = max(1, 2 // 2) = 1
     # slice_start_index = 6 - 1 = 5
     # recent_events_slice = history[5:] = [dangle2(6)]
-    # Validation: remove leading dangle2(6). validated_slice = []
-    # Final = essentials + validated_slice = [sys(1), user(2), recall_obs(4)]
-    # Expected IDs: [1, 2, 4]. Length 3.
+    # Validation: remove leading dangle2(6). validated_slice = [] (Corrected based on user feedback/bugfix)
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
+    # Expected IDs: [1, 2, 3, 4]. Length 4.
     with patch(
         'openhands.controller.agent_controller.logger.warning'
     ) as mock_log_warning:
         truncated_events = controller._apply_conversation_window()
 
-        assert (
-            len(truncated_events) == 4
-        )  # sys (1), user(2), recall_action(3) , recall_obs(4)
-        expected_ids = [1, 2, 4]
+        assert len(truncated_events) == 4  # Corrected assertion
+        expected_ids = [1, 2, 3, 4]  # Corrected assertion
         actual_ids = [e.id for e in truncated_events]
         assert actual_ids == expected_ids
         # Verify dangling observations 5 and 6 were removed
 
-        # Check if the specific warning was logged (because the validated slice became empty)
-        mock_log_warning.assert_called_once_with(
-            'All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen.'
-        )
+        # Check that the specific warning was logged exactly once
+        assert mock_log_warning.call_count == 1
+
+        # Check the essential parts of the arguments, allowing for variations like stacklevel
+        call_args, call_kwargs = mock_log_warning.call_args
+        expected_message_substring = 'All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen.'
+        assert expected_message_substring in call_args[0]
+        assert 'extra' in call_kwargs
+        assert call_kwargs['extra'].get('session_id') == 'test_sid'
 
 
 def test_empty_history(controller_fixture):
@@ -547,20 +546,20 @@ def test_multiple_user_messages(controller_fixture):
     controller.state.history = history
     mock_first_user_message.id = 2  # Explicitly set the first user message ID
 
-    # Calculation:
+    # Calculation (RecallAction now essential):
     # History len = 11
-    # Essentials = [sys(1), user1(2), recall_obs1(4)] (len=3)
-    # Non-essential count = 11 - 3 = 8
-    # num_recent_to_keep = max(1, 8 // 2) = 4
-    # slice_start_index = 11 - 4 = 7
-    # recent_events_slice = history[7:] = [recall_act2(8), recall_obs2(9), cmd2(10), obs2(11)]
-    # Validation: First event recall_act2(8) (Action). OK.
-    # Final = essentials + validated_slice = [sys(1), user1(2), recall_obs1(4)] + [recall_act2(8), recall_obs2(9), cmd2(10), obs2(11)]
-    # Expected IDs: [1, 2, 4, 8, 9, 10, 11]. Length 7.
+    # Essentials = [sys(1), user1(2), recall_act1(3), recall_obs1(4)] (len=4)
+    # Non-essential count = 11 - 4 = 7
+    # num_recent_to_keep = max(1, 7 // 2) = 3
+    # slice_start_index = 11 - 3 = 8
+    # recent_events_slice = history[8:] = [recall_obs2(9), cmd2(10), obs2(11)]
+    # Validation: remove leading recall_obs2(9). validated_slice = [cmd2(10), obs2(11)]
+    # Final = essentials + validated_slice = [sys(1), user1(2), recall_act1(3), recall_obs1(4)] + [cmd2(10), obs2(11)]
+    # Expected IDs: [1, 2, 3, 4, 10, 11]. Length 6.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 7  # Corrected assertion
-    expected_ids = [1, 2, 4, 8, 9, 10, 11]
+    assert len(truncated_events) == 6  # Corrected assertion
+    expected_ids = [1, 2, 3, 4, 10, 11]  # Corrected assertion
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 

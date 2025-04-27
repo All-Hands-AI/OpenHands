@@ -1170,8 +1170,12 @@ class AgentController:
         # Add an error event to trigger another step by the agent
         self.event_stream.add_event(
             CondensationAction(
-                forgotten_events_start_id=min(forgotten_event_ids),
-                forgotten_events_end_id=max(forgotten_event_ids),
+                forgotten_events_start_id=min(forgotten_event_ids)
+                if forgotten_event_ids
+                else 0,
+                forgotten_events_end_id=max(forgotten_event_ids)
+                if forgotten_event_ids
+                else 0,
             ),
             EventSource.AGENT,
         )
@@ -1255,6 +1259,9 @@ class AgentController:
             essential_events.append(system_message)
         if first_user_msg:
             essential_events.append(first_user_msg)
+        # Also keep the RecallAction that triggered the essential RecallObservation
+        if recall_action:
+            essential_events.append(recall_action)
         if recall_observation:
             essential_events.append(recall_observation)
 
@@ -1292,7 +1299,7 @@ class AgentController:
                     f'Removed {first_valid_event_index} dangling observation(s) from the start of recent event slice.',
                 )
         else:
-            validated_recent_events = recent_events_slice
+            validated_recent_events = []
 
         # 4. Combine essential events and validated recent events
         events_to_keep: list[Event] = essential_events + validated_recent_events
