@@ -1187,8 +1187,7 @@ class AgentController:
         1. Identify essential initial events: System Message, First User Message, Recall Observation.
         2. Determine the slice of recent events to potentially keep.
         3. Validate the start of the recent slice for dangling observations.
-        4. Combine essential events and validated recent events, ensuring essentials come first and no duplicates.
-        5. Update the state's start_id to reflect the new beginning of the history.
+        4. Combine essential events and validated recent events, ensuring essentials come first.
 
         Args:
             events: List of events to filter
