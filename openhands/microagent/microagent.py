@@ -34,8 +34,11 @@ class BaseMicroagent(BaseModel):
         """
         path = Path(path) if isinstance(path, str) else path
 
-        # Calculate derived name from relative path
-        derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
+        # Calculate derived name from relative path if microagent_dir is provided
+        # Otherwise, we will rely on the name from metadata later
+        derived_name = None
+        if microagent_dir is not None:
+            derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -73,9 +76,12 @@ class BaseMicroagent(BaseModel):
         if metadata.type not in subclass_map:
             raise ValueError(f'Unknown microagent type: {metadata.type}')
 
+        # Use derived_name if available (from relative path), otherwise fallback to metadata.name
+        agent_name = derived_name if derived_name is not None else metadata.name
+
         agent_class = subclass_map[metadata.type]
         return agent_class(
-            name=derived_name,
+            name=agent_name,
             content=content,
             metadata=metadata,
             source=str(path),
