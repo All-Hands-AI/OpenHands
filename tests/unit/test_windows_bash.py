@@ -507,38 +507,34 @@ def test_long_running_command_followed_by_execute(windows_bash_session):
     action = CmdRunAction('1..3 | ForEach-Object { Write-Output $_; Start-Sleep 3 }')
     action.set_hard_timeout(2.5)
     obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
-    assert '1' in obs.content
-    assert obs.exit_code == -1
-    assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+    assert '1' in obs.content  # First number should appear before timeout
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+    assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
     assert obs.metadata.prefix == ''
 
-    # Send another command while the first is still running in the background
-    action = CmdRunAction('Write-Output "New Command"')
-    obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-    # The new command should not execute, and we should get an error message in the suffix
-    assert 'New Command' not in obs.content # The new command output shouldn't be here
-    # Should contain output from the *original* command ('2') if it arrived
-    assert '2' in obs.content or obs.content == '' # Content might be '2' or empty depending on timing
-    assert 'Your command "Write-Output "New Command"" is NOT executed.' in obs.metadata.suffix
-    assert 'The previous command is still running' in obs.metadata.suffix
-    assert obs.exit_code == -1 # Still running the *original* command
-
-    # Send an empty command to get the next output from the original command
+    # Continue watching output
     action = CmdRunAction('')
-    action.set_hard_timeout(4) # Enough time for '3'
+    action.set_hard_timeout(2.5)
     obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-    # Should contain '3' if the original command finished
-    if '2' in obs.content: # If '2' was already printed in the previous step
-        assert '3' in obs.content
-    else: # If '2' wasn't printed previously, it might be here along with '3' or just '3'
-         assert '2' in obs.content or '3' in obs.content
+    assert '2' in obs.content
+    assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
+    assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+
+    # Test command that produces no output
+    action = CmdRunAction('sleep 15')
+    action.set_hard_timeout(2.5)
+    obs = windows_bash_session.execute(action)
+    assert '3' not in obs.content
+    assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
+    assert 'The previous command is still running' in obs.metadata.suffix
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+
+    # Finally continue again
+    action = CmdRunAction('')
+    obs = windows_bash_session.execute(action)
+    assert '3' in obs.content
     assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-    assert obs.exit_code == 0
 
 def test_command_non_existent_file(windows_bash_session):
     """Test command execution for a non-existent file returns non-zero exit code."""
