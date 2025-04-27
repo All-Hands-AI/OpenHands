@@ -25,7 +25,6 @@ const mock_provider_tokens_are_set: Record<Provider, boolean> = {
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
   const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-  const resetSettingsSpy = vi.spyOn(OpenHands, "resetSettings");
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 
   const { handleLogoutMock } = vi.hoisted(() => ({
@@ -67,7 +66,6 @@ describe("Settings Screen", () => {
       // Use queryAllByText to handle multiple elements with the same text
       expect(screen.queryAllByText("SETTINGS$LLM_SETTINGS")).not.toHaveLength(0);
       screen.getByText("ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS");
-      screen.getByText("BUTTON$RESET_TO_DEFAULTS");
       screen.getByText("BUTTON$SAVE");
     });
   });
@@ -542,54 +540,6 @@ describe("Settings Screen", () => {
         });
       });
 
-      test("resetting settings with no changes but having advanced enabled should hide the advanced items", async () => {
-        const user = userEvent.setup();
-
-        getSettingsSpy.mockResolvedValueOnce({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-        });
-
-        renderSettingsScreen();
-
-        await toggleAdvancedSettings(user);
-
-        const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
-        await user.click(resetButton);
-
-        // show modal
-        const modal = await screen.findByTestId("reset-modal");
-        expect(modal).toBeInTheDocument();
-
-        // Mock the settings that will be returned after reset
-        // This should be the default settings with no advanced settings enabled
-        getSettingsSpy.mockResolvedValueOnce({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-          llm_base_url: "",
-          confirmation_mode: false,
-          security_analyzer: "",
-        });
-
-        // confirm reset
-        const confirmButton = within(modal).getByText("Reset");
-        await user.click(confirmButton);
-
-        await waitFor(() => {
-          expect(
-            screen.queryByTestId("llm-custom-model-input"),
-          ).not.toBeInTheDocument();
-          expect(
-            screen.queryByTestId("base-url-input"),
-          ).not.toBeInTheDocument();
-          expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
-          expect(
-            screen.queryByTestId("security-analyzer-input"),
-          ).not.toBeInTheDocument();
-          expect(
-            screen.queryByTestId("enable-confirmation-mode-switch"),
-          ).not.toBeInTheDocument();
-        });
-      });
-
       it("should save if only confirmation mode is enabled", async () => {
         const user = userEvent.setup();
         renderSettingsScreen();
@@ -760,81 +710,6 @@ describe("Settings Screen", () => {
           llm_model: "openai/gpt-4o",
         }),
       );
-    });
-
-    it("should reset the settings when the 'Reset to defaults' button is clicked", async () => {
-      const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
-
-      renderSettingsScreen();
-
-      const languageInput = await screen.findByTestId("language-input");
-      await user.click(languageInput);
-
-      const norskOption = await screen.findByText("Norsk");
-      await user.click(norskOption);
-
-      expect(languageInput).toHaveValue("Norsk");
-
-      const resetButton = screen.getByText("BUTTON$RESET_TO_DEFAULTS");
-      await user.click(resetButton);
-
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
-
-      // show modal
-      const modal = await screen.findByTestId("reset-modal");
-      expect(modal).toBeInTheDocument();
-
-      // confirm reset
-      const confirmButton = within(modal).getByText("Reset");
-      await user.click(confirmButton);
-
-      await waitFor(() => {
-        expect(resetSettingsSpy).toHaveBeenCalled();
-      });
-
-      // Mock the settings response after reset
-      getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_base_url: "",
-        confirmation_mode: false,
-        security_analyzer: "",
-      });
-
-      // Wait for the mutation to complete and the modal to be removed
-      await waitFor(() => {
-        expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
-        expect(
-          screen.queryByTestId("llm-custom-model-input"),
-        ).not.toBeInTheDocument();
-        expect(screen.queryByTestId("base-url-input")).not.toBeInTheDocument();
-        expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
-        expect(
-          screen.queryByTestId("security-analyzer-input"),
-        ).not.toBeInTheDocument();
-        expect(
-          screen.queryByTestId("enable-confirmation-mode-switch"),
-        ).not.toBeInTheDocument();
-      });
-    });
-
-    it("should cancel the reset when the 'Cancel' button is clicked", async () => {
-      const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
-
-      renderSettingsScreen();
-
-      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
-      await user.click(resetButton);
-
-      const modal = await screen.findByTestId("reset-modal");
-      expect(modal).toBeInTheDocument();
-
-      const cancelButton = within(modal).getByText("Cancel");
-      await user.click(cancelButton);
-
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
-      expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
     });
 
     it("should call handleCaptureConsent with true if the save is successful", async () => {
@@ -1044,18 +919,5 @@ describe("Settings Screen", () => {
       );
     });
 
-    it("should not submit the unwanted fields when resetting", async () => {
-      const user = userEvent.setup();
-      renderSettingsScreen();
-
-      const resetButton = await screen.findByText("BUTTON$RESET_TO_DEFAULTS");
-      await user.click(resetButton);
-
-      const modal = await screen.findByTestId("reset-modal");
-      const confirmButton = within(modal).getByText("Reset");
-      await user.click(confirmButton);
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
-      expect(resetSettingsSpy).toHaveBeenCalled();
-    });
   });
 });

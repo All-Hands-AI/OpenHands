@@ -100,9 +100,8 @@ def initialize_repository_for_runtime(
         The repository directory path if a repository was cloned, None otherwise.
     """
     # clone selected repository if provided
-    github_token = (
-        SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
-    )
+    if github_token is None and 'GITHUB_TOKEN' in os.environ:
+        github_token = SecretStr(os.environ['GITHUB_TOKEN'])
 
     secret_store = (
         SecretStore(
