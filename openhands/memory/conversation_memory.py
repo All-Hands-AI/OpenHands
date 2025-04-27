@@ -2,6 +2,7 @@ from typing import Generator
 
 from litellm import ModelResponse
 
+from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
@@ -53,8 +54,8 @@ class ConversationMemory:
 
     def process_events(
         self,
+        state: State,
         condensed_history: list[Event],
-        initial_user_action: MessageAction,
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -74,7 +75,7 @@ class ConversationMemory:
 
         # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
         self._ensure_system_message(events)
-        self._ensure_initial_user_message(events, initial_user_action)
+        self._ensure_initial_user_message(events, state)
 
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
@@ -706,10 +707,30 @@ class ConversationMemory:
                     '[ConversationMemory] Added SystemMessageAction for backward compatibility'
                 )
 
-    def _ensure_initial_user_message(
-        self, events: list[Event], initial_user_action: MessageAction
-    ) -> None:
-        """Checks if the second event is a user MessageAction and inserts the provided one if needed."""
+    def _ensure_initial_user_message(self, events: list[Event], state: State) -> None:
+        """
+        Checks if the second event in the condensed history (`events`) is a user MessageAction.
+        If not, it finds the *actual* initial user message from the full history (`state.history`)
+        and inserts it at the correct position in `events`.
+        """
+        # Find the actual initial user message from the full history
+        initial_user_action: MessageAction | None = None
+        for event in state.history:
+            if isinstance(event, MessageAction) and event.source == 'user':
+                initial_user_action = event
+                break
+
+        if initial_user_action is None:
+            # This should not happen in a valid conversation
+            logger.error(
+                f'CRITICAL: Could not find the initial user MessageAction in the full {len(state.history)} events history.'
+            )
+            # Depending on desired robustness, could raise error or create a dummy action
+            # and log the error
+            raise ValueError(
+                'Initial user message not found in history. Please report this issue.'
+            )
+
         if (
             not events
         ):  # Should have system message from previous step, but safety check
