@@ -20,6 +20,7 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.session.initial_agent_prompts import get_prompt_for_task
 from openhands.server.shared import (
     ConversationStoreImpl,
     SettingsStoreImpl,
@@ -171,6 +172,10 @@ async def new_conversation(
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
     replay_json = data.replay_json
+    suggested_task = data.suggested_task
+
+    if suggested_task:
+        initial_user_msg = get_prompt_for_task(suggested_task)
 
     try:
         # Create conversation with initial message
