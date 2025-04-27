@@ -159,13 +159,13 @@ class OpenHands {
     suggested_task?: SuggestedTask,
   ): Promise<Conversation> {
     const body = {
-      conversation_trigger: conversation_trigger,
+      conversation_trigger,
       selected_repository: selectedRepository,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
       replay_json: replayJson,
-      suggested_task: suggested_task,
+      suggested_task,
     };
 
     const { data } = await openHands.post<Conversation>(
