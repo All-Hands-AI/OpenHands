@@ -617,7 +617,8 @@ class WindowsPowershellSession:
                 metadata.suffix = (
                      f"\n[The command timed out after {timeout_seconds} seconds. "
                      "You may wait longer to see additional output by sending empty command '', "
-                     "or send keys to interrupt/kill the command.]" # Keep consistent message
+                     'send other commands to interact with the current process, '
+                     'or send keys to interrupt/kill the command.]'
                 )
 
             return CmdOutputObservation(
@@ -1257,7 +1258,7 @@ class WindowsPowershellSession:
             suffix = (
                 f"\n[The command timed out after {timeout_seconds} seconds. "
                 "You may wait longer to see additional output by sending empty command '', "
-                # "send other commands to interact with the current process, " # Interaction not supported
+                "send other commands to interact with the current process, "
                 "or send keys to interrupt/kill the command.]"
             )
         elif shutdown_requested:
