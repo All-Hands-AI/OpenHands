@@ -173,6 +173,7 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
+    conversation_trigger = data.conversation_trigger
 
     if suggested_task:
         initial_user_msg = get_prompt_for_task(suggested_task)
@@ -180,13 +181,14 @@ async def new_conversation(
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            user_id,
-            provider_tokens,
-            selected_repository,
-            selected_branch,
-            initial_user_msg,
-            image_urls,
-            replay_json,
+            user_id=user_id,
+            git_provider_tokens=provider_tokens,
+            selected_repository=selected_repository,
+            selected_branch=selected_branch,
+            initial_user_msg=initial_user_msg,
+            image_urls=image_urls,
+            replay_json=replay_json,
+            conversation_trigger=conversation_trigger
         )
 
         return JSONResponse(
