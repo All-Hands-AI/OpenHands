@@ -9,7 +9,9 @@ export const generateAuthUrl = (identityProvider: string, requestUrl: URL) => {
   const authUrl = requestUrl.hostname
     .replace(/(^|\.)staging\.all-hands\.dev$/, "$1auth.staging.all-hands.dev")
     .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev")
-    .replace(/(^|\.)localhost$/, "auth.staging.all-hands.dev");
+    .replace(/(^|\.)localhost$/, "localhost:8080");
   const scope = "openid email profile"; // OAuth scope - not user-facing
-  return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=allhands&kc_idp_hint=${identityProvider}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+  const isLocalhost = requestUrl.hostname === "localhost";
+  const protocol = isLocalhost ? "http" : "https";
+  return `${protocol}://${authUrl}/realms/testing/protocol/openid-connect/auth?client_id=testing&kc_idp_hint=${identityProvider}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 };
