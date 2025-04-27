@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Keyword-triggered microagents provide OpenHands with specific instructions that are activated when certain keywords 
+Keyword-triggered microagents provide OpenHands with specific instructions that are activated when certain keywords
 appear in the prompt. This is useful for tailoring behavior based on particular tools, languages, or frameworks.
 
 ## Microagent File
@@ -12,7 +12,7 @@ that activate only for prompts with specific keywords.
 
 ## Frontmatter Syntax
 
-Frontmatter is required for keyword-triggered microagents. It must be placed at the top of the file, 
+Frontmatter is required for keyword-triggered microagents. It must be placed at the top of the file,
 above the guidelines.
 
 Enclose the frontmatter in triple dashes (---) and include the following fields:
@@ -22,7 +22,7 @@ Enclose the frontmatter in triple dashes (---) and include the following fields:
 | `name`     | A unique identifier for the microagent.          | Yes      | 'default'        |
 | `type`     | Type of microagent. Must be set to `knowledge`.  | Yes      | 'repo'           |
 | `triggers` | A list of keywords that activate the microagent. | Yes      | None             |
-| `agent`    | The agent this microagent applies to.            | No       | 'CodeActAgent'   | 
+| `agent`    | The agent this microagent applies to.            | No       | 'CodeActAgent'   |
 
 
 ## Example
