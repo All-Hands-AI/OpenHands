@@ -71,21 +71,29 @@ class BaseMicroagent(BaseModel):
         subclass_map = {
             MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
             MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
-            MicroagentType.TASK: TaskMicroagent,
         }
-        if metadata.type not in subclass_map:
-            raise ValueError(f'Unknown microagent type: {metadata.type}')
+
+        # Infer the agent type based on metadata (triggers)
+        inferred_type: MicroagentType
+        if metadata.triggers:
+            inferred_type = MicroagentType.KNOWLEDGE
+        else:
+            inferred_type = MicroagentType.REPO_KNOWLEDGE
+
+        if inferred_type not in subclass_map:
+            # This should theoretically not happen with the logic above
+            raise ValueError(f'Could not determine microagent type for: {path}')
 
         # Use derived_name if available (from relative path), otherwise fallback to metadata.name
         agent_name = derived_name if derived_name is not None else metadata.name
 
-        agent_class = subclass_map[metadata.type]
+        agent_class = subclass_map[inferred_type]
         return agent_class(
             name=agent_name,
             content=content,
             metadata=metadata,
             source=str(path),
-            type=metadata.type,
+            type=inferred_type,
         )
 
 
@@ -133,23 +141,14 @@ class RepoMicroagent(BaseMicroagent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroagentType.REPO_KNOWLEDGE:
-            raise ValueError('RepoMicroagent must have type REPO_KNOWLEDGE')
-
-
-class TaskMicroagent(BaseMicroagent):
-    """Microagent specialized for task-based operations."""
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        if self.type != MicroagentType.TASK:
-            raise ValueError('TaskMicroagent must have type TASK')
+            raise ValueError(
+                f'RepoMicroagent initialized with incorrect type: {self.type}'
+            )
 
 
 def load_microagents_from_dir(
     microagent_dir: Union[str, Path],
-) -> tuple[
-    dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent], dict[str, TaskMicroagent]
-]:
+) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
     """Load all microagents from the given directory.
 
     Note, legacy repo instructions will not be loaded here.
@@ -165,9 +164,8 @@ def load_microagents_from_dir(
 
     repo_agents = {}
     knowledge_agents = {}
-    task_agents = {}
 
-    # Load all agents from .openhands/microagents directory
+    # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
         for file in microagent_dir.rglob('*.md'):
@@ -181,10 +179,8 @@ def load_microagents_from_dir(
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                elif isinstance(agent, TaskMicroagent):
-                    task_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:
                 raise ValueError(f'Error loading agent from {file}: {e}')
 
-    return repo_agents, knowledge_agents, task_agents
+    return repo_agents, knowledge_agents

@@ -7,7 +7,7 @@ from conftest import (
     _load_runtime,
 )
 
-from openhands.microagent import KnowledgeMicroagent, RepoMicroagent, TaskMicroagent
+from openhands.microagent import KnowledgeMicroagent, RepoMicroagent
 
 
 def _create_test_microagents(test_dir: str):
@@ -48,22 +48,6 @@ Repository-specific test instructions.
 """
     (microagents_dir / 'repo.md').write_text(repo_agent)
 
-    # Create test task agent in a nested directory
-    task_dir = microagents_dir / 'tasks' / 'nested'
-    task_dir.mkdir(parents=True, exist_ok=True)
-    task_agent = """---
-name: test_task
-type: task
-version: 1.0.0
-agent: CodeActAgent
----
-
-# Test Task
-
-Test task content
-"""
-    (task_dir / 'task.md').write_text(task_agent)
-
     # Create legacy repo instructions
     legacy_instructions = """# Legacy Instructions
 
@@ -88,7 +72,6 @@ def test_load_microagents_with_trailing_slashes(
             a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         # Check knowledge agents
         assert len(knowledge_agents) == 1
@@ -102,11 +85,6 @@ def test_load_microagents_with_trailing_slashes(
         repo_names = {a.name for a in repo_agents}
         assert 'test_repo_agent' in repo_names
         assert 'repo_legacy' in repo_names
-
-        # Check task agents
-        assert len(task_agents) == 1
-        agent = task_agents[0]
-        assert agent.name == 'test_task'
 
     finally:
         _close_test_runtime(runtime)
@@ -131,7 +109,6 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
             a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         # Check knowledge agents
         assert len(knowledge_agents) == 1
@@ -145,11 +122,6 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         repo_names = {a.name for a in repo_agents}
         assert 'test_repo_agent' in repo_names
         assert 'repo_legacy' in repo_names
-
-        # Check task agents
-        assert len(task_agents) == 1
-        agent = task_agents[0]
-        assert agent.name == 'test_task'
 
     finally:
         _close_test_runtime(runtime)
@@ -184,11 +156,9 @@ Repository-specific test instructions.
             a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         assert len(knowledge_agents) == 0
         assert len(repo_agents) == 1
-        assert len(task_agents) == 0
 
         agent = repo_agents[0]
         assert agent.name == 'test_repo_agent'
