@@ -1513,7 +1513,7 @@ def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
     events = [first_msg, agent_msg, user_response, cmd1, obs1, cmd2, obs2]
 
     # Apply truncation
-    truncated = controller._apply_conversation_window(events)
+    truncated = controller._apply_conversation_window()
 
     # Verify truncation occured
     # Should keep first user message and roughly half of other events
@@ -1558,9 +1558,7 @@ def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
     controller.state.history = events.copy()
 
     # Force truncation
-    controller.state.history = controller._apply_conversation_window(
-        controller.state.history
-    )
+    controller.state.history = controller._apply_conversation_window()
 
     # Save state
     saved_start_id = controller.state.start_id
