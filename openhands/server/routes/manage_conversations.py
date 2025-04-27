@@ -20,7 +20,6 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.session.initial_agent_prompts import get_prompt_for_task
 from openhands.server.shared import (
     ConversationStoreImpl,
     SettingsStoreImpl,
@@ -42,6 +41,7 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
+
 
 app = APIRouter(prefix='/api')
 
@@ -177,7 +177,7 @@ async def new_conversation(
     conversation_trigger = data.conversation_trigger
 
     if suggested_task:
-        initial_user_msg = get_prompt_for_task(suggested_task)
+        initial_user_msg = suggested_task.get_prompt_for_task()
 
     try:
         # Create conversation with initial message
