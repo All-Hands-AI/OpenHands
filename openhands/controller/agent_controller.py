@@ -1143,7 +1143,7 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        kept_events = self._apply_conversation_window(self.state.history)
+        kept_events = self._apply_conversation_window()
         kept_event_ids = {e.id for e in kept_events}
 
         self.log(
@@ -1176,7 +1176,7 @@ class AgentController:
             EventSource.AGENT,
         )
 
-    def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
+    def _apply_conversation_window(self) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.
 
         It preserves action-observation pairs and ensures that the system message,
@@ -1196,8 +1196,10 @@ class AgentController:
         Returns:
             Filtered list of events keeping newest half while preserving pairs and essential initial events.
         """
-        if not events:
-            return events
+        if not self.state.history:
+            return []
+
+        history = self.state.history
 
         # 1. Identify essential initial events
         system_message: SystemMessageAction | None = None
@@ -1207,12 +1209,12 @@ class AgentController:
 
         # Find System Message (should be the first event, if it exists)
         system_message = next(
-            (e for e in events if isinstance(e, SystemMessageAction)), None
+            (e for e in history if isinstance(e, SystemMessageAction)), None
         )
         assert (
             system_message is None
             or isinstance(system_message, SystemMessageAction)
-            and system_message.id == events[0].id
+            and system_message.id == history[0].id
         )
 
         # Find First User Message, which MUST exist
@@ -1221,7 +1223,7 @@ class AgentController:
             raise RuntimeError('No first user message found in the event stream.')
 
         first_user_msg_index = -1
-        for i, event in enumerate(events):
+        for i, event in enumerate(history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 first_user_msg = event
                 first_user_msg_index = i
@@ -1230,16 +1232,16 @@ class AgentController:
         # Find Recall Action and Observation related to the First User Message
         if first_user_msg is not None and first_user_msg_index != -1:
             # Look for RecallAction after the first user message
-            for i in range(first_user_msg_index + 1, len(events)):
-                event = events[i]
+            for i in range(first_user_msg_index + 1, len(history)):
+                event = history[i]
                 if (
                     isinstance(event, RecallAction)
                     and event.query == first_user_msg.content
                 ):
                     # Found RecallAction, now look for its Observation
                     recall_action = event
-                    for j in range(i + 1, len(events)):
-                        obs_event = events[j]
+                    for j in range(i + 1, len(history)):
+                        obs_event = history[j]
                         # Check for Observation caused by this RecallAction
                         if (
                             isinstance(obs_event, Observation)
@@ -1258,14 +1260,14 @@ class AgentController:
             essential_events.append(recall_observation)
 
         # 2. Determine the slice of recent events to potentially keep
-        num_non_essential_events = len(events) - len(essential_events)
+        num_non_essential_events = len(history) - len(essential_events)
         # Keep roughly half of the non-essential events, minimum 1
         num_recent_to_keep = max(1, num_non_essential_events // 2)
 
         # Calculate the starting index for the recent slice
-        slice_start_index = len(events) - num_recent_to_keep
+        slice_start_index = len(history) - num_recent_to_keep
         slice_start_index = max(0, slice_start_index)  # Ensure index is not negative
-        recent_events_slice = events[slice_start_index:]
+        recent_events_slice = history[slice_start_index:]
 
         # 3. Validate the start of the recent slice for dangling observations
         # IMPORTANT: Most observations in history are tool call results, which cannot be without their action, or we get an LLM API error
