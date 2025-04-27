@@ -52,3 +52,6 @@ class ObservationType(str, Enum):
 
     MCP = 'mcp'
     """Result of a MCP Server operation"""
+
+    PLAN = 'plan'
+    """Result of a plan operation"""

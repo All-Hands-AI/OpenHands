@@ -65,6 +65,7 @@ BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'PlanningAgent': codeact_user_response,
 }
 
 

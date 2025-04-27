@@ -104,6 +104,7 @@
 # Maximum age of conversations in seconds before they are automatically closed
 #conversation_max_age_seconds = 864000  # 10 days
 
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
@@ -228,6 +229,9 @@ enable_editor = true
 # Whether the IPython tool is enabled
 enable_jupyter = true
 
+# Whether the mcp tools is enabled
+enable_mcp_tools = true
+
 # Whether the command tool is enabled
 enable_cmd = true
 
@@ -254,6 +258,21 @@ enable_history_truncation = true
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3'
+
+###### planning agent configuration #######
+# planning config
+[agent.PlanningAgent]
+enable_browsing = false
+enable_llm_editor = false
+enable_jupyter = true
+enable_mcp_tools = false
+
+# task solving config
+[agent.TaskSolvingAgent]
+enable_browsing = false
+enable_llm_editor = true
+enable_jupyter = true
+enable_mcp_tools = true
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox

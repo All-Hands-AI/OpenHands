@@ -14,9 +14,11 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    CreatePlanAction,
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
+    MarkTaskAction,
     MessageAction,
 )
 from openhands.events.action.mcp import McpAction
@@ -28,6 +30,7 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    CreatePlanObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -208,6 +211,7 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 McpAction,
+                CreatePlanAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -287,6 +291,14 @@ class ConversationMemory:
                     content=content,
                 )
             ]
+        elif isinstance(action, MarkTaskAction):
+            return [
+                Message(
+                    role='user',  # always user for MarkTaskAction
+                    content=[TextContent(text=action.message)],
+                )
+            ]
+
         elif isinstance(action, SystemMessageAction):
             # Convert SystemMessageAction to a system message
             return [
@@ -355,6 +367,9 @@ class ConversationMemory:
             # logger.warning(f'MCPObservation: {obs}')
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, CreatePlanObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
@@ -408,11 +423,14 @@ class ConversationMemory:
                 )
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
+            content = '\n\n'.join(list(obs.outputs.values()))
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                content,
                 max_message_chars,
             )
-            message = Message(role='user', content=[TextContent(text=text)])
+            role = obs.source.value if obs.source else 'user'
+            role = 'assistant' if role == 'agent' else 'user'
+            message = Message(role=role, content=[TextContent(text=text)])
         elif isinstance(obs, AgentThinkObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
@@ -490,7 +508,10 @@ class ConversationMemory:
                             repo_instructions=repo_instructions,
                         )
                     )
-                    message_content.append(TextContent(text=formatted_workspace_text))
+                    if formatted_workspace_text.strip():
+                        message_content.append(
+                            TextContent(text=formatted_workspace_text)
+                        )
 
                 # Add microagent knowledge if present
                 if has_microagent_knowledge:
@@ -499,7 +520,10 @@ class ConversationMemory:
                             triggered_agents=filtered_agents,
                         )
                     )
-                    message_content.append(TextContent(text=formatted_microagent_text))
+                    if formatted_microagent_text.strip():
+                        message_content.append(
+                            TextContent(text=formatted_microagent_text)
+                        )
 
                 # Return the combined message if we have any content
                 if message_content:
