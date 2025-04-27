@@ -67,9 +67,10 @@ async def _create_new_conversation(
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ):
+    print("trigger", conversation_trigger)
     logger.info(
         'Creating conversation',
-        extra={'signal': 'create_conversation', 'user_id': user_id},
+        extra={'signal': 'create_conversation', 'user_id': user_id, 'trigger': conversation_trigger.value},
     )
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
