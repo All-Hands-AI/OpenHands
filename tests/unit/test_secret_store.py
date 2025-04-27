@@ -5,7 +5,12 @@ from typing import Any
 
 from pydantic import SecretStr
 
-from openhands.integrations.provider import CustomSecret, ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import (
+    CustomSecret,
+    ProviderToken,
+    ProviderType,
+    SecretStore,
+)
 
 
 class TestSecretStore:
@@ -50,8 +55,12 @@ class TestSecretStore:
         """Test adding only custom secrets to the SecretStore."""
         # Create custom secrets
         custom_secrets = {
-            'API_KEY': CustomSecret(secret=SecretStr('api-key-123'), description='API key'),
-            'DATABASE_PASSWORD': CustomSecret(secret=SecretStr('db-pass-456'), description='Database password'),
+            'API_KEY': CustomSecret(
+                secret=SecretStr('api-key-123'), description='API key'
+            ),
+            'DATABASE_PASSWORD': CustomSecret(
+                secret=SecretStr('db-pass-456'), description='Database password'
+            ),
         }
 
         # Initialize the store with custom secrets
@@ -60,7 +69,9 @@ class TestSecretStore:
         # Verify the custom secrets were added correctly
         assert isinstance(store.custom_secrets, MappingProxyType)
         assert len(store.custom_secrets) == 2
-        assert store.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        assert (
+            store.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        )
         assert (
             store.custom_secrets['DATABASE_PASSWORD'].secret.get_secret_value()
             == 'db-pass-456'
@@ -78,7 +89,9 @@ class TestSecretStore:
         }
 
         # Create custom secrets as a MappingProxyType
-        custom_secret = CustomSecret(secret=SecretStr('api-key-123'), description='API key')
+        custom_secret = CustomSecret(
+            secret=SecretStr('api-key-123'), description='API key'
+        )
         custom_secrets_proxy = MappingProxyType({'API_KEY': custom_secret})
 
         # Test with dict for provider_tokens and MappingProxyType for custom_secrets
@@ -92,7 +105,9 @@ class TestSecretStore:
             store1.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
             == 'github-token-123'
         )
-        assert store1.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        assert (
+            store1.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        )
 
         # Test with MappingProxyType for provider_tokens and dict for custom_secrets
         provider_token = ProviderToken(
@@ -115,7 +130,9 @@ class TestSecretStore:
             store2.provider_tokens[ProviderType.GITLAB].token.get_secret_value()
             == 'gitlab-token-456'
         )
-        assert store2.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        assert (
+            store2.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        )
 
     def test_model_copy_update_fields(self):
         """Test using model_copy to update fields without affecting other fields."""
@@ -123,7 +140,11 @@ class TestSecretStore:
         github_token = ProviderToken(
             token=SecretStr('github-token-123'), user_id='user1'
         )
-        custom_secret = {'API_KEY': CustomSecret(secret=SecretStr('api-key-123'), description='API key')}
+        custom_secret = {
+            'API_KEY': CustomSecret(
+                secret=SecretStr('api-key-123'), description='API key'
+            )
+        }
 
         initial_store = SecretStore(
             provider_tokens=MappingProxyType({ProviderType.GITHUB: github_token}),
@@ -154,14 +175,19 @@ class TestSecretStore:
         )
         assert len(updated_store1.custom_secrets) == 1
         assert (
-            updated_store1.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+            updated_store1.custom_secrets['API_KEY'].secret.get_secret_value()
+            == 'api-key-123'
         )
 
         # Update only custom_secrets
         updated_custom_secrets = MappingProxyType(
             {
-                'API_KEY': CustomSecret(secret=SecretStr('api-key-123'), description='API key'),
-                'DATABASE_PASSWORD': CustomSecret(secret=SecretStr('db-pass-456'), description='DB password'),
+                'API_KEY': CustomSecret(
+                    secret=SecretStr('api-key-123'), description='API key'
+                ),
+                'DATABASE_PASSWORD': CustomSecret(
+                    secret=SecretStr('db-pass-456'), description='DB password'
+                ),
             }
         )
 
@@ -177,7 +203,8 @@ class TestSecretStore:
         )
         assert len(updated_store2.custom_secrets) == 2
         assert (
-            updated_store2.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+            updated_store2.custom_secrets['API_KEY'].secret.get_secret_value()
+            == 'api-key-123'
         )
         assert (
             updated_store2.custom_secrets['DATABASE_PASSWORD'].secret.get_secret_value()
@@ -191,7 +218,9 @@ class TestSecretStore:
             token=SecretStr('github-token-123'), user_id='user1'
         )
         custom_secrets = {
-            'API_KEY': CustomSecret(secret=SecretStr('api-key-123'), description='API key')
+            'API_KEY': CustomSecret(
+                secret=SecretStr('api-key-123'), description='API key'
+            )
         }
 
         store = SecretStore(
@@ -283,8 +312,13 @@ class TestSecretStore:
         """Test initializing custom secrets with both plain strings and SecretStr objects."""
         # Create custom secrets with mixed value types
         custom_secrets_dict = {
-            'API_KEY': {'secret': 'api-key-123', 'description': 'API key'},  # Dict format
-            'DATABASE_PASSWORD': CustomSecret(secret=SecretStr('db-pass-456'), description='DB password'),  # CustomSecret object
+            'API_KEY': {
+                'secret': 'api-key-123',
+                'description': 'API key',
+            },  # Dict format
+            'DATABASE_PASSWORD': CustomSecret(
+                secret=SecretStr('db-pass-456'), description='DB password'
+            ),  # CustomSecret object
         }
 
         # Initialize the store
@@ -296,7 +330,9 @@ class TestSecretStore:
 
         # Check API_KEY (was dict)
         assert isinstance(store.custom_secrets['API_KEY'], CustomSecret)
-        assert store.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        assert (
+            store.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-123'
+        )
         assert store.custom_secrets['API_KEY'].description == 'API key'
 
         # Check DATABASE_PASSWORD (was CustomSecret)
