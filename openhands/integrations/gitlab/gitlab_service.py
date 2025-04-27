@@ -108,7 +108,9 @@ class GitLabService(BaseGitService, GitService):
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
 
-    async def execute_graphql_query(self, query: str, variables: dict[str, Any] = {}) -> Any:
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any]|None = None
+    ) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
 
@@ -119,6 +121,8 @@ class GitLabService(BaseGitService, GitService):
         Returns:
             The data portion of the GraphQL response
         """
+        if variables is None:
+            variables = {}
         try:
             async with httpx.AsyncClient() as client:
                 gitlab_headers = await self._get_gitlab_headers()
@@ -294,7 +298,7 @@ class GitLabService(BaseGitService, GitService):
 
         try:
             tasks: list[SuggestedTask] = []
-            
+
             # Get merge requests using GraphQL
             response = await self.execute_graphql_query(query)
             data = response.get('currentUser', {})
@@ -343,27 +347,27 @@ class GitLabService(BaseGitService, GitService):
                             title=title,
                         )
                     )
-            
+
             # Get assigned issues using REST API
-            url = f"{self.BASE_URL}/issues"
+            url = f'{self.BASE_URL}/issues'
             params = {
-                "assignee_username": username,
-                "state": "opened",
-                "scope": "assigned_to_me"
+                'assignee_username': username,
+                'state': 'opened',
+                'scope': 'assigned_to_me',
             }
-            
+
             issues_response, _ = await self._make_request(
-                method=RequestMethod.GET,
-                url=url,
-                params=params
+                method=RequestMethod.GET, url=url, params=params
             )
-            
+
             # Process issues
             for issue in issues_response:
-                repo_name = issue.get('references', {}).get('full', '').split('#')[0].strip()
+                repo_name = (
+                    issue.get('references', {}).get('full', '').split('#')[0].strip()
+                )
                 issue_number = issue.get('iid')
                 title = issue.get('title', '')
-                
+
                 tasks.append(
                     SuggestedTask(
                         git_provider=ProviderType.GITLAB,
