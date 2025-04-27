@@ -28,9 +28,7 @@ export function HomeHeader() {
           testId="header-launch-button"
           variant="primary"
           type="button"
-          onClick={() =>
-            createConversation({ conversation_trigger: "suggested_task" })
-          }
+          onClick={() => createConversation({ conversation_trigger: "gui" })}
           isDisabled={isCreatingConversation}
         >
           {!isCreatingConversation && "Launch from Scratch"}

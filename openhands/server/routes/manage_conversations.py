@@ -13,7 +13,7 @@ from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
-from openhands.integrations.service_types import Repository
+from openhands.integrations.service_types import Repository, SuggestedTask
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -52,6 +52,7 @@ class InitSessionRequest(BaseModel):
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
     replay_json: str | None = None
+    suggested_task: SuggestedTask | None = None
     
 
 async def _create_new_conversation(

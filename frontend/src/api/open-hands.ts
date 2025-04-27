@@ -15,6 +15,7 @@ import {
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 import { GitUser, GitRepository } from "#/types/git";
+import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
   /**
@@ -155,6 +156,7 @@ class OpenHands {
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
+    suggested_task?: SuggestedTask,
   ): Promise<Conversation> {
     const body = {
       conversation_trigger: conversation_trigger,
@@ -163,6 +165,7 @@ class OpenHands {
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
       replay_json: replayJson,
+      suggested_task: suggested_task,
     };
 
     const { data } = await openHands.post<Conversation>(
