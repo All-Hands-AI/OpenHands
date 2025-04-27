@@ -456,69 +456,172 @@ class WindowsPowershellSession:
                 metadata=metadata
             )
 
-    def _check_active_job(self) -> CmdOutputObservation:
-        """Checks the active job for new output and status."""
+    def _check_active_job(self, timeout_seconds: int) -> CmdOutputObservation:
+        """
+        Checks the active job for new output and status, waiting up to timeout_seconds.
+
+        Args:
+            timeout_seconds: The maximum time to wait for new output.
+
+        Returns:
+            CmdOutputObservation or ErrorObservation.
+        """
         with self._job_lock:
             if not self.active_job:
                 # Consistent error message
                 return ErrorObservation(content="ERROR: No previous running command to retrieve logs from.")
 
             job_id = self.active_job.Id
-            logger.info(f"Checking active job ID: {job_id} for new output (empty command received).")
+            logger.info(f"Checking active job ID: {job_id} for new output (empty command received, timeout={timeout_seconds}s).")
 
-            # Get new output without removing it
-            new_output, new_errors = self._receive_job_output(self.active_job, keep=True)
+            start_time = time.monotonic()
+            monitoring_loop_finished = False
+            accumulated_output_builder = []
+            accumulated_errors = []
+            exit_code = -1 # Assume running
+            final_state = JobState.Running # Initial assumption
+            last_polled_output = "" # Track last output to detect *new* output
+            last_polled_errors = [] # Track last errors
 
-            # Check current job state
-            current_job = self._get_job_object(job_id)
-            current_state = current_job.JobStateInfo.State if current_job else JobState.Failed
+            while not monitoring_loop_finished:
+                if not should_continue():
+                    logger.warning("Shutdown signal received during job check.")
+                    monitoring_loop_finished = True
+                    # Keep exit_code as -1 (still running from external perspective)
+                    continue
 
-            logger.info(f"Job {job_id} current state during check: {current_state}")
+                elapsed_seconds = time.monotonic() - start_time
+                if elapsed_seconds > timeout_seconds:
+                    logger.warning(f"Job check timed out after {timeout_seconds}s. Job {job_id} might still be running.")
+                    monitoring_loop_finished = True
+                    # Keep exit_code as -1
+                    continue
 
-            is_finished = current_state not in [JobState.Running, JobState.NotStarted]
-            exit_code = -1 # Assume running unless finished
+                current_job_obj = self._get_job_object(job_id)
+                if not current_job_obj:
+                     logger.error(f"Job {job_id} object disappeared during check.")
+                     accumulated_errors.append("[Job object lost during check]")
+                     monitoring_loop_finished = True
+                     exit_code = 1
+                     final_state = JobState.Failed
+                     # If the job object is gone, we can't interact with it further.
+                     # Clear the active job reference in the session state.
+                     if self.active_job and self.active_job.Id == job_id:
+                         self.active_job = None
+                     if self._job_id_timed_out == job_id:
+                          self._job_id_timed_out = None
+                     continue
+
+                # Poll output (keep=True)
+                output_chunk, error_chunk = self._receive_job_output(current_job_obj, keep=True)
+
+                # --- Detect *new* output/errors since last poll ---
+                new_output_detected = ""
+                if output_chunk != last_polled_output:
+                    # Find the portion that's actually new
+                    if output_chunk.startswith(last_polled_output):
+                        new_output_detected = output_chunk[len(last_polled_output):]
+                    else: # Output changed completely? Treat whole chunk as new for safety
+                        new_output_detected = output_chunk
+                    last_polled_output = output_chunk # Update last polled output
+                    if new_output_detected.strip(): # Only append if there's actual content
+                        accumulated_output_builder.append(new_output_detected.strip())
+                        logger.debug(f"Job {job_id} check: Found new output: '{new_output_detected.strip()}'")
+
+                # --- Detect *new* errors ---
+                # Use a set for efficient checking of already accumulated errors
+                current_accumulated_errors_set = set(accumulated_errors)
+                new_errors_detected = [e for e in error_chunk if e not in current_accumulated_errors_set and e not in last_polled_errors]
+                if new_errors_detected:
+                    accumulated_errors.extend(new_errors_detected)
+                    logger.debug(f"Job {job_id} check: Found new errors: {new_errors_detected}")
+                last_polled_errors = error_chunk # Update last polled errors
+
+                # Check job state
+                current_state = current_job_obj.JobStateInfo.State
+                if current_state not in [JobState.Running, JobState.NotStarted]:
+                    logger.info(f"Job {job_id} finished check loop with state: {current_state}")
+                    monitoring_loop_finished = True
+                    final_state = current_state
+                    continue
+
+                time.sleep(0.1) # Prevent busy-waiting
+
+            # --- Loop finished, construct result ---
+            is_finished = (final_state not in [JobState.Running, JobState.NotStarted])
+            final_content = "\n".join(accumulated_output_builder).strip() # Use accumulated *new* output
 
             if is_finished:
                 logger.info(f"Job {job_id} has finished. Collecting final output.")
-                final_output, final_errors = self._receive_job_output(self.active_job, keep=False) # Consume rest
-                new_output = "\n".join(filter(None, [new_output, final_output])) # Combine if needed
-                new_errors.extend(final_errors)
-                
-                # Determine final exit code based on state
-                exit_code = 0 if current_state == JobState.Completed else 1
+                final_job_obj = self._get_job_object(job_id) # Re-get object
+                if final_job_obj:
+                    # One final receive, consuming the rest (keep=False)
+                    final_output_chunk, final_error_chunk = self._receive_job_output(final_job_obj, keep=False)
+                    # Check if this final chunk contains anything not yet seen
+                    final_new_output = ""
+                    # Handle potential None or empty string for last_polled_output
+                    last_polled_len = len(last_polled_output) if last_polled_output else 0
+                    if final_output_chunk and final_output_chunk.startswith(last_polled_output if last_polled_output else ""):
+                         final_new_output = final_output_chunk[last_polled_len:]
+                    elif final_output_chunk: # If it doesn't start with, maybe it's completely new? Add all
+                         final_new_output = final_output_chunk
 
-                # Clean up job
-                remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
-                self._run_ps_command(remove_script)
-                self.active_job = None
-                # If this was the timed out job, clear the flag
-                if self._job_id_timed_out == job_id:
-                    self._job_id_timed_out = None
-                logger.info(f"Cleaned up finished job {job_id} during check.")
+                    if final_new_output.strip():
+                         final_content = "\n".join(filter(None, [final_content, final_new_output.strip()]))
 
+                    current_accumulated_errors_set = set(accumulated_errors) # Update set before checking final errors
+                    new_final_errors = [e for e in final_error_chunk if e not in current_accumulated_errors_set]
+                    if new_final_errors:
+                        accumulated_errors.extend(new_final_errors)
 
-            # Construct result
-            output_builder = [new_output] if new_output else []
-            if new_errors:
-                output_builder.append("\n[ERROR STREAM]")
-                output_builder.extend(new_errors)
+                    # Determine final exit code based on state
+                    exit_code = 0 if final_state == JobState.Completed else 1
+
+                    # Clean up job (only if we successfully got the final object)
+                    remove_script = f"Remove-Job -Job (Get-Job -Id {job_id})"
+                    self._run_ps_command(remove_script)
+                    if self.active_job and self.active_job.Id == job_id:
+                        self.active_job = None
+                    # If this was the timed out job, clear the flag
+                    if self._job_id_timed_out == job_id:
+                        self._job_id_timed_out = None
+                    logger.info(f"Cleaned up finished job {job_id} during check.")
+                else:
+                    logger.warning(f"Could not get final job object {job_id} to clear output buffer after finish detected.")
+                    exit_code = 1 # Assume error if object gone
+                    # Ensure active_job and timeout flag are cleared even if final object retrieval failed
+                    if self.active_job and self.active_job.Id == job_id: self.active_job = None
+                    if self._job_id_timed_out == job_id: self._job_id_timed_out = None
+
+            # Append errors to final content
+            if accumulated_errors:
+                error_stream_text = "\n".join(accumulated_errors)
+                if final_content:
+                    final_content += f"\n[ERROR STREAM]\n{error_stream_text}"
+                else:
+                    final_content = f"[ERROR STREAM]\n{error_stream_text}"
+                # Ensure exit code is non-zero if errors occurred, unless job explicitly completed successfully
+                if exit_code == 0 and final_state != JobState.Completed:
+                    logger.warning(f"Job {job_id} check: Errors detected in stream but final state was {final_state}. Forcing exit_code to 1.")
+                    exit_code = 1
 
             current_cwd = self._cwd # Use the last known CWD from the session
-            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\') # Escape it
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
             metadata = CmdOutputMetadata(exit_code=exit_code, working_dir=python_safe_cwd)
-            
-            # Standard prefix for continued output
+
             metadata.prefix = "[Below is the output of the previous command.]\n"
-            
+
             if is_finished:
-                # Standard suffix for completed command
                 metadata.suffix = f"\n[The command completed with exit code {exit_code}.]"
-            else:
-                # Standard suffix indicating command is still running (no specific timeout mentioned here)
-                metadata.suffix = "\n[Command is still running...]"
+            else: # Timeout occurred during check
+                metadata.suffix = (
+                     f"\n[The command timed out after {timeout_seconds} seconds. "
+                     "You may wait longer to see additional output by sending empty command '', "
+                     "or send keys to interrupt/kill the command.]" # Keep consistent message
+                )
 
             return CmdOutputObservation(
-                content="\n".join(output_builder).strip(),
+                content=final_content, # Use accumulated new content
                 command="", # Original command was ""
                 metadata=metadata
             )
@@ -696,7 +799,8 @@ class WindowsPowershellSession:
                 if not job_is_finished:
                     if command == "":
                         logger.info("Received empty command while job running. Checking job status.")
-                        return self._check_active_job()
+                        # Pass the timeout from the empty command action to _check_active_job
+                        return self._check_active_job(timeout_seconds)
                     elif command == "C-c":
                         logger.info("Received C-c while job running. Stopping job.")
                         return self._stop_active_job()

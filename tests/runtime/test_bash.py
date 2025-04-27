@@ -1100,7 +1100,7 @@ def test_long_running_command_follow_by_execute(
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         if is_windows():
-            action = CmdRunAction('1..3 | ForEach-Object { Write-Output $_; sleep 2 }')
+            action = CmdRunAction('1..3 | ForEach-Object { Write-Output $_; sleep 3 }')
         else:
             # Test command that produces output slowly
             action = CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done')
