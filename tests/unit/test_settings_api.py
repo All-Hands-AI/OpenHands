@@ -8,6 +8,8 @@ from pydantic import SecretStr
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.app import app
 from openhands.server.user_auth.user_auth import UserAuth
+from openhands.storage.memory import InMemoryFileStore
+from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 
@@ -40,16 +42,22 @@ class MockUserAuth(UserAuth):
 @pytest.fixture
 def test_client():
     # Create a test client
-    with patch(
-        'openhands.server.user_auth.user_auth.UserAuth.get_instance',
-        return_value=MockUserAuth(),
-    ):
-        with patch(
+    with (
+        patch(
+            'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+            return_value=MockUserAuth(),
+        ),
+        patch(
             'openhands.server.routes.settings.validate_provider_token',
             return_value=ProviderType.GITHUB,
-        ):
-            client = TestClient(app)
-            yield client
+        ),
+        patch(
+            'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+            AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
+        ),
+    ):
+        client = TestClient(app)
+        yield client
 
 
 @pytest.mark.asyncio
