@@ -178,6 +178,7 @@ async def new_conversation(
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
+        conversation_trigger = ConversationTrigger.SUGGESTED_TASK
 
     try:
         # Create conversation with initial message
