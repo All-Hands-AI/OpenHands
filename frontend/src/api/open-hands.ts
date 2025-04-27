@@ -10,6 +10,7 @@ import {
   GetTrajectoryResponse,
   GitChangeDiff,
   GitChange,
+  ConversationTrigger,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -149,12 +150,14 @@ class OpenHands {
   }
 
   static async createConversation(
+    conversation_trigger: ConversationTrigger = "gui",
     selectedRepository?: GitRepository,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
   ): Promise<Conversation> {
     const body = {
+      conversation_trigger: conversation_trigger,
       selected_repository: selectedRepository,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,

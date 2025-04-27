@@ -48,6 +48,7 @@ export function TaskCard({ task }: TaskCardProps) {
     );
 
     return createConversation({
+      conversation_trigger: "suggested_task",
       selectedRepository: repo,
       q: query,
     });

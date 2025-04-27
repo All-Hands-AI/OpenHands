@@ -6,6 +6,7 @@ import OpenHands from "#/api/open-hands";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { GitRepository } from "#/types/git";
+import { ConversationTrigger } from "#/api/open-hands.types";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
@@ -19,12 +20,14 @@ export const useCreateConversation = () => {
   return useMutation({
     mutationKey: ["create-conversation"],
     mutationFn: async (variables: {
+      conversation_trigger: ConversationTrigger;
       q?: string;
       selectedRepository?: GitRepository | null;
     }) => {
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(
+        variables.conversation_trigger,
         variables.selectedRepository || undefined,
         variables.q,
         files,

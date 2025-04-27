@@ -46,12 +46,13 @@ app = APIRouter(prefix='/api')
 
 
 class InitSessionRequest(BaseModel):
+    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
     selected_repository: Repository | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
     replay_json: str | None = None
-
+    
 
 async def _create_new_conversation(
     user_id: str | None,
