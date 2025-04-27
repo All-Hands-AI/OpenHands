@@ -75,7 +75,7 @@ class SuggestedTask(BaseModel):
         elif task_type == TaskType.OPEN_ISSUE:
             template = env.get_template('open_issue_prompt.j2')
         else:
-            raise ValueError(f'Unsupported tasl type: {task_type}')
+            raise ValueError(f'Unsupported task type: {task_type}')
 
         terms = self.get_provider_terms()
 
