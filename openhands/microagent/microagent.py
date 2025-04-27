@@ -23,10 +23,19 @@ class BaseMicroagent(BaseModel):
 
     @classmethod
     def load(
-        cls, path: Union[str, Path], file_content: str | None = None
+        cls,
+        path: Union[str, Path],
+        microagent_dir: Path | None = None,
+        file_content: str | None = None,
     ) -> 'BaseMicroagent':
-        """Load a microagent from a markdown file with frontmatter."""
+        """Load a microagent from a markdown file with frontmatter.
+
+        The agent's name is derived from its path relative to the microagent_dir.
+        """
         path = Path(path) if isinstance(path, str) else path
+
+        # Calculate derived name from relative path
+        derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -66,7 +75,7 @@ class BaseMicroagent(BaseModel):
 
         agent_class = subclass_map[metadata.type]
         return agent_class(
-            name=metadata.name,
+            name=derived_name,
             content=content,
             metadata=metadata,
             source=str(path),
@@ -161,7 +170,7 @@ def load_microagents_from_dir(
             if file.name == 'README.md':
                 continue
             try:
-                agent = BaseMicroagent.load(file)
+                agent = BaseMicroagent.load(file, microagent_dir)
                 if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):

@@ -26,9 +26,10 @@ def test_legacy_micro_agent_load(tmp_path):
     legacy_file = tmp_path / '.openhands_instructions'
     legacy_file.write_text(CONTENT)
 
-    micro_agent = BaseMicroagent.load(legacy_file)
+    # Pass microagent_dir (tmp_path in this case) to load
+    micro_agent = BaseMicroagent.load(legacy_file, tmp_path)
     assert isinstance(micro_agent, RepoMicroagent)
-    assert micro_agent.name == 'repo_legacy'
+    assert micro_agent.name == 'repo_legacy'  # Legacy name is hardcoded
     assert micro_agent.content == CONTENT
     assert micro_agent.type == MicroagentType.REPO_KNOWLEDGE
 
@@ -41,7 +42,6 @@ def temp_microagents_dir():
 
         # Create test knowledge agent
         knowledge_agent = """---
-name: test_knowledge_agent
 type: knowledge
 version: 1.0.0
 agent: CodeActAgent
@@ -58,7 +58,6 @@ Testing best practices and guidelines.
 
         # Create test repo agent
         repo_agent = """---
-name: test_repo_agent
 type: repo
 version: 1.0.0
 agent: CodeActAgent
@@ -72,7 +71,6 @@ Repository-specific test instructions.
 
         # Create test task agent
         task_agent = """---
-name: test_task
 type: task
 version: 1.0.0
 agent: CodeActAgent
@@ -111,20 +109,20 @@ def test_load_microagents(temp_microagents_dir):
         temp_microagents_dir
     )
 
-    # Check knowledge agents
+    # Check knowledge agents (name derived from filename: knowledge.md -> 'knowledge')
     assert len(knowledge_agents) == 1
-    agent = knowledge_agents['test_knowledge_agent']
+    agent = knowledge_agents['knowledge']
     assert isinstance(agent, KnowledgeMicroagent)
     assert 'test' in agent.triggers
 
-    # Check repo agents
+    # Check repo agents (name derived from filename: repo.md -> 'repo')
     assert len(repo_agents) == 1
-    agent = repo_agents['test_repo_agent']
+    agent = repo_agents['repo']
     assert isinstance(agent, RepoMicroagent)
 
-    # Check task agents
+    # Check task agents (name derived from filename: task.md -> 'task')
     assert len(task_agents) == 1
-    agent = task_agents['test_task']
+    agent = task_agents['task']
     assert isinstance(agent, TaskMicroagent)
 
 
@@ -142,7 +140,8 @@ Invalid agent content
     (temp_microagents_dir / 'invalid.md').write_text(invalid_agent)
 
     with pytest.raises(MicroagentValidationError):
-        BaseMicroagent.load(temp_microagents_dir / 'invalid.md')
+        # Pass microagent_dir to load
+        BaseMicroagent.load(temp_microagents_dir / 'invalid.md', temp_microagents_dir)
 
 
 def test_load_microagents_with_nested_dirs(temp_microagents_dir):
@@ -151,7 +150,6 @@ def test_load_microagents_with_nested_dirs(temp_microagents_dir):
     nested_dir = temp_microagents_dir / 'nested' / 'dir'
     nested_dir.mkdir(parents=True)
     nested_agent = """---
-name: nested_knowledge_agent
 type: knowledge
 version: 1.0.0
 agent: CodeActAgent
@@ -169,9 +167,11 @@ Testing nested directory loading.
         temp_microagents_dir
     )
 
-    # Check that we can find the nested agent
-    assert len(knowledge_agents) == 2  # Original + nested
-    agent = knowledge_agents['nested_knowledge_agent']
+    # Check that we can find the nested agent (name derived from path: nested/dir/nested.md -> 'nested/dir/nested')
+    assert (
+        len(knowledge_agents) == 2
+    )  # Original ('knowledge') + nested ('nested/dir/nested')
+    agent = knowledge_agents['nested/dir/nested']
     assert isinstance(agent, KnowledgeMicroagent)
     assert 'nested' in agent.triggers
 
@@ -182,7 +182,6 @@ def test_load_microagents_with_trailing_slashes(temp_microagents_dir):
     knowledge_dir = temp_microagents_dir / 'knowledge/'
     knowledge_dir.mkdir(exist_ok=True)
     knowledge_agent = """---
-name: trailing_knowledge_agent
 type: knowledge
 version: 1.0.0
 agent: CodeActAgent
@@ -200,8 +199,10 @@ Testing loading with trailing slashes.
         str(temp_microagents_dir) + '/'  # Add trailing slash to test
     )
 
-    # Check that we can find the agent despite trailing slashes
-    assert len(knowledge_agents) == 2  # Original + trailing
-    agent = knowledge_agents['trailing_knowledge_agent']
+    # Check that we can find the agent despite trailing slashes (name derived from path: knowledge/trailing.md -> 'knowledge/trailing')
+    assert (
+        len(knowledge_agents) == 2
+    )  # Original ('knowledge') + trailing ('knowledge/trailing')
+    agent = knowledge_agents['knowledge/trailing']
     assert isinstance(agent, KnowledgeMicroagent)
     assert 'trailing' in agent.triggers
