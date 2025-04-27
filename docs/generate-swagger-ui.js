@@ -4,7 +4,7 @@ const swaggerUiDist = require('swagger-ui-dist');
 
 /**
  * This script manually sets up Swagger UI for the Docusaurus documentation.
- * 
+ *
  * Why we need this approach:
  * 1. Docusaurus doesn't have a built-in way to integrate Swagger UI
  * 2. We need to copy the necessary files from swagger-ui-dist to our static directory
@@ -26,15 +26,15 @@ const files = fs.readdirSync(swaggerUiDistPath);
 files.forEach(file => {
   const sourcePath = path.join(swaggerUiDistPath, file);
   const targetPath = path.join(targetDir, file);
-  
+
   // Skip directories and non-essential files
-  if (fs.statSync(sourcePath).isDirectory() || 
-      file === 'package.json' || 
+  if (fs.statSync(sourcePath).isDirectory() ||
+      file === 'package.json' ||
       file === 'README.md' ||
       file.endsWith('.map')) {
     return;
   }
-  
+
   fs.copyFileSync(sourcePath, targetPath);
 });
 
@@ -54,13 +54,13 @@ const indexHtml = `
       overflow: -moz-scrollbars-vertical;
       overflow-y: scroll;
     }
-    
+
     *,
     *:before,
     *:after {
       box-sizing: inherit;
     }
-    
+
     body {
       margin: 0;
       background: #fafafa;
