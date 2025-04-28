@@ -34,6 +34,7 @@ from openhands.server.types import AppMode
 class ProviderToken(BaseModel):
     token: SecretStr | None = Field(default=None)
     user_id: str | None = Field(default=None)
+    base_domain: str | None = Field(default=None)
 
     model_config = {
         'frozen': True,  # Makes the entire model immutable
@@ -48,7 +49,10 @@ class ProviderToken(BaseModel):
         elif isinstance(token_value, dict):
             token_str = token_value.get('token')
             user_id = token_value.get('user_id')
-            return cls(token=SecretStr(token_str), user_id=user_id)
+            base_domain = token_value.get('base_domain')
+            return cls(
+                token=SecretStr(token_str), user_id=user_id, base_domain=base_domain
+            )
 
         else:
             raise ValueError('Unsupport Provider token type')
@@ -98,6 +102,7 @@ class SecretStore(BaseModel):
                 if expose_secrets
                 else pydantic_encoder(provider_token.token),
                 'user_id': provider_token.user_id,
+                'base_domain': provider_token.base_domain,
             }
 
         return tokens
