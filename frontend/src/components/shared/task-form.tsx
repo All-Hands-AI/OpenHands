@@ -52,7 +52,7 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    createConversation({ q });
+    createConversation({ q, conversation_trigger: "gui" });
   };
 
   return (

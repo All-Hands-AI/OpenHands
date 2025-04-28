@@ -142,7 +142,12 @@ export function RepositorySelectionForm({
           isLoadingRepositories ||
           isRepositoriesError
         }
-        onClick={() => createConversation({ selectedRepository })}
+        onClick={() =>
+          createConversation({
+            selectedRepository,
+            conversation_trigger: "gui",
+          })
+        }
       >
         {!isCreatingConversation && "Launch"}
         {isCreatingConversation && t("HOME$LOADING")}

@@ -10,7 +10,8 @@ from openhands.server.routes.settings import (
     store_llm_settings,
     store_provider_tokens,
 )
-from openhands.server.settings import POSTSettingsModel, Settings
+from openhands.server.settings import POSTSettingsModel
+from openhands.storage.data_models.settings import Settings
 
 
 # Mock functions to simulate the actual functions in settings.py
