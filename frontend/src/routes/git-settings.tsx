@@ -85,7 +85,7 @@ function GitSettingsScreen() {
       )}
 
       {!isSaas && !isLoading && (
-        <div className="px-11 py-9 flex flex-col gap-12">
+        <div className="p-9 flex flex-col gap-12">
           <GitHubTokenInput
             name="github-token-input"
             isGitHubTokenSet={isGitHubTokenSet}

@@ -105,7 +105,7 @@ function AppSettingsScreen() {
     >
       {shouldBeLoading && <AppSettingsInputsSkeleton />}
       {!shouldBeLoading && (
-        <div className="px-11 py-9 flex flex-col gap-6">
+        <div className="p-9 flex flex-col gap-6">
           <LanguageInput
             name="language-input"
             defaultKey={settings.LANGUAGE}
