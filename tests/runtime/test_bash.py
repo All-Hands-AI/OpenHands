@@ -1169,16 +1169,17 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+
+@pytest.mark.skipif(is_windows(), reason="Powershell does not support interactive commands")
 def test_python_interactive_input_without_set_input(
     temp_dir, runtime_cls, run_as_openhands
 ):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        # Test Python program that asks for input - same for both platforms
+        # Test Python program that asks for input
         python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
 
         # Start Python with the interactive script
-        # For both platforms we can use the same command
         obs = runtime.run_action(CmdRunAction(f'python -c "{python_script}"'))
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Enter your name:' in obs.content
