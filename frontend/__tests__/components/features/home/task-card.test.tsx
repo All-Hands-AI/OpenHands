@@ -11,12 +11,6 @@ import { AuthProvider } from "#/context/auth-context";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
 import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
-import {
-  getFailingChecksPrompt,
-  getMergeConflictPrompt,
-  getOpenIssuePrompt,
-  getUnresolvedCommentsPrompt,
-} from "#/components/features/home/tasks/get-prompt-for-query";
 
 const MOCK_TASK_1: SuggestedTask = {
   issue_number: 123,
@@ -101,7 +95,7 @@ describe("TaskCard", () => {
     expect(createConversationSpy).toHaveBeenCalled();
   });
 
-  describe("creating conversation prompts", () => {
+  describe("creating suggested task conversation", () => {
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
         GitService,
@@ -113,7 +107,7 @@ describe("TaskCard", () => {
       });
     });
 
-    it("should call create conversation with the merge conflict prompt", async () => {
+    it("should call create conversation with suggest task trigger and selected suggested task", async () => {
       const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
 
       renderTaskCard(MOCK_TASK_1);
@@ -122,74 +116,12 @@ describe("TaskCard", () => {
       await userEvent.click(launchButton);
 
       expect(createConversationSpy).toHaveBeenCalledWith(
+        "suggested_task",
         MOCK_RESPOSITORIES[0],
-        getMergeConflictPrompt(
-          MOCK_TASK_1.git_provider,
-          MOCK_TASK_1.issue_number,
-          MOCK_TASK_1.repo,
-        ),
+        undefined,
         [],
         undefined,
-      );
-    });
-
-    it("should call create conversation with the failing checks prompt", async () => {
-      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-
-      renderTaskCard(MOCK_TASK_2);
-
-      const launchButton = screen.getByTestId("task-launch-button");
-      await userEvent.click(launchButton);
-
-      expect(createConversationSpy).toHaveBeenCalledWith(
-        MOCK_RESPOSITORIES[1],
-        getFailingChecksPrompt(
-          MOCK_TASK_2.git_provider,
-          MOCK_TASK_2.issue_number,
-          MOCK_TASK_2.repo,
-        ),
-        [],
-        undefined,
-      );
-    });
-
-    it("should call create conversation with the unresolved comments prompt", async () => {
-      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-
-      renderTaskCard(MOCK_TASK_3);
-
-      const launchButton = screen.getByTestId("task-launch-button");
-      await userEvent.click(launchButton);
-
-      expect(createConversationSpy).toHaveBeenCalledWith(
-        MOCK_RESPOSITORIES[2],
-        getUnresolvedCommentsPrompt(
-          MOCK_TASK_3.git_provider,
-          MOCK_TASK_3.issue_number,
-          MOCK_TASK_3.repo,
-        ),
-        [],
-        undefined,
-      );
-    });
-
-    it("should call create conversation with the open issue prompt", async () => {
-      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-
-      renderTaskCard(MOCK_TASK_4);
-
-      const launchButton = screen.getByTestId("task-launch-button");
-      await userEvent.click(launchButton);
-
-      expect(createConversationSpy).toHaveBeenCalledWith(
-        MOCK_RESPOSITORIES[3],
-        getOpenIssuePrompt(
-          MOCK_TASK_4.git_provider,
-          MOCK_TASK_4.issue_number,
-          MOCK_TASK_4.repo,
-        ),
-        [],
-        undefined,
+        MOCK_TASK_1,
       );
     });
   });
