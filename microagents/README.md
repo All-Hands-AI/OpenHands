@@ -15,11 +15,11 @@ This directory (`OpenHands/microagents/`) contains shareable microagents that ar
 Directory structure:
 ```
 OpenHands/microagents/
-├── knowledge/     # Keyword-triggered expertise
-│   ├── git.md      # Git operations
-│   ├── testing.md  # Testing practices
-│   └── docker.md   # Docker guidelines
-└── tasks/        # These microagents are always loaded
+├── # Keyword-triggered expertise
+│   ├── git.md         # Git operations
+│   ├── testing.md     # Testing practices
+│   └── docker.md      # Docker guidelines
+└── # These microagents are always loaded
     ├── pr_review.md   # PR review process
     ├── bug_fix.md     # Bug fixing workflow
     └── feature.md     # Feature implementation
@@ -37,7 +37,7 @@ your-repository/
 └── .openhands/
     └── microagents/
         └── repo.md    # Repository-specific instructions
-        └── knowledge/  # Private micro-agents that are only available inside this repo
+        └── ...        # Private micro-agents that are only available inside this repo
 ```
 
 
@@ -66,7 +66,7 @@ Key characteristics:
 - **Reusable**: Knowledge can be applied across multiple projects
 - **Versioned**: Support multiple versions of tools/frameworks
 
-You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/github.md).
+You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/github.md).
 
 ### 2. Repository Agents
 
@@ -123,8 +123,8 @@ You can see an example of a repo agent in [the agent for the OpenHands repo itse
 ### Submission Process
 
 1. Create your agent file in the appropriate directory:
-   - `knowledge/` for expertise (public, shareable)
-   - Note: Repository agents should remain in their respective repositories' `.openhands/microagents/` directory
+   - `microagents/` for expertise (public, shareable)
+   - Note: Repository-specific agents should remain in their respective repositories' `.openhands/microagents/` directory
 2. Test thoroughly
 3. Submit a pull request to OpenHands
 
