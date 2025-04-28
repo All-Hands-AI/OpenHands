@@ -76,14 +76,14 @@ def test_load_microagents_with_trailing_slashes(
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'test_knowledge_agent'
+        assert agent.name == 'knowledge/knowledge'
         assert 'test' in agent.triggers
         assert 'pytest' in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'test_repo_agent' in repo_names
+        assert 'repo' in repo_names
         assert 'repo_legacy' in repo_names
 
     finally:
@@ -113,14 +113,14 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'test_knowledge_agent'
+        assert agent.name == 'knowledge/knowledge'
         assert 'test' in agent.triggers
         assert 'pytest' in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'test_repo_agent' in repo_names
+        assert 'repo' in repo_names
         assert 'repo_legacy' in repo_names
 
     finally:
@@ -161,7 +161,7 @@ Repository-specific test instructions.
         assert len(repo_agents) == 1
 
         agent = repo_agents[0]
-        assert agent.name == 'test_repo_agent'
+        assert agent.name == 'repo'
 
     finally:
         _close_test_runtime(runtime)
