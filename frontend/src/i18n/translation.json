@@ -1569,6 +1569,21 @@
         "tr": "GitHub Jetonu",
         "de": "GitHub-Token"
     },
+    "GITHUB$BASE_DOMAIN_LABEL": {
+        "en": "GitHub Base Domain",
+        "ja": "GitHub ベースドメイン",
+        "zh-CN": "GitHub 基础域名",
+        "zh-TW": "GitHub 基礎網域",
+        "ko-KR": "GitHub 기본 도메인",
+        "no": "GitHub Base Domain",
+        "it": "Dominio Base GitHub",
+        "pt": "Domínio Base do GitHub",
+        "es": "Dominio Base de GitHub",
+        "ar": "نطاق GitHub الأساسي",
+        "fr": "Domaine de Base GitHub",
+        "tr": "GitHub Temel Alan Adı",
+        "de": "GitHub Basis-Domain"
+    },
     "GITHUB$TOKEN_OPTIONAL": {
         "en": "GitHub Token (Optional)",
         "ja": "GitHubトークン（任意）",
@@ -6468,6 +6483,21 @@
         "fr": "Jeton GitLab",
         "tr": "GitLab Jetonu",
         "de": "GitLab-Token"
+    },
+    "GITLAB$BASE_DOMAIN_LABEL": {
+        "en": "GitLab Base Domain",
+        "ja": "GitLab ベースドメイン",
+        "zh-CN": "GitLab 基础域名",
+        "zh-TW": "GitLab 基礎網域",
+        "ko-KR": "GitLab 기본 도메인",
+        "no": "GitLab Base Domain",
+        "it": "Dominio Base GitLab",
+        "pt": "Domínio Base do GitLab",
+        "es": "Dominio Base de GitLab",
+        "ar": "نطاق GitLab الأساسي",
+        "fr": "Domaine de Base GitLab",
+        "tr": "GitLab Temel Alan Adı",
+        "de": "GitLab Basis-Domain"
     },
     "GITLAB$GET_TOKEN": {
         "en": "Generate a token on",

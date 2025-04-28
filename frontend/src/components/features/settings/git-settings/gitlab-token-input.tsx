@@ -6,14 +6,18 @@ import { KeyStatusIcon } from "../key-status-icon";
 
 interface GitLabTokenInputProps {
   onChange: (value: string) => void;
+  onBaseDomainChange?: (value: string) => void;
   isGitLabTokenSet: boolean;
   name: string;
+  baseDomainName?: string;
 }
 
 export function GitLabTokenInput({
   onChange,
+  onBaseDomainChange,
   isGitLabTokenSet,
   name,
+  baseDomainName,
 }: GitLabTokenInputProps) {
   const { t } = useTranslation();
 
@@ -36,6 +40,18 @@ export function GitLabTokenInput({
           )
         }
       />
+
+      {baseDomainName && (
+        <SettingsInput
+          testId={baseDomainName}
+          name={baseDomainName}
+          onChange={onBaseDomainChange || (() => {})}
+          label={t(I18nKey.GITLAB$BASE_DOMAIN_LABEL)}
+          type="text"
+          className="w-[680px]"
+          placeholder="gitlab.com"
+        />
+      )}
 
       <GitLabTokenHelpAnchor />
     </div>

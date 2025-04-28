@@ -6,14 +6,18 @@ import { KeyStatusIcon } from "../key-status-icon";
 
 interface GitHubTokenInputProps {
   onChange: (value: string) => void;
+  onBaseDomainChange?: (value: string) => void;
   isGitHubTokenSet: boolean;
   name: string;
+  baseDomainName?: string;
 }
 
 export function GitHubTokenInput({
   onChange,
+  onBaseDomainChange,
   isGitHubTokenSet,
   name,
+  baseDomainName,
 }: GitHubTokenInputProps) {
   const { t } = useTranslation();
 
@@ -36,6 +40,18 @@ export function GitHubTokenInput({
           )
         }
       />
+
+      {baseDomainName && (
+        <SettingsInput
+          testId={baseDomainName}
+          name={baseDomainName}
+          onChange={onBaseDomainChange || (() => {})}
+          label={t(I18nKey.GITHUB$BASE_DOMAIN_LABEL)}
+          type="text"
+          className="w-[680px]"
+          placeholder="github.com"
+        />
+      )}
 
       <GitHubTokenHelpAnchor />
     </div>

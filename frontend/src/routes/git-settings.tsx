@@ -29,6 +29,10 @@ function GitSettingsScreen() {
     React.useState(false);
   const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
     React.useState(false);
+  const [githubBaseDomainInputHasValue, setGithubBaseDomainInputHasValue] =
+    React.useState(false);
+  const [gitlabBaseDomainInputHasValue, setGitlabBaseDomainInputHasValue] =
+    React.useState(false);
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = !!settings?.PROVIDER_TOKENS_SET.github;
@@ -45,12 +49,22 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
+    const githubBaseDomain =
+      formData.get("github-base-domain-input")?.toString() || "";
+    const gitlabBaseDomain =
+      formData.get("gitlab-base-domain-input")?.toString() || "";
 
     saveSettings(
       {
         provider_tokens: {
-          github: { token: githubToken, base_domain: null },
-          gitlab: { token: gitlabToken, base_domain: null },
+          github: {
+            token: githubToken,
+            base_domain: githubBaseDomain || null,
+          },
+          gitlab: {
+            token: gitlabToken,
+            base_domain: gitlabBaseDomain || null,
+          },
         },
       },
       {
@@ -64,12 +78,19 @@ function GitSettingsScreen() {
         onSettled: () => {
           setGithubTokenInputHasValue(false);
           setGitlabTokenInputHasValue(false);
+          setGithubBaseDomainInputHasValue(false);
+          setGitlabBaseDomainInputHasValue(false);
         },
       },
     );
   };
 
-  const formIsClean = !githubTokenInputHasValue && !gitlabTokenInputHasValue;
+  const formIsClean =
+    !githubTokenInputHasValue &&
+    !gitlabTokenInputHasValue &&
+    !githubBaseDomainInputHasValue &&
+    !gitlabBaseDomainInputHasValue;
+
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
 
   return (
@@ -88,17 +109,25 @@ function GitSettingsScreen() {
         <div className="p-9 flex flex-col gap-12">
           <GitHubTokenInput
             name="github-token-input"
+            baseDomainName="github-base-domain-input"
             isGitHubTokenSet={isGitHubTokenSet}
             onChange={(value) => {
               setGithubTokenInputHasValue(!!value);
+            }}
+            onBaseDomainChange={(value) => {
+              setGithubBaseDomainInputHasValue(!!value);
             }}
           />
 
           <GitLabTokenInput
             name="gitlab-token-input"
+            baseDomainName="gitlab-base-domain-input"
             isGitLabTokenSet={isGitLabTokenSet}
             onChange={(value) => {
               setGitlabTokenInputHasValue(!!value);
+            }}
+            onBaseDomainChange={(value) => {
+              setGitlabBaseDomainInputHasValue(!!value);
             }}
           />
         </div>
