@@ -237,7 +237,7 @@ function LlmSettingsScreen() {
         action={formAction}
         className="flex flex-col h-full justify-between"
       >
-        <div className="px-11 py-9 flex flex-col gap-6">
+        <div className="p-9 flex flex-col gap-6">
           <SettingsSwitch
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}

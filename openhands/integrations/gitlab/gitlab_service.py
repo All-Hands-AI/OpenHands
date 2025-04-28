@@ -121,6 +121,8 @@ class GitLabService(BaseGitService, GitService):
         Returns:
             The data portion of the GraphQL response
         """
+        if variables is None:
+            variables = {}
         try:
             async with httpx.AsyncClient() as client:
                 gitlab_headers = await self._get_gitlab_headers()

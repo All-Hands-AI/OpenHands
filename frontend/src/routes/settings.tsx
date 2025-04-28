@@ -60,7 +60,7 @@ function SettingsScreen() {
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-12 px-11 border-b border-tertiary"
+        className="flex items-end gap-12 px-9 border-b border-tertiary"
       >
         {navItems.map(({ to, text }) => (
           <NavLink

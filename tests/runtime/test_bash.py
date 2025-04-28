@@ -87,6 +87,33 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    server_port = 8081
+    try:
+        # Start the server, expect it to timeout (run in background manner)
+        action = CmdRunAction(f'python3 -m http.server {server_port} &')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0  # Should not timeout since this runs in background
+
+        # Give the server a moment to be ready
+        time.sleep(1)
+
+        # Verify the server is running by curling it
+        curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
+        curl_obs = runtime.run_action(curl_action)
+        logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(curl_obs, CmdOutputObservation)
+        assert curl_obs.exit_code == 0
+        # Check for content typical of python http.server directory listing
+        assert 'Directory listing for' in curl_obs.content
+
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_multiline_commands(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
