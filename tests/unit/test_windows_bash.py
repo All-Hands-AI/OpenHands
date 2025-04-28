@@ -104,13 +104,26 @@ def test_control_commands(windows_bash_session):
     action_c = CmdRunAction(command="C-c", is_input=True)
     result_c = windows_bash_session.execute(action_c)
     assert isinstance(result_c, ErrorObservation)
-    assert "Control commands like C-c are not supported or relevant when no job is active" in result_c.content
+    assert "No previous running command to interact with" in result_c.content
+
+    # Run a long-running command
+    action_long_running = CmdRunAction(command="Start-Sleep -Seconds 100")
+    result_long_running = windows_bash_session.execute(action_long_running)
+    assert isinstance(result_long_running, CmdOutputObservation)
+    assert result_long_running.exit_code == -1
 
     # Test unsupported control command
     action_d = CmdRunAction(command="C-d", is_input=True)
     result_d = windows_bash_session.execute(action_d)
-    assert isinstance(result_d, ErrorObservation)
-    assert "not supported" in result_d.content
+    assert "Your input command 'C-d' was NOT processed" in result_d.metadata.suffix
+    assert "Direct input to running processes (is_input=True) is not supported by this PowerShell session implementation." in result_d.metadata.suffix
+    assert "You can use C-c to stop the process" in result_d.metadata.suffix
+
+    # Ctrl+C now can cancel the long-running command
+    action_c = CmdRunAction(command="C-c", is_input=True)
+    result_c = windows_bash_session.execute(action_c)
+    assert isinstance(result_c, CmdOutputObservation)
+    assert result_c.exit_code == 0
 
 
 def test_command_timeout(windows_bash_session):
