@@ -32,6 +32,6 @@ triggers:
   - Propose updating repo.md with new learnings by listing specific items you'd like to add
   - Wait for user confirmation before making changes
   - Run lint and typecheck commands if available
-  - If commands are unknown, ask the user and suggest adding them to repo.md for future reference (with permission)
+  - If you don't know the essential commands for working with the repository, such as lint or typecheck, ask the user and suggest adding them to repo.md for future reference (with permission)
 
 When you receive this message, please review and summarize your recent actions, then present a list of valuable information that should be preserved in repo.md to the user.
