@@ -372,7 +372,7 @@ async def test_main_without_task(
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
-    mock_check_security.assert_called_once_with('/test/dir')
+    mock_check_security.assert_called_once_with(mock_config, '/test/dir')
     mock_read_task.assert_called_once()
 
     # Check that run_session was called with expected arguments
@@ -449,7 +449,7 @@ async def test_main_with_task(
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
-    mock_check_security.assert_called_once_with('/test/dir')
+    mock_check_security.assert_called_once_with(mock_config, '/test/dir')
     mock_read_task.assert_called_once()
 
     # Verify that run_session was called twice:
@@ -524,7 +524,7 @@ async def test_main_security_check_fails(
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
-    mock_check_security.assert_called_once_with('/test/dir')
+    mock_check_security.assert_called_once_with(mock_config, '/test/dir')
 
     # Since security check fails, no further action should happen
     # (This is an implicit assertion - we don't need to check further function calls)
