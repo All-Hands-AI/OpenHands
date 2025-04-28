@@ -8,7 +8,6 @@ class MicroagentType(str, Enum):
 
     KNOWLEDGE = 'knowledge'
     REPO_KNOWLEDGE = 'repo'
-    TASK = 'task'
 
 
 class MicroagentMetadata(BaseModel):
@@ -19,11 +18,3 @@ class MicroagentMetadata(BaseModel):
     version: str = Field(default='1.0.0')
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents
-
-
-class TaskInput(BaseModel):
-    """Input parameter for task-based agents."""
-
-    name: str
-    description: str
-    required: bool = True

@@ -5,7 +5,7 @@ You can customize how OpenHands interacts with your repository by creating a
 
 ## Microagents
 
-Microagents allow you to extend OpenHands prompts with information specific to your project and define how OpenHands 
+Microagents allow you to extend OpenHands prompts with information specific to your project and define how OpenHands
 should function. See [Microagents Overview](../prompting/microagents-overview) for more information.
 
 

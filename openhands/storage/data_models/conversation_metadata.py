@@ -6,6 +6,7 @@ from enum import Enum
 class ConversationTrigger(Enum):
     RESOLVER = 'resolver'
     GUI = 'gui'
+    SUGGESTED_TASK = 'suggested_task'
 
 
 @dataclass

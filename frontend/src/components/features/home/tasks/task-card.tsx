@@ -4,7 +4,6 @@ import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation"
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
-import { getPromptForQuery } from "./get-prompt-for-query";
 import { TaskIssueNumber } from "./task-issue-number";
 import { Provider } from "#/types/settings";
 
@@ -40,16 +39,11 @@ export function TaskCard({ task }: TaskCardProps) {
 
   const handleLaunchConversation = () => {
     const repo = getRepo(task.repo, task.git_provider);
-    const query = getPromptForQuery(
-      task.git_provider,
-      task.task_type,
-      task.issue_number,
-      task.repo,
-    );
 
     return createConversation({
+      conversation_trigger: "suggested_task",
       selectedRepository: repo,
-      q: query,
+      suggested_task: task,
     });
   };
 
