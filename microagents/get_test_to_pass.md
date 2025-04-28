@@ -1,6 +1,5 @@
 ---
 name: get_test_to_pass
-type: task
 version: 1.0.0
 author: openhands
 agent: CodeActAgent

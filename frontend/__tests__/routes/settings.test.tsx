@@ -8,18 +8,19 @@ import OpenHands from "#/api/open-hands";
 
 // Mock the i18next hook
 vi.mock("react-i18next", async () => {
-  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
   return {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_GIT": "Git",
-          "SETTINGS$NAV_APPLICATION": "Application",
-          "SETTINGS$NAV_CREDITS": "Credits",
-          "SETTINGS$NAV_API_KEYS": "API Keys",
-          "SETTINGS$NAV_LLM": "LLM",
-          "SETTINGS$TITLE": "Settings"
+          SETTINGS$NAV_GIT: "Git",
+          SETTINGS$NAV_APPLICATION: "Application",
+          SETTINGS$NAV_CREDITS: "Credits",
+          SETTINGS$NAV_API_KEYS: "API Keys",
+          SETTINGS$NAV_LLM: "LLM",
+          SETTINGS$TITLE: "Settings",
         };
         return translations[key] || key;
       },
@@ -81,7 +82,7 @@ describe("Settings Screen", () => {
   };
 
   it("should render the navbar", async () => {
-    const sectionsToInclude = ["llm", "git", "application", "secrets"];
+    const sectionsToInclude = ["llm", "git", "application"];
     const sectionsToExclude = ["api keys", "credits"];
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return app mode
@@ -112,13 +113,7 @@ describe("Settings Screen", () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
-    const sectionsToInclude = [
-      "git",
-      "application",
-      "credits",
-      "secrets",
-      "api keys",
-    ];
+    const sectionsToInclude = ["git", "application", "credits", "api keys"];
     const sectionsToExclude = ["llm"];
 
     renderSettingsScreen();
