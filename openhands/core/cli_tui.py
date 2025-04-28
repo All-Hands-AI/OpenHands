@@ -114,7 +114,7 @@ def display_initialization_animation(text, is_loaded: asyncio.Event):
     sys.stdout.flush()
 
 
-def display_banner(session_id: str, is_loaded: asyncio.Event):
+def display_banner(session_id: str):
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -129,11 +129,8 @@ def display_banner(session_id: str, is_loaded: asyncio.Event):
 
     print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
 
-    banner_text = (
-        'Initialized session' if is_loaded.is_set() else 'Initializing session'
-    )
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>{banner_text} {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Initialized session {session_id}</grey>'))
     print_formatted_text('')
 
 

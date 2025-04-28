@@ -212,7 +212,7 @@ async def run_session(
     clear()
 
     # Show OpenHands banner and session ID
-    display_banner(session_id=sid, is_loaded=is_loaded)
+    display_banner(session_id=sid)
 
     # Show OpenHands welcome
     display_welcome_message()
