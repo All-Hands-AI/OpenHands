@@ -9,11 +9,11 @@ import string
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable
+from types import MappingProxyType
+from typing import Callable, cast
 from zipfile import ZipFile
 
-from pydantic import SecretStr
-from requests.exceptions import ConnectionError
+import httpx
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
@@ -30,6 +30,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -41,9 +42,14 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+    ProviderType,
+)
+from openhands.integrations.service_types import Repository
 from openhands.microagent import (
-    BaseMicroAgent,
+    BaseMicroagent,
     load_microagents_from_dir,
 )
 from openhands.runtime.plugins import (
@@ -52,7 +58,12 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.runtime.utils.git_handler import CommandResult, GitHandler
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    call_sync_from_async,
+)
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -60,6 +71,7 @@ STATUS_MESSAGES = {
     'STATUS$PREPARING_CONTAINER': 'Preparing container...',
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
+    'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
 }
 
 
@@ -85,7 +97,7 @@ class Runtime(FileEditRuntimeMixin):
     config: AppConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
-    status_callback: Callable | None
+    status_callback: Callable[[str, str, str], None] | None
 
     def __init__(
         self,
@@ -94,11 +106,15 @@ class Runtime(FileEditRuntimeMixin):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
+        status_callback: Callable[[str, str, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
+        self.git_handler = GitHandler(
+            execute_shell_fn=self._execute_shell_fn_git_handler
+        )
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -121,19 +137,28 @@ class Runtime(FileEditRuntimeMixin):
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
+        self.provider_handler = ProviderHandler(
+            provider_tokens=git_provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_id=user_id,
+            external_token_manager=True,
+        )
+        raw_env_vars: dict[str, str] = call_async_from_sync(
+            self.provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
+        )
+        self.initial_env_vars.update(raw_env_vars)
+
         self._vscode_enabled = any(
             isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
         )
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
         )
 
         self.user_id = user_id
-
-        # TODO: remove once done debugging expired github token
-        self.prev_token: SecretStr | None = None
+        self.git_provider_tokens = git_provider_tokens
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -171,6 +196,8 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     def add_env_vars(self, env_vars: dict[str, str]) -> None:
+        env_vars = {key.upper(): value for key, value in env_vars.items()}
+
         # Add env vars to the IPython shell (if Jupyter is used)
         if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
             code = 'import os\n'
@@ -216,62 +243,53 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(event, Action):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
+    async def _export_latest_git_provider_tokens(self, event: Action) -> None:
+        """
+        Refresh runtime provider tokens when agent attemps to run action with provider token
+        """
+        if not self.user_id:
+            return
+
+        providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
+            event
+        )
+
+        if not providers_called:
+            return
+
+        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
+        env_vars = await self.provider_handler.get_env_vars(
+            providers=providers_called, expose_secrets=False, get_latest=True
+        )
+
+        if len(env_vars) == 0:
+            return
+
+        try:
+            await self.provider_handler.set_event_stream_secrets(
+                self.event_stream, env_vars=env_vars
+            )
+            self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
+        except Exception as e:
+            logger.warning(
+                f'Failed export latest github token to runtime: {self.sid}, {e}'
+            )
+
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
             # We don't block the command if this is a default timeout action
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
-            if isinstance(event, CmdRunAction):
-                if self.user_id and 'GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(
-                        external_auth_id=self.user_id, external_token_manager=True
-                    )
-                    logger.info(f'Fetching latest github token for runtime: {self.sid}')
-                    token = await gh_client.get_latest_token()
-                    if not token:
-                        logger.error(
-                            f'Failed to refresh github token for runtime: {self.sid}'
-                        )
-
-                    if token:
-                        raw_token = token.get_secret_value()
-
-                        if not self.prev_token:
-                            logger.info(
-                                f'Setting github token in runtime: {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-                            )
-
-                        elif self.prev_token.get_secret_value() != raw_token:
-                            logger.info(
-                                f'Setting new github token in runtime {self.sid}\nToken value: {raw_token[0:5]}; length: {len(raw_token)}'
-                            )
-
-                        self.prev_token = token
-
-                        env_vars = {
-                            'GITHUB_TOKEN': raw_token,
-                        }
-
-                        try:
-                            self.add_env_vars(env_vars)
-                        except Exception as e:
-                            logger.warning(
-                                f'Failed export latest github token to runtime: {self.sid}, {e}'
-                            )
-
-                        self.event_stream.update_secrets(
-                            {
-                                'github_token': raw_token,
-                            }
-                        )
-
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            await self._export_latest_git_provider_tokens(event)
+            if isinstance(event, McpAction):
+                # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
+                observation: Observation = await getattr(self, McpAction.action)(event)
+            else:
+                observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
             err_id = ''
-            if isinstance(e, ConnectionError) or isinstance(
+            if isinstance(e, httpx.NetworkError) or isinstance(
                 e, AgentRuntimeDisconnectedError
             ):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
@@ -291,18 +309,70 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(
+    async def clone_or_init_repo(
         self,
-        github_token: SecretStr,
-        selected_repository: str,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        selected_repository: str | Repository | None,
         selected_branch: str | None,
+        repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
-        if not github_token or not selected_repository:
-            raise ValueError(
-                'github_token and selected_repository must be provided to clone a repository'
+        if not selected_repository:
+            # In SaaS mode (indicated by user_id being set), always run git init
+            # In OSS mode, only run git init if workspace_base is not set
+            if self.user_id or not self.config.workspace_base:
+                logger.debug(
+                    'No repository selected. Initializing a new git repository in the workspace.'
+                )
+                action = CmdRunAction(
+                    command='git init',
+                )
+                self.run_action(action)
+            else:
+                logger.info(
+                    'In workspace mount mode, not initializing a new git repository.'
+                )
+            return ''
+
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+        }
+
+        chosen_provider = (
+            repository_provider
+            if isinstance(selected_repository, str)
+            else selected_repository.git_provider
+        )
+
+        domain = provider_domains[chosen_provider]
+        repository = (
+            selected_repository
+            if isinstance(selected_repository, str)
+            else selected_repository.full_name
+        )
+
+        # Try to use token if available, otherwise use public URL
+        if git_provider_tokens and chosen_provider in git_provider_tokens:
+            git_token = git_provider_tokens[chosen_provider].token
+            if git_token:
+                if chosen_provider == ProviderType.GITLAB:
+                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+                else:
+                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+            else:
+                remote_repo_url = f'https://{domain}/{repository}.git'
+        else:
+            remote_repo_url = f'https://{domain}/{repository}.git'
+
+        if not remote_repo_url:
+            raise ValueError('Missing either Git token or valid repository')
+
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
-        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[-1]
+
+        dir_name = repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -311,7 +381,7 @@ class Runtime(FileEditRuntimeMixin):
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
-        clone_command = f'git clone {url} {dir_name}'
+        clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
         checkout_command = (
@@ -327,16 +397,36 @@ class Runtime(FileEditRuntimeMixin):
         self.run_action(action)
         return dir_name
 
+    def maybe_run_setup_script(self):
+        """Run .openhands/setup.sh if it exists in the workspace or repository."""
+        setup_script = '.openhands/setup.sh'
+        read_obs = self.read(FileReadAction(path=setup_script))
+        if isinstance(read_obs, ErrorObservation):
+            return
+
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+            )
+
+        # setup scripts time out after 10 minutes
+        action = CmdRunAction(
+            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+        )
+        action.set_hard_timeout(600)
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log('error', f'Setup script failed: {obs.content}')
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
-    ) -> list[BaseMicroAgent]:
+    ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
         If selected_repository is None, load microagents from the current workspace.
-
         This is the main entry point for loading microagents.
         """
 
-        loaded_microagents: list[BaseMicroAgent] = []
+        loaded_microagents: list[BaseMicroagent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
@@ -366,8 +456,10 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(obs, FileReadObservation):
             self.log('info', 'openhands_instructions microagent loaded.')
             loaded_microagents.append(
-                BaseMicroAgent.load(
-                    path='.openhands_instructions', file_content=obs.content
+                BaseMicroagent.load(
+                    path='.openhands_instructions',
+                    microagent_dir=None,
+                    file_content=obs.content,
                 )
             )
 
@@ -393,16 +485,13 @@ class Runtime(FileEditRuntimeMixin):
             # Clean up the temporary zip file
             zip_path.unlink()
             # Load all microagents using the existing function
-            repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
-                microagent_folder
-            )
+            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
             self.log(
                 'info',
-                f'Loaded {len(repo_agents)} repo agents, {len(knowledge_agents)} knowledge agents, and {len(task_agents)} task agents',
+                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents',
             )
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
-            loaded_microagents.extend(task_agents.values())
             shutil.rmtree(microagent_folder)
 
         return loaded_microagents
@@ -481,6 +570,10 @@ class Runtime(FileEditRuntimeMixin):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
 
+    @abstractmethod
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
+        pass
+
     # ====================================================================
     # File operations
     # ====================================================================
@@ -517,6 +610,35 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    # ====================================================================
+    # Git
+    # ====================================================================
+
+    def _execute_shell_fn_git_handler(
+        self, command: str, cwd: str | None
+    ) -> CommandResult:
+        """
+        This function is used by the GitHandler to execute shell commands.
+        """
+        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        exit_code = 0
+        content = ''
+
+        if hasattr(obs, 'exit_code'):
+            exit_code = obs.exit_code
+        if hasattr(obs, 'content'):
+            content = obs.content
+
+        return CommandResult(content=content, exit_code=exit_code)
+
+    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_changes()
+
+    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
+        self.git_handler.set_cwd(cwd)
+        return self.git_handler.get_git_diff(file_path)
 
     @property
     def additional_agent_instructions(self) -> str:

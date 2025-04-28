@@ -6,17 +6,20 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
-  layout("routes/_oh/route.tsx", [
-    index("routes/_oh._index/route.tsx"),
+  layout("routes/root-layout.tsx", [
+    index("routes/home.tsx"),
     route("settings", "routes/settings.tsx", [
       index("routes/account-settings.tsx"),
       route("billing", "routes/billing.tsx"),
+      route("api-keys", "routes/api-keys.tsx"),
     ]),
-    route("conversations/:conversationId", "routes/_oh.app/route.tsx", [
-      index("routes/_oh.app._index/route.tsx"),
-      route("browser", "routes/_oh.app.browser.tsx"),
-      route("jupyter", "routes/_oh.app.jupyter.tsx"),
-      route("served", "routes/app.tsx"),
+    route("conversations/:conversationId", "routes/conversation.tsx", [
+      index("routes/editor.tsx"),
+      route("browser", "routes/browser-tab.tsx"),
+      route("jupyter", "routes/jupyter-tab.tsx"),
+      route("served", "routes/served-tab.tsx"),
+      route("terminal", "routes/terminal-tab.tsx"),
+      route("vscode", "routes/vscode-tab.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;

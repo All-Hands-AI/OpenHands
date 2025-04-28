@@ -1,7 +1,7 @@
 import json
 from typing import Callable
 
-import requests
+import httpx
 import tenacity
 from daytona_sdk import (
     CreateWorkspaceParams,
@@ -127,7 +127,8 @@ class DaytonaRuntime(ActionExecutionClient):
         ]
         return f'https://{port}-{self.workspace.id}.{node_domain}'
 
-    def _get_action_execution_server_host(self) -> str:
+    @property
+    def action_execution_server_url(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:
@@ -222,7 +223,7 @@ class DaytonaRuntime(ActionExecutionClient):
     @tenacity.retry(
         retry=tenacity.retry_if_exception(
             lambda e: (
-                isinstance(e, requests.HTTPError) or isinstance(e, RequestHTTPError)
+                isinstance(e, httpx.HTTPError) or isinstance(e, RequestHTTPError)
             )
             and hasattr(e, 'response')
             and e.response.status_code == 502

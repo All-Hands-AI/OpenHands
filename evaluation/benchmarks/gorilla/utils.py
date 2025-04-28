@@ -2,8 +2,8 @@ import json
 import os
 from functools import partial
 
+import httpx
 import pandas as pd
-import requests
 from ast_eval_hf import ast_eval_hf, ast_parse
 from ast_eval_tf import ast_eval_tf
 from ast_eval_th import ast_eval_th
@@ -60,7 +60,7 @@ def fetch_data(url, filename):
         with open(cache_path, 'r') as f:
             return f.read()
     else:
-        response = requests.get(url)
+        response = httpx.get(url)
         if response.status_code == 200:
             with open(cache_path, 'w') as f:
                 f.write(response.text)

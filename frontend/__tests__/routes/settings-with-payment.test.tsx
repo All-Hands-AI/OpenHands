@@ -6,11 +6,9 @@ import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import * as FeatureFlags from "#/utils/feature-flags";
 
 describe("Settings Billing", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  vi.spyOn(FeatureFlags, "BILLING_SETTINGS").mockReturnValue(true);
 
   const RoutesStub = createRoutesStub([
     {
@@ -37,14 +35,20 @@ describe("Settings Billing", () => {
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
 
-    await waitFor(() => {
-      const navbar = screen.queryByTestId("settings-navbar");
-      expect(navbar).not.toBeInTheDocument();
-    });
+    // Wait for the settings screen to be rendered
+    await screen.findByTestId("settings-screen");
+
+    // Then check that the navbar is not present
+    const navbar = screen.queryByTestId("settings-navbar");
+    expect(navbar).not.toBeInTheDocument();
   });
 
   it("should render the navbar if SaaS mode", async () => {
@@ -52,6 +56,10 @@ describe("Settings Billing", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
@@ -69,6 +77,10 @@ describe("Settings Billing", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
@@ -78,6 +90,6 @@ describe("Settings Billing", () => {
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
-    within(billingSection).getByText("Manage Credits");
+    within(billingSection).getByText("PAYMENT$MANAGE_CREDITS");
   });
 });
