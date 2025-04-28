@@ -239,6 +239,30 @@ describe("Secret actions", () => {
     expect(screen.queryByText("My_Secret_2")).not.toBeInTheDocument();
   });
 
+  it("should be able to cancel the delete confirmation modal", async () => {
+    const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
+    const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    deleteSecretSpy.mockResolvedValue(true);
+    renderSecretsSettings();
+
+    // render delete button within a secret list item
+    const secrets = await screen.findAllByTestId("secret-item");
+    const secondSecret = within(secrets[1]);
+    const deleteButton = secondSecret.getByTestId("delete-secret-button");
+    await userEvent.click(deleteButton);
+
+    // confirmation modal
+    const confirmationModal = screen.getByTestId("confirmation-modal");
+    const cancelButton = within(confirmationModal).getByTestId("cancel-button");
+    await userEvent.click(cancelButton);
+
+    // no DELETE request
+    expect(deleteSecretSpy).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("confirmation-modal")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId("secret-item")).toHaveLength(2);
+  });
+
   it("should revert the optimistic update if the request fails", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
