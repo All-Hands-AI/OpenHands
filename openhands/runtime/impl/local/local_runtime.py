@@ -111,7 +111,7 @@ class LocalRuntime(ActionExecutionClient):
         headless_mode: bool = True,
     ):
         self.config = config
-        self._user_id = os.getuid()
+        self._user_id = os.getuid() # type: ignore
         self._username = os.getenv('USER')
 
         if self.config.workspace_base is not None:

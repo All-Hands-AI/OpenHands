@@ -11,6 +11,7 @@ import base64
 import mimetypes
 import os
 import shutil
+import sys
 import tempfile
 import time
 import traceback
@@ -478,11 +479,13 @@ class ActionExecutor:
                 assert file_stat is not None
                 # restore the original file permissions if the file already exists
                 os.chmod(filepath, file_stat.st_mode)
-                os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+                if sys.platform != 'win32':
+                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
             else:
                 # set the new file permissions if the file is new
                 os.chmod(filepath, 0o664)
-                os.chown(filepath, self.user_id, self.user_id)
+                if sys.platform != 'win32':
+                    os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
             return ErrorObservation(
                 f'File {filepath} written, but failed to change ownership and permissions: {e}'
