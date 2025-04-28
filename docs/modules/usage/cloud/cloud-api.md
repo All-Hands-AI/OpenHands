@@ -1,12 +1,14 @@
 # OpenHands Cloud API
 
-OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This guide explains how to obtain an API key and use the API to start conversations.
+OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This is useful if you easily want to kick off your own jobs from your programs in a flexible way.
+
+This guide explains how to obtain an API key and use the API to start conversations.
 
 ## Obtaining an API Key
 
 To use the OpenHands Cloud API, you'll need to generate an API key:
 
-1. Log in to your OpenHands Cloud account
+1. Log in to your [OpenHands Cloud](https://app.all-hands.dev) account
 2. Navigate to the Settings page by clicking on your profile icon in the bottom-left corner
 3. In the Settings window, locate the "API Keys" section
 4. Click "Generate New Key"
