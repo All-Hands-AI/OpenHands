@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
-    ProviderToken,
     ProviderType,
     SecretStore,
 )
@@ -20,7 +18,6 @@ from openhands.server.shared import config
 from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
-    get_user_id,
     get_user_settings,
     get_user_settings_store,
 )
@@ -247,7 +244,7 @@ async def store_provider_tokens(
     if existing_settings:
         if settings.provider_tokens:
             existing_providers = [
-                provider.value
+                provider
                 for provider in existing_settings.secrets_store.provider_tokens
             ]
 
