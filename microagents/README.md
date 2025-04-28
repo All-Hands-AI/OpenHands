@@ -96,7 +96,7 @@ You can see an example of a repo agent in [the agent for the OpenHands repo itse
    - General development guidelines
 
 
-2. **Repository Agents** - When you need: # Renumbered
+2. **Repository Agents** - When you need:
    - Project-specific guidelines
    - Team conventions and practices
    - Custom workflow documentation
