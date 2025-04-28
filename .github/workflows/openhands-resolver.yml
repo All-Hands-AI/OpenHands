@@ -24,7 +24,7 @@ on:
       LLM_MODEL:
         required: false
         type: string
-        default: "anthropic/claude-3-5-sonnet-20241022"
+        default: "anthropic/claude-3-7-sonnet-20250219"
       LLM_API_VERSION:
         required: false
         type: string
