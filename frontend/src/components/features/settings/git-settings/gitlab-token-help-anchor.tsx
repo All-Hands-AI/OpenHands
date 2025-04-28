@@ -6,7 +6,7 @@ export function GitLabTokenHelpAnchor() {
 
   return (
     <p data-testid="gitlab-token-help-anchor" className="text-xs">
-      Get your{" "}
+      {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
       <b>
         <a
           href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
@@ -17,7 +17,8 @@ export function GitLabTokenHelpAnchor() {
           GitLab
         </a>{" "}
       </b>
-      token here or{" "}
+      {t(I18nKey.COMMON$HERE)}{" "}
+      {t(I18nKey.GITLAB$OR_SEE)}{" "}
       <b>
         <a
           href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
@@ -25,7 +26,7 @@ export function GitLabTokenHelpAnchor() {
           className="underline underline-offset-2"
           rel="noopener noreferrer"
         >
-          click here for instructions
+          {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
         </a>
       </b>
       .

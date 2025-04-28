@@ -6,7 +6,7 @@ export function GitHubTokenHelpAnchor() {
 
   return (
     <p data-testid="github-token-help-anchor" className="text-xs">
-      Get your{" "}
+      {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
       <b>
         <a
           href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
@@ -17,7 +17,8 @@ export function GitHubTokenHelpAnchor() {
           GitHub
         </a>{" "}
       </b>
-      token here or{" "}
+      {t(I18nKey.COMMON$HERE)}{" "}
+      {t(I18nKey.GITLAB$OR_SEE)}{" "}
       <b>
         <a
           href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
@@ -25,7 +26,7 @@ export function GitHubTokenHelpAnchor() {
           className="underline underline-offset-2"
           rel="noopener noreferrer"
         >
-          click here for instructions
+          {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
         </a>
       </b>
       .
