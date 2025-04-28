@@ -38,4 +38,4 @@ For detailed information, see:
 
 - [Microagents Overview](https://docs.all-hands.dev/modules/usage/prompting/microagents-overview)
 - [Microagents Syntax](https://docs.all-hands.dev/modules/usage/prompting/microagents-syntax)
-- [Example GitHub Microagent](https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/knowledge/github.md)
+- [Example GitHub Microagent](https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/github.md)

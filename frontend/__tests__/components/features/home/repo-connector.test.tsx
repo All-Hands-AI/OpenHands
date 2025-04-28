@@ -155,7 +155,7 @@ describe("RepoConnector", () => {
 
     // select a repository from the dropdown
     const dropdown = await waitFor(() =>
-      within(repoConnector).getByTestId("repo-dropdown")
+      within(repoConnector).getByTestId("repo-dropdown"),
     );
     await userEvent.click(dropdown);
 
@@ -164,6 +164,7 @@ describe("RepoConnector", () => {
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
+      "gui",
       {
         full_name: "rbren/polaris",
         git_provider: "github",
@@ -172,6 +173,7 @@ describe("RepoConnector", () => {
       },
       undefined,
       [],
+      undefined,
       undefined,
     );
   });
