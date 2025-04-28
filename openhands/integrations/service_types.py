@@ -14,6 +14,9 @@ class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
 
+    class Config:
+        use_enum_values = True
+
 
 class TaskType(str, Enum):
     MERGE_CONFLICTS = 'MERGE_CONFLICTS'
