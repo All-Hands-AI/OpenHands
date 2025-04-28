@@ -181,33 +181,9 @@ curl -X GET "https://api.all-hands.dev/api/v1/conversations/f03e31ed50f4417cb637
 
 ## Rate Limits
 
-The API has the following rate limits:
+The API has a limit of 3 simultaneous conversations per account. If you need a higher limit for your use case, please contact us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
 
-- 10 requests per minute
-- 100 requests per hour
-- 1000 requests per day
-
-If you exceed these limits, the API will return a 429 Too Many Requests response.
-
-## Error Handling
-
-The API uses standard HTTP status codes to indicate the success or failure of a request:
-
-- 200: Success
-- 400: Bad Request (invalid parameters)
-- 401: Unauthorized (invalid or missing API key)
-- 403: Forbidden (insufficient permissions)
-- 404: Not Found
-- 429: Too Many Requests (rate limit exceeded)
-- 500: Internal Server Error
-
-Error responses include a JSON object with an error message:
-
-```json
-{
-  "error": "Invalid repository URL. Please provide a URL to a repository you have granted access to."
-}
-```
+If you exceed this limit, the API will return a 429 Too Many Requests response.
 
 ## Additional Resources
 
