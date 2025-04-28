@@ -2,11 +2,9 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
-from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
-    ProviderType,
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
@@ -15,8 +13,12 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.server.shared import server_config
+from openhands.server.user_auth import (
+    get_access_token,
+    get_provider_tokens,
+    get_user_id,
+)
 
 app = APIRouter(prefix='/api/user')
 
@@ -139,12 +141,9 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
-
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-
-        client = GithubServiceImpl(
-            user_id=token.user_id, external_auth_token=access_token, token=token.token
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
@@ -153,16 +152,16 @@ async def get_suggested_tasks(
         except AuthenticationError as e:
             return JSONResponse(
                 content=str(e),
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         except UnknownException as e:
             return JSONResponse(
                 content=str(e),
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     return JSONResponse(
-        content='GitHub token required.',
+        content='No providers set.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )

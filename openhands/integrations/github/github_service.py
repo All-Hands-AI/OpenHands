@@ -1,13 +1,12 @@
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
-    AuthenticationError,
     BaseGitService,
     GitService,
     ProviderType,
@@ -44,6 +43,10 @@ class GitHubService(BaseGitService, GitService):
 
         if base_domain:
             self.BASE_URL = f'https://{base_domain}/api/v3'
+
+    @property
+    def provider(self) -> str:
+        return ProviderType.GITHUB.value
 
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
@@ -100,15 +103,9 @@ class GitHubService(BaseGitService, GitService):
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid Github token')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
@@ -161,6 +158,10 @@ class GitHubService(BaseGitService, GitService):
 
         return repos[:max_repos]  # Trim to max_repos if needed
 
+    def parse_pushed_at_date(self, repo):
+        ts = repo.get('pushed_at')
+        return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
+
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
@@ -187,6 +188,9 @@ class GitHubService(BaseGitService, GitService):
                 # If we've already reached MAX_REPOS, no need to check other installations
                 if len(all_repos) >= MAX_REPOS:
                     break
+
+            if sort == 'pushed':
+                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
         else:
             # Original behavior for non-SaaS mode
             params = {'per_page': str(PER_PAGE), 'sort': sort}
@@ -264,15 +268,9 @@ class GitHubService(BaseGitService, GitService):
                 return dict(result)
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid Github token')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -361,6 +359,7 @@ class GitHubService(BaseGitService, GitService):
                 if task_type != TaskType.OPEN_PR:
                     tasks.append(
                         SuggestedTask(
+                            git_provider=ProviderType.GITHUB,
                             task_type=task_type,
                             repo=repo_name,
                             issue_number=pr['number'],
@@ -373,6 +372,7 @@ class GitHubService(BaseGitService, GitService):
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
                         task_type=TaskType.OPEN_ISSUE,
                         repo=repo_name,
                         issue_number=issue['number'],

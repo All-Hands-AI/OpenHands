@@ -95,20 +95,20 @@ class CodeActAgent(Agent):
         self.response_to_actions_fn = codeact_function_calling.response_to_actions
 
     def _get_tools(self) -> list[ChatCompletionToolParam]:
-        SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+        # For these models, we use short tool descriptions ( < 1024 tokens)
+        # to avoid hitting the OpenAI token limit for tool descriptions.
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
 
-        use_simplified_tool_desc = False
+        use_short_tool_desc = False
         if self.llm is not None:
-            use_simplified_tool_desc = any(
+            use_short_tool_desc = any(
                 model_substr in self.llm.config.model
-                for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
+                for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
             )
 
         tools = []
         if self.config.enable_cmd:
-            tools.append(
-                create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc)
-            )
+            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
         if self.config.enable_think:
             tools.append(ThinkTool)
         if self.config.enable_finish:
@@ -123,7 +123,7 @@ class CodeActAgent(Agent):
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
-                    use_simplified_description=use_simplified_tool_desc
+                    use_short_description=use_short_tool_desc
                 )
             )
         return tools

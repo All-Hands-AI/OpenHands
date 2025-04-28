@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import os
 import pickle
@@ -104,7 +106,9 @@ class State:
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
 
-    def save_to_session(self, sid: str, file_store: FileStore, user_id: str | None):
+    def save_to_session(
+        self, sid: str, file_store: FileStore, user_id: str | None
+    ) -> None:
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
@@ -165,7 +169,7 @@ class State:
         state.agent_state = AgentState.LOADING
         return state
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
         state['history'] = []
@@ -177,7 +181,7 @@ class State:
 
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
         self.__dict__.update(state)
 
         # make sure we always have the attribute history

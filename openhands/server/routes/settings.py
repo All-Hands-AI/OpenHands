@@ -1,24 +1,41 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderToken,
+    ProviderType,
+    SecretStore,
+)
 from openhands.integrations.utils import validate_provider_token
-from openhands.server.auth import get_provider_tokens, get_user_id
-from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
-from openhands.server.shared import SettingsStoreImpl, config, server_config
-from openhands.server.types import AppMode
+from openhands.server.settings import (
+    GETSettingsCustomSecrets,
+    GETSettingsModel,
+    POSTSettingsCustomSecrets,
+    POSTSettingsModel,
+)
+from openhands.server.shared import config
+from openhands.storage.data_models.settings import Settings
+from openhands.server.user_auth import (
+    get_provider_tokens,
+    get_user_id,
+    get_user_settings,
+    get_user_settings_store,
+)
+from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
 
 
 @app.get('/settings', response_model=GETSettingsModel)
-async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
+async def load_settings(
+    user_id: str | None = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    settings: Settings | None = Depends(get_user_settings),
+) -> GETSettingsModel | JSONResponse:
     try:
-        user_id = get_user_id(request)
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        settings = await settings_store.load()
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -30,7 +47,6 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         if bool(user_id):
             provider_tokens_set[ProviderType.GITHUB.value] = True
 
-        provider_tokens = get_provider_tokens(request)
         if provider_tokens:
             all_provider_types = [provider.value for provider in ProviderType]
             provider_tokens_types = [provider.value for provider in provider_tokens]
@@ -42,7 +58,8 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
-            llm_api_key_set=settings.llm_api_key is not None,
+            llm_api_key_set=settings.llm_api_key is not None
+            and bool(settings.llm_api_key),
             provider_tokens_set=provider_tokens_set,
         )
         settings_with_token_data.llm_api_key = None
@@ -55,13 +72,120 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
 
 
-@app.post('/unset-settings-tokens', response_model=dict[str, str])
-async def unset_settings_tokens(request: Request) -> JSONResponse:
+@app.get('/secrets', response_model=GETSettingsCustomSecrets)
+async def load_custom_secrets_names(
+    settings: Settings | None = Depends(get_user_settings),
+) -> GETSettingsCustomSecrets | JSONResponse:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
+        if not settings:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+
+        custom_secrets = []
+        if settings.secrets_store.custom_secrets:
+            for secret_name, _ in settings.secrets_store.custom_secrets.items():
+                custom_secrets.append(secret_name)
+
+        secret_names = GETSettingsCustomSecrets(custom_secrets=custom_secrets)
+        return secret_names
+
+    except Exception as e:
+        logger.warning(f'Invalid token: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Invalid token'},
         )
 
+
+@app.post('/secrets', response_model=dict[str, str])
+async def add_custom_secret(
+    incoming_secrets: POSTSettingsCustomSecrets,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
+        existing_settings = await settings_store.load()
+        if existing_settings:
+            for (
+                secret_name,
+                secret_value,
+            ) in existing_settings.secrets_store.custom_secrets.items():
+                if (
+                    secret_name not in incoming_secrets.custom_secrets
+                ):  # Allow incoming values to override existing ones
+                    incoming_secrets.custom_secrets[secret_name] = secret_value
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=incoming_secrets.custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            # Only update SecretStore in Settings
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong storing settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
+        )
+
+
+@app.delete('/secrets/{secret_id}')
+async def delete_custom_secret(
+    secret_id: str,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
+        existing_settings: Settings | None = await settings_store.load()
+        custom_secrets = {}
+        if existing_settings:
+            for (
+                secret_name,
+                secret_value,
+            ) in existing_settings.secrets_store.custom_secrets.items():
+                if secret_name != secret_id:
+                    custom_secrets[secret_name] = secret_value
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong storing settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
+        )
+
+
+@app.post('/unset-settings-tokens', response_model=dict[str, str])
+async def unset_settings_tokens(
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
         existing_settings = await settings_store.load()
         if existing_settings:
             settings = existing_settings.model_copy(
@@ -83,58 +207,18 @@ async def unset_settings_tokens(request: Request) -> JSONResponse:
 
 
 @app.post('/reset-settings', response_model=dict[str, str])
-async def reset_settings(request: Request) -> JSONResponse:
+async def reset_settings() -> JSONResponse:
     """
-    Resets user settings.
+    Resets user settings. (Deprecated)
     """
-    try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
-
-        existing_settings = await settings_store.load()
-        settings = Settings(
-            language='en',
-            agent='CodeActAgent',
-            security_analyzer='',
-            confirmation_mode=False,
-            llm_model='anthropic/claude-3-5-sonnet-20241022',
-            llm_api_key='',
-            llm_base_url='',
-            remote_runtime_resource_factor=1,
-            enable_default_condenser=True,
-            enable_sound_notifications=False,
-            user_consents_to_analytics=existing_settings.user_consents_to_analytics
-            if existing_settings
-            else False,
-        )
-
-        server_config_values = server_config.get_config()
-        is_hide_llm_settings_enabled = server_config_values.get(
-            'FEATURE_FLAGS', {}
-        ).get('HIDE_LLM_SETTINGS', False)
-        # We don't want the user to be able to modify these settings in SaaS
-        if server_config.app_mode == AppMode.SAAS and is_hide_llm_settings_enabled:
-            if existing_settings:
-                settings.llm_api_key = existing_settings.llm_api_key
-                settings.llm_base_url = existing_settings.llm_base_url
-                settings.llm_model = existing_settings.llm_model
-
-        await settings_store.store(settings)
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
-        )
-
-    except Exception as e:
-        logger.warning(f'Something went wrong resetting settings: {e}')
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Something went wrong resetting settings'},
-        )
+    logger.warning('Deprecated endpoint /api/reset-settings called by user')
+    return JSONResponse(
+        status_code=status.HTTP_410_GONE,
+        content={'error': 'Reset settings functionality has been removed.'},
+    )
 
 
-async def check_provider_tokens(request: Request, settings: POSTSettingsModel) -> str:
+async def check_provider_tokens(settings: POSTSettingsModel) -> str:
     if settings.provider_tokens:
         # Remove extraneous token types
         provider_types = [provider.value for provider in ProviderType]
@@ -154,8 +238,9 @@ async def check_provider_tokens(request: Request, settings: POSTSettingsModel) -
     return ''
 
 
-async def store_provider_tokens(request: Request, settings: POSTSettingsModel):
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
+async def store_provider_tokens(
+    settings: POSTSettingsModel, settings_store: SettingsStore
+):
     existing_settings = await settings_store.load()
     if existing_settings:
         if settings.provider_tokens:
@@ -189,9 +274,8 @@ async def store_provider_tokens(request: Request, settings: POSTSettingsModel):
 
 
 async def store_llm_settings(
-    request: Request, settings: POSTSettingsModel
+    settings: POSTSettingsModel, settings_store: SettingsStore
 ) -> POSTSettingsModel:
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
     existing_settings = await settings_store.load()
 
     # Convert to Settings model and merge with existing settings
@@ -209,11 +293,11 @@ async def store_llm_settings(
 
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
-    request: Request,
     settings: POSTSettingsModel,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     # Check provider tokens are valid
-    provider_err_msg = await check_provider_tokens(request, settings)
+    provider_err_msg = await check_provider_tokens(settings)
     if provider_err_msg:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -221,14 +305,11 @@ async def store_settings(
         )
 
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
         existing_settings = await settings_store.load()
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            settings = await store_llm_settings(request, settings)
+            settings = await store_llm_settings(settings, settings_store)
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
@@ -236,7 +317,7 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
-            settings = await store_provider_tokens(request, settings)
+            settings = await store_provider_tokens(settings, settings_store)
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
