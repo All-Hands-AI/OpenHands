@@ -100,7 +100,7 @@ function LlmSettingsScreen() {
     saveSettings(
       {
         LLM_MODEL: fullLlmModel,
-        llm_api_key: apiKey,
+        llm_api_key: apiKey || null,
       },
       {
         onSuccess: handleSuccessfulMutation,
