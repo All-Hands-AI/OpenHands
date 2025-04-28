@@ -645,10 +645,11 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     args = parse_arguments()
 
-    logger.setLevel(logging.WARNING)
-
     # Load config from toml and override with command line arguments
     config: AppConfig = setup_config_from_args(args)
+
+    if not config.debug:
+        logger.setLevel(logging.WARNING)
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
