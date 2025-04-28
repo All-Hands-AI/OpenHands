@@ -9,7 +9,9 @@ export default [
   layout("routes/root-layout.tsx", [
     index("routes/home.tsx"),
     route("settings", "routes/settings.tsx", [
-      index("routes/account-settings.tsx"),
+      index("routes/llm-settings.tsx"),
+      route("git", "routes/git-settings.tsx"),
+      route("app", "routes/app-settings.tsx"),
       route("billing", "routes/billing.tsx"),
       route("api-keys", "routes/api-keys.tsx"),
     ]),
