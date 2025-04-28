@@ -85,7 +85,7 @@ def mock_state():
     return state
 
 
-def test_process_events_with_message_action(conversation_memory):
+def test_process_events_with_message_action(conversation_memory, mock_state):
     """Test that MessageAction is processed correctly."""
     # Create a system message action
     system_message = SystemMessageAction(content='System message')
@@ -97,9 +97,17 @@ def test_process_events_with_message_action(conversation_memory):
     assistant_message = MessageAction(content='Hi there')
     assistant_message._source = EventSource.AGENT
 
+    # Set history for the mock state (user_message is the initial one)
+    mock_state.history = [system_message, user_message, assistant_message]
+
     # Process events
     messages = conversation_memory.process_events(
-        condensed_history=[system_message, user_message, assistant_message],
+        state=mock_state,
+        condensed_history=[
+            system_message,
+            user_message,
+            assistant_message,
+        ],  # Pass condensed history
         max_message_chars=None,
         vision_is_active=False,
     )
@@ -108,13 +116,219 @@ def test_process_events_with_message_action(conversation_memory):
     assert len(messages) == 3
     assert messages[0].role == 'system'
     assert messages[0].content[0].text == 'System message'
+
+
+# Test cases for _ensure_system_message
+def test_ensure_system_message_adds_if_missing(conversation_memory):
+    """Test that _ensure_system_message adds a system message if none exists."""
+    user_message = MessageAction(content='User message')
+    user_message._source = EventSource.USER
+    events = [user_message]
+    conversation_memory._ensure_system_message(events)
+    assert len(events) == 2
+    assert isinstance(events[0], SystemMessageAction)
+    assert events[0].content == 'System message'  # From fixture
+    assert isinstance(events[1], MessageAction)  # Original event is still there
+
+
+def test_ensure_system_message_does_nothing_if_present(conversation_memory):
+    """Test that _ensure_system_message does nothing if a system message is already present."""
+    original_system_message = SystemMessageAction(content='Existing system message')
+    user_message = MessageAction(content='User message')
+    user_message._source = EventSource.USER
+    events = [
+        original_system_message,
+        user_message,
+    ]
+    original_events = list(events)  # Copy before modification
+    conversation_memory._ensure_system_message(events)
+    assert events == original_events  # List should be unchanged
+
+
+# Test cases for _ensure_initial_user_message
+@pytest.fixture
+def initial_user_action():
+    msg = MessageAction(content='Initial User Message')
+    msg._source = EventSource.USER
+    return msg
+
+
+def test_ensure_initial_user_message_adds_if_only_system(
+    conversation_memory, initial_user_action, mock_state
+):
+    """Test adding the initial user message when only the system message exists."""
+    system_message = SystemMessageAction(content='System')
+    system_message._source = EventSource.AGENT
+    events = [system_message]  # Condensed history starts with only system message
+    # Set full history for the mock state (needs the actual initial user action)
+    mock_state.history = [system_message, initial_user_action]
+    conversation_memory._ensure_initial_user_message(
+        events, mock_state
+    )  # Pass condensed events and state
+    assert len(events) == 2
+    assert events[0] == system_message
+    assert events[1] == initial_user_action
+
+
+def test_ensure_initial_user_message_correct_already_present(
+    conversation_memory, initial_user_action, mock_state
+):
+    """Test that nothing changes if the correct initial user message is at index 1."""
+    system_message = SystemMessageAction(content='System')
+    agent_message = MessageAction(content='Assistant')
+    agent_message._source = EventSource.USER
+    events = [
+        system_message,
+        initial_user_action,
+        agent_message,
+    ]
+    original_events = list(events)
+    # Set full history for the mock state
+    mock_state.history = list(events)
+    conversation_memory._ensure_initial_user_message(
+        events, mock_state
+    )  # Pass condensed events and state
+    assert events == original_events
+
+
+def test_ensure_initial_user_message_incorrect_at_index_1(
+    conversation_memory, initial_user_action, mock_state
+):
+    """Test inserting the correct initial user message when an incorrect message is at index 1."""
+    system_message = SystemMessageAction(content='System')
+    incorrect_second_message = MessageAction(content='Assistant')
+    incorrect_second_message._source = EventSource.AGENT
+    events = [
+        system_message,
+        incorrect_second_message,
+    ]  # Condensed history is incorrect
+    # Set full history for the mock state (needs the actual initial user action)
+    mock_state.history = [system_message, initial_user_action, incorrect_second_message]
+    conversation_memory._ensure_initial_user_message(
+        events, mock_state
+    )  # Pass condensed events and state
+    assert len(events) == 3
+    assert events[0] == system_message
+    assert events[1] == initial_user_action  # Correct one inserted
+    assert events[2] == incorrect_second_message  # Original second message shifted
+
+
+def test_ensure_initial_user_message_correct_present_later(
+    conversation_memory, initial_user_action, mock_state
+):
+    """Test inserting the correct initial user message at index 1 even if it exists later."""
+    system_message = SystemMessageAction(content='System')
+    incorrect_second_message = MessageAction(content='Assistant')
+    incorrect_second_message._source = EventSource.AGENT
+    # Correct initial message is present, but later in the list
+    events = [
+        system_message,
+        incorrect_second_message,
+    ]  # Condensed history is incorrect
+    # Set full history for the mock state (needs the actual initial user action)
+    mock_state.history = [system_message, initial_user_action, incorrect_second_message]
+    # conversation_memory._ensure_system_message(events) # This is called inside process_events now
+    conversation_memory._ensure_initial_user_message(
+        events, mock_state
+    )  # Pass condensed events and state
+    assert len(events) == 3  # Should still insert at index 1, not remove the later one
+    assert events[0] == system_message
+    assert events[1] == initial_user_action  # Correct one inserted at index 1
+    assert events[2] == incorrect_second_message  # Original second message shifted
+    # The duplicate initial_user_action originally at index 2 is now at index 3 (implicitly tested by length and content)
+
+
+def test_ensure_initial_user_message_different_user_msg_at_index_1(
+    conversation_memory, initial_user_action, mock_state
+):
+    """Test inserting the correct initial user message when a *different* user message is at index 1."""
+    system_message = SystemMessageAction(content='System')
+    different_user_message = MessageAction(content='Different User Message')
+    different_user_message._source = EventSource.USER
+    events = [
+        system_message,
+        different_user_message,
+    ]  # Condensed history has different user message
+    # Set full history for the mock state (needs the actual initial user action)
+    mock_state.history = [system_message, initial_user_action, different_user_message]
+    conversation_memory._ensure_initial_user_message(
+        events, mock_state
+    )  # Pass condensed events and state
+    assert len(events) == 2
+    assert events[0] == system_message
+    assert events[1] == different_user_message  # Original second message remains
+
+
+def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_obs(
+    conversation_memory, initial_user_action, mock_state
+):
+    """
+    Test process_events when an incorrect user message is at index 1 AND
+    an orphaned observation (with tool_call_metadata but no matching action) exists.
+    Expect: System msg, CORRECT initial user msg, the incorrect user msg (shifted).
+            The orphaned observation should be filtered out.
+    """
+    system_message = SystemMessageAction(content='System')
+    different_user_message = MessageAction(content='Different User Message')
+    different_user_message._source = EventSource.USER
+
+    # Create an orphaned observation (no matching action/tool call request will exist)
+    # Use a dictionary that mimics ModelResponse structure to satisfy Pydantic
+    mock_response = {
+        'id': 'mock_response_id',
+        'choices': [{'message': {'content': None, 'tool_calls': []}}],
+        'created': 0,
+        'model': '',
+        'object': '',
+        'usage': {'completion_tokens': 0, 'prompt_tokens': 0, 'total_tokens': 0},
+    }
+    orphaned_obs = CmdOutputObservation(
+        command='orphan_cmd',
+        content='Orphaned output',
+        command_id=99,
+        exit_code=0,
+    )
+    orphaned_obs.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='orphan_call_id',
+        function_name='execute_bash',
+        model_response=mock_response,
+        total_calls_in_response=1,
+    )
+
+    # Initial condensed events list: system, wrong user message, orphaned observation
+    condensed_events = [system_message, different_user_message, orphaned_obs]
+    # Full history needs the *correct* initial user action
+    mock_state.history = [
+        system_message,
+        initial_user_action,
+        different_user_message,
+        orphaned_obs,
+    ]
+
+    # Call the main process_events method
+    messages = conversation_memory.process_events(
+        state=mock_state,
+        condensed_history=condensed_events,  # Pass condensed history
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Assertions on the final messages list
+    assert len(messages) == 2
+    # 1. System message should be first
+    assert messages[0].role == 'system'
+    assert messages[0].content[0].text == 'System'
+
+    # 2. The different user message should be left at index 1
     assert messages[1].role == 'user'
-    assert messages[1].content[0].text == 'Hello'
-    assert messages[2].role == 'assistant'
-    assert messages[2].content[0].text == 'Hi there'
+    assert messages[1].content[0].text == different_user_message.content
+
+    # Implicitly assert that the orphaned_obs was filtered out by checking the length (2)
 
 
-def test_process_events_with_cmd_output_observation(conversation_memory):
+def test_process_events_with_cmd_output_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = CmdOutputObservation(
         command='echo hello',
         content='Command output',
@@ -124,15 +338,20 @@ def test_process_events_with_cmd_output_observation(conversation_memory):
             suffix='[THIS IS SUFFIX]',
         ),
     )
-
+    # Full history needs the initial user action
+    mock_state.history = [
+        initial_user_action,
+        obs,
+    ]  # System message will be added by _ensure_system_message
     messages = conversation_memory.process_events(
-        condensed_history=[obs],
+        state=mock_state,
+        condensed_history=[obs],  # Condensed might just be the obs
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -142,20 +361,23 @@ def test_process_events_with_cmd_output_observation(conversation_memory):
     assert '[THIS IS SUFFIX]' in result.content[0].text
 
 
-def test_process_events_with_ipython_run_cell_observation(conversation_memory):
+def test_process_events_with_ipython_run_cell_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = IPythonRunCellObservation(
         code='plt.plot()',
         content='IPython output\n![image](data:image/png;base64,ABC123)',
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -167,36 +389,42 @@ def test_process_events_with_ipython_run_cell_observation(conversation_memory):
     assert 'ABC123' not in result.content[0].text
 
 
-def test_process_events_with_agent_delegate_observation(conversation_memory):
+def test_process_events_with_agent_delegate_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = AgentDelegateObservation(
         content='Content', outputs={'content': 'Delegated agent output'}
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
     assert 'Delegated agent output' in result.content[0].text
 
 
-def test_process_events_with_error_observation(conversation_memory):
+def test_process_events_with_error_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = ErrorObservation('Error message')
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -204,19 +432,25 @@ def test_process_events_with_error_observation(conversation_memory):
     assert 'Error occurred in processing last action' in result.content[0].text
 
 
-def test_process_events_with_unknown_observation(conversation_memory):
+def test_process_events_with_unknown_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     # Create a mock that inherits from Event but not Action or Observation
     obs = Mock(spec=Event)
+    mock_state.history = [initial_user_action, obs]
 
     with pytest.raises(ValueError, match='Unknown event type'):
         conversation_memory.process_events(
+            state=mock_state,
             condensed_history=[obs],
             max_message_chars=None,
             vision_is_active=False,
         )
 
 
-def test_process_events_with_file_edit_observation(conversation_memory):
+def test_process_events_with_file_edit_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = FileEditObservation(
         path='/test/file.txt',
         prev_exist=True,
@@ -225,43 +459,49 @@ def test_process_events_with_file_edit_observation(conversation_memory):
         content='diff content',
         impl_source=FileEditSource.LLM_BASED_EDIT,
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
     assert '[Existing file /test/file.txt is edited with' in result.content[0].text
 
 
-def test_process_events_with_file_read_observation(conversation_memory):
+def test_process_events_with_file_read_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = FileReadObservation(
         path='/test/file.txt',
         content='File content',
         impl_source=FileReadSource.DEFAULT,
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert result.content[0].text == 'File content'
+    assert result.content[0].text == '\n\nFile content'
 
 
-def test_process_events_with_browser_output_observation(conversation_memory):
+def test_process_events_with_browser_output_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = BrowserOutputObservation(
         url='http://example.com',
         trigger_by_action='browse',
@@ -269,32 +509,36 @@ def test_process_events_with_browser_output_observation(conversation_memory):
         content='Page loaded',
         error=False,
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
     assert '[Current URL: http://example.com]' in result.content[0].text
 
 
-def test_process_events_with_user_reject_observation(conversation_memory):
+def test_process_events_with_user_reject_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     obs = UserRejectObservation('Action rejected')
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + initial user + result
+    result = messages[2]  # The actual result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -302,7 +546,9 @@ def test_process_events_with_user_reject_observation(conversation_memory):
     assert '[Last action has been rejected by the user]' in result.content[0].text
 
 
-def test_process_events_with_empty_environment_info(conversation_memory):
+def test_process_events_with_empty_environment_info(
+    conversation_memory, mock_state, initial_user_action
+):
     """Test that empty environment info observations return an empty list of messages without calling build_workspace_context."""
     # Create a RecallObservation with empty info
 
@@ -316,21 +562,24 @@ def test_process_events_with_empty_environment_info(conversation_memory):
         microagent_knowledge=[],
         content='Retrieved environment info',
     )
-
+    mock_state.history = [initial_user_action, empty_obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[empty_obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    # Should only contain no messages except system message
-    assert len(messages) == 1
+    # Should only contain system message and initial user message
+    assert len(messages) == 2
 
     # Verify that build_workspace_context was NOT called since all input values were empty
     conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
 
 
-def test_process_events_with_function_calling_observation(conversation_memory):
+def test_process_events_with_function_calling_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     mock_response = {
         'id': 'mock_id',
         'total_calls_in_response': 1,
@@ -348,31 +597,38 @@ def test_process_events_with_function_calling_observation(conversation_memory):
         model_response=mock_response,
         total_calls_in_response=1,
     )
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # No direct message when using function calling
-    assert len(messages) == 1  # should be no messages except system message
+    assert (
+        len(messages) == 2
+    )  # should be no messages except system message and initial user message
 
 
-def test_process_events_with_message_action_with_image(conversation_memory):
+def test_process_events_with_message_action_with_image(
+    conversation_memory, mock_state, initial_user_action
+):
     action = MessageAction(
         content='Message with image',
         image_urls=['http://example.com/image.jpg'],
     )
     action._source = EventSource.AGENT
-
+    mock_state.history = [initial_user_action, action]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[action],
         max_message_chars=None,
         vision_is_active=True,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'assistant'
     assert len(result.content) == 2
     assert isinstance(result.content[0], TextContent)
@@ -381,18 +637,21 @@ def test_process_events_with_message_action_with_image(conversation_memory):
     assert result.content[1].image_urls == ['http://example.com/image.jpg']
 
 
-def test_process_events_with_user_cmd_action(conversation_memory):
+def test_process_events_with_user_cmd_action(
+    conversation_memory, mock_state, initial_user_action
+):
     action = CmdRunAction(command='ls -l')
     action._source = EventSource.USER
-
+    mock_state.history = [initial_user_action, action]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[action],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -401,7 +660,7 @@ def test_process_events_with_user_cmd_action(conversation_memory):
 
 
 def test_process_events_with_agent_finish_action_with_tool_metadata(
-    conversation_memory,
+    conversation_memory, mock_state, initial_user_action
 ):
     mock_response = {
         'id': 'mock_id',
@@ -417,15 +676,16 @@ def test_process_events_with_agent_finish_action_with_tool_metadata(
         model_response=mock_response,
         total_calls_in_response=1,
     )
-
+    mock_state.history = [initial_user_action, action]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[action],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'assistant'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -450,7 +710,9 @@ def test_apply_prompt_caching(conversation_memory):
     assert messages[3].content[0].cache_prompt is True
 
 
-def test_process_events_with_environment_microagent_observation(conversation_memory):
+def test_process_events_with_environment_microagent_observation(
+    conversation_memory, mock_state, initial_user_action
+):
     """Test processing a RecallObservation with ENVIRONMENT info type."""
     obs = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
@@ -460,19 +722,20 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
         runtime_hosts={'localhost': 8080},
         content='Retrieved environment info',
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3
+    result = messages[2]
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert result.content[0].text == 'Formatted repository and runtime info'
+    assert result.content[0].text == '\n\nFormatted repository and runtime info'
 
     # Verify the prompt_manager was called with the correct parameters
     conversation_memory.prompt_manager.build_workspace_context.assert_called_once()
@@ -489,7 +752,7 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
 
 
 def test_process_events_with_knowledge_microagent_microagent_observation(
-    conversation_memory,
+    conversation_memory, mock_state, initial_user_action
 ):
     """Test processing a RecallObservation with KNOWLEDGE type."""
     microagent_knowledge = [
@@ -515,15 +778,16 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
         microagent_knowledge=microagent_knowledge,
         content='Retrieved knowledge from microagents',
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    assert len(messages) == 2
-    result = messages[1]
+    assert len(messages) == 3  # System + Initial User + Result
+    result = messages[2]  # Result is now at index 2
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
@@ -546,7 +810,7 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
 
 
 def test_process_events_with_microagent_observation_extensions_disabled(
-    agent_config, conversation_memory
+    agent_config, conversation_memory, mock_state, initial_user_action
 ):
     """Test processing a RecallObservation when prompt extensions are disabled."""
     # Modify the agent config to disable prompt extensions
@@ -558,43 +822,47 @@ def test_process_events_with_microagent_observation_extensions_disabled(
         repo_directory='/path/to/repo',
         content='Retrieved environment info',
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # When prompt extensions are disabled, the RecallObservation should be ignored
-    assert len(messages) == 1  # should be no messages except system message
+    assert len(messages) == 2  # System + Initial User
 
     # Verify the prompt_manager was not called
     conversation_memory.prompt_manager.build_workspace_context.assert_not_called()
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
 
 
-def test_process_events_with_empty_microagent_knowledge(conversation_memory):
+def test_process_events_with_empty_microagent_knowledge(
+    conversation_memory, mock_state, initial_user_action
+):
     """Test processing a RecallObservation with empty microagent knowledge."""
     obs = RecallObservation(
         recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[],
         content='Retrieved knowledge from microagents',
     )
-
+    mock_state.history = [initial_user_action, obs]
     messages = conversation_memory.process_events(
+        state=mock_state,
         condensed_history=[obs],
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # The implementation returns an empty string and it doesn't creates a message
-    assert len(messages) == 1  # should be no messages except system message
+    assert len(messages) == 2  # System + Initial User
 
     # When there are no triggered agents, build_microagent_info is not called
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
 
 
-def test_conversation_memory_processes_microagent_observation(prompt_dir):
+def test_conversation_memory_processes_microagent_observation(prompt_dir, mock_state):
     """Test that ConversationMemory processes RecallObservations correctly."""
     # Create a microagent_info.j2 template file
     template_path = os.path.join(prompt_dir, 'microagent_info.j2')
@@ -636,10 +904,15 @@ It may or may not be relevant to the user's request.
         ],
         content='Retrieved knowledge from microagents',
     )
-
+    # Set history for the mock state (needed for deduplication check, though not strictly necessary here)
+    mock_state.history = [microagent_observation]
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=microagent_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=microagent_observation,
+        tool_call_id_to_message={},
+        max_message_chars=None,
+        current_index=0,  # Need index for deduplication
+        events=mock_state.history,  # Need events for deduplication
     )
 
     # Verify the message was created correctly
@@ -662,7 +935,9 @@ This is triggered content for testing.
     os.remove(os.path.join(prompt_dir, 'microagent_info.j2'))
 
 
-def test_conversation_memory_processes_environment_microagent_observation(prompt_dir):
+def test_conversation_memory_processes_environment_microagent_observation(
+    prompt_dir, mock_state
+):
     """Test that ConversationMemory processes environment info RecallObservations correctly."""
     # Create an additional_info.j2 template file
     template_path = os.path.join(prompt_dir, 'additional_info.j2')
@@ -713,10 +988,15 @@ each of which has a corresponding port:
         runtime_hosts={'example.com': 8080},
         content='Retrieved environment info',
     )
-
+    # Set history for the mock state
+    mock_state.history = [microagent_observation]
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=microagent_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=microagent_observation,
+        tool_call_id_to_message={},
+        max_message_chars=None,
+        current_index=0,  # Need index for deduplication
+        events=mock_state.history,  # Need events for deduplication
     )
 
     # Verify the message was created correctly
@@ -740,7 +1020,9 @@ each of which has a corresponding port:
     assert 'example.com (port 8080)' in message.content[0].text
 
 
-def test_process_events_with_microagent_observation_deduplication(conversation_memory):
+def test_process_events_with_microagent_observation_deduplication(
+    conversation_memory, mock_state, initial_user_action
+):
     """Test that RecallObservations are properly deduplicated based on agent name.
 
     The deduplication logic should keep the FIRST occurrence of each microagent
@@ -792,24 +1074,26 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
         ],
         content='Third retrieval',
     )
-
+    condensed_history = [obs1, obs2, obs3]
+    mock_state.history = [initial_user_action] + condensed_history
     messages = conversation_memory.process_events(
-        condensed_history=[obs1, obs2, obs3],
+        state=mock_state,
+        condensed_history=condensed_history,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Verify that only the first occurrence of content for each agent is included
-    assert len(messages) == 2  # with system message
-
+    assert len(messages) == 3  # System + Initial User + Result
+    # Result is now at index 2
     # First microagent should include all agents since they appear here first
-    assert 'Image best practices v1' in messages[1].content[0].text
-    assert 'Git best practices v1' in messages[1].content[0].text
-    assert 'Python best practices v1' in messages[1].content[0].text
+    assert 'Image best practices v1' in messages[2].content[0].text
+    assert 'Git best practices v1' in messages[2].content[0].text
+    assert 'Python best practices v1' in messages[2].content[0].text
 
 
 def test_process_events_with_microagent_observation_deduplication_disabled_agents(
-    conversation_memory,
+    conversation_memory, mock_state, initial_user_action
 ):
     """Test that disabled agents are filtered out and deduplication keeps the first occurrence."""
     # Create a sequence of RecallObservations with disabled agents
@@ -841,23 +1125,25 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
         ],
         content='Second retrieval',
     )
-
+    condensed_history = [obs1, obs2]
+    mock_state.history = [initial_user_action] + condensed_history
     messages = conversation_memory.process_events(
-        condensed_history=[obs1, obs2],
+        state=mock_state,
+        condensed_history=condensed_history,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Verify that disabled agents are filtered out and only the first occurrence of enabled agents is included
-    assert len(messages) == 2
-
+    assert len(messages) == 3  # System + Initial User + Result
+    # Result is now at index 2
     # First microagent should include enabled_agent but not disabled_agent
-    assert 'Disabled agent content' not in messages[1].content[0].text
-    assert 'Enabled agent content v1' in messages[1].content[0].text
+    assert 'Disabled agent content' not in messages[2].content[0].text
+    assert 'Enabled agent content v1' in messages[2].content[0].text
 
 
 def test_process_events_with_microagent_observation_deduplication_empty(
-    conversation_memory,
+    conversation_memory, mock_state, initial_user_action
 ):
     """Test that empty RecallObservations are handled correctly."""
     obs = RecallObservation(
@@ -865,18 +1151,21 @@ def test_process_events_with_microagent_observation_deduplication_empty(
         microagent_knowledge=[],
         content='Empty retrieval',
     )
-
+    condensed_history = [obs]
+    mock_state.history = [initial_user_action] + condensed_history
     messages = conversation_memory.process_events(
-        condensed_history=[obs],
+        state=mock_state,
+        condensed_history=condensed_history,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Verify that empty RecallObservations are handled gracefully
     assert (
-        len(messages) == 1
-    )  # an empty microagent is not added to Messages, only system message is found
+        len(messages) == 2  # System + Initial User
+    )  # an empty microagent is not added to Messages
     assert messages[0].role == 'system'
+    assert messages[1].role == 'user'  # Initial user message
 
 
 def test_has_agent_in_earlier_events(conversation_memory):
@@ -935,10 +1224,6 @@ def test_has_agent_in_earlier_events(conversation_memory):
 
 
 class TestFilterUnmatchedToolCalls:
-    @pytest.fixture
-    def processor(self):
-        return ConversationMemory()
-
     def test_empty_is_unchanged(self):
         assert list(ConversationMemory._filter_unmatched_tool_calls([])) == []
 
@@ -1081,20 +1366,197 @@ class TestFilterUnmatchedToolCalls:
             assert msg == expected[i]
 
 
-def test_system_message_in_events(conversation_memory):
+def test_system_message_in_events(conversation_memory, mock_state, initial_user_action):
     """Test that SystemMessageAction in condensed_history is processed correctly."""
     # Create a system message action
     system_message = SystemMessageAction(content='System message', tools=['test_tool'])
     system_message._source = EventSource.AGENT
 
     # Process events with the system message in condensed_history
+    condensed_history = [system_message]
+    mock_state.history = [
+        system_message,
+        initial_user_action,
+    ]  # Full history needs initial user action
     messages = conversation_memory.process_events(
-        condensed_history=[system_message],
+        state=mock_state,
+        condensed_history=condensed_history,
         max_message_chars=None,
         vision_is_active=False,
     )
 
     # Check that the system message was processed correctly
-    assert len(messages) == 1
+    assert len(messages) == 2  # System + Initial User
     assert messages[0].role == 'system'
     assert messages[0].content[0].text == 'System message'
+    assert messages[1].role == 'user'  # Initial user message
+
+
+# Helper function to create mock tool call metadata
+def _create_mock_tool_call_metadata(
+    tool_call_id: str, function_name: str, response_id: str = 'mock_response_id'
+) -> ToolCallMetadata:
+    # Use a dictionary that mimics ModelResponse structure to satisfy Pydantic
+    mock_response = {
+        'id': response_id,
+        'choices': [
+            {
+                'message': {
+                    'role': 'assistant',
+                    'content': None,  # Content is None for tool calls
+                    'tool_calls': [
+                        {
+                            'id': tool_call_id,
+                            'type': 'function',
+                            'function': {
+                                'name': function_name,
+                                'arguments': '{}',
+                            },  # Args don't matter for this test
+                        }
+                    ],
+                }
+            }
+        ],
+        'created': 0,
+        'model': 'mock_model',
+        'object': 'chat.completion',
+        'usage': {'completion_tokens': 0, 'prompt_tokens': 0, 'total_tokens': 0},
+    }
+    return ToolCallMetadata(
+        tool_call_id=tool_call_id,
+        function_name=function_name,
+        model_response=mock_response,
+        total_calls_in_response=1,
+    )
+
+
+def test_process_events_partial_history(conversation_memory, mock_state):
+    """
+    Tests process_events with full and partial histories to verify
+    _ensure_system_message, _ensure_initial_user_message, and tool call matching logic.
+    """
+    # --- Define Common Events ---
+    system_message = SystemMessageAction(content='System message')
+    system_message._source = EventSource.AGENT
+
+    user_message = MessageAction(
+        content='Initial user query'
+    )  # This is the crucial initial_user_action
+    user_message._source = EventSource.USER
+
+    recall_obs = RecallObservation(
+        recall_type=RecallType.WORKSPACE_CONTEXT,
+        repo_name='test-repo',
+        repo_directory='/path/to/repo',
+        content='Retrieved environment info',
+    )
+    recall_obs._source = EventSource.AGENT
+
+    cmd_action = CmdRunAction(command='ls', thought='Running ls')
+    cmd_action._source = EventSource.AGENT
+    cmd_action.tool_call_metadata = _create_mock_tool_call_metadata(
+        tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'
+    )
+
+    cmd_obs = CmdOutputObservation(
+        command_id=1, command='ls', content='file1.txt\nfile2.py', exit_code=0
+    )
+    cmd_obs._source = EventSource.AGENT
+    cmd_obs.tool_call_metadata = _create_mock_tool_call_metadata(
+        tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'
+    )
+
+    # --- Scenario 1: Full History ---
+    full_history: list[Event] = [
+        system_message,
+        user_message,  # Correct initial user message at index 1
+        recall_obs,
+        cmd_action,
+        cmd_obs,
+    ]
+    mock_state.history = list(full_history)
+    messages_full = conversation_memory.process_events(
+        state=mock_state,
+        condensed_history=list(full_history),  # Pass a copy
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Expected: System, User, Recall (formatted), Assistant (tool call), Tool Response
+    assert len(messages_full) == 5
+    assert messages_full[0].role == 'system'
+    assert messages_full[0].content[0].text == 'System message'
+    assert messages_full[1].role == 'user'
+    assert messages_full[1].content[0].text == 'Initial user query'
+    assert messages_full[2].role == 'user'  # Recall obs becomes user message
+    assert (
+        'Formatted repository and runtime info' in messages_full[2].content[0].text
+    )  # From fixture mock
+    assert messages_full[3].role == 'assistant'
+    assert messages_full[3].tool_calls is not None
+    assert len(messages_full[3].tool_calls) == 1
+    assert messages_full[3].tool_calls[0].id == 'call_ls_1'
+    assert messages_full[4].role == 'tool'
+    assert messages_full[4].tool_call_id == 'call_ls_1'
+    assert 'file1.txt' in messages_full[4].content[0].text
+
+    # --- Scenario 2: Partial History (Action + Observation) ---
+    # Simulates processing only the last action/observation pair
+    partial_history_action_obs: list[Event] = [
+        cmd_action,
+        cmd_obs,
+    ]
+    # Full history still needs the initial user message for _ensure_initial_user_message
+    mock_state.history = [system_message, user_message, cmd_action, cmd_obs]
+    messages_partial_action_obs = conversation_memory.process_events(
+        state=mock_state,
+        condensed_history=list(partial_history_action_obs),  # Pass a copy
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Expected: System (added), Initial User (added), Assistant (tool call), Tool Response
+    assert len(messages_partial_action_obs) == 4
+    assert (
+        messages_partial_action_obs[0].role == 'system'
+    )  # Added by _ensure_system_message
+    assert messages_partial_action_obs[0].content[0].text == 'System message'
+    assert (
+        messages_partial_action_obs[1].role == 'user'
+    )  # Added by _ensure_initial_user_message
+    assert messages_partial_action_obs[1].content[0].text == 'Initial user query'
+    assert messages_partial_action_obs[2].role == 'assistant'
+    assert messages_partial_action_obs[2].tool_calls is not None
+    assert len(messages_partial_action_obs[2].tool_calls) == 1
+    assert messages_partial_action_obs[2].tool_calls[0].id == 'call_ls_1'
+    assert messages_partial_action_obs[3].role == 'tool'
+    assert messages_partial_action_obs[3].tool_call_id == 'call_ls_1'
+    assert 'file1.txt' in messages_partial_action_obs[3].content[0].text
+
+    # --- Scenario 3: Partial History (Observation Only) ---
+    # Simulates processing only the last observation
+    partial_history_obs_only: list[Event] = [
+        cmd_obs,
+    ]
+    # Full history still needs the initial user message
+    mock_state.history = [system_message, user_message, cmd_obs]
+    messages_partial_obs_only = conversation_memory.process_events(
+        state=mock_state,
+        condensed_history=list(partial_history_obs_only),  # Pass a copy
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Expected: System (added), Initial User (added).
+    # The CmdOutputObservation has tool_call_metadata, but there's no corresponding
+    # assistant message (from CmdRunAction) with the matching tool_call.id in the input history.
+    # Therefore, _filter_unmatched_tool_calls should remove the tool response message.
+    assert len(messages_partial_obs_only) == 2
+    assert (
+        messages_partial_obs_only[0].role == 'system'
+    )  # Added by _ensure_system_message
+    assert messages_partial_obs_only[0].content[0].text == 'System message'
+    assert (
+        messages_partial_obs_only[1].role == 'user'
+    )  # Added by _ensure_initial_user_message
+    assert messages_partial_obs_only[1].content[0].text == 'Initial user query'

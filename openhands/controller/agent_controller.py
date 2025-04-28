@@ -190,7 +190,7 @@ class AgentController:
         logger.debug(f'System message got from agent: {system_message}')
         if system_message:
             self.event_stream.add_event(system_message, EventSource.AGENT)
-            logger.debug(f'System message added to event stream: {system_message}')
+            logger.info(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -1020,7 +1020,7 @@ class AgentController:
             self.state.start_id = 0
 
             self.log(
-                'debug',
+                'info',
                 f'AgentController {self.id} - created new state. start_id: {self.state.start_id}',
             )
         else:
@@ -1030,7 +1030,7 @@ class AgentController:
                 self.state.start_id = 0
 
             self.log(
-                'debug',
+                'info',
                 f'AgentController {self.id} initializing history from event {self.state.start_id}',
             )
 
@@ -1143,70 +1143,169 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        kept_event_ids = {
-            e.id for e in self._apply_conversation_window(self.state.history)
-        }
+        kept_events = self._apply_conversation_window()
+        kept_event_ids = {e.id for e in kept_events}
+
+        self.log(
+            'info',
+            f'Context window exceeded. Keeping events with IDs: {kept_event_ids}',
+        )
+
+        # The events to forget are those that are not in the kept set
         forgotten_event_ids = {e.id for e in self.state.history} - kept_event_ids
 
-        # Save the ID of the first event in our truncated history for future reloading
-        if self.state.history:
-            self.state.start_id = self.state.history[0].id
+        if len(kept_event_ids) == 0:
+            self.log(
+                'warning',
+                'No events kept after applying conversation window. This should not happen.',
+            )
+
+        # verify that the first event id in kept_event_ids is the same as the start_id
+        if len(kept_event_ids) > 0 and self.state.history[0].id not in kept_event_ids:
+            self.log(
+                'warning',
+                f'First event after applying conversation window was not kept: {self.state.history[0].id} not in {kept_event_ids}',
+            )
 
         # Add an error event to trigger another step by the agent
         self.event_stream.add_event(
             CondensationAction(
-                forgotten_events_start_id=min(forgotten_event_ids),
-                forgotten_events_end_id=max(forgotten_event_ids),
+                forgotten_events_start_id=min(forgotten_event_ids)
+                if forgotten_event_ids
+                else 0,
+                forgotten_events_end_id=max(forgotten_event_ids)
+                if forgotten_event_ids
+                else 0,
             ),
             EventSource.AGENT,
         )
 
-    def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
+    def _apply_conversation_window(self) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.
 
-        It preserves action-observation pairs and ensures that the first user message is always included.
+        It preserves action-observation pairs and ensures that the system message,
+        the first user message, and its associated recall observation are always included
+        at the beginning of the context window.
 
         The algorithm:
-        1. Cut history in half
-        2. Check first event in new history:
-           - If Observation: find and include its Action
-           - If MessageAction: ensure its related Action-Observation pair isn't split
-        3. Always include the first user message
+        1. Identify essential initial events: System Message, First User Message, Recall Observation.
+        2. Determine the slice of recent events to potentially keep.
+        3. Validate the start of the recent slice for dangling observations.
+        4. Combine essential events and validated recent events, ensuring essentials come first.
 
         Args:
             events: List of events to filter
 
         Returns:
-            Filtered list of events keeping newest half while preserving pairs
+            Filtered list of events keeping newest half while preserving pairs and essential initial events.
         """
-        if not events:
-            return events
+        if not self.state.history:
+            return []
 
-        # Find first user message - we'll need to ensure it's included
-        first_user_msg = next(
-            (
-                e
-                for e in events
-                if isinstance(e, MessageAction) and e.source == EventSource.USER
-            ),
-            None,
+        history = self.state.history
+
+        # 1. Identify essential initial events
+        system_message: SystemMessageAction | None = None
+        first_user_msg: MessageAction | None = None
+        recall_action: RecallAction | None = None
+        recall_observation: Observation | None = None
+
+        # Find System Message (should be the first event, if it exists)
+        system_message = next(
+            (e for e in history if isinstance(e, SystemMessageAction)), None
+        )
+        assert (
+            system_message is None
+            or isinstance(system_message, SystemMessageAction)
+            and system_message.id == history[0].id
         )
 
-        # cut in half
-        mid_point = max(1, len(events) // 2)
-        kept_events = events[mid_point:]
-        if len(kept_events) > 0 and isinstance(kept_events[0], Observation):
-            kept_events = kept_events[1:]
+        # Find First User Message, which MUST exist
+        first_user_msg = self._first_user_message()
+        if first_user_msg is None:
+            raise RuntimeError('No first user message found in the event stream.')
 
-        # Ensure first user message is included
-        if first_user_msg and first_user_msg not in kept_events:
-            kept_events = [first_user_msg] + kept_events
+        first_user_msg_index = -1
+        for i, event in enumerate(history):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                first_user_msg = event
+                first_user_msg_index = i
+                break
 
-        # start_id points to first user message
+        # Find Recall Action and Observation related to the First User Message
+        if first_user_msg is not None and first_user_msg_index != -1:
+            # Look for RecallAction after the first user message
+            for i in range(first_user_msg_index + 1, len(history)):
+                event = history[i]
+                if (
+                    isinstance(event, RecallAction)
+                    and event.query == first_user_msg.content
+                ):
+                    # Found RecallAction, now look for its Observation
+                    recall_action = event
+                    for j in range(i + 1, len(history)):
+                        obs_event = history[j]
+                        # Check for Observation caused by this RecallAction
+                        if (
+                            isinstance(obs_event, Observation)
+                            and obs_event.cause == recall_action.id
+                        ):
+                            recall_observation = obs_event
+                            break  # Found the observation, stop inner loop
+                    break  # Found the recall action (and maybe obs), stop outer loop
+
+        essential_events: list[Event] = []
+        if system_message:
+            essential_events.append(system_message)
         if first_user_msg:
-            self.state.start_id = first_user_msg.id
+            essential_events.append(first_user_msg)
+        # Also keep the RecallAction that triggered the essential RecallObservation
+        if recall_action:
+            essential_events.append(recall_action)
+        if recall_observation:
+            essential_events.append(recall_observation)
 
-        return kept_events
+        # 2. Determine the slice of recent events to potentially keep
+        num_non_essential_events = len(history) - len(essential_events)
+        # Keep roughly half of the non-essential events, minimum 1
+        num_recent_to_keep = max(1, num_non_essential_events // 2)
+
+        # Calculate the starting index for the recent slice
+        slice_start_index = len(history) - num_recent_to_keep
+        slice_start_index = max(0, slice_start_index)  # Ensure index is not negative
+        recent_events_slice = history[slice_start_index:]
+
+        # 3. Validate the start of the recent slice for dangling observations
+        # IMPORTANT: Most observations in history are tool call results, which cannot be without their action, or we get an LLM API error
+        first_valid_event_index = 0
+        for i, event in enumerate(recent_events_slice):
+            if isinstance(event, Observation):
+                first_valid_event_index += 1
+            else:
+                break
+        # If all events in the slice are dangling observations, we need to keep at least one
+        if first_valid_event_index == len(recent_events_slice):
+            self.log(
+                'warning',
+                'All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen.',
+            )
+
+        # Adjust the recent_events_slice if dangling observations were found at the start
+        if first_valid_event_index < len(recent_events_slice):
+            validated_recent_events = recent_events_slice[first_valid_event_index:]
+            if first_valid_event_index > 0:
+                self.log(
+                    'debug',
+                    f'Removed {first_valid_event_index} dangling observation(s) from the start of recent event slice.',
+                )
+        else:
+            validated_recent_events = []
+
+        # 4. Combine essential events and validated recent events
+        events_to_keep: list[Event] = essential_events + validated_recent_events
+        self.log('debug', f'History truncated. Kept {len(events_to_keep)} events.')
+
+        return events_to_keep
 
     def _is_stuck(self) -> bool:
         """Checks if the agent or its delegate is stuck in a loop.

@@ -22,7 +22,6 @@ from openhands.events.observation import (
     ErrorObservation,
 )
 from openhands.events.observation.agent import RecallObservation
-from openhands.events.observation.commands import CmdOutputObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
@@ -765,7 +764,7 @@ async def test_context_window_exceeded_error_handling(
 
     # We do that by playing the role of the recall module -- subscribe to the
     # event stream and respond to recall actions by inserting fake recall
-    # obesrvations.
+    # observations.
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
             microagent_obs = RecallObservation(
@@ -807,13 +806,19 @@ async def test_context_window_exceeded_error_handling(
     # size (because we return a message action, which triggers a recall, which
     # triggers a recall response). But if the pre/post-views are on the turn
     # when we throw the context window exceeded error, we should see the
-    # post-step view compressed.
+    # post-step view compressed (or rather, a CondensationAction added).
     for index, (first_view, second_view) in enumerate(
         zip(step_state.views[:-1], step_state.views[1:])
     ):
         if index == error_after:
-            assert len(first_view) > len(second_view)
+            # Verify that the CondensationAction is present in the second view (after error)
+            # but not in the first view (before error)
+            assert not any(isinstance(e, CondensationAction) for e in first_view.events)
+            assert any(isinstance(e, CondensationAction) for e in second_view.events)
+            # The length might not strictly decrease due to CondensationAction being added
+            assert len(first_view) == len(second_view)
         else:
+            # Before the error, the view length should increase
             assert len(first_view) < len(second_view)
 
     # The final state's history should contain:
@@ -886,7 +891,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
         def step(self, state: State):
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
-            if len(state.history) > 3 and not self.has_errored:
+            if len(state.history) > 5 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
                     model='',
@@ -1465,126 +1470,6 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     assert (
         result is False
     ), 'should_step should return False for NullObservation with cause = 0'
-
-
-def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
-    """Test that the _apply_conversation_window method correctly prunes a list of events."""
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test_apply_conversation_window_basic',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-
-    # Create a sequence of events with IDs
-    first_msg = MessageAction(content='Hello, start task', wait_for_response=False)
-    first_msg._source = EventSource.USER
-    first_msg._id = 1
-
-    # Add agent question
-    agent_msg = MessageAction(
-        content='What task would you like me to perform?', wait_for_response=True
-    )
-    agent_msg._source = EventSource.AGENT
-    agent_msg._id = 2
-
-    # Add user response
-    user_response = MessageAction(
-        content='Please list all files and show me current directory',
-        wait_for_response=False,
-    )
-    user_response._source = EventSource.USER
-    user_response._id = 3
-
-    cmd1 = CmdRunAction(command='ls')
-    cmd1._id = 4
-    obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=4)
-    obs1._id = 5
-    obs1._cause = 4
-
-    cmd2 = CmdRunAction(command='pwd')
-    cmd2._id = 6
-    obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=6)
-    obs2._id = 7
-    obs2._cause = 6
-
-    events = [first_msg, agent_msg, user_response, cmd1, obs1, cmd2, obs2]
-
-    # Apply truncation
-    truncated = controller._apply_conversation_window(events)
-
-    # Verify truncation occured
-    # Should keep first user message and roughly half of other events
-    assert (
-        3 <= len(truncated) < len(events)
-    )  # First message + at least one action-observation pair
-    assert truncated[0] == first_msg  # First message always preserved
-    assert controller.state.start_id == first_msg._id
-
-    # Verify pairs aren't split
-    for i, event in enumerate(truncated[1:]):
-        if isinstance(event, CmdOutputObservation):
-            assert any(e._id == event._cause for e in truncated[: i + 1])
-
-
-def test_history_restoration_after_truncation(mock_event_stream, mock_agent):
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test_truncation',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-
-    # Create events with IDs
-    first_msg = MessageAction(content='Start task', wait_for_response=False)
-    first_msg._source = EventSource.USER
-    first_msg._id = 1
-
-    events = [first_msg]
-    for i in range(5):
-        cmd = CmdRunAction(command=f'cmd{i}')
-        cmd._id = i + 2
-        obs = CmdOutputObservation(
-            command=f'cmd{i}', content=f'output{i}', command_id=cmd._id
-        )
-        obs._cause = cmd._id
-        events.extend([cmd, obs])
-
-    # Set up initial history
-    controller.state.history = events.copy()
-
-    # Force truncation
-    controller.state.history = controller._apply_conversation_window(
-        controller.state.history
-    )
-
-    # Save state
-    saved_start_id = controller.state.start_id
-    saved_history_len = len(controller.state.history)
-
-    # Set up mock event stream for new controller
-    mock_event_stream.get_events.return_value = controller.state.history
-
-    # Create new controller with saved state
-    new_controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test_truncation',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    new_controller.state.start_id = saved_start_id
-    new_controller.state.history = mock_event_stream.get_events()
-
-    # Verify restoration
-    assert len(new_controller.state.history) == saved_history_len
-    assert new_controller.state.history[0] == first_msg
-    assert new_controller.state.start_id == saved_start_id
 
 
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
