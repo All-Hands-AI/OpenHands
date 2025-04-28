@@ -457,7 +457,9 @@ class Runtime(FileEditRuntimeMixin):
             self.log('info', 'openhands_instructions microagent loaded.')
             loaded_microagents.append(
                 BaseMicroagent.load(
-                    path='.openhands_instructions', file_content=obs.content
+                    path='.openhands_instructions',
+                    microagent_dir=None,
+                    file_content=obs.content,
                 )
             )
 
@@ -483,16 +485,13 @@ class Runtime(FileEditRuntimeMixin):
             # Clean up the temporary zip file
             zip_path.unlink()
             # Load all microagents using the existing function
-            repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
-                microagent_folder
-            )
+            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
             self.log(
                 'info',
-                f'Loaded {len(repo_agents)} repo agents, {len(knowledge_agents)} knowledge agents, and {len(task_agents)} task agents',
+                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents',
             )
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
-            loaded_microagents.extend(task_agents.values())
             shutil.rmtree(microagent_folder)
 
         return loaded_microagents
