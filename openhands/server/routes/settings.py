@@ -31,7 +31,6 @@ app = APIRouter(prefix='/api')
 
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(
-    user_id: str | None = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings: Settings | None = Depends(get_user_settings),
 ) -> GETSettingsModel | JSONResponse:
@@ -44,14 +43,11 @@ async def load_settings(
 
         provider_tokens_set = {}
 
-        if bool(user_id):
-            provider_tokens_set[ProviderType.GITHUB.value] = True
-
         if provider_tokens:
-            all_provider_types = [provider.value for provider in ProviderType]
-            provider_tokens_types = [provider.value for provider in provider_tokens]
+            all_provider_types = [provider for provider in ProviderType]
+            provider_tokens_types = [provider for provider in provider_tokens]
             for provider_type in all_provider_types:
-                if provider_type in provider_tokens_types:
+                if provider_type in provider_tokens_types and (provider_tokens[provider_type].token or provider_tokens[provider_type].user_id):
                     provider_tokens_set[provider_type] = True
                 else:
                     provider_tokens_set[provider_type] = False
@@ -221,19 +217,25 @@ async def reset_settings() -> JSONResponse:
 async def check_provider_tokens(settings: POSTSettingsModel) -> str:
     if settings.provider_tokens:
         # Remove extraneous token types
-        provider_types = [provider.value for provider in ProviderType]
+        provider_types = [provider for provider in ProviderType]
         settings.provider_tokens = {
             k: v for k, v in settings.provider_tokens.items() if k in provider_types
         }
 
         # Determine whether tokens are valid
         for token_type, token_value in settings.provider_tokens.items():
+            token = token_value.token
+
+            if not token:
+                continue
+
             confirmed_token_type = await validate_provider_token(
-                token_value.token,
+                token,
                 token_value.base_domain
             )
-            if not confirmed_token_type or confirmed_token_type.value != token_type:
-                return f'Invalid token. Please make sure it is a valid {token_type} token.'
+
+            if not confirmed_token_type or confirmed_token_type != token_type:
+                return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
 
     return ''
 

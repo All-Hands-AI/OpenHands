@@ -34,6 +34,9 @@ class GETSettingsModel(Settings):
     provider_tokens_set: dict[str, bool] | None = None
     llm_api_key_set: bool
 
+    class Config:
+        use_enum_values = True
+
 
 class GETSettingsCustomSecrets(BaseModel):
     """
