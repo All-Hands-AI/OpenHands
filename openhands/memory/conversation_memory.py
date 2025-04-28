@@ -247,7 +247,12 @@ class ConversationMemory:
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
             if vision_is_active and action.image_urls:
-                content.append(ImageContent(image_urls=action.image_urls))
+                if role == 'user':
+                    for idx, url in enumerate(action.image_urls):
+                        content.append(TextContent(text=f'Image {idx+1}:'))
+                        content.append(ImageContent(image_urls=[url]))
+                else:
+                    content.append(ImageContent(image_urls=action.image_urls))
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
             return [

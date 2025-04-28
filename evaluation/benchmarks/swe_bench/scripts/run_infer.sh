@@ -26,8 +26,8 @@ if [ -z "$AGENT" ]; then
 fi
 
 if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 60"
-  MAX_ITER=60
+  echo "MAX_ITER not specified, use default 100"
+  MAX_ITER=100
 fi
 
 if [ -z "$RUN_WITH_BROWSING" ]; then

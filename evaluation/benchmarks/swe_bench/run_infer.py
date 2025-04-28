@@ -147,19 +147,17 @@ Follow these steps to reproduce the issue:
 /workspace/{workspace_dir_name}
 </uploaded_files>
 
-I've uploaded a javascript code repository in the directory {workspace_dir_name}. Consider the following issue description:
+I have uploaded a javascript code repository in your current working directory: /workspace/{workspace_dir_name}. Consider the following issue description:
 
 <issue_description>
 {instance.problem_statement}
 </issue_description>
 
-Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?
-I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
-Also, all the image URLs referenced in the <issue_description> have already been included as image inputs for your reference. In addition, the <issue_description> may also contain links to online IDEs that contains code to reproduce the issue.
-The development environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
+Please implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met. Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure that all the requirements in the <issue_description> are satisfied.
 
-Follow these phases to resolve the issue:
+Also, all the image URLs referenced in the <issue_description> have already been included as image inputs and are denoted as Image 1, Image 2, and so on for your reference. In addition, the <issue_description> may also contain links to online IDEs containing useful code to reproduce the issue. The development environment is already set up for you (i.e., all dependencies are already installed), so you do not need to install other packages.
+
+You MUST strictly follow all the instructions in the below phases to resolve the issue:
 
 Phase 1. READING: read the problem and reword it in clearer terms
    1.1 If there are code or config snippets. Express in words any best practices or conventions in them.
@@ -168,54 +166,50 @@ Phase 1. READING: read the problem and reword it in clearer terms
    1.4 Enumerate the steps to reproduce the problem.
    1.5 Hightlight any best practices to take into account when testing and fixing the issue
 
-Phase 2. RUNNING: install and run the tests on the repository
-   2.1 Follow the readme
-   2.2 Install the environment and anything needed
-   2.2 Iterate and figure out how to run the tests
+Phase 2. EXPLORATION: find the files that are related to the problem and possible solutions
+   2.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
+   2.2 Identify all files related to the problem statement.
+   2.3 Propose the methods and files to fix the issue and explain why.
 
-Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions
-   3.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
-   3.2 Identify all files related to the problem statement.
-   3.3 Propose the methods and files to fix the issue and explain why.
-   3.4 From the possible file locations, select the most likely location to fix the issue.
+Phase 3. [IMPORTANT] REPRODUCTION: before you implement any fix, you MUST write comphrensive tests that will be used to visually analyse the issue and test your proposed changes. Do NOT assume that existing tests in the repository are sufficient for testing your implementation.
+   3.1 Create a comprehensive test file which checks all possible edge cases for your fix. Whenever applicable, you MUST try to visually verify the issue using the browser.
+   3.2 Run the test file to confirm that the issue exists.
+   3.3 If the issue description contains links to online IDEs containing code for reproducing the error, you should refer to these as well.
 
-Phase 4. [IMPORTANT] TEST CREATION: before implementing any fix, you MUST create a script to reproduce and verify the issue.
-   4.1 Look at existing test files in the repository to understand the test format/structure.
-   4.2 Create a minimal reproduction script that reproduces the located issue.
-   4.3 Run the reproduction script to confirm you are reproducing the issue.
-   4.4 Adjust the reproduction script as necessary.
-   4.5 If the issue description contains URLs to online IDEs containing code for reproducing the error, you can also use that as a reference.
+Phase 4. FIX ANALYSIS: state clearly the problem and how to fix it
+   4.1 State clearly what the problem is.
+   4.2 State clearly where the problem is located.
+   4.3 State clearly how the tests in Phase 3 reproduce the issue. If possible, also provide visual analysis of the issue.
+   4.4 State clearly the best practices to take into account in the fix.
+   4.5 State clearly how to fix the problem.
 
-Phase 5. FIX ANALYSIS: state clearly the problem and how to fix it
-   5.1 State clearly what the problem is.
-   5.2 State clearly where the problem is located.
-   5.3 State clearly how the test in Phase 4 reproduces the issue.
-   5.4 State clearly the best practices to take into account in the fix.
-   5.5 State clearly how to fix the problem.
+Phase 5. IMPLEMENTATION: Edit the source code to implement your chosen solution.
+   5.1 Make minimal, focused changes to fix the issue.
+   5.2 Check the versions of programming languages and packages to ensure that your code is syntactically correct.
 
-Phase 6. FIX IMPLEMENTATION: Edit the source code to implement your chosen solution.
-   6.1 Make minimal, focused changes to fix the issue.
+Phase 6. [IMPORTANT] VERIFICATION: Test your implementation thoroughly and visually verify that your implementation works whenever applicable.
+   6.1 Run your tests from Phase 3 to verify your implementation.
+   6.2 Add more edge cases to your tests to ensure comprehensive coverage.
+   6.3 You MUST run existing tests in the repository which are related to the modified code to ensure you have not broken existing functionality. Do NOT modify existing test files in the repository.
 
-Phase 7. [IMPORTANT] VERIFICATION: Test your implementation thoroughly.
-   7.1 Run your reproduction script to verify the fix works.
-   7.2 Add edge cases to your test script to ensure comprehensive coverage.
-   7.3 Run existing tests related to the modified code to ensure you haven't broken anything.
+Phase 7. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
+   7.1 Ensure you have fully addressed all requirements given in the <issue_description>.
+   7.2 Make sure that you have run existing tests in the repository related to:
+     7.2.1 The issue you are fixing
+     7.2.2 The files you modified
+     7.2.3 The functions you changed
+   7.3 Make sure that you have thoroughly verified your implementation using the tests in Phase 3.
+   7.4 If any tests fail, you MUST revise your implementation until all tests pass.
 
-8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
-   8.1 Ensure you've fully addressed all requirements.
-   8.2 Run any tests in the repository related to:
-     8.2.1 The issue you are fixing
-     8.2.2 The files you modified
-     8.2.3 The functions you changed
-   8.3 If any tests fail, you MUST revise your implementation until all tests pass.
-
-Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+Be thorough in your exploration, testing, and reasoning. It is fine if your thinking process is lengthy - quality and completeness are more important than brevity.
 """
-    # TODO: is this prompt important? - WE MUST HAVE BROWSING, SO REMOVE.
     if RUN_WITH_BROWSING:
         instruction += (
             '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to access GitHub via the browser.'
+            'You SHOULD NEVER attempt to access GitHub via the browser.\n'
+            'Since you are dealing with front-end code, it is extremely important that you MUST visually verify if your implementation works.\n'
+            'You MUST check the versions of programming languages and packages to ensure that all your code is syntactically correct.\n'
+            'The bash terminal may not generate any output for commands that run servers or host websites. You MUST access them using the browser.\n'
             '</IMPORTANT!>\n'
         )
 
@@ -226,10 +220,24 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
         ), 'problem_statement is required in image_assets'
         image_urls = assets['problem_statement']
         valid_urls = []
+        index_dict = {}
         for url in image_urls:
             if is_valid_image_url(url):
                 valid_urls.append(url)
-        return MessageAction(content=instruction, image_urls=valid_urls)
+                assert (
+                    url in instruction
+                ), f'Image URL {url} not present in {instruction}'
+                idx = instruction.find(url)
+                assert idx != -1
+                index_dict[url] = idx
+            else:
+                logger.info(f'{url} is marked invalid due to incompatible format')
+        sorted_urls = sorted(index_dict.items(), key=lambda x: x[1])
+        sorted_urls = [item[0] for item in sorted_urls]
+        for idx, url in enumerate(sorted_urls):
+            instruction = instruction.replace(url, f'{url} (Image: {idx+1})')
+        print(instruction)
+        return MessageAction(content=instruction, image_urls=sorted_urls)
     return MessageAction(content=instruction)
 
 
@@ -486,6 +494,30 @@ def initialize_runtime(
     action = CmdRunAction(command='echo "0.0.0.0 github.com" >> /etc/hosts')
     obs = runtime.run_action(action)
 
+    if 'chartjs' in workspace_dir_name.lower():
+        # action = CmdRunAction(command="python3 -m http.server 8000 &")
+        # obs = runtime.run_action(action)
+        # print(f"server observation: {obs}")
+        # import time
+        # time.sleep(10)
+        action = CmdRunAction(
+            command='wget -O firefox.tar.bz2 "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"     && tar xvf firefox.tar.bz2 -C /opt && ln -s /opt/firefox/firefox /usr/local/bin/firefox'
+        )
+        obs = runtime.run_action(action)
+        print(obs)
+
+        action = CmdRunAction(command='Xvfb :99 -screen 0 1024x768x16 &')
+        obs = runtime.run_action(action)
+        print(obs)
+
+        action = CmdRunAction(command='export DISPLAY=:99')
+        obs = runtime.run_action(action)
+        print(obs)
+
+        # action = CmdRunAction(command='cd /workspace/chartjs__Chart.js__3.0 && npm test -- --grep="Scale"')
+        # obs = runtime.run_action(action)
+        # print(obs)
+
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
     logger.info('-' * 30)
@@ -723,9 +755,9 @@ def process_instance(
         logger.info(
             f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
         )
-    except Exception:
-        # print(e)
-        runtime.close()
+    # except Exception:
+    #     # print(e)
+    #     runtime.close()
     finally:
         runtime.close()
     # ==========================================
