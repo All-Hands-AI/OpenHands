@@ -152,8 +152,8 @@ async def test_memory_with_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # Check for the derived name 'knowledge/flarglebargle'
-    derived_name = 'knowledge/flarglebargle'
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
     assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
@@ -282,8 +282,8 @@ async def test_memory_with_agent_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # Check for the derived name 'knowledge/flarglebargle'
-    derived_name = 'knowledge/flarglebargle'
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
     assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word

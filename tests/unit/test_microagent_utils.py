@@ -140,7 +140,7 @@ Testing nested directory loading.
 def test_load_microagents_with_trailing_slashes(temp_microagents_dir):
     """Test loading microagents when directory paths have trailing slashes."""
     # Create a directory with trailing slash
-    knowledge_dir = temp_microagents_dir / 'knowledge/'
+    knowledge_dir = temp_microagents_dir / 'test_knowledge/'
     knowledge_dir.mkdir(exist_ok=True)
     knowledge_agent = """---
 # type: knowledge
@@ -160,11 +160,11 @@ Testing loading with trailing slashes.
         str(temp_microagents_dir) + '/'  # Add trailing slash to test
     )
 
-    # Check that we can find the agent despite trailing slashes (name derived from path: knowledge/trailing.md -> 'knowledge/trailing')
+    # Check that we can find the agent despite trailing slashes (name derived from path: test_knowledge/trailing.md -> 'test_knowledge/trailing')
     assert (
         len(knowledge_agents) == 2
-    )  # Original ('knowledge') + trailing ('knowledge/trailing')
-    agent_t = knowledge_agents['knowledge/trailing']
+    )  # Original ('knowledge') + trailing ('test_knowledge/trailing')
+    agent_t = knowledge_agents['test_knowledge/trailing']
     assert isinstance(agent_t, KnowledgeMicroagent)
     assert agent_t.type == MicroagentType.KNOWLEDGE  # Check inferred type
     assert 'trailing' in agent_t.triggers
