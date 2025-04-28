@@ -250,6 +250,8 @@ class ActionExecutionClient(Runtime):
 
         # set timeout to default if not set
         if action.timeout is None:
+            if isinstance(action, CmdRunAction) and action.blocking:
+                raise RuntimeError('Blocking command with no timeout set')
             # We don't block the command if this is a default timeout action
             action.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
 
@@ -337,9 +339,9 @@ class ActionExecutionClient(Runtime):
         if self.mcp_clients is None:
             self.log(
                 'debug',
-                f'Creating MCP clients with servers: {self.config.mcp.sse.mcp_servers}',
+                f'Creating MCP clients with servers: {self.config.mcp.mcp_servers}',
             )
-            self.mcp_clients = await create_mcp_clients(self.config.mcp.sse.mcp_servers)
+            self.mcp_clients = await create_mcp_clients(self.config.mcp.mcp_servers)
         return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:

@@ -291,7 +291,7 @@ def response_to_actions(
             # ================================================
             elif tool_call.function.name.endswith(MCPClientTool.postfix()):
                 action = McpAction(
-                    name=tool_call.function.name.rstrip(MCPClientTool.postfix()),
+                    name=tool_call.function.name.removesuffix(MCPClientTool.postfix()),
                     arguments=tool_call.function.arguments,
                 )
             else:
