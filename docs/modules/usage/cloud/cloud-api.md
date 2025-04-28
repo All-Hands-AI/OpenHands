@@ -7,7 +7,7 @@ OpenHands Cloud provides a REST API that allows you to programmatically interact
 To use the OpenHands Cloud API, you'll need to generate an API key:
 
 1. Log in to your OpenHands Cloud account
-2. Navigate to the Settings page by clicking on your profile icon in the top-right corner
+2. Navigate to the Settings page by clicking on your profile icon in the bottom-left corner
 3. In the Settings window, locate the "API Keys" section
 4. Click "Generate New Key"
 5. Give your key a descriptive name (e.g., "Development", "Production")
