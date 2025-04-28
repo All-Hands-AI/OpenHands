@@ -5,6 +5,7 @@ from pydantic import (
     SecretStr,
 )
 
+from openhands.integrations.provider import ProviderToken
 from openhands.storage.data_models.settings import Settings
 
 
@@ -13,7 +14,7 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    provider_tokens: dict[str, str] = {}
+    provider_tokens: dict[str, ProviderToken] = {}
 
 
 class POSTSettingsCustomSecrets(BaseModel):

@@ -143,8 +143,8 @@ function AccountSettings() {
       provider_tokens:
         githubToken || gitlabToken
           ? {
-              github: githubToken || "",
-              gitlab: gitlabToken || "",
+              github: { token: githubToken || "", base_domain: null },
+              gitlab: { token: gitlabToken || "", base_domain: null },
             }
           : undefined,
       LANGUAGE: languageValue,
