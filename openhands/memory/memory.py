@@ -44,12 +44,10 @@ class Memory:
         self,
         event_stream: EventStream,
         sid: str,
-        custom_microagents_dir: str | None,
         status_callback: Callable | None = None,
     ):
         self.event_stream = event_stream
         self.sid = sid if sid else str(uuid.uuid4())
-        self.custom_microagents_dir = custom_microagents_dir
         self.status_callback = status_callback
         self.loop = None
 
@@ -71,9 +69,9 @@ class Memory:
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
 
-        # Load custom microagents (Knowledge + Repo)
-        # from typically user-defined microagents directory
-        self._load_custom_microagents()
+        # Load user microagents (Knowledge + Repo)
+        # from typically user-defined repo
+        self._load_user_microagents()
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -260,9 +258,9 @@ class Memory:
             if isinstance(agent, RepoMicroAgent):
                 self.repo_microagents[name] = agent
 
-    def _load_custom_microagents(self) -> None:
+    def _load_user_microagents(self) -> None:
         """
-        Loads custom microagents from the user-defined microagents directory
+        Loads user microagents from the user git .openhands repo
         """
         if self.custom_microagents_dir:
             custom_agents, _, _ = load_microagents_from_dir(self.custom_microagents_dir)

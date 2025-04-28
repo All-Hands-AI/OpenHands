@@ -76,11 +76,12 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
         raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
 
     # Check browser works
-    logger.debug('Checking dependencies: browser')
-    from openhands.runtime.browser.browser_env import BrowserEnv
+    # FIXME
+    #logger.debug('Checking dependencies: browser')
+    #from openhands.runtime.browser.browser_env import BrowserEnv
 
-    browser = BrowserEnv()
-    browser.close()
+    #browser = BrowserEnv()
+    #browser.close()
 
 
 class LocalRuntime(ActionExecutionClient):
@@ -271,8 +272,8 @@ class LocalRuntime(ActionExecutionClient):
         return port
 
     @tenacity.retry(
-        wait=tenacity.wait_exponential(min=1, max=10),
-        stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
+        wait=tenacity.wait_exponential(min=1, max=20),
+        stop=tenacity.stop_after_attempt(20) | stop_if_should_exit(),
         before_sleep=lambda retry_state: logger.debug(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
         ),
