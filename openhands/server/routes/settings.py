@@ -15,9 +15,9 @@ from openhands.server.settings import (
     GETSettingsModel,
     POSTSettingsCustomSecrets,
     POSTSettingsModel,
-    Settings,
 )
 from openhands.server.shared import config
+from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,

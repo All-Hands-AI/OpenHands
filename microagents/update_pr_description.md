@@ -1,6 +1,5 @@
 ---
 name: update_pr_description
-type: task
 version: 1.0.0
 author: openhands
 agent: CodeActAgent

@@ -32,7 +32,7 @@ Before creating a global microagent, consider:
 #### 2. Create File
 
 Create a new Markdown file with a descriptive name in the appropriate directory:
-[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge)
+[`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)
 
 #### 3. Testing the Global Microagent
 

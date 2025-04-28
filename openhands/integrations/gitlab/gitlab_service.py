@@ -109,7 +109,7 @@ class GitLabService(BaseGitService, GitService):
             raise self.handle_http_error(e)
 
     async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any]|None = None
+        self, query: str, variables: dict[str, Any] | None = None
     ) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
