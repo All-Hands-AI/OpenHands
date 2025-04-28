@@ -1646,6 +1646,32 @@
         }
       }
     },
+    "/api/reset-settings": {
+      "post": {
+        "summary": "Reset settings (Deprecated)",
+        "description": "This endpoint is deprecated and will return a 410 Gone error. Reset functionality has been removed.",
+        "operationId": "resetSettings",
+        "deprecated": true,
+        "responses": {
+          "410": {
+            "description": "Feature removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Reset settings functionality has been removed."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/unset-settings-tokens": {
       "post": {
         "summary": "Unset settings tokens",
