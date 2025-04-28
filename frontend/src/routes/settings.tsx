@@ -51,7 +51,7 @@ function SettingsScreen() {
       data-testid="settings-screen"
       className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
     >
-      <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
+      <header className="px-11 py-1.5 border-b border-b-tertiary flex items-center gap-2">
         <SettingsIcon width={16} height={16} />
         <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
       </header>
