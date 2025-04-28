@@ -484,5 +484,5 @@ class TestHandleResumeCommand:
         assert source == EventSource.USER
 
         # Check the return values
-        assert close_repl is False
+        assert close_repl is True
         assert new_session_requested is False

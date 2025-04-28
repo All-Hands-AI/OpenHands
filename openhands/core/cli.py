@@ -127,10 +127,12 @@ async def run_session(
 
     usage_metrics = UsageMetrics()
 
-    async def prompt_for_next_task():
+    async def prompt_for_next_task(agent_state: str):
         nonlocal reload_microagents, new_session_requested
         while True:
-            next_message = await read_prompt_input(config.cli_multiline_input)
+            next_message = await read_prompt_input(
+                agent_state, multiline=config.cli_multiline_input
+            )
 
             if not next_message.strip():
                 continue
@@ -178,7 +180,7 @@ async def run_session(
                     )
                     memory.load_user_workspace_microagents(microagents)
                     reload_microagents = False
-                await prompt_for_next_task()
+                await prompt_for_next_task(event.agent_state)
 
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 # Only display the confirmation prompt if the agent is not paused
@@ -245,7 +247,7 @@ async def run_session(
         )
     else:
         # Otherwise prompt for the user's first message right away
-        asyncio.create_task(prompt_for_next_task())
+        asyncio.create_task(prompt_for_next_task(''))
 
     await run_agent_until_done(
         controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]

@@ -71,7 +71,6 @@ async def handle_commands(
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
     elif command == '/resume':
-        # TODO: verify agent state == PAUSED before resuming
         close_repl, new_session_requested = await handle_resume_command(event_stream)
     else:
         close_repl = True
@@ -186,13 +185,13 @@ async def handle_settings_command(
         await modify_llm_settings_advanced(config, settings_store)
 
 
-# FIXME: Currently there's an issue with the actual 'resume' behavior which is achieved by setting the agent state to RUNNING.
-# Doing so will freeze the agent without continuing with the task.
+# FIXME: Currently there's an issue with the actual 'resume' behavior.
+# Setting the agent state to RUNNING will currently freeze the agent without continuing with the rest of the task.
 # This is a workaround to handle the resume command for the time being. Replace user message with the state change event once the issue is fixed.
 async def handle_resume_command(
     event_stream: EventStream,
 ) -> tuple[bool, bool]:
-    close_repl = False
+    close_repl = True
     new_session_requested = False
 
     event_stream.add_event(

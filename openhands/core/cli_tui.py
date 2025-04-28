@@ -24,6 +24,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
 from openhands.core.config import AppConfig
+from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import (
     Action,
@@ -34,6 +35,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentStateChangedObservation,
     CmdOutputObservation,
     FileEditObservation,
     FileReadObservation,
@@ -177,6 +179,8 @@ def display_event(event: Event, config: AppConfig) -> None:
         display_file_edit(event)
     if isinstance(event, FileReadObservation):
         display_file_read(event)
+    if isinstance(event, AgentStateChangedObservation):
+        display_agent_paused_message(event.agent_state)
 
 
 def display_message(message: str):
@@ -392,7 +396,16 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
 def display_agent_running_message():
     print_formatted_text('')
     print_formatted_text(
-        HTML('<gold>Agent is running...</gold> <grey>(Ctrl-P to pause)</grey>')
+        HTML('<gold>Agent running...</gold> <grey>(Ctrl-P to pause)</grey>')
+    )
+
+
+def display_agent_paused_message(agent_state: str):
+    if agent_state != AgentState.PAUSED:
+        return
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<gold>Agent paused</gold> <grey>(type /resume to resume)</grey>')
     )
 
 
@@ -400,30 +413,37 @@ def display_agent_running_message():
 class CommandCompleter(Completer):
     """Custom completer for commands."""
 
+    def __init__(self, agent_state: str):
+        super().__init__()
+        self.agent_state = agent_state
+
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor.lstrip()
         if text.startswith('/'):
-            for command in COMMANDS:
+            available_commands = dict(COMMANDS)
+            if self.agent_state != AgentState.PAUSED:
+                available_commands.pop('/resume', None)
+
+            for command, description in available_commands.items():
                 if command.startswith(text):
-                    display_meta = COMMANDS[command]
                     yield Completion(
                         command,
                         start_position=-len(text),
-                        display_meta=display_meta,
+                        display_meta=description,
                         style='bg:ansidarkgray fg:ansiwhite',
                     )
 
 
-def create_prompt_session(with_completer=False):
-    session = PromptSession(style=DEFAULT_STYLE)
-    if with_completer:
-        session.completer = CommandCompleter()
-    return session
+def create_prompt_session():
+    return PromptSession(style=DEFAULT_STYLE)
 
 
-async def read_prompt_input(multiline=False):
+async def read_prompt_input(agent_state: str, multiline=False):
     try:
-        prompt_session = create_prompt_session(with_completer=not multiline)
+        prompt_session = create_prompt_session()
+        prompt_session.completer = (
+            CommandCompleter(agent_state) if not multiline else None
+        )
 
         if multiline:
             kb = KeyBindings()
@@ -454,7 +474,7 @@ async def read_prompt_input(multiline=False):
 
 async def read_confirmation_input() -> bool:
     try:
-        prompt_session = create_prompt_session(with_completer=False)
+        prompt_session = create_prompt_session()
 
         with patch_stdout():
             print_formatted_text('')
