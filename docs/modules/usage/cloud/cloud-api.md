@@ -47,7 +47,8 @@ POST https://api.all-hands.dev/api/v1/conversations
 
 #### Examples
 
-##### cURL
+<details>
+<summary>cURL</summary>
 
 ```bash
 curl -X POST "https://api.all-hands.dev/api/v1/conversations" \
@@ -58,8 +59,10 @@ curl -X POST "https://api.all-hands.dev/api/v1/conversations" \
     "repository_url": "https://github.com/yourusername/your-repo"
   }'
 ```
+</details>
 
-##### Python (with requests)
+<details>
+<summary>Python (with requests)</summary>
 
 ```python
 import requests
@@ -83,8 +86,10 @@ conversation = response.json()
 print(f"Conversation ID: {conversation['id']}")
 print(f"Status: {conversation['status']}")
 ```
+</details>
 
-##### TypeScript/JavaScript (with fetch)
+<details>
+<summary>TypeScript/JavaScript (with fetch)</summary>
 
 ```typescript
 const apiKey = "YOUR_API_KEY";
@@ -121,6 +126,7 @@ async function startConversation() {
 
 startConversation();
 ```
+</details>
 
 #### Response
 
@@ -150,10 +156,14 @@ GET https://api.all-hands.dev/api/v1/conversations/{conversation_id}
 
 #### Example
 
+<details>
+<summary>cURL</summary>
+
 ```bash
 curl -X GET "https://api.all-hands.dev/api/v1/conversations/f03e31ed50f4417cb637aa1e4806269f" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
+</details>
 
 #### Response
 
