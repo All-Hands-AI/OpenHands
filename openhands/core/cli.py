@@ -286,7 +286,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     if not current_dir:
         raise ValueError('Workspace base directory not specified')
 
-    if not check_folder_security_agreement(current_dir):
+    if not check_folder_security_agreement(config, current_dir):
         # User rejected, exit application
         return
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict, List
 
 import toml
 
@@ -8,36 +9,43 @@ from openhands.core.cli_tui import (
 from openhands.events.event import Event
 from openhands.llm.metrics import Metrics
 
+_LOCAL_CONFIG_FILE_PATH = Path.home() / '.openhands' / 'config.toml'
+_DEFAULT_CONFIG: Dict[str, Dict[str, List[str]]] = {'sandbox': {'trusted_dirs': []}}
 
-def manage_openhands_file(folder_path=None, add_to_trusted=False):
-    openhands_file = Path.home() / '.openhands.toml'
-    default_content: dict = {'trusted_dirs': []}
 
-    if not openhands_file.exists():
-        with open(openhands_file, 'w') as f:
-            toml.dump(default_content, f)
-
-    if folder_path:
-        with open(openhands_file, 'r') as f:
+def get_local_config_trusted_dirs() -> list[str]:
+    if _LOCAL_CONFIG_FILE_PATH.exists():
+        with open(_LOCAL_CONFIG_FILE_PATH, 'r') as f:
             try:
                 config = toml.load(f)
             except Exception:
-                config = default_content
+                config = _DEFAULT_CONFIG
+        if 'sandbox' in config and 'trusted_dirs' in config['sandbox']:
+            return config['sandbox']['trusted_dirs']
+    return []
 
-        if 'trusted_dirs' not in config:
-            config['trusted_dirs'] = []
 
-        if folder_path in config['trusted_dirs']:
-            return True
+def add_local_config_trusted_dir(folder_path: str):
+    config = _DEFAULT_CONFIG
+    if _LOCAL_CONFIG_FILE_PATH.exists():
+        try:
+            with open(_LOCAL_CONFIG_FILE_PATH, 'r') as f:
+                config = toml.load(f)
+        except Exception:
+            config = _DEFAULT_CONFIG
+    else:
+        _LOCAL_CONFIG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-        if add_to_trusted:
-            config['trusted_dirs'].append(folder_path)
-            with open(openhands_file, 'w') as f:
-                toml.dump(config, f)
+    if 'sandbox' not in config:
+        config['sandbox'] = {}
+    if 'trusted_dirs' not in config['sandbox']:
+        config['sandbox']['trusted_dirs'] = []
 
-        return False
+    if folder_path not in config['sandbox']['trusted_dirs']:
+        config['sandbox']['trusted_dirs'].append(folder_path)
 
-    return False
+    with open(_LOCAL_CONFIG_FILE_PATH, 'w') as f:
+        toml.dump(config, f)
 
 
 def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):

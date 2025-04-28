@@ -19,7 +19,8 @@ from openhands.core.cli_tui import (
     display_status,
 )
 from openhands.core.cli_utils import (
-    manage_openhands_file,
+    add_local_config_trusted_dir,
+    get_local_config_trusted_dirs,
     read_file,
     write_to_file,
 )
@@ -238,8 +239,18 @@ async def init_repository(current_dir: str) -> bool:
     return init_repo
 
 
-def check_folder_security_agreement(current_dir):
-    is_trusted = manage_openhands_file(current_dir)
+def check_folder_security_agreement(config: AppConfig, current_dir):
+    # Directories trusted by user for the CLI to use as workspace
+    # Config from ~/.openhands/config.toml overrides the app config
+
+    app_config_trusted_dirs = config.sandbox.trusted_dirs
+    local_config_trusted_dirs = get_local_config_trusted_dirs()
+
+    trusted_dirs = local_config_trusted_dirs
+    if not local_config_trusted_dirs:
+        trusted_dirs = app_config_trusted_dirs
+
+    is_trusted = current_dir in trusted_dirs
 
     if not is_trusted:
         security_frame = Frame(
@@ -265,7 +276,7 @@ def check_folder_security_agreement(current_dir):
         )
 
         if confirm:
-            manage_openhands_file(current_dir, add_to_trusted=True)
+            add_local_config_trusted_dir(current_dir)
 
         return confirm
 
