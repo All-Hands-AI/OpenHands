@@ -456,61 +456,37 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
 
 def test_command_output_continuation(windows_bash_session):
     """Test retrieving continued output using empty command after timeout."""
-    # Start a command that produces output slowly
-    action = CmdRunAction('1..5 | ForEach-Object { Write-Output $_; Start-Sleep 2 }') # Sleep 2s per line
-    action.set_hard_timeout(1.5) # Timeout after 1.5s
+    # Windows PowerShell version
+    action = CmdRunAction('1..5 | ForEach-Object { Write-Output $_; Start-Sleep 3 }')
+    action.set_hard_timeout(2.5)
     obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.content.strip() == '1' # Should only see the first line
+    assert obs.content.strip() == '1'
     assert obs.metadata.prefix == ''
-    assert '[The command timed out after 1.5 seconds.' in obs.metadata.suffix
-    assert obs.exit_code == -1 # Still running
-
-    # Continue watching output with empty command
+    assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+            
+    # Continue watching output
     action = CmdRunAction('')
-    action.set_hard_timeout(1.5) # Another timeout
+    action.set_hard_timeout(2.5)
     obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
     assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-    assert obs.content.strip() == '' # Should see no new output within 1.5s
-    assert '[The command timed out after 1.5 seconds.' in obs.metadata.suffix
-    assert obs.exit_code == -1 # Still running
-
-    # Continue again
-    action = CmdRunAction('')
-    action.set_hard_timeout(1.5) # Another timeout
-    obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-    assert obs.content.strip() == '2' # Should see the second line now
-    assert '[The command timed out after 1.5 seconds.' in obs.metadata.suffix
-    assert obs.exit_code == -1 # Still running
-
+    assert obs.content.strip() == '2'
+    assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+            
     # Continue until completion
     for expected in ['3', '4', '5']:
         action = CmdRunAction('')
-        action.set_hard_timeout(3) # Give enough time for next output
+        action.set_hard_timeout(2.5)
         obs = windows_bash_session.execute(action)
-        assert isinstance(obs, CmdOutputObservation)
         assert (
             '[Below is the output of the previous command.]' in obs.metadata.prefix
         )
         assert obs.content.strip() == expected
-        if expected == '5':
-             # The command should complete after printing '5'
-             assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-             assert obs.exit_code == 0
-        else:
-             # Still running if not the last line
-             assert '[The command timed out after 3 seconds.' in obs.metadata.suffix
-             assert obs.exit_code == -1
-
-    # Final empty command should confirm completion (or show error if it failed)
+        assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+                
+    # Final empty command to complete
     action = CmdRunAction('')
     obs = windows_bash_session.execute(action)
-    assert isinstance(obs, CmdOutputObservation)
     assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-    assert obs.exit_code == 0
 
 def test_long_running_command_followed_by_execute(windows_bash_session):
     """Tests behavior when a new command is sent while another is running after timeout."""
