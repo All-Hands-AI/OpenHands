@@ -135,4 +135,33 @@ describe("RepositorySelectionForm", () => {
       screen.getByText("HOME$FAILED_TO_LOAD_REPOSITORIES"),
     ).toBeInTheDocument();
   });
+
+  test("has responsive width on mobile screens", () => {
+    // Setup loaded repositories
+    mockUseUserRepositories.mockReturnValue({
+      data: {
+        pages: [
+          {
+            data: [
+              {
+                id: 1,
+                full_name: "user/repo1",
+                git_provider: "github",
+                is_public: true,
+              },
+            ],
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+
+    // Check if dropdown has responsive width classes
+    const dropdown = screen.getByTestId("repo-dropdown");
+    const wrapper = dropdown.closest("label");
+    expect(wrapper).toHaveClass("w-full", "max-w-[500px]");
+  });
 });

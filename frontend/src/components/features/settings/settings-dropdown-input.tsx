@@ -53,12 +53,13 @@ export function SettingsDropdownInput({
         placeholder={placeholder}
         className="w-full"
         classNames={{
-          popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+          popoverContent:
+            "bg-tertiary rounded-xl border border-[#717888] max-w-[calc(100vw-2rem)] sm:max-w-none",
         }}
         inputProps={{
           classNames: {
             inputWrapper:
-              "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+              "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic text-sm sm:text-base",
           },
         }}
       >
