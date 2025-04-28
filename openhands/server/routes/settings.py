@@ -84,10 +84,10 @@ async def load_custom_secrets_names(
                 content={'error': 'Settings not found'},
             )
 
-        custom_secrets = []
+        custom_secrets = {}
         if settings.secrets_store.custom_secrets:
-            for secret_name, _ in settings.secrets_store.custom_secrets.items():
-                custom_secrets.append(secret_name)
+            for secret_name, secret_value in settings.secrets_store.custom_secrets.items():
+                custom_secrets[secret_name] = secret_value.description
 
         secret_names = GETSettingsCustomSecrets(custom_secrets=custom_secrets)
         return secret_names
@@ -117,7 +117,7 @@ async def create_custom_secret(
                         content={'message': f'Secret {secret_name} already exists'},
                     )
             
-                custom_secrets[secret_name] = CustomSecret(**secret_value)
+                custom_secrets[secret_name] = secret_value
         
 
             # Create a new SecretStore that preserves provider tokens
@@ -163,7 +163,7 @@ async def update_custom_secret(
             custom_secrets.pop(secret_id)
 
             for secret_name, secret_value in incoming_secret.custom_secrets.items():
-                custom_secrets[secret_name] = CustomSecret(**secret_value)
+                custom_secrets[secret_name] = secret_value
 
 
             # Create a new SecretStore that preserves provider tokens

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
-    SecretStr,
 )
 
+from openhands.integrations.provider import CustomSecret
 from openhands.storage.data_models.settings import Settings
 
 
@@ -21,7 +21,7 @@ class POSTSettingsCustomSecrets(BaseModel):
     Adding new custom secret
     """
 
-    custom_secrets: dict[str, dict[str, str]] = {}
+    custom_secrets: dict[str, CustomSecret] = {}
 
 
 class GETSettingsModel(Settings):
@@ -38,4 +38,4 @@ class GETSettingsCustomSecrets(BaseModel):
     Custom secrets names
     """
 
-    custom_secrets: list[str] | None = None
+    custom_secrets: dict[str, str] | None = None
