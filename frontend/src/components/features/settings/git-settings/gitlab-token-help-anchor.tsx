@@ -7,7 +7,7 @@ export function GitLabTokenHelpAnchor() {
   return (
     <p data-testid="gitlab-token-help-anchor" className="text-xs">
       {" "}
-      {t(I18nKey.GITLAB$GET_TOKEN)}{" "}
+      {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
       <b>
         {" "}
         <a
@@ -19,7 +19,7 @@ export function GitLabTokenHelpAnchor() {
           GitLab
         </a>{" "}
       </b>
-      {t(I18nKey.GITLAB$OR_SEE)}{" "}
+      {t(I18nKey.COMMON$HERE)}{" "}
       <b>
         <a
           href="https://docs.gitlab.com/user/profile/personal_access_tokens/"
@@ -27,7 +27,7 @@ export function GitLabTokenHelpAnchor() {
           className="underline underline-offset-2"
           rel="noopener noreferrer"
         >
-          {t(I18nKey.COMMON$DOCUMENTATION)}
+          {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
         </a>
       </b>
       .
