@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 
-const DEFAULT_SECRETS = ["OpenAI API Key", "Google Maps API Key"];
+const DEFAULT_SECRETS = ["OpenAI_API_Key", "Google_Maps_API_Key"];
 const secrets = new Map<string, string>(
   DEFAULT_SECRETS.map((secret) => [secret, "test-123"]),
 );

@@ -30,7 +30,7 @@ describe("Content", () => {
 
   it("should render existing secrets", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
-    getSecretsSpy.mockResolvedValue(["My Secret 1", "My Secret 2"]);
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
     renderSecretsSettings();
 
     const secrets = await screen.findAllByTestId("secret-item");
@@ -65,13 +65,13 @@ describe("Secret actions", () => {
 
     vi.clearAllMocks(); // reset mocks to check for upcoming calls
 
-    await userEvent.type(nameInput, "My Custom Secret");
+    await userEvent.type(nameInput, "My_Custom_Secret");
     await userEvent.type(valueInput, "my-custom-secret-value");
     await userEvent.click(submitButton);
 
     // make POST request
     expect(createSecretSpy).toHaveBeenCalledWith(
-      "My Custom Secret",
+      "My_Custom_Secret",
       "my-custom-secret-value",
     );
 
@@ -83,7 +83,7 @@ describe("Secret actions", () => {
   it("should edit a secret", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const updateSecretSpy = vi.spyOn(SecretsService, "updateSecret");
-    getSecretsSpy.mockResolvedValue(["My Secret 1", "My Secret 2"]);
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
     updateSecretSpy.mockResolvedValue(true);
     renderSecretsSettings();
 
@@ -106,17 +106,17 @@ describe("Secret actions", () => {
     const valueInput = within(editForm).getByTestId("value-input");
     const submitButton = within(editForm).getByTestId("submit-button");
 
-    expect(nameInput).toHaveValue("My Secret 1");
+    expect(nameInput).toHaveValue("My_Secret_1");
 
     await userEvent.clear(nameInput);
-    await userEvent.type(nameInput, "My Edited Secret");
+    await userEvent.type(nameInput, "My_Edited_Secret");
     await userEvent.type(valueInput, "my-edited-secret-value");
     await userEvent.click(submitButton);
 
     // make POST request
     expect(updateSecretSpy).toHaveBeenCalledWith(
-      "My Secret 1",
-      "My Edited Secret",
+      "My_Secret_1",
+      "My_Edited_Secret",
       "my-edited-secret-value",
     );
 
@@ -126,12 +126,12 @@ describe("Secret actions", () => {
     // optimistic update
     const updatedSecrets = await screen.findAllByTestId("secret-item");
     expect(updatedSecrets).toHaveLength(2);
-    expect(updatedSecrets[0]).toHaveTextContent(/my edited secret/i);
+    expect(updatedSecrets[0]).toHaveTextContent(/my_edited_secret/i);
   });
 
   it("should be able to cancel the create or edit form", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
-    getSecretsSpy.mockResolvedValue(["My Secret 1", "My Secret 2"]);
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
     renderSecretsSettings();
 
     // render form & hide items
@@ -168,7 +168,7 @@ describe("Secret actions", () => {
   it("should undo the optimistic update if the request fails", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const updateSecretSpy = vi.spyOn(SecretsService, "updateSecret");
-    getSecretsSpy.mockResolvedValue(["My Secret 1", "My Secret 2"]);
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
     updateSecretSpy.mockRejectedValue(new Error("Failed to update secret"));
     renderSecretsSettings();
 
@@ -191,14 +191,14 @@ describe("Secret actions", () => {
     const submitButton = within(editForm).getByTestId("submit-button");
 
     await userEvent.clear(nameInput);
-    await userEvent.type(nameInput, "My Edited Secret");
+    await userEvent.type(nameInput, "My_Edited_Secret");
     await userEvent.type(valueInput, "my-edited-secret-value");
     await userEvent.click(submitButton);
 
     // make POST request
     expect(updateSecretSpy).toHaveBeenCalledWith(
-      "My Secret 1",
-      "My Edited Secret",
+      "My_Secret_1",
+      "My_Edited_Secret",
       "my-edited-secret-value",
     );
 
@@ -214,7 +214,7 @@ describe("Secret actions", () => {
   it("should remove the secret from the list after deletion", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
-    getSecretsSpy.mockResolvedValue(["My Secret 1", "My Secret 2"]);
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
     deleteSecretSpy.mockResolvedValue(true);
     renderSecretsSettings();
 
@@ -231,18 +231,18 @@ describe("Secret actions", () => {
     await userEvent.click(confirmButton);
 
     // make DELETE request
-    expect(deleteSecretSpy).toHaveBeenCalledWith("My Secret 2");
+    expect(deleteSecretSpy).toHaveBeenCalledWith("My_Secret_2");
     expect(screen.queryByTestId("confirmation-modal")).not.toBeInTheDocument();
 
     // optimistic update
     expect(screen.queryAllByTestId("secret-item")).toHaveLength(1);
-    expect(screen.queryByText("My Secret 2")).not.toBeInTheDocument();
+    expect(screen.queryByText("My_Secret_2")).not.toBeInTheDocument();
   });
 
   it("should revert the optimistic update if the request fails", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
-    getSecretsSpy.mockResolvedValue(["My Secret 1", "My Secret 2"]);
+    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
     deleteSecretSpy.mockRejectedValue(new Error("Failed to delete secret"));
     renderSecretsSettings();
 
@@ -259,12 +259,12 @@ describe("Secret actions", () => {
     await userEvent.click(confirmButton);
 
     // make DELETE request
-    expect(deleteSecretSpy).toHaveBeenCalledWith("My Secret 2");
+    expect(deleteSecretSpy).toHaveBeenCalledWith("My_Secret_2");
     expect(screen.queryByTestId("confirmation-modal")).not.toBeInTheDocument();
 
     // optimistic update
     expect(screen.queryAllByTestId("secret-item")).toHaveLength(2);
-    expect(screen.queryByText("My Secret 2")).toBeInTheDocument();
+    expect(screen.queryByText("My_Secret_2")).toBeInTheDocument();
   });
 
   it("should hide the no items message when in form view", async () => {
@@ -280,5 +280,39 @@ describe("Secret actions", () => {
     const secretForm = screen.getByTestId("add-secret-form");
     expect(secretForm).toBeInTheDocument();
     expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
+  });
+
+  it("should not allow spaces in secret names", async () => {
+    const createSecretSpy = vi.spyOn(SecretsService, "createSecret");
+    renderSecretsSettings();
+
+    // render form & hide items
+    expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
+    const button = screen.getByTestId("add-secret-button");
+    await userEvent.click(button);
+
+    const secretForm = screen.getByTestId("add-secret-form");
+    expect(secretForm).toBeInTheDocument();
+
+    // enter details
+    const nameInput = within(secretForm).getByTestId("name-input");
+    const valueInput = within(secretForm).getByTestId("value-input");
+    const submitButton = within(secretForm).getByTestId("submit-button");
+
+    await userEvent.type(nameInput, "My Custom Secret With Spaces");
+    await userEvent.type(valueInput, "my-custom-secret-value");
+    await userEvent.click(submitButton);
+
+    // make POST request
+    expect(createSecretSpy).not.toHaveBeenCalled();
+
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "MyCustomSecret");
+    await userEvent.click(submitButton);
+
+    expect(createSecretSpy).toHaveBeenCalledWith(
+      "MyCustomSecret",
+      "my-custom-secret-value",
+    );
   });
 });

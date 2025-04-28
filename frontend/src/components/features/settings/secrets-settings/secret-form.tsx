@@ -91,7 +91,8 @@ export function SecretForm({
         className="w-[350px]"
         required
         defaultValue={mode === "edit" && selectedSecret ? selectedSecret : ""}
-        placeholder="e.g. OpenAI API Key"
+        placeholder="e.g. OpenAI_API_Key"
+        pattern="^\S*$"
       />
 
       <label className="flex flex-col gap-2.5 w-fit">
