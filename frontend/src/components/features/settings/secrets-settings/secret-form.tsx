@@ -1,9 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
+import React from "react";
 import { useCreateSecret } from "#/hooks/mutation/use-create-secret";
 import { useUpdateSecret } from "#/hooks/mutation/use-update-secret";
 import { SettingsInput } from "../settings-input";
 import { cn } from "#/utils/utils";
 import { BrandButton } from "../brand-button";
+import { useGetSecrets } from "#/hooks/query/use-get-secrets";
 
 interface SecretFormProps {
   mode: "add" | "edit";
@@ -18,8 +20,11 @@ export function SecretForm({
 }: SecretFormProps) {
   const queryClient = useQueryClient();
 
+  const { data: secrets } = useGetSecrets();
   const { mutate: createSecret } = useCreateSecret();
   const { mutate: updateSecret } = useUpdateSecret();
+
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleCreateSecret = (name: string, value: string) => {
     createSecret(
@@ -67,6 +72,16 @@ export function SecretForm({
     const value = formData.get("secret-value")?.toString();
 
     if (name && value) {
+      setError(null);
+
+      const isNameAlreadyUsed = secrets?.some(
+        (secret) => secret === name && secret !== selectedSecret,
+      );
+      if (isNameAlreadyUsed) {
+        setError("Secret already exists");
+        return;
+      }
+
       if (mode === "add") {
         handleCreateSecret(name, value);
       } else if (mode === "edit" && selectedSecret) {
@@ -94,6 +109,7 @@ export function SecretForm({
         placeholder="e.g. OpenAI_API_Key"
         pattern="^\S*$"
       />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <label className="flex flex-col gap-2.5 w-fit">
         <span className="text-sm">Value</span>

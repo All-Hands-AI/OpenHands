@@ -339,4 +339,51 @@ describe("Secret actions", () => {
       "my-custom-secret-value",
     );
   });
+
+  it("should not allow existing secret names", async () => {
+    const createSecretSpy = vi.spyOn(SecretsService, "createSecret");
+    const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
+    getSecretsSpy.mockResolvedValue(["My_Secret_1"]);
+    renderSecretsSettings();
+
+    // render form & hide items
+    expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
+    const button = screen.getByTestId("add-secret-button");
+    await userEvent.click(button);
+
+    const secretForm = screen.getByTestId("add-secret-form");
+    expect(secretForm).toBeInTheDocument();
+
+    // enter details
+    const nameInput = within(secretForm).getByTestId("name-input");
+    const valueInput = within(secretForm).getByTestId("value-input");
+    const submitButton = within(secretForm).getByTestId("submit-button");
+
+    await userEvent.type(nameInput, "My_Secret_1");
+    await userEvent.type(valueInput, "my-custom-secret-value");
+    await userEvent.click(submitButton);
+
+    // make POST request
+    expect(createSecretSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText(/secret already exists/i)).toBeInTheDocument();
+
+    // form has been reset, re enter details
+    expect(nameInput).toHaveValue("");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "My_Custom_Secret");
+
+    expect(valueInput).toHaveValue("");
+    await userEvent.clear(valueInput);
+    await userEvent.type(valueInput, "my-custom-secret-value");
+
+    await userEvent.click(submitButton);
+
+    expect(createSecretSpy).toHaveBeenCalledWith(
+      "My_Custom_Secret",
+      "my-custom-secret-value",
+    );
+    expect(
+      screen.queryByText(/secret already exists/i),
+    ).not.toBeInTheDocument();
+  });
 });
