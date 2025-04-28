@@ -157,7 +157,7 @@ async def run_session(
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
-        # Pause the agent if the pause event is set (through Ctrl-P)
+        # Pause the agent if the pause event is set (if Ctrl-P is pressed)
         if is_paused.is_set():
             event_stream.add_event(
                 ChangeAgentStateAction(AgentState.PAUSED),
@@ -181,7 +181,7 @@ async def run_session(
                 await prompt_for_next_task()
 
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                # Only display the confirmation prompt if the agent is not paused (this doesn't happen fast enough)
+                # Only display the confirmation prompt if the agent is not paused
                 if not is_paused.is_set():
                     user_confirmed = await read_confirmation_input()
                     if user_confirmed:
