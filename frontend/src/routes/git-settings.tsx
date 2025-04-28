@@ -110,11 +110,10 @@ function GitSettingsScreen() {
         <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
       )}
 
-      {!isSaas && !isLoading && (
+      {!isLoading && (
         <div className="p-9 flex flex-col gap-12">
           <GitHubTokenInput
             name="github-token-input"
-            baseDomainName="github-base-domain-input"
             baseDomainSet={existingGithubBaseDomain}
             isGitHubTokenSet={isGitHubTokenSet}
             onChange={(value) => {
@@ -123,11 +122,11 @@ function GitSettingsScreen() {
             onBaseDomainChange={(value) => {
               setGithubBaseDomainInputHasValue(!!value);
             }}
+            isSaas={isSaas}
           />
 
           <GitLabTokenInput
             name="gitlab-token-input"
-            baseDomainName="gitlab-base-domain-input"
             baseDomainSet={existingGitlabBaseDomain}
             isGitLabTokenSet={isGitLabTokenSet}
             onChange={(value) => {
@@ -136,6 +135,7 @@ function GitSettingsScreen() {
             onBaseDomainChange={(value) => {
               setGitlabBaseDomainInputHasValue(!!value);
             }}
+            isSaas={isSaas}
           />
         </div>
       )}

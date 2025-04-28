@@ -10,7 +10,7 @@ interface GitLabTokenInputProps {
   isGitLabTokenSet: boolean;
   name: string;
   baseDomainSet?: string | null;
-  baseDomainName?: string;
+  isSaas: boolean;
 }
 
 export function GitLabTokenInput({
@@ -19,44 +19,42 @@ export function GitLabTokenInput({
   isGitLabTokenSet,
   name,
   baseDomainSet,
-  baseDomainName,
+  isSaas,
 }: GitLabTokenInputProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingsInput
-        testId={name}
-        name={name}
-        onChange={onChange}
-        label={t(I18nKey.GITLAB$TOKEN_LABEL)}
-        type="password"
-        className="w-[680px]"
-        placeholder={isGitLabTokenSet ? "<hidden>" : ""}
-        startContent={
-          isGitLabTokenSet && (
-            <KeyStatusIcon
-              testId="gl-set-token-indicator"
-              isSet={isGitLabTokenSet}
-            />
-          )
-        }
-      />
-
-      {baseDomainName && (
+      {!isSaas && (
         <SettingsInput
-          testId={baseDomainName}
-          name={baseDomainName}
-          onChange={onBaseDomainChange || (() => {})}
-          label={t(I18nKey.GITLAB$BASE_DOMAIN_LABEL)}
-          type="text"
+          testId={name}
+          name={name}
+          onChange={onChange}
+          label={t(I18nKey.GITLAB$TOKEN_LABEL)}
+          type="password"
           className="w-[680px]"
-          placeholder={"gitlab.com"}
-          defaultValue={baseDomainSet ? baseDomainSet : undefined}
+          placeholder={isGitLabTokenSet ? "<hidden>" : ""}
+          startContent={
+            isGitLabTokenSet && (
+              <KeyStatusIcon
+                testId="gl-set-token-indicator"
+                isSet={isGitLabTokenSet}
+              />
+            )
+          }
         />
       )}
 
-      <GitLabTokenHelpAnchor />
+      <SettingsInput
+        onChange={onBaseDomainChange || (() => {})}
+        label={t(I18nKey.GITLAB$BASE_DOMAIN_LABEL)}
+        type="text"
+        className="w-[680px]"
+        placeholder={"gitlab.com"}
+        defaultValue={baseDomainSet ? baseDomainSet : undefined}
+      />
+
+      {!isSaas && <GitLabTokenHelpAnchor />}
     </div>
   );
 }

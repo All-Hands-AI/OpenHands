@@ -10,7 +10,7 @@ interface GitHubTokenInputProps {
   isGitHubTokenSet: boolean;
   name: string;
   baseDomainSet?: string | null;
-  baseDomainName?: string;
+  isSaas: boolean;
 }
 
 export function GitHubTokenInput({
@@ -19,44 +19,42 @@ export function GitHubTokenInput({
   isGitHubTokenSet,
   name,
   baseDomainSet,
-  baseDomainName,
+  isSaas,
 }: GitHubTokenInputProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingsInput
-        testId={name}
-        name={name}
-        onChange={onChange}
-        label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-        type="password"
-        className="w-[680px]"
-        placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-        startContent={
-          isGitHubTokenSet && (
-            <KeyStatusIcon
-              testId="gh-set-token-indicator"
-              isSet={isGitHubTokenSet}
-            />
-          )
-        }
-      />
-
-      {baseDomainName && (
+      {!isSaas && (
         <SettingsInput
-          testId={baseDomainName}
-          name={baseDomainName}
-          onChange={onBaseDomainChange || (() => {})}
-          label={t(I18nKey.GITHUB$BASE_DOMAIN_LABEL)}
-          type="text"
+          testId={name}
+          name={name}
+          onChange={onChange}
+          label={t(I18nKey.GITHUB$TOKEN_LABEL)}
+          type="password"
           className="w-[680px]"
-          placeholder={"github.com"}
-          defaultValue={baseDomainSet ? baseDomainSet : undefined}
+          placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+          startContent={
+            isGitHubTokenSet && (
+              <KeyStatusIcon
+                testId="gh-set-token-indicator"
+                isSet={isGitHubTokenSet}
+              />
+            )
+          }
         />
       )}
 
-      <GitHubTokenHelpAnchor />
+      <SettingsInput
+        onChange={onBaseDomainChange || (() => {})}
+        label={t(I18nKey.GITHUB$BASE_DOMAIN_LABEL)}
+        type="text"
+        className="w-[680px]"
+        placeholder={"github.com"}
+        defaultValue={baseDomainSet ? baseDomainSet : undefined}
+      />
+
+      {!isSaas && <GitHubTokenHelpAnchor />}
     </div>
   );
 }
