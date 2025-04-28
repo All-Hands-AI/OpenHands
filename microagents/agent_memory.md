@@ -18,7 +18,7 @@ triggers:
   4. Workflows and best practices
   5. Any other repository-specific knowledge you learn
 
-* IMPORTANT: ONLY LOG the information that would be helpful for different future tasks, for example, how to configure the setting, setup the repository. Do NOT add issue-specific information (e.g., what specific error you have ran into and how you fix it).
+* IMPORTANT: ONLY LOG the information that would be helpful for different future tasks, for example, how to configure the settings, how to setup the repository. Do NOT add issue-specific information (e.g., what specific error you have ran into and how you fix it).
 
 * When adding new information:
   - ALWAYS ask for user confirmation first by listing the items (numbered 1, 2, 3, etc.) you plan to save to repo.md
