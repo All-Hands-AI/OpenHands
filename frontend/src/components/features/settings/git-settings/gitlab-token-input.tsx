@@ -9,6 +9,7 @@ interface GitLabTokenInputProps {
   onBaseDomainChange?: (value: string) => void;
   isGitLabTokenSet: boolean;
   name: string;
+  baseDomainSet?: string | null;
   baseDomainName?: string;
 }
 
@@ -17,6 +18,7 @@ export function GitLabTokenInput({
   onBaseDomainChange,
   isGitLabTokenSet,
   name,
+  baseDomainSet,
   baseDomainName,
 }: GitLabTokenInputProps) {
   const { t } = useTranslation();
@@ -49,7 +51,8 @@ export function GitLabTokenInput({
           label={t(I18nKey.GITLAB$BASE_DOMAIN_LABEL)}
           type="text"
           className="w-[680px]"
-          placeholder="gitlab.com"
+          placeholder={"gitlab.com"}
+          defaultValue={baseDomainSet ? baseDomainSet : undefined}
         />
       )}
 

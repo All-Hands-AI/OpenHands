@@ -15,11 +15,13 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
+import { useAuth } from "#/context/auth-context";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
+  const { providerTokensSet } = useAuth();
   const { mutate: disconnectGitTokens } = useLogout();
 
   const { data: settings, isLoading } = useSettings();
@@ -35,8 +37,11 @@ function GitSettingsScreen() {
     React.useState(false);
 
   const isSaas = config?.APP_MODE === "saas";
-  const isGitHubTokenSet = !!settings?.PROVIDER_TOKENS_SET.github;
-  const isGitLabTokenSet = !!settings?.PROVIDER_TOKENS_SET.gitlab;
+  const isGitHubTokenSet = providerTokensSet.includes("github");
+  const isGitLabTokenSet = providerTokensSet.includes("gitlab");
+
+  const existingGithubBaseDomain = settings?.PROVIDER_TOKENS_SET["github"];
+  const existingGitlabBaseDomain = settings?.PROVIDER_TOKENS_SET["gitlab"];
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -110,6 +115,7 @@ function GitSettingsScreen() {
           <GitHubTokenInput
             name="github-token-input"
             baseDomainName="github-base-domain-input"
+            baseDomainSet={existingGithubBaseDomain}
             isGitHubTokenSet={isGitHubTokenSet}
             onChange={(value) => {
               setGithubTokenInputHasValue(!!value);
@@ -122,6 +128,7 @@ function GitSettingsScreen() {
           <GitLabTokenInput
             name="gitlab-token-input"
             baseDomainName="gitlab-base-domain-input"
+            baseDomainSet={existingGitlabBaseDomain}
             isGitLabTokenSet={isGitLabTokenSet}
             onChange={(value) => {
               setGitlabTokenInputHasValue(!!value);

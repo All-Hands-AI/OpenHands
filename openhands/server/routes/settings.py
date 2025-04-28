@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
+    ProviderToken,
     ProviderType,
     SecretStore,
 )
@@ -44,10 +46,11 @@ async def load_settings(
             all_provider_types = [provider for provider in ProviderType]
             provider_tokens_types = [provider for provider in provider_tokens]
             for provider_type in all_provider_types:
-                if provider_type in provider_tokens_types and (provider_tokens[provider_type].token or provider_tokens[provider_type].user_id):
-                    provider_tokens_set[provider_type] = True
-                else:
-                    provider_tokens_set[provider_type] = False
+
+                token = provider_tokens[provider_type]
+
+                if provider_type in provider_tokens_types and (token.token or token.user_id):
+                    provider_tokens_set[provider_type] = token.base_domain
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
@@ -211,7 +214,7 @@ async def reset_settings() -> JSONResponse:
     )
 
 
-async def check_provider_tokens(settings: POSTSettingsModel) -> str:
+async def check_provider_tokens(settings: POSTSettingsModel, existing_settings: Settings | None) -> str:
     if settings.provider_tokens:
         # Remove extraneous token types
         provider_types = [provider for provider in ProviderType]
@@ -220,27 +223,36 @@ async def check_provider_tokens(settings: POSTSettingsModel) -> str:
         }
 
         # Determine whether tokens are valid
-        for token_type, token_value in settings.provider_tokens.items():
-            token = token_value.token
+        for provider_type, provider_token in settings.provider_tokens.items():
+            token_value = provider_token
+            existing_token = existing_settings.secrets_store.provider_tokens.get(provider_type, None) if existing_settings else None
+
+            # Use incoming value otherwise default to existing value
+            token = SecretStr("")
+            if token_value.token:
+                token = token_value.token
+            elif existing_token and existing_token.token:
+                token = existing_token.token
 
             if not token:
                 continue
-
+            
+            base_domain = provider_token.base_domain # FE should always send latest base_domain param
             confirmed_token_type = await validate_provider_token(
                 token,
-                token_value.base_domain
+                base_domain
             )
 
-            if not confirmed_token_type or confirmed_token_type != token_type:
-                return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
+            
+            if not confirmed_token_type or confirmed_token_type != provider_type:
+                return f'Invalid {provider_type.value} token or base domain.'
 
     return ''
 
 
 async def store_provider_tokens(
-    settings: POSTSettingsModel, settings_store: SettingsStore
+    settings: POSTSettingsModel, existing_settings: Settings
 ):
-    existing_settings: Settings | None = await settings_store.load()
     if existing_settings:
         if settings.provider_tokens:
             existing_providers = [
@@ -257,8 +269,15 @@ async def store_provider_tokens(
                             provider_type
                         )
                     )
-                    if existing_token and existing_token.token:
-                        settings.provider_tokens[provider] = existing_token
+
+                    if existing_token:
+                        updated_token = ProviderToken(
+                            token=existing_token.token,
+                            user_id=existing_token.user_id,
+                            base_domain=token_value.base_domain
+                        )
+
+                        settings.provider_tokens[provider] = updated_token
 
         else:  # nothing passed in means keep current settings
             settings.provider_tokens = dict(existing_settings.secrets_store.provider_tokens)
@@ -267,10 +286,8 @@ async def store_provider_tokens(
 
 
 async def store_llm_settings(
-    settings: POSTSettingsModel, settings_store: SettingsStore
+    settings: POSTSettingsModel, existing_settings: Settings
 ) -> POSTSettingsModel:
-    existing_settings = await settings_store.load()
-
     # Convert to Settings model and merge with existing settings
     if existing_settings:
         # Keep existing LLM settings if not provided
@@ -288,9 +305,10 @@ async def store_llm_settings(
 async def store_settings(
     settings: POSTSettingsModel,
     settings_store: SettingsStore = Depends(get_user_settings_store),
+    existing_settings: Settings | None = Depends(get_user_settings),
 ) -> JSONResponse:
     # Check provider tokens are valid
-    provider_err_msg = await check_provider_tokens(settings)
+    provider_err_msg = await check_provider_tokens(settings, existing_settings)
     if provider_err_msg:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -298,11 +316,9 @@ async def store_settings(
         )
 
     try:
-        existing_settings = await settings_store.load()
-
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            settings = await store_llm_settings(settings, settings_store)
+            settings = await store_llm_settings(settings, existing_settings)
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
@@ -310,7 +326,7 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
-            settings = await store_provider_tokens(settings, settings_store)
+            settings = await store_provider_tokens(settings, existing_settings)
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:

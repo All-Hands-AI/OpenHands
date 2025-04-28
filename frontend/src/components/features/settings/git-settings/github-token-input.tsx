@@ -9,6 +9,7 @@ interface GitHubTokenInputProps {
   onBaseDomainChange?: (value: string) => void;
   isGitHubTokenSet: boolean;
   name: string;
+  baseDomainSet?: string | null;
   baseDomainName?: string;
 }
 
@@ -17,6 +18,7 @@ export function GitHubTokenInput({
   onBaseDomainChange,
   isGitHubTokenSet,
   name,
+  baseDomainSet,
   baseDomainName,
 }: GitHubTokenInputProps) {
   const { t } = useTranslation();
@@ -49,7 +51,8 @@ export function GitHubTokenInput({
           label={t(I18nKey.GITHUB$BASE_DOMAIN_LABEL)}
           type="text"
           className="w-[680px]"
-          placeholder="github.com"
+          placeholder={"github.com"}
+          defaultValue={baseDomainSet ? baseDomainSet : undefined}
         />
       )}
 
