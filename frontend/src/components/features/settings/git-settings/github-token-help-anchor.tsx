@@ -3,29 +3,30 @@ import { I18nKey } from "#/i18n/declaration";
 
 export function GitHubTokenHelpAnchor() {
   const { t } = useTranslation();
+  const tokenHelpText = t(I18nKey.GITHUB$TOKEN_HELP_TEXT);
+  const parts = tokenHelpText.split(/here/i);
 
   return (
     <p data-testid="github-token-help-anchor" className="text-xs">
-      {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
+      {parts[0]}
       <a
         href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
         target="_blank"
-        className="font-bold underline underline-offset-2"
+        className="underline underline-offset-2"
         rel="noopener noreferrer"
       >
-        GitHub
-      </a>{" "}
-      {t(I18nKey.COMMON$HERE)}{" "}
-      {t(I18nKey.GITLAB$OR_SEE)}{" "}
+        here
+      </a>
+      {parts[1]}
       <a
         href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
         target="_blank"
-        className="font-bold underline underline-offset-2"
+        className="underline underline-offset-2"
         rel="noopener noreferrer"
       >
-        {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
+        here
       </a>
-      .
+      {parts[2] || ""}
     </p>
   );
 }

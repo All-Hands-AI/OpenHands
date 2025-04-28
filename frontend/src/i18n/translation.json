@@ -1599,6 +1599,21 @@
         "tr": "Jetonunuzu alın",
         "de": "Token abrufen"
     },
+    "GITHUB$TOKEN_HELP_TEXT": {
+        "en": "Get your GitHub token here or click here for instructions",
+        "ja": "GitHubトークンをここで取得するか、手順についてはここをクリックしてください",
+        "zh-CN": "在此获取GitHub令牌或点击此处获取说明",
+        "zh-TW": "在此取得GitHub權杖或點擊此處獲取說明",
+        "ko-KR": "GitHub 토큰을 여기서 받거나 지침을 보려면 여기를 클릭하세요",
+        "no": "Få din GitHub-token her eller klikk her for instruksjoner",
+        "it": "Ottieni il tuo token GitHub qui o clicca qui per istruzioni",
+        "pt": "Obtenha seu token GitHub aqui ou clique aqui para instruções",
+        "es": "Obtenga su token de GitHub aquí o haga clic aquí para obtener instrucciones",
+        "ar": "احصل على رمز GitHub الخاص بك هنا أو انقر هنا للحصول على تعليمات",
+        "fr": "Obtenez votre jeton GitHub ici ou cliquez ici pour les instructions",
+        "tr": "GitHub jetonunuzu buradan alın veya talimatlar için buraya tıklayın",
+        "de": "Holen Sie sich Ihren GitHub-Token hier oder klicken Sie hier für Anweisungen"
+    },
     "COMMON$HERE": {
         "en": "here",
         "ja": "こちら",
@@ -6438,6 +6453,21 @@
         "fr": "Générer un jeton sur",
         "tr": "Üzerinde bir jeton oluştur",
         "de": "Token generieren auf"
+    },
+    "GITLAB$TOKEN_HELP_TEXT": {
+        "en": "Get your GitLab token here or click here for instructions",
+        "ja": "GitLabトークンをここで取得するか、手順についてはここをクリックしてください",
+        "zh-CN": "在此获取GitLab令牌或点击此处获取说明",
+        "zh-TW": "在此取得GitLab權杖或點擊此處獲取說明",
+        "ko-KR": "GitLab 토큰을 여기서 받거나 지침을 보려면 여기를 클릭하세요",
+        "no": "Få din GitLab-token her eller klikk her for instruksjoner",
+        "it": "Ottieni il tuo token GitLab qui o clicca qui per istruzioni",
+        "pt": "Obtenha seu token GitLab aqui ou clique aqui para instruções",
+        "es": "Obtenga su token de GitLab aquí o haga clic aquí para obtener instrucciones",
+        "ar": "احصل على رمز GitLab الخاص بك هنا أو انقر هنا للحصول على تعليمات",
+        "fr": "Obtenez votre jeton GitLab ici ou cliquez ici pour les instructions",
+        "tr": "GitLab jetonunuzu buradan alın veya talimatlar için buraya tıklayın",
+        "de": "Holen Sie sich Ihren GitLab-Token hier oder klicken Sie hier für Anweisungen"
     },
     "GITLAB$OR_SEE": {
         "en": "or see the",
