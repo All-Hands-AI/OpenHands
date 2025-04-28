@@ -14,12 +14,14 @@ from openhands.core.cli_commands import (
 )
 from openhands.core.cli_tui import (
     UsageMetrics,
+    display_agent_running_message,
     display_banner,
     display_event,
     display_initial_user_prompt,
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
+    process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
 )
@@ -99,6 +101,7 @@ async def run_session(
 
     sid = str(uuid4())
     is_loaded = asyncio.Event()
+    is_paused = asyncio.Event()
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -150,14 +153,23 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents
+        nonlocal reload_microagents, is_paused
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
+
+        # Pause the agent if the pause event is set (through Ctrl-P)
+        if is_paused.is_set():
+            event_stream.add_event(
+                ChangeAgentStateAction(AgentState.PAUSED),
+                EventSource.USER,
+            )
+            is_paused.clear()
 
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
+                AgentState.PAUSED,
             ]:
                 # Reload microagents after initialization of repo.md
                 if reload_microagents:
@@ -169,17 +181,25 @@ async def run_session(
                 await prompt_for_next_task()
 
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                user_confirmed = await read_confirmation_input()
-                if user_confirmed:
-                    event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
-                        EventSource.USER,
-                    )
-                else:
-                    event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.USER_REJECTED),
-                        EventSource.USER,
-                    )
+                # Only display the confirmation prompt if the agent is not paused (this doesn't happen fast enough)
+                if not is_paused.is_set():
+                    user_confirmed = await read_confirmation_input()
+                    if user_confirmed:
+                        event_stream.add_event(
+                            ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                            EventSource.USER,
+                        )
+                    else:
+                        event_stream.add_event(
+                            ChangeAgentStateAction(AgentState.USER_REJECTED),
+                            EventSource.USER,
+                        )
+
+            if event.agent_state == AgentState.RUNNING:
+                # Enable pause/resume functionality only if the confirmation mode is disabled
+                if not config.security.confirmation_mode:
+                    display_agent_running_message()
+                    loop.create_task(process_agent_pause(is_paused))
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
