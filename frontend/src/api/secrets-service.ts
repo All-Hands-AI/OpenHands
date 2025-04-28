@@ -11,8 +11,7 @@ export class SecretsService {
 
   static async createSecret(name: string, value: string) {
     const { data } = await openHands.post<boolean>("/api/secrets", {
-      name,
-      value,
+      custom_secrets: { [name]: { secret: value } },
     });
 
     return data;
@@ -20,8 +19,7 @@ export class SecretsService {
 
   static async updateSecret(id: string, name: string, value: string) {
     const { data } = await openHands.put<boolean>(`/api/secrets/${id}`, {
-      name,
-      value,
+      custom_secrets: { [name]: { value } },
     });
 
     return data;
