@@ -1033,10 +1033,9 @@ class WindowsPowershellSession:
         try:
             ps_start = PowerShell.Create()
             ps_start.Runspace = self.runspace
-            escaped_command = command.replace("'", "''")
             escaped_cwd = self._cwd.replace("'", "''")
             # Check $? after the command. If it's false, exit 1.
-            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{escaped_cwd}'; {escaped_command}; if (-not $?) {{ exit 1 }} }}"
+            start_job_script = f"Start-Job -ScriptBlock {{ Set-Location '{escaped_cwd}'; {command}; if (-not $?) {{ exit 1 }} }}"
 
             logger.info(f"Starting command as PowerShell job: {command}")
             ps_start.AddScript(start_job_script)

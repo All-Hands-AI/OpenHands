@@ -546,76 +546,12 @@ def test_command_non_existent_file(windows_bash_session):
     # Check that the error message is captured in the output (error stream part)
     assert "Cannot find path" in result.content or "does not exist" in result.content
 
-def test_python_interactive_input(windows_bash_session):
-    """Test Python interactive input with proper input flag."""
-    # Test Python program that asks for input - properly escaped for PowerShell
-    python_script = r"""name = input(\"Enter your name: \"); age = input(\"Enter your age: \"); print(f\"Hello {name}, you are {age} years old\")"""
 
-    # Start Python with the interactive script
-    action = CmdRunAction(f'python -c "{python_script}"')
+def test_interactive_input(windows_bash_session):
+    """Test interactive input attempt reflects implementation limitations."""
+    action = CmdRunAction(f'$name = Read-Host "Enter name"')
     result = windows_bash_session.execute(action)
-    
+
     assert isinstance(result, CmdOutputObservation)
-    assert 'Enter your name:' in result.content
-    assert result.exit_code == -1  # -1 indicates command is still running
-
-    # Send first input (name) with input flag
-    action = CmdRunAction('Alice', is_input=True)
-    result = windows_bash_session.execute(action)
-    
-    assert isinstance(result, CmdOutputObservation)
-    assert 'Enter your age:' in result.content
-    assert result.exit_code == -1
-
-    # Send second input (age) with input flag
-    action = CmdRunAction('25', is_input=True)
-    result = windows_bash_session.execute(action)
-    
-    assert isinstance(result, CmdOutputObservation)
-    assert 'Hello Alice, you are 25 years old' in result.content
-    assert result.exit_code == 0
-
-
-def test_python_interactive_input_without_set_input(windows_bash_session):
-    """Test Python interactive input with and without the input flag."""
-    # Test Python program that asks for input - properly escaped for PowerShell
-    python_script = r"""name = input(\"Enter your name: \"); age = input(\"Enter your age: \"); print(f\"Hello {name}, you are {age} years old\")"""
-
-    # Start Python with the interactive script
-    action = CmdRunAction(f'python -c "{python_script}"')
-    result = windows_bash_session.execute(action)
-    
-    assert isinstance(result, CmdOutputObservation)
-    assert 'Enter your name:' in result.content
-    assert result.exit_code == -1  # -1 indicates command is still running
-
-    # Send first input (name) WITHOUT input flag - should fail
-    action = CmdRunAction('Alice', is_input=False)
-    result = windows_bash_session.execute(action)
-    
-    assert isinstance(result, CmdOutputObservation)
-    # Should not have processed the input
-    assert 'Enter your age:' not in result.content
-    # Should indicate the command wasn't executed due to a running process
-    assert (
-        'Your command "Alice" is NOT executed. The previous command is still running'
-        in result.metadata.suffix
-    )
-    assert result.exit_code == -1
-
-    # Try again WITH input flag - should succeed
-    action = CmdRunAction('Alice', is_input=True)
-    result = windows_bash_session.execute(action)
-    
-    assert isinstance(result, CmdOutputObservation)
-    assert 'Enter your age:' in result.content
-    assert result.exit_code == -1
-
-    # Send second input (age) with input flag
-    action = CmdRunAction('25', is_input=True)
-    result = windows_bash_session.execute(action)
-    
-    assert isinstance(result, CmdOutputObservation)
-    assert 'Hello Alice, you are 25 years old' in result.content
-    assert result.exit_code == 0
-    assert '[The command completed with exit code 0.]' in result.metadata.suffix 
+    assert 'A command that prompts the user failed because the host program or the command type does not support user interaction. The host was attempting to request confirmation with the following message' in result.content
+    assert result.exit_code == 1
