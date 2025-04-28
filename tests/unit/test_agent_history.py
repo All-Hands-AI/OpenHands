@@ -169,8 +169,8 @@ def test_basic_truncation(controller_fixture):
     # Expected IDs: [1, 2, 3, 4, 9, 10]. Length 6.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 6  # Corrected assertion
-    expected_ids = [1, 2, 3, 4, 9, 10]  # Corrected assertion
+    assert len(truncated_events) == 6
+    expected_ids = [1, 2, 3, 4, 9, 10]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
     # Check no dangling observations at the start of the recent slice part
@@ -227,8 +227,8 @@ def test_no_system_message(controller_fixture):
     # Expected IDs: [1, 2, 3, 8, 9]. Length 5.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 5  # Corrected assertion
-    expected_ids = [1, 2, 3, 8, 9]  # Corrected assertion
+    assert len(truncated_events) == 5
+    expected_ids = [1, 2, 3, 8, 9]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -283,8 +283,8 @@ def test_no_recall_observation(controller_fixture):
     # Expected IDs: [1, 2, 3, 8, 9]. Length 5.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 5  # Corrected assertion
-    expected_ids = [1, 2, 3, 8, 9]  # Corrected assertion
+    assert len(truncated_events) == 5
+    expected_ids = [1, 2, 3, 8, 9]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -326,8 +326,8 @@ def test_short_history_no_truncation(controller_fixture):
     # Expected IDs: [1, 2, 3, 4]. Length 4.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 4  # Corrected assertion
-    expected_ids = [1, 2, 3, 4]  # Corrected assertion
+    assert len(truncated_events) == 4
+    expected_ids = [1, 2, 3, 4]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -362,8 +362,8 @@ def test_only_essential_events(controller_fixture):
     # Expected IDs: [1, 2, 3, 4]. Length 4.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 4  # Corrected assertion
-    expected_ids = [1, 2, 3, 4]  # Corrected assertion
+    assert len(truncated_events) == 4
+    expected_ids = [1, 2, 3, 4]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
@@ -423,8 +423,8 @@ def test_dangling_observations_at_cut_point(controller_fixture):
     # Expected IDs: [1, 2, 3, 4, 9, 10]. Length 6.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 6  # Corrected assertion
-    expected_ids = [1, 2, 3, 4, 9, 10]  # Corrected assertion
+    assert len(truncated_events) == 6
+    expected_ids = [1, 2, 3, 4, 9, 10]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
     # Verify dangling observations 5 and 6 were removed (implicitly by slice start and validation)
@@ -474,8 +474,8 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
     ) as mock_log_warning:
         truncated_events = controller._apply_conversation_window()
 
-        assert len(truncated_events) == 4  # Corrected assertion
-        expected_ids = [1, 2, 3, 4]  # Corrected assertion
+        assert len(truncated_events) == 4
+        expected_ids = [1, 2, 3, 4]
         actual_ids = [e.id for e in truncated_events]
         assert actual_ids == expected_ids
         # Verify dangling observations 5 and 6 were removed
@@ -558,8 +558,8 @@ def test_multiple_user_messages(controller_fixture):
     # Expected IDs: [1, 2, 3, 4, 10, 11]. Length 6.
     truncated_events = controller._apply_conversation_window()
 
-    assert len(truncated_events) == 6  # Corrected assertion
-    expected_ids = [1, 2, 3, 4, 10, 11]  # Corrected assertion
+    assert len(truncated_events) == 6
+    expected_ids = [1, 2, 3, 4, 10, 11]
     actual_ids = [e.id for e in truncated_events]
     assert actual_ids == expected_ids
 
