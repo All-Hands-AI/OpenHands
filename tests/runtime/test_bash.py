@@ -746,8 +746,7 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
         if is_windows():
             # Test simple command
             obs = _run_cmd_action(runtime, "Write-Output 'hello world'")
-            # FIXME: check why space becomes newline
-            assert 'hello\nworld' in obs.content
+            assert 'hello world' in obs.content
             assert obs.exit_code == 0
 
             # Test command with error
@@ -756,12 +755,12 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
             assert 'not recognized' in obs.content or 'command not found' in obs.content
 
             # Test command with special characters
-            obs = _run_cmd_action(runtime, "Write-Output 'hello   world    with`nspecial  chars'")
+            obs = _run_cmd_action(runtime, 'Write-Output "hello   world    with`nspecial  chars"')
             assert 'hello   world    with\nspecial  chars' in obs.content
             assert obs.exit_code == 0
 
             # Test multiple commands in sequence
-            obs = _run_cmd_action(runtime, 'Write-Output "first"; Write-Output "second"; Write-Output "third"')
+            obs = _run_cmd_action(runtime, 'Write-Output "first" && Write-Output "second" && Write-Output "third"')
             assert 'first' in obs.content
             assert 'second' in obs.content
             assert 'third' in obs.content

@@ -52,7 +52,7 @@ def test_initialization(windows_bash_session, temp_work_dir):
 def test_command_execution(windows_bash_session):
     """Test basic command execution."""
     # Test a simple command
-    action = CmdRunAction(command='Write-Output "Hello World"')
+    action = CmdRunAction(command="Write-Output 'Hello World'")
     result = windows_bash_session.execute(action)
 
     assert isinstance(result, CmdOutputObservation)
@@ -381,8 +381,7 @@ def test_runspace_state_after_error(windows_bash_session):
     valid_action = CmdRunAction(command="Write-Output 'Still working'")
     valid_result = windows_bash_session.execute(valid_action)
     assert isinstance(valid_result, CmdOutputObservation)
-    # FIXME: check why space becomes newline in the output
-    assert "working" in valid_result.content
+    assert "Still working" in valid_result.content
     assert valid_result.exit_code == 0
 
 
