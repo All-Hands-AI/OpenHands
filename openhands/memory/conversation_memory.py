@@ -140,7 +140,11 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
 
         # Filter out assistant messages with empty content lists, unless they have tool calls
-        messages = [msg for msg in messages if msg.role != 'assistant' or msg.content or msg.tool_calls]
+        messages = [
+            msg
+            for msg in messages
+            if msg.role != 'assistant' or msg.content or msg.tool_calls
+        ]
 
         # Apply final formatting
         messages = self._apply_user_message_formatting(messages)
@@ -273,7 +277,11 @@ class ConversationMemory:
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             # Only include content if it's not None and not empty after stripping
-            content = [TextContent(text=action.content)] if action.content and action.content.strip() else []
+            content = (
+                [TextContent(text=action.content)]
+                if action.content and action.content.strip()
+                else []
+            )
             if vision_is_active and action.image_urls:
                 content.append(ImageContent(image_urls=action.image_urls))
             if role not in ('user', 'system', 'assistant', 'tool'):

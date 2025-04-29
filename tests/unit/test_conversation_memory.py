@@ -423,7 +423,12 @@ def test_process_events_with_empty_content_message(conversation_memory):
 
     # Process events
     messages = conversation_memory.process_events(
-        condensed_history=[empty_message, none_message, whitespace_message, valid_message],
+        condensed_history=[
+            empty_message,
+            none_message,
+            whitespace_message,
+            valid_message,
+        ],
         initial_user_action=initial_user_message,
         max_message_chars=None,
         vision_is_active=False,
