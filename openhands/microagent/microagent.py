@@ -1,6 +1,6 @@
 import io
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 import frontmatter
 from pydantic import BaseModel
@@ -121,13 +121,38 @@ class KnowledgeMicroagent(BaseMicroagent):
         """
         message = message.lower()
         for trigger in self.triggers:
-            if trigger.lower() in message:
+            # Check for exact match for triggers starting with "/"
+            if trigger.startswith("/") and trigger.lower() == message.strip().lower():
+                return trigger
+            # Otherwise, check for substring match
+            elif not trigger.startswith("/") and trigger.lower() in message:
                 return trigger
         return None
 
     @property
     def triggers(self) -> list[str]:
         return self.metadata.triggers
+        
+    def extract_variables(self, content: str) -> List[str]:
+        """Extract variables from the content.
+        
+        Variables are in the format ${variable_name}.
+        """
+        import re
+        pattern = r'\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}'
+        matches = re.findall(pattern, content)
+        return matches
+        
+    def requires_user_input(self) -> bool:
+        """Check if this microagent requires user input.
+        
+        Returns True if the content contains variables in the format ${variable_name}.
+        """
+        # Check if the content contains any variables
+        import re
+        pattern = r'\${([a-zA-Z_][a-zA-Z0-9_]*)}'
+        matches = re.findall(pattern, self.content)
+        return len(matches) > 0
 
 
 class RepoMicroagent(BaseMicroagent):

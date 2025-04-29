@@ -8,6 +8,7 @@ class MicroagentType(str, Enum):
 
     KNOWLEDGE = 'knowledge'
     REPO_KNOWLEDGE = 'repo'
+    USER_INPUT_KNOWLEDGE = 'user_input_knowledge'  # Special type for microagents that require user input
 
 
 class MicroagentMetadata(BaseModel):
