@@ -13,7 +13,7 @@ from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
-from openhands.integrations.service_types import Repository, SuggestedTask
+from openhands.integrations.service_types import PartialRepository, Repository, SuggestedTask
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -59,7 +59,7 @@ class InitSessionRequest(BaseModel):
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    selected_repository: Repository | None,
+    selected_repository: Repository | PartialRepository | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -96,7 +96,12 @@ async def _create_new_conversation(
         raise MissingSettingsError('Settings not found')
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
-    session_init_args['selected_repository'] = selected_repository
+
+    repository = None
+    if isinstance(selected_repository, PartialRepository):
+        repository = selected_repository.convert_to_repo_model()
+
+    session_init_args['selected_repository'] = repository
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')

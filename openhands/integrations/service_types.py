@@ -101,6 +101,23 @@ class Repository(BaseModel):
     pushed_at: str | None = None  # ISO 8601 format date string
 
 
+# Used for OpenHands API
+class PartialRepository(BaseModel):
+    full_name: str
+    git_provider: ProviderType
+
+    def convert_to_repo_model(self) -> Repository:
+        return Repository(
+            id=-1,
+            full_name=self.full_name,
+            git_provider=self.git_provider,
+            is_public=False,
+            stargazers_count=None,
+            link_header=None,
+            pushed_at=None,
+        )
+
+
 class AuthenticationError(ValueError):
     """Raised when there is an issue with GitHub authentication."""
 
