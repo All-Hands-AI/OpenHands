@@ -45,9 +45,11 @@ This tool uses [OpenHands](https://github.com/all-hands-ai/openhands) AI agents 
 
 ### Prerequisites
 
-Create a GitLab Personal Access Token with API, read/write access.
+Create a GitLab Personal Access Token with API, read/write access
 
-## 3. Shared Label & Triggering an AI Agent
+### Installation
+
+## 3. Triggering OpenHands Agent
 
 You can trigger OpenHands in two shared ways (works for both GitHub and GitLab):
 
@@ -56,10 +58,10 @@ Using the 'fix-me' label:
 - Add the 'fix-me' label to any issue you want the AI to resolve
 - The agent will consider all comments in the issue thread when resolving
 
-Using the @openhands-agent comment:
+Using `@openhands-agent` in an issue/pr comment:
 
-- Create a new comment containing `@openhands-agent` in any issue
-- The agent will only consider the comment where it's mentioned
+- Create a new comment containing `@openhands-agent`
+- The agent will only consider the comment + comment thread where it's mentioned
 
 ## 4. Running Locally
 
