@@ -50,7 +50,7 @@ app = APIRouter(prefix='/api')
 
 class InitSessionRequest(BaseModel):
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
-    selected_repository: Repository | None = None
+    selected_repository: Repository | PartialRepository | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -69,9 +69,9 @@ async def _create_new_conversation(
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ):
-    print("trigger", conversation_trigger)
+    
     logger.info(
-        'Creating conversation',
+        f'Creating conversation with trigger {conversation_trigger}',
         extra={'signal': 'create_conversation', 'user_id': user_id, 'trigger': conversation_trigger.value},
     )
     logger.info('Loading settings')
