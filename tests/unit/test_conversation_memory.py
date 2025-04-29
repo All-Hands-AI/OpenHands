@@ -400,6 +400,45 @@ def test_process_events_with_unknown_observation(conversation_memory):
         )
 
 
+def test_process_events_with_empty_content_message(conversation_memory):
+    """Test that empty content messages are handled correctly."""
+    # Create a message action with empty string content
+    empty_message = MessageAction(content='')
+    empty_message._source = EventSource.AGENT
+
+    # Create a message action with None content
+    none_message = MessageAction(content=None)
+    none_message._source = EventSource.AGENT
+
+    # Create a message action with whitespace content
+    whitespace_message = MessageAction(content='   \n  \t  ')
+    whitespace_message._source = EventSource.AGENT
+
+    # Create a valid message for comparison
+    valid_message = MessageAction(content='Valid content')
+    valid_message._source = EventSource.AGENT
+
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+
+    # Process events
+    messages = conversation_memory.process_events(
+        condensed_history=[empty_message, none_message, whitespace_message, valid_message],
+        initial_user_action=initial_user_message,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # We expect 3 messages: system message, initial user message, and the valid message
+    # The empty, None, and whitespace messages should be filtered out
+    assert len(messages) == 3
+    assert messages[0].role == 'system'  # System message
+    assert messages[1].role == 'user'  # Initial user message
+    assert messages[2].role == 'assistant'  # Valid message
+    assert len(messages[2].content) == 1
+    assert messages[2].content[0].text == 'Valid content'
+
+
 def test_process_events_with_file_edit_observation(conversation_memory):
     obs = FileEditObservation(
         path='/test/file.txt',
