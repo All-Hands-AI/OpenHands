@@ -21,7 +21,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
-import { isOnTosPage } from "#/utils/is-on-tos-page";
+import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -59,7 +59,7 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const tosPageStatus = isOnTosPage(pathname);
+  const tosPageStatus = useIsOnTosPage();
   const [searchParams] = useSearchParams();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();

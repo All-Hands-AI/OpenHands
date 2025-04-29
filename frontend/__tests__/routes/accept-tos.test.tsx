@@ -3,6 +3,8 @@ import { it, describe, expect, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import AcceptTOS from "#/routes/accept-tos";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
+import * as ToastHandlers from "#/utils/custom-toast-handlers";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { openHands } from "#/api/open-hands-axios";
 
 // Mock the react-router hooks
@@ -27,6 +29,26 @@ vi.mock("#/api/open-hands-axios", () => ({
   },
 }));
 
+// Mock the toast handlers
+vi.mock("#/utils/custom-toast-handlers", () => ({
+  displayErrorToast: vi.fn(),
+}));
+
+// Create a wrapper with QueryClientProvider
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+};
+
 describe("AcceptTOS", () => {
   beforeEach(() => {
     vi.stubGlobal("location", { href: "" });
@@ -38,7 +60,7 @@ describe("AcceptTOS", () => {
   });
 
   it("should render a TOS checkbox that is unchecked by default", () => {
-    render(<AcceptTOS />);
+    render(<AcceptTOS />, { wrapper: createWrapper() });
     
     const checkbox = screen.getByRole("checkbox");
     const continueButton = screen.getByRole("button", { name: "TOS$CONTINUE" });
@@ -49,7 +71,7 @@ describe("AcceptTOS", () => {
 
   it("should enable the continue button when the TOS checkbox is checked", async () => {
     const user = userEvent.setup();
-    render(<AcceptTOS />);
+    render(<AcceptTOS />, { wrapper: createWrapper() });
     
     const checkbox = screen.getByRole("checkbox");
     const continueButton = screen.getByRole("button", { name: "TOS$CONTINUE" });
@@ -73,13 +95,16 @@ describe("AcceptTOS", () => {
     });
 
     const user = userEvent.setup();
-    render(<AcceptTOS />);
+    render(<AcceptTOS />, { wrapper: createWrapper() });
     
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 
     const continueButton = screen.getByRole("button", { name: "TOS$CONTINUE" });
     await user.click(continueButton);
+
+    // Wait for the mutation to complete
+    await new Promise(process.nextTick);
 
     expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
     expect(openHands.post).toHaveBeenCalledWith("/api/accept_tos", {
@@ -95,13 +120,16 @@ describe("AcceptTOS", () => {
     });
 
     const user = userEvent.setup();
-    render(<AcceptTOS />);
+    render(<AcceptTOS />, { wrapper: createWrapper() });
     
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 
     const continueButton = screen.getByRole("button", { name: "TOS$CONTINUE" });
     await user.click(continueButton);
+
+    // Wait for the mutation to complete
+    await new Promise(process.nextTick);
 
     expect(window.location.href).toBe(externalUrl);
   });

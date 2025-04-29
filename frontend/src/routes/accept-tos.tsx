@@ -1,56 +1,60 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
-import { toast } from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
 import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { openHands } from "#/api/open-hands-axios";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 export default function AcceptTOS() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Get the redirect URL from the query parameters
   const redirectUrl = searchParams.get("redirect_url") || "/";
 
-  const handleAcceptTOS = async () => {
-    if (isTosAccepted && !isSubmitting) {
-      try {
-        setIsSubmitting(true);
+  // Use mutation for accepting TOS
+  const { mutate: acceptTOS, isPending: isSubmitting } = useMutation({
+    mutationFn: async () => {
+      // Set consent for analytics
+      handleCaptureConsent(true);
 
-        // Set consent for analytics
-        handleCaptureConsent(true);
+      // Call the API to record TOS acceptance in the database
+      return openHands.post("/api/accept_tos", {
+        redirect_url: redirectUrl,
+      });
+    },
+    onSuccess: (response) => {
+      // Get the redirect URL from the response
+      const finalRedirectUrl = response.data.redirect_url || redirectUrl;
 
-        // Call the API to record TOS acceptance in the database
-        const response = await openHands.post("/api/accept_tos", {
-          redirect_url: redirectUrl,
-        });
-
-        // Get the redirect URL from the response
-        const finalRedirectUrl = response.data.redirect_url || redirectUrl;
-
-        // Check if the redirect URL is an external URL (starts with http or https)
-        if (
-          finalRedirectUrl.startsWith("http://") ||
-          finalRedirectUrl.startsWith("https://")
-        ) {
-          // For external URLs, redirect using window.location
-          window.location.href = finalRedirectUrl;
-        } else {
-          // For internal routes, use navigate
-          navigate(finalRedirectUrl);
-        }
-      } catch (error) {
-        console.error(t(I18nKey.TOS$ERROR_ACCEPTING), error);
-        toast.error(t(I18nKey.ERROR$GENERIC));
-        setIsSubmitting(false);
+      // Check if the redirect URL is an external URL (starts with http or https)
+      if (
+        finalRedirectUrl.startsWith("http://") ||
+        finalRedirectUrl.startsWith("https://")
+      ) {
+        // For external URLs, redirect using window.location
+        window.location.href = finalRedirectUrl;
+      } else {
+        // For internal routes, use navigate
+        navigate(finalRedirectUrl);
       }
+    },
+    onError: () => {
+      // Log error silently and show toast to user
+      displayErrorToast(t(I18nKey.ERROR$GENERIC));
+    },
+  });
+
+  const handleAcceptTOS = () => {
+    if (isTosAccepted && !isSubmitting) {
+      acceptTOS();
     }
   };
 
