@@ -48,19 +48,19 @@ async def create_mcp_clients(
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
     if sse_servers:
-        for server_url in sse_servers:
+        for server_config in sse_servers:
             logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
+                f'Initializing MCP agent for {server_config.url} with SSE connection...'
             )
 
             client = MCPClient()
             try:
-                await client.connect_sse(server_url.url, api_key=server_url.api_key)
+                await client.connect_sse(server_config.url, api_key=server_config.api_key)
                 # Only add the client to the list after a successful connection
                 mcp_clients.append(client)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
+                logger.info(f'Connected to MCP server {server_config.url} via SSE')
             except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
+                logger.error(f'Failed to connect to {server_config.url}: {str(e)}')
                 try:
                     await client.disconnect()
                 except Exception as disconnect_error:
@@ -149,21 +149,8 @@ async def add_mcp_tools_to_agent(
     """
     Add MCP tools to an agent.
     """
-    from openhands.runtime.impl.action_execution.action_execution_client import (
-        ActionExecutionClient,  # inline import to avoid circular import
-    )
-
-    assert isinstance(
-        runtime, ActionExecutionClient
-    ), 'Runtime must be an instance of ActionExecutionClient'
-    assert (
-        runtime.runtime_initialized
-    ), 'Runtime must be initialized before adding MCP tools'
-
-    # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config()
-    # Fetch the MCP tools
-    mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
+    # Fetch the MCP tools from the config
+    mcp_tools = await fetch_mcp_tools_from_config(mcp_config)
 
     logger.info(
         f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}"
