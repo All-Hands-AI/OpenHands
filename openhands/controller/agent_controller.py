@@ -286,11 +286,13 @@ class AgentController:
         ):
             err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
 
-        self.state.last_error = err_id
         if err_id:
             # These err_details will end up on the frontend. We only plumb through known errors
             # listed above to avoid exposing sensitive information
             err_details = type(e).__name__ + ': ' + str(e)
+            self.state.last_error = err_details
+        else:
+            self.state.last_error = f'{type(e).__name__}: {str(e)}'
 
         if self.status_callback is not None:
             self.status_callback('error', err_id, err_details)

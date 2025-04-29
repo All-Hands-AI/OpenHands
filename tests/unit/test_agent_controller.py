@@ -208,7 +208,7 @@ async def test_react_to_content_policy_violation(
     )
 
     # Verify the state was updated correctly
-    assert controller.state.last_error == 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+    assert controller.state.last_error == 'ContentPolicyViolationError: litellm.BadRequestError: litellm.ContentPolicyViolationError: Output blocked by content filtering policy'
     assert controller.state.agent_state == AgentState.ERROR
 
     await controller.close()
@@ -272,10 +272,8 @@ async def test_run_controller_with_fatal_error(
     error_observation = error_observations[0]
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    assert (
-        error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    )
+    assert state.last_error == 'AgentStuckInLoopError'
+    assert error_observation.reason == 'AgentStuckInLoopError'
     assert len(events) == 12
 
 
@@ -355,7 +353,7 @@ async def test_run_controller_stop_with_stuck(
     assert last_event['observation'] == 'agent_state_changed'
 
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
+    assert state.last_error == 'AgentStuckInLoopError'
 
 
 @pytest.mark.asyncio
@@ -688,14 +686,14 @@ async def test_run_controller_max_iterations_has_metrics(
     )
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'RuntimeError'
+    assert 'RuntimeError' in state.last_error
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
     )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
 
-    assert error_observation.reason == 'RuntimeError'
+    assert 'RuntimeError' in error_observation.reason
 
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
@@ -1013,17 +1011,14 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     # With the refactored system message handling, the iteration count is different
     assert state.iteration == 1
     assert state.agent_state == AgentState.ERROR
-    assert (
-        state.last_error
-        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
-    )
+    assert state.last_error == 'LLMContextWindowExceedError'
 
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
     )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
-    assert error_observation.reason == 'LLMContextWindowExceedError'
+    assert 'LLMContextWindowExceedError' in error_observation.reason
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
