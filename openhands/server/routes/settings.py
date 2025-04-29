@@ -44,7 +44,7 @@ async def load_settings(
         if provider_tokens:
             for provider_type, provider_token in provider_tokens.items():
                 if provider_token.token or provider_token.user_id:
-                    provider_tokens_set[provider_type] = ""
+                    provider_tokens_set[provider_type] = None
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),

@@ -29,7 +29,7 @@ class GETSettingsModel(Settings):
     Settings with additional token data for the frontend
     """
 
-    provider_tokens_set: dict[str, str] | None = None
+    provider_tokens_set: dict[str, str | None] | None = None # provider + base_domain key-value pair
     llm_api_key_set: bool
 
 
