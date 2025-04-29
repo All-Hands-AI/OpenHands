@@ -76,6 +76,8 @@ from openhands.llm.metrics import Metrics, TokenUsage
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
+ERROR_ACTION_NOT_EXECUTED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED'
+ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
 class AgentController:
@@ -566,7 +568,10 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
-                obs = ErrorObservation(content='The action has not been executed.')
+                obs = ErrorObservation(
+                    content=ERROR_ACTION_NOT_EXECUTED,
+                    error_id=ERROR_ACTION_NOT_EXECUTED_ID,
+                )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
@@ -842,6 +847,8 @@ class AgentController:
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
                     or 'input length and `max_tokens` exceed context limit' in error_str
+                    or 'please reduce the length of either one'
+                    in error_str  # For OpenRouter context window errors
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
