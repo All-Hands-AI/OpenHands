@@ -1,35 +1,31 @@
 ---
 name: get_test_to_pass
-type: knowledge
 version: 1.0.0
+author: openhands
 agent: CodeActAgent
 triggers:
 - /fix_test
+inputs:
+  - name: BRANCH_NAME
+    description: "Branch for the agent to work on"
+    required: true
+  - name: TEST_COMMAND_TO_RUN
+    description: "The test command you want the agent to work on. For example, `pytest tests/unit/test_bash_parsing.py`"
+    required: true
+  - name: FUNCTION_TO_FIX
+    description: "The name of function to fix"
+    required: false
+  - name: FILE_FOR_FUNCTION
+    description: "The path of the file that contains the function"
+    required: false
 ---
 
-I'll help you fix failing tests in your codebase. Please provide the following information:
+Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.
 
-1. Test file path: ${test_file_path}
-2. Implementation file path (if known): ${implementation_file_path}
-3. Error message or failure details: ${error_message}
-4. Repository name: ${repo_name}
+{%- if FUNCTION_TO_FIX and FILE_FOR_FUNCTION %}
+Help me fix these tests to pass by fixing the {{ FUNCTION_TO_FIX }} function in file {{ FILE_FOR_FUNCTION }}.
+{%- endif %}
+
+PLEASE DO NOT modify the tests by yourselves -- Let me know if you think some of the tests are incorrect.
 
 If the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task.
-
-I'll follow these steps to fix the failing test:
-
-1. Examine the test file to understand what's being tested
-2. Look at the implementation file to understand the current code
-3. Analyze the error message to identify the specific issue
-4. Make the necessary changes to fix the test
-5. Run the test to verify that it passes
-6. Explain the changes made and why they fix the issue
-
-My approach will be:
-- First understand the test requirements and expected behavior
-- Identify the root cause of the failure
-- Make minimal changes to fix the issue while maintaining the intended functionality
-- Ensure the fix doesn't break other tests or functionality
-- Document the changes and explain the reasoning
-
-I'll keep you updated throughout the process and let you know when the test is passing.
