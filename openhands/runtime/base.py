@@ -97,7 +97,7 @@ class Runtime(FileEditRuntimeMixin):
     config: AppConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
-    status_callback: Callable | None
+    status_callback: Callable[[str, str, str], None] | None
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class Runtime(FileEditRuntimeMixin):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
+        status_callback: Callable[[str, str, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
@@ -344,12 +344,6 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.git_provider
         )
 
-        if not git_provider_tokens:
-            raise RuntimeError('Need git provider tokens to clone repo')
-        git_token = git_provider_tokens[chosen_provider].token
-        if not git_token:
-            raise RuntimeError('Need a valid git token to clone repo')
-
         domain = provider_domains[chosen_provider]
         repository = (
             selected_repository
@@ -357,12 +351,18 @@ class Runtime(FileEditRuntimeMixin):
             else selected_repository.full_name
         )
 
-        if chosen_provider == ProviderType.GITLAB:
-            remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+        # Try to use token if available, otherwise use public URL
+        if git_provider_tokens and chosen_provider in git_provider_tokens:
+            git_token = git_provider_tokens[chosen_provider].token
+            if git_token:
+                if chosen_provider == ProviderType.GITLAB:
+                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+                else:
+                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+            else:
+                remote_repo_url = f'https://{domain}/{repository}.git'
         else:
-            remote_repo_url = (
-                f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
-            )
+            remote_repo_url = f'https://{domain}/{repository}.git'
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
@@ -409,7 +409,11 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        action = CmdRunAction(f'chmod +x {setup_script} && source {setup_script}')
+        # setup scripts time out after 10 minutes
+        action = CmdRunAction(
+            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+        )
+        action.set_hard_timeout(600)
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
@@ -453,7 +457,9 @@ class Runtime(FileEditRuntimeMixin):
             self.log('info', 'openhands_instructions microagent loaded.')
             loaded_microagents.append(
                 BaseMicroagent.load(
-                    path='.openhands_instructions', file_content=obs.content
+                    path='.openhands_instructions',
+                    microagent_dir=None,
+                    file_content=obs.content,
                 )
             )
 
@@ -479,16 +485,13 @@ class Runtime(FileEditRuntimeMixin):
             # Clean up the temporary zip file
             zip_path.unlink()
             # Load all microagents using the existing function
-            repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
-                microagent_folder
-            )
+            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
             self.log(
                 'info',
-                f'Loaded {len(repo_agents)} repo agents, {len(knowledge_agents)} knowledge agents, and {len(task_agents)} task agents',
+                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents',
             )
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
-            loaded_microagents.extend(task_agents.values())
             shutil.rmtree(microagent_folder)
 
         return loaded_microagents

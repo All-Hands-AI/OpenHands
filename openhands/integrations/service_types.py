@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, Protocol
 
 from httpx import AsyncClient, HTTPError, HTTPStatusError
+from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -28,6 +29,57 @@ class SuggestedTask(BaseModel):
     repo: str
     issue_number: int
     title: str
+
+    def get_provider_terms(self) -> dict:
+        if self.git_provider == ProviderType.GITLAB:
+            return {
+                'requestType': 'Merge Request',
+                'requestTypeShort': 'MR',
+                'apiName': 'GitLab API',
+                'tokenEnvVar': 'GITLAB_TOKEN',
+                'ciSystem': 'CI pipelines',
+                'ciProvider': 'GitLab',
+                'requestVerb': 'merge request',
+            }
+        elif self.git_provider == ProviderType.GITHUB:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'GitHub API',
+                'tokenEnvVar': 'GITHUB_TOKEN',
+                'ciSystem': 'GitHub Actions',
+                'ciProvider': 'GitHub',
+                'requestVerb': 'pull request',
+            }
+
+        raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
+
+    def get_prompt_for_task(
+        self,
+    ) -> str:
+        task_type = self.task_type
+        issue_number = self.issue_number
+        repo = self.repo
+
+        env = Environment(
+            loader=FileSystemLoader('openhands/integrations/templates/suggested_task')
+        )
+
+        template = None
+        if task_type == TaskType.MERGE_CONFLICTS:
+            template = env.get_template('merge_conflict_prompt.j2')
+        elif task_type == TaskType.FAILING_CHECKS:
+            template = env.get_template('failing_checks_prompt.j2')
+        elif task_type == TaskType.UNRESOLVED_COMMENTS:
+            template = env.get_template('unresolved_comments_prompt.j2')
+        elif task_type == TaskType.OPEN_ISSUE:
+            template = env.get_template('open_issue_prompt.j2')
+        else:
+            raise ValueError(f'Unsupported task type: {task_type}')
+
+        terms = self.get_provider_terms()
+
+        return template.render(issue_number=issue_number, repo=repo, **terms)
 
 
 class User(BaseModel):
