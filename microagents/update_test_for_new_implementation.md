@@ -8,10 +8,8 @@ triggers:
 inputs:
   - name: BRANCH_NAME
     description: "Branch for the agent to work on"
-    required: true
   - name: TEST_COMMAND_TO_RUN
     description: "The test command you want the agent to work on. For example, `pytest tests/unit/test_bash_parsing.py`"
-    required: true
 ---
 
 Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.

@@ -1,4 +1,5 @@
 import io
+import re
 from pathlib import Path
 from typing import Union, List, Dict, Any, Optional
 
@@ -71,19 +72,23 @@ class BaseMicroagent(BaseModel):
         subclass_map = {
             MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
             MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
-            MicroagentType.USER_INPUT_KNOWLEDGE: UserInputKnowledgeMicroagent,
+            MicroagentType.TASK: TaskMicroagent,
         }
 
         # Infer the agent type:
-        # 1. If inputs exist -> USER_INPUT_KNOWLEDGE
+        # 1. If inputs exist -> TASK
         # 2. If triggers exist -> KNOWLEDGE
         # 3. Else (no triggers) -> REPO
         inferred_type: MicroagentType
         if metadata.inputs:
-            inferred_type = MicroagentType.USER_INPUT_KNOWLEDGE
+            inferred_type = MicroagentType.TASK
             # Add a trigger for the agent name if not already present
-            if not metadata.triggers:
-                metadata.triggers = [f"/{metadata.name}"]
+            trigger = f"/{metadata.name}"
+            if not metadata.triggers or trigger not in metadata.triggers:
+                if not metadata.triggers:
+                    metadata.triggers = [trigger]
+                else:
+                    metadata.triggers.append(trigger)
         elif metadata.triggers:
             inferred_type = MicroagentType.KNOWLEDGE
         else:
@@ -145,7 +150,6 @@ class KnowledgeMicroagent(BaseMicroagent):
         
         Variables are in the format ${variable_name}.
         """
-        import re
         pattern = r'\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}'
         matches = re.findall(pattern, content)
         return matches
@@ -156,10 +160,8 @@ class KnowledgeMicroagent(BaseMicroagent):
         Returns True if the content contains variables in the format ${variable_name}.
         """
         # Check if the content contains any variables
-        import re
-        pattern = r'\${([a-zA-Z_][a-zA-Z0-9_]*)}'
-        matches = re.findall(pattern, self.content)
-        return len(matches) > 0
+        variables = self.extract_variables(self.content)
+        return len(variables) > 0
 
 
 class RepoMicroagent(BaseMicroagent):
@@ -182,7 +184,7 @@ class RepoMicroagent(BaseMicroagent):
             )
 
 
-class UserInputKnowledgeMicroagent(KnowledgeMicroagent):
+class TaskMicroagent(BaseMicroagent):
     """Microagent specialized for tasks that require user input.
     
     These microagents are triggered by a special format: "/{agent_name}"
@@ -191,9 +193,9 @@ class UserInputKnowledgeMicroagent(KnowledgeMicroagent):
     
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroagentType.USER_INPUT_KNOWLEDGE:
+        if self.type != MicroagentType.TASK:
             raise ValueError(
-                f'UserInputKnowledgeMicroagent initialized with incorrect type: {self.type}'
+                f'TaskMicroagent initialized with incorrect type: {self.type}'
             )
         
         # Append a prompt to ask for missing variables
@@ -201,11 +203,49 @@ class UserInputKnowledgeMicroagent(KnowledgeMicroagent):
     
     def _append_missing_variables_prompt(self) -> None:
         """Append a prompt to ask for missing variables."""
-        if not self.metadata.inputs:
+        # Check if the content contains any variables or has inputs defined
+        if not self.requires_user_input() and not self.metadata.inputs:
             return
             
         prompt = "\n\nIf the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task."
         self.content += prompt
+    
+    def match_trigger(self, message: str) -> str | None:
+        """Match a trigger in the message.
+
+        It returns the first trigger that matches the message.
+        """
+        message = message.lower()
+        for trigger in self.triggers:
+            # Check for exact match for triggers starting with "/"
+            if trigger.startswith("/") and trigger.lower() == message.strip().lower():
+                return trigger
+            # Otherwise, check for substring match
+            elif not trigger.startswith("/") and trigger.lower() in message:
+                return trigger
+        return None
+    
+    @property
+    def triggers(self) -> list[str]:
+        return self.metadata.triggers
+        
+    def extract_variables(self, content: str) -> List[str]:
+        """Extract variables from the content.
+        
+        Variables are in the format ${variable_name}.
+        """
+        pattern = r'\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}'
+        matches = re.findall(pattern, content)
+        return matches
+        
+    def requires_user_input(self) -> bool:
+        """Check if this microagent requires user input.
+        
+        Returns True if the content contains variables in the format ${variable_name}.
+        """
+        # Check if the content contains any variables
+        variables = self.extract_variables(self.content)
+        return len(variables) > 0
     
     @property
     def inputs(self) -> List[InputMetadata]:
@@ -245,7 +285,7 @@ def load_microagents_from_dir(
                 if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
-                    # Both KnowledgeMicroagent and UserInputKnowledgeMicroagent go into knowledge_agents
+                    # Both KnowledgeMicroagent and TaskMicroagent go into knowledge_agents
                     knowledge_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:

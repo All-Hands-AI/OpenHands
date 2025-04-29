@@ -1,5 +1,5 @@
 ---
-name: add_openhands_repo_instruction
+name: add_repo_instruction
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
@@ -8,7 +8,6 @@ triggers:
 inputs:
   - name: REPO_FOLDER_NAME
     description: "Branch for the agent to work on"
-    required: false
 ---
 
 Please browse the current repository under /workspace/{{ REPO_FOLDER_NAME }}, look at the documentation and relevant code, and understand the purpose of this repository.

@@ -9,7 +9,7 @@ class MicroagentType(str, Enum):
 
     KNOWLEDGE = 'knowledge'
     REPO_KNOWLEDGE = 'repo'
-    USER_INPUT_KNOWLEDGE = 'user_input_knowledge'  # Special type for microagents that require user input
+    TASK = 'task'  # Special type for task microagents that require user input
 
 
 class InputMetadata(BaseModel):
@@ -17,9 +17,6 @@ class InputMetadata(BaseModel):
     
     name: str
     description: str
-    required: bool = False
-    type: str = "string"
-    validation: Optional[Dict[str, Any]] = None
 
 
 class MicroagentMetadata(BaseModel):
