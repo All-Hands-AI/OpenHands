@@ -462,6 +462,8 @@ class BashSession:
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
             combined_output += output_segment + '\n'
+        # Add the content after the last PS1 prompt
+        combined_output += pane_content[ps1_matches[-1].end() + 1 :]
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
