@@ -49,7 +49,9 @@ async def connect(connection_id: str, environ):
     try:
         latest_event_id = int(latest_event_id_str)
     except ValueError:
-        logger.warning(f"Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1")
+        logger.warning(
+            f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
+        )
         latest_event_id = -1
     conversation_id = query_params.get('conversation_id', [None])[0]
     raw_list = query_params.get('providers_set', [])
