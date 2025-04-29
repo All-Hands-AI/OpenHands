@@ -61,6 +61,18 @@ def test_command_execution(windows_bash_session):
     assert content == "Hello World"
     assert result.exit_code == 0
 
+    # Test a simple command with multiline input but single line output
+    action = CmdRunAction(command="""Write-Output `
+    ('hello ' + `
+    'world')""")
+    result = windows_bash_session.execute(action)
+
+    assert isinstance(result, CmdOutputObservation)
+    # Check content, stripping potential trailing newlines
+    content = result.content.strip()
+    assert content == "hello world"
+    assert result.exit_code == 0
+
     # Test a simple command with a newline
     action = CmdRunAction(command='Write-Output "Hello\\n World"')
     result = windows_bash_session.execute(action)

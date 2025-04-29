@@ -212,8 +212,8 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
             'Write-Output "hello`nworld"',
             """Write-Output "hello it's me\"""",
             """Write-Output `
-    'hello' `
-    -NoNewline""",
+    ('hello ' + `
+    'world')""",
             """Write-Output 'hello`nworld`nare`nyou`nthere?'""",
             """Write-Output 'hello`nworld`nare`nyou`n`nthere?'""",
             """Write-Output 'hello`nworld `"'""",  # Escape the trailing double quote
@@ -225,7 +225,7 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
             """echo -e "hello it's me\"""",
             """echo \\
     -e 'hello' \\
-    -v""",
+    world""",
             """echo -e 'hello\\nworld\\nare\\nyou\\nthere?'""",
             """echo -e 'hello\nworld\nare\nyou\n\nthere?'""",
             """echo -e 'hello\nworld "'""",
@@ -250,26 +250,18 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         # Verify all expected outputs are present
         if is_windows():
             assert '.git_config' in results[0]  # Get-ChildItem
-            assert 'hello\nworld' in results[1]  # Write-Output newline
-            # TODO: investigate why this returns two single quotes
-            assert "hello it''s me" in results[2]  # Write-Output with quote
-            assert 'hello' in results[3]  # Write-Output with backticks
-            assert 'hello\nworld\nare\nyou\nthere?' in results[4]  # Write-Output with newlines
-            assert 'hello\nworld\nare\nyou\n\nthere?' in results[5]  # Write-Output with literal newlines
-            # TODO: investigate why the tailing space becomes a newline
-            assert 'hello\nworld\n"' in results[6]  # Write-Output with quote
         else:
             assert 'total 0' in results[0]  # ls -l
-            assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
-            assert "hello it's me" in results[2]  # echo -e "hello it\'s me"
-            assert 'hello -v' in results[3]  # echo -e 'hello' -v
-            assert (
-                'hello\nworld\nare\nyou\nthere?' in results[4]
-            )  # echo -e 'hello\nworld\nare\nyou\nthere?'
-            assert (
-                'hello\nworld\nare\nyou\n\nthere?' in results[5]
-            )  # echo -e with literal newlines
-            assert 'hello\nworld "' in results[6]  # echo -e with quote
+        assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
+        assert "hello it's me" in results[2]  # echo -e "hello it\'s me"
+        assert 'hello world' in results[3]  # echo -e 'hello' world
+        assert (
+            'hello\nworld\nare\nyou\nthere?' in results[4]
+        )  # echo -e 'hello\nworld\nare\nyou\nthere?'
+        assert (
+            'hello\nworld\nare\nyou\n\nthere?' in results[5]
+        )  # echo -e with literal newlines
+        assert 'hello\nworld "' in results[6]  # echo -e with quote
     finally:
         _close_test_runtime(runtime)
 
