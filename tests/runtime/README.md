@@ -5,13 +5,14 @@ This folder contains integration tests that verify the functionality of OpenHand
 ### What are Runtime Tests?
 
 Runtime tests focus on testing:
-- Different runtime environments (Docker, Local, Remote, Runloop, Daytona)
-- Tool interactions within these environments (bash commands, browsing, file operations)
+- Tool interactions within a runtime environment (bash commands, browsing, file operations)
 - Environment setup and configuration
 - Resource management and cleanup
 - Browser-based operations and file viewing capabilities
 - IPython/Jupyter integration
 - Environment variables and configuration handling
+
+The tests can be run against different runtime environments (Docker, Local, Remote, Runloop, or Daytona) by setting the TEST_RUNTIME environment variable. By default, tests run using the Docker runtime.
 
 ### How are they different from Unit Tests?
 
