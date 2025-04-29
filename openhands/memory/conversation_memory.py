@@ -231,7 +231,7 @@ class ConversationMemory:
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
                 content=[TextContent(text=assistant_msg.content or '')]
-                if assistant_msg.content is not None
+                if assistant_msg.content
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
