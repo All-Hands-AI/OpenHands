@@ -5,8 +5,9 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { isOnTosPage } from "#/utils/is-on-tos-page";
+import { Settings } from "#/types/settings";
 
-const getSettingsQueryFn = async () => {
+const getSettingsQueryFn = async (): Promise<Settings> => {
   const apiSettings = await OpenHands.getSettings();
 
   return {

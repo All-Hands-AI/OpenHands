@@ -8,6 +8,7 @@ from openhands.core.cli_commands import (
     handle_help_command,
     handle_init_command,
     handle_new_command,
+    handle_resume_command,
     handle_settings_command,
     handle_status_command,
 )
@@ -461,3 +462,27 @@ class TestHandleSettingsCommand:
         # Verify correct behavior
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
+
+
+class TestHandleResumeCommand:
+    @pytest.mark.asyncio
+    async def test_handle_resume_command(self):
+        """Test that handle_resume_command adds the 'continue' message to the event stream."""
+        # Create a mock event stream
+        event_stream = MagicMock(spec=EventStream)
+
+        # Call the function
+        close_repl, new_session_requested = await handle_resume_command(event_stream)
+
+        # Check that the event stream add_event was called with the correct message action
+        event_stream.add_event.assert_called_once()
+        args, kwargs = event_stream.add_event.call_args
+        message_action, source = args
+
+        assert isinstance(message_action, MessageAction)
+        assert message_action.content == 'continue'
+        assert source == EventSource.USER
+
+        # Check the return values
+        assert close_repl is True
+        assert new_session_requested is False
