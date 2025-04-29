@@ -256,11 +256,18 @@ async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
 ) -> ConversationInfoResultSet:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
-    conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
+    # get conversation visibility by user id
+    visible_conversations = await conversation_module._get_conversation_visibility_by_user_id(user_id, 1, limit)
+    if len(visible_conversations) == 0:
+        return ConversationInfoResultSet(results=[], next_page_id=None)
+    visible_conversation_ids = [conversation['conversation_id'] for conversation in visible_conversations]
+
+    conversation_metadata_result_set = await conversation_store.search(page_id, limit, filter_conversation_ids=visible_conversation_ids)
     # Filter out conversations older than max_age
     now = datetime.now(timezone.utc)
     max_age = config.conversation_max_age_seconds
@@ -427,9 +434,11 @@ async def delete_conversation(
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)
-    runtime_cls = get_runtime_cls(config.runtime)
-    await runtime_cls.delete(conversation_id)
-    await conversation_store.delete_metadata(conversation_id)
+
+    # disable delete conversation from runtime
+    # runtime_cls = get_runtime_cls(config.runtime)
+    # await runtime_cls.delete(conversation_id)
+    # await conversation_store.delete_metadata(conversation_id)
 
     # delete conversation from database
     await conversation_module._delete_conversation(conversation_id, str(user_id))

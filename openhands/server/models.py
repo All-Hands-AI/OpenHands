@@ -36,6 +36,7 @@ Conversation = Table(
     Column('title', String, nullable=False),
     Column('short_description', String, nullable=False),
     Column('status', String, nullable=False, default='available'),
+    Column('created_at', DateTime, default=func.now(), nullable=False),
 )
 
 ResearchView = Table(

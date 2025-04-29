@@ -48,6 +48,7 @@ class ConversationStore(ABC):
         self,
         page_id: str | None = None,
         limit: int = 20,
+        filter_conversation_ids: list[str] | None = None,
     ) -> ConversationMetadataResultSet:
         """Search conversations."""
 
