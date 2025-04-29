@@ -40,7 +40,7 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-        provider_tokens_set = {}
+        provider_tokens_set: dict[ProviderType, str | None]  = {}
         if provider_tokens:
             for provider_type, provider_token in provider_tokens.items():
                 if provider_token.token or provider_token.user_id:
