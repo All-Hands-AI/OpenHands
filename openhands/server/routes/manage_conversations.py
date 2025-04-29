@@ -14,7 +14,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
-from openhands.integrations.service_types import Repository, SuggestedTask
+from openhands.integrations.service_types import AuthenticationError, Repository, SuggestedTask
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -185,6 +185,7 @@ async def new_conversation(
     suggested_task = data.suggested_task
     conversation_trigger = data.conversation_trigger
 
+    # Determine git provider when only repo name is provided
     if selected_repository and not selected_repository.git_provider:
         provider_handler = ProviderHandler(provider_tokens)
         selected_repository = await provider_handler.verify_repo_provider(selected_repository)
@@ -230,6 +231,15 @@ async def new_conversation(
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
             },
             status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except AuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
+            }
         )
 
 
