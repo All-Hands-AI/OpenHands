@@ -5,6 +5,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import get_user_auth
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 
@@ -40,6 +41,12 @@ async def get_user_settings(request: Request) -> Settings | None:
     user_auth = await get_user_auth(request)
     user_settings = await user_auth.get_user_settings()
     return user_settings
+
+
+async def get_user_secret_store(request: Request) -> UserSecrets | None:
+    user_auth = await get_user_auth(request)
+    user_secret_store = await user_auth.get_user_secret_store()
+    return user_secret_store
 
 
 async def get_user_settings_store(request: Request) -> SettingsStore | None:

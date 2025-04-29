@@ -7,8 +7,9 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderToken,
     ProviderType,
-    SecretStore,
 )
+
+
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.settings import (
     GETSettingsCustomSecrets,
@@ -24,6 +25,7 @@ from openhands.server.user_auth import (
     get_user_settings,
     get_user_settings_store,
 )
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
@@ -117,7 +119,7 @@ async def add_custom_secret(
                     incoming_secrets.custom_secrets[secret_name] = secret_value
 
             # Create a new SecretStore that preserves provider tokens
-            updated_secret_store = SecretStore(
+            updated_secret_store = UserSecrets(
                 custom_secrets=incoming_secrets.custom_secrets,
                 provider_tokens=existing_settings.secrets_store.provider_tokens,
             )
@@ -158,7 +160,7 @@ async def delete_custom_secret(
                     custom_secrets[secret_name] = secret_value
 
             # Create a new SecretStore that preserves provider tokens
-            updated_secret_store = SecretStore(
+            updated_secret_store = UserSecrets(
                 custom_secrets=custom_secrets,
                 provider_tokens=existing_settings.secrets_store.provider_tokens,
             )
@@ -189,7 +191,7 @@ async def unset_settings_tokens(
         existing_settings = await settings_store.load()
         if existing_settings:
             settings = existing_settings.model_copy(
-                update={'secrets_store': SecretStore()}
+                update={'secrets_store': UserSecrets()}
             )
             await settings_store.store(settings)
 
@@ -367,7 +369,7 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
 
         # Create new SecretStore with tokens
         settings = settings.model_copy(
-            update={'secrets_store': SecretStore(provider_tokens=tokens)}
+            update={'secrets_store': UserSecrets(provider_tokens=tokens)}
         )
 
     return settings

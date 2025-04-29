@@ -7,6 +7,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import UserAuth
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 
@@ -44,6 +45,15 @@ class DefaultUserAuth(UserAuth):
         settings = await settings_store.load()
         self._settings = settings
         return settings
+
+    async def get_user_secret_store(self) -> UserSecrets | None:
+        user_id = await self.get_user_id()
+        secret_store: UserSecrets = await shared.SecretStoreImpl.get_instance(
+            shared.config, user_id
+        )
+        user_secrets = secret_store.load()
+        return user_secrets
+
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         settings = await self.get_user_settings()
