@@ -232,10 +232,9 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             service = self._get_service(provider)
             tokens[provider] = await service.get_latest_token()
+        return tokens
 
-    async def get_repositories(
-        self, sort: str, app_mode: AppMode
-    ) -> list[Repository]:
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
         Get repositories from providers
         """

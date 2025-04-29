@@ -2,11 +2,21 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    Field,
     SecretStr,
+    SerializationInfo,
+    field_serializer,
+    model_validator,
 )
+from pydantic.json import pydantic_encoder
 
-from openhands.storage.data_models.settings import Settings
+from openhands.core.config import load_app_config
+from openhands.core.config.llm_config import LLMConfig
+from openhands.integrations.provider import SecretStore
+from openhands.storage.data_models.settings import Settings as BaseSettings
 
+
+class Settings(BaseSettings):
     language: str | None = None
     agent: str | None = None
     max_iterations: int | None = None

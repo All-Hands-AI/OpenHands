@@ -203,8 +203,9 @@ async def test_runtime_error_handling(mock_agent, mock_event_stream):
     await controller._step_with_exception_handling()
 
     # Verify that an error observation was added to the event stream
-    mock_event_stream.add_event.assert_called_once()
-    args, kwargs = mock_event_stream.add_event.call_args
+    # The system message is added first, so we need to check the second call
+    assert mock_event_stream.add_event.call_count == 2
+    args, kwargs = mock_event_stream.add_event.call_args_list[1]
 
     # Check that the first argument is an ErrorObservation
     assert isinstance(args[0], ErrorObservation)
@@ -229,7 +230,7 @@ async def test_runtime_error_handling(mock_agent, mock_event_stream):
     assert controller._runtime_error_count == 2
 
     # Verify that another error observation was added
-    assert mock_event_stream.add_event.call_count == 2
+    assert mock_event_stream.add_event.call_count == 3
     args, kwargs = mock_event_stream.add_event.call_args
     assert 'Retry 2 of 3' in args[0].content
 
@@ -292,30 +293,6 @@ async def test_react_to_content_policy_violation(
         confirmation_mode=False,
         headless_mode=True,
     )
-
-    # Verify that an error observation was added to the event stream
-    mock_event_stream.add_event.assert_called_once()
-    args, kwargs = mock_event_stream.add_event.call_args
-
-    # Check that the first argument is an ErrorObservation
-    assert isinstance(args[0], ErrorObservation)
-
-    # Check that the content of the ErrorObservation contains the expected message
-    assert 'Your command may have consumed too much resources' in args[0].content
-    assert 'previous runtime died' in args[0].content
-
-    # Check that the source is ENVIRONMENT
-    assert len(args) >= 2  # Should have at least 2 positional arguments
-    assert args[1] == EventSource.ENVIRONMENT
-
-    await controller.close()
-
-
-@pytest.mark.asyncio
-async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
-    config = AppConfig()
-
-    controller.state.agent_state = AgentState.RUNNING
 
     # Create and handle the content policy violation error
     error = ContentPolicyViolationError(
