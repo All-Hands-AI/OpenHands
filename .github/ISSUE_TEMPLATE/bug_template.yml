@@ -10,7 +10,7 @@ body:
 
   - type: checkboxes
     attributes:
-      label: Is there an existing issue for the same bug? (If one exists, thumbs up or comment on the issue instead).
+      label: Is there an existing issue with the same bug? (If one exists, thumbs up or comment on the issue instead).
       description: Please check if an issue already exists for the bug you encountered.
       options:
       - label: I have checked the existing issues.
@@ -20,7 +20,23 @@ body:
     id: bug-description
     attributes:
       label: Describe the bug and reproduction steps
-      description: Provide a description of the issue along with any reproduction steps.
+      description: Describe the issue along with any reproduction steps.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected-output
+    attributes:
+      label: Expected Output
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-output
+    attributes:
+      label: Actual Output
+      description: What actually happened?
     validations:
       required: true
 
@@ -58,6 +74,6 @@ body:
     attributes:
       label: Logs, Errors, Screenshots, and Additional Context
       description: Please provide any additional information you think might help. If you want to share the chat history
-        you can click the thumbs-down (👎) button above the input field and you will get a shareable link
-        (you can also click thumbs up when things are going well of course!). LLM logs will be stored in the
+        you can click the thumbs-down (👎) button above the input field, and you will get a shareable link
+        (you can also click thumbs up when things are going well, of course!). LLM logs will be stored in the
         `logs/llm/default` folder. Please add any additional context about the problem here.
