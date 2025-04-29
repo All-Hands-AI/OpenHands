@@ -65,6 +65,7 @@ CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
 
+
 class SecretStore(BaseModel):
     provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
