@@ -92,30 +92,14 @@ class User(BaseModel):
 
 
 class Repository(BaseModel):
-    id: int
+    # Only enforcing name as non-optional field for OpenHands API
     full_name: str
     git_provider: ProviderType
-    is_public: bool
+    id: int | None = None
+    is_public: bool | None = None
     stargazers_count: int | None = None
     link_header: str | None = None
     pushed_at: str | None = None  # ISO 8601 format date string
-
-
-# Used for OpenHands API
-class PartialRepository(BaseModel):
-    full_name: str
-    git_provider: ProviderType
-
-    def convert_to_repo_model(self) -> Repository:
-        return Repository(
-            id=-1,
-            full_name=self.full_name,
-            git_provider=self.git_provider,
-            is_public=False,
-            stargazers_count=None,
-            link_header=None,
-            pushed_at=None,
-        )
 
 
 class AuthenticationError(ValueError):
@@ -223,3 +207,8 @@ class GitService(Protocol):
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories"""
         ...
+
+    async def get_repository_details_from_repo_name(
+        self, repository: Repository
+    ) -> Repository:
+        """Gets all repository details from repository name"""

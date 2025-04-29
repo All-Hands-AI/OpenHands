@@ -12,8 +12,9 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
 )
-from openhands.integrations.service_types import PartialRepository, Repository, SuggestedTask
+from openhands.integrations.service_types import Repository, SuggestedTask
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -50,7 +51,7 @@ app = APIRouter(prefix='/api')
 
 class InitSessionRequest(BaseModel):
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
-    selected_repository: Repository | PartialRepository | None = None
+    selected_repository: Repository | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -184,8 +185,9 @@ async def new_conversation(
     suggested_task = data.suggested_task
     conversation_trigger = data.conversation_trigger
 
-    if isinstance(selected_repository, PartialRepository):
-        selected_repository = selected_repository.convert_to_repo_model()
+    if selected_repository and not selected_repository.git_provider:
+        provider_handler = ProviderHandler(provider_tokens)
+        selected_repository = await provider_handler.verify_repo_provider(selected_repository)
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
