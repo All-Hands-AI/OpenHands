@@ -83,16 +83,9 @@ class FileConversationStore(ConversationStore):
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
 
-        if filter_conversation_ids and len(filter_conversation_ids) == 0:
-            return ConversationMetadataResultSet([])
-
-        # check filter_conversation_ids should be a subset of conversation_ids
         if filter_conversation_ids:
-            if not all(conversation_id in conversation_ids for conversation_id in filter_conversation_ids):
-                raise ValueError('filter_conversation_ids should be a subset of conversation_ids')
+            conversation_ids = list(set(conversation_ids) & set(filter_conversation_ids))
 
-            conversation_ids = filter_conversation_ids
-        print("conversation_ids", conversation_ids)
         num_conversations = len(conversation_ids)
         start = page_id_to_offset(page_id)
         end = min(limit + start, num_conversations)
