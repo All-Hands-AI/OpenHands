@@ -6,13 +6,13 @@ General guidelines for OpenHands to work more effectively with the repository.
 
 ## Microagent File
 
-Create a general repository microagent (example: `.openhands/microagents/repo.md`) to include 
-project-specific instructions, team practices, coding standards, and architectural guidelines that are relevant for 
+Create a general repository microagent (example: `.openhands/microagents/repo.md`) to include
+project-specific instructions, team practices, coding standards, and architectural guidelines that are relevant for
 **all** prompts in that repository.
 
 ## Frontmatter Syntax
 
-The frontmatter for this type of microagent is optional, unless you plan to include more than one general 
+The frontmatter for this type of microagent is optional, unless you plan to include more than one general
 repository microagent.
 
 Frontmatter should be enclosed in triple dashes (---) and may include the following fields:

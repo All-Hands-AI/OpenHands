@@ -153,8 +153,9 @@ async def test_memory_with_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # We know 'flarglebargle' exists in the global directory
-    assert 'flarglebargle' in memory.knowledge_microagents
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
+    assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
@@ -188,7 +189,8 @@ async def test_memory_with_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    # Check against the derived name
+    assert observation.microagent_knowledge[0].name == derived_name
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
 
@@ -281,8 +283,9 @@ async def test_memory_with_agent_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # We know 'flarglebargle' exists in the global directory
-    assert 'flarglebargle' in memory.knowledge_microagents
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
+    assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
@@ -316,7 +319,8 @@ async def test_memory_with_agent_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    # Check against the derived name
+    assert observation.microagent_knowledge[0].name == derived_name
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
 

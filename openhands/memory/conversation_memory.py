@@ -54,6 +54,7 @@ class ConversationMemory:
     def process_events(
         self,
         condensed_history: list[Event],
+        initial_user_action: MessageAction,
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -66,12 +67,14 @@ class ConversationMemory:
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
+            initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
 
         events = condensed_history
 
-        # Ensure the system message exists (handles legacy cases)
+        # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
         self._ensure_system_message(events)
+        self._ensure_initial_user_message(events, initial_user_action)
 
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
@@ -699,6 +702,43 @@ class ConversationMemory:
                 system_message = SystemMessageAction(content=system_prompt)
                 # Insert the system message directly at the beginning of the events list
                 events.insert(0, system_message)
-                logger.debug(
+                logger.info(
                     '[ConversationMemory] Added SystemMessageAction for backward compatibility'
                 )
+
+    def _ensure_initial_user_message(
+        self, events: list[Event], initial_user_action: MessageAction
+    ) -> None:
+        """Checks if the second event is a user MessageAction and inserts the provided one if needed."""
+        if (
+            not events
+        ):  # Should have system message from previous step, but safety check
+            logger.error('Cannot ensure initial user message: event list is empty.')
+            # Or raise? Let's log for now, _ensure_system_message should handle this.
+            return
+
+        # We expect events[0] to be SystemMessageAction after _ensure_system_message
+        if len(events) == 1:
+            # Only system message exists
+            logger.info(
+                'Initial user message action was missing. Inserting the initial user message.'
+            )
+            events.insert(1, initial_user_action)
+        elif not isinstance(events[1], MessageAction) or events[1].source != 'user':
+            # The second event exists but is not the correct initial user message action.
+            # We will insert the correct one provided.
+            logger.info(
+                'Second event was not the initial user message action. Inserting correct one at index 1.'
+            )
+
+            # Insert the user message event at index 1. This will be the second message as LLM APIs expect
+            # but something was wrong with the history, so log all we can.
+            events.insert(1, initial_user_action)
+
+        # Else: events[1] is already a user MessageAction.
+        # Check if it matches the one provided (if any discrepancy, log warning but proceed).
+        elif events[1] != initial_user_action:
+            logger.debug(
+                'The user MessageAction at index 1 does not match the provided initial_user_action. '
+                'Proceeding with the one found in condensed history.'
+            )
