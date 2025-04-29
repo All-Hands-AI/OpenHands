@@ -503,7 +503,10 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     args, kwargs = mock_event_stream.add_event.call_args
     error_obs, source = args
     assert isinstance(error_obs, ErrorObservation)
-    assert error_obs.content == 'The action has not been executed.'
+    assert (
+        error_obs.content
+        == 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
+    )
     assert error_obs.tool_call_metadata == pending_action.tool_call_metadata
     assert error_obs._cause == pending_action.id
     assert source == EventSource.AGENT
