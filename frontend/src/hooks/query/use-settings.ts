@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
@@ -30,6 +31,8 @@ export const useSettings = () => {
   const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
     useAuth();
 
+  const isOnTosPage = useIsOnTosPage();
+
   const query = useQuery({
     queryKey: ["settings", providerTokensSet],
     queryFn: getSettingsQueryFn,
@@ -39,6 +42,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
+    enabled: !isOnTosPage,
     meta: {
       disableToast: true,
     },
