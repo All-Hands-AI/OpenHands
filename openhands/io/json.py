@@ -36,7 +36,15 @@ def dumps(obj, **kwargs):
     """Serialize an object to str format"""
     if not kwargs:
         return _json_encoder.encode(obj)
-    return json.dumps(obj, cls=OpenHandsJSONEncoder, **kwargs)
+
+    # Create a copy of the kwargs to avoid modifying the original
+    encoder_kwargs = kwargs.copy()
+
+    # If cls is specified, use it; otherwise use our custom encoder
+    if 'cls' not in encoder_kwargs:
+        encoder_kwargs['cls'] = OpenHandsJSONEncoder
+
+    return json.dumps(obj, **encoder_kwargs)
 
 
 def loads(json_str, **kwargs):

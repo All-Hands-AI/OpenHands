@@ -133,6 +133,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
         response = self.llm.completion(
             messages=self.llm.format_messages_for_llm(messages),
+            extra_body={'metadata': self._llm_metadata},
         )
         summary = response.choices[0].message.content
 
@@ -155,8 +156,14 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
     def from_config(
         cls, config: LLMSummarizingCondenserConfig
     ) -> LLMSummarizingCondenser:
+        # This condenser cannot take advantage of prompt caching. If it happens
+        # to be set, we'll pay for the cache writes but never get a chance to
+        # save on a read.
+        llm_config = config.llm_config.model_copy()
+        llm_config.caching_prompt = False
+
         return LLMSummarizingCondenser(
-            llm=LLM(config=config.llm_config),
+            llm=LLM(config=llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

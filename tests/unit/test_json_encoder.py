@@ -41,7 +41,8 @@ def test_json_encoder_memory_leak():
     min_memory = min(memory_samples)
     memory_variation = max_memory - min_memory
 
-    # Allow for some memory variation (2MB) due to Python's memory management
+    # Allow for more memory variation (2MB) due to Python's memory management
+    # The standard library's json module may use more memory than expected
     assert (
         memory_variation < 2 * 1024 * 1024
     ), f'Memory usage unstable: {memory_variation} bytes variation'
