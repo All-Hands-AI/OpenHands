@@ -4,6 +4,7 @@ from typing import overload
 
 from pydantic import BaseModel
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -65,6 +66,8 @@ class View(BaseModel):
                     break
 
         if summary is not None and summary_offset is not None:
+            logger.info(f'Inserting summary at offset {summary_offset}')
+
             kept_events.insert(
                 summary_offset, AgentCondensationObservation(content=summary)
             )

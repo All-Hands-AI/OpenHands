@@ -11,14 +11,14 @@ class LLM:
 
 
 class Event(BaseModel):
-    metadata: dict | None = Field(
+    metadata: dict[str, Any] | None = Field(
         default_factory=lambda: dict(), description='Metadata associated with the event'
     )
 
 
 class Function(BaseModel):
     name: str
-    arguments: dict
+    arguments: dict[str, Any]
 
 
 class ToolCall(Event):
