@@ -46,7 +46,6 @@ async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id_str = query_params.get('latest_event_id', [-1])[0]
-    # Handle case when latest_event_id is 'undefined' or other non-integer values
     try:
         latest_event_id = int(latest_event_id_str)
     except ValueError:
