@@ -8,8 +8,6 @@ This tool uses OpenHands AI agents to automatically resolve issues in your repos
 
 ### Prerequisites
 
----
-
 - [Create a personal access token](https://github.com/settings/tokens?type=beta) with read/write scope for
   - "contents"
   - "issues"
@@ -18,8 +16,6 @@ This tool uses OpenHands AI agents to automatically resolve issues in your repos
     Create an LLM API key (e,g [Claude API](https://www.anthropic.com/api))
 
 ### Installation
-
----
 
 1. Copy `examples/openhands-resolver.yml` to your repository's `.github/workflows/` directory
 
@@ -72,15 +68,17 @@ Using the @openhands-agent comment:
 
 ## 4. Running Locally
 
-1. Install the package:
+### Installation
 
 ```bash
 pip install openhands-ai
 ```
 
-2. Create a GitHub or GitLab access token with appropriate permissions
+### Setup
 
-3. Set up environment variables:
+Create a GitHub or GitLab access token with appropriate permissions
+
+Set up environment variables:
 
 ```bash
 # GitHub credentials
@@ -97,7 +95,7 @@ export LLM_API_KEY="your-llm-api-key"
 export LLM_BASE_URL="your-api-url"  # Optional
 ```
 
-## Resolving Issues
+### Resolving Issues
 
 Resolve a single issue:
 
@@ -105,7 +103,7 @@ Resolve a single issue:
 python -m openhands.resolver.resolve_issue --selected-repo [OWNER]/[REPO] --issue-number [NUMBER]
 ```
 
-## Responding to PR Comments
+### Responding to PR Comments
 
 Respond to comments on pull requests:
 
@@ -113,7 +111,7 @@ Respond to comments on pull requests:
 python -m openhands.resolver.send_pull_request --issue-number PR_NUMBER --issue-type pr
 ```
 
-## Visualizing Results
+### Visualizing Results
 
 View successful PRs:
 
@@ -127,7 +125,7 @@ Visualize specific PR:
 python -m openhands.resolver.visualize_resolver_output --issue-number ISSUE_NUMBER --vis-method json
 ```
 
-## Uploading PRs
+### Uploading PRs
 
 Upload your changes in one of three ways:
 
