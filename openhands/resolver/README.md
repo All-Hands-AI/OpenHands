@@ -2,7 +2,7 @@
 
 Need help resolving GitHub or GitLab issues? Let an AI agent help you out!
 
-This tool uses OpenHands AI agents to automatically resolve issues in your repositories. It's designed to handle one issue at a time with high quality.
+This tool uses [OpenHands](https://github.com/all-hands-ai/openhands) AI agents to automatically resolve issues in your repositories. It's designed to handle one issue at a time with high quality.
 
 ## 1. Setting Up for GitHub (Action Workflow)
 
