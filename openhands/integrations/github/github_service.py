@@ -257,8 +257,7 @@ class GitHubService(BaseGitService, GitService):
     ) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API."""
         try:
-            timeout = httpx.Timeout(45.0)  
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
                 response = await client.post(
                     f'{self.BASE_URL}/graphql',
@@ -336,11 +335,10 @@ class GitHubService(BaseGitService, GitService):
                         )
                     )
 
-        except ReadTimeout:
-            logger.info(f"Hit timeout on suggested task for PRs", 
+            
+        except Exception as e:
+            logger.info(f"Error fetching suggested task for PRs: {e}", 
                          extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
-        except Exception:
-            pass
             
         try:
             # Execute issue query
@@ -361,12 +359,10 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-        except ReadTimeout:
-            logger.info(f"Hit timeout on suggested task for issues", 
-                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
         
-        except Exception:
-            pass
+        except Exception as e:
+            logger.info(f"Error fetching suggested task for issues: {e}", 
+                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
 
         return tasks
 
