@@ -1180,6 +1180,51 @@ def test_has_agent_in_earlier_events(conversation_memory):
     )
 
 
+def test_process_events_with_empty_content(conversation_memory):
+    """Test that empty string content is handled correctly and not included in messages."""
+    # Create a tool call for the execute_bash function
+    tool_call = ChatCompletionMessageToolCall(
+        id='test_call_id',
+        function={'name': 'execute_bash', 'arguments': '{"command": "test"}'},
+        type='function'
+    )
+
+    # Create a mock ModelResponse with empty string content but with tool calls
+    mock_response = {
+        'id': 'mock_response_id',
+        'choices': [{'message': {'content': '', 'tool_calls': [tool_call]}}],
+        'created': 0,
+        'model': '',
+        'object': '',
+        'usage': {'completion_tokens': 0, 'prompt_tokens': 0, 'total_tokens': 0},
+    }
+
+    # Create an action with empty content
+    action = CmdRunAction(command='test')
+    action._source = EventSource.AGENT
+    action.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='test_call_id',
+        function_name='execute_bash',
+        model_response=mock_response,
+        total_calls_in_response=1,
+    )
+
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+
+    # Process events
+    messages = conversation_memory.process_events(
+        condensed_history=[action],
+        initial_user_action=initial_user_message,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Verify that the empty content is not included
+    assert len(messages) == 2  # Only system message and initial user message
+    assert all(len(msg.content) > 0 for msg in messages)  # All messages should have non-empty content
+
+
 class TestFilterUnmatchedToolCalls:
     @pytest.fixture
     def processor(self):
