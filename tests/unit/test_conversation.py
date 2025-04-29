@@ -82,7 +82,9 @@ async def test_search_conversations():
                             async def mock_get_running_agent_loops(*args, **kwargs):
                                 return set()
 
-                            mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                            mock_manager.get_running_agent_loops = (
+                                mock_get_running_agent_loops
+                            )
                             with patch(
                                 'openhands.server.routes.manage_conversations.datetime'
                             ) as mock_datetime:
@@ -92,9 +94,13 @@ async def test_search_conversations():
                                 mock_datetime.fromisoformat = datetime.fromisoformat
                                 mock_datetime.timezone = timezone
                                 result_set = await search_conversations(
-                                    MagicMock(state=MagicMock(github_token='', user_id='12345')),
+                                    MagicMock(
+                                        state=MagicMock(
+                                            github_token='', user_id='12345'
+                                        )
+                                    ),
                                     page_id=None,
-                                    limit=20
+                                    limit=20,
                                 )
                                 expected = ConversationInfoResultSet(
                                     results=[
@@ -111,7 +117,7 @@ async def test_search_conversations():
                                             selected_repository='foobar',
                                         )
                                     ],
-                                    next_page_id=None
+                                    next_page_id=None,
                                 )
                                 assert result_set == expected
 
