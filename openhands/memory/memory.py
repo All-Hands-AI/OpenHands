@@ -219,13 +219,13 @@ class Memory:
             trigger = microagent.match_trigger(query)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
-                
+
                 # Check if this is a special microagent that requires user input
                 content = microagent.content
                 if microagent.requires_user_input():
                     # Add a prompt at the end of the content to ask for missing variables
                     content += "\n\nIf the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task."
-                
+
                 recalled_content.append(
                     MicroagentKnowledge(
                         name=microagent.name,

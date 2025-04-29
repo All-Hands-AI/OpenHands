@@ -1,11 +1,10 @@
-import io
 import tempfile
-from pathlib import Path
-from unittest import mock
 
-import pytest
-
-from openhands.microagent.microagent import BaseMicroagent, KnowledgeMicroagent, TaskMicroagent
+from openhands.microagent.microagent import (
+    BaseMicroagent,
+    KnowledgeMicroagent,
+    TaskMicroagent,
+)
 from openhands.microagent.types import MicroagentType
 
 
@@ -25,17 +24,17 @@ inputs:
 
 This is a test task microagent with a variable: ${test_var}.
 """
-    
-    with tempfile.NamedTemporaryFile(suffix=".md") as f:
+
+    with tempfile.NamedTemporaryFile(suffix='.md') as f:
         f.write(content.encode())
         f.flush()
-        
+
         agent = BaseMicroagent.load(f.name)
-        
+
         assert isinstance(agent, TaskMicroagent)
         assert agent.type == MicroagentType.TASK
-        assert agent.name == "test_task"
-        assert "/test_task" in agent.triggers
+        assert agent.name == 'test_task'
+        assert '/test_task' in agent.triggers
         assert "If the user didn't provide any of these variables" in agent.content
 
 
@@ -55,16 +54,16 @@ inputs:
 
 This is a test with variables: ${var1}, ${var2}, and ${var3}.
 """
-    
-    with tempfile.NamedTemporaryFile(suffix=".md") as f:
+
+    with tempfile.NamedTemporaryFile(suffix='.md') as f:
         f.write(content.encode())
         f.flush()
-        
+
         agent = BaseMicroagent.load(f.name)
-        
+
         assert isinstance(agent, TaskMicroagent)
         variables = agent.extract_variables(agent.content)
-        assert set(variables) == {"var1", "var2", "var3"}
+        assert set(variables) == {'var1', 'var2', 'var3'}
         assert agent.requires_user_input()
 
 
@@ -81,13 +80,13 @@ triggers:
 
 This is a test knowledge microagent.
 """
-    
-    with tempfile.NamedTemporaryFile(suffix=".md") as f:
+
+    with tempfile.NamedTemporaryFile(suffix='.md') as f:
         f.write(content.encode())
         f.flush()
-        
+
         agent = BaseMicroagent.load(f.name)
-        
+
         assert isinstance(agent, KnowledgeMicroagent)
         assert agent.type == MicroagentType.KNOWLEDGE
         assert "If the user didn't provide any of these variables" not in agent.content
@@ -107,15 +106,15 @@ inputs:
 
 This is a test task microagent.
 """
-    
-    with tempfile.NamedTemporaryFile(suffix=".md") as f:
+
+    with tempfile.NamedTemporaryFile(suffix='.md') as f:
         f.write(content.encode())
         f.flush()
-        
+
         agent = BaseMicroagent.load(f.name)
-        
+
         assert isinstance(agent, TaskMicroagent)
-        assert "/test_task" in agent.triggers
+        assert '/test_task' in agent.triggers
 
 
 def test_task_microagent_no_duplicate_trigger():
@@ -135,15 +134,15 @@ inputs:
 
 This is a test task microagent.
 """
-    
-    with tempfile.NamedTemporaryFile(suffix=".md") as f:
+
+    with tempfile.NamedTemporaryFile(suffix='.md') as f:
         f.write(content.encode())
         f.flush()
-        
+
         agent = BaseMicroagent.load(f.name)
-        
+
         assert isinstance(agent, TaskMicroagent)
-        assert agent.triggers.count("/test_task") == 1  # No duplicates
+        assert agent.triggers.count('/test_task') == 1  # No duplicates
         assert len(agent.triggers) == 2
 
 
@@ -163,15 +162,19 @@ inputs:
 
 This is a test task microagent.
 """
-    
-    with tempfile.NamedTemporaryFile(suffix=".md") as f:
+
+    with tempfile.NamedTemporaryFile(suffix='.md') as f:
         f.write(content.encode())
         f.flush()
-        
+
         agent = BaseMicroagent.load(f.name)
-        
+
         assert isinstance(agent, TaskMicroagent)
-        assert agent.match_trigger("/test_task") == "/test_task"
-        assert agent.match_trigger("  /test_task  ") == "/test_task"  # Whitespace is trimmed
-        assert agent.match_trigger("This contains /test_task") is None  # Not an exact match
-        assert agent.match_trigger("/other_task") is None
+        assert agent.match_trigger('/test_task') == '/test_task'
+        assert (
+            agent.match_trigger('  /test_task  ') == '/test_task'
+        )  # Whitespace is trimmed
+        assert (
+            agent.match_trigger('This contains /test_task') is None
+        )  # Not an exact match
+        assert agent.match_trigger('/other_task') is None

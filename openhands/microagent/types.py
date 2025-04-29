@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +14,7 @@ class MicroagentType(str, Enum):
 
 class InputMetadata(BaseModel):
     """Metadata for task microagent inputs."""
-    
+
     name: str
     description: str
 
