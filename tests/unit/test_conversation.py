@@ -14,7 +14,6 @@ from openhands.integrations.service_types import (
     TaskType,
 )
 from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
@@ -27,6 +26,7 @@ from openhands.server.routes.manage_conversations import (
     update_conversation,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
+from openhands.server.user_auth.user_auth import AuthType
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
@@ -466,7 +466,10 @@ async def test_new_conversation_with_partial_repository():
 
             # Call new_conversation
             response = await new_conversation(
-                data=test_request, user_id='test_user', provider_tokens={}, auth_type=None
+                data=test_request,
+                user_id='test_user',
+                provider_tokens={},
+                auth_type=None,
             )
 
             # Verify the response
@@ -481,14 +484,14 @@ async def test_new_conversation_with_partial_repository():
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['user_id'] == 'test_user'
-            
+
             # Verify that the PartialRepository was converted to a Repository
             assert isinstance(call_args['selected_repository'], Repository)
             assert call_args['selected_repository'].full_name == 'test/repo'
             assert call_args['selected_repository'].git_provider == ProviderType.GITHUB
             assert call_args['selected_repository'].id == -1
             assert call_args['selected_repository'].is_public is False
-            
+
             assert call_args['selected_branch'] == 'main'
             assert call_args['initial_user_msg'] == 'Hello, agent!'
             assert call_args['conversation_trigger'] == ConversationTrigger.GUI
@@ -522,10 +525,10 @@ async def test_new_conversation_with_bearer_auth():
 
             # Call new_conversation with bearer auth type
             response = await new_conversation(
-                data=test_request, 
-                user_id='test_user', 
+                data=test_request,
+                user_id='test_user',
                 provider_tokens={},
-                auth_type=AuthType.BEARER
+                auth_type=AuthType.BEARER,
             )
 
             # Verify the response
@@ -543,9 +546,11 @@ async def test_new_conversation_with_bearer_auth():
             assert call_args['selected_repository'] == test_repo
             assert call_args['selected_branch'] == 'main'
             assert call_args['initial_user_msg'] == 'Hello, agent!'
-            
+
             # Verify that the conversation trigger was set to OPENHANDS_API
-            assert call_args['conversation_trigger'] == ConversationTrigger.OPENHANDS_API
+            assert (
+                call_args['conversation_trigger'] == ConversationTrigger.OPENHANDS_API
+            )
 
 
 @pytest.mark.asyncio
@@ -574,10 +579,10 @@ async def test_new_conversation_with_partial_repo_and_bearer_auth():
 
             # Call new_conversation with bearer auth type
             response = await new_conversation(
-                data=test_request, 
-                user_id='test_user', 
+                data=test_request,
+                user_id='test_user',
                 provider_tokens={},
-                auth_type=AuthType.BEARER
+                auth_type=AuthType.BEARER,
             )
 
             # Verify the response
@@ -592,17 +597,19 @@ async def test_new_conversation_with_partial_repo_and_bearer_auth():
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['user_id'] == 'test_user'
-            
+
             # Verify that the PartialRepository was converted to a Repository
             assert isinstance(call_args['selected_repository'], Repository)
             assert call_args['selected_repository'].full_name == 'test/repo'
             assert call_args['selected_repository'].git_provider == ProviderType.GITHUB
-            
+
             assert call_args['selected_branch'] == 'main'
             assert call_args['initial_user_msg'] == 'Hello, agent!'
-            
+
             # Verify that the conversation trigger was set to OPENHANDS_API
-            assert call_args['conversation_trigger'] == ConversationTrigger.OPENHANDS_API
+            assert (
+                call_args['conversation_trigger'] == ConversationTrigger.OPENHANDS_API
+            )
 
 
 @pytest.mark.asyncio
