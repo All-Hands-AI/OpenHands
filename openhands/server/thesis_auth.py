@@ -124,7 +124,6 @@ async def handle_thesis_auth_request(
 ) -> dict:
     url = f'{endpoint}'
     headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
-    print('x_device_id', x_device_id)
     if x_device_id:
         headers['x-device-id'] = x_device_id
     try:
