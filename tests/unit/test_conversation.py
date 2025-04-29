@@ -7,12 +7,14 @@ import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.integrations.service_types import (
+    PartialRepository,
     ProviderType,
     Repository,
     SuggestedTask,
     TaskType,
 )
 from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
@@ -436,6 +438,171 @@ async def test_new_conversation_invalid_api_key():
                 'utf-8'
             )
             assert 'STATUS$ERROR_LLM_AUTHENTICATION' in response.body.decode('utf-8')
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_partial_repository():
+    """Test creating a new conversation with a PartialRepository that gets converted to Repository."""
+    with _patch_store():
+        # Mock the _create_new_conversation function directly
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Create test data with PartialRepository
+            test_partial_repo = PartialRepository(
+                full_name='test/repo',
+                git_provider=ProviderType.GITHUB,
+            )
+
+            test_request = InitSessionRequest(
+                conversation_trigger=ConversationTrigger.GUI,
+                selected_repository=test_partial_repo,
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+            )
+
+            # Call new_conversation
+            response = await new_conversation(
+                data=test_request, user_id='test_user', provider_tokens={}, auth_type=None
+            )
+
+            # Verify the response
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 200
+            assert (
+                response.body.decode('utf-8')
+                == '{"status":"ok","conversation_id":"test_conversation_id"}'
+            )
+
+            # Verify that _create_new_conversation was called with the correct arguments
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert call_args['user_id'] == 'test_user'
+            
+            # Verify that the PartialRepository was converted to a Repository
+            assert isinstance(call_args['selected_repository'], Repository)
+            assert call_args['selected_repository'].full_name == 'test/repo'
+            assert call_args['selected_repository'].git_provider == ProviderType.GITHUB
+            assert call_args['selected_repository'].id == -1
+            assert call_args['selected_repository'].is_public is False
+            
+            assert call_args['selected_branch'] == 'main'
+            assert call_args['initial_user_msg'] == 'Hello, agent!'
+            assert call_args['conversation_trigger'] == ConversationTrigger.GUI
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_bearer_auth():
+    """Test creating a new conversation with bearer authentication sets OPENHANDS_API trigger."""
+    with _patch_store():
+        # Mock the _create_new_conversation function directly
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Create test data
+            test_repo = Repository(
+                id=12345,
+                full_name='test/repo',
+                git_provider=ProviderType.GITHUB,
+                is_public=True,
+            )
+
+            test_request = InitSessionRequest(
+                conversation_trigger=ConversationTrigger.GUI,  # This should be overridden
+                selected_repository=test_repo,
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+            )
+
+            # Call new_conversation with bearer auth type
+            response = await new_conversation(
+                data=test_request, 
+                user_id='test_user', 
+                provider_tokens={},
+                auth_type=AuthType.BEARER
+            )
+
+            # Verify the response
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 200
+            assert (
+                response.body.decode('utf-8')
+                == '{"status":"ok","conversation_id":"test_conversation_id"}'
+            )
+
+            # Verify that _create_new_conversation was called with the correct arguments
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert call_args['user_id'] == 'test_user'
+            assert call_args['selected_repository'] == test_repo
+            assert call_args['selected_branch'] == 'main'
+            assert call_args['initial_user_msg'] == 'Hello, agent!'
+            
+            # Verify that the conversation trigger was set to OPENHANDS_API
+            assert call_args['conversation_trigger'] == ConversationTrigger.OPENHANDS_API
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_partial_repo_and_bearer_auth():
+    """Test creating a new conversation with both PartialRepository and bearer auth."""
+    with _patch_store():
+        # Mock the _create_new_conversation function directly
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Create test data with PartialRepository
+            test_partial_repo = PartialRepository(
+                full_name='test/repo',
+                git_provider=ProviderType.GITHUB,
+            )
+
+            test_request = InitSessionRequest(
+                conversation_trigger=ConversationTrigger.GUI,  # This should be overridden
+                selected_repository=test_partial_repo,
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+            )
+
+            # Call new_conversation with bearer auth type
+            response = await new_conversation(
+                data=test_request, 
+                user_id='test_user', 
+                provider_tokens={},
+                auth_type=AuthType.BEARER
+            )
+
+            # Verify the response
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 200
+            assert (
+                response.body.decode('utf-8')
+                == '{"status":"ok","conversation_id":"test_conversation_id"}'
+            )
+
+            # Verify that _create_new_conversation was called with the correct arguments
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert call_args['user_id'] == 'test_user'
+            
+            # Verify that the PartialRepository was converted to a Repository
+            assert isinstance(call_args['selected_repository'], Repository)
+            assert call_args['selected_repository'].full_name == 'test/repo'
+            assert call_args['selected_repository'].git_provider == ProviderType.GITHUB
+            
+            assert call_args['selected_branch'] == 'main'
+            assert call_args['initial_user_msg'] == 'Hello, agent!'
+            
+            # Verify that the conversation trigger was set to OPENHANDS_API
+            assert call_args['conversation_trigger'] == ConversationTrigger.OPENHANDS_API
 
 
 @pytest.mark.asyncio
