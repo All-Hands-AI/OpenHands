@@ -251,7 +251,8 @@ class GitHubService(BaseGitService, GitService):
     ) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API."""
         try:
-            async with httpx.AsyncClient() as client:
+            timeout = httpx.Timeout(45.0)  
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 github_headers = await self._get_github_headers()
                 response = await client.post(
                     f'{self.BASE_URL}/graphql',
