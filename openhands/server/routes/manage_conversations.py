@@ -61,7 +61,7 @@ class InitSessionRequest(BaseModel):
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    selected_repository: Repository | PartialRepository | None,
+    selected_repository: Repository | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -99,11 +99,9 @@ async def _create_new_conversation(
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
 
-    repository = None
-    if isinstance(selected_repository, PartialRepository):
-        repository = selected_repository.convert_to_repo_model()
+    
 
-    session_init_args['selected_repository'] = repository
+    session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
@@ -163,6 +161,8 @@ async def _create_new_conversation(
     return conversation_id
 
 
+
+
 @app.post('/conversations')
 async def new_conversation(
     data: InitSessionRequest,
@@ -183,6 +183,17 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     conversation_trigger = data.conversation_trigger
+
+    if isinstance(selected_repository, PartialRepository):
+        if auth_type != AuthType.BEARER:
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Expected Repository instead of PartialRepository type for selected_repository'
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        selected_repository = selected_repository.convert_to_repo_model()
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
