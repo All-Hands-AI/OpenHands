@@ -35,6 +35,15 @@ const MOCK_USER_PREFERENCES: {
   settings: null,
 };
 
+/**
+ * Set the user settings to the default settings
+ *
+ * Useful for resetting the settings in tests
+ */
+export const resetTestHandlersMockSettings = () => {
+  MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
+};
+
 const conversations: Conversation[] = [
   {
     conversation_id: "1",
@@ -80,6 +89,7 @@ const openHandsHandlers = [
     HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
+      "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-3-5-sonnet-20241022",
     ]),
@@ -173,6 +183,7 @@ export const handlers = [
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
+    await delay();
     const body = await request.json();
 
     if (body) {
