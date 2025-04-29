@@ -8,7 +8,6 @@ import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { openHands } from "#/api/open-hands-axios";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 export default function AcceptTOS() {
   const { t } = useTranslation();
