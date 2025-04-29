@@ -46,10 +46,6 @@ export default function AcceptTOS() {
         navigate(finalRedirectUrl);
       }
     },
-    onError: () => {
-      // Log error silently and show toast to user
-      displayErrorToast(t(I18nKey.ERROR$GENERIC));
-    },
   });
 
   const handleAcceptTOS = () => {
