@@ -185,14 +185,6 @@ async def new_conversation(
     conversation_trigger = data.conversation_trigger
 
     if isinstance(selected_repository, PartialRepository):
-        if auth_type != AuthType.BEARER:
-            return JSONResponse(
-                content={
-                    'status': 'error',
-                    'message': 'Expected Repository instead of PartialRepository type for selected_repository'
-                },
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
         selected_repository = selected_repository.convert_to_repo_model()
 
     if suggested_task:
