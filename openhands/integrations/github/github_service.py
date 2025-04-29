@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 import httpx
+from httpx import ReadTimeout
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
@@ -289,9 +290,7 @@ class GitHubService(BaseGitService, GitService):
         tasks: list[SuggestedTask] = []
         variables = {'login': login}
 
-        
-
-        # Split into two separate queries: one for PRs and one for issues
+        # First try using GraphQL for better performance
         try:
             # Execute PR query
             pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
@@ -334,11 +333,6 @@ class GitHubService(BaseGitService, GitService):
                         )
                     )
             
-        except Exception:
-            pass
-
-
-        try:
             # Execute issue query
             issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
             issue_data = issue_response['data']['user']
@@ -357,10 +351,111 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
+        except ReadTimeout:
+            # If we hit a timeout, fall back to REST API calls
+            return await self._get_suggested_tasks_rest(login)
         except Exception:
+            # For other exceptions, just return what we have so far
             pass
 
-
+        return tasks
+        
+    async def _get_suggested_tasks_rest(self, login: str) -> list[SuggestedTask]:
+        """Get suggested tasks using REST API calls instead of GraphQL.
+        
+        This is a fallback method when GraphQL queries timeout or fail.
+        """
+        tasks: list[SuggestedTask] = []
+        
+        # 1. Get user's open PRs
+        try:
+            url = f'{self.BASE_URL}/search/issues'
+            params = {
+                'q': f'author:{login} is:pr is:open',
+                'per_page': '10',
+                'sort': 'updated',
+                'order': 'desc'
+            }
+            pr_response, _ = await self._make_request(url, params)
+            
+            # Process each PR to get additional details
+            for pr_item in pr_response.get('items', []):
+                pr_number = pr_item['number']
+                repo_url = pr_item['repository_url']
+                repo_name = repo_url.split('repos/')[1] if 'repos/' in repo_url else ''
+                title = pr_item['title']
+                
+                # Default task type
+                task_type = TaskType.OPEN_PR
+                
+                # Get PR details to check mergeable status
+                pr_url = f'{self.BASE_URL}/repos/{repo_name}/pulls/{pr_number}'
+                pr_details, _ = await self._make_request(pr_url)
+                
+                # Check mergeable status
+                if pr_details.get('mergeable') is False and pr_details.get('mergeable_state') == 'dirty':
+                    task_type = TaskType.MERGE_CONFLICTS
+                
+                # Check for failing checks
+                if task_type == TaskType.OPEN_PR:
+                    # Get commit status
+                    commit_sha = pr_details.get('head', {}).get('sha')
+                    if commit_sha:
+                        status_url = f'{self.BASE_URL}/repos/{repo_name}/commits/{commit_sha}/status'
+                        status_response, _ = await self._make_request(status_url)
+                        if status_response.get('state') == 'failure':
+                            task_type = TaskType.FAILING_CHECKS
+                
+                # Check for review comments
+                if task_type == TaskType.OPEN_PR:
+                    reviews_url = f'{self.BASE_URL}/repos/{repo_name}/pulls/{pr_number}/reviews'
+                    reviews_response, _ = await self._make_request(reviews_url)
+                    
+                    if any(review.get('state') in ['CHANGES_REQUESTED', 'COMMENTED'] 
+                           for review in reviews_response):
+                        task_type = TaskType.UNRESOLVED_COMMENTS
+                
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            git_provider=ProviderType.GITHUB,
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=pr_number,
+                            title=title,
+                        )
+                    )
+        except Exception:
+            pass
+        
+        # 2. Get issues assigned to the user
+        try:
+            url = f'{self.BASE_URL}/search/issues'
+            params = {
+                'q': f'assignee:{login} is:issue is:open',
+                'per_page': '10',
+                'sort': 'updated',
+                'order': 'desc'
+            }
+            issue_response, _ = await self._make_request(url, params)
+            
+            for issue in issue_response.get('items', []):
+                repo_url = issue['repository_url']
+                repo_name = repo_url.split('repos/')[1] if 'repos/' in repo_url else ''
+                
+                tasks.append(
+                    SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
+                        task_type=TaskType.OPEN_ISSUE,
+                        repo=repo_name,
+                        issue_number=issue['number'],
+                        title=issue['title'],
+                    )
+                )
+        except Exception:
+            pass
+            
         return tasks
 
 
