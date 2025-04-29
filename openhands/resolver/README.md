@@ -40,6 +40,7 @@ This tool uses [OpenHands](https://github.com/all-hands-ai/openhands) AI agents 
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
      - `LLM_BASE_URL`: Base URL for LLM API (only if using a proxy)
+     - [See how to customize more configurations](https://docs.all-hands.dev/modules/usage/how-to/github-action#custom-configurations)
 
 ## 2. Setting up GitLab (CI Runner)
 
