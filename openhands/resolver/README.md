@@ -9,11 +9,13 @@ This tool uses [OpenHands](https://github.com/all-hands-ai/openhands) AI agents 
 ### Prerequisites
 
 - [Create a personal access token](https://github.com/settings/tokens?type=beta) with read/write scope for
+
   - "contents"
   - "issues"
   - "pull requests"
   - "workflows"
-    Create an LLM API key (e,g [Claude API](https://www.anthropic.com/api))
+
+- Create an LLM API key (e,g [Claude API](https://www.anthropic.com/api))
 
 ### Installation
 
@@ -38,13 +40,6 @@ This tool uses [OpenHands](https://github.com/all-hands-ai/openhands) AI agents 
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
      - `LLM_BASE_URL`: Base URL for LLM API (only if using a proxy)
-
-4. Usage:
-
-   - Using the 'fix-me' label:
-     - Add the 'fix-me' label to any issue you want the AI to resolve
-   - Using `@openhands-agent` mention:
-     - Create a comment containing `@openhands-agent` in any issue
 
 ## 2. Setting up GitLab (CI Runner)
 
