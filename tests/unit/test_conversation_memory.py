@@ -1186,7 +1186,7 @@ def test_process_events_with_empty_content(conversation_memory):
     tool_call = ChatCompletionMessageToolCall(
         id='test_call_id',
         function={'name': 'execute_bash', 'arguments': '{"command": "test"}'},
-        type='function'
+        type='function',
     )
 
     # Create a mock ModelResponse with empty string content but with tool calls
@@ -1222,7 +1222,9 @@ def test_process_events_with_empty_content(conversation_memory):
 
     # Verify that the empty content is not included
     assert len(messages) == 2  # Only system message and initial user message
-    assert all(len(msg.content) > 0 for msg in messages)  # All messages should have non-empty content
+    assert all(
+        len(msg.content) > 0 for msg in messages
+    )  # All messages should have non-empty content
 
 
 class TestFilterUnmatchedToolCalls:
