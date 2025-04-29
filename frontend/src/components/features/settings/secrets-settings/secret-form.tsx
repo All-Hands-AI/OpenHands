@@ -6,6 +6,7 @@ import { SettingsInput } from "../settings-input";
 import { cn } from "#/utils/utils";
 import { BrandButton } from "../brand-button";
 import { useGetSecrets } from "#/hooks/query/use-get-secrets";
+import { GetSecretsResponse } from "#/api/secrets-service.types";
 
 interface SecretFormProps {
   mode: "add" | "edit";
@@ -39,11 +40,19 @@ export function SecretForm({
   };
 
   const updateSecretOptimistically = (oldName: string, name: string) => {
-    queryClient.setQueryData(
+    queryClient.setQueryData<GetSecretsResponse["custom_secrets"]>(
       ["secrets"],
-      (oldSecrets: string[] | undefined) => {
+      (oldSecrets) => {
         if (!oldSecrets) return [];
-        return oldSecrets.map((secret) => (secret === oldName ? name : secret));
+        return oldSecrets.map((secret) => {
+          if (secret.name === oldName) {
+            return {
+              ...secret,
+              name,
+            };
+          }
+          return secret;
+        });
       },
     );
   };
@@ -75,7 +84,7 @@ export function SecretForm({
       setError(null);
 
       const isNameAlreadyUsed = secrets?.some(
-        (secret) => secret === name && secret !== selectedSecret,
+        (secret) => secret.name === name && secret.name !== selectedSecret,
       );
       if (isNameAlreadyUsed) {
         setError("Secret already exists");

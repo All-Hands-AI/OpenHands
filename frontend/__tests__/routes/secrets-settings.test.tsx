@@ -4,6 +4,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import SecretsSettingsScreen from "#/routes/secrets-settings";
 import { SecretsService } from "#/api/secrets-service";
+import { GetSecretsResponse } from "#/api/secrets-service.types";
+
+const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
+  {
+    name: "My_Secret_1",
+    description: "My first secret",
+  },
+  {
+    name: "My_Secret_2",
+    description: "My second secret",
+  },
+];
 
 const renderSecretsSettings = () =>
   render(<SecretsSettingsScreen />, {
@@ -30,7 +42,7 @@ describe("Content", () => {
 
   it("should render existing secrets", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     renderSecretsSettings();
 
     const secrets = await screen.findAllByTestId("secret-item");
@@ -83,7 +95,7 @@ describe("Secret actions", () => {
   it("should edit a secret", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const updateSecretSpy = vi.spyOn(SecretsService, "updateSecret");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     updateSecretSpy.mockResolvedValue(true);
     renderSecretsSettings();
 
@@ -131,7 +143,7 @@ describe("Secret actions", () => {
 
   it("should be able to cancel the create or edit form", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     renderSecretsSettings();
 
     // render form & hide items
@@ -168,7 +180,7 @@ describe("Secret actions", () => {
   it("should undo the optimistic update if the request fails", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const updateSecretSpy = vi.spyOn(SecretsService, "updateSecret");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     updateSecretSpy.mockRejectedValue(new Error("Failed to update secret"));
     renderSecretsSettings();
 
@@ -214,7 +226,7 @@ describe("Secret actions", () => {
   it("should remove the secret from the list after deletion", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     deleteSecretSpy.mockResolvedValue(true);
     renderSecretsSettings();
 
@@ -242,7 +254,7 @@ describe("Secret actions", () => {
   it("should be able to cancel the delete confirmation modal", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     deleteSecretSpy.mockResolvedValue(true);
     renderSecretsSettings();
 
@@ -266,7 +278,7 @@ describe("Secret actions", () => {
   it("should revert the optimistic update if the request fails", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const deleteSecretSpy = vi.spyOn(SecretsService, "deleteSecret");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1", "My_Secret_2"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
     deleteSecretSpy.mockRejectedValue(new Error("Failed to delete secret"));
     renderSecretsSettings();
 
@@ -343,7 +355,7 @@ describe("Secret actions", () => {
   it("should not allow existing secret names", async () => {
     const createSecretSpy = vi.spyOn(SecretsService, "createSecret");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
-    getSecretsSpy.mockResolvedValue(["My_Secret_1"]);
+    getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE.slice(0, 1));
     renderSecretsSettings();
 
     // render form & hide items

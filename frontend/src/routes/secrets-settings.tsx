@@ -6,6 +6,7 @@ import { SecretForm } from "#/components/features/settings/secrets-settings/secr
 import { SecretListItem } from "#/components/features/settings/secrets-settings/secret-list-item";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
+import { GetSecretsResponse } from "#/api/secrets-service.types";
 
 function SecretsSettingsScreen() {
   const queryClient = useQueryClient();
@@ -23,11 +24,11 @@ function SecretsSettingsScreen() {
     React.useState(false);
 
   const deleteSecretOptimistically = (secret: string) => {
-    queryClient.setQueryData(
+    queryClient.setQueryData<GetSecretsResponse["custom_secrets"]>(
       ["secrets"],
-      (oldSecrets: string[] | undefined) => {
+      (oldSecrets) => {
         if (!oldSecrets) return [];
-        return oldSecrets.filter((s) => s !== secret);
+        return oldSecrets.filter((s) => s.name !== secret);
       },
     );
   };
@@ -67,15 +68,15 @@ function SecretsSettingsScreen() {
         <ul>
           {secrets?.map((secret) => (
             <SecretListItem
-              key={secret}
-              title={secret}
+              key={secret.name}
+              title={secret.name}
               onEdit={() => {
                 setView("edit-secret-form");
-                setSelectedSecret(secret);
+                setSelectedSecret(secret.name);
               }}
               onDelete={() => {
                 setConfirmationModalIsVisible(true);
-                setSelectedSecret(secret);
+                setSelectedSecret(secret.name);
               }}
             />
           ))}
