@@ -1,6 +1,6 @@
 import io
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Dict, Any, Optional
 
 import frontmatter
 from pydantic import BaseModel
@@ -9,7 +9,7 @@ from openhands.core.exceptions import (
     MicroagentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroagentMetadata, MicroagentType
+from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
 
 
 class BaseMicroagent(BaseModel):
@@ -71,13 +71,20 @@ class BaseMicroagent(BaseModel):
         subclass_map = {
             MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
             MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
+            MicroagentType.USER_INPUT_KNOWLEDGE: UserInputKnowledgeMicroagent,
         }
 
         # Infer the agent type:
-        # 1. If triggers exist -> KNOWLEDGE
-        # 2. Else (no triggers) -> REPO
+        # 1. If inputs exist -> USER_INPUT_KNOWLEDGE
+        # 2. If triggers exist -> KNOWLEDGE
+        # 3. Else (no triggers) -> REPO
         inferred_type: MicroagentType
-        if metadata.triggers:
+        if metadata.inputs:
+            inferred_type = MicroagentType.USER_INPUT_KNOWLEDGE
+            # Add a trigger for the agent name if not already present
+            if not metadata.triggers:
+                metadata.triggers = [f"/{metadata.name}"]
+        elif metadata.triggers:
             inferred_type = MicroagentType.KNOWLEDGE
         else:
             # No triggers, default to REPO unless metadata explicitly says otherwise (which it shouldn't for REPO)
@@ -175,6 +182,37 @@ class RepoMicroagent(BaseMicroagent):
             )
 
 
+class UserInputKnowledgeMicroagent(KnowledgeMicroagent):
+    """Microagent specialized for tasks that require user input.
+    
+    These microagents are triggered by a special format: "/{agent_name}"
+    and will prompt the user for any required inputs before proceeding.
+    """
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.type != MicroagentType.USER_INPUT_KNOWLEDGE:
+            raise ValueError(
+                f'UserInputKnowledgeMicroagent initialized with incorrect type: {self.type}'
+            )
+        
+        # Append a prompt to ask for missing variables
+        self._append_missing_variables_prompt()
+    
+    def _append_missing_variables_prompt(self) -> None:
+        """Append a prompt to ask for missing variables."""
+        if not self.metadata.inputs:
+            return
+            
+        prompt = "\n\nIf the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task."
+        self.content += prompt
+    
+    @property
+    def inputs(self) -> List[InputMetadata]:
+        """Get the inputs for this microagent."""
+        return self.metadata.inputs
+
+
 def load_microagents_from_dir(
     microagent_dir: Union[str, Path],
 ) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
@@ -186,7 +224,7 @@ def load_microagents_from_dir(
         microagent_dir: Path to the microagents directory (e.g. .openhands/microagents)
 
     Returns:
-        Tuple of (repo_agents, knowledge_agents, task_agents) dictionaries
+        Tuple of (repo_agents, knowledge_agents) dictionaries
     """
     if isinstance(microagent_dir, str):
         microagent_dir = Path(microagent_dir)
@@ -207,6 +245,7 @@ def load_microagents_from_dir(
                 if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
+                    # Both KnowledgeMicroagent and UserInputKnowledgeMicroagent go into knowledge_agents
                     knowledge_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:
