@@ -1,27 +1,41 @@
 import React from "react";
+import { Provider } from "#/types/settings";
 
 interface AuthContextType {
-  githubTokenIsSet: boolean;
-  setGitHubTokenIsSet: (value: boolean) => void;
+  providerTokensSet: Provider[];
+  setProviderTokensSet: (tokens: Provider[]) => void;
+  providersAreSet: boolean;
+  setProvidersAreSet: (status: boolean) => void;
 }
 
 interface AuthContextProps extends React.PropsWithChildren {
-  initialGithubTokenIsSet?: boolean;
+  initialProviderTokens?: Provider[];
+  initialProvidersAreSet?: boolean;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-function AuthProvider({ children, initialGithubTokenIsSet }: AuthContextProps) {
-  const [githubTokenIsSet, setGitHubTokenIsSet] = React.useState(
-    !!initialGithubTokenIsSet,
+function AuthProvider({
+  children,
+  initialProviderTokens = [],
+  initialProvidersAreSet = false,
+}: AuthContextProps) {
+  const [providerTokensSet, setProviderTokensSet] = React.useState<Provider[]>(
+    initialProviderTokens,
+  );
+
+  const [providersAreSet, setProvidersAreSet] = React.useState<boolean>(
+    initialProvidersAreSet,
   );
 
   const value = React.useMemo(
     () => ({
-      githubTokenIsSet,
-      setGitHubTokenIsSet,
+      providerTokensSet,
+      setProviderTokensSet,
+      providersAreSet,
+      setProvidersAreSet,
     }),
-    [githubTokenIsSet, setGitHubTokenIsSet],
+    [providerTokensSet],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

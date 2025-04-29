@@ -6,6 +6,7 @@ from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
@@ -28,8 +29,8 @@ from openhands.events.action import MessageAction, NullAction
 from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
-from openhands.events.serialization import event_from_dict
 from openhands.io import read_input, read_task
+from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -95,6 +96,8 @@ async def run_controller(
 
     if agent is None:
         agent = create_agent(config)
+        mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
+        agent.set_mcp_tools(mcp_tools)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -148,7 +151,7 @@ async def run_controller(
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if initial_state is not None:
+    if initial_state is not None and initial_state.last_error:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
@@ -163,7 +166,7 @@ async def run_controller(
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
-    def on_event(event: Event):
+    def on_event(event: Event) -> None:
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
@@ -210,9 +213,9 @@ async def run_controller(
         else:
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = controller.get_trajectory()
-        with open(file_path, 'w') as f:
-            json.dump(histories, f)
+        histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
+        with open(file_path, 'w') as f:  # noqa: ASYNC101
+            json.dump(histories, f, indent=4)
 
     return state
 
@@ -250,21 +253,7 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
             raise ValueError(f'Trajectory path is a directory, not a file: {path}')
 
         with open(path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            if not isinstance(data, list):
-                raise ValueError(
-                    f'Expected a list in {path}, got {type(data).__name__}'
-                )
-            events = []
-            for item in data:
-                event = event_from_dict(item)
-                if event.source == EventSource.ENVIRONMENT:
-                    # ignore ENVIRONMENT events as they are not issued by
-                    # the user or agent, and should not be replayed
-                    continue
-                # cannot add an event with _id to event stream
-                event._id = None  # type: ignore[attr-defined]
-                events.append(event)
+            events = ReplayManager.get_replay_events(json.load(file))
             assert isinstance(events[0], MessageAction)
             return events[1:], events[0]
     except json.JSONDecodeError as e:

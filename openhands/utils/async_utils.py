@@ -45,6 +45,10 @@ def call_async_from_sync(
         finally:
             loop_for_thread.close()
 
+    if getattr(EXECUTOR, '_shutdown', False):
+        result = run()
+        return result
+
     future = EXECUTOR.submit(run)
     futures.wait([future], timeout=timeout or None)
     result = future.result()

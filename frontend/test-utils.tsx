@@ -11,7 +11,6 @@ import { vi } from "vitest";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
-import { SettingsProvider } from "#/context/settings-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -39,7 +38,7 @@ i18n.use(initReactI18next).init({
   },
 });
 
-const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
+export const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
     reducer: rootReducer,
     preloadedState,
@@ -66,7 +65,7 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <AuthProvider initialGithubTokenIsSet={true}>
+        <AuthProvider initialProviderTokens={[]}>
           <QueryClientProvider
             client={
               new QueryClient({
@@ -74,11 +73,9 @@ export function renderWithProviders(
               })
             }
           >
-            <SettingsProvider>
-              <ConversationProvider>
-                <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
-              </ConversationProvider>
-            </SettingsProvider>
+            <ConversationProvider>
+              <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+            </ConversationProvider>
           </QueryClientProvider>
         </AuthProvider>
       </Provider>

@@ -49,6 +49,10 @@ export interface GetConfigResponse {
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
   STRIPE_PUBLISHABLE_KEY?: string;
+  FEATURE_FLAGS: {
+    ENABLE_BILLING: boolean;
+    HIDE_LLM_SETTINGS: boolean;
+  };
 }
 
 export interface GetVSCodeUrlResponse {
@@ -66,6 +70,8 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
+
 export interface Conversation {
   conversation_id: string;
   title: string;
@@ -73,9 +79,22 @@ export interface Conversation {
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
+  trigger?: ConversationTrigger;
 }
 
 export interface ResultSet<T> {
   results: T[];
   next_page_id: string | null;
+}
+
+export type GitChangeStatus = "M" | "A" | "D" | "R" | "U";
+
+export interface GitChange {
+  status: GitChangeStatus;
+  path: string;
+}
+
+export interface GitChangeDiff {
+  modified: string;
+  original: string;
 }

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 from browsergym.utils.obs import flatten_axtree_to_str
 
@@ -16,13 +17,17 @@ class BrowserOutputObservation(Observation):
     set_of_marks: str = field(default='', repr=False)  # don't show in repr
     error: bool = False
     observation: str = ObservationType.BROWSE
-    goal_image_urls: list = field(default_factory=list)
+    goal_image_urls: list[str] = field(default_factory=list)
     # do not include in the memory
-    open_pages_urls: list = field(default_factory=list)
+    open_pages_urls: list[str] = field(default_factory=list)
     active_page_index: int = -1
-    dom_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
-    axtree_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
-    extra_element_properties: dict = field(
+    dom_object: dict[str, Any] = field(
+        default_factory=dict, repr=False
+    )  # don't show in repr
+    axtree_object: dict[str, Any] = field(
+        default_factory=dict, repr=False
+    )  # don't show in repr
+    extra_element_properties: dict[str, Any] = field(
         default_factory=dict, repr=False
     )  # don't show in repr
     last_browser_action: str = ''
@@ -102,4 +107,4 @@ class BrowserOutputObservation(Observation):
             skip_generic=False,
             filter_visible_only=filter_visible_only,
         )
-        return cur_axtree_txt
+        return str(cur_axtree_txt)

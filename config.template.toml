@@ -24,7 +24,7 @@
 #daytona_target = ""
 
 # Base path for the workspace
-workspace_base = "./workspace"
+#workspace_base = "./workspace"
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
@@ -41,6 +41,10 @@ workspace_base = "./workspace"
 # Path to store trajectories, can be a folder or a file
 # If it's a folder, the session id will be used as the file name
 #save_trajectory_path="./trajectories"
+
+# Whether to save screenshots in the trajectory
+# The screenshots are encoded and can make trajectory json files very large
+#save_screenshots_in_trajectory = false
 
 # Path to replay a trajectory, must be a file path
 # If provided, trajectory will be loaded and replayed before the
@@ -60,7 +64,7 @@ workspace_base = "./workspace"
 #max_budget_per_task = 0.0
 
 # Maximum number of iterations
-#max_iterations = 100
+#max_iterations = 250
 
 # Path to mount the workspace in the sandbox
 #workspace_mount_path_in_sandbox = "/workspace"
@@ -212,13 +216,26 @@ model = "gpt-4o"
 [agent]
 
 # Whether the browsing tool is enabled
-codeact_enable_browsing = true
+enable_browsing = true
 
 # Whether the LLM draft editor is enabled
-codeact_enable_llm_editor = false
+enable_llm_editor = false
+
+# Whether the standard editor tool (str_replace_editor) is enabled
+# Only has an effect if enable_llm_editor is False
+enable_editor = true
 
 # Whether the IPython tool is enabled
-codeact_enable_jupyter = true
+enable_jupyter = true
+
+# Whether the command tool is enabled
+enable_cmd = true
+
+# Whether the think tool is enabled
+enable_think = true
+
+# Whether the finish tool is enabled
+enable_finish = true
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'

@@ -2,21 +2,10 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
-    Field,
     SecretStr,
-    SerializationInfo,
-    field_serializer,
-    model_validator,
 )
-from pydantic.json import pydantic_encoder
 
-from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import SecretStore
-
-
-class Settings(BaseModel):
-    """Persisted settings for OpenHands sessions."""
+from openhands.storage.data_models.settings import Settings
 
     language: str | None = None
     agent: str | None = None
@@ -103,16 +92,27 @@ class Settings(BaseModel):
 class POSTSettingsModel(Settings):
     """Settings for POST requests."""
 
-    unset_github_token: bool | None = None
-    # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
 
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
-        return provider_tokens
+
+class POSTSettingsCustomSecrets(BaseModel):
+    """
+    Adding new custom secret
+    """
+
+    custom_secrets: dict[str, str | SecretStr] = {}
 
 
 class GETSettingsModel(Settings):
     """Settings with additional token data for the frontend."""
 
-    github_token_is_set: bool | None = None
+    provider_tokens_set: dict[str, bool] | None = None
+    llm_api_key_set: bool
+
+
+class GETSettingsCustomSecrets(BaseModel):
+    """
+    Custom secrets names
+    """
+
+    custom_secrets: list[str] | None = None
