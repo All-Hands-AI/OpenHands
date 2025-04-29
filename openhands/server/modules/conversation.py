@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from sqlalchemy import desc, func, select, or_
+from sqlalchemy import desc, func, or_, select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
@@ -60,7 +60,11 @@ class ConversationModule:
             }
         except Exception as e:
             logger.error(f'Error getting conversation visibility: {str(e)}')
-            return {'is_published': False, 'hidden_prompt': False, 'thumbnail_url': None}
+            return {
+                'is_published': False,
+                'hidden_prompt': False,
+                'thumbnail_url': None,
+            }
 
     async def _update_conversation_visibility(
         self,
@@ -85,7 +89,12 @@ class ConversationModule:
                         (Conversation.c.conversation_id == conversation_id)
                         & (Conversation.c.user_id == user_id)
                     )
-                    .values(published=is_published, configs={**existing_record.configs, **configs}, title=title, status=status)
+                    .values(
+                        published=is_published,
+                        configs={**existing_record.configs, **configs},
+                        title=title,
+                        status=status,
+                    )
                 )
             else:
                 await database.execute(
@@ -113,8 +122,8 @@ class ConversationModule:
             existing_record = await database.fetch_one(query)
             if not existing_record:
                 return 'Conversation not found', None
-            if existing_record.status and existing_record.status == 'deleted':
-                return 'Conversation deleted', None
+            # if existing_record.status and existing_record.status == 'deleted':
+            #     return 'Conversation deleted', None
             if not existing_record.published:
                 return 'Conversation not published', None
             user_id = existing_record.user_id
@@ -136,10 +145,12 @@ class ConversationModule:
             if not existing_record:
                 return 'Conversation not found', None
             await database.execute(
-                Conversation.update().where(
+                Conversation.update()
+                .where(
                     (Conversation.c.conversation_id == conversation_id)
                     & (Conversation.c.user_id == user_id)
-                ).values(status='deleted')
+                )
+                .values(status='deleted')
             )
             return True
         except Exception as e:
@@ -234,7 +245,9 @@ class ConversationModule:
                     'short_description': conversation.get('short_description'),
                     'published': conversation.get('published'),
                     'view_count': self.get_view_count(conversation, sort_by),
-                    'thumbnail_url': conversation.get('configs', {}).get('thumbnail_url', None),
+                    'thumbnail_url': conversation.get('configs', {}).get(
+                        'thumbnail_url', None
+                    ),
                 }
                 for conversation in conversations
             ]
@@ -249,7 +262,9 @@ class ConversationModule:
                     'short_description': conversation.get('short_description'),
                     'published': conversation.get('published'),
                     'view_count': self.get_view_count(conversation, sort_by),
-                    'thumbnail_url': conversation.get('configs', {}).get('thumbnail_url', None),
+                    'thumbnail_url': conversation.get('configs', {}).get(
+                        'thumbnail_url', None
+                    ),
                 }
                 for conversation in conversations
             ]
@@ -264,20 +279,34 @@ class ConversationModule:
             prioritized_usecase_ids = kwargs.get('prioritized_usecase_ids', [])
             sort_by = kwargs.get('sort_by', None)
             if sort_by:
-                query = select(
-                    Conversation,
-                    ResearchTrending.c.total_view_24h,
-                    ResearchTrending.c.total_view_7d,
-                    ResearchTrending.c.total_view_30d,
-                ).select_from(
-                    Conversation.outerjoin(
-                        ResearchTrending,
-                        Conversation.c.conversation_id
-                        == ResearchTrending.c.conversation_id,
+                query = (
+                    select(
+                        Conversation,
+                        ResearchTrending.c.total_view_24h,
+                        ResearchTrending.c.total_view_7d,
+                        ResearchTrending.c.total_view_30d,
                     )
-                ).where(or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None)))
+                    .select_from(
+                        Conversation.outerjoin(
+                            ResearchTrending,
+                            Conversation.c.conversation_id
+                            == ResearchTrending.c.conversation_id,
+                        )
+                    )
+                    .where(
+                        or_(
+                            Conversation.c.status != 'deleted',
+                            Conversation.c.status.is_(None),
+                        )
+                    )
+                )
             else:
-                query = select(Conversation).where(or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None)))
+                query = select(Conversation).where(
+                    or_(
+                        Conversation.c.status != 'deleted',
+                        Conversation.c.status.is_(None),
+                    )
+                )
 
             if published is not None:
                 query = query.where(Conversation.c.published == published)
@@ -335,6 +364,25 @@ class ConversationModule:
             }
         except Exception as e:
             logger.error(f'Error getting list conversations: {str(e)}')
+            return []
+
+    async def _get_conversation_visibility_by_user_id(
+        self, user_id: str | None, page: int = 1, limit: int = 10
+    ):
+        if not user_id:
+            return []
+        try:
+            offset = (page - 1) * limit
+            query = Conversation.select().where(Conversation.c.user_id == user_id)
+            query = query.where(
+                or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None))
+            )
+            query = query.offset(offset).limit(limit)
+            query = query.order_by(desc(Conversation.c))
+            items = await database.fetch_all(query)
+            return items
+        except Exception as e:
+            logger.error(f'Error getting conversation by user id: {str(e)}')
             return []
 
 
