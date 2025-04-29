@@ -237,6 +237,10 @@ class Session:
             await self.send(event_dict)
 
     async def dispatch(self, data: dict):
+        # Update last_active_ts when receiving data from client
+        # This ensures the session is considered active when the client sends data
+        self.last_active_ts = int(time.time())
+        
         event = event_from_dict(data.copy())
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.image_urls:
