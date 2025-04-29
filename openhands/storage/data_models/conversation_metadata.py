@@ -7,6 +7,7 @@ class ConversationTrigger(Enum):
     RESOLVER = 'resolver'
     GUI = 'gui'
     SUGGESTED_TASK = 'suggested_task'
+    OPENHANDS_API = 'openhands_api'
 
 
 @dataclass

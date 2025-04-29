@@ -29,9 +29,11 @@ from openhands.server.shared import (
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
+    get_auth_type,
     get_provider_tokens,
     get_user_id,
 )
+from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
@@ -166,6 +168,7 @@ async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
+    auth_type: AuthType | None = Depends(get_auth_type)
 ):
     """Initialize a new session or join an existing one.
 
@@ -184,6 +187,9 @@ async def new_conversation(
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+
+    if auth_type == AuthType.BEARER:
+        conversation_trigger = ConversationTrigger.OPENHANDS_API
 
     try:
         # Create conversation with initial message
