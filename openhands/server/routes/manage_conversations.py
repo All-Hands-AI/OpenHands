@@ -194,7 +194,7 @@ async def new_conversation(
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
 
     if auth_type == AuthType.BEARER:
-        conversation_trigger = ConversationTrigger.OPENHANDS_API
+        conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
     try:
         # Create conversation with initial message

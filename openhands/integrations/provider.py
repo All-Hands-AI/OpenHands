@@ -406,4 +406,4 @@ class ProviderHandler:
             except Exception:
                 pass
 
-        raise AuthenticationError(f"Unable to access repo {repository.full_name}")
+        raise AuthenticationError(f'Unable to access repo {repository.full_name}')
