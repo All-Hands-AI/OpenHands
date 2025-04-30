@@ -114,8 +114,7 @@ function run_eval() {
     --split $SPLIT \
     --mode $MODE"
 
-  # Conditionally add the condenser config argument.
-  # The Python script defaults to NoOpCondenserConfig if this argument is not provided.
+  # This will default to NoOpCondenserConfig if not provided
   if [ -n "$CONDENSER_CONFIG" ]; then
     COMMAND="$COMMAND --condenser-config $CONDENSER_CONFIG"
   fi
