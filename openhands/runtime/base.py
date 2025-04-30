@@ -47,7 +47,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
-from openhands.integrations.service_types import Repository
+from openhands.integrations.service_types import AuthenticationError, Repository
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -312,27 +312,25 @@ class Runtime(FileEditRuntimeMixin):
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-        selected_repository: str | Repository | None,
+        selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
-        chosen_provider = None
-
-        if isinstance(selected_repository, str):  # Determine provider from repo name
+        repository = Repository(full_name=selected_repository)
+        if selected_repository:  # Determine provider from repo name
             try:
                 provider_handler = ProviderHandler(
                     git_provider_tokens or MappingProxyType({})
                 )
-                repo_obj = Repository(full_name=selected_repository)
-                chosen_provider = await provider_handler.verify_repo_provider(repo_obj)
-            except Exception:
-                pass
-        elif (
-            selected_repository and selected_repository.git_provider
-        ):  # See if repo object contains provider
-            chosen_provider = selected_repository.git_provider
+                repository = await provider_handler.verify_repo_provider(
+                    selected_repository
+                )
+            except AuthenticationError:
+                raise RuntimeError(
+                    'Git provider authentication issue when cloning repo'
+                )
 
-        # If repo is not provided or unable to determine repo's git provider
-        if not selected_repository or not chosen_provider:
+        # If repo is not provided
+        if not selected_repository:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
             if self.user_id or not self.config.workspace_base:
@@ -349,30 +347,28 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
+        provider = repository.git_provider if repository.git_provider else None
+        if not provider:
+            return ''
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
         }
 
-        domain = provider_domains[chosen_provider]
-        repository = (
-            selected_repository
-            if isinstance(selected_repository, str)
-            else selected_repository.full_name
-        )
+        domain = provider_domains[provider]
 
         # Try to use token if available, otherwise use public URL
-        if git_provider_tokens and chosen_provider in git_provider_tokens:
-            git_token = git_provider_tokens[chosen_provider].token
+        if git_provider_tokens and provider in git_provider_tokens:
+            git_token = git_provider_tokens[provider].token
             if git_token:
-                if chosen_provider == ProviderType.GITLAB:
-                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+                if provider == ProviderType.GITLAB:
+                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
                 else:
-                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
             else:
-                remote_repo_url = f'https://{domain}/{repository}.git'
+                remote_repo_url = f'https://{domain}/{selected_repository}.git'
         else:
-            remote_repo_url = f'https://{domain}/{repository}.git'
+            remote_repo_url = f'https://{domain}/{selected_repository}.git'
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
@@ -382,7 +378,7 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        dir_name = repository.split('/')[-1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(

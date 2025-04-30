@@ -62,7 +62,7 @@ class InitSessionRequest(BaseModel):
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    selected_repository: Repository | None,
+    selected_repository: str | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -125,7 +125,7 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository.full_name
+            selected_repository=selected_repository
             if selected_repository
             else selected_repository,
             selected_branch=selected_branch,
@@ -188,17 +188,11 @@ async def new_conversation(
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
     try:
-        selected_repository = None
-        # Determine git provider from repo name
-        if isinstance(repository, str):
-            provider_handler = ProviderHandler(provider_tokens)
-            selected_repository = await provider_handler.verify_repo_provider(repository)
-
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
-            selected_repository=selected_repository,
+            selected_repository=repository,
             selected_branch=selected_branch,
             initial_user_msg=initial_user_msg,
             image_urls=image_urls,
