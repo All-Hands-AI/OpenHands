@@ -49,7 +49,7 @@ async def connect(connection_id: str, environ):
     try:
         latest_event_id = int(latest_event_id_str)
     except ValueError:
-        logger.warning(
+        logger.debug(
             f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
         )
         latest_event_id = -1
