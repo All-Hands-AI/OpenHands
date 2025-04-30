@@ -398,7 +398,7 @@ class ProviderHandler:
         """
         return f'{provider.value}_token'.lower()
 
-    async def verify_repo_provider(self, repository: Repository):
+    async def verify_repo_provider(self, repository: str):
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
@@ -406,4 +406,4 @@ class ProviderHandler:
             except Exception:
                 pass
 
-        raise AuthenticationError(f'Unable to access repo {repository.full_name}')
+        raise AuthenticationError(f'Unable to access repo {repository}')

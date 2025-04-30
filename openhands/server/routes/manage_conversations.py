@@ -51,7 +51,7 @@ app = APIRouter(prefix='/api')
 
 class InitSessionRequest(BaseModel):
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
-    selected_repository: Repository | None = None
+    repository: str | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -172,7 +172,7 @@ async def new_conversation(
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    selected_repository = data.selected_repository
+    repository = data.repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
@@ -188,10 +188,11 @@ async def new_conversation(
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
     try:
-        # Determine git provider when only repo name is provided
-        if selected_repository and not selected_repository.git_provider:
+        selected_repository = None
+        # Determine git provider from repo name
+        if isinstance(repository, str):
             provider_handler = ProviderHandler(provider_tokens)
-            selected_repository = await provider_handler.verify_repo_provider(selected_repository)
+            selected_repository = await provider_handler.verify_repo_provider(repository)
 
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(

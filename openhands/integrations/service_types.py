@@ -209,6 +209,6 @@ class GitService(Protocol):
         ...
 
     async def get_repository_details_from_repo_name(
-        self, repository: Repository
+        self, repository: str
     ) -> Repository:
         """Gets all repository details from repository name"""

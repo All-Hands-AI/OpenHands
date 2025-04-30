@@ -384,9 +384,8 @@ class GitHubService(BaseGitService, GitService):
         except Exception:
             return []
 
-    async def get_repository_details_from_repo_name(self, repository: Repository) -> Repository:
-        full_name = repository.full_name  # Format: "owner/repo"
-        url = f'{self.BASE_URL}/repos/{full_name}'
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
         repo, _ = await self._make_request(url)
 
         return Repository(
