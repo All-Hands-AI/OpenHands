@@ -1,6 +1,6 @@
 # Microagents Overview
 
-Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge. 
+Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge.
 They provide expert guidance, automate common tasks, and ensure consistent practices across projects.
 
 ## Microagent Types
@@ -10,11 +10,11 @@ Currently OpenHands supports the following types of microagents:
 - [General Repository Microagents](./microagents-repo): General guidelines for OpenHands about the repository.
 - [Keyword-Triggered Microagents](./microagents-keyword): Guidelines activated by specific keywords in prompts.
 
-To customize OpenHands' behavior, create a .openhands/microagents/ directory in the root of your repository and 
+To customize OpenHands' behavior, create a .openhands/microagents/ directory in the root of your repository and
 add `<microagent_name>.md` files inside.
 
 :::note
-Loaded microagents take up space in the context window. 
+Loaded microagents take up space in the context window.
 These microagents, alongside user messages, inform OpenHands about the task and the environment.
 :::
 
@@ -31,10 +31,10 @@ some-repository/
 
 ## Microagents Frontmatter Requirements
 
-Each microagent file may include frontmatter that provides additional information. In some cases, this frontmatter 
+Each microagent file may include frontmatter that provides additional information. In some cases, this frontmatter
 is required:
 
-| Microagent Type                  | Frontmatter Requirement                               |
-|----------------------------------|-------------------------------------------------------|
-| `General Repository Microagents` | Required only if more than one of this type exists.   |
-| `Keyword-Triggered Microagents`  | Required.                                             |
+| Microagent Type                  | Required |
+|----------------------------------|----------|
+| `General Repository Microagents` | No       |
+| `Keyword-Triggered Microagents`  | Yes      |
