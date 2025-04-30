@@ -136,7 +136,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use the workspace panel to explore your project structure.
 - Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive
