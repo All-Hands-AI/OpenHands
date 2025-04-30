@@ -73,6 +73,7 @@ echo "MAX_ITER: $MAX_ITER"
 echo "NUM_WORKERS: $NUM_WORKERS"
 echo "COMMIT_HASH: $COMMIT_HASH"
 echo "MODE: $MODE"
+echo "CONDENSER_CONFIG: $CONDENSER_CONFIG"
 
 # Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
@@ -95,6 +96,10 @@ fi
 # if mode != swe, add mode to the eval note
 if [ "$MODE" != "swe" ]; then
   EVAL_NOTE="${EVAL_NOTE}-${MODE}"
+fi
+# Add condenser config to eval note if provided
+if [ -n "$CONDENSER_CONFIG" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${CONDENSER_CONFIG}"
 fi
 
 function run_eval() {
