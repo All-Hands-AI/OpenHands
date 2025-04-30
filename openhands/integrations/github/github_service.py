@@ -124,11 +124,7 @@ class GitHubService(BaseGitService, GitService):
     async def verify_access(self) -> bool:
         """Verify if the token is valid by making a simple request."""
         url = f'{self.BASE_URL}'
-        try:
-            await self._make_request(url)
-            return True
-        except Exception:
-            return False
+        await self._make_request(url)
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
