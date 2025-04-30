@@ -152,7 +152,7 @@ class OpenHands {
 
   static async createConversation(
     conversation_trigger: ConversationTrigger = "gui",
-    selectedRepository?: GitRepository,
+    selectedRepository?: string,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
@@ -160,7 +160,7 @@ class OpenHands {
   ): Promise<Conversation> {
     const body = {
       conversation_trigger,
-      selected_repository: selectedRepository,
+      repository: selectedRepository,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,

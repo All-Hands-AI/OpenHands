@@ -30,7 +30,9 @@ export const useCreateConversation = () => {
 
       return OpenHands.createConversation(
         variables.conversation_trigger,
-        variables.selectedRepository || undefined,
+        variables.selectedRepository
+          ? variables.selectedRepository.full_name
+          : undefined,
         variables.q,
         files,
         replayJson || undefined,
