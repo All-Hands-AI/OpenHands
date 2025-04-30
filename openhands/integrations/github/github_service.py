@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -18,8 +19,6 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-from datetime import datetime
-
 
 
 class GitHubService(BaseGitService, GitService):
@@ -125,6 +124,7 @@ class GitHubService(BaseGitService, GitService):
         """Verify if the token is valid by making a simple request."""
         url = f'{self.BASE_URL}'
         await self._make_request(url)
+        return True
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
@@ -164,12 +164,9 @@ class GitHubService(BaseGitService, GitService):
 
         return repos[:max_repos]  # Trim to max_repos if needed
 
-
     def parse_pushed_at_date(self, repo):
-        ts = repo.get("pushed_at")
-        return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ") if ts else datetime.min
-
-
+        ts = repo.get('pushed_at')
+        return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
@@ -197,11 +194,9 @@ class GitHubService(BaseGitService, GitService):
                 # If we've already reached MAX_REPOS, no need to check other installations
                 if len(all_repos) >= MAX_REPOS:
                     break
-            
-            if sort == "pushed":
-                all_repos.sort(
-                    key=self.parse_pushed_at_date, reverse=True
-                )
+
+            if sort == 'pushed':
+                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
         else:
             # Original behavior for non-SaaS mode
             params = {'per_page': str(PER_PAGE), 'sort': sort}
@@ -209,7 +204,6 @@ class GitHubService(BaseGitService, GitService):
 
             # Fetch user repositories
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
-
 
         # Convert to Repository objects
         return [
