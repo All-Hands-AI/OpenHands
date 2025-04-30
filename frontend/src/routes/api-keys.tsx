@@ -3,7 +3,7 @@ import { ApiKeysManager } from "#/components/features/settings/api-keys-manager"
 
 function ApiKeysScreen() {
   return (
-    <div className="flex flex-col grow overflow-auto p-11">
+    <div className="flex flex-col grow overflow-auto p-9">
       <ApiKeysManager />
     </div>
   );
