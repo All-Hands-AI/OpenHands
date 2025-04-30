@@ -5633,14 +5633,14 @@ voice-helpers = ["numpy (>=2.0.2)", "sounddevice (>=0.5.1)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.2.10"
+version = "0.2.11"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_aci-0.2.10-py3-none-any.whl", hash = "sha256:0703eb117e24326d80d990b81a0c71e28a364f56999095b95c146c934e40fc55"},
-    {file = "openhands_aci-0.2.10.tar.gz", hash = "sha256:a5e6bf46cbd9a99c5c592548419a9a3b3091c4e82f0227e8aaf470b18a261cc9"},
+    {file = "openhands_aci-0.2.11-py3-none-any.whl", hash = "sha256:bb6cdd30da8cf57292f7d1d87b2396a31af3f3abc2f5d6f02c22cb648956b41e"},
+    {file = "openhands_aci-0.2.11.tar.gz", hash = "sha256:38ae6abbeedfc0f6018dc5db58ad0ccc38295d649fe27218a0acab689df0e6c7"},
 ]
 
 [package.dependencies]
@@ -10269,4 +10269,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "3dd43a2d68987d22d18ec4137b6a6eb2022a30ef0791dcc42fc33e40e3190022"
+content-hash = "e8326a1441d5ce74c017755566e1e0d865551712290c00202d257c931b7dc5bd"

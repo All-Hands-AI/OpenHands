@@ -88,4 +88,4 @@ triggers:
 - ビルド時間とイメージサイズを最適化
 ```
 
-より多くの例については、[現在のパブリックマイクロエージェント](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge)をご覧ください。
+より多くの例については、[現在のパブリックマイクロエージェント](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)をご覧ください。
