@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-from abc import abstractmethod
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -28,6 +27,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
+from openhands.events.action.mcp import McpAction
 from openhands.events.observation import (
     AgentThinkObservation,
     ErrorObservation,
@@ -38,14 +38,17 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.mcp import MCPClient, create_mcp_clients
+from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-def _is_retryable_check_alive_error(exception):
+def _is_retryable_error(exception):
     return isinstance(
         exception, (httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
     )
@@ -76,6 +79,7 @@ class ActionExecutionClient(Runtime):
         self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
+        self.mcp_clients: list[MCPClient] | None = None
         super().__init__(
             config,
             event_stream,
@@ -89,10 +93,19 @@ class ActionExecutionClient(Runtime):
             git_provider_tokens,
         )
 
-    @abstractmethod
-    def _get_action_execution_server_host(self) -> str:
-        pass
+    @property
+    def action_execution_server_url(self) -> str:
+        raise NotImplementedError('Action execution server URL is not implemented')
 
+    @property
+    def runtime_initialized(self) -> bool:
+        return self._runtime_initialized
+
+    @retry(
+        retry=retry_if_exception(_is_retryable_error),
+        stop=stop_after_attempt(5) | stop_if_should_exit(),
+        wait=wait_exponential(multiplier=1, min=4, max=15),
+    )
     def _send_action_server_request(
         self,
         method: str,
@@ -114,15 +127,10 @@ class ActionExecutionClient(Runtime):
         """
         return send_request(self.session, method, url, **kwargs)
 
-    @retry(
-        retry=retry_if_exception(_is_retryable_check_alive_error),
-        stop=stop_after_attempt(5) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=4, max=15),
-    )
     def check_if_alive(self) -> None:
         response = self._send_action_server_request(
             'GET',
-            f'{self._get_action_execution_server_host()}/alive',
+            f'{self.action_execution_server_url}/alive',
             timeout=5,
         )
         assert response.is_closed
@@ -140,7 +148,7 @@ class ActionExecutionClient(Runtime):
 
             response = self._send_action_server_request(
                 'POST',
-                f'{self._get_action_execution_server_host()}/list_files',
+                f'{self.action_execution_server_url}/list_files',
                 json=data,
                 timeout=10,
             )
@@ -158,7 +166,7 @@ class ActionExecutionClient(Runtime):
             params = {'path': path}
             with self.session.stream(
                 'GET',
-                f'{self._get_action_execution_server_host()}/download_files',
+                f'{self.action_execution_server_url}/download_files',
                 params=params,
                 timeout=30,
             ) as response:
@@ -202,7 +210,7 @@ class ActionExecutionClient(Runtime):
 
             response = self._send_action_server_request(
                 'POST',
-                f'{self._get_action_execution_server_host()}/upload_file',
+                f'{self.action_execution_server_url}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
@@ -219,12 +227,12 @@ class ActionExecutionClient(Runtime):
             )
 
     def get_vscode_token(self) -> str:
-        if self.vscode_enabled and self._runtime_initialized:
+        if self.vscode_enabled and self.runtime_initialized:
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
             response = self._send_action_server_request(
                 'GET',
-                f'{self._get_action_execution_server_host()}/vscode/connection_token',
+                f'{self.action_execution_server_url}/vscode/connection_token',
                 timeout=10,
             )
             response_json = response.json()
@@ -245,6 +253,8 @@ class ActionExecutionClient(Runtime):
 
         # set timeout to default if not set
         if action.timeout is None:
+            if isinstance(action, CmdRunAction) and action.blocking:
+                raise RuntimeError('Blocking command with no timeout set')
             # We don't block the command if this is a default timeout action
             action.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
 
@@ -278,10 +288,13 @@ class ActionExecutionClient(Runtime):
             assert action.timeout is not None
 
             try:
+                execution_action_body: dict[str, Any] = {
+                    'action': event_to_dict(action),
+                }
                 response = self._send_action_server_request(
                     'POST',
-                    f'{self._get_action_execution_server_host()}/execute_action',
-                    json={'action': event_to_dict(action)},
+                    f'{self.action_execution_server_url}/execute_action',
+                    json=execution_action_body,
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
                 )
@@ -316,6 +329,20 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
+    async def call_tool_mcp(self, action: McpAction) -> Observation:
+        if self.mcp_clients is None:
+            self.log(
+                'debug',
+                f'Creating MCP clients with servers: {self.config.mcp.mcp_servers}',
+            )
+            self.mcp_clients = await create_mcp_clients(self.config.mcp.mcp_servers)
+        return await call_tool_mcp_handler(self.mcp_clients, action)
+
+    async def aclose(self) -> None:
+        if self.mcp_clients:
+            for client in self.mcp_clients:
+                await client.disconnect()
+
     def close(self) -> None:
         # Make sure we don't close the session multiple times
         # Can happen in evaluation
@@ -323,3 +350,4 @@ class ActionExecutionClient(Runtime):
             return
         self._runtime_closed = True
         self.session.close()
+        call_async_from_sync(self.aclose)

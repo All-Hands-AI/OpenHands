@@ -151,7 +151,7 @@ class LLMConfig(BaseModel):
 
         return llm_mapping
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
 
         This ensures that these values are accessible to litellm at runtime.
@@ -164,8 +164,8 @@ class LLMConfig(BaseModel):
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
-        # Assign an API version for Azure models
-        # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        # Set an API version by default for Azure models
+        # Required for newer models.
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
-            self.api_version = '2024-08-01-preview'
+            self.api_version = '2024-12-01-preview'

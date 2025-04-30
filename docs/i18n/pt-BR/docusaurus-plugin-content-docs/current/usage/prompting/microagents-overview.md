@@ -13,7 +13,7 @@ Quando o OpenHands trabalha com um repositório, ele:
 
 1. Carrega instruções específicas do repositório de `.openhands/microagents/`, se presentes no repositório.
 2. Carrega diretrizes gerais acionadas por palavras-chave nas conversas.
-Veja os [Microagentes Públicos](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) atuais.
+Veja os [Microagentes Públicos](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents) atuais.
 
 ## Formato do Microagente
 
@@ -21,8 +21,8 @@ Todos os microagentes usam arquivos markdown com frontmatter YAML que possuem in
 ```
 ---
 name: <Nome do microagente>
-type: <Tipo do MicroAgent>
-version: <Versão do MicroAgent>
+type: <Tipo do Microagent>
+version: <Versão do Microagent>
 agent: <O tipo de agente (normalmente CodeActAgent)>
 triggers:
 - <Palavras-chave opcionais que acionam o microagente. Se os gatilhos forem removidos, ele sempre será incluído>

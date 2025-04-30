@@ -13,7 +13,7 @@ OpenHandsがリポジトリで動作する際:
 
 1. リポジトリに`.openhands/microagents/`が存在する場合、そこからリポジトリ固有の指示を読み込みます。
 2. 会話のキーワードによってトリガーされる一般的なガイドラインを読み込みます。
-現在の[パブリックMicroagents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge)を参照してください。
+現在の[パブリックMicroagents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)を参照してください。
 
 ## Microagentのフォーマット
 
@@ -21,8 +21,8 @@ OpenHandsがリポジトリで動作する際:
 ```
 ---
 name: <Microagentの名前>
-type: <MicroAgentのタイプ>
-version: <MicroAgentのバージョン>
+type: <Microagentのタイプ>
+version: <Microagentのバージョン>
 agent: <エージェントのタイプ (通常はCodeActAgent)>
 triggers:
 - <オプション: microagentをトリガーするキーワード。トリガーを削除すると、常に含まれるようになります>

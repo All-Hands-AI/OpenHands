@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "../query/use-config";
 
 export const useLogout = () => {
-  const { setGitHubTokenIsSet } = useAuth();
+  const { setProviderTokensSet, setProvidersAreSet } = useAuth();
   const queryClient = useQueryClient();
   const { data: config } = useConfig();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: async () => {
@@ -20,7 +22,17 @@ export const useLogout = () => {
       queryClient.removeQueries({ queryKey: ["settings"] });
 
       // Update token state - this will trigger a settings refetch since it's part of the query key
-      setGitHubTokenIsSet(false);
+      setProviderTokensSet([]);
+      setProvidersAreSet(false);
+
+      // Navigate to root page and refresh the page
+      navigate("/");
+      window.location.reload();
+    },
+    onSuccess: () => {
+      // Home screen suggested tasks
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.removeQueries({ queryKey: ["tasks"] });
     },
   });
 };

@@ -15,6 +15,31 @@ import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 import { clickOnEditButton } from "./utils";
 
+// We'll use the actual i18next implementation but override the translation function
+import { I18nextProvider } from "react-i18next";
+import i18n from "i18next";
+
+// Mock the t function to return our custom translations
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => {
+        const translations: Record<string, string> = {
+          "CONVERSATION$CREATED": "Created",
+          "CONVERSATION$AGO": "ago",
+          "CONVERSATION$UPDATED": "Updated"
+        };
+        return translations[key] || key;
+      },
+      i18n: {
+        changeLanguage: () => new Promise(() => {}),
+      },
+    }),
+  };
+});
+
 describe("ConversationCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
@@ -47,12 +72,18 @@ describe("ConversationCard", () => {
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
-    const expectedDate = `${formatTimeDelta(new Date("2021-10-01T12:00:00Z"))} ago`;
 
     const card = screen.getByTestId("conversation-card");
 
     within(card).getByText("Conversation 1");
-    within(card).getByText(expectedDate);
+
+    // Just check that the card contains the expected text content
+    expect(card).toHaveTextContent("Created");
+    expect(card).toHaveTextContent("ago");
+
+    // Use a regex to match the time part since it might have whitespace
+    const timeRegex = new RegExp(formatTimeDelta(new Date("2021-10-01T12:00:00Z")));
+    expect(card).toHaveTextContent(timeRegex);
   });
 
   it("should render the selectedRepository if available", () => {
@@ -341,7 +372,7 @@ describe("ConversationCard", () => {
     await user.click(displayCostButton);
 
     // Verify if metrics modal is displayed by checking for the modal content
-    expect(screen.getByText("Metrics Information")).toBeInTheDocument();
+    expect(screen.getByTestId("metrics-modal")).toBeInTheDocument();
   });
 
   it("should not display the edit or delete options if the handler is not provided", async () => {

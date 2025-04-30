@@ -38,7 +38,7 @@ i18n.use(initReactI18next).init({
   },
 });
 
-const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
+export const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
     reducer: rootReducer,
     preloadedState,
@@ -65,7 +65,7 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <AuthProvider initialGithubTokenIsSet>
+        <AuthProvider initialProviderTokens={[]}>
           <QueryClientProvider
             client={
               new QueryClient({

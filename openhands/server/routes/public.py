@@ -1,20 +1,12 @@
-import warnings
 from typing import Any
 
-import httpx
 from fastapi import APIRouter
 
 from openhands.security.options import SecurityAnalyzers
 
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    import litellm
-
 from openhands.controller.agent import Agent
-from openhands.core.config import LLMConfig
-from openhands.core.logger import openhands_logger as logger
-from openhands.llm import bedrock
 from openhands.server.shared import config, server_config
+from openhands.utils.llm import get_supported_llm_models
 
 app = APIRouter(prefix='/api/options')
 
@@ -34,40 +26,7 @@ async def get_litellm_models() -> list[str]:
     Returns:
         list[str]: A sorted list of unique model names.
     """
-    litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
-    litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
-        litellm_model_list
-    )
-    # TODO: for bedrock, this is using the default config
-    llm_config: LLMConfig = config.get_llm_config()
-    bedrock_model_list = []
-    if (
-        llm_config.aws_region_name
-        and llm_config.aws_access_key_id
-        and llm_config.aws_secret_access_key
-    ):
-        bedrock_model_list = bedrock.list_foundation_models(
-            llm_config.aws_region_name,
-            llm_config.aws_access_key_id.get_secret_value(),
-            llm_config.aws_secret_access_key.get_secret_value(),
-        )
-    model_list = litellm_model_list_without_bedrock + bedrock_model_list
-    for llm_config in config.llms.values():
-        ollama_base_url = llm_config.ollama_base_url
-        if llm_config.model.startswith('ollama'):
-            if not ollama_base_url:
-                ollama_base_url = llm_config.base_url
-        if ollama_base_url:
-            ollama_url = ollama_base_url.strip('/') + '/api/tags'
-            try:
-                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']
-                for model in ollama_models_list:
-                    model_list.append('ollama/' + model['name'])
-                break
-            except httpx.HTTPError as e:
-                logger.error(f'Error getting OLLAMA models: {e}')
-
-    return list(sorted(set(model_list)))
+    return get_supported_llm_models(config)
 
 
 @app.get('/agents', response_model=list[str])

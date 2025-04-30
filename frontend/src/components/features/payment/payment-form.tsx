@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useBalance } from "#/hooks/query/use-balance";
 import { cn } from "#/utils/utils";
@@ -7,8 +8,10 @@ import { SettingsInput } from "../settings/settings-input";
 import { BrandButton } from "../settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { amountIsValid } from "#/utils/amount-is-valid";
+import { I18nKey } from "#/i18n/declaration";
 
 export function PaymentForm() {
+  const { t } = useTranslation();
   const { data: balance, isLoading } = useBalance();
   const { mutate: addBalance, isPending } = useCreateStripeCheckoutSession();
 
@@ -20,8 +23,8 @@ export function PaymentForm() {
     if (amount?.trim()) {
       if (!amountIsValid(amount)) return;
 
-      const float = parseFloat(amount);
-      addBalance({ amount: Number(float.toFixed(2)) });
+      const intValue = parseInt(amount, 10);
+      addBalance({ amount: intValue });
     }
 
     setButtonIsDisabled(true);
@@ -37,10 +40,6 @@ export function PaymentForm() {
       data-testid="billing-settings"
       className="flex flex-col gap-6 px-11 py-9"
     >
-      <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-        Manage Credits
-      </h2>
-
       <div
         className={cn(
           "flex items-center justify-between w-[680px] bg-[#7F7445] rounded px-3 py-2",
@@ -49,7 +48,7 @@ export function PaymentForm() {
       >
         <div className="flex items-center gap-2">
           <MoneyIcon width={22} height={14} />
-          <span>Balance</span>
+          <span>{t(I18nKey.PAYMENT$MANAGE_CREDITS)}</span>
         </div>
         {!isLoading && (
           <span data-testid="user-balance">${Number(balance).toFixed(2)}</span>
@@ -62,10 +61,13 @@ export function PaymentForm() {
           testId="top-up-input"
           name="top-up-input"
           onChange={handleTopUpInputChange}
-          type="text"
-          label="Add funds"
+          type="number"
+          label={t(I18nKey.PAYMENT$ADD_FUNDS)}
           placeholder="Specify an amount in USD to add - min $10"
           className="w-[680px]"
+          min={10}
+          max={25000}
+          step={1}
         />
 
         <div className="flex items-center w-[680px] gap-2">
@@ -74,7 +76,7 @@ export function PaymentForm() {
             type="submit"
             isDisabled={isPending || buttonIsDisabled}
           >
-            Add credit
+            {t(I18nKey.PAYMENT$ADD_CREDIT)}
           </BrandButton>
           {isPending && <LoadingSpinner size="small" />}
         </div>

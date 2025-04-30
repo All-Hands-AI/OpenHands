@@ -1,7 +1,7 @@
 {
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.json",
   },
   "extends": [
     "airbnb",
@@ -11,15 +11,12 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
-    "plugin:@tanstack/query/recommended"
+    "plugin:@tanstack/query/recommended",
   ],
-  "plugins": [
-    "prettier"
-  ],
+  "plugins": ["prettier", "unused-imports"],
   "rules": {
-    "prettier/prettier": [
-      "error"
-    ],
+    "unused-imports/no-unused-imports": "error",
+    "prettier/prettier": ["error"],
     // Resolves https://stackoverflow.com/questions/59265981/typescript-eslint-missing-file-extension-ts-import-extensions/59268871#59268871
     "import/extensions": [
       "error",
@@ -27,32 +24,26 @@
       {
         "": "never",
         "ts": "never",
-        "tsx": "never"
-      }
-    ]
+        "tsx": "never",
+      },
+    ],
   },
   "settings": {
     "react": {
-      "version": "detect"
-    }
+      "version": "detect",
+    },
   },
   "overrides": [
     {
-      "files": [
-        "*.ts",
-        "*.tsx"
-      ],
+      "files": ["*.ts", "*.tsx"],
       "rules": {
         // Allow state modification in reduce and Redux reducers
         "no-param-reassign": [
           "error",
           {
             "props": true,
-            "ignorePropertyModificationsFor": [
-              "acc",
-              "state"
-            ]
-          }
+            "ignorePropertyModificationsFor": ["acc", "state"],
+          },
         ],
         // For https://stackoverflow.com/questions/55844608/stuck-with-eslint-error-i-e-separately-loops-should-be-avoided-in-favor-of-arra
         "no-restricted-syntax": "off",
@@ -66,24 +57,19 @@
           2,
           {
             "required": {
-              "some": [
-                "nesting",
-                "id"
-              ]
-            }
-          }
+              "some": ["nesting", "id"],
+            },
+          },
         ],
         "react/prop-types": "off",
         "react/no-array-index-key": "off",
         "react-hooks/exhaustive-deps": "off",
         "import/no-extraneous-dependencies": "off",
-        "react/react-in-jsx-scope": "off"
+        "react/react-in-jsx-scope": "off",
       },
       "parserOptions": {
-        "project": [
-          "**/tsconfig.json"
-        ]
-      }
-    }
-  ]
+        "project": ["**/tsconfig.json"],
+      },
+    },
+  ],
 }

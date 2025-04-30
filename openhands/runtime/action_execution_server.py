@@ -18,9 +18,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -56,9 +57,11 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
-from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -257,6 +260,7 @@ class ActionExecutor:
 
         logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+
         logger.debug('Runtime client initialized.')
         self._initialized = True
 
@@ -299,14 +303,22 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
             return observation
 
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
+        if action.is_static:
+            path = action.cwd or self._initial_cwd
+            result = await AsyncBashSession.execute(action.command, path)
+            obs = CmdOutputObservation(
+                content=result.content,
+                exit_code=result.exit_code,
+                command=action.command,
+            )
+            return obs
+
         assert self.bash_session is not None
         obs = await call_sync_from_async(self.bash_session.execute, action)
         return obs
@@ -356,6 +368,11 @@ class ActionExecutor:
 
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
+
+        # Cannot read binary files
+        if is_binary(action.path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
@@ -515,6 +532,8 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
+    logger.warning('Starting Action Execution Server')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -529,13 +548,17 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
+
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
-    port_path = '/tmp/oh-server-url'
-    os.makedirs(os.path.dirname(port_path), exist_ok=True)
-    with open(port_path, 'w') as f:
-        f.write(f'http://127.0.0.1:{args.port}')
+    # Start the file viewer server in a separate thread
+    logger.info('Starting file viewer server')
+    _file_viewer_port = find_available_tcp_port(
+        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
+    )
+    server_url, _ = start_file_viewer_server(port=_file_viewer_port)
+    logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -585,7 +608,10 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
+            content={
+                'detail': 'Invalid request parameters',
+                'errors': str(exc.errors()),
+            },
         )
 
     @app.middleware('http')
@@ -623,6 +649,7 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
+
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
@@ -816,54 +843,6 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
-
-    @app.get('/view')
-    async def view_file(path: str, request: Request):
-        """View a file using an embedded viewer.
-
-        Args:
-            path (str): The absolute path of the file to view.
-            request (Request): The FastAPI request object.
-
-        Returns:
-            HTMLResponse: An HTML page with an appropriate viewer for the file.
-        """
-        # Security check: Only allow requests from localhost
-        client_host = request.client.host if request.client else None
-        if client_host not in ['127.0.0.1', 'localhost', '::1']:
-            logger.warning(f'Unauthorized file view attempt from {client_host}')
-            return HTMLResponse(
-                content='<h1>Access Denied</h1><p>This endpoint is only accessible from localhost</p>',
-                status_code=403,
-            )
-
-        if not os.path.isabs(path):
-            return HTMLResponse(
-                content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
-                status_code=400,
-            )
-
-        if not os.path.exists(path):
-            return HTMLResponse(
-                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
-            )
-
-        if os.path.isdir(path):
-            return HTMLResponse(
-                content=f'<h1>Error: Path is a directory</h1><p>{path}</p>',
-                status_code=400,
-            )
-
-        try:
-            html_content = generate_file_viewer_html(path)
-            return HTMLResponse(content=html_content)
-
-        except Exception as e:
-            logger.error(f'Error serving file viewer: {str(e)}')
-            return HTMLResponse(
-                content=f'<h1>Error viewing file</h1><p>{path}</p><p>{str(e)}</p>',
-                status_code=500,
-            )
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

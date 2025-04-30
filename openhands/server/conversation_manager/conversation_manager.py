@@ -6,11 +6,11 @@ import socketio
 
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
-from openhands.events.stream import EventStream
+from openhands.events.event_store import EventStore
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
-from openhands.server.settings import Settings
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.files import FileStore
 
@@ -54,7 +54,7 @@ class ConversationManager(ABC):
         settings: Settings,
         user_id: str | None,
         github_user_id: str | None,
-    ) -> EventStream | None:
+    ) -> EventStore | None:
         """Join a conversation and return its event stream."""
 
     async def is_agent_loop_running(self, sid: str) -> bool:
@@ -83,7 +83,7 @@ class ConversationManager(ABC):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
         github_user_id: str | None = None,
-    ) -> EventStream:
+    ) -> EventStore:
         """Start an event loop if one is not already running"""
 
     @abstractmethod
