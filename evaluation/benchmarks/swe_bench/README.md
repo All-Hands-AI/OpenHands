@@ -45,7 +45,7 @@ For example, for instance ID `django_django-11011`, it will try to pull our pre-
 This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
-./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split] [condenser_config] [n_runs] [mode]
 
 # Example
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test
@@ -68,6 +68,9 @@ default, it is set to 60.
 default, it is set to 1.
 - `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench`, `princeton-nlp/SWE-bench_Lite`, `princeton-nlp/SWE-bench_Verified`, or `princeton-nlp/SWE-bench_Multimodal`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
+- `condenser_config`, e.g. `summarizer_for_eval`, is the name of the condenser configuration group to use for memory management, as defined in your `config.toml`. If not specified, it defaults to `NoOpCondenser`.
+- `n_runs`, e.g. `3`, is the number of times to run the evaluation. Default is 1.
+- `mode`, e.g. `swt`, `swt-ci`, or `swe`, specifies the evaluation mode. Default is `swe`.
 
 > [!CAUTION]
 > Setting `num_workers` larger than 1 is not officially tested, YMMV.
