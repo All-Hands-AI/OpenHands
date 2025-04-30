@@ -3,7 +3,6 @@
 import os
 import sys
 import time
-import platform
 from pathlib import Path
 
 import pytest
@@ -21,6 +20,7 @@ from openhands.runtime.impl.local.local_runtime import LocalRuntime
 # Bash-specific tests
 # ============================================================================================================================
 
+
 # Helper function to determine if running on Windows
 def is_windows():
     return sys.platform == 'win32'
@@ -33,6 +33,7 @@ def _run_cmd_action(runtime, custom_command: str):
     assert isinstance(obs, (CmdOutputObservation, ErrorObservation))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     return obs
+
 
 # Get platform-appropriate command
 def get_platform_command(linux_cmd, windows_cmd):
@@ -63,7 +64,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == -1
         assert 'Serving HTTP on' in obs.content
         assert (
-            "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+            "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
             in obs.metadata.suffix
         )
 
@@ -108,6 +109,33 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    server_port = 8081
+    try:
+        # Start the server, expect it to timeout (run in background manner)
+        action = CmdRunAction(f'python3 -m http.server {server_port} &')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0  # Should not timeout since this runs in background
+
+        # Give the server a moment to be ready
+        time.sleep(1)
+
+        # Verify the server is running by curling it
+        curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
+        curl_obs = runtime.run_action(curl_action)
+        logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(curl_obs, CmdOutputObservation)
+        assert curl_obs.exit_code == 0
+        # Check for content typical of python http.server directory listing
+        assert 'Directory listing for' in curl_obs.content
+
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_multiline_commands(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
@@ -116,12 +144,12 @@ def test_multiline_commands(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'Write-Output `\n "foo"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert 'foo' in obs.content
-            
+
             # test multiline output
             obs = _run_cmd_action(runtime, 'Write-Output "hello`nworld"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert 'hello\nworld' in obs.content
-            
+
             # test whitespace
             obs = _run_cmd_action(runtime, 'Write-Output "a`n`n`nz"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -146,11 +174,13 @@ def test_multiline_commands(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test relies on Linux bash-specific complex commands")
-def test_complex_commands(temp_dir, runtime_cls):
+@pytest.mark.skipif(
+    is_windows(), reason='Test relies on Linux bash-specific complex commands'
+)
+def test_complex_commands(temp_dir, runtime_cls, run_as_openhands):
     cmd = """count=0; tries=0; while [ $count -lt 3 ]; do result=$(echo "Heads"); tries=$((tries+1)); echo "Flip $tries: $result"; if [ "$result" = "Heads" ]; then count=$((count+1)); else count=0; fi; done; echo "Got 3 heads in a row after $tries flips!";"""
 
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -177,7 +207,9 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test uses Linux-specific bash loops and sed commands")
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific bash loops and sed commands'
+)
 def test_multiline_command_loop(temp_dir, runtime_cls):
     # https://github.com/All-Hands-AI/OpenHands/issues/3143
     init_cmd = """mkdir -p _modules && \
@@ -345,7 +377,10 @@ def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
             assert obs.exit_code == 0
             # Check for Windows-style home paths
             if runtime_cls == LocalRuntime:
-                assert os.getenv('USERPROFILE') in obs.content or os.getenv('HOME') in obs.content
+                assert (
+                    os.getenv('USERPROFILE') in obs.content
+                    or os.getenv('HOME') in obs.content
+                )
             # For non-local runtime, we are less concerned with precise paths
         else:
             # Original Linux version
@@ -385,7 +420,9 @@ def test_stateful_cmd(temp_dir, runtime_cls):
     try:
         if is_windows():
             # Windows PowerShell version
-            obs = _run_cmd_action(runtime, 'New-Item -ItemType Directory -Path test -Force')
+            obs = _run_cmd_action(
+                runtime, 'New-Item -ItemType Directory -Path test -Force'
+            )
             assert obs.exit_code == 0, 'The exit code should be 0.'
 
             obs = _run_cmd_action(runtime, 'Set-Location test')
@@ -394,8 +431,10 @@ def test_stateful_cmd(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'Get-Location')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             # Account for both forward and backward slashes in path
-            norm_path = config.workspace_mount_path_in_sandbox.replace('\\', '/').replace('//', '/')
-            test_path = f"{norm_path}/test".replace('//', '/')
+            norm_path = config.workspace_mount_path_in_sandbox.replace(
+                '\\', '/'
+            ).replace('//', '/')
+            test_path = f'{norm_path}/test'.replace('//', '/')
             assert test_path in obs.content.replace('\\', '/')
         else:
             # Original Linux version
@@ -484,12 +523,16 @@ def test_copy_directory_recursively(temp_dir, runtime_cls):
             assert 'file1.txt' not in obs.content
             assert 'file2.txt' not in obs.content
 
-            obs = _run_cmd_action(runtime, f'Get-ChildItem -Path {sandbox_dir}/test_dir')
+            obs = _run_cmd_action(
+                runtime, f'Get-ChildItem -Path {sandbox_dir}/test_dir'
+            )
             assert obs.exit_code == 0
             assert 'file1.txt' in obs.content
             assert 'file2.txt' in obs.content
 
-            obs = _run_cmd_action(runtime, f'Get-Content {sandbox_dir}/test_dir/file1.txt')
+            obs = _run_cmd_action(
+                runtime, f'Get-Content {sandbox_dir}/test_dir/file1.txt'
+            )
             assert obs.exit_code == 0
             assert 'File 1 content' in obs.content
         else:
@@ -540,7 +583,9 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
             assert 'test_file.txt' not in obs.content
 
             # Create an empty file
-            obs = _run_cmd_action(runtime, f'New-Item -ItemType File -Path {sandbox_file} -Force')
+            obs = _run_cmd_action(
+                runtime, f'New-Item -ItemType File -Path {sandbox_file} -Force'
+            )
             assert obs.exit_code == 0
 
             # Verify file exists and is empty
@@ -550,7 +595,7 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
 
             obs = _run_cmd_action(runtime, f'Get-Content {sandbox_file}')
             assert obs.exit_code == 0
-            assert obs.content.strip() == '' # Empty file
+            assert obs.content.strip() == ''  # Empty file
             assert 'Hello, World!' not in obs.content
 
             # Create host file and copy to overwrite
@@ -565,7 +610,7 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
             # Original Linux version
             obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
             assert obs.exit_code == 0
-            assert 'test_file.txt' not in obs.content # Check initial state
+            assert 'test_file.txt' not in obs.content  # Check initial state
 
             obs = _run_cmd_action(runtime, f'touch {sandbox_file}')
             assert obs.exit_code == 0
@@ -576,7 +621,7 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
 
             obs = _run_cmd_action(runtime, f'cat {sandbox_file}')
             assert obs.exit_code == 0
-            assert obs.content.strip() == '' # Empty file
+            assert obs.content.strip() == ''  # Empty file
             assert 'Hello, World!' not in obs.content
 
             _create_test_file(temp_dir)
@@ -628,7 +673,9 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test uses Linux-specific file permissions and sudo commands")
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific file permissions and sudo commands'
+)
 def test_git_operation(temp_dir, runtime_cls):
     # do not mount workspace, since workspace mount by tests will be owned by root
     # while the user_id we get via os.getuid() is different from root
@@ -747,12 +794,17 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
             assert 'not recognized' in obs.content or 'command not found' in obs.content
 
             # Test command with special characters
-            obs = _run_cmd_action(runtime, 'Write-Output "hello   world    with`nspecial  chars"')
+            obs = _run_cmd_action(
+                runtime, 'Write-Output "hello   world    with`nspecial  chars"'
+            )
             assert 'hello   world    with\nspecial  chars' in obs.content
             assert obs.exit_code == 0
 
             # Test multiple commands in sequence
-            obs = _run_cmd_action(runtime, 'Write-Output "first" && Write-Output "second" && Write-Output "third"')
+            obs = _run_cmd_action(
+                runtime,
+                'Write-Output "first" && Write-Output "second" && Write-Output "third"',
+            )
             assert 'first' in obs.content
             assert 'second' in obs.content
             assert 'third' in obs.content
@@ -770,12 +822,16 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
             assert 'nonexistent_command: command not found' in obs.content
 
             # Test command with special characters
-            obs = _run_cmd_action(runtime, "echo 'hello   world    with\nspecial  chars'")
+            obs = _run_cmd_action(
+                runtime, "echo 'hello   world    with\nspecial  chars'"
+            )
             assert 'hello   world    with\nspecial  chars' in obs.content
             assert obs.exit_code == 0
 
             # Test multiple commands in sequence
-            obs = _run_cmd_action(runtime, 'echo "first" && echo "second" && echo "third"')
+            obs = _run_cmd_action(
+                runtime, 'echo "first" && echo "second" && echo "third"'
+            )
             assert 'first' in obs.content
             assert 'second' in obs.content
             assert 'third' in obs.content
@@ -784,7 +840,9 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Powershell does not support interactive commands")
+@pytest.mark.skipif(
+    is_windows(), reason='Powershell does not support interactive commands'
+)
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(
         temp_dir,
@@ -821,7 +879,10 @@ EOF""")
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test relies on Linux-specific commands like seq and bash for loops")
+@pytest.mark.skipif(
+    is_windows(),
+    reason='Test relies on Linux-specific commands like seq and bash for loops',
+)
 def test_long_output(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -836,7 +897,10 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test relies on Linux-specific commands like seq and bash for loops")
+@pytest.mark.skipif(
+    is_windows(),
+    reason='Test relies on Linux-specific commands like seq and bash for loops',
+)
 def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -853,7 +917,9 @@ def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhand
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test uses Linux-specific temp directory and bash for loops")
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific temp directory and bash for loops'
+)
 def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -879,7 +945,10 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test uses Linux-specific commands like find and grep with complex syntax")
+@pytest.mark.skipif(
+    is_windows(),
+    reason='Test uses Linux-specific commands like find and grep with complex syntax',
+)
 def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -907,7 +976,9 @@ def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Test uses Linux-specific ps aux, awk, and grep commands")
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific ps aux, awk, and grep commands'
+)
 def test_stress_long_output_with_soft_and_hard_timeout(
     temp_dir, runtime_cls, run_as_openhands
 ):
@@ -1003,32 +1074,39 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
     try:
         if is_windows():
             # Windows PowerShell version
-            action = CmdRunAction('1..5 | ForEach-Object { Write-Output $_; Start-Sleep 3 }')
+            action = CmdRunAction(
+                '1..5 | ForEach-Object { Write-Output $_; Start-Sleep 3 }'
+            )
             action.set_hard_timeout(2.5)
             obs = runtime.run_action(action)
             assert obs.content.strip() == '1'
             assert obs.metadata.prefix == ''
             assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
-            
+
             # Continue watching output
             action = CmdRunAction('')
             action.set_hard_timeout(2.5)
             obs = runtime.run_action(action)
-            assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+            assert (
+                '[Below is the output of the previous command.]' in obs.metadata.prefix
+            )
             assert obs.content.strip() == '2'
             assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
-            
+
             # Continue until completion
             for expected in ['3', '4', '5']:
                 action = CmdRunAction('')
                 action.set_hard_timeout(2.5)
                 obs = runtime.run_action(action)
                 assert (
-                    '[Below is the output of the previous command.]' in obs.metadata.prefix
+                    '[Below is the output of the previous command.]'
+                    in obs.metadata.prefix
                 )
                 assert obs.content.strip() == expected
-                assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
-                
+                assert (
+                    '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+                )
+
             # Final empty command to complete
             action = CmdRunAction('')
             obs = runtime.run_action(action)
@@ -1047,7 +1125,9 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
             action = CmdRunAction('')
             action.set_hard_timeout(2.5)
             obs = runtime.run_action(action)
-            assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+            assert (
+                '[Below is the output of the previous command.]' in obs.metadata.prefix
+            )
             assert obs.content.strip() == '2'
             assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
@@ -1057,10 +1137,13 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
                 action.set_hard_timeout(2.5)
                 obs = runtime.run_action(action)
                 assert (
-                    '[Below is the output of the previous command.]' in obs.metadata.prefix
+                    '[Below is the output of the previous command.]'
+                    in obs.metadata.prefix
                 )
                 assert obs.content.strip() == expected
-                assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+                assert (
+                    '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+                )
 
             # Final empty command to complete
             action = CmdRunAction('')
@@ -1080,7 +1163,7 @@ def test_long_running_command_follow_by_execute(
         else:
             # Test command that produces output slowly
             action = CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done')
-            
+
         action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert '1' in obs.content  # First number should appear before timeout
@@ -1130,7 +1213,9 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(is_windows(), reason="Powershell does not support interactive commands")
+@pytest.mark.skipif(
+    is_windows(), reason='Powershell does not support interactive commands'
+)
 def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -1160,8 +1245,9 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-
-@pytest.mark.skipif(is_windows(), reason="Powershell does not support interactive commands")
+@pytest.mark.skipif(
+    is_windows(), reason='Powershell does not support interactive commands'
+)
 def test_python_interactive_input_without_set_input(
     temp_dir, runtime_cls, run_as_openhands
 ):

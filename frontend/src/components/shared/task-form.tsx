@@ -52,11 +52,11 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    createConversation({ q });
+    createConversation({ q, conversation_trigger: "gui" });
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-1 w-full">
       <form
         ref={ref}
         onSubmit={handleSubmit}

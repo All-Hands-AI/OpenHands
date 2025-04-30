@@ -17,9 +17,10 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from zipfile import ZipFile
 from typing import Optional
+from zipfile import ZipFile
 
+from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
@@ -33,6 +34,7 @@ from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
+from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -57,14 +59,17 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
-from openhands.utils.async_utils import call_sync_from_async, wait_all
 from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
 class ActionRequest(BaseModel):
@@ -162,14 +167,18 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-        
+
         # Check if we're running on Windows
         if platform.system() == 'Windows':
-            logger.warning("Browser functionality is not supported on Windows. Browser actions will be skipped.")
+            logger.warning(
+                'Browser functionality is not supported on Windows. Browser actions will be skipped.'
+            )
             self.browser = None
         else:
-            self.browser = BrowserEnv(browsergym_eval_env)
-            
+            self.browser: BrowserEnv | None = None
+        self.browser_init_task: asyncio.Task | None = None
+        self.browsergym_eval_env = browsergym_eval_env
+
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
@@ -193,6 +202,38 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
+    async def _init_browser_async(self):
+        """Initialize the browser asynchronously."""
+        logger.debug('Initializing browser asynchronously')
+        try:
+            self.browser = BrowserEnv(self.browsergym_eval_env)
+            logger.debug('Browser initialized asynchronously')
+        except Exception as e:
+            logger.error(f'Failed to initialize browser: {e}')
+            self.browser = None
+
+    async def _ensure_browser_ready(self):
+        """Ensure the browser is ready for use."""
+        if self.browser is None:
+            if self.browser_init_task is None:
+                # Start browser initialization if it hasn't been started
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+            elif self.browser_init_task.done():
+                # If the task is done but browser is still None, restart initialization
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+
+            # Wait for browser to be initialized
+            if self.browser_init_task:
+                logger.debug('Waiting for browser to be ready...')
+                await self.browser_init_task
+
+            # Check if browser was successfully initialized
+            if self.browser is None:
+                raise BrowserUnavailableException('Browser initialization failed')
+
+        # If we get here, the browser is ready
+        logger.debug('Browser is ready')
+
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
@@ -201,7 +242,7 @@ class ActionExecutor:
                 work_dir=self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
-                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
                 ),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
@@ -210,16 +251,20 @@ class ActionExecutor:
                 work_dir=self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
-                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
                 ),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
         self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
+        # Start browser initialization in the background
+        self.browser_init_task = asyncio.create_task(self._init_browser_async())
+        logger.debug('Browser initialization started in background')
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=30,
+            timeout=60,
         )
         logger.debug('All plugins initialized')
 
@@ -237,6 +282,7 @@ class ActionExecutor:
 
         logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+
         logger.debug('Runtime client initialized.')
         self._initialized = True
 
@@ -289,7 +335,7 @@ class ActionExecutor:
         # Determine no-pager command
         if is_windows:
             # TODO: fix this later
-            no_pager_cmd = 'Write-Output "Hello World"' # '$function:git = { git.exe --no-pager $args }'
+            no_pager_cmd = 'Write-Output "Hello World"'  # '$function:git = { git.exe --no-pager $args }'
         else:
             no_pager_cmd = 'alias git="git --no-pager"'
 
@@ -313,14 +359,22 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
             return observation
 
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
+        if action.is_static:
+            path = action.cwd or self._initial_cwd
+            result = await AsyncBashSession.execute(action.command, path)
+            obs = CmdOutputObservation(
+                content=result.content,
+                exit_code=result.exit_code,
+                command=action.command,
+            )
+            return obs
+
         assert self.bash_session is not None
         logger.info(f'Executing CmdRunAction: {action.command}')
         obs = await call_sync_from_async(self.bash_session.execute, action)
@@ -341,7 +395,7 @@ class ActionExecutor:
                 # Escape backslashes in the path for Python string literal
                 python_safe_cwd = self.bash_session.cwd.replace('\\', '\\\\\\\\')
                 reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{python_safe_cwd}")' # Use escaped path
+                    f'import os; os.chdir("{python_safe_cwd}")'  # Use escaped path
                 )
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
@@ -374,6 +428,11 @@ class ActionExecutor:
 
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
+
+        # Cannot read binary files
+        if is_binary(action.path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
@@ -394,7 +453,7 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -404,13 +463,13 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_image)
             elif filepath.lower().endswith('.pdf'):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     pdf_data = file.read()
                     encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
                     encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
                 return FileReadObservation(path=filepath, content=encoded_pdf)
             elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
-                with open(filepath, 'rb') as file:
+                with open(filepath, 'rb') as file:  # noqa: ASYNC101
                     video_data = file.read()
                     encoded_video = base64.b64encode(video_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -420,7 +479,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
@@ -453,7 +512,7 @@ class ActionExecutor:
 
         mode = 'w' if not file_exists else 'r+'
         try:
-            with open(filepath, mode, encoding='utf-8') as file:
+            with open(filepath, mode, encoding='utf-8') as file:  # noqa: ASYNC101
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
@@ -518,12 +577,18 @@ class ActionExecutor:
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         if self.browser is None:
-            return ErrorObservation("Browser functionality is not supported on Windows.")
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
+        await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         if self.browser is None:
-            return ErrorObservation("Browser functionality is not supported on Windows.")
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
+        await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     def close(self):
@@ -535,6 +600,8 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
+    logger.warning('Starting Action Execution Server')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -549,8 +616,17 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
+
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+
+    # Start the file viewer server in a separate thread
+    logger.info('Starting file viewer server')
+    _file_viewer_port = find_available_tcp_port(
+        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
+    )
+    server_url, _ = start_file_viewer_server(port=_file_viewer_port)
+    logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -600,7 +676,10 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'detail': 'Invalid request parameters', 'errors': str(exc.errors())},
+            content={
+                'detail': 'Invalid request parameters',
+                'errors': str(exc.errors()),
+            },
         )
 
     @app.middleware('http')
@@ -633,21 +712,23 @@ if __name__ == '__main__':
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
         assert client is not None
-        logger.info(f"Received request for /execute_action: {action_request.action.get('action')}")
+        logger.info(
+            f"Received request for /execute_action: {action_request.action.get('action')}"
+        )
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            logger.info(f"Executing action: {action}")
+            logger.info(f'Executing action: {action}')
             observation = await client.run_action(action)
-            logger.info(f"Action executed. Observation: {observation}")
+            logger.info(f'Action executed. Observation: {observation}')
             obs_dict = event_to_dict(observation)
-            logger.info(f"Returning response for /execute_action: {obs_dict}")
+            logger.info(f'Returning response for /execute_action: {obs_dict}')
             return obs_dict
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')
-            logger.exception("Full traceback for /execute_action error:")
+            logger.exception('Full traceback for /execute_action error:')
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
@@ -678,7 +759,7 @@ if __name__ == '__main__':
                     )
 
                 zip_path = os.path.join(full_dest_path, file.filename)
-                with open(zip_path, 'wb') as buffer:
+                with open(zip_path, 'wb') as buffer:  # noqa: ASYNC101
                     shutil.copyfileobj(file.file, buffer)
 
                 # Extract the zip file
@@ -691,7 +772,7 @@ if __name__ == '__main__':
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
-                with open(file_path, 'wb') as buffer:
+                with open(file_path, 'wb') as buffer:  # noqa: ASYNC101
                     shutil.copyfileobj(file.file, buffer)
                 logger.debug(f'Uploaded file {file.filename} to {destination}')
 

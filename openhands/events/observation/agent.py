@@ -10,6 +10,7 @@ class AgentStateChangedObservation(Observation):
     """This data class represents the result from delegating to another agent"""
 
     agent_state: str
+    reason: str = ''
     observation: str = ObservationType.AGENT_STATE_CHANGED
 
     @property
@@ -60,18 +61,19 @@ class MicroagentKnowledge:
 
 
 @dataclass
-class MicroagentObservation(Observation):
+class RecallObservation(Observation):
     """The retrieval of content from a microagent or more microagents."""
 
     recall_type: RecallType
-    observation: str = ObservationType.MICROAGENT
+    observation: str = ObservationType.RECALL
 
-    # environment
+    # workspace context
     repo_name: str = ''
     repo_directory: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+    date: str = ''
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
@@ -95,22 +97,37 @@ class MicroagentObservation(Observation):
 
     @property
     def message(self) -> str:
-        return self.__str__()
+        return (
+            'Added workspace context'
+            if self.recall_type == RecallType.WORKSPACE_CONTEXT
+            else 'Added microagent knowledge'
+        )
 
     def __str__(self) -> str:
-        # Build a string representation of all fields
-        fields = [
-            f'recall_type={self.recall_type}',
-            f'repo_name={self.repo_name}',
-            f'repo_instructions={self.repo_instructions[:20]}...',
-            f'runtime_hosts={self.runtime_hosts}',
-            f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
-        ]
-
-        # Only include microagent_knowledge if it's not empty
+        # Build a string representation
+        fields = []
+        if self.recall_type == RecallType.WORKSPACE_CONTEXT:
+            fields.extend(
+                [
+                    f'recall_type={self.recall_type}',
+                    f'repo_name={self.repo_name}',
+                    f'repo_instructions={self.repo_instructions[:20]}...',
+                    f'runtime_hosts={self.runtime_hosts}',
+                    f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
+                    f'date={self.date}',
+                ]
+            )
+        else:
+            fields.extend(
+                [
+                    f'recall_type={self.recall_type}',
+                ]
+            )
         if self.microagent_knowledge:
-            fields.append(
-                f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}'
+            fields.extend(
+                [
+                    f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}',
+                ]
             )
 
-        return f'**MicroagentObservation**\n{", ".join(fields)}'
+        return f'**RecallObservation**\n{", ".join(fields)}'

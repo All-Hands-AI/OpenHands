@@ -5,11 +5,12 @@ This runtime runs the action_execution_server directly on the local machine with
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 from typing import Callable
 
-import requests
+import httpx
 import tenacity
 
 import openhands
@@ -44,7 +45,7 @@ def get_user_info():
     """Get user ID and username in a cross-platform way."""
     import getpass
     import platform
-    
+
     username = getpass.getuser()
     if platform.system() == 'Windows':
         # On Windows, we don't use user IDs the same way
@@ -79,25 +80,28 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
 
     # Check libtmux is installed (skip on Windows)
     import platform
+
     if platform.system() != 'Windows':
         logger.debug('Checking dependencies: libtmux')
         import libtmux
 
         server = libtmux.Server()
-        session = server.new_session(session_name='test-session')
+        try:
+            session = server.new_session(session_name='test-session')
+        except Exception:
+            raise ValueError('tmux is not properly installed or available on the path.')
         pane = session.attached_pane
         pane.send_keys('echo "test"')
         pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
         session.kill_session()
         if 'test' not in pane_output:
             raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
-    else:
-        logger.warning('Running on Windows - tmux functionality will be limited.')
 
     # Skip browser environment check on Windows
     if platform.system() != 'Windows':
         logger.debug('Checking dependencies: browser')
         from openhands.runtime.browser.browser_env import BrowserEnv
+
         browser = BrowserEnv()
         browser.close()
     else:
@@ -128,6 +132,7 @@ class LocalRuntime(ActionExecutionClient):
         headless_mode: bool = True,
     ):
         import platform
+
         self.is_windows = platform.system() == 'Windows'
         if self.is_windows:
             logger.warning(
@@ -203,7 +208,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -232,35 +238,22 @@ class LocalRuntime(ActionExecutionClient):
         env = os.environ.copy()
         # Get the code repo path
         code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-        env['PYTHONPATH'] = os.pathsep.join([code_repo_path, os.getenv('PYTHONPATH', '')])
+        env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
-        
-        # Get poetry virtualenv path in a cross-platform way
-        output = subprocess.check_output(
-            ['poetry', 'show', '-v'],
-            env=env,
-            cwd=code_repo_path,
-            text=True,
-            shell=False,
-        ).splitlines()[0]
-        
-        # On Windows, the output might look like:
-        # Using virtualenv: C:\Users\username\AppData\Local\pypoetry\Cache\virtualenvs\openhands-py3.12
-        # On Unix:
-        # Using virtualenv: /home/username/.cache/pypoetry/virtualenvs/openhands-py3.12
-        poetry_venvs_path = output.split('Using virtualenv:', 1)[1].strip()
-        if not os.path.exists(poetry_venvs_path):
-            # If the exact path doesn't exist, try to get the parent directory
-            poetry_venvs_path = os.path.dirname(poetry_venvs_path)
-            
-        env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
-        logger.info(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
-        check_dependencies(code_repo_path, poetry_venvs_path)
-        logger.info(f'Running server command: {" ".join(cmd)}')
-        logger.info(f'Server CWD: {code_repo_path}')
-        self.server_process = subprocess.Popen(
+        # Derive environment paths using sys.executable
+        interpreter_path = sys.executable
+        python_bin_path = os.path.dirname(interpreter_path)
+        env_root_path = os.path.dirname(python_bin_path)
+
+        # Prepend the interpreter's bin directory to PATH for subprocesses
+        env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
+        logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
+
+        # Check dependencies using the derived env_root_path
+        check_dependencies(code_repo_path, env_root_path)
+        self.server_process = subprocess.Popen(  # noqa: ASYNC101
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -289,11 +282,18 @@ class LocalRuntime(ActionExecutionClient):
                     self.log('info', f'Server: {line.strip()}')
 
                 # Capture any remaining output after the process exits OR if signaled
-                if not self._log_thread_exit_event.is_set():  # Check again before reading remaining
+                if (
+                    not self._log_thread_exit_event.is_set()
+                ):  # Check again before reading remaining
                     self.log('info', 'Server process exited, reading remaining output.')
                     for line in self.server_process.stdout:
-                        if self._log_thread_exit_event.is_set():  # Check inside loop too
-                            self.log('info', 'Log thread received exit signal while reading remaining output.')
+                        if (
+                            self._log_thread_exit_event.is_set()
+                        ):  # Check inside loop too
+                            self.log(
+                                'info',
+                                'Log thread received exit signal while reading remaining output.',
+                            )
                             break
                         self.log('info', f'Server (remaining): {line.strip()}')
 
@@ -301,7 +301,9 @@ class LocalRuntime(ActionExecutionClient):
                 # Log the error, but don't prevent the thread from potentially exiting
                 self.log('error', f'Error reading server output: {e}')
             finally:
-                self.log('info', 'Log output thread finished.')  # Add log for thread exit
+                self.log(
+                    'info', 'Log output thread finished.'
+                )  # Add log for thread exit
 
         self._log_thread = threading.Thread(target=log_output, daemon=True)
         self._log_thread.start()
@@ -351,7 +353,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
-        if not self._runtime_initialized:
+        if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:
@@ -366,7 +368,7 @@ class LocalRuntime(ActionExecutionClient):
                     )
                 )
                 return observation_from_dict(response.json())
-            except requests.exceptions.ConnectionError:
+            except httpx.NetworkError:
                 raise AgentRuntimeDisconnectedError('Server connection lost')
 
     def close(self):

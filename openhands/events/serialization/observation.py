@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 
 from openhands.events.event import RecallType
 from openhands.events.observation.agent import (
@@ -6,7 +7,7 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
     AgentThinkObservation,
     MicroagentKnowledge,
-    MicroagentObservation,
+    RecallObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -24,6 +25,7 @@ from openhands.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
@@ -43,7 +45,8 @@ observations = (
     UserRejectObservation,
     AgentCondensationObservation,
     AgentThinkObservation,
-    MicroagentObservation,
+    RecallObservation,
+    MCPObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
@@ -53,8 +56,8 @@ OBSERVATION_TYPE_TO_CLASS = {
 
 
 def _update_cmd_output_metadata(
-    metadata: dict | CmdOutputMetadata | None, **kwargs
-) -> dict | CmdOutputMetadata:
+    metadata: dict[str, Any] | CmdOutputMetadata | None, **kwargs: Any
+) -> dict[str, Any] | CmdOutputMetadata:
     """Update the metadata of a CmdOutputObservation.
 
     If metadata is None, create a new CmdOutputMetadata instance.
@@ -114,7 +117,7 @@ def observation_from_dict(observation: dict) -> Observation:
         else:
             extras['metadata'] = CmdOutputMetadata()
 
-    if observation_class is MicroagentObservation:
+    if observation_class is RecallObservation:
         # handle the Enum conversion
         if 'recall_type' in extras:
             extras['recall_type'] = RecallType(extras['recall_type'])
@@ -128,4 +131,6 @@ def observation_from_dict(observation: dict) -> Observation:
                 for item in extras['microagent_knowledge']
             ]
 
-    return observation_class(content=content, **extras)
+    obs = observation_class(content=content, **extras)
+    assert isinstance(obs, Observation)
+    return obs

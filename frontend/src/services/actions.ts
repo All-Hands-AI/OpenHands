@@ -9,6 +9,7 @@ import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -85,6 +86,15 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
+  // Update metrics if available
+  if (message.llm_metrics) {
+    const metrics = {
+      cost: message.llm_metrics?.accumulated_cost ?? null,
+      usage: message.llm_metrics?.accumulated_token_usage ?? null,
+    };
+    store.dispatch(setMetrics(metrics));
+  }
+
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
   }
@@ -94,7 +104,12 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.source === "agent") {
-    if (message.args && message.args.thought) {
+    // Only add thought as a message if it's not a "think" action
+    if (
+      message.args &&
+      message.args.thought &&
+      message.action !== ActionType.THINK
+    ) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     // Need to convert ActionMessage to RejectAction

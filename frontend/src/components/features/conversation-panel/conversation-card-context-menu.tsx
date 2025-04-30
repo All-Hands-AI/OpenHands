@@ -7,7 +7,9 @@ interface ConversationCardContextMenuProps {
   onClose: () => void;
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onDownload?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onShowAgentTools?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDownloadViaVSCode?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   position?: "top" | "bottom";
 }
 
@@ -15,7 +17,9 @@ export function ConversationCardContextMenu({
   onClose,
   onDelete,
   onEdit,
-  onDownload,
+  onDisplayCost,
+  onShowAgentTools,
+  onDownloadViaVSCode,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
@@ -25,7 +29,7 @@ export function ConversationCardContextMenu({
       ref={ref}
       testId="context-menu"
       className={cn(
-        "right-0 absolute",
+        "right-0 absolute mt-3",
         position === "top" && "bottom-full",
         position === "bottom" && "top-full",
       )}
@@ -40,9 +44,28 @@ export function ConversationCardContextMenu({
           Edit Title
         </ContextMenuListItem>
       )}
-      {onDownload && (
-        <ContextMenuListItem testId="download-button" onClick={onDownload}>
-          Download Workspace
+      {onDownloadViaVSCode && (
+        <ContextMenuListItem
+          testId="download-vscode-button"
+          onClick={onDownloadViaVSCode}
+        >
+          Download via VS Code
+        </ContextMenuListItem>
+      )}
+      {onDisplayCost && (
+        <ContextMenuListItem
+          testId="display-cost-button"
+          onClick={onDisplayCost}
+        >
+          Display Cost
+        </ContextMenuListItem>
+      )}
+      {onShowAgentTools && (
+        <ContextMenuListItem
+          testId="show-agent-tools-button"
+          onClick={onShowAgentTools}
+        >
+          Show Agent Tools & Metadata
         </ContextMenuListItem>
       )}
     </ContextMenu>

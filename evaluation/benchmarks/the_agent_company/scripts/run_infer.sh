@@ -145,7 +145,7 @@ while IFS= read -r task_image; do
     docker pull $task_image
 
     # Build the Python command
-    COMMAND="poetry run python run_infer.py \
+    COMMAND="poetry run python -m evaluation.benchmarks.the_agent_company.run_infer \
             --agent-llm-config \"$AGENT_LLM_CONFIG\" \
             --env-llm-config \"$ENV_LLM_CONFIG\" \
             --outputs-path \"$OUTPUTS_PATH\" \

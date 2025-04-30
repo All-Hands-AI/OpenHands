@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import subprocess
@@ -175,6 +176,11 @@ def process_instance(
         logger.warning(
             f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
+    metadata = copy.deepcopy(metadata)
+    metadata.details['runtime_failure_count'] = runtime_failure_count
+    metadata.details['remote_runtime_resource_factor'] = (
+        config.sandbox.remote_runtime_resource_factor
+    )
 
     try:
         runtime = create_runtime(config)
@@ -296,14 +302,20 @@ def process_instance(
                         with open(test_output_path, 'w') as f:
                             f.write(test_output)
                         try:
+                            extra_kwargs = {}
+                            if 'SWE-Gym' in metadata.dataset:
+                                # SWE-Gym uses a different version of the package, hence a different eval report argument
+                                extra_kwargs['log_path'] = test_output_path
+                            else:
+                                extra_kwargs['test_log_path'] = test_output_path
                             _report = conditional_imports.get_eval_report(
                                 test_spec=test_spec,
                                 prediction={
                                     'model_patch': model_patch,
                                     'instance_id': instance_id,
                                 },
-                                test_log_path=test_output_path,
                                 include_tests_status=True,
+                                **extra_kwargs,
                             )
                             report = _report[instance_id]
                             logger.info(
@@ -463,6 +475,7 @@ if __name__ == '__main__':
             .decode('utf-8')
             .strip(),  # Current commit
             dataset=args.dataset,  # Dataset name from args
+            details={},
         )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to

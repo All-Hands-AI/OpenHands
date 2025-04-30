@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 from litellm import ModelResponse
 
@@ -57,31 +55,34 @@ def response_mock(content: str, tool_call_id: str):
 def test_get_messages(codeact_agent: CodeActAgent):
     # Add some events to history
     history = list()
+    # Add system message action
+    system_message_action = codeact_agent.get_system_message()
+    history.append(system_message_action)
+
     message_action_1 = MessageAction('Initial user message')
     message_action_1._source = 'user'
     history.append(message_action_1)
     message_action_2 = MessageAction('Sure!')
-    message_action_2._source = 'assistant'
+    message_action_2._source = 'agent'
     history.append(message_action_2)
     message_action_3 = MessageAction('Hello, agent!')
     message_action_3._source = 'user'
     history.append(message_action_3)
     message_action_4 = MessageAction('Hello, user!')
-    message_action_4._source = 'assistant'
+    message_action_4._source = 'agent'
     history.append(message_action_4)
     message_action_5 = MessageAction('Laaaaaaaast!')
     message_action_5._source = 'user'
     history.append(message_action_5)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=5, iteration=0, extra_data={})
-    )
+    messages = codeact_agent._get_messages(history, message_action_1)
 
     assert (
         len(messages) == 6
     )  # System, initial user + user message, agent message, last user message
-    assert messages[0].content[0].cache_prompt  # system message
+    assert messages[0].role == 'system'  # system message
+    assert messages[0].content[0].cache_prompt  # system message should be cached
     assert messages[1].role == 'user'
     assert messages[1].content[0].text.endswith('Initial user message')
     # we add cache breakpoint to only the last user message
@@ -100,19 +101,24 @@ def test_get_messages(codeact_agent: CodeActAgent):
 
 def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     history = list()
+    # Add system message action
+    system_message_action = codeact_agent.get_system_message()
+    history.append(system_message_action)
+
     # Add multiple user and agent messages
+    initial_user_message = None  # Keep track of the first user message
     for i in range(15):
         message_action_user = MessageAction(f'User message {i}')
         message_action_user._source = 'user'
+        if initial_user_message is None:
+            initial_user_message = message_action_user  # Store the first one
         history.append(message_action_user)
         message_action_agent = MessageAction(f'Agent message {i}')
-        message_action_agent._source = 'assistant'
+        message_action_agent._source = 'agent'
         history.append(message_action_agent)
 
     codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=10, iteration=5, extra_data={})
-    )
+    messages = codeact_agent._get_messages(history, initial_user_message)
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
@@ -122,7 +128,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     ]
     assert (
         len(cached_user_messages) == 2
-    )  # Including the initial system+user + last user message
+    )  # Including the initial system message + last user message
 
     # Verify that these are indeed the last user message (from start)
     assert cached_user_messages[0].content[0].text.startswith('You are OpenHands agent')
