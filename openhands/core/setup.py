@@ -120,6 +120,7 @@ def initialize_repository_for_runtime(
         GENERAL_TIMEOUT,
         provider_tokens,
         selected_repository,
+        None
     )
     # Run setup script if it exists
     runtime.maybe_run_setup_script()
