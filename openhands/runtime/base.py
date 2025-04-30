@@ -315,7 +315,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
-        repository = Repository(full_name=selected_repository)
+        repository = Repository(full_name='')
         if selected_repository:  # Determine provider from repo name
             try:
                 provider_handler = ProviderHandler(
@@ -329,7 +329,6 @@ class Runtime(FileEditRuntimeMixin):
                     'Git provider authentication issue when cloning repo'
                 )
 
-        # If repo is not provided
         if not selected_repository:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
@@ -347,9 +346,11 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
+        # This satisfies mypr because param is optional, but `verify_repo_provider` guarentees this gets populated
         provider = repository.git_provider if repository.git_provider else None
         if not provider:
             return ''
+
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
