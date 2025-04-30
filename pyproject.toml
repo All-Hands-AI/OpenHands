@@ -79,7 +79,6 @@ mcp = "1.6.0"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
-pythonnet = { version = "^3.0.5", markers = "sys_platform == 'win32'" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.7"

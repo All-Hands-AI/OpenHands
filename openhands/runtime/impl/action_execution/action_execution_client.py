@@ -179,11 +179,6 @@ class ActionExecutionClient(Runtime):
                     return Path(temp_file.name)
         except httpx.TimeoutException:
             raise TimeoutError('Copy operation timed out')
-        except requests.exceptions.RequestException as e:
-            self.log(
-                'error', f'copy_from: RequestException occurred for path={path}: {e}'
-            )
-            raise  # Re-raise other request-related errors
         except Exception as e:
             self.log(
                 'error', f'copy_from: Unexpected error occurred for path={path}: {e}'

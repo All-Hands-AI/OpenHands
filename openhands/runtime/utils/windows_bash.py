@@ -26,7 +26,6 @@ try:
     print("Successfully called pythonnet.load('coreclr')")
     logger.info("Successfully called pythonnet.load('coreclr')")
 except Exception as py_net_ex:
-    print(f"WARNING: Could not explicitly load pythonnet with 'coreclr'. Error: {py_net_ex}. Proceeding with default initialization...")
     logger.warning(f"Could not explicitly load pythonnet with 'coreclr'. Error: {py_net_ex}. Proceeding with default initialization...")
 
 # Now that pythonnet is initialized, import clr and System

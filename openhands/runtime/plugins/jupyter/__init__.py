@@ -1,6 +1,5 @@
 import asyncio
 import os
-import platform
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
