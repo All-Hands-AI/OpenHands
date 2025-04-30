@@ -4,7 +4,7 @@ version: 1.0.0
 author: openhands
 agent: CodeActAgent
 triggers:
-- /address_pr_comments
+- /pr_comments
 inputs:
   - name: PR_URL
     description: "URL of the pull request"
