@@ -314,9 +314,25 @@ class Runtime(FileEditRuntimeMixin):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
         selected_repository: str | Repository | None,
         selected_branch: str | None,
-        repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
-        if not selected_repository:
+        chosen_provider = None
+
+        if isinstance(selected_repository, str):  # Determine provider from repo name
+            try:
+                provider_handler = ProviderHandler(
+                    git_provider_tokens or MappingProxyType({})
+                )
+                repo_obj = Repository(full_name=selected_repository)
+                chosen_provider = await provider_handler.verify_repo_provider(repo_obj)
+            except Exception:
+                pass
+        elif (
+            selected_repository and selected_repository.git_provider
+        ):  # See if repo object contains provider
+            chosen_provider = selected_repository.git_provider
+
+        # If repo is not provider or unable to determine repo provider
+        if not selected_repository or not chosen_provider:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
             if self.user_id or not self.config.workspace_base:
@@ -337,12 +353,6 @@ class Runtime(FileEditRuntimeMixin):
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
         }
-
-        chosen_provider = (
-            repository_provider
-            if isinstance(selected_repository, str)
-            else selected_repository.git_provider
-        )
 
         domain = provider_domains[chosen_provider]
         repository = (
