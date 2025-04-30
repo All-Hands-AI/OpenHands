@@ -705,6 +705,7 @@ class AgentController:
             is_delegate=True,
             headless_mode=self.headless_mode,
         )
+        self.delegateAction = action
 
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).
@@ -736,10 +737,6 @@ class AgentController:
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
             )
-
-            # emit the delegate result observation
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
             # emit AgentDelegateObservation with error content
@@ -750,9 +747,12 @@ class AgentController:
                 f'{self.delegate.agent.name} encountered an error during execution.'
             )
 
-            # emit the delegate result observation
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+        content = f"Delegated agent finished with result:\n\n{content}"
+
+        # emit the delegate result observation
+        obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+        obs.tool_call_metadata = self.delegateAction.tool_call_metadata
+        self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
