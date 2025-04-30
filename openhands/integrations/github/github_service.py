@@ -120,6 +120,12 @@ class GitHubService(BaseGitService, GitService):
             email=response.get('email'),
         )
 
+    async def get_app(self) -> dict:
+        """Check if the token belongs to a GitHub App installation."""
+        url = f'{self.BASE_URL}/installation/repositories'
+        response, _ = await self._make_request(url)
+        return response
+
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
