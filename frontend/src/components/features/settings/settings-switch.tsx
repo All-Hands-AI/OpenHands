@@ -6,7 +6,6 @@ interface SettingsSwitchProps {
   name?: string;
   onToggle?: (value: boolean) => void;
   defaultIsToggled?: boolean;
-  isToggled?: boolean;
   isBeta?: boolean;
 }
 
@@ -16,7 +15,6 @@ export function SettingsSwitch({
   name,
   onToggle,
   defaultIsToggled,
-  isToggled: controlledIsToggled,
   isBeta,
 }: React.PropsWithChildren<SettingsSwitchProps>) {
   const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false);
@@ -27,18 +25,17 @@ export function SettingsSwitch({
   };
 
   return (
-    <label className="flex items-center gap-2 w-fit cursor-pointer">
+    <label className="flex items-center gap-2 w-fit">
       <input
         hidden
         data-testid={testId}
         name={name}
         type="checkbox"
         onChange={(e) => handleToggle(e.target.checked)}
-        checked={controlledIsToggled ?? isToggled}
         defaultChecked={defaultIsToggled}
       />
 
-      <StyledSwitchComponent isToggled={controlledIsToggled ?? isToggled} />
+      <StyledSwitchComponent isToggled={isToggled} />
 
       <div className="flex items-center gap-1">
         <span className="text-sm">{children}</span>

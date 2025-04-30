@@ -13,35 +13,21 @@ import posthog from "posthog-js";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
+import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
-import OpenHands from "./api/open-hands";
-import { displayErrorToast } from "./utils/custom-toast-handlers";
 
 function PosthogInit() {
-  const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
-    null,
-  );
+  const { data: config } = useConfig();
 
   React.useEffect(() => {
-    (async () => {
-      try {
-        const config = await OpenHands.getConfig();
-        setPosthogClientKey(config.POSTHOG_CLIENT_KEY);
-      } catch (error) {
-        displayErrorToast("Error fetching PostHog client key");
-      }
-    })();
-  }, []);
-
-  React.useEffect(() => {
-    if (posthogClientKey) {
-      posthog.init(posthogClientKey, {
+    if (config?.POSTHOG_CLIENT_KEY) {
+      posthog.init(config.POSTHOG_CLIENT_KEY, {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
       });
     }
-  }, [posthogClientKey]);
+  }, [config]);
 
   return null;
 }

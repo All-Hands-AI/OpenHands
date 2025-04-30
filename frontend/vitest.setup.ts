@@ -18,10 +18,6 @@ vi.mock("react-i18next", async (importOriginal) => ({
   }),
 }));
 
-vi.mock("#/hooks/use-is-on-tos-page", () => ({
-  useIsOnTosPage: () => false,
-}));
-
 // Mock requests during tests
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
 afterEach(() => {

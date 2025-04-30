@@ -1,4 +1,4 @@
-import { DiffEditor, Monaco } from "@monaco-editor/react";
+import { DiffEditor } from "@monaco-editor/react";
 import React from "react";
 import { editor as editor_t } from "monaco-editor";
 import { LuFileDiff, LuFileMinus, LuFilePlus } from "react-icons/lu";
@@ -88,29 +88,6 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
     }
   }, []);
 
-  const beforeMount = (monaco: Monaco) => {
-    monaco.editor.defineTheme("custom-diff-theme", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [
-        { token: "comment", foreground: "6a9955" },
-        { token: "keyword", foreground: "569cd6" },
-        { token: "string", foreground: "ce9178" },
-        { token: "number", foreground: "b5cea8" },
-      ],
-      colors: {
-        "diffEditor.insertedTextBackground": "#014b01AA", // Stronger green background
-        "diffEditor.removedTextBackground": "#750000AA", // Stronger red background
-        "diffEditor.insertedLineBackground": "#003f00AA", // Dark green for added lines
-        "diffEditor.removedLineBackground": "#5a0000AA", // Dark red for removed lines
-        "diffEditor.border": "#444444", // Border between diff editors
-
-        "editorUnnecessaryCode.border": "#00000000", // No border for unnecessary code
-        "editorUnnecessaryCode.opacity": "#00000077", // Slightly faded
-      },
-    });
-  };
-
   const handleEditorDidMount = (editor: editor_t.IStandaloneDiffEditor) => {
     diffEditorRef.current = editor;
     updateEditorHeight();
@@ -168,9 +145,8 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
             language={getLanguageFromPath(filePath)}
             original={isAdded ? "" : diff.original}
             modified={isDeleted ? "" : diff.modified}
-            theme="custom-diff-theme"
+            theme="vs-dark"
             onMount={handleEditorDidMount}
-            beforeMount={beforeMount}
             options={{
               renderValidationDecorations: "off",
               readOnly: true,

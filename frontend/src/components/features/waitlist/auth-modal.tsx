@@ -4,6 +4,8 @@ import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
+import { TOSCheckbox } from "./tos-checkbox";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
@@ -17,6 +19,7 @@ interface AuthModalProps {
 
 export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
   const { t } = useTranslation();
+  const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
@@ -25,14 +28,14 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
-      // Always start the OIDC flow, let the backend handle TOS check
+      handleCaptureConsent(true);
       window.location.href = githubAuthUrl;
     }
   };
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
-      // Always start the OIDC flow, let the backend handle TOS check
+      handleCaptureConsent(true);
       window.location.href = gitlabAuthUrl;
     }
   };
@@ -47,8 +50,11 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
           </h1>
         </div>
 
+        <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
+
         <div className="flex flex-col gap-3 w-full">
           <BrandButton
+            isDisabled={!isTosAccepted}
             type="button"
             variant="primary"
             onClick={handleGitHubAuth}
@@ -59,6 +65,7 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
           </BrandButton>
 
           <BrandButton
+            isDisabled={!isTosAccepted}
             type="button"
             variant="primary"
             onClick={handleGitLabAuth}

@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRoutesStub } from "react-router";
@@ -6,30 +6,6 @@ import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-
-// Mock the i18next hook
-vi.mock("react-i18next", async () => {
-  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (key: string) => {
-        const translations: Record<string, string> = {
-          "SETTINGS$NAV_GIT": "Git",
-          "SETTINGS$NAV_APPLICATION": "Application",
-          "SETTINGS$NAV_CREDITS": "Credits",
-          "SETTINGS$NAV_API_KEYS": "API Keys",
-          "SETTINGS$NAV_LLM": "LLM",
-          "SETTINGS$TITLE": "Settings"
-        };
-        return translations[key] || key;
-      },
-      i18n: {
-        changeLanguage: vi.fn(),
-      },
-    }),
-  };
-});
 
 describe("Settings Billing", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
@@ -43,22 +19,18 @@ describe("Settings Billing", () => {
           Component: () => <PaymentForm />,
           path: "/settings/billing",
         },
-        {
-          Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
-        },
       ],
     },
   ]);
 
   const renderSettingsScreen = () =>
-    renderWithProviders(<RoutesStub initialEntries={["/settings/billing"]} />);
+    renderWithProviders(<RoutesStub initialEntries={["/settings"]} />);
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should not render the credits tab if OSS mode", async () => {
+  it("should not render the navbar if OSS mode", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "123",
@@ -71,12 +43,15 @@ describe("Settings Billing", () => {
 
     renderSettingsScreen();
 
-    const navbar = await screen.findByTestId("settings-navbar");
-    const credits = within(navbar).queryByText("Credits");
-    expect(credits).not.toBeInTheDocument();
+    // Wait for the settings screen to be rendered
+    await screen.findByTestId("settings-screen");
+
+    // Then check that the navbar is not present
+    const navbar = screen.queryByTestId("settings-navbar");
+    expect(navbar).not.toBeInTheDocument();
   });
 
-  it("should render the credits tab if SaaS mode and billing is enabled", async () => {
+  it("should render the navbar if SaaS mode", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
@@ -89,8 +64,11 @@ describe("Settings Billing", () => {
 
     renderSettingsScreen();
 
-    const navbar = await screen.findByTestId("settings-navbar");
-    within(navbar).getByText("Credits");
+    await waitFor(() => {
+      const navbar = screen.getByTestId("settings-navbar");
+      within(navbar).getByText("Account");
+      within(navbar).getByText("Credits");
+    });
   });
 
   it("should render the billing settings if clicking the credits item", async () => {
@@ -112,6 +90,6 @@ describe("Settings Billing", () => {
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
-    expect(billingSection).toBeInTheDocument();
+    within(billingSection).getByText("PAYMENT$MANAGE_CREDITS");
   });
 });

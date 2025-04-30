@@ -20,7 +20,10 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.action import Action, AgentFinishAction, MessageAction
+from openhands.events.action import (
+    Action,
+    AgentFinishAction,
+)
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -170,8 +173,7 @@ class CodeActAgent(Agent):
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
         )
 
-        initial_user_message = self._get_initial_user_message(state.history)
-        messages = self._get_messages(condensed_history, initial_user_message)
+        messages = self._get_messages(condensed_history)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
@@ -214,29 +216,7 @@ class CodeActAgent(Agent):
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_initial_user_message(self, history: list[Event]) -> MessageAction:
-        """Finds the initial user message action from the full history."""
-        initial_user_message: MessageAction | None = None
-        for event in history:
-            if isinstance(event, MessageAction) and event.source == 'user':
-                initial_user_message = event
-                break
-
-        if initial_user_message is None:
-            # This should not happen in a valid conversation
-            logger.error(
-                f'CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history.'
-            )
-            # Depending on desired robustness, could raise error or create a dummy action
-            # and log the error
-            raise ValueError(
-                'Initial user message not found in history. Please report this issue.'
-            )
-        return initial_user_message
-
-    def _get_messages(
-        self, events: list[Event], initial_user_message: MessageAction
-    ) -> list[Message]:
+    def _get_messages(self, events: list[Event]) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -273,7 +253,6 @@ class CodeActAgent(Agent):
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
-            initial_user_action=initial_user_message,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )
