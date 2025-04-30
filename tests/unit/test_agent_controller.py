@@ -208,7 +208,10 @@ async def test_react_to_content_policy_violation(
     )
 
     # Verify the state was updated correctly
-    assert controller.state.last_error == 'ContentPolicyViolationError: litellm.BadRequestError: litellm.ContentPolicyViolationError: Output blocked by content filtering policy'
+    assert (
+        controller.state.last_error
+        == 'ContentPolicyViolationError: litellm.BadRequestError: litellm.ContentPolicyViolationError: Output blocked by content filtering policy'
+    )
     assert controller.state.agent_state == AgentState.ERROR
 
     await controller.close()

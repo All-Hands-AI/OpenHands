@@ -17,13 +17,13 @@ from openhands.server.settings import (
     POSTSettingsModel,
 )
 from openhands.server.shared import config
-from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
     get_user_settings,
     get_user_settings_store,
 )
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
