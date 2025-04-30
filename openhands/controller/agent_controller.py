@@ -89,6 +89,7 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
+    delegateAction: 'AgentDelegateAction | None' = None
     _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -747,11 +748,12 @@ class AgentController:
                 f'{self.delegate.agent.name} encountered an error during execution.'
             )
 
-        content = f"Delegated agent finished with result:\n\n{content}"
+        content = f'Delegated agent finished with result:\n\n{content}'
 
         # emit the delegate result observation
         obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-        obs.tool_call_metadata = self.delegateAction.tool_call_metadata
+        if self.delegateAction:
+            obs.tool_call_metadata = self.delegateAction.tool_call_metadata
         self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
