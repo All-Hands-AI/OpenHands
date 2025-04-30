@@ -94,7 +94,7 @@ class User(BaseModel):
 class Repository(BaseModel):
     # Only enforcing name as non-optional field for OpenHands API
     full_name: str
-    git_provider: ProviderType
+    git_provider: ProviderType | None = None
     id: int | None = None
     is_public: bool | None = None
     stargazers_count: int | None = None
