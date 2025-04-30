@@ -222,17 +222,6 @@ async def new_conversation(
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    
-    except AuthenticationError as e:
-        return JSONResponse(
-            content={
-                'status': 'error',
-                'message': str(e),
-                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
-            },
-
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
 
 
 @app.get('/conversations')

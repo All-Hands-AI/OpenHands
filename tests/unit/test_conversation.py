@@ -7,7 +7,6 @@ import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.integrations.service_types import (
-    AuthenticationError,
     ProviderType,
     Repository,
     SuggestedTask,
@@ -244,17 +243,9 @@ async def test_new_conversation_success():
             # Set up the mock to return a conversation ID
             mock_create_conversation.return_value = 'test_conversation_id'
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                selected_repository=test_repo,
+                repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
                 image_urls=['https://example.com/image.jpg'],
@@ -277,7 +268,7 @@ async def test_new_conversation_success():
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['user_id'] == 'test_user'
-            assert call_args['selected_repository'] == test_repo
+            assert call_args['selected_repository'] == 'test/repo'
             assert call_args['selected_branch'] == 'main'
             assert call_args['initial_user_msg'] == 'Hello, agent!'
             assert call_args['image_urls'] == ['https://example.com/image.jpg']
@@ -303,14 +294,6 @@ async def test_new_conversation_with_suggested_task():
                     'Please fix the failing checks in PR #123'
                 )
 
-                # Create test data
-                test_repo = Repository(
-                    id=12345,
-                    full_name='test/repo',
-                    git_provider=ProviderType.GITHUB,
-                    is_public=True,
-                )
-
                 test_task = SuggestedTask(
                     git_provider=ProviderType.GITHUB,
                     task_type=TaskType.FAILING_CHECKS,
@@ -321,7 +304,7 @@ async def test_new_conversation_with_suggested_task():
 
                 test_request = InitSessionRequest(
                     conversation_trigger=ConversationTrigger.SUGGESTED_TASK,
-                    selected_repository=test_repo,
+                    repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
                 )
@@ -343,7 +326,7 @@ async def test_new_conversation_with_suggested_task():
                 mock_create_conversation.assert_called_once()
                 call_args = mock_create_conversation.call_args[1]
                 assert call_args['user_id'] == 'test_user'
-                assert call_args['selected_repository'] == test_repo
+                assert call_args['selected_repository'] == 'test/repo'
                 assert call_args['selected_branch'] == 'main'
                 assert (
                     call_args['initial_user_msg']
@@ -371,17 +354,9 @@ async def test_new_conversation_missing_settings():
                 'Settings not found'
             )
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                selected_repository=test_repo,
+                repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
             )
@@ -411,17 +386,9 @@ async def test_new_conversation_invalid_api_key():
                 'Error authenticating with the LLM provider. Please check your API key'
             )
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                selected_repository=test_repo,
+                repo='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
             )
@@ -498,76 +465,6 @@ async def test_delete_conversation():
                     mock_runtime_cls.delete.assert_called_once_with(
                         'some_conversation_id'
                     )
-
-
-@pytest.mark.asyncio
-async def test_new_conversation_with_repo_name_only():
-    """Test creating a new conversation with a repository that only has a name."""
-    with _patch_store():
-        # Mock the _create_new_conversation function
-        with patch(
-            'openhands.server.routes.manage_conversations._create_new_conversation'
-        ) as mock_create_conversation:
-            # Set up the mock to return a conversation ID
-            mock_create_conversation.return_value = 'test_conversation_id'
-
-            # Mock the ProviderHandler
-            with patch(
-                'openhands.server.routes.manage_conversations.ProviderHandler'
-            ) as mock_provider_handler_cls:
-                # Create a mock provider handler
-                mock_provider_handler = MagicMock()
-
-                # Set up the verify_repo_provider method to return a repository with provider info
-                verified_repo = Repository(
-                    id=12345,
-                    full_name='test/repo',
-                    git_provider=ProviderType.GITHUB,
-                    is_public=True,
-                )
-                mock_provider_handler.verify_repo_provider = AsyncMock(
-                    return_value=verified_repo
-                )
-                mock_provider_handler_cls.return_value = mock_provider_handler
-
-                # Create test data - repository with only name
-                repo_with_name_only = Repository(
-                    full_name='test/repo',
-                )
-
-                # Create the request object
-                test_request = InitSessionRequest(
-                    conversation_trigger=ConversationTrigger.GUI,
-                    selected_repository=repo_with_name_only,
-                    selected_branch='main',
-                    initial_user_msg='Hello, agent!',
-                )
-
-                # Call new_conversation
-                response = await new_conversation(
-                    data=test_request,
-                    user_id='test_user',
-                    provider_tokens={'github': 'token123'},
-                    auth_type=None,
-                )
-
-                # Verify the response
-                assert isinstance(response, JSONResponse)
-                assert response.status_code == 200
-                assert json.loads(response.body.decode('utf-8')) == {
-                    'status': 'ok',
-                    'conversation_id': 'test_conversation_id',
-                }
-
-                # Verify that verify_repo_provider was called with the repository
-                mock_provider_handler.verify_repo_provider.assert_called_once_with(
-                    repo_with_name_only
-                )
-
-                # Verify that _create_new_conversation was called with the verified repository
-                mock_create_conversation.assert_called_once()
-                call_args = mock_create_conversation.call_args[1]
-                assert call_args['selected_repository'] == verified_repo
 
 
 @pytest.mark.asyncio
@@ -652,66 +549,3 @@ async def test_new_conversation_with_null_repository():
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['selected_repository'] is None
-
-
-@pytest.mark.asyncio
-async def test_new_conversation_with_provider_authentication_error():
-    """Test creating a new conversation when provider authentication fails."""
-    with _patch_store():
-        # Mock the _create_new_conversation function
-        with patch(
-            'openhands.server.routes.manage_conversations._create_new_conversation'
-        ) as mock_create_conversation:
-            # Set up the mock to return a conversation ID
-            mock_create_conversation.return_value = 'test_conversation_id'
-
-            # Mock the ProviderHandler
-            with patch(
-                'openhands.server.routes.manage_conversations.ProviderHandler'
-            ) as mock_provider_handler_cls:
-                # Create a mock provider handler
-                mock_provider_handler = MagicMock()
-
-                mock_provider_handler.verify_repo_provider = AsyncMock(
-                    side_effect=AuthenticationError('auth error')
-                )
-
-                mock_provider_handler_cls.return_value = mock_provider_handler
-
-                # Create test data - repository with only name
-                repo_with_name_only = Repository(
-                    full_name='test/repo',
-                )
-
-                # Create the request object
-                test_request = InitSessionRequest(
-                    conversation_trigger=ConversationTrigger.GUI,
-                    selected_repository=repo_with_name_only,
-                    selected_branch='main',
-                    initial_user_msg='Hello, agent!',
-                )
-
-                # Call new_conversation
-                response = await new_conversation(
-                    data=test_request,
-                    user_id='test_user',
-                    provider_tokens={'github': 'token123'},
-                    auth_type=None,
-                )
-
-                # Verify the response
-                assert isinstance(response, JSONResponse)
-                assert response.status_code == 400
-                assert json.loads(response.body.decode('utf-8')) == {
-                    'status': 'error',
-                    'message': 'auth error',
-                    'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
-                }
-
-                # Verify that verify_repo_provider was called with the repository
-                mock_provider_handler.verify_repo_provider.assert_called_once_with(
-                    repo_with_name_only
-                )
-
-                # Verify that _create_new_conversation was not called
-                mock_create_conversation.assert_not_called()
