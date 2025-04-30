@@ -2,10 +2,12 @@ import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { FaServer } from "react-icons/fa";
+import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
+import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import {
   ConversationProvider,
   useConversation,
@@ -14,12 +16,12 @@ import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import CodeIcon from "#/icons/code.svg?react";
+
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
-import { FilesProvider } from "#/context/files";
+
 import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
@@ -50,6 +52,7 @@ function AppContent() {
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
@@ -134,9 +137,37 @@ function AppContent() {
                 icon: <DiGit className="w-6 h-6" />,
               },
               {
-                label: t(I18nKey.WORKSPACE$TITLE),
-                to: "workspace",
-                icon: <CodeIcon />,
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.VSCODE$TITLE)}
+                  </div>
+                ),
+                to: "vscode",
+                icon: <VscCode className="w-5 h-5" />,
+                rightContent: !RUNTIME_INACTIVE_STATES.includes(
+                  curAgentState,
+                ) ? (
+                  <FaExternalLinkAlt
+                    className="w-3 h-3 text-neutral-400 cursor-pointer"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (conversationId) {
+                        try {
+                          const response = await fetch(
+                            `/api/conversations/${conversationId}/vscode-url`,
+                          );
+                          const data = await response.json();
+                          if (data.vscode_url) {
+                            window.open(data.vscode_url, "_blank");
+                          }
+                        } catch (err) {
+                          // Silently handle the error
+                        }
+                      }
+                    }}
+                  />
+                ) : null,
               },
               {
                 label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
@@ -160,9 +191,7 @@ function AppContent() {
               },
             ]}
           >
-            <FilesProvider>
-              <Outlet />
-            </FilesProvider>
+            <Outlet />
           </Container>
         }
       />

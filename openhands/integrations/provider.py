@@ -25,6 +25,7 @@ from openhands.integrations.service_types import (
     GitService,
     ProviderType,
     Repository,
+    SuggestedTask,
     User,
 )
 from openhands.server.types import AppMode
@@ -59,6 +60,10 @@ PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
+CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
+    CUSTOM_SECRETS_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class SecretStore(BaseModel):
@@ -66,8 +71,8 @@ class SecretStore(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
-        default_factory=lambda: MappingProxyType({})
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
+        default_factory=lambda: MappingProxyType({}),
     )
 
     model_config = {
@@ -227,7 +232,7 @@ class ProviderHandler:
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
-        Get repositories from a selected providers with pagination support
+        Get repositories from providers
         """
 
         all_repos: list[Repository] = []
@@ -240,6 +245,21 @@ class ProviderHandler:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
 
         return all_repos
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """
+        Get suggested tasks from providers
+        """
+        tasks: list[SuggestedTask] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.get_suggested_tasks()
+                tasks.extend(service_repos)
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {provider}: {e}')
+
+        return tasks
 
     async def search_repositories(
         self,

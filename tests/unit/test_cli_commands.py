@@ -1,368 +1,488 @@
-import asyncio
-from io import StringIO
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from prompt_toolkit.application import create_app_session
-from prompt_toolkit.input import create_pipe_input
-from prompt_toolkit.output import create_output
 
-from openhands.core.cli import main
+from openhands.core.cli_commands import (
+    handle_commands,
+    handle_exit_command,
+    handle_help_command,
+    handle_init_command,
+    handle_new_command,
+    handle_resume_command,
+    handle_settings_command,
+    handle_status_command,
+)
+from openhands.core.cli_tui import UsageMetrics
 from openhands.core.config import AppConfig
 from openhands.core.schema import AgentState
+from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction, MessageAction
-from openhands.events.event import EventSource
-from openhands.events.observation import AgentStateChangedObservation
-
-
-class MockEventStream:
-    def __init__(self):
-        self._subscribers = {}
-        self.cur_id = 0
-        self.events = []
-
-    def subscribe(self, subscriber_id, callback, callback_id=None):
-        if subscriber_id not in self._subscribers:
-            self._subscribers[subscriber_id] = {}
-        self._subscribers[subscriber_id][callback_id] = callback
-        return callback_id
-
-    def unsubscribe(self, subscriber_id, callback_id):
-        if (
-            subscriber_id in self._subscribers
-            and callback_id in self._subscribers[subscriber_id]
-        ):
-            del self._subscribers[subscriber_id][callback_id]
-
-    def add_event(self, event, source):
-        event._id = self.cur_id
-        self.cur_id += 1
-        event._source = source
-        event._timestamp = '2023-01-01T00:00:00'
-        self.events.append((event, source))
-
-        for subscriber_id in self._subscribers:
-            for callback_id, callback in self._subscribers[subscriber_id].items():
-                if asyncio.iscoroutinefunction(callback):
-                    asyncio.create_task(callback(event))
-                else:
-                    callback(event)
-
-
-@pytest.fixture
-def mock_agent():
-    with patch('openhands.core.cli.create_agent') as mock_create_agent:
-        mock_agent_instance = AsyncMock()
-        mock_agent_instance.name = 'test-agent'
-        mock_agent_instance.llm = AsyncMock()
-        mock_agent_instance.llm.config = AsyncMock()
-        mock_agent_instance.llm.config.model = 'test-model'
-        mock_agent_instance.llm.config.base_url = 'http://test'
-        mock_agent_instance.llm.config.max_message_chars = 1000
-        mock_agent_instance.config = AsyncMock()
-        mock_agent_instance.config.disabled_microagents = []
-        mock_agent_instance.sandbox_plugins = []
-        mock_agent_instance.prompt_manager = AsyncMock()
-        mock_create_agent.return_value = mock_agent_instance
-        yield mock_agent_instance
-
-
-@pytest.fixture
-def mock_controller():
-    with patch('openhands.core.cli.create_controller') as mock_create_controller:
-        mock_controller_instance = AsyncMock()
-        mock_controller_instance.state.agent_state = None
-        # Mock run_until_done to finish immediately
-        mock_controller_instance.run_until_done = AsyncMock(return_value=None)
-        mock_create_controller.return_value = (mock_controller_instance, None)
-        yield mock_controller_instance
-
-
-@pytest.fixture
-def mock_config():
-    with patch('openhands.core.cli.parse_arguments') as mock_parse_args:
-        args = Mock()
-        args.file = None
-        args.task = None
-        args.directory = None
-        mock_parse_args.return_value = args
-        with patch('openhands.core.cli.setup_config_from_args') as mock_setup_config:
-            mock_config = AppConfig()
-            mock_config.cli_multiline_input = False
-            mock_config.security = Mock()
-            mock_config.security.confirmation_mode = False
-            mock_config.sandbox = Mock()
-            mock_config.sandbox.selected_repo = None
-            mock_config.workspace_base = '/test'
-            mock_config.runtime = 'local'  # Important for /init test
-            mock_setup_config.return_value = mock_config
-            yield mock_config
-
-
-@pytest.fixture
-def mock_memory():
-    with patch('openhands.core.cli.create_memory') as mock_create_memory:
-        mock_memory_instance = AsyncMock()
-        mock_create_memory.return_value = mock_memory_instance
-        yield mock_memory_instance
-
-
-@pytest.fixture
-def mock_read_task():
-    with patch('openhands.core.cli.read_task') as mock_read_task:
-        mock_read_task.return_value = None
-        yield mock_read_task
-
-
-@pytest.fixture
-def mock_runtime():
-    with patch('openhands.core.cli.create_runtime') as mock_create_runtime:
-        mock_runtime_instance = AsyncMock()
-
-        mock_event_stream = MockEventStream()
-        mock_runtime_instance.event_stream = mock_event_stream
-
-        mock_runtime_instance.connect = AsyncMock()
-
-        # Ensure status_callback is None
-        mock_runtime_instance.status_callback = None
-        # Mock get_microagents_from_selected_repo
-        mock_runtime_instance.get_microagents_from_selected_repo = Mock(return_value=[])
-        mock_create_runtime.return_value = mock_runtime_instance
-        yield mock_runtime_instance
-
-
-@pytest.mark.asyncio
-async def test_help_command(
-    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
-):
-    buffer = StringIO()
-
-    with patch('openhands.core.cli.manage_openhands_file', return_value=True):
-        with patch(
-            'openhands.core.cli.check_folder_security_agreement', return_value=True
-        ):
-            with patch('openhands.core.cli.read_prompt_input') as mock_prompt:
-                # Setup to return /help first, then simulate an exit
-                mock_prompt.side_effect = ['/help', '/exit']
-
-                with create_app_session(
-                    input=create_pipe_input(), output=create_output(stdout=buffer)
-                ):
-                    mock_controller.status_callback = None
-
-                    main_task = asyncio.create_task(main(asyncio.get_event_loop()))
-
-                    agent_ready_event = AgentStateChangedObservation(
-                        agent_state=AgentState.AWAITING_USER_INPUT,
-                        content='Agent is ready for user input',
-                    )
-                    mock_runtime.event_stream.add_event(
-                        agent_ready_event, EventSource.AGENT
-                    )
-
-                    await asyncio.sleep(0.1)
-
-                    try:
-                        await asyncio.wait_for(main_task, timeout=0.5)
-                    except asyncio.TimeoutError:
-                        main_task.cancel()
-                        try:
-                            await main_task
-                        except asyncio.CancelledError:
-                            pass
-
-                    buffer.seek(0)
-                    output = buffer.read()
-
-                    # Verify help output was displayed
-                    assert 'OpenHands CLI' in output
-                    assert 'Things that you can try' in output
-                    assert 'Interactive commands' in output
-                    assert '/help' in output
-                    assert '/exit' in output
-
-                    # Verify the help command didn't add a MessageAction to the event stream
-                    message_actions = [
-                        event
-                        for event, _ in mock_runtime.event_stream.events
-                        if isinstance(event, MessageAction)
-                    ]
-                    assert len(message_actions) == 0
-
-
-@pytest.mark.asyncio
-async def test_exit_command(
-    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
-):
-    buffer = StringIO()
-
-    with patch('openhands.core.cli.manage_openhands_file', return_value=True):
-        with patch(
-            'openhands.core.cli.check_folder_security_agreement', return_value=True
-        ):
-            with patch('openhands.core.cli.read_prompt_input') as mock_prompt:
-                # First prompt call returns /exit
-                mock_prompt.side_effect = ['/exit']
-
-                with patch('openhands.core.cli.shutdown') as mock_shutdown:
-                    with create_app_session(
-                        input=create_pipe_input(), output=create_output(stdout=buffer)
-                    ):
-                        mock_controller.status_callback = None
-
-                        main_task = asyncio.create_task(main(asyncio.get_event_loop()))
-
-                        agent_ready_event = AgentStateChangedObservation(
-                            agent_state=AgentState.AWAITING_USER_INPUT,
-                            content='Agent is ready for user input',
-                        )
-                        mock_runtime.event_stream.add_event(
-                            agent_ready_event, EventSource.AGENT
-                        )
-
-                        await asyncio.sleep(0.1)
-
-                        try:
-                            await asyncio.wait_for(main_task, timeout=0.5)
-                        except asyncio.TimeoutError:
-                            main_task.cancel()
-                            try:
-                                await main_task
-                            except asyncio.CancelledError:
-                                pass
-
-                        # Verify that the exit command sent a STOPPED state change event
-                        state_change_events = [
-                            event
-                            for event, source in mock_runtime.event_stream.events
-                            if isinstance(event, ChangeAgentStateAction)
-                            and event.agent_state == AgentState.STOPPED
-                            and source == EventSource.ENVIRONMENT
-                        ]
-                        assert len(state_change_events) == 1
-
-                        # Verify shutdown was called
-                        mock_shutdown.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_init_command(
-    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
-):
-    buffer = StringIO()
-
-    with patch('openhands.core.cli.manage_openhands_file', return_value=True):
-        with patch(
-            'openhands.core.cli.check_folder_security_agreement', return_value=True
-        ):
-            with patch('openhands.core.cli.read_prompt_input') as mock_prompt:
-                # First prompt call returns /init, second call returns /exit
-                mock_prompt.side_effect = ['/init', '/exit']
-
-                with patch('openhands.core.cli.init_repository') as mock_init_repo:
-                    with create_app_session(
-                        input=create_pipe_input(), output=create_output(stdout=buffer)
-                    ):
-                        mock_controller.status_callback = None
-
-                        main_task = asyncio.create_task(main(asyncio.get_event_loop()))
-
-                        agent_ready_event = AgentStateChangedObservation(
-                            agent_state=AgentState.AWAITING_USER_INPUT,
-                            content='Agent is ready for user input',
-                        )
-                        mock_runtime.event_stream.add_event(
-                            agent_ready_event, EventSource.AGENT
-                        )
-
-                        await asyncio.sleep(0.1)
-
-                        try:
-                            await asyncio.wait_for(main_task, timeout=0.5)
-                        except asyncio.TimeoutError:
-                            main_task.cancel()
-                            try:
-                                await main_task
-                            except asyncio.CancelledError:
-                                pass
-
-                        # Verify init_repository was called with the correct directory
-                        mock_init_repo.assert_called_once_with('/test')
-
-                        # Verify that a MessageAction was sent with the repository creation prompt
-                        message_events = [
-                            event
-                            for event, source in mock_runtime.event_stream.events
-                            if isinstance(event, MessageAction)
-                            and 'Please explore this repository' in event.content
-                            and source == EventSource.USER
-                        ]
-                        assert len(message_events) == 1
-
-
-@pytest.mark.asyncio
-async def test_init_command_non_local_runtime(
-    mock_runtime, mock_controller, mock_config, mock_agent, mock_memory, mock_read_task
-):
-    buffer = StringIO()
-
-    # Set runtime to non-local for this test
-    mock_config.runtime = 'remote'
-
-    with patch('openhands.core.cli.manage_openhands_file', return_value=True):
-        with patch(
-            'openhands.core.cli.check_folder_security_agreement', return_value=True
-        ):
-            with patch('openhands.core.cli.read_prompt_input') as mock_prompt:
-                # First prompt call returns /init, second call returns /exit
-                mock_prompt.side_effect = ['/init', '/exit']
-
-                with patch('openhands.core.cli.init_repository') as mock_init_repo:
-                    with create_app_session(
-                        input=create_pipe_input(), output=create_output(stdout=buffer)
-                    ):
-                        mock_controller.status_callback = None
-
-                        main_task = asyncio.create_task(main(asyncio.get_event_loop()))
-
-                        # Send AgentStateChangedObservation to trigger prompt
-                        agent_ready_event = AgentStateChangedObservation(
-                            agent_state=AgentState.AWAITING_USER_INPUT,
-                            content='Agent is ready for user input',
-                        )
-                        mock_runtime.event_stream.add_event(
-                            agent_ready_event, EventSource.AGENT
-                        )
-
-                        await asyncio.sleep(0.1)
-
-                        try:
-                            await asyncio.wait_for(main_task, timeout=0.5)
-                        except asyncio.TimeoutError:
-                            main_task.cancel()
-                            try:
-                                await main_task
-                            except asyncio.CancelledError:
-                                pass
-
-                        buffer.seek(0)
-                        output = buffer.read()
-
-                        # Verify error message was displayed
-                        assert (
-                            'Repository initialization through the CLI is only supported for local runtime'
-                            in output
-                        )
-
-                        # Verify init_repository was not called
-                        mock_init_repo.assert_not_called()
-
-                        # Verify no MessageAction was sent for repository creation
-                        message_events = [
-                            event
-                            for event, _ in mock_runtime.event_stream.events
-                            if isinstance(event, MessageAction)
-                            and 'Please explore this repository' in event.content
-                        ]
-                        assert len(message_events) == 0
+from openhands.events.stream import EventStream
+from openhands.storage.settings.file_settings_store import FileSettingsStore
+
+
+class TestHandleCommands:
+    @pytest.fixture
+    def mock_dependencies(self):
+        event_stream = MagicMock(spec=EventStream)
+        usage_metrics = MagicMock(spec=UsageMetrics)
+        sid = 'test-session-id'
+        config = MagicMock(spec=AppConfig)
+        current_dir = '/test/dir'
+        settings_store = MagicMock(spec=FileSettingsStore)
+
+        return {
+            'event_stream': event_stream,
+            'usage_metrics': usage_metrics,
+            'sid': sid,
+            'config': config,
+            'current_dir': current_dir,
+            'settings_store': settings_store,
+        }
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.handle_exit_command')
+    async def test_handle_exit_command(self, mock_handle_exit, mock_dependencies):
+        mock_handle_exit.return_value = True
+
+        close_repl, reload_microagents, new_session = await handle_commands(
+            '/exit', **mock_dependencies
+        )
+
+        mock_handle_exit.assert_called_once_with(
+            mock_dependencies['event_stream'],
+            mock_dependencies['usage_metrics'],
+            mock_dependencies['sid'],
+        )
+        assert close_repl is True
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.handle_help_command')
+    async def test_handle_help_command(self, mock_handle_help, mock_dependencies):
+        mock_handle_help.return_value = (False, False, False)
+
+        close_repl, reload_microagents, new_session = await handle_commands(
+            '/help', **mock_dependencies
+        )
+
+        mock_handle_help.assert_called_once()
+        assert close_repl is False
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.handle_init_command')
+    async def test_handle_init_command(self, mock_handle_init, mock_dependencies):
+        mock_handle_init.return_value = (True, True)
+
+        close_repl, reload_microagents, new_session = await handle_commands(
+            '/init', **mock_dependencies
+        )
+
+        mock_handle_init.assert_called_once_with(
+            mock_dependencies['config'],
+            mock_dependencies['event_stream'],
+            mock_dependencies['current_dir'],
+        )
+        assert close_repl is True
+        assert reload_microagents is True
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.handle_status_command')
+    async def test_handle_status_command(self, mock_handle_status, mock_dependencies):
+        mock_handle_status.return_value = (False, False, False)
+
+        close_repl, reload_microagents, new_session = await handle_commands(
+            '/status', **mock_dependencies
+        )
+
+        mock_handle_status.assert_called_once_with(
+            mock_dependencies['usage_metrics'], mock_dependencies['sid']
+        )
+        assert close_repl is False
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.handle_new_command')
+    async def test_handle_new_command(self, mock_handle_new, mock_dependencies):
+        mock_handle_new.return_value = (True, True)
+
+        close_repl, reload_microagents, new_session = await handle_commands(
+            '/new', **mock_dependencies
+        )
+
+        mock_handle_new.assert_called_once_with(
+            mock_dependencies['event_stream'],
+            mock_dependencies['usage_metrics'],
+            mock_dependencies['sid'],
+        )
+        assert close_repl is True
+        assert reload_microagents is False
+        assert new_session is True
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.handle_settings_command')
+    async def test_handle_settings_command(
+        self, mock_handle_settings, mock_dependencies
+    ):
+        close_repl, reload_microagents, new_session = await handle_commands(
+            '/settings', **mock_dependencies
+        )
+
+        mock_handle_settings.assert_called_once_with(
+            mock_dependencies['config'],
+            mock_dependencies['settings_store'],
+        )
+        assert close_repl is False
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    async def test_handle_unknown_command(self, mock_dependencies):
+        user_message = 'Hello, this is not a command'
+
+        close_repl, reload_microagents, new_session = await handle_commands(
+            user_message, **mock_dependencies
+        )
+
+        # The command should be treated as a message and added to the event stream
+        mock_dependencies['event_stream'].add_event.assert_called_once()
+        # Check the first argument is a MessageAction with the right content
+        args, kwargs = mock_dependencies['event_stream'].add_event.call_args
+        assert isinstance(args[0], MessageAction)
+        assert args[0].content == user_message
+        assert args[1] == EventSource.USER
+
+        assert close_repl is True
+        assert reload_microagents is False
+        assert new_session is False
+
+
+class TestHandleExitCommand:
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.display_shutdown_message')
+    def test_exit_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        event_stream = MagicMock(spec=EventStream)
+        usage_metrics = MagicMock(spec=UsageMetrics)
+        sid = 'test-session-id'
+
+        # Mock user confirming exit
+        mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
+
+        # Call the function under test
+        result = handle_exit_command(event_stream, usage_metrics, sid)
+
+        # Verify correct behavior
+        mock_cli_confirm.assert_called_once()
+        event_stream.add_event.assert_called_once()
+        # Check event is the right type
+        args, kwargs = event_stream.add_event.call_args
+        assert isinstance(args[0], ChangeAgentStateAction)
+        assert args[0].agent_state == AgentState.STOPPED
+        assert args[1] == EventSource.ENVIRONMENT
+
+        mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
+        assert result is True
+
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.display_shutdown_message')
+    def test_exit_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        event_stream = MagicMock(spec=EventStream)
+        usage_metrics = MagicMock(spec=UsageMetrics)
+        sid = 'test-session-id'
+
+        # Mock user rejecting exit
+        mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
+
+        # Call the function under test
+        result = handle_exit_command(event_stream, usage_metrics, sid)
+
+        # Verify correct behavior
+        mock_cli_confirm.assert_called_once()
+        event_stream.add_event.assert_not_called()
+        mock_display_shutdown.assert_not_called()
+        assert result is False
+
+
+class TestHandleHelpCommand:
+    @patch('openhands.core.cli_commands.display_help')
+    def test_help_command(self, mock_display_help):
+        handle_help_command()
+        mock_display_help.assert_called_once()
+
+
+class TestHandleStatusCommand:
+    @patch('openhands.core.cli_commands.display_status')
+    def test_status_command(self, mock_display_status):
+        usage_metrics = MagicMock(spec=UsageMetrics)
+        sid = 'test-session-id'
+
+        handle_status_command(usage_metrics, sid)
+
+        mock_display_status.assert_called_once_with(usage_metrics, sid)
+
+
+class TestHandleNewCommand:
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.display_shutdown_message')
+    def test_new_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        event_stream = MagicMock(spec=EventStream)
+        usage_metrics = MagicMock(spec=UsageMetrics)
+        sid = 'test-session-id'
+
+        # Mock user confirming new session
+        mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
+
+        # Call the function under test
+        close_repl, new_session = handle_new_command(event_stream, usage_metrics, sid)
+
+        # Verify correct behavior
+        mock_cli_confirm.assert_called_once()
+        event_stream.add_event.assert_called_once()
+        # Check event is the right type
+        args, kwargs = event_stream.add_event.call_args
+        assert isinstance(args[0], ChangeAgentStateAction)
+        assert args[0].agent_state == AgentState.STOPPED
+        assert args[1] == EventSource.ENVIRONMENT
+
+        mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
+        assert close_repl is True
+        assert new_session is True
+
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.display_shutdown_message')
+    def test_new_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        event_stream = MagicMock(spec=EventStream)
+        usage_metrics = MagicMock(spec=UsageMetrics)
+        sid = 'test-session-id'
+
+        # Mock user rejecting new session
+        mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
+
+        # Call the function under test
+        close_repl, new_session = handle_new_command(event_stream, usage_metrics, sid)
+
+        # Verify correct behavior
+        mock_cli_confirm.assert_called_once()
+        event_stream.add_event.assert_not_called()
+        mock_display_shutdown.assert_not_called()
+        assert close_repl is False
+        assert new_session is False
+
+
+class TestHandleInitCommand:
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.init_repository')
+    async def test_init_local_runtime_successful(self, mock_init_repository):
+        config = MagicMock(spec=AppConfig)
+        config.runtime = 'local'
+        event_stream = MagicMock(spec=EventStream)
+        current_dir = '/test/dir'
+
+        # Mock successful repository initialization
+        mock_init_repository.return_value = True
+
+        # Call the function under test
+        close_repl, reload_microagents = await handle_init_command(
+            config, event_stream, current_dir
+        )
+
+        # Verify correct behavior
+        mock_init_repository.assert_called_once_with(current_dir)
+        event_stream.add_event.assert_called_once()
+        # Check event is the right type
+        args, kwargs = event_stream.add_event.call_args
+        assert isinstance(args[0], MessageAction)
+        assert 'Please explore this repository' in args[0].content
+        assert args[1] == EventSource.USER
+
+        assert close_repl is True
+        assert reload_microagents is True
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.init_repository')
+    async def test_init_local_runtime_unsuccessful(self, mock_init_repository):
+        config = MagicMock(spec=AppConfig)
+        config.runtime = 'local'
+        event_stream = MagicMock(spec=EventStream)
+        current_dir = '/test/dir'
+
+        # Mock unsuccessful repository initialization
+        mock_init_repository.return_value = False
+
+        # Call the function under test
+        close_repl, reload_microagents = await handle_init_command(
+            config, event_stream, current_dir
+        )
+
+        # Verify correct behavior
+        mock_init_repository.assert_called_once_with(current_dir)
+        event_stream.add_event.assert_not_called()
+
+        assert close_repl is False
+        assert reload_microagents is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.print_formatted_text')
+    @patch('openhands.core.cli_commands.init_repository')
+    async def test_init_non_local_runtime(self, mock_init_repository, mock_print):
+        config = MagicMock(spec=AppConfig)
+        config.runtime = 'remote'  # Not local
+        event_stream = MagicMock(spec=EventStream)
+        current_dir = '/test/dir'
+
+        # Call the function under test
+        close_repl, reload_microagents = await handle_init_command(
+            config, event_stream, current_dir
+        )
+
+        # Verify correct behavior
+        mock_init_repository.assert_not_called()
+        mock_print.assert_called_once()
+        event_stream.add_event.assert_not_called()
+
+        assert close_repl is False
+        assert reload_microagents is False
+
+
+class TestHandleSettingsCommand:
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.display_settings')
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.modify_llm_settings_basic')
+    async def test_settings_basic_with_changes(
+        self,
+        mock_modify_basic,
+        mock_cli_confirm,
+        mock_display_settings,
+    ):
+        config = MagicMock(spec=AppConfig)
+        settings_store = MagicMock(spec=FileSettingsStore)
+
+        # Mock user selecting "Basic" settings
+        mock_cli_confirm.return_value = 0
+
+        # Call the function under test
+        await handle_settings_command(config, settings_store)
+
+        # Verify correct behavior
+        mock_display_settings.assert_called_once_with(config)
+        mock_cli_confirm.assert_called_once()
+        mock_modify_basic.assert_called_once_with(config, settings_store)
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.display_settings')
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.modify_llm_settings_basic')
+    async def test_settings_basic_without_changes(
+        self,
+        mock_modify_basic,
+        mock_cli_confirm,
+        mock_display_settings,
+    ):
+        config = MagicMock(spec=AppConfig)
+        settings_store = MagicMock(spec=FileSettingsStore)
+
+        # Mock user selecting "Basic" settings
+        mock_cli_confirm.return_value = 0
+
+        # Call the function under test
+        await handle_settings_command(config, settings_store)
+
+        # Verify correct behavior
+        mock_display_settings.assert_called_once_with(config)
+        mock_cli_confirm.assert_called_once()
+        mock_modify_basic.assert_called_once_with(config, settings_store)
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.display_settings')
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.modify_llm_settings_advanced')
+    async def test_settings_advanced_with_changes(
+        self,
+        mock_modify_advanced,
+        mock_cli_confirm,
+        mock_display_settings,
+    ):
+        config = MagicMock(spec=AppConfig)
+        settings_store = MagicMock(spec=FileSettingsStore)
+
+        # Mock user selecting "Advanced" settings
+        mock_cli_confirm.return_value = 1
+
+        # Call the function under test
+        await handle_settings_command(config, settings_store)
+
+        # Verify correct behavior
+        mock_display_settings.assert_called_once_with(config)
+        mock_cli_confirm.assert_called_once()
+        mock_modify_advanced.assert_called_once_with(config, settings_store)
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.display_settings')
+    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.core.cli_commands.modify_llm_settings_advanced')
+    async def test_settings_advanced_without_changes(
+        self,
+        mock_modify_advanced,
+        mock_cli_confirm,
+        mock_display_settings,
+    ):
+        config = MagicMock(spec=AppConfig)
+        settings_store = MagicMock(spec=FileSettingsStore)
+
+        # Mock user selecting "Advanced" settings
+        mock_cli_confirm.return_value = 1
+
+        # Call the function under test
+        await handle_settings_command(config, settings_store)
+
+        # Verify correct behavior
+        mock_display_settings.assert_called_once_with(config)
+        mock_cli_confirm.assert_called_once()
+        mock_modify_advanced.assert_called_once_with(config, settings_store)
+
+    @pytest.mark.asyncio
+    @patch('openhands.core.cli_commands.display_settings')
+    @patch('openhands.core.cli_commands.cli_confirm')
+    async def test_settings_go_back(self, mock_cli_confirm, mock_display_settings):
+        config = MagicMock(spec=AppConfig)
+        settings_store = MagicMock(spec=FileSettingsStore)
+
+        # Mock user selecting "Go back"
+        mock_cli_confirm.return_value = 2
+
+        # Call the function under test
+        await handle_settings_command(config, settings_store)
+
+        # Verify correct behavior
+        mock_display_settings.assert_called_once_with(config)
+        mock_cli_confirm.assert_called_once()
+
+
+class TestHandleResumeCommand:
+    @pytest.mark.asyncio
+    async def test_handle_resume_command(self):
+        """Test that handle_resume_command adds the 'continue' message to the event stream."""
+        # Create a mock event stream
+        event_stream = MagicMock(spec=EventStream)
+
+        # Call the function
+        close_repl, new_session_requested = await handle_resume_command(event_stream)
+
+        # Check that the event stream add_event was called with the correct message action
+        event_stream.add_event.assert_called_once()
+        args, kwargs = event_stream.add_event.call_args
+        message_action, source = args
+
+        assert isinstance(message_action, MessageAction)
+        assert message_action.content == 'continue'
+        assert source == EventSource.USER
+
+        # Check the return values
+        assert close_repl is True
+        assert new_session_requested is False
