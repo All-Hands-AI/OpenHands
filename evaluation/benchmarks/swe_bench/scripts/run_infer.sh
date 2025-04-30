@@ -11,8 +11,10 @@ MAX_ITER=$5
 NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
-N_RUNS=$9
-MODE=${10}
+CONDENSER_CONFIG=$9
+N_RUNS=${10}
+MODE=${11}
+
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -49,6 +51,12 @@ fi
 if [ -z "$MODE" ]; then
   MODE="swe"
   echo "MODE not specified, use default $MODE"
+fi
+
+if [ -n "$CONDENSER_CONFIG" ]; then
+  echo "Using Condenser Config: $CONDENSER_CONFIG"
+else
+  echo "No Condenser Config provided, use default (NoOpCondenser)."
 fi
 
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
@@ -91,7 +99,19 @@ fi
 
 function run_eval() {
   local eval_note="${1}"
-  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
+  local base_command="evaluation/benchmarks/swe_bench/run_infer.py"
+
+  # Check if DEBUG_EVAL environment variable is set to true
+  if [[ "${DEBUG_EVAL}" == "true" ]]; then
+    echo "Running in DEBUG mode with debugpy, listening on port 5678"
+    # Prepend DEBUG=true to set the environment variable for the python process
+    # Use standard debugpy port 5678
+    COMMAND="DEBUG=true poetry run debugpy --listen 0.0.0.0:5678 --wait-for-client $base_command"
+  else
+    COMMAND="poetry run python $base_command"
+  fi
+
+  COMMAND="$COMMAND \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \
@@ -100,6 +120,12 @@ function run_eval() {
     --dataset $DATASET \
     --split $SPLIT \
     --mode $MODE"
+
+  # Conditionally add the condenser config argument.
+  # The Python script defaults to NoOpCondenserConfig if this argument is not provided.
+  if [ -n "$CONDENSER_CONFIG" ]; then
+    COMMAND="$COMMAND --condenser-config $CONDENSER_CONFIG"
+  fi
 
   if [ -n "$EVAL_LIMIT" ]; then
     echo "EVAL_LIMIT: $EVAL_LIMIT"
