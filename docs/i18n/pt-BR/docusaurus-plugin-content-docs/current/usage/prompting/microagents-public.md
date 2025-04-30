@@ -4,7 +4,7 @@
 
 Microagentes públicos são diretrizes especializadas acionadas por palavras-chave para todos os usuários do OpenHands.
 Eles são definidos em arquivos markdown no diretório
-[`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
+[`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents).
 
 Microagentes públicos:
 - Monitoram comandos recebidos em busca de suas palavras-chave de acionamento.
@@ -149,5 +149,5 @@ Lembre-se de:
 - Otimizar para tempo de build e tamanho da imagem
 ```
 
-Veja os [microagentes públicos atuais](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) para
+Veja os [microagentes públicos atuais](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents) para
 mais exemplos.

@@ -46,4 +46,4 @@ Keyword-triggered microagents:
 - Apply their specialized knowledge and capabilities.
 - Follow defined guidelines and restrictions.
 
-[See examples of microagents triggered by keywords in the official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge)
+[See examples of microagents triggered by keywords in the official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)
