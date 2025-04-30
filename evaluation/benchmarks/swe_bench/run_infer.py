@@ -44,6 +44,8 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.utils import get_condenser_config_arg
+from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
@@ -744,6 +746,12 @@ if __name__ == '__main__':
         choices=['swe', 'swt', 'swt-ci'],
         help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
+    parser.add_argument(
+        '--condenser-config',
+        type=str,
+        default=None,
+        help='Name of the condenser config to use, e.g., "default_4_20" for [condenser.default_4_20] section in config.toml',
+    )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -780,6 +788,18 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
+    condenser_config = None
+    if args.condenser_config:
+        condenser_config = get_condenser_config_arg(args.condenser_config)
+        if condenser_config is None:
+            raise ValueError(
+                f'Could not find Condenser config: --condenser-config {args.condenser_config}'
+            )
+    else:
+        # If no specific condenser config is provided via args, default to NoOpCondenser
+        condenser_config = NoOpCondenserConfig()
+        logger.warning('No Condenser config provided via --condenser-config, using NoOpCondenser.')
+
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
@@ -794,6 +814,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        condenser_config=condenser_config,
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
