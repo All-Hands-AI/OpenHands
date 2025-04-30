@@ -42,7 +42,7 @@ class PromptManager:
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
-        self.microagent_info_template: Template = self._load_template('microagent_info')
+        # self.microagent_info_template: Template = self._load_template('microagent_info')
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
