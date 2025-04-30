@@ -99,19 +99,7 @@ fi
 
 function run_eval() {
   local eval_note="${1}"
-  local base_command="evaluation/benchmarks/swe_bench/run_infer.py"
-
-  # Check if DEBUG_EVAL environment variable is set to true
-  if [[ "${DEBUG_EVAL}" == "true" ]]; then
-    echo "Running in DEBUG mode with debugpy, listening on port 5678"
-    # Prepend DEBUG=true to set the environment variable for the python process
-    # Use standard debugpy port 5678
-    COMMAND="DEBUG=true poetry run debugpy --listen 0.0.0.0:5678 --wait-for-client $base_command"
-  else
-    COMMAND="poetry run python $base_command"
-  fi
-
-  COMMAND="$COMMAND \
+  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \
