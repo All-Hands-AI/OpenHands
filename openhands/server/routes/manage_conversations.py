@@ -72,7 +72,7 @@ async def _create_new_conversation(
 ):
     
     logger.info(
-        f'Creating conversation with trigger {conversation_trigger}',
+        'Creating conversation',
         extra={'signal': 'create_conversation', 'user_id': user_id, 'trigger': conversation_trigger.value},
     )
     logger.info('Loading settings')
