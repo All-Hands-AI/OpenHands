@@ -331,7 +331,7 @@ class Runtime(FileEditRuntimeMixin):
         ):  # See if repo object contains provider
             chosen_provider = selected_repository.git_provider
 
-        # If repo is not provider or unable to determine repo provider
+        # If repo is not provided or unable to determine repo's git provider
         if not selected_repository or not chosen_provider:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
