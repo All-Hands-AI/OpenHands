@@ -45,7 +45,15 @@ describe("Empty state", () => {
   it("should render suggestions if empty", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { messages: [] },
+        chat: {
+          messages: [],
+          systemMessage: {
+            content: "",
+            tools: [],
+            openhands_version: null,
+            agent_class: null
+          }
+        },
       },
     });
 
@@ -68,7 +76,15 @@ describe("Empty state", () => {
   it("should render the default suggestions", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { messages: [] },
+        chat: {
+          messages: [],
+          systemMessage: {
+            content: "",
+            tools: [],
+            openhands_version: null,
+            agent_class: null
+          }
+        },
       },
     });
 
@@ -98,7 +114,15 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { messages: [] },
+          chat: {
+            messages: [],
+            systemMessage: {
+              content: "",
+              tools: [],
+              openhands_version: null,
+              agent_class: null
+            }
+          },
         },
       });
 
@@ -127,7 +151,15 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { messages: [] },
+          chat: {
+            messages: [],
+            systemMessage: {
+              content: "",
+              tools: [],
+              openhands_version: null,
+              agent_class: null
+            }
+          },
         },
       });
 

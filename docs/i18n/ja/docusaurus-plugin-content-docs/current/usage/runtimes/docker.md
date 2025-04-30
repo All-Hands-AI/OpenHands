@@ -25,7 +25,7 @@ nikolaik の `SANDBOX_RUNTIME_CONTAINER_IMAGE` は、ランタイムサーバー
 
     ```bash
     docker run # ...
-        -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.33-nikolaik \
+        -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.35-nikolaik \
         -e SANDBOX_USER_ID=$(id -u) \
         -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
         -v $WORKSPACE_BASE:/opt/workspace_base \
@@ -82,5 +82,5 @@ docker network create openhands-network
 # 分離されたネットワークで OpenHands を実行
 docker run # ... \
     --network openhands-network \
-    docker.all-hands.dev/all-hands-ai/openhands:0.33
+    docker.all-hands.dev/all-hands-ai/openhands:0.35
 ```

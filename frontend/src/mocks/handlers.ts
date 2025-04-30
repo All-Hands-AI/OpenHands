@@ -8,7 +8,8 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
-import { GitUser } from "#/types/git";
+import { GitRepository, GitUser } from "#/types/git";
+import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -32,6 +33,15 @@ const MOCK_USER_PREFERENCES: {
   settings: ApiSettings | PostApiSettings | null;
 } = {
   settings: null,
+};
+
+/**
+ * Set the user settings to the default settings
+ *
+ * Useful for resetting the settings in tests
+ */
+export const resetTestHandlersMockSettings = () => {
+  MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
 };
 
 const conversations: Conversation[] = [
@@ -79,6 +89,7 @@ const openHandsHandlers = [
     HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
+      "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-3-5-sonnet-20241022",
     ]),
@@ -105,13 +116,26 @@ const openHandsHandlers = [
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
   ...FILE_SERVICE_HANDLERS,
+  ...TASK_SUGGESTIONS_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/user/repositories", () =>
-    HttpResponse.json([
-      { id: 1, full_name: "octocat/hello-world" },
-      { id: 2, full_name: "octocat/earth" },
-    ]),
-  ),
+  http.get("/api/user/repositories", () => {
+    const data: GitRepository[] = [
+      {
+        id: 1,
+        full_name: "octocat/hello-world",
+        git_provider: "github",
+        is_public: true,
+      },
+      {
+        id: 2,
+        full_name: "octocat/earth",
+        git_provider: "github",
+        is_public: true,
+      },
+    ];
+
+    return HttpResponse.json(data);
+  }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
       id: 1,
@@ -159,6 +183,7 @@ export const handlers = [
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
+    await delay();
     const body = await request.json();
 
     if (body) {
@@ -231,7 +256,9 @@ export const handlers = [
     },
   ),
 
-  http.post("/api/conversations", () => {
+  http.post("/api/conversations", async () => {
+    await delay();
+
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",

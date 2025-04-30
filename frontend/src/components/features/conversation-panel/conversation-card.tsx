@@ -10,10 +10,12 @@ import {
 } from "./conversation-state-indicator";
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
+import { SystemMessageModal } from "./system-message-modal";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
+import { selectSystemMessage } from "#/state/chat-slice";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -52,10 +54,12 @@ export function ConversationCard({
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
+  const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);
+  const systemMessage = useSelector(selectSystemMessage);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -127,6 +131,11 @@ export function ConversationCard({
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setMetricsModalVisible(true);
+  };
+
+  const handleShowAgentTools = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setSystemModalVisible(true);
   };
 
   React.useEffect(() => {
@@ -207,6 +216,11 @@ export function ConversationCard({
                       : undefined
                   }
                   onDisplayCost={showOptions ? handleDisplayCost : undefined}
+                  onShowAgentTools={
+                    showOptions && systemMessage
+                      ? handleShowAgentTools
+                      : undefined
+                  }
                   position={variant === "compact" ? "top" : "bottom"}
                 />
               )}
@@ -315,6 +329,12 @@ export function ConversationCard({
           )}
         </div>
       </BaseModal>
+
+      <SystemMessageModal
+        isOpen={systemModalVisible}
+        onClose={() => setSystemModalVisible(false)}
+        systemMessage={systemMessage}
+      />
     </>
   );
 }

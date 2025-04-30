@@ -24,7 +24,7 @@ on:
       LLM_MODEL:
         required: false
         type: string
-        default: "anthropic/claude-3-5-sonnet-20241022"
+        default: "anthropic/claude-3-7-sonnet-20250219"
       LLM_API_VERSION:
         required: false
         type: string
@@ -179,7 +179,7 @@ jobs:
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.PAT_TOKEN || github.token }}" >> $GITHUB_ENV
-          echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
+          echo "SANDBOX_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
           echo "TARGET_BRANCH=${{ inputs.target_branch || 'main' }}" >> $GITHUB_ENV

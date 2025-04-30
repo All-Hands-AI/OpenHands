@@ -48,13 +48,7 @@ class JupyterPlugin(Plugin):
                     'OPENHANDS_REPO_PATH environment variable is not set. '
                     'This is required for the jupyter plugin to work with LocalRuntime.'
                 )
-            # assert POETRY_VIRTUALENVS_PATH is set
-            poetry_venvs_path = os.environ.get('POETRY_VIRTUALENVS_PATH')
-            if not poetry_venvs_path:
-                raise ValueError(
-                    'POETRY_VIRTUALENVS_PATH environment variable is not set. '
-                    'This is required for the jupyter plugin to work with LocalRuntime.'
-                )
+            # The correct environment is ensured by the PATH in LocalRuntime.
             poetry_prefix = f'cd {code_repo_path}\n'
         jupyter_launch_command = (
             f"{prefix}/bin/bash << 'EOF'\n"

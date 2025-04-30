@@ -1,6 +1,6 @@
 import os
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 
 class SandboxConfig(BaseModel):
@@ -38,6 +38,7 @@ class SandboxConfig(BaseModel):
         enable_gpu: Whether to enable GPU.
         docker_runtime_kwargs: Additional keyword arguments to pass to the Docker runtime when running containers.
             This should be a JSON string that will be parsed into a dictionary.
+        trusted_dirs: List of directories that can be trusted to run the OpenHands CLI.
     """
 
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
@@ -75,6 +76,7 @@ class SandboxConfig(BaseModel):
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
+    trusted_dirs: list[str] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 
@@ -98,3 +100,9 @@ class SandboxConfig(BaseModel):
             raise ValueError(f'Invalid sandbox configuration: {e}')
 
         return sandbox_mapping
+
+    @model_validator(mode='after')
+    def set_default_base_image(self) -> 'SandboxConfig':
+        if self.base_container_image is None:
+            self.base_container_image = 'nikolaik/python-nodejs:python3.12-nodejs22'
+        return self

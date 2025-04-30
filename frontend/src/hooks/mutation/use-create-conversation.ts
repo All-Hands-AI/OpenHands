@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
+import { GitRepository } from "#/types/git";
+import { ConversationTrigger } from "#/api/open-hands.types";
+import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
@@ -16,14 +19,22 @@ export const useCreateConversation = () => {
   );
 
   return useMutation({
-    mutationFn: async (variables: { q?: string }) => {
+    mutationKey: ["create-conversation"],
+    mutationFn: async (variables: {
+      conversation_trigger: ConversationTrigger;
+      q?: string;
+      selectedRepository?: GitRepository | null;
+      suggested_task?: SuggestedTask;
+    }) => {
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(
-        selectedRepository || undefined,
+        variables.conversation_trigger,
+        variables.selectedRepository || undefined,
         variables.q,
         files,
         replayJson || undefined,
+        variables.suggested_task || undefined,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {

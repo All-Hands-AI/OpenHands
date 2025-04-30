@@ -100,9 +100,8 @@ def initialize_repository_for_runtime(
         The repository directory path if a repository was cloned, None otherwise.
     """
     # clone selected repository if provided
-    github_token = (
-        SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
-    )
+    if github_token is None and 'GITHUB_TOKEN' in os.environ:
+        github_token = SecretStr(os.environ['GITHUB_TOKEN'])
 
     secret_store = (
         SecretStore(
@@ -115,18 +114,16 @@ def initialize_repository_for_runtime(
     )
     provider_tokens = secret_store.provider_tokens if secret_store else None
 
-    repo_directory = None
-    if selected_repository and provider_tokens:
-        logger.debug(f'Selected repository {selected_repository}.')
-        repo_directory = call_async_from_sync(
-            runtime.clone_repo,
-            GENERAL_TIMEOUT,
-            provider_tokens,
-            selected_repository,
-            None,
-        )
-        # Run setup script if it exists
-        runtime.maybe_run_setup_script()
+    logger.debug(f'Selected repository {selected_repository}.')
+    repo_directory = call_async_from_sync(
+        runtime.clone_or_init_repo,
+        GENERAL_TIMEOUT,
+        provider_tokens,
+        selected_repository,
+        None,
+    )
+    # Run setup script if it exists
+    runtime.maybe_run_setup_script()
 
     return repo_directory
 

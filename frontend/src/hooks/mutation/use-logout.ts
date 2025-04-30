@@ -29,5 +29,10 @@ export const useLogout = () => {
       navigate("/");
       window.location.reload();
     },
+    onSuccess: () => {
+      // Home screen suggested tasks
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.removeQueries({ queryKey: ["tasks"] });
+    },
   });
 };
