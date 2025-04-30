@@ -110,6 +110,12 @@ requires = [
   "poetry-core",
 ]
 
+[tool.poetry-pyinstaller-plugin]
+version = "6.13.0"
+
+[tool.poetry-pyinstaller-plugin.scripts]
+action-execution-server = { source = "openhands/runtime/action_execution_server.py", type = "onedir", bundle = false }
+
 [tool.autopep8]
 # autopep8 fights with mypy on line length issue
 ignore = [ "E501" ]
