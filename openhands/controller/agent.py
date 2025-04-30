@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
@@ -32,6 +33,7 @@ class Agent(ABC):
 
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
+    enable_delegation: bool = False
 
     def __init__(
         self,
@@ -64,7 +66,9 @@ class Agent(ABC):
                 )
                 return None
 
-            system_message = self.prompt_manager.get_system_message()
+            system_message = self.prompt_manager.get_system_message(
+                current_datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
 
             # Get tools if available
             tools = getattr(self, 'tools', None)

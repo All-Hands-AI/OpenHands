@@ -61,7 +61,7 @@ async def test_iteration_limit_extends_on_user_message():
     # Simulate user message
     user_message = MessageAction('test message', EventSource.USER)
     event_stream.add_event(user_message, EventSource.USER)
-    await asyncio.sleep(0.1)  # Give time for event to be processed
+    await asyncio.sleep(1)  # Give time for event to be processed
 
     # Verify max_iterations was extended
     assert controller.state.max_iterations == 90 + initial_max_iterations
@@ -70,7 +70,7 @@ async def test_iteration_limit_extends_on_user_message():
     controller.state.iteration = 180  # Close to new limit
     user_message2 = MessageAction('another message', EventSource.USER)
     event_stream.add_event(user_message2, EventSource.USER)
-    await asyncio.sleep(0.1)  # Give time for event to be processed
+    await asyncio.sleep(1)  # Give time for event to be processed
 
     # Verify max_iterations was extended again
     assert controller.state.max_iterations == 180 + initial_max_iterations
