@@ -750,7 +750,7 @@ if __name__ == '__main__':
         '--condenser-config',
         type=str,
         default=None,
-        help='Name of the condenser config to use, e.g., "default_4_20" for [condenser.default_4_20] section in config.toml',
+        help='Name of the condenser config to use, e.g., "summarizer_for_eval" for [condenser.summarizer_for_eval] section in config.toml',
     )
     args, _ = parser.parse_known_args()
 
