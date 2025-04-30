@@ -180,11 +180,6 @@ async def new_conversation(
     suggested_task = data.suggested_task
     conversation_trigger = data.conversation_trigger
 
-    # Determine git provider when only repo name is provided
-    if selected_repository and not selected_repository.git_provider:
-        provider_handler = ProviderHandler(provider_tokens)
-        selected_repository = await provider_handler.verify_repo_provider(selected_repository)
-
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
@@ -193,6 +188,11 @@ async def new_conversation(
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
     try:
+        # Determine git provider when only repo name is provided
+        if selected_repository and not selected_repository.git_provider:
+            provider_handler = ProviderHandler(provider_tokens)
+            selected_repository = await provider_handler.verify_repo_provider(selected_repository)
+
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             user_id=user_id,
@@ -234,7 +234,9 @@ async def new_conversation(
                 'status': 'error',
                 'message': str(e),
                 'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
-            }
+            },
+
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 

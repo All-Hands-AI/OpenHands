@@ -7,6 +7,7 @@ import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.integrations.service_types import (
+    AuthenticationError,
     ProviderType,
     Repository,
     SuggestedTask,
@@ -651,3 +652,66 @@ async def test_new_conversation_with_null_repository():
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['selected_repository'] is None
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_provider_authentication_error():
+    """Test creating a new conversation when provider authentication fails."""
+    with _patch_store():
+        # Mock the _create_new_conversation function
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Mock the ProviderHandler
+            with patch(
+                'openhands.server.routes.manage_conversations.ProviderHandler'
+            ) as mock_provider_handler_cls:
+                # Create a mock provider handler
+                mock_provider_handler = MagicMock()
+
+                mock_provider_handler.verify_repo_provider = AsyncMock(
+                    side_effect=AuthenticationError('auth error')
+                )
+
+                mock_provider_handler_cls.return_value = mock_provider_handler
+
+                # Create test data - repository with only name
+                repo_with_name_only = Repository(
+                    full_name='test/repo',
+                )
+
+                # Create the request object
+                test_request = InitSessionRequest(
+                    conversation_trigger=ConversationTrigger.GUI,
+                    selected_repository=repo_with_name_only,
+                    selected_branch='main',
+                    initial_user_msg='Hello, agent!',
+                )
+
+                # Call new_conversation
+                response = await new_conversation(
+                    data=test_request,
+                    user_id='test_user',
+                    provider_tokens={'github': 'token123'},
+                    auth_type=None,
+                )
+
+                # Verify the response
+                assert isinstance(response, JSONResponse)
+                assert response.status_code == 400
+                assert json.loads(response.body.decode('utf-8')) == {
+                    'status': 'error',
+                    'message': 'auth error',
+                    'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
+                }
+
+                # Verify that verify_repo_provider was called with the repository
+                mock_provider_handler.verify_repo_provider.assert_called_once_with(
+                    repo_with_name_only
+                )
+
+                # Verify that _create_new_conversation was not called
+                mock_create_conversation.assert_not_called()
