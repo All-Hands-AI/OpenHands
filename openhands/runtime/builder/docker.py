@@ -128,9 +128,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         # add proxy build args
         proxy_build_args = []
-        if os.getenv('HTTP_PROXY'):
+        if os.getenv('http_proxy'):
             proxy_build_args.append(f'--build-arg=http_proxy={os.getenv('http_proxy')}')
-        if os.getenv('HTTPS_PROXY'):
+        if os.getenv('https_proxy'):
             proxy_build_args.append(f'--build-arg=https_proxy={os.getenv('https_proxy')}')
             
 
