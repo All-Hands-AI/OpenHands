@@ -14,7 +14,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
-from openhands.integrations.service_types import AuthenticationError, Repository, SuggestedTask
+from openhands.integrations.service_types import AuthenticationError, ProviderType, Repository, SuggestedTask
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -52,6 +52,7 @@ app = APIRouter(prefix='/api')
 class InitSessionRequest(BaseModel):
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
     repository: str | None = None
+    git_provider: ProviderType | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -179,6 +180,7 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     conversation_trigger = data.conversation_trigger
+    git_provider = data.git_provider
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
@@ -188,6 +190,11 @@ async def new_conversation(
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
     try:
+        if repository:
+            provider_handler = ProviderHandler(provider_tokens)
+            # Check against git_provider, otherwise check all provider apis
+            await provider_handler.verify_repo_provider(repository, git_provider)
+
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             user_id=user_id,
@@ -219,6 +226,16 @@ async def new_conversation(
                 'status': 'error',
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except AuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )

@@ -398,7 +398,16 @@ class ProviderHandler:
         """
         return f'{provider.value}_token'.lower()
 
-    async def verify_repo_provider(self, repository: str):
+    async def verify_repo_provider(
+        self, repository: str, specified_provider: ProviderType | None = None
+    ):
+        if specified_provider:
+            try:
+                service = self._get_service(specified_provider)
+                return await service.get_repository_details_from_repo_name(repository)
+            except Exception:
+                pass
+
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
