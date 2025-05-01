@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
-import { useScrollToBottom } from "../use-scroll-to-bottom";
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { useScrollToBottom } from "../use-scroll-to-bottom";
 
 describe("useScrollToBottom", () => {
   let mockRef: { current: HTMLDivElement | null };
