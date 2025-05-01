@@ -161,7 +161,6 @@ class ActionExecutionClient(Runtime):
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
-        self.log('debug', f'Entering copy_from: path={path}')  # Add entry log
         try:
             params = {'path': path}
             with self.session.stream(
@@ -179,19 +178,10 @@ class ActionExecutionClient(Runtime):
                     return Path(temp_file.name)
         except httpx.TimeoutException:
             raise TimeoutError('Copy operation timed out')
-        except Exception as e:
-            self.log(
-                'error', f'copy_from: Unexpected error occurred for path={path}: {e}'
-            )
-            raise  # Re-raise unexpected errors
 
     def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ) -> None:
-        self.log(
-            'debug',
-            f'Entering copy_to: host_src={host_src}, sandbox_dest={sandbox_dest}, recursive={recursive}',
-        )
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
@@ -249,7 +239,6 @@ class ActionExecutionClient(Runtime):
                 f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
             )
         finally:
-            self.log('debug', 'Entering finally block for copy_to.')
             if file_to_upload:
                 self.log('debug', f'Closing file handle for: {file_to_upload.name}')
                 file_to_upload.close()
@@ -270,8 +259,6 @@ class ActionExecutionClient(Runtime):
                         'error',
                         f'Failed to delete temporary zip file {temp_zip_path}: {e}',
                     )
-            self.log('debug', f'Exiting finally block for copy_to for host:{host_src}.')
-        self.log('debug', f'Exiting copy_to: host_src={host_src}')
 
     def get_vscode_token(self) -> str:
         if self.vscode_enabled and self.runtime_initialized:
