@@ -198,7 +198,7 @@ class ServiceContextPR(ServiceContext):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
-            git_patch=git_patch or self.default_git_patch,
+            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -226,7 +226,7 @@ class ServiceContextPR(ServiceContext):
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
-            git_patch=git_patch or self.default_git_patch,
+            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -254,7 +254,7 @@ class ServiceContextPR(ServiceContext):
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
-            git_patch=git_patch or self.default_git_patch,
+            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -362,7 +362,7 @@ class ServiceContextIssue(ServiceContext):
         Args:
             issue: The issue to check
             history: The agent's history
-            git_patch: Optional git patch showing the changes made
+            git_patch: Optional git patch showing the changes made. If None, indicates no code changes were needed.
         """
         last_message = history[-1].message
         # Include thread comments in the prompt if they exist
@@ -383,7 +383,7 @@ class ServiceContextIssue(ServiceContext):
         prompt = template.render(
             issue_context=issue_context,
             last_message=last_message,
-            git_patch=git_patch or self.default_git_patch,
+            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
         )
 
         response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
