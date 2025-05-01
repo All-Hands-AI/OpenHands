@@ -18,7 +18,7 @@ from openhands.resolver.utils import extract_image_urls
 
 class ServiceContext:
     issue_type: ClassVar[str]
-    default_git_patch: ClassVar[str] = 'No changes made yet'
+    default_git_patch: ClassVar[str] = 'No code changes were made or needed'
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
@@ -198,7 +198,7 @@ class ServiceContextPR(ServiceContext):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
-            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
+            git_patch=git_patch if git_patch is not None else self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -226,7 +226,7 @@ class ServiceContextPR(ServiceContext):
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
-            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
+            git_patch=git_patch if git_patch is not None else self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -254,7 +254,7 @@ class ServiceContextPR(ServiceContext):
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
-            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
+            git_patch=git_patch if git_patch is not None else self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -383,7 +383,7 @@ class ServiceContextIssue(ServiceContext):
         prompt = template.render(
             issue_context=issue_context,
             last_message=last_message,
-            git_patch=git_patch if git_patch is not None else "No code changes were made or needed.",
+            git_patch=git_patch if git_patch is not None else self.default_git_patch,
         )
 
         response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
