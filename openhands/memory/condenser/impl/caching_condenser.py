@@ -76,7 +76,7 @@ class CachingCondenser(Condenser, ABC):
         params = agent.build_llm_completion_params(events, state)
 
         # Convert events to messages using the agent's method
-        messages = agent.get_messages(events)
+        messages = agent.get_messages(events, agent._get_initial_user_message(events))
 
         # Now we add our own prompt at the end
         messages.append(self.createCondensationPrompt(events, state, messages))

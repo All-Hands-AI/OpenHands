@@ -4,6 +4,7 @@ from typing import overload
 
 from pydantic import BaseModel
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import CondensationAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -58,10 +59,12 @@ class View(BaseModel):
                 if event.summary is not None:
                     summary_obs = AgentCondensationObservation(content=event.summary)
                     if event.summary_offset is not None:
-                        kept_events.insert(event.summary_offset, summary_obs)
+                        offset = event.summary_offset
                     else:
                         # insert after action
-                        kept_events.insert(kept_events.index(event) + 1, summary_obs)
+                        offset = kept_events.index(event) + 1
+                    logger.info(f'Inserting summary at offset {offset}')
+                    kept_events.insert(offset, summary_obs)
                     break
 
         return View(events=kept_events)

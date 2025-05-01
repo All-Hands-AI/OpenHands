@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message
+from openhands.events.action.message import MessageAction
 
 if TYPE_CHECKING:
     from openhands.core.config import AgentConfig
@@ -43,7 +44,7 @@ class Agent(ABC):
         self.llm = llm
         self.config = config
         self._complete = False
-        self.prompt_manager: 'PromptManager' | None = None
+        self.prompt_manager: 'PromptManager | None' = None
         self.mcp_tools: list[dict] = []
         self.tools: list = []
 
@@ -183,7 +184,9 @@ class LLMCompletionProvider(ABC):
     llm: LLM
 
     @abstractmethod
-    def get_messages(self, condensed_history: list[Event]) -> list[Message]:
+    def get_messages(
+        self, condensed_history: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
         """Convert events to messages for the LLM."""
         pass
 
@@ -201,3 +204,23 @@ class LLMCompletionProvider(ABC):
             dict of parameters for LLM completion
         """
         pass
+
+    def _get_initial_user_message(self, history: list[Event]) -> MessageAction:
+        """Finds the initial user message action from the full history."""
+        initial_user_message: MessageAction | None = None
+        for event in history:
+            if isinstance(event, MessageAction) and event.source == 'user':
+                initial_user_message = event
+                break
+
+        if initial_user_message is None:
+            # This should not happen in a valid conversation
+            logger.error(
+                f'CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history.'
+            )
+            # Depending on desired robustness, could raise error or create a dummy action
+            # and log the error
+            raise ValueError(
+                'Initial user message not found in history. Please report this issue.'
+            )
+        return initial_user_message

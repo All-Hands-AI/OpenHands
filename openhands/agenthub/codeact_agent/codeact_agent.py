@@ -21,10 +21,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.action import (
-    Action,
-    AgentFinishAction,
-)
+from openhands.events.action import Action, AgentFinishAction
+from openhands.events.action.message import MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -186,7 +184,8 @@ class CodeActAgent(Agent, LLMCompletionProvider):
     def build_llm_completion_params(
         self, condensed_history: list[Event], state: State
     ) -> dict[str, Any]:
-        messages = self.get_messages(condensed_history)
+        initial_user_message = self._get_initial_user_message(state.history)
+        messages = self.get_messages(condensed_history, initial_user_message)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
@@ -223,7 +222,9 @@ class CodeActAgent(Agent, LLMCompletionProvider):
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         return params
 
-    def get_messages(self, events: list[Event]) -> list[Message]:
+    def get_messages(
+        self, events: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -260,6 +261,7 @@ class CodeActAgent(Agent, LLMCompletionProvider):
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
+            initial_user_action=initial_user_message,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )
