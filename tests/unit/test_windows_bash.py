@@ -13,12 +13,6 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
 
-# The main module (windows_bash.py) handles SDK loading and potential errors.
-# Tests should not attempt to load the SDK themselves.
-# If loading fails in the main module, the session class will raise an error on init.
-# Import the class under test
-from openhands.runtime.utils.windows_bash import WindowsPowershellSession
-
 # Skip all tests in this module if not running on Windows
 pytestmark = pytest.mark.skipif(
     sys.platform != 'win32', reason='WindowsPowershellSession tests require Windows'
@@ -44,6 +38,15 @@ def windows_bash_session(temp_work_dir):
     yield session
     # Ensure cleanup happens even if test fails
     session.close()
+
+
+# Helper function to determine if running on Windows
+def is_windows():
+    return sys.platform == 'win32'
+
+
+if is_windows():
+    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 
 def test_command_execution(windows_bash_session):

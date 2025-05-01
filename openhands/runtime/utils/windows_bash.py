@@ -9,13 +9,10 @@ import os
 import time
 import traceback
 from pathlib import Path
-from threading import (
-    RLock,  # Import RLock
-)
+from threading import RLock
 
 import pythonnet
 
-# Import logger early so it's available in the initialization blocks
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation
@@ -260,7 +257,7 @@ class WindowsPowershellSession:
         """Receives output and errors from a job."""
         if not job:
             return '', []
-    
+
         output_parts = []
         error_parts = []
 
@@ -984,14 +981,20 @@ class WindowsPowershellSession:
                             # Get current working directory after CWD command
                             current_cwd = self._get_current_cwd()
                             python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
-                            
+
                             # Convert results to string output if any
-                            output = '\n'.join([str(r) for r in ps_results]) if ps_results else ''
-                            
+                            output = (
+                                '\n'.join([str(r) for r in ps_results])
+                                if ps_results
+                                else ''
+                            )
+
                             return CmdOutputObservation(
                                 content=output,
                                 command=command,
-                                metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                                metadata=CmdOutputMetadata(
+                                    exit_code=0, working_dir=python_safe_cwd
+                                ),
                             )
                 # Check direct CommandAst
                 elif isinstance(statement, CommandAst):
@@ -1010,14 +1013,20 @@ class WindowsPowershellSession:
                         # Get current working directory after CWD command
                         current_cwd = self._get_current_cwd()
                         python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
-                        
+
                         # Convert results to string output if any
-                        output = '\n'.join([str(r) for r in ps_results]) if ps_results else ''
-                        
+                        output = (
+                            '\n'.join([str(r) for r in ps_results])
+                            if ps_results
+                            else ''
+                        )
+
                         return CmdOutputObservation(
                             content=output,
                             command=command,
-                            metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                            metadata=CmdOutputMetadata(
+                                exit_code=0, working_dir=python_safe_cwd
+                            ),
                         )
             except ImportError as imp_err:
                 logger.error(
@@ -1080,16 +1089,16 @@ class WindowsPowershellSession:
                     job_state_test = underlying_job.JobStateInfo.State
                     job = underlying_job
                     job_id = job.Id
-                    
+
                     # For background commands, don't track the job in the session
                     if not run_in_background:
                         with self._job_lock:
                             self.active_job = job
-                    
+
                     logger.info(
                         f'Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}, Background: {run_in_background}'
                     )
-                    
+
                     if job_state_test == JobState.Failed:
                         logger.error(f'Job {job.Id} failed immediately after starting.')
                         output_chunk, error_chunk = self._receive_job_output(
@@ -1145,9 +1154,9 @@ class WindowsPowershellSession:
             metadata = CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
             metadata.suffix = f'\n[Command started as background job {job_id}.]'
             return CmdOutputObservation(
-                content=f'[Started background job {job_id}]',  
+                content=f'[Started background job {job_id}]',
                 command=f'{command} &',
-                metadata=metadata
+                metadata=metadata,
             )
 
         # --- Monitor the Job ---
