@@ -51,8 +51,8 @@ function GitSettingsScreen() {
     saveSettings(
       {
         provider_tokens: {
-          github: githubToken,
-          gitlab: gitlabToken,
+          github: { token: githubToken },
+          gitlab: { token: gitlabToken },
         },
       },
       {

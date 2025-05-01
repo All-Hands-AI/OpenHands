@@ -5,6 +5,10 @@ export const ProviderOptions = {
 
 export type Provider = keyof typeof ProviderOptions;
 
+export type ProviderToken = {
+  token: string;
+};
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -18,7 +22,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
-  PROVIDER_TOKENS: Record<Provider, string>;
+  PROVIDER_TOKENS: Record<Provider, ProviderToken>;
   IS_NEW_USER?: boolean;
 };
 
@@ -35,17 +39,17 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
-  provider_tokens: Record<Provider, string>;
+  provider_tokens: Record<Provider, ProviderToken>;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
 };
 
 export type PostSettings = Settings & {
-  provider_tokens: Record<Provider, string>;
+  provider_tokens: Record<Provider, ProviderToken>;
   user_consents_to_analytics: boolean | null;
   llm_api_key?: string | null;
 };
 
 export type PostApiSettings = ApiSettings & {
-  provider_tokens: Record<Provider, string>;
+  provider_tokens: Record<Provider, ProviderToken>;
   user_consents_to_analytics: boolean | null;
 };
