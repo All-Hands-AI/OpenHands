@@ -40,17 +40,11 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-# Import only the client to avoid circular imports
-from openhands.mcp.client import MCPClient
-# Defer these imports to the function level to avoid circular imports
-# from openhands.mcp import create_mcp_clients
-# from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
-
 
 def _is_retryable_error(exception):
     return isinstance(
@@ -393,4 +387,3 @@ class ActionExecutionClient(Runtime):
             return
         self._runtime_closed = True
         self.session.close()
-        # No need to call aclose() as we're not maintaining persistent MCP clients
