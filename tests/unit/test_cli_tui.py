@@ -1,4 +1,3 @@
-import asyncio
 from unittest.mock import MagicMock, Mock, patch
 
 from openhands.core.cli_tui import (
@@ -52,12 +51,9 @@ class TestDisplayFunctions:
 
     @patch('openhands.core.cli_tui.print_formatted_text')
     def test_display_banner(self, mock_print):
-        # Create a mock loaded event
-        is_loaded = asyncio.Event()
-        is_loaded.set()
         session_id = 'test-session-id'
 
-        display_banner(session_id, is_loaded)
+        display_banner(session_id)
 
         # Verify banner calls
         assert mock_print.call_count >= 3

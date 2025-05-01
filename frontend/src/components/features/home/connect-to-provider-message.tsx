@@ -10,7 +10,7 @@ export function ConnectToProviderMessage() {
   return (
     <div className="flex flex-col gap-4">
       <p>{t("HOME$CONNECT_PROVIDER_MESSAGE")}</p>
-      <Link data-testid="navigate-to-settings-button" to="/settings">
+      <Link data-testid="navigate-to-settings-button" to="/settings/git">
         <BrandButton type="button" variant="primary" isDisabled={isLoading}>
           {!isLoading && t("SETTINGS$TITLE")}
           {isLoading && t("HOME$LOADING")}

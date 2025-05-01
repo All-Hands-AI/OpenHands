@@ -20,7 +20,6 @@ from openhands.server.shared import config
 from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
-    get_user_id,
     get_user_settings,
     get_user_settings_store,
 )
@@ -31,7 +30,6 @@ app = APIRouter(prefix='/api')
 
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(
-    user_id: str | None = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings: Settings | None = Depends(get_user_settings),
 ) -> GETSettingsModel | JSONResponse:
@@ -42,19 +40,11 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-        provider_tokens_set = {}
-
-        if bool(user_id):
-            provider_tokens_set[ProviderType.GITHUB.value] = True
-
+        provider_tokens_set: dict[ProviderType, str | None]  = {}
         if provider_tokens:
-            all_provider_types = [provider.value for provider in ProviderType]
-            provider_tokens_types = [provider.value for provider in provider_tokens]
-            for provider_type in all_provider_types:
-                if provider_type in provider_tokens_types:
-                    provider_tokens_set[provider_type] = True
-                else:
-                    provider_tokens_set[provider_type] = False
+            for provider_type, provider_token in provider_tokens.items():
+                if provider_token.token or provider_token.user_id:
+                    provider_tokens_set[provider_type] = None
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),

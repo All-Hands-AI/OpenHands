@@ -10,7 +10,9 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
+from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
@@ -22,6 +24,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
 from openhands.core.config import AppConfig
+from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import (
     Action,
@@ -32,6 +35,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentStateChangedObservation,
     CmdOutputObservation,
     FileEditObservation,
     FileReadObservation,
@@ -56,6 +60,7 @@ COMMANDS = {
     '/status': 'Display session details and usage metrics',
     '/new': 'Create a new session',
     '/settings': 'Display and modify current settings',
+    '/resume': 'Resume the agent',
 }
 
 
@@ -114,7 +119,7 @@ def display_initialization_animation(text, is_loaded: asyncio.Event):
     sys.stdout.flush()
 
 
-def display_banner(session_id: str, is_loaded: asyncio.Event):
+def display_banner(session_id: str):
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -129,11 +134,8 @@ def display_banner(session_id: str, is_loaded: asyncio.Event):
 
     print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
 
-    banner_text = (
-        'Initialized session' if is_loaded.is_set() else 'Initializing session'
-    )
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>{banner_text} {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Initialized session {session_id}</grey>'))
     print_formatted_text('')
 
 
@@ -177,6 +179,8 @@ def display_event(event: Event, config: AppConfig) -> None:
         display_file_edit(event)
     if isinstance(event, FileReadObservation):
         display_file_read(event)
+    if isinstance(event, AgentStateChangedObservation):
+        display_agent_paused_message(event.agent_state)
 
 
 def display_message(message: str):
@@ -389,77 +393,58 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     display_usage_metrics(usage_metrics)
 
 
+def display_agent_running_message():
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<gold>Agent running...</gold> <grey>(Ctrl-P to pause)</grey>')
+    )
+
+
+def display_agent_paused_message(agent_state: str):
+    if agent_state != AgentState.PAUSED:
+        return
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<gold>Agent paused</gold> <grey>(type /resume to resume)</grey>')
+    )
+
+
 # Common input functions
 class CommandCompleter(Completer):
     """Custom completer for commands."""
 
+    def __init__(self, agent_state: str):
+        super().__init__()
+        self.agent_state = agent_state
+
     def get_completions(self, document, complete_event):
-        text = document.text
-
-        # Only show completions if the user has typed '/'
+        text = document.text_before_cursor.lstrip()
         if text.startswith('/'):
-            # If just '/' is typed, show all commands
-            if text == '/':
-                for command, description in COMMANDS.items():
+            available_commands = dict(COMMANDS)
+            if self.agent_state != AgentState.PAUSED:
+                available_commands.pop('/resume', None)
+
+            for command, description in available_commands.items():
+                if command.startswith(text):
                     yield Completion(
-                        command[1:],  # Remove the leading '/' as it's already typed
-                        start_position=0,
-                        display=f'{command} - {description}',
+                        command,
+                        start_position=-len(text),
+                        display_meta=description,
+                        style='bg:ansidarkgray fg:ansiwhite',
                     )
-            # Otherwise show matching commands
-            else:
-                for command, description in COMMANDS.items():
-                    if command.startswith(text):
-                        yield Completion(
-                            command[len(text) :],  # Complete the remaining part
-                            start_position=0,
-                            display=f'{command} - {description}',
-                        )
 
 
-prompt_session = PromptSession(style=DEFAULT_STYLE)
-
-# RPrompt animation related variables
-SPINNER_FRAMES = [
-    '[ ■□□□ ]',
-    '[ □■□□ ]',
-    '[ □□■□ ]',
-    '[ □□□■ ]',
-    '[ □□■□ ]',
-    '[ □■□□ ]',
-]
-ANIMATION_INTERVAL = 0.2  # seconds
-
-current_frame_index = 0
-last_update_time = time.monotonic()
+def create_prompt_session():
+    return PromptSession(style=DEFAULT_STYLE)
 
 
-# RPrompt function for the user confirmation
-def get_rprompt() -> FormattedText:
-    """
-    Returns the current animation frame for the rprompt.
-    This function is called by prompt_toolkit during rendering.
-    """
-    global current_frame_index, last_update_time
-
-    # Only update the frame if enough time has passed
-    # This prevents excessive recalculation during rendering
-    now = time.monotonic()
-    if now - last_update_time > ANIMATION_INTERVAL:
-        current_frame_index = (current_frame_index + 1) % len(SPINNER_FRAMES)
-        last_update_time = now
-
-    # Return the frame wrapped in FormattedText
-    return FormattedText(
-        [
-            ('', ' '),  # Add a space before the spinner
-            (COLOR_GOLD, SPINNER_FRAMES[current_frame_index]),
-        ]
-    )
-
-
-async def read_prompt_input(multiline=False):
+async def read_prompt_input(agent_state: str, multiline=False):
     try:
+        prompt_session = create_prompt_session()
+        prompt_session.completer = (
+            CommandCompleter(agent_state) if not multiline else None
+        )
+
         if multiline:
             kb = KeyBindings()
 
@@ -470,36 +455,52 @@ async def read_prompt_input(multiline=False):
             with patch_stdout():
                 print_formatted_text('')
                 message = await prompt_session.prompt_async(
-                    'Enter your message and press Ctrl+D to finish:\n',
+                    HTML(
+                        '<gold>Enter your message and press Ctrl-D to finish:</gold>\n'
+                    ),
                     multiline=True,
                     key_bindings=kb,
                 )
         else:
             with patch_stdout():
                 print_formatted_text('')
-                prompt_session.completer = CommandCompleter()
                 message = await prompt_session.prompt_async(
-                    '> ',
+                    HTML('<gold>> </gold>'),
                 )
-        return message
+        return message if message is not None else ''
     except (KeyboardInterrupt, EOFError):
         return '/exit'
 
 
-async def read_confirmation_input():
+async def read_confirmation_input() -> bool:
     try:
+        prompt_session = create_prompt_session()
+
         with patch_stdout():
-            prompt_session.completer = None
-            confirmation = await prompt_session.prompt_async(
-                'Proceed with action? (y)es/(n)o > ',
-                rprompt=get_rprompt,
-                refresh_interval=ANIMATION_INTERVAL / 2,
+            print_formatted_text('')
+            confirmation: str = await prompt_session.prompt_async(
+                HTML('<gold>Proceed with action? (y)es/(n)o > </gold>'),
             )
-            prompt_session.rprompt = None
-            confirmation = confirmation.strip().lower()
+
+            confirmation = '' if confirmation is None else confirmation.strip().lower()
             return confirmation in ['y', 'yes']
     except (KeyboardInterrupt, EOFError):
         return False
+
+
+async def process_agent_pause(done: asyncio.Event) -> None:
+    input = create_input()
+
+    def keys_ready():
+        for key_press in input.read_keys():
+            if key_press.key == Keys.ControlP:
+                print_formatted_text('')
+                print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+                done.set()
+
+    with input.raw_mode():
+        with input.attach(keys_ready):
+            await done.wait()
 
 
 def cli_confirm(
