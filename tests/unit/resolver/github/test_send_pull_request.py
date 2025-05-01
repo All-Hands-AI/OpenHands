@@ -440,9 +440,40 @@ def test_send_pull_request(
         assert post_data['draft'] == (pr_type == 'draft')
 
 
-@patch('subprocess.run')
-@patch('httpx.post')
-@patch('httpx.get')
+def test_make_commit_failed_add(mock_output_dir, mock_issue):
+    """Test that make_commit returns False when git add fails."""
+    # Create a test file
+    test_file = os.path.join(mock_output_dir, 'test.txt')
+    with open(test_file, 'w') as f:
+        f.write('test content')
+
+    # Mock a failed add by making the directory not a git repo
+    shutil.rmtree(os.path.join(mock_output_dir, '.git'))
+
+    # Try to make a commit
+    result = make_commit(mock_output_dir, mock_issue, 'issue')
+
+    # Assert that the function returned False
+    assert result is False
+
+
+def test_make_commit_failed_commit(mock_output_dir, mock_issue):
+    """Test that make_commit returns False when git commit fails."""
+    # Create a test file
+    test_file = os.path.join(mock_output_dir, 'test.txt')
+    with open(test_file, 'w') as f:
+        f.write('test content')
+
+    # Mock a failed commit by making the directory not a git repo
+    shutil.rmtree(os.path.join(mock_output_dir, '.git'))
+
+    # Try to make a commit
+    result = make_commit(mock_output_dir, mock_issue, 'issue')
+
+    # Assert that the function returned False
+    assert result is False
+
+
 def test_send_pull_request_with_reviewer(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):

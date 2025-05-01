@@ -194,7 +194,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
     )
     if result.returncode != 0:
         logger.error(f'Error adding files: {result.stderr}')
-        raise RuntimeError('Failed to add files to git')
+        return False
 
     # Check the status of the git index
     status_result = subprocess.run(
@@ -221,7 +221,8 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f'Failed to commit changes: {result}')
+        logger.error(f'Failed to commit changes: {result}')
+        return False
 
     return True
 
