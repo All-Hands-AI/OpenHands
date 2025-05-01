@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
-import { createRoutesStub } from "react-router";
+import { createRoutesStub, Outlet } from "react-router";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { GitRepository } from "#/types/git";
@@ -23,8 +23,18 @@ const renderRepoConnector = (initialProvidersAreSet = true) => {
       path: "/conversations/:conversationId",
     },
     {
-      Component: () => <div data-testid="settings-screen" />,
+      Component: Outlet,
       path: "/settings",
+      children: [
+        {
+          Component: () => <div data-testid="settings-screen" />,
+          path: "/settings",
+        },
+        {
+          Component: () => <div data-testid="git-settings-screen" />,
+          path: "/settings/git",
+        },
+      ],
     },
   ]);
 
@@ -226,6 +236,6 @@ describe("RepoConnector", () => {
     expect(goToSettingsButton).toBeInTheDocument();
 
     await userEvent.click(goToSettingsButton);
-    await screen.findByTestId("settings-screen");
+    await screen.findByTestId("git-settings-screen");
   });
 });
