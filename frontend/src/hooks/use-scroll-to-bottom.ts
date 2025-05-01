@@ -9,7 +9,7 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
 
   // Check if the scroll position is at the bottom
   const isAtBottom = useCallback((element: HTMLElement): boolean => {
-    const bottomThreshold = 10; // Pixels from bottom to consider "at bottom"
+    const bottomThreshold = 50; // Increased threshold to be more lenient
     const bottomPosition = element.scrollTop + element.clientHeight;
     return bottomPosition >= element.scrollHeight - bottomThreshold;
   }, []);
@@ -51,15 +51,22 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
     if (shouldScrollToBottom) {
       const dom = scrollRef.current;
       if (dom) {
-        requestAnimationFrame(() => {
-          dom.scrollTo({
-            top: dom.scrollHeight,
-            behavior: "smooth",
+        // Use a short timeout to ensure content has been rendered
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            dom.scrollTo({
+              top: dom.scrollHeight,
+              behavior: "smooth",
+            });
+            // Check if we actually reached the bottom
+            if (isAtBottom(dom)) {
+              setHitBottom(true);
+            }
           });
-        });
+        }, 50);
       }
     }
-  });
+  }, [scrollRef, shouldScrollToBottom, isAtBottom]);
 
   return {
     scrollRef,

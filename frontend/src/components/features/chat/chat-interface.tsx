@@ -46,6 +46,13 @@ export function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
+  // Trigger auto-scroll when new messages arrive or agent state changes
+  React.useEffect(() => {
+    if (messages.length > 0 && scrollRef.current) {
+      scrollDomToBottom();
+    }
+  }, [messages.length, curAgentState, scrollDomToBottom]);
+
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
