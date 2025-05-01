@@ -2,8 +2,8 @@ import asyncio
 import os
 import platform
 import subprocess
+import time
 from dataclasses import dataclass
-from typing import Union
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action, IPythonRunCellAction
@@ -23,7 +23,7 @@ class JupyterPlugin(Plugin):
     name: str = 'jupyter'
     kernel_gateway_port: int
     kernel_id: str
-    gateway_process: Union[asyncio.subprocess.Process, subprocess.Popen]
+    gateway_process: asyncio.subprocess.Process
     python_interpreter_path: str
 
     async def initialize(
@@ -32,7 +32,7 @@ class JupyterPlugin(Plugin):
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         is_windows = platform.system() == 'Windows'
-
+        
         if username in ['root', 'openhands']:
             # Non-LocalRuntime
             prefix = f'su - {username} -s '
@@ -55,7 +55,7 @@ class JupyterPlugin(Plugin):
                 )
             # The correct environment is ensured by the PATH in LocalRuntime.
             poetry_prefix = f'cd {code_repo_path}\n'
-
+        
         if is_windows:
             # Windows-specific command format
             jupyter_launch_command = (
@@ -66,31 +66,31 @@ class JupyterPlugin(Plugin):
             )
             logger.debug(f'Jupyter launch command (Windows): {jupyter_launch_command}')
 
-            # Use asyncio for Windows process too to avoid ASYNC101 linting error
-            self.gateway_process = await asyncio.create_subprocess_shell(
+            self.gateway_process = subprocess.Popen(
                 jupyter_launch_command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                text=True,
             )
 
             # Windows-specific stdout handling
             output = ''
             while should_continue():
                 if self.gateway_process.stdout is None:
-                    await asyncio.sleep(1)
+                    time.sleep(1)
                     continue
 
-                line_bytes = await self.gateway_process.stdout.readline()
-                if not line_bytes:
-                    await asyncio.sleep(1)
+                line = self.gateway_process.stdout.readline()
+                if not line:
+                    time.sleep(1)
                     continue
 
-                line = line_bytes.decode('utf-8')
                 output += line
                 if 'at' in line:
                     break
 
-                await asyncio.sleep(1)
+                time.sleep(1)
                 logger.debug('Waiting for jupyter kernel gateway to start...')
 
             logger.debug(
@@ -129,7 +129,7 @@ class JupyterPlugin(Plugin):
             logger.debug(
                 f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
             )
-
+        
         _obs = await self.run(
             IPythonRunCellAction(code='import sys; print(sys.executable)')
         )
