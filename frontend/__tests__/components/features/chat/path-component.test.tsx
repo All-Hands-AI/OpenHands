@@ -21,9 +21,9 @@ describe("isLikelyDirectory", () => {
     expect(isLikelyDirectory("dir")).toBe(true);
   });
 
-  it("should return true for paths ending with dot", () => {
-    expect(isLikelyDirectory("/path/to/dir.")).toBe(true);
-    expect(isLikelyDirectory("dir.")).toBe(true);
+  it("should return false for paths ending with dot", () => {
+    expect(isLikelyDirectory("/path/to/dir.")).toBe(false);
+    expect(isLikelyDirectory("dir.")).toBe(false);
   });
 
   it("should return false for paths with file extensions", () => {
