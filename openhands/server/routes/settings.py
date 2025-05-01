@@ -19,7 +19,6 @@ from openhands.server.user_auth import (
     get_secrets_store,
     get_user_settings_store,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.secret_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
