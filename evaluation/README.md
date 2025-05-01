@@ -64,7 +64,8 @@ max_events = 50       # Maximum number of events to keep in history
 You can then specify which condenser configuration to use when running evaluation scripts, for example:
 
 ```bash
-./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test summarizer_for_eval
+EVAL_CONDENSER=summarizer_for_eval \
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test
 ```
 
 The name is up to you, but should match a name defined in your `config.toml` file. The last argument in the command specifies the condenser configuration to use. In this case, `summarizer_for_eval` is used, which refers to the LLM-based summarizing condenser as defined above.
