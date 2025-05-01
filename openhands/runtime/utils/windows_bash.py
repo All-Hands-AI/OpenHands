@@ -659,8 +659,15 @@ class WindowsPowershellSession:
         timeout_seconds = action.timeout or 60  # Default to 60 seconds hard timeout
         is_input = action.is_input  # Check if it's intended as input
 
+        # Detect if this is a background command (ending with &)
+        run_in_background = False
+        if command.endswith('&'):
+            run_in_background = True
+            command = command[:-1].strip()  # Remove the & and extra spaces
+            logger.info(f"Detected background command: '{command}'")
+
         logger.info(
-            f"Received command: '{command}', Timeout: {timeout_seconds}s, is_input: {is_input}"
+            f"Received command: '{command}', Timeout: {timeout_seconds}s, is_input: {is_input}, background: {run_in_background}"
         )
 
         # --- Simplified Active Job Handling (aligned with bash.py) ---
@@ -944,10 +951,7 @@ class WindowsPowershellSession:
             )
         # --- End validation ---
 
-        # --- Check if it's a CWD command to run synchronously ---
-        # (Keep this logic as it's a reasonable optimization for PS)
-        is_cwd_command = False
-        identified_cwd_cmd_name = None
+        # === Synchronous Execution Path (for CWD commands) ===
         if statements and statements.Count == 1:
             statement = statements[0]
             try:
@@ -972,11 +976,10 @@ class WindowsPowershellSession:
                             'push-location',
                             'pop-location',
                         ]:
-                            is_cwd_command = True
-                            identified_cwd_cmd_name = command_name
                             logger.info(
                                 f'execute: Identified CWD command via PipelineAst: {command_name}'
                             )
+                            return self._run_ps_command(command)
                 # Check direct CommandAst
                 elif isinstance(statement, CommandAst):
                     command_name = statement.GetCommandName()
@@ -986,80 +989,16 @@ class WindowsPowershellSession:
                         'push-location',
                         'pop-location',
                     ]:
-                        is_cwd_command = True
-                        identified_cwd_cmd_name = command_name
                         logger.info(
                             f'execute: Identified CWD command via direct CommandAst: {command_name}'
                         )
+                        return self._run_ps_command(command)
             except ImportError as imp_err:
                 logger.error(
                     f'execute: Failed to import CommandAst: {imp_err}. Cannot check for CWD commands.'
                 )
             except Exception as ast_err:
                 logger.error(f'execute: Error checking command AST: {ast_err}')
-
-        # === Synchronous Execution Path (for CWD commands) ===
-        if is_cwd_command:
-            logger.info(
-                f"execute: Entering synchronous execution path for CWD command: '{command}'"
-            )
-            ps_sync = None
-            sync_output = ''
-            sync_errors = []
-            sync_exit_code = 1
-
-            try:
-                ps_sync = PowerShell.Create()
-                ps_sync.Runspace = self.runspace
-                ps_sync.AddScript(command)
-                sync_results_ps = ps_sync.Invoke()
-
-                if sync_results_ps:
-                    sync_output = '\n'.join([str(r) for r in sync_results_ps])
-
-                if ps_sync.Streams.Error and ps_sync.Streams.Error.Count > 0:
-                    sync_errors = [str(e) for e in ps_sync.Streams.Error]
-                    logger.error(
-                        f"execute[sync]: Errors executing '{command}': {sync_errors}"
-                    )
-                    sync_exit_code = 1
-                else:
-                    sync_exit_code = 0
-
-            except Exception as e:
-                logger.error(f"execute[sync]: Exception executing '{command}': {e}")
-                logger.error(traceback.format_exc())
-                sync_errors.append(f'[Sync Execution Exception: {e}]')
-                sync_exit_code = 1
-            finally:
-                if ps_sync:
-                    ps_sync.Dispose()
-
-            current_cwd = self._get_current_cwd()
-            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
-
-            final_output_content = sync_output.strip()
-            if sync_errors:
-                error_stream_text = '\n'.join(sync_errors)
-                if final_output_content:
-                    final_output_content += f'\n[ERROR STREAM]\n{error_stream_text}'
-                else:
-                    final_output_content = f'[ERROR STREAM]\n{error_stream_text}'
-                # If sync command resulted in errors, ensure exit code is non-zero
-                if sync_exit_code == 0:
-                    sync_exit_code = 1
-
-            metadata = CmdOutputMetadata(
-                exit_code=sync_exit_code, working_dir=python_safe_cwd
-            )
-            # Align completion suffix with bash.py
-            metadata.suffix = (
-                f'\n[The command completed with exit code {sync_exit_code}.]'
-            )
-
-            return CmdOutputObservation(
-                content=final_output_content, command=action.command, metadata=metadata
-            )
 
         # === Asynchronous Execution Path (for non-CWD commands) ===
         logger.info(
@@ -1115,11 +1054,16 @@ class WindowsPowershellSession:
                     job_state_test = underlying_job.JobStateInfo.State
                     job = underlying_job
                     job_id = job.Id
-                    with self._job_lock:
-                        self.active_job = job
+                    
+                    # For background commands, don't track the job in the session
+                    if not run_in_background:
+                        with self._job_lock:
+                            self.active_job = job
+                    
                     logger.info(
-                        f'Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}'
+                        f'Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}, Background: {run_in_background}'
                     )
+                    
                     if job_state_test == JobState.Failed:
                         logger.error(f'Job {job.Id} failed immediately after starting.')
                         output_chunk, error_chunk = self._receive_job_output(
@@ -1133,7 +1077,8 @@ class WindowsPowershellSession:
                         remove_script = f'Remove-Job -Job (Get-Job -Id {job.Id})'
                         self._run_ps_command(remove_script)
                         with self._job_lock:
-                            self.active_job = None
+                            if self.active_job and self.active_job.Id == job.Id:
+                                self.active_job = None
                 except AttributeError as e:
                     logger.error(
                         f'Get-Job returned an object without expected properties on BaseObject: {e}'
@@ -1166,6 +1111,18 @@ class WindowsPowershellSession:
             return ErrorObservation(
                 content='Failed to start PowerShell job.\n[ERRORS]\n'
                 + '\n'.join(all_errors)
+            )
+
+        # For background commands, return immediately with success
+        if run_in_background:
+            current_cwd = self._get_current_cwd()
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
+            metadata = CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+            metadata.suffix = f'\n[Command started as background job {job_id}.]'
+            return CmdOutputObservation(
+                content=f'[Started background job {job_id}]',  
+                command=f'{command} &',
+                metadata=metadata
             )
 
         # --- Monitor the Job ---
