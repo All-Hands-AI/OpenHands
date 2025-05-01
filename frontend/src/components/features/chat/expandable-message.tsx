@@ -41,7 +41,14 @@ export function ExpandableMessage({
   action,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
-  const { t, i18n, ready: i18nReady } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Hardcoded translations for critical messages that need to be available immediately
+  // This ensures they display correctly even before i18n is fully loaded
+  const CRITICAL_TRANSLATIONS: Record<string, string> = {
+    [I18nKey.OBSERVATION_MESSAGE$RECALL]: t(I18nKey.OBSERVATION_MESSAGE$RECALL),
+  };
+
   const [showDetails, setShowDetails] = useState(true);
   const [details, setDetails] = useState(message);
   const [translationId, setTranslationId] = useState<string | undefined>(id);
@@ -53,13 +60,9 @@ export function ExpandableMessage({
   });
 
   useEffect(() => {
-    // Only process translations if i18n is ready
-    // This fixes an issue where OBSERVATION_MESSAGE$RECALL and other translations
-    // wouldn't display properly on first load because i18n resources weren't fully loaded yet
-    if (!i18nReady) return;
-
     // If we have a translation ID, process it
-    if (id && i18n.exists(id)) {
+    // Check both i18n translations and our hardcoded critical translations
+    if (id && (i18n.exists(id) || id in CRITICAL_TRANSLATIONS)) {
       let processedObservation = observation;
       let processedAction = action;
 
@@ -99,7 +102,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, observation, action, i18n.language, i18nReady]);
+  }, [id, message, observation, action, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -143,19 +146,31 @@ export function ExpandableMessage({
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {translationId && i18nReady && i18n.exists(translationId) ? (
-              <Trans
-                i18nKey={translationId}
-                values={translationParams}
-                components={{
-                  bold: <strong />,
-                  path: <PathComponent />,
-                  cmd: <MonoComponent />,
-                }}
-              />
-            ) : (
-              message
-            )}
+            {(() => {
+              if (!translationId) {
+                return message;
+              }
+
+              if (i18n.exists(translationId)) {
+                return (
+                  <Trans
+                    i18nKey={translationId}
+                    values={translationParams}
+                    components={{
+                      bold: <strong />,
+                      path: <PathComponent />,
+                      cmd: <MonoComponent />,
+                    }}
+                  />
+                );
+              }
+
+              if (translationId in CRITICAL_TRANSLATIONS) {
+                return CRITICAL_TRANSLATIONS[translationId];
+              }
+
+              return message;
+            })()}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
