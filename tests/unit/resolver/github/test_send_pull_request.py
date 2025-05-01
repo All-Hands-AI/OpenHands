@@ -474,6 +474,9 @@ def test_make_commit_failed_commit(mock_output_dir, mock_issue):
     assert result is False
 
 
+@patch('subprocess.run')
+@patch('httpx.post')
+@patch('httpx.get')
 def test_send_pull_request_with_reviewer(
     mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
