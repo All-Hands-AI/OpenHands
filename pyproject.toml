@@ -13,7 +13,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.12,<3.14"
 litellm = "^1.60.0, !=1.64.4, <1.67.2" # avoid 1.64.4 (known bug) & 1.67.2 (known bug #10272)
 aiohttp = ">=3.9.0,!=3.11.13"  # Pin to avoid yanked version 3.11.13
 google-generativeai = "*" # To use litellm with Gemini Pro API
@@ -77,6 +77,9 @@ python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 anyio = "4.9.0"
+pythonnet = "*"
+torch = "^2.2.0"
+
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.7"
