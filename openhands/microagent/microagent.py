@@ -141,6 +141,7 @@ class KnowledgeMicroagent(BaseMicroagent):
     def triggers(self) -> list[str]:
         return self.metadata.triggers
 
+
 class RepoMicroagent(BaseMicroagent):
     """Microagent specialized for repository-specific knowledge and guidelines.
 

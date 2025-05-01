@@ -10,6 +10,7 @@ from conftest import (
 
 from openhands.microagent.microagent import (
     BaseMicroagent,
+    RepoMicroagent,
     KnowledgeMicroagent,
     TaskMicroagent,
 )
