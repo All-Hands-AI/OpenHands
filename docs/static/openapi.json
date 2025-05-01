@@ -858,14 +858,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "selected_repository": {
-                    "type": "object",
-                    "nullable": true,
-                    "properties": {
-                      "full_name": {
-                        "type": "string"
-                      }
-                    }
+                  "repository": {
+                    "type": "string",
+                    "nullable": true
                   },
                   "selected_branch": {
                     "type": "string",
