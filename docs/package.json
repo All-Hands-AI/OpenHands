@@ -4,23 +4,27 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
+    "start": "node generate-swagger-ui.js && docusaurus start",
+    "build": "node generate-swagger-ui.js && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "generate-swagger-ui": "node generate-swagger-ui.js"
   },
+  "// Note": "The OpenAPI spec is stored in docs/static/openapi.json so it's accessible at /openapi.json in the deployed site",
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
     "@docusaurus/plugin-content-pages": "^3.7.0",
     "@docusaurus/preset-classic": "^3.7.0",
     "@docusaurus/theme-mermaid": "^3.7.0",
     "@mdx-js/react": "^3.1.0",
+    "@node-rs/jieba": "^2.0.1",
     "clsx": "^2.0.0",
+    "docusaurus-lunr-search": "^3.6.0",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -31,6 +35,8 @@
     "@docusaurus/module-type-aliases": "^3.5.1",
     "@docusaurus/tsconfig": "^3.7.0",
     "@docusaurus/types": "^3.5.1",
+    "swagger-cli": "^4.0.4",
+    "swagger-ui-dist": "^5.21.0",
     "typescript": "~5.8.3"
   },
   "browserslist": {
@@ -47,5 +53,6 @@
   },
   "engines": {
     "node": ">=18.0"
-  }
+  },
+  "packageManager": "npm@10.5.0"
 }

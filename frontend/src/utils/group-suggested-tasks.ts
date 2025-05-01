@@ -14,14 +14,16 @@ export function groupSuggestedTasks(
   const groupsMap: Record<string, SuggestedTaskGroup> = {};
 
   for (const task of tasks) {
-    if (!groupsMap[task.repo]) {
-      groupsMap[task.repo] = {
-        title: task.repo,
+    const groupKey = `${task.repo}`;
+
+    if (!groupsMap[groupKey]) {
+      groupsMap[groupKey] = {
+        title: groupKey,
         tasks: [],
       };
     }
 
-    groupsMap[task.repo].tasks.push(task);
+    groupsMap[groupKey].tasks.push(task);
   }
 
   return Object.values(groupsMap);
