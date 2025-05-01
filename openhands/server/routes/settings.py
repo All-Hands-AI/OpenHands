@@ -33,8 +33,13 @@ async def load_settings(
 ) -> GETSettingsModel | JSONResponse:
     
 
+    user_secrets = await invalidate_legacy_secrets_store(settings_store, secrets_store)
+
+    # On initial load, user secrets may not be populated with values migrated from settings store
+    # If invalidation is successful, then the returned user secrets holds the most recent values
+    git_providers = user_secrets.provider_tokens if user_secrets else provider_tokens
+
     settings: Settings | None = await settings_store.load()
-    await invalidate_legacy_secrets_store(settings_store, settings, secrets_store)
 
     try:
         if not settings:
@@ -44,8 +49,8 @@ async def load_settings(
             )
 
         provider_tokens_set: dict[ProviderType, str | None]  = {}
-        if provider_tokens:
-            for provider_type, provider_token in provider_tokens.items():
+        if git_providers:
+            for provider_type, provider_token in git_providers.items():
                 if provider_token.token or provider_token.user_id:
                     provider_tokens_set[provider_type] = None
 

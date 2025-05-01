@@ -7,7 +7,10 @@ export class SecretsService {
     const tokens: POSTProviderTokens = {
       provider_tokens: providers,
     };
-    const { data } = await openHands.post<boolean>("add-git-providers", tokens);
+    const { data } = await openHands.post<boolean>(
+      "/api/add-git-providers",
+      tokens,
+    );
     return data;
   }
 }

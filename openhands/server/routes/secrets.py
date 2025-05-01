@@ -24,8 +24,14 @@ app = APIRouter(prefix='/api')
 
 async def invalidate_legacy_secrets_store(
     settings_store: SettingsStore, 
-    settings: Settings | None,
-    secrets_store: SecretsStore):
+    secrets_store: SecretsStore) -> UserSecrets | None:
+
+    """
+    We are moving `secrets_store` (a field from `Settings` object) to its own dedicated store
+    This function moves the values from Settings to UserSecrets, and deletes the values in Settings
+    """
+
+    settings = await settings_store.load()
 
     if settings and len(settings.secrets_store.provider_tokens.items()) > 0:
         user_secrets = UserSecrets(provider_tokens=settings.secrets_store.provider_tokens)
@@ -33,6 +39,8 @@ async def invalidate_legacy_secrets_store(
 
         # Invalidate old tokens via settings store serializer
         await settings_store.store(settings)
+        
+        return user_secrets
 
 
 
@@ -55,29 +63,50 @@ async def store_provider_tokens(
     provider_info: POSTProviderModel, 
     secrets_store: SecretsStore = Depends(get_secrets_store)
 ):
-    user_secrets = await secrets_store.load()
-    if user_secrets:
-        if provider_info.provider_tokens:
-            existing_providers = [
-                provider
-                for provider in user_secrets.provider_tokens
-            ]
+    provider_err_msg = await check_provider_tokens(provider_info)
+    if provider_err_msg:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': provider_err_msg},
+        )
+    
+    try:
+        user_secrets = await secrets_store.load()
 
-            # Merge incoming settings store with the existing one
-            for provider, token_value in list(provider_info.provider_tokens.items()):
-                if provider in existing_providers and not token_value:
-                    existing_token = (
-                        user_secrets.provider_tokens.get(provider)
-                    )
-                    if existing_token and existing_token.token:
-                        provider_info.provider_tokens[provider] = existing_token
 
-        else:  # nothing passed in means keep current settings
-            provider_info.provider_tokens = dict(user_secrets.provider_tokens)
+        if user_secrets:
+            if provider_info.provider_tokens:
+                existing_providers = [
+                    provider
+                    for provider in user_secrets.provider_tokens
+                ]
 
-        
-        updated_secrets = user_secrets.model_copy(update={"provider_tokens":provider_info.provider_tokens})    
-        await secrets_store.store(updated_secrets)
+                # Merge incoming settings store with the existing one
+                for provider, token_value in list(provider_info.provider_tokens.items()):
+                    if provider in existing_providers and not token_value.token:
+                        existing_token = (
+                            user_secrets.provider_tokens.get(provider)
+                        )
+                        if existing_token and existing_token.token:
+                            provider_info.provider_tokens[provider] = existing_token
+
+            else:  # nothing passed in means keep current settings
+                provider_info.provider_tokens = dict(user_secrets.provider_tokens)
+
+            
+            updated_secrets = user_secrets.model_copy(update={"provider_tokens":provider_info.provider_tokens})    
+            await secrets_store.store(updated_secrets)
+
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={'message': 'Git providers stored'},
+            )
+    except Exception as e:
+        logger.warning(f'Something went wrong storing git providers: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing git providers'},
+        )
 
 
 @app.post('/unset-provider-tokens', response_model=dict[str, str])
