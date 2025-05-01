@@ -166,7 +166,7 @@ def test_long_running_command(windows_bash_session):
     assert 'Serving HTTP on' in result.content
     # Check for timeout specific metadata
     assert (
-        "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+        "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
         in result.metadata.suffix
     )
     assert result.exit_code == -1
