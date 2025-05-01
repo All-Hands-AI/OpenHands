@@ -1,5 +1,5 @@
 ---
-name: update_test_for_new_implementation
+name: update_test
 version: 1.0.0
 author: openhands
 agent: CodeActAgent

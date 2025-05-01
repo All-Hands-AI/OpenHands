@@ -1,10 +1,10 @@
 ---
-name: add_repo_instruction
+name: add_repo_inst
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
 triggers:
-- /add_repo_instruction
+- /add_repo_inst
 inputs:
   - name: REPO_FOLDER_NAME
     description: "Branch for the agent to work on"

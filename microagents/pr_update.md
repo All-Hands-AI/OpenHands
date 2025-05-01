@@ -1,5 +1,5 @@
 ---
-name: update_pr_description
+name: pr_update
 version: 1.0.0
 author: openhands
 agent: CodeActAgent

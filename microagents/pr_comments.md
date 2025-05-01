@@ -1,5 +1,5 @@
 ---
-name: address_pr_comments
+name: pr_comments
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
@@ -17,4 +17,3 @@ First, check the branch {{ BRANCH_NAME }} and read the diff against the main bra
 This branch corresponds to this PR {{ PR_URL }}
 
 Next, you should use the GitHub API to read the reviews and comments on this PR and address them.
-
