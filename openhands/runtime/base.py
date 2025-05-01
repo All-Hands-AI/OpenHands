@@ -346,7 +346,7 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
-        # This satisfies mypr because param is optional, but `verify_repo_provider` guarentees this gets populated
+        # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
         provider = repository.git_provider if repository.git_provider else None
         if not provider:
             return ''
