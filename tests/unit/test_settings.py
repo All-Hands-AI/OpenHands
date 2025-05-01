@@ -110,10 +110,11 @@ def test_settings_handles_sensitive_data():
 
 
 def test_convert_to_settings():
+    github_token = ProviderToken(token=SecretStr('test-token'))
     settings_with_token_data = POSTSettingsModel(
         llm_api_key='test-key',
         provider_tokens={
-            'github': 'test-token',
+            ProviderType.GITHUB: github_token,
         },
     )
 
