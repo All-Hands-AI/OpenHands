@@ -50,13 +50,12 @@ async def check_provider_tokens(provider_info: POSTProviderModel) -> str:
     return ''
 
 
-@app.post('/set_tokens', response_model=dict[str, str])
+@app.post('/add-git-providers', response_model=dict[str, str])
 async def store_provider_tokens(
     provider_info: POSTProviderModel, 
     secrets_store: SecretsStore = Depends(get_secrets_store)
 ):
     user_secrets = await secrets_store.load()
-
     if user_secrets:
         if provider_info.provider_tokens:
             existing_providers = [
@@ -65,21 +64,20 @@ async def store_provider_tokens(
             ]
 
             # Merge incoming settings store with the existing one
-            for provider, token_value in list(user_secrets.provider_tokens.items()):
+            for provider, token_value in list(provider_info.provider_tokens.items()):
                 if provider in existing_providers and not token_value:
-                    provider_type = ProviderType(provider)
                     existing_token = (
-                        user_secrets.provider_tokens.get(
-                            provider_type
-                        )
+                        user_secrets.provider_tokens.get(provider)
                     )
                     if existing_token and existing_token.token:
-                        user_secrets.provider_tokens[provider] = (
-                            existing_token.token.get_secret_value()
-                        )
+                        provider_info.provider_tokens[provider] = existing_token
+
         else:  # nothing passed in means keep current settings
-            pass
+            provider_info.provider_tokens = dict(user_secrets.provider_tokens)
+
         
+        updated_secrets = user_secrets.model_copy(update={"provider_tokens":provider_info.provider_tokens})    
+        await secrets_store.store(updated_secrets)
 
 
 @app.post('/unset-provider-tokens', response_model=dict[str, str])
@@ -89,10 +87,10 @@ async def unset_provider_tokens(
     try:
         user_secrets = await secrets_store.load()
         if user_secrets:
-            user_secrets = user_secrets.model_copy(
+            updated_secrets = user_secrets.model_copy(
                 update={'provider_tokens': {}}
             )
-            await secrets_store.store(user_secrets)
+            await secrets_store.store(updated_secrets)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,

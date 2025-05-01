@@ -2,6 +2,7 @@ from types import MappingProxyType
 from typing import Any
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     SerializationInfo,
@@ -22,11 +23,12 @@ class UserSecrets(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    model_config = {
-        'frozen': True,
-        'validate_assignment': True,
-        'arbitrary_types_allowed': True,
-    }
+    model_config = ConfigDict(
+        frozen=True,
+        validate_assignment=True,
+        arbitrary_types_allowed=True,
+    )
+
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(

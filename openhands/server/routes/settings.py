@@ -10,16 +10,13 @@ from openhands.integrations.provider import (
 
 from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
-    GETSettingsCustomSecrets,
     GETSettingsModel,
-    POSTSettingsCustomSecrets,
 )
 from openhands.server.shared import config
 from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
-    get_user_settings,
     get_user_settings_store,
 )
 from openhands.storage.data_models.user_secrets import UserSecrets
