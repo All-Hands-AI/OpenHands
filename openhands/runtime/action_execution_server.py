@@ -167,15 +167,7 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-
-        # Check if we're running on Windows
-        if platform.system() == 'Windows':
-            logger.warning(
-                'Browser functionality is not supported on Windows. Browser actions will be skipped.'
-            )
-            self.browser = None
-        else:
-            self.browser: BrowserEnv | None = None
+        self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
 
@@ -255,7 +247,7 @@ class ActionExecutor:
                 ),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
-        self.bash_session.initialize()
+            self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
         # Start browser initialization in the background
