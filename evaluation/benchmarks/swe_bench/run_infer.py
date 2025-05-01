@@ -798,7 +798,7 @@ if __name__ == '__main__':
     else:
         # If no specific condenser config is provided via args, default to NoOpCondenser
         condenser_config = NoOpCondenserConfig()
-        logger.warning('No Condenser config provided via --condenser-config, using NoOpCondenser.')
+        logger.debug('No Condenser config provided via --condenser-config, using NoOpCondenser.')
 
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
