@@ -383,7 +383,7 @@ class ServiceContextIssue(ServiceContext):
         prompt = template.render(
             issue_context=issue_context,
             last_message=last_message,
-            git_patch=git_patch if git_patch is not None else self.default_git_patch,
+            git_patch=git_patch or self.default_git_patch,
         )
 
         response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
