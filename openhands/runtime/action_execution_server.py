@@ -343,14 +343,14 @@ class ActionExecutor:
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.set_hard_timeout(300)
-            logger.info(f'Executing init command: {command}')
+            logger.debug(f'Executing init command: {command}')
             obs = await self.run(action)
             assert isinstance(obs, CmdOutputObservation)
-            logger.info(
+            logger.debug(
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
-        logger.info('Bash init commands completed')
+        logger.debug('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:
         async with self.lock:
@@ -372,9 +372,9 @@ class ActionExecutor:
             return obs
 
         assert self.bash_session is not None
-        logger.info(f'Executing CmdRunAction: {action.command}')
+        logger.debug(f'Executing CmdRunAction: {action.command}')
         obs = await call_sync_from_async(self.bash_session.execute, action)
-        logger.info(f'CmdRunAction finished execution. Observation: {obs}')
+        logger.debug(f'CmdRunAction finished execution. Observation: {obs}')
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -708,7 +708,7 @@ if __name__ == '__main__':
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
         assert client is not None
-        logger.info(
+        logger.debug(
             f"Received request for /execute_action: {action_request.action.get('action')}"
         )
         try:
@@ -716,15 +716,12 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            logger.info(f'Executing action: {action}')
+            logger.debug(f'Executing action: {action}')
             observation = await client.run_action(action)
-            logger.info(f'Action executed. Observation: {observation}')
-            obs_dict = event_to_dict(observation)
-            logger.info(f'Returning response for /execute_action: {obs_dict}')
-            return obs_dict
+            logger.debug(f'Action executed. Observation: {observation}')
+            return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')
-            logger.exception('Full traceback for /execute_action error:')
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
