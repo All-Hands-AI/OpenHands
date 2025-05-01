@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.core.config.app_config import AppConfig
-from openhands.server.settings import Settings
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -21,7 +21,7 @@ def file_settings_store(mock_file_store):
 @pytest.mark.asyncio
 async def test_load_nonexistent_data(file_settings_store):
     with patch(
-        'openhands.server.settings.load_app_config',
+        'openhands.storage.data_models.settings.load_app_config',
         MagicMock(return_value=AppConfig()),
     ):
         file_settings_store.file_store.read.side_effect = FileNotFoundError()

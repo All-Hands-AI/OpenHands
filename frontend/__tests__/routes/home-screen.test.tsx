@@ -91,6 +91,13 @@ describe("HomeScreen", () => {
     screen.getByTestId("task-suggestions");
   });
 
+  it("should have responsive layout for mobile and desktop screens", async () => {
+    renderHomeScreen();
+    
+    const mainContainer = screen.getByTestId("home-screen").querySelector("main");
+    expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
+  });
+
   it("should filter the suggested tasks based on the selected repository", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
       GitService,

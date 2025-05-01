@@ -10,7 +10,7 @@ from openhands.events.event_store import EventStore
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
-from openhands.server.settings import Settings
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.files import FileStore
 

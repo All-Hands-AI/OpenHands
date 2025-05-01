@@ -1646,6 +1646,32 @@
         }
       }
     },
+    "/api/reset-settings": {
+      "post": {
+        "summary": "Reset settings (Deprecated)",
+        "description": "This endpoint is deprecated and will return a 410 Gone error. Reset functionality has been removed.",
+        "operationId": "resetSettings",
+        "deprecated": true,
+        "responses": {
+          "410": {
+            "description": "Feature removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Reset settings functionality has been removed."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/unset-settings-tokens": {
       "post": {
         "summary": "Unset settings tokens",
@@ -1669,45 +1695,6 @@
           },
           "500": {
             "description": "Error unsetting tokens",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/reset-settings": {
-      "post": {
-        "summary": "Reset settings",
-        "description": "Reset user settings to defaults",
-        "operationId": "resetSettings",
-        "responses": {
-          "200": {
-            "description": "Settings reset successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Error resetting settings",
             "content": {
               "application/json": {
                 "schema": {
