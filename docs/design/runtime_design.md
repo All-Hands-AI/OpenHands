@@ -99,20 +99,67 @@ The two-stage approach simplifies the runtime building procedure by:
 - Use archive mode when copying to preserve permissions
 - Handle user/group IDs consistently across images
 
+## PyInstaller Approach
+
+### Overview
+
+The PyInstaller approach further simplifies the runtime building procedure by:
+
+1. Using PyInstaller to bundle the action_execution_server and all its dependencies into a standalone binary
+2. Packaging Playwright's Chromium browser in a portable way
+3. Copying only the binary and browser components to the target runtime image
+4. Eliminating the need to install Python and other dependencies in the target image
+
+### Benefits
+
+1. **Smaller Image Size**: Only the binary and browser components are needed, not all Python dependencies
+2. **Faster Builds**: No need to install Python and dependencies in the target image
+3. **Better Compatibility**: The binary should work on any Linux distribution with compatible glibc
+4. **Simplified Maintenance**: Easier to update the binary independently of the base image
+
+### Challenges and Solutions
+
+#### 1. Binary Compatibility
+
+**Challenge**: Binaries compiled in one environment might not work in another due to different system libraries.
+
+**Solutions**:
+- Build the binary in a minimal environment (e.g., Ubuntu 20.04) for maximum compatibility
+- Include all necessary shared libraries in the binary
+- Use static linking where possible
+
+#### 2. Browser Integration
+
+**Challenge**: Playwright requires Chromium and its dependencies.
+
+**Solutions**:
+- Extract Chromium from Playwright's cache
+- Create a portable browser package
+- Use wrapper scripts to set up the correct environment
+
+#### 3. Plugin System
+
+**Challenge**: The current plugin system might not work with a bundled binary.
+
+**Solutions**:
+- Modify the plugin system to work with the binary
+- Include all plugins in the binary
+- Implement a mechanism to load plugins at runtime
+
 ## Implementation Plan
 
-### Phase 1: Create Dependencies Image
+### Phase 1: Create PyInstaller Binary
 
-1. Create a Dockerfile that installs all dependencies to `/openhands`
-2. Include all necessary libraries and binaries
-3. Create wrapper scripts for key components (Chromium, tmux, etc.)
-4. Test the image with various base images to ensure compatibility
+1. Create a PyInstaller spec file for action_execution_server.py
+2. Build the binary using PyInstaller
+3. Extract and package Playwright's Chromium browser
+4. Create a new Dockerfile template for the PyInstaller approach
 
 ### Phase 2: Update Runtime Builder
 
-1. Update `runtime_build.py` to implement the two-stage build process
-2. Add option to build dependencies-only image
-3. Implement the copying mechanism for the `/openhands` folder
+1. Update `runtime_build.py` to implement the PyInstaller approach
+2. Add option to build using PyInstaller
+3. Implement the copying mechanism for the binary and browser components
 4. Simplify the tagging system for better clarity
 
 ### Phase 3: Integration and Testing
@@ -124,63 +171,82 @@ The two-stage approach simplifies the runtime building procedure by:
 
 ### Phase 4: Optimization
 
-1. Analyze and optimize the size of the `/openhands` folder
-2. Implement selective copying based on required features
+1. Analyze and optimize the size of the binary
+2. Implement selective features based on requirements
 3. Further improve build performance
 
 ## Technical Details
 
-### Dependencies Image Structure
+### PyInstaller Binary Structure
 
 ```
 /openhands/
-├── bin/                  # Executable wrappers
-├── lib/                  # Shared libraries
-├── micromamba/           # Micromamba environment
-├── poetry/               # Poetry virtual environments
-├── code/                 # OpenHands source code
-├── .openvscode-server/   # VSCode server
-├── browser/              # Chromium and dependencies
-└── workspace/            # Default workspace directory
+├── action-execution-server/  # PyInstaller binary
+│   ├── action-execution-server  # Main executable
+│   ├── _internal/            # PyInstaller bundled dependencies
+│   └── ...
+├── browser/                  # Packaged Chromium browser
+│   ├── ms-playwright/        # Playwright browser files
+│   └── chromium-wrapper.sh   # Wrapper script for Chromium
+└── lib/                      # Additional shared libraries if needed
 ```
 
-### Wrapper Script Example
-
-```bash
-#!/bin/bash
-# Wrapper for Chromium
-
-# Set up environment
-export LD_LIBRARY_PATH=/openhands/lib:$LD_LIBRARY_PATH
-export CHROMIUM_PATH=/openhands/browser/chromium
-
-# Launch Chromium with the correct environment
-exec $CHROMIUM_PATH "$@"
-```
-
-### Modified Dockerfile Template
+### Dockerfile Template for PyInstaller Approach
 
 ```dockerfile
-# Stage 1: Build the dependencies image
-FROM {{ base_image }} as deps
-# Install all dependencies to /openhands
-# ...
+FROM {{ base_image }}
 
-# Stage 2: Final image
-FROM {{ target_base_image }}
-# Copy the /openhands folder from the deps image
-COPY --from=deps /openhands /openhands
+# Install minimal dependencies required by the base system
+RUN if command -v apt-get > /dev/null; then \
+        apt-get update && apt-get install -y --no-install-recommends ca-certificates bash && \
+        apt-get clean && rm -rf /var/lib/apt/lists/*; \
+    elif command -v apk > /dev/null; then \
+        apk add --no-cache ca-certificates bash gcompat libstdc++; \
+    elif command -v yum > /dev/null; then \
+        yum install -y ca-certificates bash; \
+        yum clean all; \
+    fi
 
-# Set up environment variables
+# Create the openhands user if it doesn't exist
+RUN if ! id -u openhands > /dev/null 2>&1; then \
+        if command -v useradd > /dev/null 2>&1; then \
+            groupadd -g 1000 openhands 2>/dev/null || true; \
+            useradd -u 1000 -g 1000 -m -s /bin/bash openhands 2>/dev/null || true; \
+        elif command -v adduser > /dev/null 2>&1; then \
+            addgroup -g 1000 openhands 2>/dev/null || true; \
+            adduser -D -u 1000 -G openhands openhands 2>/dev/null || true; \
+        fi; \
+    fi
+
+# Create directories
+RUN mkdir -p /openhands/bin /openhands/lib /workspace && \
+    chown -R openhands:openhands /workspace /openhands 2>/dev/null || true
+
+# Copy the bundled action execution server
+COPY ./dist/pyinstaller/action-execution-server /openhands/action-execution-server
+
+# Copy Playwright browser
+COPY ./browser /openhands/browser
+
+# Set environment variables
 ENV PATH=/openhands/bin:$PATH \
     LD_LIBRARY_PATH=/openhands/lib:$LD_LIBRARY_PATH \
-    POETRY_VIRTUALENVS_PATH=/openhands/poetry \
-    MAMBA_ROOT_PREFIX=/openhands/micromamba \
-    # ... other environment variables
+    PLAYWRIGHT_BROWSERS_PATH=/openhands/browser \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# Set the working directory
+WORKDIR /workspace
+
+# Switch to the openhands user
+USER openhands
+
+# Command to start the action execution server
+CMD ["/openhands/action-execution-server/action-execution-server", "8000", "/workspace"]
 ```
 
 ## Conclusion
 
-The two-stage building approach offers significant benefits in terms of build speed, flexibility, and maintainability. While there are challenges related to binary compatibility and system dependencies, these can be addressed with careful implementation of wrapper scripts and proper environment setup.
+Both the two-stage building approach and the PyInstaller approach offer significant benefits in terms of build speed, flexibility, and maintainability. The PyInstaller approach provides additional advantages in terms of image size and build simplicity, but may have challenges with plugin support and binary compatibility.
 
-By separating the OpenHands dependencies from the base image, we can achieve a more modular and efficient runtime building process that supports a wider range of base images while maintaining the security and isolation properties of the traditional approach.
+By bundling the action_execution_server and its dependencies into a standalone binary, we can achieve an even more efficient runtime building process that supports a wider range of base images while maintaining the security and isolation properties of the traditional approach.
