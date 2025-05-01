@@ -64,4 +64,3 @@ Frontend:
 Now, please write a similar markdown for the current repository.
 Read all the GitHub workflows under .github/ of the repository (if this folder exists) to understand the CI checks (e.g., linter, pre-commit), and include those in the repo.md file.
 
-If the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task.

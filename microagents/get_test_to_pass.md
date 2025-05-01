@@ -24,4 +24,3 @@ Help me fix these tests to pass by fixing the {{ FUNCTION_TO_FIX }} function in 
 
 PLEASE DO NOT modify the tests by yourselves -- Let me know if you think some of the tests are incorrect.
 
-If the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task.

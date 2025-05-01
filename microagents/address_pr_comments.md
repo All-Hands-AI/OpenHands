@@ -18,4 +18,3 @@ This branch corresponds to this PR {{ PR_URL }}
 
 Next, you should use the GitHub API to read the reviews and comments on this PR and address them.
 
-If the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task.

@@ -20,4 +20,3 @@ Please check the branch "{{ BRANCH_NAME }}" and look at the diff against the mai
 
 Once you understand the purpose of the diff, please use Github API to read the existing PR description, and update it to be more reflective of the changes we've made when necessary.
 
-If the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task.
