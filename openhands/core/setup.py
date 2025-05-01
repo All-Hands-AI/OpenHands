@@ -97,22 +97,15 @@ def initialize_repository_for_runtime(
         The repository directory path if a repository was cloned, None otherwise.
     """
     # clone selected repository if provided
-    github_token = None
+    provider_tokens = {}
     if 'GITHUB_TOKEN' in os.environ:
         github_token = SecretStr(os.environ['GITHUB_TOKEN'])
-
-    gitlab_token = None
-    if 'GITLAB_TOKEN' in os.environ:
-        gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
-
-    provider_tokens = {}
-
-    if github_token:
         provider_tokens[ProviderType.GITHUB] = ProviderToken(
             token=SecretStr(github_token)
         )
 
-    if gitlab_token:
+    if 'GITLAB_TOKEN' in os.environ:
+        gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
         provider_tokens[ProviderType.GITLAB] = ProviderToken(
             token=SecretStr(gitlab_token)
         )
