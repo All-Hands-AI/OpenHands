@@ -91,13 +91,10 @@ class Settings(BaseModel):
     @field_serializer('secrets_store')
     def secrets_store_serializer(self, secrets: UserSecrets, info: SerializationInfo):
         """Custom serializer for secrets store."""
+
+        """Invalidate this storage"""
         return {
-            'provider_tokens': secrets.provider_tokens_serializer(
-                secrets.provider_tokens, info
-            ),
-            'custom_secrets': secrets.custom_secrets_serializer(
-                secrets.custom_secrets, info
-            ),
+            'provider_tokens': {}
         }
 
     @staticmethod
