@@ -10,7 +10,7 @@ from openhands.integrations.service_types import ProviderType
 from openhands.storage.data_models.settings import Settings
 
 
-class POSTProviderModel:
+class POSTProviderModel(BaseModel):
     """
     Settings for POST requests
     """
