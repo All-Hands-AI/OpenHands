@@ -979,7 +979,20 @@ class WindowsPowershellSession:
                             logger.info(
                                 f'execute: Identified CWD command via PipelineAst: {command_name}'
                             )
-                            return self._run_ps_command(command)
+                            # Run command and prepare proper CmdOutputObservation
+                            ps_results = self._run_ps_command(command)
+                            # Get current working directory after CWD command
+                            current_cwd = self._get_current_cwd()
+                            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
+                            
+                            # Convert results to string output if any
+                            output = '\n'.join([str(r) for r in ps_results]) if ps_results else ''
+                            
+                            return CmdOutputObservation(
+                                content=output,
+                                command=command,
+                                metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                            )
                 # Check direct CommandAst
                 elif isinstance(statement, CommandAst):
                     command_name = statement.GetCommandName()
@@ -992,7 +1005,20 @@ class WindowsPowershellSession:
                         logger.info(
                             f'execute: Identified CWD command via direct CommandAst: {command_name}'
                         )
-                        return self._run_ps_command(command)
+                        # Run command and prepare proper CmdOutputObservation
+                        ps_results = self._run_ps_command(command)
+                        # Get current working directory after CWD command
+                        current_cwd = self._get_current_cwd()
+                        python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
+                        
+                        # Convert results to string output if any
+                        output = '\n'.join([str(r) for r in ps_results]) if ps_results else ''
+                        
+                        return CmdOutputObservation(
+                            content=output,
+                            command=command,
+                            metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                        )
             except ImportError as imp_err:
                 logger.error(
                     f'execute: Failed to import CommandAst: {imp_err}. Cannot check for CWD commands.'
