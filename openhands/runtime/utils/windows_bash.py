@@ -260,8 +260,7 @@ class WindowsPowershellSession:
         """Receives output and errors from a job."""
         if not job:
             return '', []
-        logger.debug(f'_receive_job_output: Called for Job ID {job.Id}, Keep={keep}')
-
+    
         output_parts = []
         error_parts = []
 
