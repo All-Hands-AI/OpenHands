@@ -125,7 +125,9 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
 
         # Verify the server is running by curling it
         if is_windows():
-            curl_action = CmdRunAction(f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content')
+            curl_action = CmdRunAction(
+                f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+            )
         else:
             curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
         curl_obs = runtime.run_action(curl_action)
@@ -140,12 +142,11 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
             # Use PowerShell job management commands instead of trying to kill process directly
             kill_action = CmdRunAction('Get-Job | Stop-Job')
         else:
-            kill_action = CmdRunAction(f'pkill -f "http.server"')
+            kill_action = CmdRunAction('pkill -f "http.server"')
         kill_obs = runtime.run_action(kill_action)
         logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(kill_obs, CmdOutputObservation)
         assert kill_obs.exit_code == 0
-        
 
     finally:
         _close_test_runtime(runtime)
