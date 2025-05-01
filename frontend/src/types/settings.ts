@@ -18,7 +18,7 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
-  PROVIDER_TOKENS_SET: Record<Provider, boolean>;
+  PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;

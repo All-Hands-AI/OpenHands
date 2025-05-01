@@ -178,7 +178,7 @@ export const handlers = [
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
     if (Object.keys(settings.provider_tokens_set).length > 0)
-      settings.provider_tokens_set = { github: false, gitlab: false };
+      settings.provider_tokens_set = {};
 
     return HttpResponse.json(settings);
   }),

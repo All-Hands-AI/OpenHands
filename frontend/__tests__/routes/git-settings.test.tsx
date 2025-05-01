@@ -119,10 +119,6 @@ describe("Content", () => {
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {
-        github: false,
-        gitlab: false,
-      },
     });
 
     const { rerender } = renderGitSettingsScreen();
@@ -144,8 +140,8 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: true,
-        gitlab: true,
+        github: null,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -169,8 +165,7 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: false,
-        gitlab: true,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -304,8 +299,7 @@ describe("Form submission", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: true,
-        gitlab: false,
+        github: null,
       },
     });
 
@@ -319,10 +313,6 @@ describe("Form submission", () => {
 
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {
-        github: false,
-        gitlab: false,
-      },
     });
     queryClient.invalidateQueries();
 
@@ -339,8 +329,7 @@ describe("Form submission", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: true,
-        gitlab: false,
+        github: null,
       },
     });
 
