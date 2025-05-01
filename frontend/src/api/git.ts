@@ -55,7 +55,7 @@ export const retrieveGitHubAppRepositories = async (
  * @returns A list of repositories
  */
 export const retrieveUserGitRepositories = async () => {
-  const response = await openHands.get<GitRepository[]>(
+  const { data } = await openHands.get<GitRepository[]>(
     "/api/user/repositories",
     {
       params: {
@@ -64,12 +64,5 @@ export const retrieveUserGitRepositories = async () => {
     },
   );
 
-  // Check if any provider has more results
-  const link =
-    response.data.length > 0 && response.data[0].link_header
-      ? response.data[0].link_header
-      : "";
-  const nextPage = extractNextPageFromLink(link);
-
-  return { data: response.data, nextPage };
+  return data;
 };

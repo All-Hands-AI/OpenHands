@@ -67,10 +67,7 @@ describe("RepoConnector", () => {
       GitService,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -89,10 +86,7 @@ describe("RepoConnector", () => {
       GitService,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -138,10 +132,7 @@ describe("RepoConnector", () => {
       GitService,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -183,10 +174,7 @@ describe("RepoConnector", () => {
       GitService,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
