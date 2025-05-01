@@ -19,24 +19,13 @@ export function HomeHeader() {
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  // Note: handleCreateConversation is now implemented inline in the NavLink onClick
-
   return (
     <header className="flex flex-col gap-5">
       <AllHandsLogo />
 
       <div className="flex items-center justify-between">
         <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
-        <NavLink to="/" onClick={(e) => {
-          // If cmd/ctrl key is pressed, let the default behavior happen (open in new tab)
-          if (e.metaKey || e.ctrlKey) {
-            return; // Don't prevent default to allow browser to handle opening in new tab
-          }
-          
-          // Otherwise, call the createConversation function with the conversation_trigger
-          createConversation({ conversation_trigger: "gui" });
-          e.preventDefault();
-        }}>
+        <NavLink to="/">
           <BrandButton
             testId="header-launch-button"
             variant="primary"
