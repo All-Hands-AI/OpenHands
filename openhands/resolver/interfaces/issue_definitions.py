@@ -198,7 +198,7 @@ class ServiceContextPR(ServiceContext):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
-            git_patch=git_patch if git_patch is not None else self.default_git_patch,
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
