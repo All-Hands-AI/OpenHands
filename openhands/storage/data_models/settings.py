@@ -92,7 +92,7 @@ class Settings(BaseModel):
     def secrets_store_serializer(self, secrets: UserSecrets, info: SerializationInfo):
         """Custom serializer for secrets store."""
 
-        """Invalidate this storage"""
+        """Force invalidate secret store"""
         return {
             'provider_tokens': {}
         }

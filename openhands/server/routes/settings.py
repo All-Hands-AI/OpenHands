@@ -8,7 +8,7 @@ from openhands.integrations.provider import (
 )
 
 
-from openhands.integrations.utils import validate_provider_token
+from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsCustomSecrets,
     GETSettingsModel,
@@ -18,10 +18,12 @@ from openhands.server.shared import config
 from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
+    get_user_secret_store,
     get_user_settings,
     get_user_settings_store,
 )
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.settings.secret_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
@@ -30,8 +32,14 @@ app = APIRouter(prefix='/api')
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    settings: Settings | None = Depends(get_user_settings),
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+    secrets_store: SecretsStore = Depends(get_user_secret_store)
 ) -> GETSettingsModel | JSONResponse:
+    
+
+    settings: Settings | None = await settings_store.load()
+    await invalidate_legacy_secrets_store(settings_store, settings, secrets_store)
+
     try:
         if not settings:
             return JSONResponse(

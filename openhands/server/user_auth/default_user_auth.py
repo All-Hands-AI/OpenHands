@@ -56,8 +56,7 @@ class DefaultUserAuth(UserAuth):
 
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
-        settings = await self.get_user_settings()
-        secrets_store = getattr(settings, 'secrets_store', None)
+        secrets_store = await self.get_user_secret_store()
         provider_tokens = getattr(secrets_store, 'provider_tokens', None)
         return provider_tokens
 
