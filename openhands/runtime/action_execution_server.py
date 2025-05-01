@@ -238,7 +238,6 @@ class ActionExecutor:
                 ),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
-            self.bash_session.initialize()
         else:
             self.bash_session = BashSession(
                 work_dir=self._initial_cwd,

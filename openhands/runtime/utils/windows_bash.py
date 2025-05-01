@@ -65,7 +65,7 @@ try:
         if winps_path.exists():
             ps_sdk_path = str(winps_path)
             clr.AddReference(ps_sdk_path)
-            print(f'Loaded PowerShell SDK (Desktop): {ps_sdk_path}')
+            logger.debug(f'Loaded PowerShell SDK (Desktop): {ps_sdk_path}')
         else:
             # Last resort: try loading by assembly name (might work if in GAC or path)
             clr.AddReference('System.Management.Automation')
@@ -215,50 +215,33 @@ class WindowsPowershellSession:
         """Gets the last known working directory of the session."""
         return self._cwd
 
-    def initialize(self):
-        """Initialization logic is handled in __init__."""
-        # This method might be redundant now but kept for potential API compatibility.
-        return self._initialized
-
     def _run_ps_command(
         self, script: str, log_output: bool = True
     ) -> list[System.Management.Automation.PSObject]:
         """Helper to run a simple synchronous command in the runspace."""
-        logger.debug(f"_run_ps_command: Executing script: '{script}'")
+        if log_output:
+            logger.debug(f"Running PS command: '{script}'")
         ps = None
         results = []
-        errors = []
         try:
             ps = PowerShell.Create()
             ps.Runspace = self.runspace
             ps.AddScript(script)
             results = ps.Invoke()
         except Exception as e:
-            logger.error(
-                f'_run_ps_command: Exception running script:\n{script}\n--- Exception:\n{e}'
-            )
-            logger.error(traceback.format_exc())
-            errors.append(f'Exception: {e}')  # Ensure exception is captured as error
+            logger.error(f'Exception running script: {script}\n{e}')
         finally:
             if ps:
                 ps.Dispose()
-        # You might want to return errors too, or raise exception
-        # For now, just return results, errors are logged
-        # Return empty list on error to avoid downstream issues
-        return results if results and not errors else []
+        return results if results else []
 
     def _get_job_object(
         self, job_id: int | None
     ) -> System.Management.Automation.Job | None:
         """Retrieves a job object by its ID."""
         script = f'Get-Job -Id {job_id}'
-        results = self._run_ps_command(
-            script, log_output=False
-        )  # Avoid excessive logging
+        results = self._run_ps_command(script, log_output=False)
         if results and len(results) > 0:
-            # Need to ensure result is actually a Job object
-            # The result from Invoke is a PSObject wrapping the actual job.
-            # Return the BaseObject.
             potential_job_wrapper = results[0]
             try:
                 underlying_job = potential_job_wrapper.BaseObject
@@ -267,11 +250,8 @@ class WindowsPowershellSession:
                 _ = underlying_job.JobStateInfo.State
                 return underlying_job
             except AttributeError:
-                logger.warning(
-                    f"_get_job_object: Retrieved object is not a valid job (missing properties on BaseObject). Wrapper: {potential_job_wrapper}, BaseObject: {getattr(potential_job_wrapper, 'BaseObject', 'N/A')}"
-                )
+                logger.warning(f'Retrieved object is not a valid job. ID: {job_id}')
                 return None
-        # logger.warning(f"_get_job_object: Could not retrieve job object for ID: {job_id}") # Less verbose logging
         return None
 
     def _receive_job_output(
@@ -285,35 +265,22 @@ class WindowsPowershellSession:
         output_parts = []
         error_parts = []
 
-        # Use PowerShell object directly associated with the job for Receive-Job
-        # This might be more reliable than creating a new PS instance each time.
-        # However, managing the lifetime of such a ps object is complex.
-        # Let's stick to running commands in the runspace for now.
-
-        # === Try getting the error stream first ===
+        # Get error stream directly from job object if available
         try:
-            # Ensure we have the latest job object reference
             current_job_obj = self._get_job_object(job.Id)
-            logger.debug(
-                f"_receive_job_output: Fetched current job object (State: {current_job_obj.JobStateInfo.State if current_job_obj else 'N/A'}) for direct error read."
-            )
             if current_job_obj and current_job_obj.Error:
-                error_records = current_job_obj.Error.ReadAll()  # ReadAll consumes them
+                error_records = current_job_obj.Error.ReadAll()
                 if error_records:
                     error_parts.extend([str(e) for e in error_records])
-                    logger.debug(
-                        f'Retrieved {len(error_records)} error records directly from Job {job.Id} error stream.'
-                    )
         except Exception as read_err:
             logger.error(
                 f'Failed to read job error stream directly for Job {job.Id}: {read_err}'
             )
             error_parts.append(f'[Direct Error Stream Read Exception: {read_err}]')
-        # === Now run Receive-Job for the output stream ===
 
+        # Run Receive-Job for the output stream
         keep_switch = '-Keep' if keep else ''
         script = f'Receive-Job -Job (Get-Job -Id {job.Id}) {keep_switch}'
-        logger.debug(f'_receive_job_output: Running script: {script}')
 
         ps_receive = None
         try:
@@ -321,61 +288,27 @@ class WindowsPowershellSession:
             ps_receive.Runspace = self.runspace
             ps_receive.AddScript(script)
 
-            # Invoke and collect output
+            # Collect output
             results = ps_receive.Invoke()
-            logger.debug(
-                f'_receive_job_output: Receive-Job script returned {len(results) if results else 0} result items.'
-            )
             if results:
                 output_parts = [str(r) for r in results]
-                logger.debug(
-                    f'_receive_job_output: Received output parts: {output_parts}'
-                )
 
-            # Collect errors from the Receive-Job command itself
+            # Collect errors from the Receive-Job command
             if ps_receive.Streams.Error:
-                # These errors are about Receive-Job, often reflecting errors from the job's script
                 receive_job_errors = [str(e) for e in ps_receive.Streams.Error]
                 logger.warning(
                     f'Errors during Receive-Job for Job ID {job.Id}: {receive_job_errors}'
                 )
                 error_parts.extend(receive_job_errors)
 
-            # How to get the job's actual error stream?
-            # Receive-Job typically forwards the job's output stream.
-            # Errors from the job might be in the job object itself or need specific retrieval.
-            # Let's check the job's error stream property if available after receiving.
-            # Re-fetch job object?
-            updated_job = self._get_job_object(job.Id)
-            if updated_job and updated_job.Error:  # Accessing job's error stream data
-                # This might require the job object to store errors. Let's test this.
-                # This gets PSDataCollection[ErrorRecord]
-                try:
-                    # Consume the errors from the job's stream
-                    error_records = updated_job.Error.ReadAll()  # ReadAll consumes them
-                    if error_records:
-                        error_parts.extend([str(e) for e in error_records])
-                        logger.debug(
-                            f'Retrieved {len(error_records)} error records from Job {job.Id} stream.'
-                        )
-                except Exception as read_err:
-                    logger.error(
-                        f'Failed to read job error stream for Job {job.Id}: {read_err}'
-                    )
-
         except Exception as e:
             logger.error(f'Exception during Receive-Job for Job ID {job.Id}: {e}')
-            logger.error(traceback.format_exc())
-            # Add this exception as an error?
             error_parts.append(f'[Receive-Job Exception: {e}]')
         finally:
             if ps_receive:
                 ps_receive.Dispose()
 
         final_combined_output = '\n'.join(output_parts)
-        logger.debug(
-            f"_receive_job_output: Returning combined output: '{final_combined_output}', errors: {error_parts}"
-        )
         return final_combined_output, error_parts
 
     def _stop_active_job(self) -> CmdOutputObservation | ErrorObservation:
@@ -383,7 +316,6 @@ class WindowsPowershellSession:
         with self._job_lock:
             job = self.active_job
             if not job:
-                # Consistent error message if no job to stop
                 return ErrorObservation(
                     content='ERROR: No previous running command to interact with.'
                 )
@@ -391,48 +323,28 @@ class WindowsPowershellSession:
             job_id = job.Id  # type: ignore[unreachable]
             logger.info(f'Attempting to stop job ID: {job_id} via C-c.')
 
-            # Attempt graceful stop first (simulates Ctrl+C if process handles it)
-            # Stop-Job is the closest equivalent
+            # Attempt graceful stop
             stop_script = f'Stop-Job -Job (Get-Job -Id {job_id})'
-            logger.debug(f'_stop_active_job: Running command: {stop_script}')
             self._run_ps_command(stop_script)
-            logger.debug('_stop_active_job: Stop-Job command finished.')
 
             # Allow process time to potentially print shutdown messages
-            logger.debug(f'_stop_active_job: Waiting {0.5}s after Stop-Job...')
             time.sleep(0.5)
-            logger.debug('_stop_active_job: Wait finished.')
 
-            # Get final output and errors AFTER waiting - call only ONCE without -Keep
-            logger.debug(
-                '_stop_active_job: Calling _receive_job_output(keep=False) for final output.'
-            )
-            final_output, final_errors = self._receive_job_output(
-                job, keep=False
-            )  # Consume the rest
-            logger.debug(
-                f"_stop_active_job: Final output received: '{final_output}', errors: {final_errors}"
-            )
+            # Get final output and errors
+            final_output, final_errors = self._receive_job_output(job, keep=False)
 
             combined_output = final_output
             combined_errors = final_errors
 
             # Check job state after stopping
             final_job = self._get_job_object(job_id)
-            logger.debug(
-                f'_stop_active_job: Checking final job state (Job Object: {final_job})'
-            )
-            final_state = (
-                final_job.JobStateInfo.State if final_job else JobState.Failed
-            )  # Assume failed if obj not found
+            final_state = final_job.JobStateInfo.State if final_job else JobState.Failed
 
             logger.info(f'Job {job_id} final state after stop attempt: {final_state}')
 
-            # Clean up the job from PowerShell's repository
+            # Clean up the job
             remove_script = f'Remove-Job -Job (Get-Job -Id {job_id})'
-            logger.debug(f'_stop_active_job: Running command: {remove_script}')
             self._run_ps_command(remove_script)
-            logger.debug('_stop_active_job: Remove-Job command finished.')
 
             # Clear the active job reference
             self.active_job = None
@@ -448,20 +360,18 @@ class WindowsPowershellSession:
                 0 if final_state in [JobState.Stopped, JobState.Completed] else 1
             )
 
-            # Use final content as built
             final_content = '\n'.join(output_builder).strip()
 
-            current_cwd = self._cwd  # Use the last known CWD from the session
-            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')  # Escape it
+            current_cwd = self._cwd
+            python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
             metadata = CmdOutputMetadata(
                 exit_code=exit_code, working_dir=python_safe_cwd
             )
-            # Align suffix with bash.py for completed command + CTRL key info
             metadata.suffix = f'\n[The command completed with exit code {exit_code}. CTRL+C was sent.]'
 
             return CmdOutputObservation(
-                content=final_content,  # Use original content
-                command='C-c',  # Original command was C-c
+                content=final_content,
+                command='C-c',
                 metadata=metadata,
             )
 
@@ -470,52 +380,37 @@ class WindowsPowershellSession:
     ) -> CmdOutputObservation | ErrorObservation:
         """
         Checks the active job for new output and status, waiting up to timeout_seconds.
-
-        Args:
-            timeout_seconds: The maximum time to wait for new output.
-
-        Returns:
-            CmdOutputObservation or ErrorObservation.
         """
         with self._job_lock:
             if not self.active_job:
-                # Consistent error message
                 return ErrorObservation(
                     content='ERROR: No previous running command to retrieve logs from.'
                 )
 
             job_id = self.active_job.Id  # type: ignore[unreachable]
             logger.info(
-                f'Checking active job ID: {job_id} for new output (empty command received, timeout={timeout_seconds}s).'
+                f'Checking active job ID: {job_id} for new output (timeout={timeout_seconds}s).'
             )
 
             start_time = time.monotonic()
             monitoring_loop_finished = False
-            accumulated_new_output_builder = []  # Collect only new output chunks here
-            accumulated_new_errors = []  # Collect only new error chunks here
+            accumulated_new_output_builder = []
+            accumulated_new_errors = []
             exit_code = -1  # Assume running
-            final_state = JobState.Running  # Initial assumption
-            latest_cumulative_output = (
-                self._last_job_output
-            )  # Start with previously known output from self
-            latest_cumulative_errors = list(
-                self._last_job_error
-            )  # Start with previously known errors from self
+            final_state = JobState.Running
+            latest_cumulative_output = self._last_job_output
+            latest_cumulative_errors = list(self._last_job_error)
 
             while not monitoring_loop_finished:
                 if not should_continue():
                     logger.warning('Shutdown signal received during job check.')
                     monitoring_loop_finished = True
-                    # Keep exit_code as -1 (still running from external perspective)
                     continue
 
                 elapsed_seconds = time.monotonic() - start_time
                 if elapsed_seconds > timeout_seconds:
-                    logger.warning(
-                        f'Job check timed out after {timeout_seconds}s. Job {job_id} might still be running.'
-                    )
+                    logger.warning(f'Job check timed out after {timeout_seconds}s.')
                     monitoring_loop_finished = True
-                    # Keep exit_code as -1
                     continue
 
                 current_job_obj = self._get_job_object(job_id)
@@ -525,43 +420,36 @@ class WindowsPowershellSession:
                     monitoring_loop_finished = True
                     exit_code = 1
                     final_state = JobState.Failed
-                    # If the job object is gone, we can't interact with it further.
-                    # Clear the active job reference in the session state.
                     if self.active_job and self.active_job.Id == job_id:
                         self.active_job = None
                     continue
 
-                # Poll output (keep=True) -> Returns CUMULATIVE output/errors
+                # Poll output with keep=True (returns cumulative output/errors)
                 polled_cumulative_output, polled_cumulative_errors = (
                     self._receive_job_output(current_job_obj, keep=True)
                 )
 
-                # --- Detect *new* output/errors since last poll ---
+                # Detect new output since last poll
                 new_output_detected = ''
                 if polled_cumulative_output != latest_cumulative_output:
                     if polled_cumulative_output.startswith(latest_cumulative_output):
                         new_output_detected = polled_cumulative_output[
                             len(latest_cumulative_output) :
                         ]
-                    else:  # Output changed completely? Treat whole chunk as new for safety
+                    else:
                         logger.warning(
-                            f"Job {job_id} check: Cumulative output changed unexpectedly. Previous: '{latest_cumulative_output}', Current: '{polled_cumulative_output}'"
+                            f'Job {job_id} check: Cumulative output changed unexpectedly'
                         )
                         new_output_detected = polled_cumulative_output.removeprefix(
                             self._last_job_output
                         )
 
-                    if (
-                        new_output_detected.strip()
-                    ):  # Only append if there's actual content
+                    if new_output_detected.strip():
                         accumulated_new_output_builder.append(
                             new_output_detected.strip()
                         )
-                        logger.debug(
-                            f"Job {job_id} check: Found new output: '{new_output_detected.strip()}'"
-                        )
 
-                # --- Detect *new* errors ---
+                # Detect new errors
                 latest_cumulative_errors_set = set(latest_cumulative_errors)
                 new_errors_detected = [
                     e
@@ -570,13 +458,9 @@ class WindowsPowershellSession:
                 ]
                 if new_errors_detected:
                     accumulated_new_errors.extend(new_errors_detected)
-                    logger.debug(
-                        f'Job {job_id} check: Found new errors: {new_errors_detected}'
-                    )
+
                 latest_cumulative_output = polled_cumulative_output
-                latest_cumulative_errors = (
-                    polled_cumulative_errors  # Store the full list
-                )
+                latest_cumulative_errors = polled_cumulative_errors
 
                 # Check job state
                 current_state = current_job_obj.JobStateInfo.State
@@ -590,34 +474,30 @@ class WindowsPowershellSession:
 
                 time.sleep(0.1)  # Prevent busy-waiting
 
-            # --- Loop finished, construct result ---
+            # Process results after loop finished
             is_finished = final_state not in [JobState.Running, JobState.NotStarted]
-            final_content = '\n'.join(
-                accumulated_new_output_builder
-            ).strip()  # Use accumulated *new* output chunks
-            final_errors = list(accumulated_new_errors)  # Use accumulated *new* errors
+            final_content = '\n'.join(accumulated_new_output_builder).strip()
+            final_errors = list(accumulated_new_errors)
 
             if is_finished:
                 logger.info(f'Job {job_id} has finished. Collecting final output.')
                 final_job_obj = self._get_job_object(job_id)
                 if final_job_obj:
-                    # One final receive, consuming the rest (keep=False)
+                    # Final receive with keep=False to consume remaining output
                     final_cumulative_output, final_cumulative_errors = (
                         self._receive_job_output(final_job_obj, keep=False)
                     )
 
-                    # Check if this final chunk contains anything not yet seen relative to last poll
+                    # Check for new output in final chunk
                     final_new_output_chunk = ''
                     if final_cumulative_output.startswith(latest_cumulative_output):
                         final_new_output_chunk = final_cumulative_output[
                             len(latest_cumulative_output) :
                         ]
-                    elif (
-                        final_cumulative_output
-                    ):  # Treat as all new if prefix doesn't match
+                    elif final_cumulative_output:
                         final_new_output_chunk = final_cumulative_output.removeprefix(
                             self._last_job_output
-                        )  # Relative to absolute last
+                        )
 
                     if final_new_output_chunk.strip():
                         final_content = '\n'.join(
@@ -626,9 +506,8 @@ class WindowsPowershellSession:
                             )
                         )
 
-                    latest_cumulative_errors_set = set(
-                        latest_cumulative_errors
-                    )  # Use errors from *last poll*
+                    # Check for new errors in final chunk
+                    latest_cumulative_errors_set = set(latest_cumulative_errors)
                     new_final_errors = [
                         e
                         for e in final_cumulative_errors
@@ -637,67 +516,51 @@ class WindowsPowershellSession:
                     if new_final_errors:
                         final_errors.extend(new_final_errors)
 
-                    # Determine final exit code based on state
+                    # Determine exit code based on state
                     exit_code = 0 if final_state == JobState.Completed else 1
 
-                    # Clean up job (only if we successfully got the final object)
+                    # Clean up job
                     remove_script = f'Remove-Job -Job (Get-Job -Id {job_id})'
                     self._run_ps_command(remove_script)
                     if self.active_job and self.active_job.Id == job_id:
                         self.active_job = None
                     self._last_job_output = ''
                     self._last_job_error = []
-                    logger.info(f'Cleaned up finished job {job_id} during check.')
                 else:
-                    logger.warning(
-                        f'Could not get final job object {job_id} to clear output buffer after finish detected.'
-                    )
-                    exit_code = 1  # Assume error if object gone
-                    # Ensure active_job and timeout flag are cleared even if final object retrieval failed
+                    logger.warning(f'Could not get final job object {job_id}')
+                    exit_code = 1
                     if self.active_job and self.active_job.Id == job_id:
                         self.active_job = None
-                    # --- Reset persistent state (even if final object retrieval failed) ---
                     self._last_job_output = ''
                     self._last_job_error = []
-            else:  # Timeout occurred during check or shutdown requested
-                # --- UPDATE persistent state ---
-                # We return only the *new* content accumulated during this check,
-                # but update the persistent state with the latest *cumulative* values seen.
+            else:
+                # Update persistent state with latest cumulative values
                 self._last_job_output = latest_cumulative_output
-                self._last_job_error = list(
-                    set(latest_cumulative_errors)
-                )  # Store unique errors
-                logger.debug(
-                    f"Updating session state: _last_job_output='{self._last_job_output}', _last_job_error={self._last_job_error}"
-                )
+                self._last_job_error = list(set(latest_cumulative_errors))
 
             # Append errors to final content
-            if final_errors:  # Use the calculated final *new* errors
+            if final_errors:
                 error_stream_text = '\n'.join(final_errors)
                 if final_content:
                     final_content += f'\n[ERROR STREAM]\n{error_stream_text}'
                 else:
                     final_content = f'[ERROR STREAM]\n{error_stream_text}'
-                # Ensure exit code is non-zero if errors occurred, unless job explicitly completed successfully
+                # Ensure exit code is non-zero if errors occurred
                 if exit_code == 0 and final_state != JobState.Completed:
-                    logger.warning(
-                        f'Job {job_id} check: Errors detected in stream but final state was {final_state}. Forcing exit_code to 1.'
-                    )
                     exit_code = 1
 
-            current_cwd = self._cwd  # Use the last known CWD from the session
+            current_cwd = self._cwd
             python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
             metadata = CmdOutputMetadata(
                 exit_code=exit_code, working_dir=python_safe_cwd
             )
-
             metadata.prefix = '[Below is the output of the previous command.]\n'
 
             if is_finished:
                 metadata.suffix = (
                     f'\n[The command completed with exit code {exit_code}.]'
                 )
-            else:  # Timeout occurred during check or shutdown requested
+            else:
                 metadata.suffix = (
                     f'\n[The command timed out after {timeout_seconds} seconds. '
                     "You may wait longer to see additional output by sending empty command '', "
@@ -706,63 +569,10 @@ class WindowsPowershellSession:
                 )
 
             return CmdOutputObservation(
-                content=final_content,  # Use accumulated new content
-                command='',  # Original command was ""
+                content=final_content,
+                command='',
                 metadata=metadata,
             )
-
-    def _handle_nochange_timeout_command(
-        self, command: str, job_id: int
-    ) -> CmdOutputObservation:
-        """Handles the case when a job has no new output for a specified timeout period."""
-        logger.info(
-            f'Job {job_id} has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds.'
-        )
-
-        # Get the current job object
-        current_job = self._get_job_object(job_id)
-
-        # Get current cumulative output without consuming it
-        cumulative_output, cumulative_errors = (
-            self._receive_job_output(current_job, keep=True)
-            if current_job
-            else ('', [])
-        )
-
-        # --- Calculate new output/errors based on persistent state ---
-        new_output = cumulative_output.removeprefix(self._last_job_output)
-        last_error_set = set(self._last_job_error)
-        new_errors = [e for e in cumulative_errors if e not in last_error_set]
-
-        # Construct the output with only new content
-        output_builder = [new_output] if new_output else []
-        if new_errors:
-            output_builder.append('\\n[ERROR STREAM]')
-            output_builder.extend(new_errors)
-
-        # --- UPDATE persistent state ---
-        self._last_job_output = cumulative_output
-        self._last_job_error = list(set(cumulative_errors))
-
-        # Use the cached working directory
-        current_cwd = self._cwd
-        python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
-        metadata = CmdOutputMetadata(
-            exit_code=-1, working_dir=python_safe_cwd
-        )  # Still running
-        metadata.prefix = '[Below is the output of the previous command.]\\n'
-        metadata.suffix = (
-            f'\\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '  # Interaction via is_input not fully supported, but keep message consistent
-            'or send keys to interrupt/kill the command.]'
-        )
-
-        return CmdOutputObservation(
-            content='\\n'.join(output_builder).strip(),
-            command=command,  # Original command that led to this state
-            metadata=metadata,
-        )
 
     def _get_current_cwd(self) -> str:
         """Gets the current working directory from the runspace."""
