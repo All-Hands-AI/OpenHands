@@ -1103,8 +1103,7 @@ class WindowsPowershellSession:
                         remove_script = f'Remove-Job -Job (Get-Job -Id {job.Id})'
                         self._run_ps_command(remove_script)
                         with self._job_lock:
-                            if self.active_job and self.active_job.Id == job.Id:
-                                self.active_job = None
+                            self.active_job = None
                 except AttributeError as e:
                     logger.error(
                         f'Get-Job returned an object without expected properties on BaseObject: {e}'

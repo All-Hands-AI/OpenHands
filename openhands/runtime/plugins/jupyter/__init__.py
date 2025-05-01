@@ -4,6 +4,7 @@ import platform
 import subprocess
 import time
 from dataclasses import dataclass
+from typing import Union
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action, IPythonRunCellAction
@@ -23,7 +24,7 @@ class JupyterPlugin(Plugin):
     name: str = 'jupyter'
     kernel_gateway_port: int
     kernel_id: str
-    gateway_process: asyncio.subprocess.Process
+    gateway_process: Union[asyncio.subprocess.Process, subprocess.Popen]
     python_interpreter_path: str
 
     async def initialize(
