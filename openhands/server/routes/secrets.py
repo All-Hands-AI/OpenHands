@@ -4,7 +4,7 @@ from pydantic import SecretStr
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.settings import POSTProviderModel
-from openhands.server.user_auth import get_user_secret_store
+from openhands.server.user_auth import get_secrets_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.secret_store import SecretsStore
@@ -45,39 +45,32 @@ async def check_provider_tokens(provider_info: POSTProviderModel) -> str:
 @app.post('/set_tokens', response_model=dict[str, str])
 async def store_provider_tokens(
     provider_info: POSTProviderModel, 
-    settings_store: SettingsStore,
-    existing_user_secrets: UserSecrets = Depends(get_user_secret_store)
+    secrets_store: SecretsStore = Depends(get_secrets_store)
 ):
-    existing_settings = await settings_store.load()
+    user_secrets = await secrets_store.load()
 
-
-
-    if existing_user_secrets:
+    if user_secrets:
         if provider_info.provider_tokens:
-            if existing_settings.secrets_store:
-                existing_providers = [
-                    provider.value
-                    for provider in existing_settings.secrets_store.provider_tokens
-                ]
+            existing_providers = [
+                provider
+                for provider in user_secrets.provider_tokens
+            ]
 
-                # Merge incoming settings store with the existing one
-                for provider, token_value in list(existing_user_secrets.provider_tokens.items()):
-                    if provider in existing_providers and not token_value:
-                        provider_type = ProviderType(provider)
-                        existing_token = (
-                            existing_settings.secrets_store.provider_tokens.get(
-                                provider_type
-                            )
+            # Merge incoming settings store with the existing one
+            for provider, token_value in list(user_secrets.provider_tokens.items()):
+                if provider in existing_providers and not token_value:
+                    provider_type = ProviderType(provider)
+                    existing_token = (
+                        user_secrets.provider_tokens.get(
+                            provider_type
                         )
-                        if existing_token and existing_token.token:
-                            settings.provider_tokens[provider] = (
-                                existing_token.token.get_secret_value()
-                            )
+                    )
+                    if existing_token and existing_token.token:
+                        user_secrets.provider_tokens[provider] = (
+                            existing_token.token.get_secret_value()
+                        )
         else:  # nothing passed in means keep current settings
-            provider_tokens = existing_settings.secrets_store.provider_tokens
-            existing_user_secrets.provider_tokens = {
-                provider.value: data.token.get_secret_value() if data.token else None
-                for provider, data in provider_tokens.items()
-            }
+            pass
+        
 
-    return settings
+

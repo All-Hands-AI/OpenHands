@@ -18,7 +18,7 @@ from openhands.server.shared import config
 from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
-    get_user_secret_store,
+    get_secrets_store,
     get_user_settings,
     get_user_settings_store,
 )
@@ -33,7 +33,7 @@ app = APIRouter(prefix='/api')
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
-    secrets_store: SecretsStore = Depends(get_user_secret_store)
+    secrets_store: SecretsStore = Depends(get_secrets_store)
 ) -> GETSettingsModel | JSONResponse:
     
 

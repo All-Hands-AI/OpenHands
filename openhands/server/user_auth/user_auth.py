@@ -9,6 +9,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
 from openhands.server.shared import server_config
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.settings.secret_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
@@ -45,10 +46,14 @@ class UserAuth(ABC):
         settings = await settings_store.load()
         self._settings = settings
         return settings
-    
+
     @abstractmethod
-    async def get_user_secret_store(self) -> UserSecrets | None:
-        """Get the user's secret store"""
+    async def get_secrets_store(self) -> SecretsStore:
+        """Get secrets store"""
+
+    @abstractmethod
+    async def get_user_secrets(self) -> UserSecrets | None:
+        """Get the user's secrets"""
 
     @classmethod
     @abstractmethod
