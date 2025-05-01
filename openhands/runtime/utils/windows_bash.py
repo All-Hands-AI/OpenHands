@@ -136,10 +136,6 @@ class WindowsPowershellSession:
 
         # Create and open the persistent runspace
         try:
-            # Consider InitialSessionState for more control (e.g., execution policy)
-            # iss = InitialSessionState.CreateDefault()
-            # iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted # Requires importing Microsoft.PowerShell namespace
-            # self.runspace = RunspaceFactory.CreateRunspace(iss)
             self.runspace = RunspaceFactory.CreateRunspace()
             self.runspace.Open()
             # Set initial working directory within the runspace
@@ -166,8 +162,6 @@ class WindowsPowershellSession:
                 self._confirm_cwd()
             else:
                 logger.debug(f'Successfully set initial runspace CWD to {self._cwd}')
-                # Optional: Confirm CWD even on success for robustness
-                # self._confirm_cwd()
         except Exception as e:
             logger.error(f'Exception setting initial CWD: {e}')
             logger.error(traceback.format_exc())
@@ -260,7 +254,7 @@ class WindowsPowershellSession:
         """Receives output and errors from a job."""
         if not job:
             return '', []
-    
+
         output_parts = []
         error_parts = []
 
@@ -984,14 +978,20 @@ class WindowsPowershellSession:
                             # Get current working directory after CWD command
                             current_cwd = self._get_current_cwd()
                             python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
-                            
+
                             # Convert results to string output if any
-                            output = '\n'.join([str(r) for r in ps_results]) if ps_results else ''
-                            
+                            output = (
+                                '\n'.join([str(r) for r in ps_results])
+                                if ps_results
+                                else ''
+                            )
+
                             return CmdOutputObservation(
                                 content=output,
                                 command=command,
-                                metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                                metadata=CmdOutputMetadata(
+                                    exit_code=0, working_dir=python_safe_cwd
+                                ),
                             )
                 # Check direct CommandAst
                 elif isinstance(statement, CommandAst):
@@ -1010,14 +1010,20 @@ class WindowsPowershellSession:
                         # Get current working directory after CWD command
                         current_cwd = self._get_current_cwd()
                         python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
-                        
+
                         # Convert results to string output if any
-                        output = '\n'.join([str(r) for r in ps_results]) if ps_results else ''
-                        
+                        output = (
+                            '\n'.join([str(r) for r in ps_results])
+                            if ps_results
+                            else ''
+                        )
+
                         return CmdOutputObservation(
                             content=output,
                             command=command,
-                            metadata=CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
+                            metadata=CmdOutputMetadata(
+                                exit_code=0, working_dir=python_safe_cwd
+                            ),
                         )
             except ImportError as imp_err:
                 logger.error(
@@ -1080,16 +1086,16 @@ class WindowsPowershellSession:
                     job_state_test = underlying_job.JobStateInfo.State
                     job = underlying_job
                     job_id = job.Id
-                    
+
                     # For background commands, don't track the job in the session
                     if not run_in_background:
                         with self._job_lock:
                             self.active_job = job
-                    
+
                     logger.info(
                         f'Job retrieved successfully. Job ID: {job.Id}, State: {job_state_test}, Background: {run_in_background}'
                     )
-                    
+
                     if job_state_test == JobState.Failed:
                         logger.error(f'Job {job.Id} failed immediately after starting.')
                         output_chunk, error_chunk = self._receive_job_output(
@@ -1103,8 +1109,7 @@ class WindowsPowershellSession:
                         remove_script = f'Remove-Job -Job (Get-Job -Id {job.Id})'
                         self._run_ps_command(remove_script)
                         with self._job_lock:
-                            if self.active_job and self.active_job.Id == job.Id:
-                                self.active_job = None
+                            self.active_job = None
                 except AttributeError as e:
                     logger.error(
                         f'Get-Job returned an object without expected properties on BaseObject: {e}'
@@ -1146,9 +1151,9 @@ class WindowsPowershellSession:
             metadata = CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
             metadata.suffix = f'\n[Command started as background job {job_id}.]'
             return CmdOutputObservation(
-                content=f'[Started background job {job_id}]',  
+                content=f'[Started background job {job_id}]',
                 command=f'{command} &',
-                metadata=metadata
+                metadata=metadata,
             )
 
         # --- Monitor the Job ---
