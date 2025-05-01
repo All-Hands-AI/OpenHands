@@ -25,7 +25,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from mcpm.router.router import MCPRouter
+from mcpm import MCPRouter, RouterConfig
 from mcpm.router.router import logger as mcp_router_logger
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -597,7 +597,11 @@ if __name__ == '__main__':
         # Initialize and mount MCP Router
         logger.info('Initializing MCP Router...')
         mcp_router = MCPRouter(
-            profile_path=MCP_ROUTER_PROFILE_PATH, api_key=SESSION_API_KEY
+            profile_path=MCP_ROUTER_PROFILE_PATH,
+            router_config=RouterConfig(
+                api_key=SESSION_API_KEY,
+                auth_enabled=bool(SESSION_API_KEY),
+            ),
         )
         allowed_origins = ['*']
         sse_app = await mcp_router.get_sse_server_app(
