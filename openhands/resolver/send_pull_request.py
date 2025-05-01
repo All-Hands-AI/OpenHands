@@ -158,13 +158,16 @@ def initialize_repo(
     return dest_dir
 
 
-def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
+def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
     """Make a commit with the changes to the repository.
 
     Args:
         repo_dir: The directory containing the repository
         issue: The issue to fix
         issue_type: The type of the issue
+
+    Returns:
+        bool: True if changes were committed, False if there were no changes to commit
     """
     # Check if git username is set
     result = subprocess.run(
@@ -201,12 +204,12 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         text=True,
     )
 
-    # If there are no changes, raise an error
+    # If there are no changes, log it and return False
     if not status_result.stdout.strip():
-        logger.error(
+        logger.info(
             f'No changes to commit for issue #{issue.number}. Skipping commit.'
         )
-        raise RuntimeError('ERROR: Openhands failed to make code changes.')
+        return False
 
     # Prepare the commit message
     commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
@@ -219,6 +222,8 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
     )
     if result.returncode != 0:
         raise RuntimeError(f'Failed to commit changes: {result}')
+
+    return True
 
 
 def send_pull_request(
@@ -518,7 +523,21 @@ def process_single_issue(
 
     apply_patch(patched_repo_dir, resolver_output.git_patch)
 
-    make_commit(patched_repo_dir, resolver_output.issue, issue_type)
+    has_changes = make_commit(patched_repo_dir, resolver_output.issue, issue_type)
+
+    # If there are no changes, we still want to post a comment with the result explanation
+    if not has_changes:
+        if issue_type == 'pr':
+            handler = ServiceContextIssue(
+                GithubIssueHandler(resolver_output.issue.owner, resolver_output.issue.repo, token, username, base_domain),
+                llm_config,
+            ) if platform == ProviderType.GITHUB else ServiceContextIssue(
+                GitlabIssueHandler(resolver_output.issue.owner, resolver_output.issue.repo, token, username, base_domain),
+                llm_config,
+            )
+            if resolver_output.result_explanation:
+                handler.send_comment_msg(resolver_output.issue.number, resolver_output.result_explanation)
+        return
 
     if issue_type == 'pr':
         update_existing_pull_request(
