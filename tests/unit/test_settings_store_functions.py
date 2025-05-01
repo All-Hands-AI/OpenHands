@@ -204,7 +204,7 @@ async def test_store_provider_tokens_update_existing():
 async def test_store_provider_tokens_keep_existing():
     """Test store_provider_tokens keeps existing tokens when empty string provided."""
     settings = POSTSettingsModel(
-        provider_tokens={'github': ''}  # Empty string should keep existing token
+        provider_tokens={'github': {'token': ''}}  # Empty string should keep existing token
     )
 
     # Mock the settings store
@@ -225,4 +225,4 @@ async def test_store_provider_tokens_keep_existing():
     result = await store_provider_tokens(settings, mock_store)
 
     # Should return settings with the existing token preserved
-    assert result.provider_tokens == {'github': 'existing-token'}
+    assert result.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'existing-token'

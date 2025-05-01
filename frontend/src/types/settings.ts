@@ -40,7 +40,7 @@ export type ApiSettings = {
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens: Record<Provider, ProviderToken>;
-  provider_tokens_set: Record<Provider, boolean>;
+  provider_tokens_set: Partial<Record<Provider, string | null>>;
 };
 
 export type PostSettings = Settings & {
