@@ -56,6 +56,10 @@ PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
+CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
+    CUSTOM_SECRETS_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class ProviderHandler:
