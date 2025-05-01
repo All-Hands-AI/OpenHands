@@ -1,6 +1,6 @@
 import { Tooltip } from "@heroui/react";
 import React, { ReactNode } from "react";
-import { NavLink } from "react-router";
+import { NavLink } from "react-router-dom";
 import { cn } from "#/utils/utils";
 
 export interface TooltipButtonProps {

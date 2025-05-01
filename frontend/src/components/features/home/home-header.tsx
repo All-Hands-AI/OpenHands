@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router";
+import { NavLink } from "react-router-dom";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
@@ -27,16 +27,19 @@ export function HomeHeader() {
 
       <div className="flex items-center justify-between">
         <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
-        <NavLink to="/" onClick={(e) => {
-          // If cmd/ctrl key is pressed, let the default behavior happen (open in new tab)
-          if (e.metaKey || e.ctrlKey) {
-            return; // Don't prevent default to allow browser to handle opening in new tab
-          }
-          
-          // Otherwise, call the createConversation function with the conversation_trigger
-          createConversation({ conversation_trigger: "gui" });
-          e.preventDefault();
-        }}>
+        <NavLink
+          to="/"
+          onClick={(e) => {
+            // If cmd/ctrl key is pressed, let the default behavior happen (open in new tab)
+            if (e.metaKey || e.ctrlKey) {
+              return; // Don't prevent default to allow browser to handle opening in new tab
+            }
+
+            // Otherwise, call the createConversation function with the conversation_trigger
+            createConversation({ conversation_trigger: "gui" });
+            e.preventDefault();
+          }}
+        >
           <BrandButton
             testId="header-launch-button"
             variant="primary"
