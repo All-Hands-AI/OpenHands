@@ -41,7 +41,7 @@ export function ExpandableMessage({
   action,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
-  const { t, i18n } = useTranslation();
+  const { t, i18n, ready: i18nReady } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
   const [details, setDetails] = useState(message);
   const [translationId, setTranslationId] = useState<string | undefined>(id);
@@ -53,6 +53,11 @@ export function ExpandableMessage({
   });
 
   useEffect(() => {
+    // Only process translations if i18n is ready
+    // This fixes an issue where OBSERVATION_MESSAGE$RECALL and other translations
+    // wouldn't display properly on first load because i18n resources weren't fully loaded yet
+    if (!i18nReady) return;
+
     // If we have a translation ID, process it
     if (id && i18n.exists(id)) {
       let processedObservation = observation;
@@ -94,7 +99,7 @@ export function ExpandableMessage({
       setDetails(message);
       setShowDetails(false);
     }
-  }, [id, message, observation, action, i18n.language]);
+  }, [id, message, observation, action, i18n.language, i18nReady]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -138,7 +143,7 @@ export function ExpandableMessage({
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {translationId && i18n.exists(translationId) ? (
+            {translationId && i18nReady && i18n.exists(translationId) ? (
               <Trans
                 i18nKey={translationId}
                 values={translationParams}
