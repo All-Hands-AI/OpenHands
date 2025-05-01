@@ -388,10 +388,8 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
-                # Escape backslashes in the path for Python string literal
-                python_safe_cwd = self.bash_session.cwd.replace('\\', '\\\\\\\\')
                 reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{python_safe_cwd}")'  # Use escaped path
+                    f'import os; os.chdir("{self.bash_session.cwd}")'
                 )
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
