@@ -10,8 +10,8 @@ from conftest import (
 
 from openhands.microagent.microagent import (
     BaseMicroagent,
-    RepoMicroagent,
     KnowledgeMicroagent,
+    RepoMicroagent,
     TaskMicroagent,
 )
 from openhands.microagent.types import MicroagentType
