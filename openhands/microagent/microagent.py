@@ -123,8 +123,8 @@ class KnowledgeMicroagent(BaseMicroagent):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroagentType.KNOWLEDGE:
-            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE')
+        if self.type not in [MicroagentType.KNOWLEDGE, MicroagentType.TASK]:
+            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE or TASK')
 
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
