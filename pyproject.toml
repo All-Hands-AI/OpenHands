@@ -80,7 +80,6 @@ anyio = "4.9.0"
 pythonnet = "*"
 torch = "^2.2.0"
 
-
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.7"
 mypy = "1.15.0"

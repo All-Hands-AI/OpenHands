@@ -36,7 +36,14 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
-  plugins: [],
+  plugins: [
+    [
+      require.resolve('docusaurus-lunr-search'),
+      {
+        languages: ['en', 'zh', 'fr', 'ja', 'pt']
+      }
+    ]
+  ],
   presets: [
     [
       'classic',
@@ -83,6 +90,10 @@ const config: Config = {
         },
         {
           type: 'localeDropdown',
+          position: 'left',
+        },
+        {
+          type: 'search',
           position: 'left',
         },
         {
