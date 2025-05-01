@@ -93,8 +93,10 @@ describe("HomeScreen", () => {
 
   it("should have responsive layout for mobile and desktop screens", async () => {
     renderHomeScreen();
-    
-    const mainContainer = screen.getByTestId("home-screen").querySelector("main");
+
+    const mainContainer = screen
+      .getByTestId("home-screen")
+      .querySelector("main");
     expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
   });
 
