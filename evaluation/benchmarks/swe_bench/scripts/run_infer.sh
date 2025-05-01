@@ -11,9 +11,8 @@ MAX_ITER=$5
 NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
-CONDENSER_CONFIG=$9
-N_RUNS=${10}
-MODE=${11}
+N_RUNS=$9
+MODE=${10}
 
 
 if [ -z "$NUM_WORKERS" ]; then
@@ -53,10 +52,10 @@ if [ -z "$MODE" ]; then
   echo "MODE not specified, use default $MODE"
 fi
 
-if [ -n "$CONDENSER_CONFIG" ]; then
-  echo "Using Condenser Config: $CONDENSER_CONFIG"
+if [ -n "$EVAL_CONDENSER" ]; then
+  echo "Using Condenser Config: $EVAL_CONDENSER"
 else
-  echo "No Condenser Config provided, use default (NoOpCondenser)."
+  echo "No Condenser Config provided via EVAL_CONDENSER, use default (NoOpCondenser)."
 fi
 
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
@@ -73,7 +72,7 @@ echo "MAX_ITER: $MAX_ITER"
 echo "NUM_WORKERS: $NUM_WORKERS"
 echo "COMMIT_HASH: $COMMIT_HASH"
 echo "MODE: $MODE"
-echo "CONDENSER_CONFIG: $CONDENSER_CONFIG"
+echo "EVAL_CONDENSER: $EVAL_CONDENSER"
 
 # Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
@@ -98,8 +97,8 @@ if [ "$MODE" != "swe" ]; then
   EVAL_NOTE="${EVAL_NOTE}-${MODE}"
 fi
 # Add condenser config to eval note if provided
-if [ -n "$CONDENSER_CONFIG" ]; then
-  EVAL_NOTE="${EVAL_NOTE}-${CONDENSER_CONFIG}"
+if [ -n "$EVAL_CONDENSER" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${EVAL_CONDENSER}"
 fi
 
 function run_eval() {
@@ -114,10 +113,7 @@ function run_eval() {
     --split $SPLIT \
     --mode $MODE"
 
-  # This will default to NoOpCondenserConfig if not provided
-  if [ -n "$CONDENSER_CONFIG" ]; then
-    COMMAND="$COMMAND --condenser-config $CONDENSER_CONFIG"
-  fi
+
 
   if [ -n "$EVAL_LIMIT" ]; then
     echo "EVAL_LIMIT: $EVAL_LIMIT"

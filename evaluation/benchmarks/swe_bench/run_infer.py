@@ -746,12 +746,7 @@ if __name__ == '__main__':
         choices=['swe', 'swt', 'swt-ci'],
         help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
-    parser.add_argument(
-        '--condenser-config',
-        type=str,
-        default=None,
-        help='Name of the condenser config to use, e.g., "summarizer_for_eval" for [condenser.summarizer_for_eval] section in config.toml',
-    )
+
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -788,17 +783,18 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    condenser_config = None
-    if args.condenser_config:
-        condenser_config = get_condenser_config_arg(args.condenser_config)
+    # Get condenser config from environment variable
+    condenser_name = os.environ.get('EVAL_CONDENSER')
+    if condenser_name:
+        condenser_config = get_condenser_config_arg(condenser_name)
         if condenser_config is None:
             raise ValueError(
-                f'Could not find Condenser config: --condenser-config {args.condenser_config}'
+                f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
             )
     else:
-        # If no specific condenser config is provided via args, default to NoOpCondenser
+        # If no specific condenser config is provided via env var, default to NoOpCondenser
         condenser_config = NoOpCondenserConfig()
-        logger.debug('No Condenser config provided via --condenser-config, using NoOpCondenser.')
+        logger.debug('No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.')
 
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
