@@ -24,6 +24,7 @@ export const useCreateConversation = () => {
       conversation_trigger: ConversationTrigger;
       q?: string;
       selectedRepository?: GitRepository | null;
+
       suggested_task?: SuggestedTask;
     }) => {
       if (variables.q) dispatch(setInitialPrompt(variables.q));
@@ -32,6 +33,9 @@ export const useCreateConversation = () => {
         variables.conversation_trigger,
         variables.selectedRepository
           ? variables.selectedRepository.full_name
+          : undefined,
+        variables.selectedRepository
+          ? variables.selectedRepository.git_provider
           : undefined,
         variables.q,
         files,

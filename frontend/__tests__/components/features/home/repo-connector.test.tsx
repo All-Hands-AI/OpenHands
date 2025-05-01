@@ -166,6 +166,7 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
       "gui",
       "rbren/polaris",
+      "github",
       undefined,
       [],
       undefined,

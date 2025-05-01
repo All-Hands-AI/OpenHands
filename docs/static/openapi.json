@@ -860,7 +860,13 @@
                 "properties": {
                   "repository": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Full name of the repository (e.g., owner/repo)"
+                  },
+                  "git_provider": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "The Git provider if multiple are configured (github or gitlab)"
                   },
                   "selected_branch": {
                     "type": "string",
