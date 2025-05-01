@@ -12,18 +12,7 @@ Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate
 
 MCP configuration is defined in the `[mcp]` section of your `config.toml` file.
 
-### Basic Configuration Example
-
-```toml
-[mcp]
-stdio_servers = [
-    {name="fetch", command="uvx", args=["mcp-server-fetch"]}
-]
-```
-
-This example configures a stdio-based MCP server named "fetch" that runs the command `uvx mcp-server-fetch`.
-
-### Full Configuration Options
+### Configuration Example
 
 ```toml
 [mcp]
