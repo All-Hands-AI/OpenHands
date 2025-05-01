@@ -219,7 +219,6 @@ class Memory:
             trigger = microagent.match_trigger(query)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
-
                 recalled_content.append(
                     MicroagentKnowledge(
                         name=microagent.name,
