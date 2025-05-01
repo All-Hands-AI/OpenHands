@@ -28,7 +28,9 @@ from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -80,7 +82,10 @@ def test_event_stream():
 
 @pytest.fixture
 def mock_runtime() -> Runtime:
-    from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
+    from openhands.runtime.impl.action_execution.action_execution_client import (
+        ActionExecutionClient,
+    )
+
     runtime = MagicMock(
         spec=ActionExecutionClient,
         event_stream=test_event_stream,

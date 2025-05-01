@@ -18,11 +18,12 @@ from openhands.events.observation.agent import (
     RecallType,
 )
 from openhands.events.stream import EventStream
-from openhands.runtime.impl.action_execution.action_execution_client import ActionExecutionClient
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.storage.memory import InMemoryFileStore
 
 

@@ -26,7 +26,7 @@ async def test_sse_connection_timeout():
         # Create a list of server URLs to test
         servers = [
             MCPSSEServerConfig(url='http://server1:8080'),
-            MCPSSEServerConfig(url='http://server2:8080')
+            MCPSSEServerConfig(url='http://server2:8080'),
         ]
 
         # Call create_mcp_clients with the server URLs
