@@ -8,7 +8,6 @@ from fastapi.responses import JSONResponse
 
 from openhands.integrations.service_types import (
     ProviderType,
-    Repository,
     SuggestedTask,
     TaskType,
 )
@@ -478,18 +477,10 @@ async def test_new_conversation_with_bearer_auth():
             # Set up the mock to return a conversation ID
             mock_create_conversation.return_value = 'test_conversation_id'
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             # Create the request object
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,  # This should be overridden
-                selected_repository=test_repo,
+                selected_repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
             )

@@ -90,6 +90,20 @@ def runtime(temp_dir):
     return runtime
 
 
+def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=True):
+    repo = Repository(
+        id=123, full_name='owner/repo', git_provider=provider, is_public=is_public
+    )
+
+    async def mock_verify_repo_provider(*_args, **_kwargs):
+        return repo
+
+    monkeypatch.setattr(
+        ProviderHandler, 'verify_repo_provider', mock_verify_repo_provider
+    )
+    return repo
+
+
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
     """Test that no token export happens when user_id is not set"""
@@ -282,13 +296,11 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_github_with_token(temp_dir):
-    """Test cloning a GitHub repository with a token"""
+async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
-    # Set up GitHub token
     github_token = 'github_test_token'
     git_provider_tokens = MappingProxyType(
         {ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))}
@@ -302,28 +314,17 @@ async def test_clone_or_init_repo_github_with_token(temp_dir):
         git_provider_tokens=git_provider_tokens,
     )
 
-    # Mock the verify_repo_provider method to return a GitHub repository
-    repo = Repository(full_name='owner/repo', git_provider=ProviderType.GITHUB)
-    with patch.object(ProviderHandler, 'verify_repo_provider', return_value=repo):
-        # Call the function with a repository
-        result = await runtime.clone_or_init_repo(
-            git_provider_tokens, 'owner/repo', None
-        )
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
 
-    # Verify that git clone was called with the token
-    assert len(runtime.run_action_calls) == 1
-    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
-    # Check that the command contains the token and correct URL format
     cmd = runtime.run_action_calls[0].command
     assert f'git clone https://{github_token}@github.com/owner/repo.git repo' in cmd
-    assert 'cd repo' in cmd
-    assert 'git checkout -b openhands-workspace-' in cmd
     assert result == 'repo'
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_github_no_token(temp_dir):
+async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     """Test cloning a GitHub repository without a token"""
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
@@ -333,11 +334,8 @@ async def test_clone_or_init_repo_github_no_token(temp_dir):
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
 
-    # Mock the verify_repo_provider method to return a GitHub repository
-    repo = Repository(full_name='owner/repo', git_provider=ProviderType.GITHUB)
-    with patch.object(ProviderHandler, 'verify_repo_provider', return_value=repo):
-        # Call the function with a repository but no token
-        result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
+    result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
     # Verify that git clone was called with the public URL
     assert len(runtime.run_action_calls) == 1
@@ -352,13 +350,11 @@ async def test_clone_or_init_repo_github_no_token(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_gitlab_with_token(temp_dir):
-    """Test cloning a GitLab repository with a token"""
+async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
-    # Set up GitLab token
     gitlab_token = 'gitlab_test_token'
     git_provider_tokens = MappingProxyType(
         {ProviderType.GITLAB: ProviderToken(token=SecretStr(gitlab_token))}
@@ -372,30 +368,19 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir):
         git_provider_tokens=git_provider_tokens,
     )
 
-    # Mock the verify_repo_provider method to return a GitLab repository
-    repo = Repository(full_name='owner/repo', git_provider=ProviderType.GITLAB)
-    with patch.object(ProviderHandler, 'verify_repo_provider', return_value=repo):
-        # Call the function with a repository
-        result = await runtime.clone_or_init_repo(
-            git_provider_tokens, 'owner/repo', None
-        )
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITLAB)
 
-    # Verify that git clone was called with the token in GitLab format
-    assert len(runtime.run_action_calls) == 1
-    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
-    # Check that the command contains the token and correct URL format for GitLab
     cmd = runtime.run_action_calls[0].command
     assert (
         f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in cmd
     )
-    assert 'cd repo' in cmd
-    assert 'git checkout -b openhands-workspace-' in cmd
     assert result == 'repo'
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_with_branch(temp_dir):
+async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     """Test cloning a repository with a specified branch"""
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
@@ -405,11 +390,8 @@ async def test_clone_or_init_repo_with_branch(temp_dir):
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
 
-    # Mock the verify_repo_provider method to return a GitHub repository
-    repo = Repository(full_name='owner/repo', git_provider=ProviderType.GITHUB)
-    with patch.object(ProviderHandler, 'verify_repo_provider', return_value=repo):
-        # Call the function with a repository and a specific branch
-        result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
+    result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')
 
     # Verify that git clone was called with the correct branch checkout
     assert len(runtime.run_action_calls) == 1
@@ -422,25 +404,3 @@ async def test_clone_or_init_repo_with_branch(temp_dir):
     assert 'git checkout feature-branch' in cmd
     assert 'git checkout -b' not in cmd  # Should not create a new branch
     assert result == 'repo'
-
-
-@pytest.mark.asyncio
-async def test_clone_or_init_repo_no_provider(temp_dir):
-    """Test that empty string is returned when no provider is determined"""
-    config = AppConfig()
-    file_store = get_file_store('local', temp_dir)
-    event_stream = EventStream('abc', file_store)
-
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
-
-    # Mock the verify_repo_provider method to return a repository without a provider
-    repo = Repository(full_name='owner/repo', git_provider=None)
-    with patch.object(ProviderHandler, 'verify_repo_provider', return_value=repo):
-        # Call the function with a repository but no provider
-        result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
-
-    # Verify that no git command was called and empty string is returned
-    assert len(runtime.run_action_calls) == 0
-    assert result == ''

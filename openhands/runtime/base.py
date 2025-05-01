@@ -47,7 +47,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
-from openhands.integrations.service_types import AuthenticationError, Repository
+from openhands.integrations.service_types import AuthenticationError
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -315,7 +315,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
-        repository = Repository(full_name='')
+        repository = None
         if selected_repository:  # Determine provider from repo name
             try:
                 provider_handler = ProviderHandler(
@@ -347,7 +347,7 @@ class Runtime(FileEditRuntimeMixin):
             return ''
 
         # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
-        provider = repository.git_provider if repository.git_provider else None
+        provider = repository.git_provider if repository else None
         if not provider:
             return ''
 
