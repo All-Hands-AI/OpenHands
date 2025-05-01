@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
-from openhands.server.settings import POSTProviderModel
-from openhands.server.user_auth import get_secrets_store
+from openhands.server.settings import GETSettingsCustomSecrets, POSTProviderModel, POSTSettingsCustomSecrets
+from openhands.server.user_auth import get_secrets_store, get_user_settings, get_user_settings_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.secret_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
-
+from openhands.core.logger import openhands_logger as logger
 
 app = APIRouter(prefix='/api')
 
@@ -73,4 +74,194 @@ async def store_provider_tokens(
             pass
         
 
+
+@app.post('/unset-settings-tokens', response_model=dict[str, str])
+async def unset_settings_tokens(
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
+        existing_settings = await settings_store.load()
+        if existing_settings:
+            settings = existing_settings.model_copy(
+                update={'secrets_store': UserSecrets()}
+            )
+            await settings_store.store(settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+
+    except Exception as e:
+        logger.warning(f'Something went wrong unsetting tokens: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong unsetting tokens'},
+        )
+
+
+
+
+
+@app.get('/secrets', response_model=GETSettingsCustomSecrets)
+async def load_custom_secrets_names(
+    settings: Settings | None = Depends(get_user_settings),
+) -> GETSettingsCustomSecrets | JSONResponse:
+    try:
+        if not settings:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+
+        custom_secrets = {}
+        if settings.secrets_store.custom_secrets:
+            for secret_name, secret_value in settings.secrets_store.custom_secrets.items():
+                custom_secrets[secret_name] = secret_value.description
+
+        secret_names = GETSettingsCustomSecrets(custom_secrets=custom_secrets)
+        return secret_names
+
+    except Exception as e:
+        logger.warning(f'Invalid token: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Invalid token'},
+        )
+
+
+@app.post('/secrets', response_model=dict[str, str])
+async def create_custom_secret(
+    incoming_secret: POSTSettingsCustomSecrets,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
+        existing_settings = await settings_store.load()
+        if existing_settings:
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
+
+            for secret_name, secret_value in incoming_secret.custom_secrets.items():
+                if secret_name in custom_secrets:
+                    return JSONResponse(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        content={'message': f'Secret {secret_name} already exists'},
+                    )
+            
+                custom_secrets[secret_name] = secret_value
+        
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            # Only update SecretStore in Settings
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Secret created successfully'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong creating secret: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong creating secret'},
+        )
+
+@app.put('/secrets/{secret_id}', response_model=dict[str, str])
+async def update_custom_secret(
+    secret_id: str, incoming_secret: POSTSettingsCustomSecrets, settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
+        existing_settings: Settings | None = await settings_store.load()
+        if existing_settings:
+            # Check if the secret to update exists
+            if secret_id not in existing_settings.secrets_store.custom_secrets:
+                return JSONResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    content={'error': f'Secret with ID {secret_id} not found'},
+                )
+
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
+            custom_secrets.pop(secret_id)
+
+            for secret_name, secret_value in incoming_secret.custom_secrets.items():
+                custom_secrets[secret_name] = secret_value
+
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            # Only update SecretStore in Settings
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            updated_settings = convert_to_settings(updated_settings)
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Secret updated successfully'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong updating secret: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong updating secret'},
+        )
+
+
+@app.delete('/secrets/{secret_id}')
+async def delete_custom_secret(
+    secret_id: str,
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> JSONResponse:
+    try:
+        existing_settings: Settings | None = await settings_store.load()
+        if existing_settings:
+            # Get existing custom secrets
+            custom_secrets = dict(existing_settings.secrets_store.custom_secrets)
+
+            # Check if the secret to delete exists
+            if secret_id not in custom_secrets:
+                return JSONResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    content={'error': f'Secret with ID {secret_id} not found'},
+                )
+
+            # Remove the secret
+            custom_secrets.pop(secret_id)
+
+            # Create a new SecretStore that preserves provider tokens
+            updated_secret_store = SecretStore(
+                custom_secrets=custom_secrets,
+                provider_tokens=existing_settings.secrets_store.provider_tokens,
+            )
+
+            updated_settings = existing_settings.model_copy(
+                update={'secrets_store': updated_secret_store}
+            )
+
+            await settings_store.store(updated_settings)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Secret deleted successfully'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong deleting secret: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong deleting secret'},
+        )
 
