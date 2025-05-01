@@ -347,10 +347,10 @@ class Runtime(FileEditRuntimeMixin):
             return ''
 
         # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
-        provider = repository.git_provider if repository else None
-        if not provider:
+        if not repository:
             return ''
 
+        provider = repository.git_provider
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
