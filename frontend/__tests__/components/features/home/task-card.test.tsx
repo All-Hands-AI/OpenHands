@@ -20,30 +20,6 @@ const MOCK_TASK_1: SuggestedTask = {
   git_provider: "github",
 };
 
-const MOCK_TASK_2: SuggestedTask = {
-  issue_number: 456,
-  repo: "repo2",
-  title: "Task 2",
-  task_type: "FAILING_CHECKS",
-  git_provider: "github",
-};
-
-const MOCK_TASK_3: SuggestedTask = {
-  issue_number: 789,
-  repo: "repo3",
-  title: "Task 3",
-  task_type: "UNRESOLVED_COMMENTS",
-  git_provider: "gitlab",
-};
-
-const MOCK_TASK_4: SuggestedTask = {
-  issue_number: 101112,
-  repo: "repo4",
-  title: "Task 4",
-  task_type: "OPEN_ISSUE",
-  git_provider: "gitlab",
-};
-
 const MOCK_RESPOSITORIES: GitRepository[] = [
   { id: 1, full_name: "repo1", git_provider: "github", is_public: true },
   { id: 2, full_name: "repo2", git_provider: "github", is_public: true },
@@ -117,7 +93,7 @@ describe("TaskCard", () => {
 
       expect(createConversationSpy).toHaveBeenCalledWith(
         "suggested_task",
-        MOCK_RESPOSITORIES[0],
+        MOCK_RESPOSITORIES[0].full_name,
         undefined,
         [],
         undefined,

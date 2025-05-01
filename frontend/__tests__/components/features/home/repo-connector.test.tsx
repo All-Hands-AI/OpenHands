@@ -165,12 +165,7 @@ describe("RepoConnector", () => {
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
       "gui",
-      {
-        full_name: "rbren/polaris",
-        git_provider: "github",
-        id: 1,
-        is_public: true,
-      },
+      "rbren/polaris",
       undefined,
       [],
       undefined,
