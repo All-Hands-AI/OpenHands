@@ -132,6 +132,17 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
         # Check for content typical of python http.server directory listing
         assert 'Directory listing for' in curl_obs.content
 
+        # Kill the server
+        if is_windows():
+            kill_action = CmdRunAction(f'Stop-Process -Id (Get-NetTCPConnection -LocalPort {server_port}).OwningProcess -Force')
+        else:
+            kill_action = CmdRunAction(f'pkill -f "http.server"')
+        kill_obs = runtime.run_action(kill_action)
+        logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(kill_obs, CmdOutputObservation)
+        assert kill_obs.exit_code == 0
+        
+
     finally:
         _close_test_runtime(runtime)
 

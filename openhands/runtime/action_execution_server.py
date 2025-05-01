@@ -196,6 +196,10 @@ class ActionExecutor:
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
+        if platform.system() == 'Windows':
+            logger.warning('Browser environment not supported on windows')
+            return
+
         logger.debug('Initializing browser asynchronously')
         try:
             self.browser = BrowserEnv(self.browsergym_eval_env)
