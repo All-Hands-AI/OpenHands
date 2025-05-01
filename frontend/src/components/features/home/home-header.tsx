@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router-dom";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
@@ -25,17 +24,16 @@ export function HomeHeader() {
 
       <div className="flex items-center justify-between">
         <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
-        <NavLink to="/">
-          <BrandButton
-            testId="header-launch-button"
-            variant="primary"
-            type="button"
-            isDisabled={isCreatingConversation}
-          >
-            {!isCreatingConversation && "Launch from Scratch"}
-            {isCreatingConversation && t("HOME$LOADING")}
-          </BrandButton>
-        </NavLink>
+        <BrandButton
+          testId="header-launch-button"
+          variant="primary"
+          type="button"
+          onClick={() => createConversation({ conversation_trigger: "gui" })}
+          isDisabled={isCreatingConversation}
+        >
+          {!isCreatingConversation && "Launch from Scratch"}
+          {isCreatingConversation && t("HOME$LOADING")}
+        </BrandButton>
       </div>
 
       <div className="flex items-center justify-between">

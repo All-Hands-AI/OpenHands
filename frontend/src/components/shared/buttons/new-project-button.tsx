@@ -3,18 +3,13 @@ import { I18nKey } from "#/i18n/declaration";
 import PlusIcon from "#/icons/plus.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
-interface NewProjectButtonProps {
-  onClick?: () => void;
-}
-
-export function NewProjectButton({ onClick }: NewProjectButtonProps) {
+export function NewProjectButton() {
   const { t } = useTranslation();
   const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
   return (
     <TooltipButton
       tooltip={startNewProject}
       ariaLabel={startNewProject}
-      onClick={onClick}
       navLinkTo="/"
       testId="new-project-button"
     >

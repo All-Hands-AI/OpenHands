@@ -12,7 +12,6 @@ import { ConversationPanelButton } from "#/components/shared/buttons/conversatio
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
@@ -23,7 +22,6 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers";
 export function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
-  const endSession = useEndSession();
   const user = useGitUser();
   const { data: config } = useConfig();
   const {
@@ -68,11 +66,6 @@ export function Sidebar() {
     location.pathname,
   ]);
 
-  const handleEndSession = () => {
-    dispatch(setCurrentAgentState(AgentState.LOADING));
-    endSession();
-  };
-
   const handleLogout = async () => {
     await logout();
     posthog.reset();
@@ -84,9 +77,9 @@ export function Sidebar() {
         <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
           <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">
-              <AllHandsLogoButton onClick={handleEndSession} />
+              <AllHandsLogoButton/>
             </div>
-            <NewProjectButton onClick={handleEndSession} />
+            <NewProjectButton/>
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
