@@ -24,7 +24,6 @@ const isLikelyDirectory = (path: string): boolean => {
   // Check if path has no extension (simple heuristic)
   const lastPart = path.split(/[/\\]/).pop() || "";
   // If the last part has no dots, it's likely a directory
-  // Note: Paths ending with a dot are not considered directories
   return !lastPart.includes(".");
 };
 
