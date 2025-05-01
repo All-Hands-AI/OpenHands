@@ -23,8 +23,8 @@ const isLikelyDirectory = (path: string): boolean => {
   if (path.endsWith("/") || path.endsWith("\\")) return true;
   // Check if path has no extension (simple heuristic)
   const lastPart = path.split(/[/\\]/).pop() || "";
-  // If the last part has no dots or ends with a dot, it's likely a directory
-  return !lastPart.includes(".") || lastPart.endsWith(".");
+  // If the last part has no dots, it's likely a directory
+  return !lastPart.includes(".");
 };
 
 /**
@@ -86,4 +86,4 @@ function PathComponent(props: { children?: ReactNode }) {
   return <strong className="font-mono">{children}</strong>;
 }
 
-export { PathComponent };
+export { PathComponent, isLikelyDirectory };

@@ -361,21 +361,25 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        if action.is_static:
-            path = action.cwd or self._initial_cwd
-            result = await AsyncBashSession.execute(action.command, path)
-            obs = CmdOutputObservation(
-                content=result.content,
-                exit_code=result.exit_code,
-                command=action.command,
-            )
-            return obs
+        try:
+            if action.is_static:
+                path = action.cwd or self._initial_cwd
+                result = await AsyncBashSession.execute(action.command, path)
+                obs = CmdOutputObservation(
+                    content=result.content,
+                    exit_code=result.exit_code,
+                    command=action.command,
+                )
+                return obs
 
-        assert self.bash_session is not None
-        logger.debug(f'Executing CmdRunAction: {action.command}')
-        obs = await call_sync_from_async(self.bash_session.execute, action)
-        logger.debug(f'CmdRunAction finished execution. Observation: {obs}')
-        return obs
+            assert self.bash_session is not None
+            logger.debug(f'Executing CmdRunAction: {action.command}')
+            obs = await call_sync_from_async(self.bash_session.execute, action)
+            logger.debug(f'CmdRunAction finished execution. Observation: {obs}')
+            return obs
+        except Exception as e:
+            logger.error(f'Error running command: {e}')
+            return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
