@@ -1,6 +1,5 @@
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { DangerModal } from "./confirmation-modals/danger-modal";
@@ -16,12 +15,9 @@ export function ExitProjectConfirmationModal({
 }: ExitProjectConfirmationModalProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const endSession = useEndSession();
 
   const handleEndSession = () => {
     onClose();
-    dispatch(setCurrentAgentState(AgentState.LOADING));
-    endSession();
   };
 
   return (

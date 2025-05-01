@@ -8,7 +8,6 @@ import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation"
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
-import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
@@ -19,7 +18,6 @@ interface ConversationPanelProps {
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { t } = useTranslation();
   const { conversationId: cid } = useParams();
-  const endSession = useEndSession();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =

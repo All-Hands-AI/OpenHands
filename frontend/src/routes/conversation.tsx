@@ -32,7 +32,6 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -54,7 +53,6 @@ function AppContent() {
   );
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
-  const endSession = useEndSession();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -66,7 +64,6 @@ function AppContent() {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
-      endSession();
     }
   }, [conversation, isFetched]);
 
