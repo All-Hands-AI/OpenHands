@@ -37,9 +37,6 @@ export function GitRepositoriesSuggestionBox({
 
   const isLoading = isUserReposLoading || isSearchReposLoading;
 
-  const repositories =
-    userRepositories?.pages.flatMap((page) => page.data) || [];
-
   const handleConnectToGitHub = () => {
     if (gitHubAuthUrl) {
       window.location.href = gitHubAuthUrl;
@@ -59,7 +56,7 @@ export function GitRepositoriesSuggestionBox({
             onInputChange={setSearchQuery}
             onSelect={handleSubmit}
             publicRepositories={searchedRepos || []}
-            userRepositories={repositories}
+            userRepositories={userRepositories || []}
             isLoading={isLoading}
           />
         ) : (
