@@ -104,6 +104,3 @@ async def test_settings_api_endpoints(test_client):
     # Test the unset-provider-tokens endpoint
     response = test_client.post('/api/unset-provider-tokens')
     assert response.status_code == 200
-
-    # We'll skip the secrets endpoints for now as they require more complex mocking  # noqa: E501
-    # and they're not directly related to the authentication refactoring
