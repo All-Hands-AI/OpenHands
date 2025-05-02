@@ -16,6 +16,7 @@ import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
+import { useResetBrowserState } from "#/hooks/use-reset-browser-state";
 
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
@@ -53,6 +54,7 @@ function AppContent() {
   );
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
+  const resetBrowserState = useResetBrowserState();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -68,9 +70,14 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
+    // Clear all state when conversation ID changes
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    
+    // Reset browser state to initial values
+    resetBrowserState();
+    
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
@@ -83,12 +90,15 @@ function AppContent() {
       dispatch(clearInitialPrompt());
       dispatch(clearFiles());
     }
-  }, [conversationId]);
+  }, [conversationId, resetBrowserState]);
 
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    
+    // Reset browser state to initial values on component mount
+    resetBrowserState();
   });
 
   function handleResize() {
@@ -101,6 +111,13 @@ function AppContent() {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+  
+  // Reset browser state when component unmounts
+  React.useEffect(() => {
+    return () => {
+      resetBrowserState();
+    };
+  }, [resetBrowserState]);
 
   const {
     isOpen: securityModalIsOpen,
