@@ -146,12 +146,12 @@ export const chatSlice = createSlice({
         // Format MCP action with name and arguments
         const name = action.payload.args.name || "";
         const args = action.payload.args.arguments || {};
-        text = `**MCP Tool Call:** ${name}\n\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
-
+        text = `**MCP Tool Call:** ${name}\n\n`;
         // Include thought if available
         if (action.payload.args.thought) {
           text += `\n\n**Thought:**\n${action.payload.args.thought}`;
         }
+        text += `\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -257,6 +257,7 @@ export const chatSlice = createSlice({
         (message) => message.eventID === causeID,
       );
       if (!causeMessage) {
+        console.log("No cause message found for observation", observationID);
         return;
       }
       causeMessage.translationID = translationID;
@@ -323,7 +324,7 @@ export const chatSlice = createSlice({
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        content = `${causeMessage.content}\n\nOutput:\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+        content = `${causeMessage.content}\n\n**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
         // Set success based on whether there's an error message
         causeMessage.success = !observation.payload.content
