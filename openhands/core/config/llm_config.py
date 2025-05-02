@@ -44,6 +44,10 @@ class LLMConfig(BaseModel):
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         seed: The seed to use for the LLM.
+        in_context_learning_example: A custom example provided by the user. If not None (even with an empty string),
+            the default in context learning examples will not be used.
+            It may be necessary to pass it if default tools have been disabled to prevent runtime errors due to
+            the tool set not being compatible with the default in-context learning example.
     """
 
     model: str = Field(default='claude-3-7-sonnet-20250219')
@@ -84,6 +88,7 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
     seed: int | None = Field(default=None)
+    in_context_learning_example: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 

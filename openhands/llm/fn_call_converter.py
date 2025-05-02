@@ -48,7 +48,7 @@ Reminder:
 STOP_WORDS = ['</function']
 
 # NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
-IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
+DEFAULT_IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
 Here's a running example of how to perform a task with the provided tools.
 
 --------------------- START OF EXAMPLE ---------------------
@@ -304,12 +304,40 @@ def convert_tools_to_description(tools: list[dict]) -> str:
     return ret
 
 
+def enrich_content_with_in_context_learning_example(
+    content: str | list[dict],
+    in_context_learning_prefix: str,
+    in_context_learning_suffix: str,
+) -> str | list[str]:
+    """Enrich content with in-context learning example."""
+    if isinstance(content, str):
+        content = in_context_learning_prefix + content + in_context_learning_suffix
+    elif isinstance(content, list):
+        if content and content[0]['type'] == 'text':
+            content[0]['text'] = (
+                in_context_learning_prefix
+                + content[0]['text']
+                + in_context_learning_suffix
+            )
+        else:
+            content = (
+                [{'type': 'text', 'text': in_context_learning_prefix}]
+                + content
+                + [{'type': 'text', 'text': in_context_learning_suffix}]
+            )
+    return content
+
+
 def convert_fncall_messages_to_non_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
-    add_in_context_learning_example: bool = True,
+    add_default_in_context_learning_example: bool = True,
+    custom_in_context_learning_example: str | None = None,
 ) -> list[dict]:
     """Convert function calling messages to non-function calling messages."""
+    print(f'{add_default_in_context_learning_example=}')
+    print(f'{custom_in_context_learning_example=}')
+
     messages = copy.deepcopy(messages)
 
     formatted_tools = convert_tools_to_description(tools)
@@ -322,6 +350,10 @@ def convert_fncall_messages_to_non_fncall_messages(
     for message in messages:
         role = message['role']
         content = message['content']
+        if not isinstance(content, list | str):
+            raise FunctionCallConversionError(
+                f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
+            )
 
         # 1. SYSTEM MESSAGES
         # append system prompt suffix to content
@@ -341,8 +373,21 @@ def convert_fncall_messages_to_non_fncall_messages(
 
         # 2. USER MESSAGES (no change)
         elif role == 'user':
-            # Add in-context learning example for the first user message
-            if not first_user_message_encountered and add_in_context_learning_example:
+            # Add custom in-context learning examples for the first user message
+            if (
+                not first_user_message_encountered
+                and custom_in_context_learning_example is not None
+            ):
+                content = enrich_content_with_in_context_learning_example(
+                    content,
+                    in_context_learning_prefix=custom_in_context_learning_example,
+                    in_context_learning_suffix='',
+                )
+            # If default examples (for the default tools) should be added, add them too
+            if (
+                not first_user_message_encountered
+                and add_default_in_context_learning_example
+            ):
                 first_user_message_encountered = True
                 # Check tools
                 if not (
@@ -376,41 +421,11 @@ def convert_fncall_messages_to_non_fncall_messages(
                         'The currently provided tool set are NOT compatible with the in-context learning example for FnCall to Non-FnCall conversion. '
                         'Please update your tool set OR the in-context learning example in openhands/llm/fn_call_converter.py'
                     )
-
-                # add in-context learning example
-                if isinstance(content, str):
-                    content = (
-                        IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
-                        + content
-                        + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
-                    )
-                elif isinstance(content, list):
-                    if content and content[0]['type'] == 'text':
-                        content[0]['text'] = (
-                            IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
-                            + content[0]['text']
-                            + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
-                        )
-                    else:
-                        content = (
-                            [
-                                {
-                                    'type': 'text',
-                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
-                                }
-                            ]
-                            + content
-                            + [
-                                {
-                                    'type': 'text',
-                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
-                                }
-                            ]
-                        )
-                else:
-                    raise FunctionCallConversionError(
-                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
-                    )
+                content = enrich_content_with_in_context_learning_example(
+                    content,
+                    DEFAULT_IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
+                    IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
+                )
             converted_messages.append(
                 {
                     'role': 'user',
@@ -595,13 +610,15 @@ def convert_non_fncall_messages_to_fncall_messages(
             if not first_user_message_encountered:
                 first_user_message_encountered = True
                 if isinstance(content, str):
-                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, '')
+                    content = content.replace(
+                        DEFAULT_IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, ''
+                    )
                     content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, '')
                 elif isinstance(content, list):
                     for item in content:
                         if item['type'] == 'text':
                             item['text'] = item['text'].replace(
-                                IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, ''
+                                DEFAULT_IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, ''
                             )
                             item['text'] = item['text'].replace(
                                 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, ''

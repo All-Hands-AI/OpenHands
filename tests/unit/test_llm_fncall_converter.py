@@ -7,7 +7,7 @@ import pytest
 from litellm import ChatCompletionToolParam
 
 from openhands.llm.fn_call_converter import (
-    IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
+    DEFAULT_IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
     FunctionCallConversionError,
     convert_fncall_messages_to_non_fncall_messages,
@@ -270,7 +270,7 @@ NON_FNCALL_MESSAGES = [
         'content': [
             {
                 'type': 'text',
-                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                'text': DEFAULT_IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
                 + "<uploaded_files>\n/workspace/astropy__astropy__5.1\n</uploaded_files>\nI've uploaded a python code repository in the directory astropy__astropy__5.1. LONG DESCRIPTION:\n\n"
                 + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
             }
