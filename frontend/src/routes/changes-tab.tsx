@@ -29,7 +29,7 @@ function GitChanges() {
   React.useEffect(() => {
     setRandomTip(getRandomTip());
   }, []);
-  console.log('random tip', randomTip);
+  console.log("random tip", randomTip);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
