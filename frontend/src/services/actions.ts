@@ -154,14 +154,18 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else if (message.error) {
     // Handle error messages from the server
+    const errorMessage =
+      typeof message.message === "string"
+        ? message.message
+        : String(message.message || "Unknown error");
     trackError({
-      message: message.message,
+      message: errorMessage,
       source: "websocket",
       metadata: { raw_message: message },
     });
     store.dispatch(
       addErrorMessage({
-        message: message.message,
+        message: errorMessage,
       }),
     );
   } else {
