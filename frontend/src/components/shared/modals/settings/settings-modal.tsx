@@ -7,15 +7,20 @@ import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
 import { Settings } from "#/types/settings";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useState } from "react";
+import { cn } from "#/utils/utils";
 
 interface SettingsModalProps {
   settings?: Settings;
   onClose: () => void;
 }
 
+type SettingsTab = "llm" | "mcp";
+
 export function SettingsModal({ onClose, settings }: SettingsModalProps) {
   const aiConfigOptions = useAIConfigOptions();
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<SettingsTab>("llm");
 
   return (
     <ModalBackdrop>
@@ -40,6 +45,29 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
             {t(I18nKey.SETTINGS$SEE_ADVANCED_SETTINGS)}
           </Link>
         </p>
+        
+        {/* Tabs Navigation */}
+        <div className="flex border-b border-tertiary mt-2">
+          <button
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
+              activeTab === "llm" && "border-primary"
+            )}
+            onClick={() => setActiveTab("llm")}
+          >
+            LLM
+          </button>
+          <button
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
+              activeTab === "mcp" && "border-primary"
+            )}
+            onClick={() => setActiveTab("mcp")}
+          >
+            MCP
+          </button>
+        </div>
+        
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
             <LoadingSpinner size="small" />
@@ -50,6 +78,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
             settings={settings || DEFAULT_SETTINGS}
             models={aiConfigOptions.data?.models}
             onClose={onClose}
+            activeTab={activeTab}
           />
         )}
       </div>

@@ -21,9 +21,10 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   onClose: () => void;
+  activeTab: "llm" | "mcp";
 }
 
-export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
+export function SettingsForm({ settings, models, onClose, activeTab }: SettingsFormProps) {
   const { mutate: saveUserSettings } = useSaveSettings();
   const endSession = useEndSession();
 
@@ -91,40 +92,47 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
         onSubmit={handleSubmit}
       >
         <div className="flex flex-col gap-4">
-          <ModelSelector
-            models={organizeModelsAndProviders(models)}
-            currentModel={settings.LLM_MODEL}
-          />
+          {activeTab === "llm" && (
+            <>
+              <ModelSelector
+                models={organizeModelsAndProviders(models)}
+                currentModel={settings.LLM_MODEL}
+              />
 
-          <SettingsInput
-            testId="llm-api-key-input"
-            name="llm-api-key-input"
-            label={t(I18nKey.SETTINGS_FORM$API_KEY)}
-            type="password"
-            className="w-[680px]"
-            placeholder={isLLMKeySet ? "<hidden>" : ""}
-            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
-          />
+              <SettingsInput
+                testId="llm-api-key-input"
+                name="llm-api-key-input"
+                label={t(I18nKey.SETTINGS_FORM$API_KEY)}
+                type="password"
+                className="w-[680px]"
+                placeholder={isLLMKeySet ? "<hidden>" : ""}
+                startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
+              />
 
-          <HelpLink
-            testId="llm-api-key-help-anchor"
-            text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-            linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-            href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
-          />
-
-          {/* MCP Configuration Section */}
-          <div className="mt-6 mb-2">
-            <h3 className="text-base font-medium">{t("SETTINGS$MCP_TITLE")}</h3>
-            <p className="text-xs text-gray-400 mb-2">
-              {t("SETTINGS$MCP_DESCRIPTION")}
-            </p>
-          </div>
+              <HelpLink
+                testId="llm-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+              />
+            </>
+          )}
           
-          <MCPConfigEditor 
-            mcpConfig={mcpConfig} 
-            onChange={setMcpConfig}
-          />
+          {activeTab === "mcp" && (
+            <>
+              <div className="mb-2">
+                <h3 className="text-base font-medium">{t("SETTINGS$MCP_TITLE")}</h3>
+                <p className="text-xs text-gray-400 mb-2">
+                  {t("SETTINGS$MCP_DESCRIPTION")}
+                </p>
+              </div>
+              
+              <MCPConfigEditor 
+                mcpConfig={mcpConfig} 
+                onChange={setMcpConfig}
+              />
+            </>
+          )}
           
           {/* Hidden field to store MCP configuration */}
           <input 
