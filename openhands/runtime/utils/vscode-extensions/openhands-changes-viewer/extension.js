@@ -75,6 +75,11 @@ function activate(context) {
             }
         }
     });
+    
+    // Register the open changes view command
+    let openChangesViewCommand = vscode.commands.registerCommand('openhands-changes-viewer.openChangesView', () => {
+        vscode.commands.executeCommand('workbench.view.extension.openhands-changes');
+    });
 
     // Open the changes view when the extension is activated
     vscode.commands.executeCommand('workbench.view.extension.openhands-changes');
@@ -82,6 +87,7 @@ function activate(context) {
     // Add commands to subscriptions
     context.subscriptions.push(refreshCommand);
     context.subscriptions.push(viewDiffCommand);
+    context.subscriptions.push(openChangesViewCommand);
     context.subscriptions.push(treeView);
 
     // Auto-refresh the changes view every 10 seconds

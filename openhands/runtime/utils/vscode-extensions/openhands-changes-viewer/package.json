@@ -12,7 +12,8 @@
         "SCM Providers"
     ],
     "activationEvents": [
-        "onStartupFinished"
+        "onStartupFinished",
+        "onCommand:openhands-changes-viewer.openChangesView"
     ],
     "main": "./extension.js",
     "contributes": {
@@ -43,6 +44,11 @@
             {
                 "command": "openhands-changes-viewer.viewDiff",
                 "title": "View Diff"
+            },
+            {
+                "command": "openhands-changes-viewer.openChangesView",
+                "title": "OpenHands: Show Changes View",
+                "category": "OpenHands"
             }
         ],
         "menus": {
@@ -60,5 +66,13 @@
                     "group": "inline"
                 }
             ]
-        }
+        },
+        "keybindings": [
+            {
+                "command": "openhands-changes-viewer.openChangesView",
+                "key": "ctrl+shift+c",
+                "mac": "cmd+shift+c",
+                "when": "editorTextFocus"
+            }
+        ]
     }
