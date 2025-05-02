@@ -18,10 +18,6 @@ describe("App", () => {
   }));
 
   beforeAll(() => {
-    vi.mock("#/hooks/use-end-session", () => ({
-      useEndSession: vi.fn(() => endSessionMock),
-    }));
-
     vi.mock("#/hooks/use-terminal", () => ({
       useTerminal: vi.fn(),
     }));

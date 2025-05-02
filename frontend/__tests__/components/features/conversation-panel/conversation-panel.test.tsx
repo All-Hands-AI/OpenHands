@@ -46,11 +46,6 @@ describe("ConversationPanel", () => {
       useLocation: vi.fn(() => ({ pathname: "/conversation" })),
       useParams: vi.fn(() => ({ conversationId: "2" })),
     }));
-
-    vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("#/hooks/use-end-session")>()),
-      useEndSession: vi.fn(() => endSessionMock),
-    }));
   });
 
   const mockConversations = [
