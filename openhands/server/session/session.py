@@ -228,10 +228,6 @@ class Session:
                     'Agent status error',
                     extra={'signal': 'agent_status_error'},
                 )
-            elif isinstance(event, RecallObservation):
-                self.logger.debug(
-                    f'Sending RecallObservation to frontend: {event.recall_type}'
-                )
         elif isinstance(event, ErrorObservation):
             # send error events as agent events to the UI
             event_dict = event_to_dict(event)
