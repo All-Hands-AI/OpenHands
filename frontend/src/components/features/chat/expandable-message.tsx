@@ -42,8 +42,6 @@ export function ExpandableMessage({
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
-  const [i18nReady, setI18nReady] = useState(i18n.isInitialized);
-
   const [showDetails, setShowDetails] = useState(true);
   const [details, setDetails] = useState(message);
   const [translationId, setTranslationId] = useState<string | undefined>(id);
@@ -54,41 +52,9 @@ export function ExpandableMessage({
     action,
   });
 
-  // Listen for i18n initialization
   useEffect(() => {
-    if (!i18nReady) {
-      const handleInitialized = () => {
-        setI18nReady(true);
-      };
-
-      if (i18n.isInitialized) {
-        setI18nReady(true);
-        return undefined;
-      }
-      i18n.on("initialized", handleInitialized);
-      return () => {
-        i18n.off("initialized", handleInitialized);
-      };
-    }
-    return undefined;
-  }, [i18n, i18nReady]);
-
-  useEffect(() => {
-    // Only process translations when i18n is ready or for non-critical messages
-    if (!id) {
-      setTranslationId(undefined);
-      setDetails(message);
-      return;
-    }
-
-    // For RECALL messages, wait until i18n is ready
-    if (id === I18nKey.OBSERVATION_MESSAGE$RECALL && !i18nReady) {
-      // Don't set anything yet, wait for i18n to be ready
-      return;
-    }
-
-    // For other messages or when i18n is ready
-    if (i18n.exists(id)) {
+    // If we have a translation ID, process it
+    if (id && i18n.exists(id)) {
       let processedObservation = observation;
       let processedAction = action;
 
@@ -127,12 +93,8 @@ export function ExpandableMessage({
       });
       setDetails(message);
       setShowDetails(false);
-    } else {
-      // If no translation exists, just use the message
-      setTranslationId(undefined);
-      setDetails(message);
     }
-  }, [id, message, observation, action, i18n.language, i18nReady]);
+  }, [id, message, observation, action, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -176,35 +138,19 @@ export function ExpandableMessage({
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
-            {(() => {
-              // If we're waiting for i18n to be ready for RECALL message, show loading
-              if (id === I18nKey.OBSERVATION_MESSAGE$RECALL && !i18nReady) {
-                return null; // Don't render anything until i18n is ready
-              }
-
-              // If no translation ID, just show the message
-              if (!translationId) {
-                return message;
-              }
-
-              // If i18n is ready and the translation exists, use Trans component
-              if (i18n.exists(translationId)) {
-                return (
-                  <Trans
-                    i18nKey={translationId}
-                    values={translationParams}
-                    components={{
-                      bold: <strong />,
-                      path: <PathComponent />,
-                      cmd: <MonoComponent />,
-                    }}
-                  />
-                );
-              }
-
-              // Fallback to the message
-              return message;
-            })()}
+            {translationId && i18n.exists(translationId) ? (
+              <Trans
+                i18nKey={translationId}
+                values={translationParams}
+                components={{
+                  bold: <strong />,
+                  path: <PathComponent />,
+                  cmd: <MonoComponent />,
+                }}
+              />
+            ) : (
+              message
+            )}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}

@@ -13,25 +13,6 @@ vi.mock("react-router", async () => {
   };
 });
 
-// Mock react-i18next
-vi.mock("react-i18next", async () => {
-  const actual = await vi.importActual("react-i18next");
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (key: string) => key,
-      i18n: {
-        changeLanguage: () => new Promise(() => {}),
-        language: "en",
-        exists: () => true,
-        isInitialized: true,
-        on: vi.fn(),
-        off: vi.fn(),
-      },
-    }),
-  };
-});
-
 describe("File Operations Messages", () => {
   it("should show success indicator for successful file read operation", () => {
     const messages: Message[] = [
