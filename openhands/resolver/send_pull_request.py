@@ -188,41 +188,48 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
         )
         logger.info('Git user configured as openhands')
 
-    # Add all changes to the git index
-    result = subprocess.run(
-        f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        logger.error(f'Error adding files: {result.stderr}')
+    try:
+        # Add all changes to the git index
+        result = subprocess.run(
+            f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            logger.error(f'Error adding files: {result.stderr}')
+            return False
+
+        # Check the status of the git index
+        status_result = subprocess.run(
+            f'git -C {repo_dir} status --porcelain',
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        if status_result.returncode != 0:
+            logger.error(f'Error checking git status: {status_result.stderr}')
+            return False
+
+        # If there are no changes, log it and return False
+        if not status_result.stdout.strip():
+            logger.info(f'No changes to commit for issue #{issue.number}. Skipping commit.')
+            return False
+
+        # Prepare the commit message
+        commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
+
+        # Commit the changes
+        result = subprocess.run(
+            ['git', '-C', repo_dir, 'commit', '-m', commit_message],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            logger.error(f'Failed to commit changes: {result}')
+            return False
+
+        return True
+    except Exception as e:
+        logger.error(f'Error during git operations: {e}')
         return False
-
-    # Check the status of the git index
-    status_result = subprocess.run(
-        f'git -C {repo_dir} status --porcelain',
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
-
-    # If there are no changes, log it and return False
-    if not status_result.stdout.strip():
-        logger.info(f'No changes to commit for issue #{issue.number}. Skipping commit.')
-        return False
-
-    # Prepare the commit message
-    commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
-
-    # Commit the changes
-    result = subprocess.run(
-        ['git', '-C', repo_dir, 'commit', '-m', commit_message],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        logger.error(f'Failed to commit changes: {result}')
-        return False
-
-    return True
 
 
 def send_pull_request(

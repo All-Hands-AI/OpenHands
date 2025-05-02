@@ -1158,7 +1158,9 @@ def test_make_commit_no_changes(mock_subprocess_run):
 @patch('openhands.resolver.send_pull_request.apply_patch')
 @patch('openhands.resolver.send_pull_request.send_pull_request')
 @patch('openhands.resolver.send_pull_request.make_commit')
+@patch('openhands.resolver.interfaces.gitlab.GitlabIssueHandler.send_comment_msg')
 def test_process_single_issue_no_changes(
+    mock_send_comment_msg,
     mock_make_commit,
     mock_send_pull_request,
     mock_apply_patch,
@@ -1194,6 +1196,9 @@ def test_process_single_issue_no_changes(
     # Mock make_commit to return False (no changes)
     mock_make_commit.return_value = False
 
+    # Mock initialize_repo to return a path
+    mock_initialize_repo.return_value = f'{mock_output_dir}/patches/issue_1'
+
     # Call the function
     process_single_issue(
         mock_output_dir,
@@ -1216,6 +1221,7 @@ def test_process_single_issue_no_changes(
         f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
     )
     mock_send_pull_request.assert_not_called()
+    mock_send_comment_msg.assert_called_once_with(1, 'No changes needed')
 
 
 def test_apply_patch_rename_directory(mock_output_dir):
