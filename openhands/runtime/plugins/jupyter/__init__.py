@@ -1,7 +1,7 @@
 import asyncio
 import os
-import platform
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from typing import Union
@@ -32,8 +32,8 @@ class JupyterPlugin(Plugin):
     ) -> None:
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
-        is_windows = platform.system() == 'Windows'
-        
+        is_windows = sys.platform == 'win32'
+
         if username in ['root', 'openhands']:
             # Non-LocalRuntime
             prefix = f'su - {username} -s '
@@ -56,7 +56,7 @@ class JupyterPlugin(Plugin):
                 )
             # The correct environment is ensured by the PATH in LocalRuntime.
             poetry_prefix = f'cd {code_repo_path}\n'
-        
+
         if is_windows:
             # Windows-specific command format
             jupyter_launch_command = (
@@ -130,7 +130,7 @@ class JupyterPlugin(Plugin):
             logger.debug(
                 f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
             )
-        
+
         _obs = await self.run(
             IPythonRunCellAction(code='import sys; print(sys.executable)')
         )

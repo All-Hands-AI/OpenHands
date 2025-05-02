@@ -1,3 +1,4 @@
+import sys
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
@@ -57,7 +58,7 @@ class AppConfig(BaseModel):
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
-    runtime: str = Field(default='docker')
+    _runtime: str = Field(default='docker', alias='runtime')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
     save_trajectory_path: str | None = Field(default=None)
@@ -135,6 +136,26 @@ class AppConfig(BaseModel):
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
+
+    @property
+    def runtime(self) -> str:
+        """Get the runtime environment identifier.
+
+        On Windows systems, always returns 'local' regardless of configuration.
+        Displays a warning if runtime was configured to a different value on Windows.
+        """
+        if sys.platform == 'win32':
+            if self._runtime != 'local':
+                logger.openhands_logger.warning(
+                    f'Runtime "{self._runtime}" is not supported on Windows. Using "local" instead.'
+                )
+            return 'local'
+        return self._runtime
+
+    @runtime.setter
+    def runtime(self, value: str) -> None:
+        """Setter for runtime property."""
+        self._runtime = value
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook, called when the instance is created with only default values."""

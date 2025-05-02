@@ -12,7 +12,6 @@ import json
 import logging
 import mimetypes
 import os
-import platform
 import shutil
 import sys
 import tempfile
@@ -207,7 +206,7 @@ class ActionExecutor:
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
-        if platform.system() == 'Windows':
+        if sys.platform == 'win32':
             logger.warning('Browser environment not supported on windows')
             return
 
@@ -244,7 +243,7 @@ class ActionExecutor:
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
-        if platform.system() == 'Windows':
+        if sys.platform == 'win32':
             self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
                 work_dir=self._initial_cwd,
                 username=self.username,
@@ -313,7 +312,7 @@ class ActionExecutor:
     async def _init_bash_commands(self):
         INIT_COMMANDS = []
         is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
-        is_windows = platform.system() == 'Windows'
+        is_windows = sys.platform == 'win32'
 
         # Determine base git config command
         if is_local_runtime:

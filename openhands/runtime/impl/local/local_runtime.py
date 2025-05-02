@@ -44,10 +44,9 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 def get_user_info():
     """Get user ID and username in a cross-platform way."""
     import getpass
-    import platform
 
     username = getpass.getuser()
-    if platform.system() == 'Windows':
+    if sys.platform == 'win32':
         # On Windows, we don't use user IDs the same way
         # Return a default value that won't cause issues
         return 1000, username
@@ -79,9 +78,8 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
         raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
 
     # Check libtmux is installed (skip on Windows)
-    import platform
 
-    if platform.system() != 'Windows':
+    if sys.platform != 'win32':
         logger.debug('Checking dependencies: libtmux')
         import libtmux
 
@@ -98,7 +96,7 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
             raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
 
     # Skip browser environment check on Windows
-    if platform.system() != 'Windows':
+    if sys.platform != 'win32':
         logger.debug('Checking dependencies: browser')
         from openhands.runtime.browser.browser_env import BrowserEnv
 
@@ -131,9 +129,7 @@ class LocalRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        import platform
-
-        self.is_windows = platform.system() == 'Windows'
+        self.is_windows = sys.platform == 'win32'
         if self.is_windows:
             logger.warning(
                 'Running on Windows - some features that require tmux will be limited. '
