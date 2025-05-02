@@ -86,7 +86,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        selected_repository: Repository | None = None,
+        selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
@@ -153,7 +153,7 @@ class AgentSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.full_name.split('/')[-1]
+                repo_directory = selected_repository.split('/')[-1]
 
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
@@ -265,7 +265,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-        selected_repository: Repository | None = None,
+        selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
         """Creates a runtime instance
@@ -400,7 +400,7 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: Repository | None, repo_directory: str | None
+        self, selected_repository: str | None, repo_directory: str | None
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -415,13 +415,13 @@ class AgentSession:
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
-                selected_repository.full_name if selected_repository else None,
+                selected_repository or None,
             )
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
                 memory.set_repository_info(
-                    selected_repository.full_name, repo_directory
+                    selected_repository, repo_directory
                 )
         return memory
 

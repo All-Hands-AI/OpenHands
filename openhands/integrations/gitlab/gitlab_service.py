@@ -383,6 +383,23 @@ class GitLabService(BaseGitService, GitService):
             return []
 
 
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
+        encoded_name = repository.replace("/", "%2F")
+
+        url = f'{self.BASE_URL}/projects/{encoded_name}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('path_with_namespace'),
+            stargazers_count=repo.get('star_count'),
+            git_provider=ProviderType.GITLAB,
+            is_public=repo.get('visibility') == 'public',
+        )
+        
+       
+
+
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',
     'openhands.integrations.gitlab.gitlab_service.GitLabService',
