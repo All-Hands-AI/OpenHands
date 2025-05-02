@@ -40,6 +40,7 @@ import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
+import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 
 function AppContent() {
   useConversationConfig();
@@ -159,7 +160,12 @@ function AppContent() {
                           );
                           const data = await response.json();
                           if (data.vscode_url) {
-                            window.open(data.vscode_url, "_blank");
+                            const transformedUrl = transformVSCodeUrl(
+                              data.vscode_url,
+                            );
+                            if (transformedUrl) {
+                              window.open(transformedUrl, "_blank");
+                            }
                           }
                         } catch (err) {
                           // Silently handle the error

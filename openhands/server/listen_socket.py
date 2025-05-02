@@ -45,7 +45,14 @@ def create_provider_tokens_object(
 async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
-    latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
+    latest_event_id_str = query_params.get('latest_event_id', [-1])[0]
+    try:
+        latest_event_id = int(latest_event_id_str)
+    except ValueError:
+        logger.debug(
+            f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
+        )
+        latest_event_id = -1
     conversation_id = query_params.get('conversation_id', [None])[0]
     raw_list = query_params.get('providers_set', [])
     providers_list = []

@@ -13,7 +13,7 @@ Quando o OpenHands trabalha com um repositório, ele:
 
 1. Carrega instruções específicas do repositório de `.openhands/microagents/`, se presentes no repositório.
 2. Carrega diretrizes gerais acionadas por palavras-chave nas conversas.
-Veja os [Microagentes Públicos](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) atuais.
+Veja os [Microagentes Públicos](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents) atuais.
 
 ## Formato do Microagente
 

@@ -87,14 +87,13 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  const repositoriesList = repositories?.pages.flatMap((page) => page.data);
-  const repositoriesItems = repositoriesList?.map((repo) => ({
+  const repositoriesItems = repositories?.map((repo) => ({
     key: repo.id,
     label: repo.full_name,
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = repositoriesList?.find(
+    const selectedRepo = repositories?.find(
       (repo) => repo.id.toString() === key,
     );
 
