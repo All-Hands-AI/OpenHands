@@ -268,7 +268,7 @@ async def delete_custom_secret(
             # Remove the secret
             custom_secrets.pop(secret_id)
 
-            # Create a new SecretStore that preserves provider tokens
+            # Create a new UserSecrets that preserves provider tokens and remaining secrets
             updated_secrets = UserSecrets(
                 custom_secrets=custom_secrets,
                 provider_tokens=existing_secrets.provider_tokens,
