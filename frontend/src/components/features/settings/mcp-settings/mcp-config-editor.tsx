@@ -80,7 +80,10 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           className="mb-2 p-2 bg-base-tertiary rounded-md"
         >
           <div className="text-sm">
-            <span className="font-medium">SSE:</span> {server}
+            <span className="font-medium">
+              {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}:
+            </span>{" "}
+            {server}
           </div>
         </div>
       );
@@ -91,11 +94,16 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         className="mb-2 p-2 bg-base-tertiary rounded-md"
       >
         <div className="text-sm">
-          <span className="font-medium">SSE:</span> {server.url}
+          <span className="font-medium">
+            {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}:
+          </span>{" "}
+          {server.url}
         </div>
         {server.api_key && (
           <div className="mt-1 text-sm text-gray-500">
-            <span className="font-medium">{t(I18nKey.SETTINGS$MCP_API_KEY)}:</span>{" "}
+            <span className="font-medium">
+              {t(I18nKey.SETTINGS$MCP_API_KEY)}:
+            </span>{" "}
             {server.api_key
               ? "Configured"
               : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
@@ -111,7 +119,8 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       className="mb-2 p-2 bg-base-tertiary rounded-md"
     >
       <div className="text-sm">
-        <span className="font-medium">Name:</span> {server.name}
+        <span className="font-medium">{t(I18nKey.SETTINGS$MCP_NAME)}:</span>{" "}
+        {server.name}
       </div>
       <div className="mt-1 text-sm text-gray-500">
         <span className="font-medium">{t(I18nKey.SETTINGS$MCP_COMMAND)}:</span>{" "}
@@ -198,7 +207,9 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
               <div className="mb-3">
                 <h4 className="text-sm font-medium mb-1">
                   {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}{" "}
-                  <span className="text-gray-500">({config.sse_servers.length})</span>
+                  <span className="text-gray-500">
+                    ({config.sse_servers.length})
+                  </span>
                 </h4>
                 {config.sse_servers.length > 0 ? (
                   config.sse_servers.map(renderSSEServer)
@@ -212,7 +223,9 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
               <div>
                 <h4 className="text-sm font-medium mb-1">
                   {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}{" "}
-                  <span className="text-gray-500">({config.stdio_servers.length})</span>
+                  <span className="text-gray-500">
+                    ({config.stdio_servers.length})
+                  </span>
                 </h4>
                 {config.stdio_servers.length > 0 ? (
                   config.stdio_servers.map(renderStdioServer)
