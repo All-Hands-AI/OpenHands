@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { useState } from "react";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
@@ -7,7 +8,6 @@ import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
 import { Settings } from "#/types/settings";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { useState } from "react";
 import { cn } from "#/utils/utils";
 
 interface SettingsModalProps {
@@ -45,29 +45,31 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
             {t(I18nKey.SETTINGS$SEE_ADVANCED_SETTINGS)}
           </Link>
         </p>
-        
+
         {/* Tabs Navigation */}
         <div className="flex border-b border-tertiary mt-2">
           <button
+            type="button"
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
-              activeTab === "llm" && "border-primary"
+              activeTab === "llm" && "border-primary",
             )}
             onClick={() => setActiveTab("llm")}
           >
             LLM
           </button>
           <button
+            type="button"
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
-              activeTab === "mcp" && "border-primary"
+              activeTab === "mcp" && "border-primary",
             )}
             onClick={() => setActiveTab("mcp")}
           >
             MCP
           </button>
         </div>
-        
+
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
             <LoadingSpinner size="small" />

@@ -110,12 +110,12 @@ class Settings(BaseModel):
             # If no api key has been set, we take this to mean that there is no reasonable default
             return None
         security = app_config.security
-        
+
         # Get MCP config if available
         mcp_config = None
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
-        
+
         settings = Settings(
             language='en',
             agent=app_config.default_agent,

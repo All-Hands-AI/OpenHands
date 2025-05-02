@@ -75,12 +75,12 @@ export const extractSettings = (
 
   // Get MCP configuration from hidden field if it exists
   const mcpConfigStr = formData.get("mcp-config")?.toString();
-  let mcpConfig = undefined;
+  let mcpConfig;
   if (mcpConfigStr) {
     try {
       mcpConfig = JSON.parse(mcpConfigStr);
     } catch (e) {
-      console.error("Failed to parse MCP configuration", e);
+      // Failed to parse MCP configuration, using default empty config
     }
   }
 

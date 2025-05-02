@@ -20,6 +20,10 @@ export const DEFAULT_SETTINGS: Settings = {
     gitlab: { token: "" },
   },
   IS_NEW_USER: true,
+  MCP_CONFIG: {
+    sse_servers: [],
+    stdio_servers: [],
+  },
 };
 
 /**

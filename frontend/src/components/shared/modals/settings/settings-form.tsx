@@ -24,14 +24,21 @@ interface SettingsFormProps {
   activeTab: "llm" | "mcp";
 }
 
-export function SettingsForm({ settings, models, onClose, activeTab }: SettingsFormProps) {
+export function SettingsForm({
+  settings,
+  models,
+  onClose,
+  activeTab,
+}: SettingsFormProps) {
   const { mutate: saveUserSettings } = useSaveSettings();
   const endSession = useEndSession();
 
   const location = useLocation();
   const { t } = useTranslation();
-  
-  const [mcpConfig, setMcpConfig] = useState<MCPConfig | undefined>(settings.MCP_CONFIG);
+
+  const [mcpConfig, setMcpConfig] = useState<MCPConfig | undefined>(
+    settings.MCP_CONFIG,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -58,8 +65,10 @@ export function SettingsForm({ settings, models, onClose, activeTab }: SettingsF
           REMOTE_RUNTIME_RESOURCE_FACTOR:
             newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
           HAS_MCP_CONFIG: newSettings.MCP_CONFIG ? "YES" : "NO",
-          MCP_SSE_SERVERS_COUNT: newSettings.MCP_CONFIG?.sse_servers?.length || 0,
-          MCP_STDIO_SERVERS_COUNT: newSettings.MCP_CONFIG?.stdio_servers?.length || 0,
+          MCP_SSE_SERVERS_COUNT:
+            newSettings.MCP_CONFIG?.sse_servers?.length || 0,
+          MCP_STDIO_SERVERS_COUNT:
+            newSettings.MCP_CONFIG?.stdio_servers?.length || 0,
         });
       },
     });
@@ -106,7 +115,9 @@ export function SettingsForm({ settings, models, onClose, activeTab }: SettingsF
                 type="password"
                 className="w-[680px]"
                 placeholder={isLLMKeySet ? "<hidden>" : ""}
-                startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
+                startContent={
+                  isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
+                }
               />
 
               <HelpLink
@@ -117,27 +128,26 @@ export function SettingsForm({ settings, models, onClose, activeTab }: SettingsF
               />
             </>
           )}
-          
+
           {activeTab === "mcp" && (
             <>
               <div className="mb-2">
-                <h3 className="text-base font-medium">{t("SETTINGS$MCP_TITLE")}</h3>
+                <h3 className="text-base font-medium">
+                  {t("SETTINGS$MCP_TITLE")}
+                </h3>
                 <p className="text-xs text-gray-400 mb-2">
                   {t("SETTINGS$MCP_DESCRIPTION")}
                 </p>
               </div>
-              
-              <MCPConfigEditor 
-                mcpConfig={mcpConfig} 
-                onChange={setMcpConfig}
-              />
+
+              <MCPConfigEditor mcpConfig={mcpConfig} onChange={setMcpConfig} />
             </>
           )}
-          
+
           {/* Hidden field to store MCP configuration */}
-          <input 
-            type="hidden" 
-            name="mcp-config" 
+          <input
+            type="hidden"
+            name="mcp-config"
             value={mcpConfig ? JSON.stringify(mcpConfig) : ""}
           />
         </div>

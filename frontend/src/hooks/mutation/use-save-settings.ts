@@ -34,27 +34,31 @@ export const useSaveSettings = () => {
   return useMutation({
     mutationFn: async (settings: Partial<PostSettings>) => {
       const newSettings = { ...currentSettings, ...settings };
-      
+
       // Track MCP configuration changes
-      if (settings.MCP_CONFIG && currentSettings?.MCP_CONFIG !== settings.MCP_CONFIG) {
+      if (
+        settings.MCP_CONFIG &&
+        currentSettings?.MCP_CONFIG !== settings.MCP_CONFIG
+      ) {
         try {
           const hasMcpConfig = !!settings.MCP_CONFIG;
           const sseServersCount = settings.MCP_CONFIG?.sse_servers?.length || 0;
-          const stdioServersCount = settings.MCP_CONFIG?.stdio_servers?.length || 0;
-          
+          const stdioServersCount =
+            settings.MCP_CONFIG?.stdio_servers?.length || 0;
+
           // Track MCP configuration usage
           if (window.posthog) {
-            window.posthog.capture('mcp_config_updated', {
+            window.posthog.capture("mcp_config_updated", {
               has_mcp_config: hasMcpConfig,
               sse_servers_count: sseServersCount,
               stdio_servers_count: stdioServersCount,
             });
           }
         } catch (e) {
-          console.error('Error tracking MCP configuration', e);
+          // Error tracking MCP configuration, silently continue
         }
       }
-      
+
       await saveSettingsMutationFn(newSettings);
     },
     onSuccess: async () => {
