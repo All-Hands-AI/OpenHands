@@ -61,11 +61,11 @@ async def check_provider_tokens(provider_info: POSTProviderModel) -> str:
     return ''
 
 
-@app.post('/add-git-providers', response_model=dict[str, str])
+@app.post('/add-git-providers')
 async def store_provider_tokens(
     provider_info: POSTProviderModel, 
     secrets_store: SecretsStore = Depends(get_secrets_store)
-):
+) -> JSONResponse:
     provider_err_msg = await check_provider_tokens(provider_info)
     if provider_err_msg:
         return JSONResponse(
@@ -155,15 +155,10 @@ async def load_custom_secrets_names(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={'error': 'User secrets not found'},
             )
-
-        custom_secrets = []
-        if user_secrets.custom_secrets:
-            for secret_name, secret_value in user_secrets.custom_secrets.items():
-                custom_secrets.append(secret_name)
-
-        secret_names = GETCustomSecrets(custom_secrets=custom_secrets)
-        return secret_names
-
+        
+        custom_secrets = list(user_secrets.custom_secrets.keys())
+        return GETCustomSecrets(custom_secrets=custom_secrets)
+    
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
