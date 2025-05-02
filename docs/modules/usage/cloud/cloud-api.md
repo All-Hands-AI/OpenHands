@@ -28,8 +28,8 @@ To start a new conversation with OpenHands performing a task, you'll need to mak
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `message` | string | Yes | The initial message to start the conversation |
-| `repository_url` | string | No | GitHub repository URL to provide context (must be a repository you've granted access to) |
+| `initial_user_msg` | string | Yes | The initial message to start the conversation |
+| `repository` | string | No | GitHub repository URL to provide context (must be a repository you've granted access to) |
 
 #### Examples
 
@@ -37,12 +37,12 @@ To start a new conversation with OpenHands performing a task, you'll need to mak
 <summary>cURL</summary>
 
 ```bash
-curl -X POST "https://api.all-hands.dev/api/conversations" \
+curl -X POST "https://app.all-hands.dev/api/conversations" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-    "repository_url": "https://github.com/yourusername/your-repo"
+    "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
+    "repository": "https://github.com/yourusername/your-repo"
   }'
 ```
 </details>
@@ -54,7 +54,7 @@ curl -X POST "https://api.all-hands.dev/api/conversations" \
 import requests
 
 api_key = "YOUR_API_KEY"
-url = "https://api.all-hands.dev/api/conversations"
+url = "https://app.all-hands.dev/api/conversations"
 
 headers = {
     "Authorization": f"Bearer {api_key}",
@@ -62,14 +62,14 @@ headers = {
 }
 
 data = {
-    "message": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-    "repository_url": "https://github.com/yourusername/your-repo"
+    "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
+    "repository": "https://github.com/yourusername/your-repo"
 }
 
 response = requests.post(url, headers=headers, json=data)
 conversation = response.json()
 
-print(f"Conversation ID: {conversation['id']}")
+print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['id']}")
 print(f"Status: {conversation['status']}")
 ```
 </details>
@@ -79,7 +79,7 @@ print(f"Status: {conversation['status']}")
 
 ```typescript
 const apiKey = "YOUR_API_KEY";
-const url = "https://api.all-hands.dev/api/conversations";
+const url = "https://app.all-hands.dev/api/conversations";
 
 const headers = {
   "Authorization": `Bearer ${apiKey}`,
@@ -87,8 +87,8 @@ const headers = {
 };
 
 const data = {
-  message: "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-  repository_url: "https://github.com/yourusername/your-repo"
+  initial_user_msg: "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
+  repository: "https://github.com/yourusername/your-repo"
 };
 
 async function startConversation() {
@@ -101,7 +101,7 @@ async function startConversation() {
 
     const conversation = await response.json();
 
-    console.log(`Conversation ID: ${conversation.id}`);
+    console.log(`Conversation Link: https://app.all-hands.dev/conversations/${conversation.id}`);
     console.log(`Status: ${conversation.status}`);
 
     return conversation;
@@ -133,7 +133,7 @@ You can check the status of a conversation by making a GET request to the conver
 #### Endpoint
 
 ```
-GET https://api.all-hands.dev/api/conversations/{conversation_id}
+GET https://app.all-hands.dev/api/conversations/{conversation_id}
 ```
 
 #### Example
@@ -142,7 +142,7 @@ GET https://api.all-hands.dev/api/conversations/{conversation_id}
 <summary>cURL</summary>
 
 ```bash
-curl -X GET "https://api.all-hands.dev/api/conversations/abc1234" \
+curl -X GET "https://app.all-hands.dev/api/conversations/{conversation_id}" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 </details>
