@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { SubmitButton } from "#/components/shared/buttons/submit-button";
 import { StopButton } from "#/components/shared/buttons/stop-button";
+import { MicroagentSuggestions } from "./microagent-suggestions";
 
 interface ChatInputProps {
   name?: string;
@@ -42,6 +43,14 @@ export function ChatInput({
   const { t } = useTranslation();
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+  const [showMicroagentSuggestions, setShowMicroagentSuggestions] =
+    React.useState(false);
+  const [inputValue, setInputValue] = React.useState(value || "");
+
+  // Update internal state when value prop changes
+  useEffect(() => {
+    setInputValue(value || "");
+  }, [value]);
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // Only handle paste if we have an image paste handler and there are files
@@ -84,9 +93,10 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    const message = value || textareaRef.current?.value || "";
+    const message = inputValue || textareaRef.current?.value || "";
     if (message.trim()) {
       onSubmit(message);
+      setInputValue("");
       onChange?.("");
       if (textareaRef.current) {
         textareaRef.current.value = "";
@@ -103,18 +113,58 @@ export function ChatInput({
     ) {
       event.preventDefault();
       handleSubmitMessage();
+    } else if (event.key === "Escape") {
+      setShowMicroagentSuggestions(false);
+    } else if (event.key === "/" && !inputValue) {
+      // Show microagent suggestions when user types "/"
+      setShowMicroagentSuggestions(true);
     }
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange?.(event.target.value);
+    const newValue = event.target.value;
+    setInputValue(newValue);
+    onChange?.(newValue);
+
+    // Show microagent suggestions when user types "/"
+    if (newValue.startsWith("/")) {
+      setShowMicroagentSuggestions(true);
+    } else {
+      setShowMicroagentSuggestions(false);
+    }
+  };
+
+  const handleSelectMicroagent = (trigger: string) => {
+    setInputValue(`${trigger} `);
+    onChange?.(`${trigger} `);
+    setShowMicroagentSuggestions(false);
+    // Focus the textarea after selection
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    // Don't hide suggestions if we're clicking on them
+    if (!event.relatedTarget?.closest(".microagent-suggestions")) {
+      setTimeout(() => {
+        setShowMicroagentSuggestions(false);
+      }, 200);
+    }
+    onBlur?.(event);
   };
 
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-6 w-full"
+      className="flex items-end justify-end grow gap-1 min-h-6 w-full relative"
     >
+      <MicroagentSuggestions
+        query={inputValue}
+        isVisible={showMicroagentSuggestions}
+        onSelect={handleSelectMicroagent}
+        className="microagent-suggestions"
+      />
       <TextareaAutosize
         ref={textareaRef}
         name={name}
@@ -122,12 +172,12 @@ export function ChatInput({
         onKeyDown={handleKeyPress}
         onChange={handleChange}
         onFocus={onFocus}
-        onBlur={onBlur}
+        onBlur={handleBlur}
         onPaste={handlePaste}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        value={value}
+        value={inputValue}
         minRows={1}
         maxRows={maxRows}
         data-dragging-over={isDraggingOver}

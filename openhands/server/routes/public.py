@@ -1,10 +1,12 @@
-from typing import Any
+from typing import Any, Dict, List
 
-from fastapi import APIRouter
-
-from openhands.security.options import SecurityAnalyzers
+from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
 
 from openhands.controller.agent import Agent
+from openhands.microagent.microagent import KnowledgeMicroagent, TaskMicroagent
+from openhands.security.options import SecurityAnalyzers
+from openhands.server.session.agent_session_manager import get_agent_session_manager
 from openhands.server.shared import config, server_config
 from openhands.utils.llm import get_supported_llm_models
 
@@ -67,3 +69,48 @@ async def get_config() -> dict[str, Any]:
         dict[str, Any]: The current server configuration.
     """
     return server_config.get_config()
+
+
+class MicroagentInfo(BaseModel):
+    name: str
+    trigger: str
+    description: str
+
+
+@app.get('/microagents', response_model=List[Dict[str, str]])
+async def get_microagents(
+    request: Request,
+    session_manager=Depends(get_agent_session_manager),
+) -> List[Dict[str, str]]:
+    """Get all available microagents for the current session.
+
+    To get the microagents:
+    ```sh
+    curl http://localhost:3000/api/options/microagents
+    ```
+
+    Returns:
+        List[Dict[str, str]]: A list of microagent information including name and trigger.
+    """
+    sid = request.cookies.get('sid')
+    if not sid:
+        return []
+
+    session = session_manager.get_session(sid)
+    if not session or not session.memory:
+        return []
+
+    # Get all knowledge microagents from memory
+    microagents = []
+    for agent in session.memory.knowledge_microagents.values():
+        if isinstance(agent, (KnowledgeMicroagent, TaskMicroagent)) and agent.triggers:
+            # Use the first trigger as the main one
+            trigger = agent.triggers[0]
+            # Extract a short description from the content (first line or paragraph)
+            description = agent.content.strip().split('\n')[0][:100]
+
+            microagents.append(
+                {'name': agent.name, 'trigger': trigger, 'description': description}
+            )
+
+    return microagents
