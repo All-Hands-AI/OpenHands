@@ -304,7 +304,7 @@ class ActionExecutor:
 
         if isinstance(plugin, JupyterPlugin):
             # Escape backslashes in Windows path
-            cwd = self.bash_session.cwd.replace('\\', '\\\\')
+            cwd = self.bash_session.cwd.replace('\\', '/')
             await self.run_ipython(
                 IPythonRunCellAction(
                     code=f'import os; os.chdir(r"{cwd}")'
@@ -404,8 +404,9 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
+                cwd = self.bash_session.cwd.replace('\\', '/')
                 reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{self.bash_session.cwd}")'
+                    f'import os; os.chdir("{cwd}")'
                 )
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
