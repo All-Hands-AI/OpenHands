@@ -6969,6 +6969,18 @@
         "de": "OpenHands hat eine API! Erstellen Sie OpenHands-Gespräche mit einem einfachen cURL-Befehl."
     },
     "TIPS$LEARN_MORE": {
-        "en": "Learn more"
+        "en": "Learn more",
+        "ja": "詳細を見る",
+        "zh-CN": "了解更多",
+        "zh-TW": "了解更多",
+        "ko-KR": "더 알아보기",
+        "no": "Lær mer",
+        "it": "Scopri di più",
+        "pt": "Saiba mais",
+        "es": "Más información",
+        "ar": "اعرف المزيد",
+        "fr": "En savoir plus",
+        "tr": "Daha fazla bilgi",
+        "de": "Mehr erfahren"
     }
 }
