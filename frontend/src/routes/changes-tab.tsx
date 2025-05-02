@@ -58,7 +58,7 @@ function GitChanges() {
 
       {!isError && gitChanges?.length === 0 && (
         <div className="max-w-2xl flex">
-          <div className="mb-4 text-m bg-tertiary rounded p-4 text-left">
+          <div className="mb-4 text-m bg-tertiary rounded-xl p-4 text-left">
             <p>
               <h4 className="font-bold">{t(I18nKey.TIPS$PROTIP)}:</h4>
               {t(randomTip.key)}
