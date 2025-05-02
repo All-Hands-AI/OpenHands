@@ -51,23 +51,23 @@ system requirements and more information.
 
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.35-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.36-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.35-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.36-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.35
+    docker.all-hands.dev/all-hands-ai/openhands:0.36
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
 When you open the application, you'll be asked to choose an LLM provider and add an API key.
-[Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-5-sonnet-20241022`)
+[Anthropic's Claude 3.7 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-7-sonnet-20250219`)
 works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
 
 ## 💡 Other ways to run OpenHands

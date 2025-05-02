@@ -177,38 +177,30 @@ class CodeActAgent(Agent):
         }
         params['tools'] = self.tools
 
-        if self.mcp_tools:
-            # Only add tools with unique names
-            existing_names = {tool['function']['name'] for tool in params['tools']}
-            unique_mcp_tools = [
-                tool
-                for tool in self.mcp_tools
-                if tool['function']['name'] not in existing_names
-            ]
-
-            if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
-                logger.info(
-                    f'Removing the default fields from the MCP tools for {self.llm.config.model} '
-                    "since it doesn't support them and the request would crash."
-                )
-                # prevent mutation of input tools
-                unique_mcp_tools = copy.deepcopy(unique_mcp_tools)
-                # Strip off default fields that cause errors with gemini-preview
-                for tool in unique_mcp_tools:
-                    if 'function' in tool and 'parameters' in tool['function']:
-                        if 'properties' in tool['function']['parameters']:
-                            for prop_name, prop in tool['function']['parameters'][
-                                'properties'
-                            ].items():
-                                if 'default' in prop:
-                                    del prop['default']
-
-            params['tools'] += unique_mcp_tools
+        # Special handling for Gemini model which doesn't support default fields
+        if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
+            logger.info(
+                f'Removing the default fields from tools for {self.llm.config.model} '
+                "since it doesn't support them and the request would crash."
+            )
+            # prevent mutation of input tools
+            params['tools'] = copy.deepcopy(params['tools'])
+            # Strip off default fields that cause errors with gemini-preview
+            for tool in params['tools']:
+                if 'function' in tool and 'parameters' in tool['function']:
+                    if 'properties' in tool['function']['parameters']:
+                        for prop_name, prop in tool['function']['parameters'][
+                            'properties'
+                        ].items():
+                            if 'default' in prop:
+                                del prop['default']
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
-        actions = self.response_to_actions_fn(response)
+        actions = self.response_to_actions_fn(
+            response, mcp_tool_names=list(self.mcp_tools.keys())
+        )
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
