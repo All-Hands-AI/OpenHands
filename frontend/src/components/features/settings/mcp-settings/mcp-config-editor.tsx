@@ -74,7 +74,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       return (
         <div
           key={`sse-${index}`}
-          className="mb-2 p-2 bg-base-tertiary rounded-md border border-gray-200"
+          className="mb-2 p-2 bg-base-tertiary rounded-md"
         >
           <div className="text-xs font-medium flex items-center">
             <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-2">
@@ -88,7 +88,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
     return (
       <div
         key={`sse-${index}`}
-        className="mb-2 p-2 bg-base-tertiary rounded-md border border-gray-200"
+        className="mb-2 p-2 bg-base-tertiary rounded-md"
       >
         <div className="text-xs font-medium flex items-center">
           <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-2">
@@ -111,7 +111,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
   const renderStdioServer = (server: MCPStdioServer, index: number) => (
     <div
       key={`stdio-${index}`}
-      className="mb-2 p-2 bg-base-tertiary rounded-md border border-gray-200"
+      className="mb-2 p-2 bg-base-tertiary rounded-md"
     >
       <div className="text-xs font-medium flex items-center">
         <span className="bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded mr-2">
@@ -151,7 +151,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
   const config = mcpConfig || { sse_servers: [], stdio_servers: [] };
 
   return (
-    <div className="border border-base-tertiary rounded-md p-3">
+    <div>
       <div className="flex justify-between items-center mb-3">
         <div className="text-sm font-medium">MCP Configuration</div>
         <div className="flex items-center">
@@ -169,7 +169,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             className="text-xs bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
             onClick={toggleEdit}
           >
-            {isEditing ? "Save Changes" : "Edit Configuration"}
+            {isEditing ? "Apply Changes" : "Edit Configuration"}
           </button>
         </div>
       </div>
@@ -183,7 +183,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
               <code>stdio_servers</code> arrays.
             </div>
             <textarea
-              className="w-full h-64 p-2 text-xs font-mono bg-base-tertiary rounded-md border border-base-tertiary focus:border-blue-500 focus:outline-none"
+              className="w-full h-64 p-2 text-xs font-mono bg-base-tertiary rounded-md focus:border-blue-500 focus:outline-none"
               value={configText}
               onChange={handleTextChange}
               spellCheck="false"
