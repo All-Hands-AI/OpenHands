@@ -44,13 +44,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (selectedConversationId) {
       deleteConversation(
         { conversationId: selectedConversationId },
-        {
-          onSuccess: () => {
-            if (cid === selectedConversationId) {
-              endSession();
-            }
-          },
-        },
       );
     }
   };
@@ -127,7 +120,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {confirmExitConversationModalVisible && (
         <ExitConversationModal
           onConfirm={() => {
-            endSession();
             onClose();
           }}
           onClose={() => setConfirmExitConversationModalVisible(false)}
