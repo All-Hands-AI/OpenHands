@@ -165,7 +165,9 @@ CHANGES: User asked about database schema and agent explained the tables and rel
     condenser = LLMAgentCacheCondenser(max_size=5)
     agent.condenser = condenser
 
-    events = [FileReadObservation(f'{i}.txt', 'content.' * i) for i in range(6)]
+    events = [user_msg()] + [
+        FileReadObservation(f'{i}.txt', 'content.' * i) for i in range(5)
+    ]
     for i, event in enumerate(events):
         event._id = i  # type: ignore [attr-defined]
 
@@ -213,7 +215,7 @@ CHANGES: Summary <mention content of message 4,5>
     condenser = LLMAgentCacheCondenser(max_size=5)
     agent.condenser = condenser
 
-    events = []
+    events = [user_msg()]
 
     for i in range(1, 8):
         if i % 2 == 0:
@@ -261,35 +263,29 @@ CURRENT_STATE: Conversation in progress
     agent.condenser = condenser
 
     # Create a lot of events to ensure we exceed max_size
-    events = []
+    events: list[Event] = []
     for i in range(10):
         event = MessageAction(f'Message {i}')
         event._source = 'user' if i % 2 == 0 else 'agent'  # type: ignore [attr-defined]
         event._id = i + 1  # type: ignore [attr-defined]
         events.append(event)
 
-    state = State(history=cast(list[Event], events))
+    state = State(history=events)
 
     result = condenser.condensed_history(state, agent)
 
     # Verify that a Condensation is returned
     assert isinstance(result, Condensation)
     result.action._id = 20  # type: ignore [attr-defined]
+    state.history.append(result.action)
 
-    # Create a new state with just a few events and the condensation action
-    # to avoid triggering condensation again
-    new_state = State(
-        history=[
-            events[-1],  # Keep the last event
-            result.action,  # Add the condensation action
-        ]
-    )
-
-    view = condenser.condensed_history(new_state, agent)
+    view = condenser.condensed_history(state, agent)
     assert isinstance(view, View)
 
     # Check that the system prompt is preserved in the messages
-    messages = agent.get_messages(view.events)
+    messages = agent.get_messages(
+        view.events, agent._get_initial_user_message(state.history)
+    )
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
 
@@ -353,7 +349,9 @@ CURRENT_STATE: Conversation started
     assert len(user_messages) > 0
 
     # Check that the system prompt is preserved in the messages
-    messages = agent.get_messages(view.events)
+    messages = agent.get_messages(
+        view.events, agent._get_initial_user_message(state.history)
+    )
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
 
@@ -408,7 +406,9 @@ CURRENT_STATE: Conversation initialized
     assert result.action in view.events
 
     # Check that the system prompt is preserved in the messages
-    messages = agent.get_messages(view.events)
+    messages = agent.get_messages(
+        view.events, agent._get_initial_user_message(state.history)
+    )
     assert messages[0].role == 'system'
     assert 'You are OpenHands' in messages[0].content[0].text
 
@@ -610,3 +610,11 @@ CURRENT_STATE: Conversation initialized
 
     # Check that the summary contains the greeting information
     assert 'User and AI greeted each other' in result.action.summary
+
+
+def user_msg() -> MessageAction:
+    """Create a user message."""
+    event = MessageAction('User message')
+    event._source = EventSource.USER  # type: ignore [attr-defined]
+    event._id = 1  # type: ignore [attr-defined]
+    return event
