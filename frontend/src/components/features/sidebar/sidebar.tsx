@@ -1,5 +1,4 @@
 import React from "react";
-import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { useLocation } from "react-router-dom";
 import { useGitUser } from "#/hooks/query/use-git-user";
