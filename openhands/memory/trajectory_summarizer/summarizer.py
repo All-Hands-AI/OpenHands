@@ -388,6 +388,18 @@ class TrajectorySummarizer:
         trajectory = await self.get_trajectory_from_event_stream(
             event_stream, filter_hidden=filter_hidden
         )
+        
+        # Debug: Print the trajectory
+        logger.info(f"DEBUG - Raw Trajectory: {json.dumps(trajectory, indent=2)}")
+        
+        # Preprocess the trajectory
+        processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory)
+        logger.info(f"DEBUG - Processed Trajectory: {json.dumps(processed_trajectory, indent=2)}")
 
         # Summarize the trajectory
-        return self.summarize_trajectory(trajectory, llm=llm)
+        summary = self.summarize_trajectory(trajectory, llm=llm)
+        
+        # Debug: Print the summary
+        logger.info(f"DEBUG - Summary Result: {json.dumps(summary, indent=2)}")
+        
+        return summary

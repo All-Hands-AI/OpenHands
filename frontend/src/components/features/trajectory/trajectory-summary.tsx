@@ -271,6 +271,18 @@ export function TrajectorySummary({
                     segments.length,
                     segment,
                   );
+                  
+                  // Debug: Log segment information
+                  console.log(`Segment ${index} - ${segment.title}:`, {
+                    ids: segment.ids,
+                    timestamp_range: segment.timestamp_range,
+                    messageCount: segmentMessages.length,
+                    messages: segmentMessages.map(m => ({
+                      id: m.eventID,
+                      sender: m.sender,
+                      content: m.content?.substring(0, 50) + (m.content?.length > 50 ? '...' : '')
+                    }))
+                  });
 
                   if (segmentMessages.length === 0) {
                     return (

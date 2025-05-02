@@ -59,27 +59,41 @@ async def get_trajectory_summary(request: Request) -> JSONResponse:
     try:
         # Get the session ID from the conversation
         sid = request.state.conversation.sid
+        logger.info(f"DEBUG - Getting trajectory summary for conversation {sid}")
         
         # Get the agent session from the conversation manager
         session = conversation_manager._local_agent_loops_by_sid.get(sid)
         if not session:
+            logger.error(f"DEBUG - No active session found for conversation {sid}")
             raise ValueError(f"No active session found for conversation {sid}")
             
         agent_session = session.agent_session
         if not agent_session or not agent_session.controller:
+            logger.error(f"DEBUG - No agent controller found for conversation {sid}")
             raise ValueError(f"No agent controller found for conversation {sid}")
         
         # Get the LLM from the agent controller
         llm = agent_session.controller.agent.llm
+        logger.info(f"DEBUG - Using LLM: {llm.__class__.__name__}")
 
         # Create a summarizer using the same LLM
         summarizer = TrajectorySummarizer(llm=llm)
+        logger.info(f"DEBUG - Created summarizer: {summarizer.__class__.__name__}")
 
         # Get the event stream from the conversation
         event_stream = request.state.conversation.event_stream
+        logger.info(f"DEBUG - Got event stream with {len(event_stream.events)} events")
 
         # Summarize the conversation
+        logger.info(f"DEBUG - Starting conversation summarization")
         summary = await summarizer.summarize_conversation(event_stream)
+        logger.info(f"DEBUG - Summarization complete with {len(summary.get('segments', []))} segments")
+        
+        # Log the summary structure
+        logger.info(f"DEBUG - Summary structure: overall_summary and {len(summary.get('segments', []))} segments")
+        for i, segment in enumerate(summary.get('segments', [])):
+            logger.info(f"DEBUG - Segment {i}: {segment.get('title')} with {len(segment.get('ids', []))} IDs")
+            logger.info(f"DEBUG - Segment {i} IDs: {segment.get('ids', [])}")
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=summary)
     except Exception as e:
