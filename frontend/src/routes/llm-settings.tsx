@@ -22,6 +22,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { isCustomModel } from "#/utils/is-custom-model";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -101,6 +102,13 @@ function LlmSettingsScreen() {
       {
         LLM_MODEL: fullLlmModel,
         llm_api_key: apiKey || null,
+
+        // reset advanced settings
+        LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
+        AGENT: DEFAULT_SETTINGS.AGENT,
+        CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+        SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+        ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -126,7 +134,7 @@ function LlmSettingsScreen() {
       {
         LLM_MODEL: model,
         LLM_BASE_URL: baseUrl,
-        llm_api_key: apiKey,
+        llm_api_key: apiKey || null,
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
