@@ -13,7 +13,7 @@ import {
   ConversationTrigger,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
@@ -152,7 +152,8 @@ class OpenHands {
 
   static async createConversation(
     conversation_trigger: ConversationTrigger = "gui",
-    selectedRepository?: GitRepository,
+    selectedRepository?: string,
+    git_provider?: Provider,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
@@ -160,7 +161,8 @@ class OpenHands {
   ): Promise<Conversation> {
     const body = {
       conversation_trigger,
-      selected_repository: selectedRepository,
+      repository: selectedRepository,
+      git_provider,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,

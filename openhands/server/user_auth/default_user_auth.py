@@ -72,6 +72,7 @@ class DefaultUserAuth(UserAuth):
         provider_tokens = getattr(secrets_store, 'provider_tokens', None)
         return provider_tokens
 
+
     @classmethod
     async def get_instance(cls, request: Request) -> UserAuth:
         user_auth = DefaultUserAuth()

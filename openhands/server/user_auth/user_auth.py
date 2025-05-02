@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from fastapi import Request
 from pydantic import SecretStr
@@ -12,6 +13,11 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.secret_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
+
+
+class AuthType(Enum):
+    COOKIE = "cookie"
+    BEARER = "bearer"
 
 
 class UserAuth(ABC):
@@ -54,6 +60,9 @@ class UserAuth(ABC):
     @abstractmethod
     async def get_user_secrets(self) -> UserSecrets | None:
         """Get the user's secrets"""
+        
+    def get_auth_type(self) -> AuthType | None:
+        return None
 
     @classmethod
     @abstractmethod
