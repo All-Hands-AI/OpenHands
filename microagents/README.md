@@ -4,7 +4,7 @@ Microagents are specialized prompts that enhance OpenHands with domain-specific 
 
 ## Sources of Microagents
 
-OpenHands loads microagents from two sources:
+OpenHands loads microagents from three sources:
 
 ### 1. Shareable Microagents (Public)
 This directory (`OpenHands/microagents/`) contains shareable microagents that are:
@@ -25,7 +25,25 @@ OpenHands/microagents/
     └── feature.md     # Feature implementation
 ```
 
-### 2. Repository Instructions (Private)
+### 2. User Global Microagents
+The `~/.openhands/microagents/` directory contains user-specific global microagents that are:
+- Available across all repositories on your machine
+- Maintained by you locally
+- Perfect for personal preferences and workflows that apply to all your projects
+
+Directory structure:
+```
+~/.openhands/microagents/
+├── # Your personal knowledge microagents
+│   ├── my-python-style.md    # Personal Python style preferences
+│   ├── my-git-workflow.md    # Your preferred Git workflow
+│   └── ...
+└── # Your global repo microagents
+    ├── global-guidelines.md  # Guidelines for all your repos
+    └── ...
+```
+
+### 3. Repository Instructions (Private)
 Each repository can have its own instructions in `.openhands/microagents/repo.md`. These instructions are:
 - Private to that repository
 - Automatically loaded when working with that repository
@@ -44,8 +62,10 @@ your-repository/
 ## Loading Order
 
 When OpenHands works with a repository, it:
-1. Loads repository-specific instructions from `.openhands/microagents/repo.md` if present
-2. Loads relevant knowledge agents based on keywords in conversations
+1. Loads global microagents from the OpenHands package
+2. Loads user global microagents from `~/.openhands/microagents/` if present
+3. Loads repository-specific instructions from `.openhands/microagents/repo.md` if present
+4. Loads relevant knowledge agents based on keywords in conversations
 
 ## Types of Microagents
 
@@ -119,14 +139,6 @@ You can see an example of a repo agent in [the agent for the OpenHands repo itse
    - List environment requirements
    - Maintain up-to-date team practices
    - YAML frontmatter is optional - files without frontmatter will be loaded with default settings
-
-### Submission Process
-
-1. Create your agent file in the appropriate directory:
-   - `microagents/` for expertise (public, shareable)
-   - Note: Repository-specific agents should remain in their respective repositories' `.openhands/microagents/` directory
-2. Test thoroughly
-3. Submit a pull request to OpenHands
 
 
 ## License
