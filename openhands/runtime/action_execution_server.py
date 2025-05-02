@@ -303,9 +303,11 @@ class ActionExecutor:
         logger.debug(f'Initializing plugin: {plugin.name}')
 
         if isinstance(plugin, JupyterPlugin):
+            # Convert Windows path to use forward slashes to avoid escape sequence issues
+            cwd = self.bash_session.cwd.replace('\\', '/')
             await self.run_ipython(
                 IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
+                    code=f'import os; os.chdir(r"{cwd}")'
                 )
             )
 
