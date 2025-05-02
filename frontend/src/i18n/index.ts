@@ -2,6 +2,8 @@ import i18n from "i18next";
 import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
+import translations from "./translation.json";
+import { tipTranslations } from "#/utils/tips";
 
 export const AvailableLanguages = [
   { label: "English", value: "en" },
@@ -19,6 +21,17 @@ export const AvailableLanguages = [
   { label: "Türkçe", value: "tr" },
 ];
 
+// Merge the translations
+const resources = {};
+AvailableLanguages.forEach(({ value }) => {
+  resources[value] = {
+    translation: {
+      ...translations,
+      ...tipTranslations
+    }
+  };
+});
+
 i18n
   .use(Backend)
   .use(LanguageDetector)
@@ -27,6 +40,7 @@ i18n
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
     load: "languageOnly",
+    resources
   });
 
 export default i18n;

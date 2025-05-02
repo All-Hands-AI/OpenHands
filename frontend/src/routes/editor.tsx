@@ -1,11 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import React from "react";
 import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-viewer";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { getRandomTip } from "#/utils/tips";
 
 // Error message patterns
 const GIT_REPO_ERROR_PATTERN = /not a git repository/i;
@@ -21,6 +23,12 @@ function StatusMessage({ children }: React.PropsWithChildren) {
 function EditorScreen() {
   const { t } = useTranslation();
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
+  const [randomTip, setRandomTip] = React.useState(getRandomTip());
+
+  // Update the random tip when the component mounts
+  React.useEffect(() => {
+    setRandomTip(getRandomTip());
+  }, []);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
@@ -47,7 +55,12 @@ function EditorScreen() {
       )}
 
       {runtimeIsActive && !isError && gitChanges?.length === 0 && (
-        <StatusMessage>{t(I18nKey.DIFF_VIEWER$NO_CHANGES)}</StatusMessage>
+        <StatusMessage>
+          <div className="max-w-2xl text-center">
+            <div className="mb-4 text-xl font-semibold">Tip</div>
+            {t(randomTip.key)}
+          </div>
+        </StatusMessage>
       )}
       {isSuccess &&
         gitChanges.map((change) => (
