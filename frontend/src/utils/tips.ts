@@ -16,6 +16,30 @@ export const TIPS: Tip[] = [
   },
   { key: I18nKey.TIPS$VSCODE_INSTANCE },
   { key: I18nKey.TIPS$SAVE_WORK },
+  {
+    key: I18nKey.TIPS$SPECIFY_FILES,
+    link: "https://docs.all-hands.dev/modules/usage/prompting/prompting-best-practices",
+  },
+  {
+    key: I18nKey.TIPS$HEADLESS_MODE,
+    link: "https://docs.all-hands.dev/modules/usage/how-to/headless-mode",
+  },
+  {
+    key: I18nKey.TIPS$CLI_MODE,
+    link: "https://docs.all-hands.dev/modules/usage/how-to/cli-mode",
+  },
+  {
+    key: I18nKey.TIPS$GITHUB_HOOK,
+    link: "https://docs.all-hands.dev/modules/usage/cloud/cloud-github-resolver",
+  },
+  {
+    key: I18nKey.TIPS$BLOG_SIGNUP,
+    link: "https://www.all-hands.dev/blog",
+  },
+  {
+    key: I18nKey.TIPS$API_USAGE,
+    link: "https://docs.all-hands.dev/swagger-ui/",
+  },
 ];
 
 export function getRandomTip(): Tip {
