@@ -496,18 +496,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.38.6"
+version = "1.38.7"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.38.6-py3-none-any.whl", hash = "sha256:fe5bbd349310ef560b247e61453983ee6078ad4c2672620ca66bc0d29d64e728"},
-    {file = "boto3-1.38.6.tar.gz", hash = "sha256:9d764c402cadd112020812b9621a567058aa29d41a491d2d04b070be19ad5173"},
+    {file = "boto3-1.38.7-py3-none-any.whl", hash = "sha256:c548983189b0a88f09cd4c572519b1923695b25cd877def58b61e03f41a6fd96"},
+    {file = "boto3-1.38.7.tar.gz", hash = "sha256:0269f793f0affc646b95c2cd12d42a4db49d5f30ef1073f616a112a384933f8e"},
 ]
 
 [package.dependencies]
-botocore = ">=1.38.6,<1.39.0"
+botocore = ">=1.38.7,<1.39.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.12.0,<0.13.0"
 
@@ -516,14 +516,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.38.6"
-description = "Type annotations for boto3 1.38.6 generated with mypy-boto3-builder 8.10.1"
+version = "1.38.7"
+description = "Type annotations for boto3 1.38.7 generated with mypy-boto3-builder 8.10.1"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.38.6-py3-none-any.whl", hash = "sha256:501117865f52445654c9192885abd5995cfd31fec46aac02c7f5ea0b78492252"},
-    {file = "boto3_stubs-1.38.6.tar.gz", hash = "sha256:3459d1203da5ca3400a1606b5dac53b10c31877ac11bbf95a82b85784ff32771"},
+    {file = "boto3_stubs-1.38.7-py3-none-any.whl", hash = "sha256:1d3fbc6a3a79d1bf91da081c22a83797297d261190b4a36052aac4953425fb17"},
+    {file = "boto3_stubs-1.38.7.tar.gz", hash = "sha256:fda87e0ef0dbada1179b6bf563567ddf45d6d014c5d682d2b5db101263c2eb44"},
 ]
 
 [package.dependencies]
@@ -579,7 +579,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.38.0,<1.39.0)"]
 billing = ["mypy-boto3-billing (>=1.38.0,<1.39.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.38.0,<1.39.0)"]
-boto3 = ["boto3 (==1.38.6)"]
+boto3 = ["boto3 (==1.38.7)"]
 braket = ["mypy-boto3-braket (>=1.38.0,<1.39.0)"]
 budgets = ["mypy-boto3-budgets (>=1.38.0,<1.39.0)"]
 ce = ["mypy-boto3-ce (>=1.38.0,<1.39.0)"]
@@ -944,14 +944,14 @@ xray = ["mypy-boto3-xray (>=1.38.0,<1.39.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.38.6"
+version = "1.38.7"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.38.6-py3-none-any.whl", hash = "sha256:ccac197e444b7fcdc2ddbdafddddf9f82454a7e1f9d2a55ef9dcc0258b3b27e3"},
-    {file = "botocore-1.38.6.tar.gz", hash = "sha256:07e0721f6b1758183ed425f481a7af79e4897a3c02c2c486e101c576aee7377c"},
+    {file = "botocore-1.38.7-py3-none-any.whl", hash = "sha256:a002ec18cc02c4b039d20c39ca88ecf2fdb9533c0a5f3670e8c0fcdd3ee4a045"},
+    {file = "botocore-1.38.7.tar.gz", hash = "sha256:5c6df7171390437683072aadc0d2dfbcbfa72df52a134a5d4bed811ed214c3df"},
 ]
 
 [package.dependencies]
@@ -2857,7 +2857,7 @@ grpcio = {version = ">=1.49.1,<2.0dev", optional = true, markers = "python_versi
 grpcio-status = {version = ">=1.49.1,<2.0.dev0", optional = true, markers = "python_version >= \"3.11\" and extra == \"grpc\""}
 proto-plus = [
     {version = ">=1.25.0,<2.0.0dev", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0dev"},
+    {version = ">=1.22.3,<2.0.0dev", markers = "python_version < \"3.13\""},
 ]
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
 requests = ">=2.18.0,<3.0.0.dev0"
@@ -3072,7 +3072,7 @@ google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0dev"
 grpc-google-iam-v1 = ">=0.14.0,<1.0.0dev"
 proto-plus = [
     {version = ">=1.25.0,<2.0.0dev", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0dev", markers = "python_version < \"3.13\""},
+    {version = ">=1.22.3,<2.0.0dev"},
 ]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0dev"
 
@@ -5108,14 +5108,14 @@ files = [
 
 [[package]]
 name = "mcp"
-version = "1.6.0"
+version = "1.7.0"
 description = "Model Context Protocol SDK"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0"},
-    {file = "mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723"},
+    {file = "mcp-1.7.0-py3-none-any.whl", hash = "sha256:0e874a587f542211f36f87b02c9acd6ad2534976fb2c36ff794d8b2bc0a91915"},
+    {file = "mcp-1.7.0.tar.gz", hash = "sha256:8b955eddf5fbb09613c4d517956745d932db9f757673200112b336bd8092509f"},
 ]
 
 [package.dependencies]
@@ -5124,9 +5124,10 @@ httpx = ">=0.27"
 httpx-sse = ">=0.4"
 pydantic = ">=2.7.2,<3.0.0"
 pydantic-settings = ">=2.5.2"
+python-multipart = ">=0.0.9"
 sse-starlette = ">=1.6.1"
 starlette = ">=0.27"
-uvicorn = ">=0.23.1"
+uvicorn = {version = ">=0.23.1", markers = "sys_platform != \"emscripten\""}
 
 [package.extras]
 cli = ["python-dotenv (>=1.0.0)", "typer (>=0.12.4)"]
@@ -5217,14 +5218,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.74.39"
+version = "0.74.40"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.74.39-py3-none-any.whl", hash = "sha256:6ac666ef159eff8e0d33c279894cd8cc8b924510a871f207955cbd8531f42db6"},
-    {file = "modal-0.74.39.tar.gz", hash = "sha256:06a2ec55d1591918ce6b51b620148330006b2e81ed6e0f1b8cf4a18f124e5e67"},
+    {file = "modal-0.74.40-py3-none-any.whl", hash = "sha256:2cb1f2c44f8b4965f7d12713074d0761ae43cd00dd19d22689ec3d431ef2a65a"},
+    {file = "modal-0.74.40.tar.gz", hash = "sha256:b36f16a52aaa1d22fa8e2d98543c72e0758ca9b0c6967cfd7e9e98395b8fb135"},
 ]
 
 [package.dependencies]
@@ -8570,30 +8571,30 @@ files = [
 
 [[package]]
 name = "ruff"
-version = "0.11.7"
+version = "0.11.8"
 description = "An extremely fast Python linter and code formatter, written in Rust."
 optional = false
 python-versions = ">=3.7"
 groups = ["dev", "evaluation"]
 files = [
-    {file = "ruff-0.11.7-py3-none-linux_armv6l.whl", hash = "sha256:d29e909d9a8d02f928d72ab7837b5cbc450a5bdf578ab9ebee3263d0a525091c"},
-    {file = "ruff-0.11.7-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:dd1fb86b168ae349fb01dd497d83537b2c5541fe0626e70c786427dd8363aaee"},
-    {file = "ruff-0.11.7-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d3d7d2e140a6fbbc09033bce65bd7ea29d6a0adeb90b8430262fbacd58c38ada"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4809df77de390a1c2077d9b7945d82f44b95d19ceccf0c287c56e4dc9b91ca64"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:f3a0c2e169e6b545f8e2dba185eabbd9db4f08880032e75aa0e285a6d3f48201"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:49b888200a320dd96a68e86736cf531d6afba03e4f6cf098401406a257fcf3d6"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:2b19cdb9cf7dae00d5ee2e7c013540cdc3b31c4f281f1dacb5a799d610e90db4"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:64e0ee994c9e326b43539d133a36a455dbaab477bc84fe7bfbd528abe2f05c1e"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:bad82052311479a5865f52c76ecee5d468a58ba44fb23ee15079f17dd4c8fd63"},
-    {file = "ruff-0.11.7-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7940665e74e7b65d427b82bffc1e46710ec7f30d58b4b2d5016e3f0321436502"},
-    {file = "ruff-0.11.7-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:169027e31c52c0e36c44ae9a9c7db35e505fee0b39f8d9fca7274a6305295a92"},
-    {file = "ruff-0.11.7-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:305b93f9798aee582e91e34437810439acb28b5fc1fee6b8205c78c806845a94"},
-    {file = "ruff-0.11.7-py3-none-musllinux_1_2_i686.whl", hash = "sha256:a681db041ef55550c371f9cd52a3cf17a0da4c75d6bd691092dfc38170ebc4b6"},
-    {file = "ruff-0.11.7-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:07f1496ad00a4a139f4de220b0c97da6d4c85e0e4aa9b2624167b7d4d44fd6b6"},
-    {file = "ruff-0.11.7-py3-none-win32.whl", hash = "sha256:f25dfb853ad217e6e5f1924ae8a5b3f6709051a13e9dad18690de6c8ff299e26"},
-    {file = "ruff-0.11.7-py3-none-win_amd64.whl", hash = "sha256:0a931d85959ceb77e92aea4bbedfded0a31534ce191252721128f77e5ae1f98a"},
-    {file = "ruff-0.11.7-py3-none-win_arm64.whl", hash = "sha256:778c1e5d6f9e91034142dfd06110534ca13220bfaad5c3735f6cb844654f6177"},
-    {file = "ruff-0.11.7.tar.gz", hash = "sha256:655089ad3224070736dc32844fde783454f8558e71f501cb207485fe4eee23d4"},
+    {file = "ruff-0.11.8-py3-none-linux_armv6l.whl", hash = "sha256:896a37516c594805e34020c4a7546c8f8a234b679a7716a3f08197f38913e1a3"},
+    {file = "ruff-0.11.8-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ab86d22d3d721a40dd3ecbb5e86ab03b2e053bc93c700dc68d1c3346b36ce835"},
+    {file = "ruff-0.11.8-py3-none-macosx_11_0_arm64.whl", hash = "sha256:258f3585057508d317610e8a412788cf726efeefa2fec4dba4001d9e6f90d46c"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:727d01702f7c30baed3fc3a34901a640001a2828c793525043c29f7614994a8c"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:3dca977cc4fc8f66e89900fa415ffe4dbc2e969da9d7a54bfca81a128c5ac219"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c657fa987d60b104d2be8b052d66da0a2a88f9bd1d66b2254333e84ea2720c7f"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:f2e74b021d0de5eceb8bd32919f6ff8a9b40ee62ed97becd44993ae5b9949474"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f9b5ef39820abc0f2c62111f7045009e46b275f5b99d5e59dda113c39b7f4f38"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c1dba3135ca503727aa4648152c0fa67c3b1385d3dc81c75cd8a229c4b2a1458"},
+    {file = "ruff-0.11.8-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7f024d32e62faad0f76b2d6afd141b8c171515e4fb91ce9fd6464335c81244e5"},
+    {file = "ruff-0.11.8-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:d365618d3ad747432e1ae50d61775b78c055fee5936d77fb4d92c6f559741948"},
+    {file = "ruff-0.11.8-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:4d9aaa91035bdf612c8ee7266153bcf16005c7c7e2f5878406911c92a31633cb"},
+    {file = "ruff-0.11.8-py3-none-musllinux_1_2_i686.whl", hash = "sha256:0eba551324733efc76116d9f3a0d52946bc2751f0cd30661564117d6fd60897c"},
+    {file = "ruff-0.11.8-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:161eb4cff5cfefdb6c9b8b3671d09f7def2f960cee33481dd898caf2bcd02304"},
+    {file = "ruff-0.11.8-py3-none-win32.whl", hash = "sha256:5b18caa297a786465cc511d7f8be19226acf9c0a1127e06e736cd4e1878c3ea2"},
+    {file = "ruff-0.11.8-py3-none-win_amd64.whl", hash = "sha256:6e70d11043bef637c5617297bdedec9632af15d53ac1e1ba29c448da9341b0c4"},
+    {file = "ruff-0.11.8-py3-none-win_arm64.whl", hash = "sha256:304432e4c4a792e3da85b7699feb3426a0908ab98bf29df22a31b0cdd098fac2"},
+    {file = "ruff-0.11.8.tar.gz", hash = "sha256:6d742d10626f9004b781f4558154bb226620a7242080e11caeffab1a40e99df8"},
 ]
 
 [[package]]
@@ -11118,4 +11119,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "f1ce7e74efef9d2c06783bb4167b7ab558459ed63bcd99c8549f984bbb4d0034"
+content-hash = "fc267a36d8218a751e29c461ea1a769c8cc76b11e1eb55e860f85d8df349bb95"
