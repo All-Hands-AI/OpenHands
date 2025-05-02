@@ -12,8 +12,9 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
 )
-from openhands.integrations.service_types import Repository, SuggestedTask
+from openhands.integrations.service_types import AuthenticationError, ProviderType, Repository, SuggestedTask
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -29,9 +30,11 @@ from openhands.server.shared import (
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
+    get_auth_type,
     get_provider_tokens,
     get_user_id,
 )
+from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
@@ -48,7 +51,8 @@ app = APIRouter(prefix='/api')
 
 class InitSessionRequest(BaseModel):
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
-    selected_repository: Repository | None = None
+    repository: str | None = None
+    git_provider: ProviderType | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -59,7 +63,7 @@ class InitSessionRequest(BaseModel):
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    selected_repository: Repository | None,
+    selected_repository: str | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -67,7 +71,7 @@ async def _create_new_conversation(
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ):
-    print("trigger", conversation_trigger)
+    
     logger.info(
         'Creating conversation',
         extra={'signal': 'create_conversation', 'user_id': user_id, 'trigger': conversation_trigger.value},
@@ -122,9 +126,7 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository.full_name
-            if selected_repository
-            else selected_repository,
+            selected_repository=selected_repository,
             selected_branch=selected_branch,
         )
     )
@@ -161,6 +163,7 @@ async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
+    auth_type: AuthType | None = Depends(get_auth_type)
 ):
     """Initialize a new session or join an existing one.
 
@@ -168,24 +171,33 @@ async def new_conversation(
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    selected_repository = data.selected_repository
+    repository = data.repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     conversation_trigger = data.conversation_trigger
+    git_provider = data.git_provider
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
 
+    if auth_type == AuthType.BEARER:
+        conversation_trigger = ConversationTrigger.REMOTE_API_KEY
+
     try:
+        if repository:
+            provider_handler = ProviderHandler(provider_tokens)
+            # Check against git_provider, otherwise check all provider apis
+            await provider_handler.verify_repo_provider(repository, git_provider)
+
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
-            selected_repository=selected_repository,
+            selected_repository=repository,
             selected_branch=selected_branch,
             initial_user_msg=initial_user_msg,
             image_urls=image_urls,
@@ -212,6 +224,16 @@ async def new_conversation(
                 'status': 'error',
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except AuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )

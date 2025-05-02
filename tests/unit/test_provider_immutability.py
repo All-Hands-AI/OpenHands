@@ -119,8 +119,13 @@ def test_settings_immutability():
 def test_post_settings_conversion():
     """Test that POSTSettingsModel correctly converts to Settings"""
     # Create POST model with token data
+    github_token = ProviderToken(token=SecretStr('test_token'))
+    gitlab_token = ProviderToken(token=SecretStr('gitlab_token'))
     post_data = POSTSettingsModel(
-        provider_tokens={'github': 'test_token', 'gitlab': 'gitlab_token'}
+        provider_tokens={
+            ProviderType.GITHUB: github_token,
+            ProviderType.GITLAB: gitlab_token,
+        }
     )
 
     # Convert to settings using convert_to_settings function

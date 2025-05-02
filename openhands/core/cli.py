@@ -14,12 +14,14 @@ from openhands.core.cli_commands import (
 )
 from openhands.core.cli_tui import (
     UsageMetrics,
+    display_agent_running_message,
     display_banner,
     display_event,
     display_initial_user_prompt,
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
+    process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
 )
@@ -52,7 +54,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
-from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -99,6 +101,7 @@ async def run_session(
 
     sid = str(uuid4())
     is_loaded = asyncio.Event()
+    is_paused = asyncio.Event()  # Event to track agent pause requests
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -109,8 +112,6 @@ async def run_session(
     )
 
     agent = create_agent(config)
-    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -124,10 +125,12 @@ async def run_session(
 
     usage_metrics = UsageMetrics()
 
-    async def prompt_for_next_task():
+    async def prompt_for_next_task(agent_state: str):
         nonlocal reload_microagents, new_session_requested
         while True:
-            next_message = await read_prompt_input(config.cli_multiline_input)
+            next_message = await read_prompt_input(
+                agent_state, multiline=config.cli_multiline_input
+            )
 
             if not next_message.strip():
                 continue
@@ -150,7 +153,7 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents
+        nonlocal reload_microagents, is_paused
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -159,6 +162,10 @@ async def run_session(
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
             ]:
+                # If the agent is paused, do not prompt for input as it's already handled by PAUSED state change
+                if is_paused.is_set():
+                    return
+
                 # Reload microagents after initialization of repo.md
                 if reload_microagents:
                     microagents: list[BaseMicroagent] = (
@@ -166,9 +173,14 @@ async def run_session(
                     )
                     memory.load_user_workspace_microagents(microagents)
                     reload_microagents = False
-                await prompt_for_next_task()
+                await prompt_for_next_task(event.agent_state)
 
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                # If the agent is paused, do not prompt for confirmation
+                # The confirmation step will re-run after the agent has been resumed
+                if is_paused.is_set():
+                    return
+
                 user_confirmed = await read_confirmation_input()
                 if user_confirmed:
                     event_stream.add_event(
@@ -181,12 +193,23 @@ async def run_session(
                         EventSource.USER,
                     )
 
+            if event.agent_state == AgentState.PAUSED:
+                is_paused.clear()  # Revert the event state before prompting for user input
+                await prompt_for_next_task(event.agent_state)
+
+            if event.agent_state == AgentState.RUNNING:
+                display_agent_running_message()
+                loop.create_task(
+                    process_agent_pause(is_paused, event_stream)
+                )  # Create a task to track agent pause requests from the user
+
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
+    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None
@@ -212,7 +235,7 @@ async def run_session(
     clear()
 
     # Show OpenHands banner and session ID
-    display_banner(session_id=sid, is_loaded=is_loaded)
+    display_banner(session_id=sid)
 
     # Show OpenHands welcome
     display_welcome_message()
@@ -225,7 +248,7 @@ async def run_session(
         )
     else:
         # Otherwise prompt for the user's first message right away
-        asyncio.create_task(prompt_for_next_task())
+        asyncio.create_task(prompt_for_next_task(''))
 
     await run_agent_until_done(
         controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
