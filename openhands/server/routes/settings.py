@@ -32,21 +32,19 @@ async def load_settings(
     secrets_store: SecretsStore = Depends(get_secrets_store)
 ) -> GETSettingsModel | JSONResponse:
     
-
-    user_secrets = await invalidate_legacy_secrets_store(settings_store, secrets_store)
-
-    # On initial load, user secrets may not be populated with values migrated from settings store
-    # If invalidation is successful, then the returned user secrets holds the most recent values
-    git_providers = user_secrets.provider_tokens if user_secrets else provider_tokens
-
-    settings: Settings | None = await settings_store.load()
-
+    settings = await settings_store.load()
+    
     try:
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={'error': 'Settings not found'},
             )
+        
+        # On initial load, user secrets may not be populated with values migrated from settings store
+        user_secrets = await invalidate_legacy_secrets_store(settings, settings_store, secrets_store)
+        # If invalidation is successful, then the returned user secrets holds the most recent values
+        git_providers = user_secrets.provider_tokens if user_secrets else provider_tokens
 
         provider_tokens_set: dict[ProviderType, str | None]  = {}
         if git_providers:
