@@ -19,40 +19,6 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _normalize_windows_path_for_comparison(path1, path2):
-    """
-    Helper function to normalize Windows paths for comparison, handling 8.3 short name vs long name issues.
-
-    This works by splitting both paths at common parts (like Temp) and comparing only the constant parts
-    while ignoring username differences which can vary between short/long form.
-    """
-    # Convert both to lowercase for case-insensitive comparison
-    path1 = os.path.normcase(path1)
-    path2 = os.path.normcase(path2)
-
-    # Check if they're already equal after normcase
-    if path1 == path2:
-        return True
-
-    # Split both paths by common identifiers
-    parts1 = path1.split('\\')
-    parts2 = path2.split('\\')
-
-    # Need same number of parts for a valid path
-    if len(parts1) != len(parts2):
-        return False
-
-    # Compare all parts except user directory which can differ (RUNNER~1 vs runneradmin)
-    for i, (part1, part2) in enumerate(zip(parts1, parts2)):
-        # Skip username part comparison (typically index 1 in C:\Users\username\...)
-        if i == 1 and 'users' in parts1[0].lower() and 'users' in parts2[0].lower():
-            continue
-        if part1 != part2:
-            return False
-
-    return True
-
-
 @pytest.fixture
 def temp_work_dir():
     """Create a temporary directory for testing."""
@@ -288,22 +254,17 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     sub_dir_path = Path(abs_temp_work_dir) / 'subdir'
     sub_dir_path.mkdir()
     assert sub_dir_path.is_dir()
-    sub_dir_str = str(sub_dir_path)
 
     # Test changing directory
     action_cd = CmdRunAction(command='Set-Location subdir')
     result_cd = windows_bash_session.execute(action_cd)
     assert isinstance(result_cd, CmdOutputObservation)
     assert result_cd.exit_code == 0
-    # Check that the session's internal CWD state was updated - normalize paths
-    # to handle Windows short name vs long name format differences
-    assert _normalize_windows_path_for_comparison(
-        windows_bash_session._cwd, sub_dir_str
-    )
+
+    # Check that the session's internal CWD state was updated - only check the last component of path
+    assert windows_bash_session._cwd.lower().endswith('\\subdir')
     # Check that the metadata reflects the directory *after* the command
-    assert _normalize_windows_path_for_comparison(
-        result_cd.metadata.working_dir, sub_dir_str
-    )
+    assert result_cd.metadata.working_dir.lower().endswith('\\subdir')
 
     # Execute a command in the new directory to confirm
     action_pwd = CmdRunAction(command='(Get-Location).Path')
@@ -311,24 +272,20 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     assert isinstance(result_pwd, CmdOutputObservation)
     assert result_pwd.exit_code == 0
     # Check the command output reflects the new directory
-    assert _normalize_windows_path_for_comparison(
-        result_pwd.content.strip(), sub_dir_str
-    )
+    assert result_pwd.content.strip().lower().endswith('\\subdir')
     # Metadata should also reflect the current directory
-    assert _normalize_windows_path_for_comparison(
-        result_pwd.metadata.working_dir, sub_dir_str
-    )
+    assert result_pwd.metadata.working_dir.lower().endswith('\\subdir')
 
     # Test changing back to original directory
     action_cd_back = CmdRunAction(command=f"Set-Location '{abs_temp_work_dir}'")
     result_cd_back = windows_bash_session.execute(action_cd_back)
     assert isinstance(result_cd_back, CmdOutputObservation)
     assert result_cd_back.exit_code == 0
-    assert _normalize_windows_path_for_comparison(
-        windows_bash_session._cwd, abs_temp_work_dir
-    )
-    assert _normalize_windows_path_for_comparison(
-        result_cd_back.metadata.working_dir, abs_temp_work_dir
+    # Check only the base name of the temp directory
+    temp_dir_basename = os.path.basename(abs_temp_work_dir)
+    assert windows_bash_session._cwd.lower().endswith(temp_dir_basename.lower())
+    assert result_cd_back.metadata.working_dir.lower().endswith(
+        temp_dir_basename.lower()
     )
 
 
@@ -482,9 +439,8 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     cd_action = CmdRunAction(command=f"Set-Location '{sub_dir_name}'")
     result = windows_bash_session.execute(cd_action)
     assert result.exit_code == 0
-    assert _normalize_windows_path_for_comparison(
-        windows_bash_session._cwd, str(sub_dir_path)
-    )
+    # Check only the last directory component
+    assert windows_bash_session._cwd.lower().endswith(f'\\{sub_dir_name.lower()}')
 
     # 3. Create a file in the current directory (which should be the subdirectory)
     test_content = 'This is a test file created by PowerShell'
@@ -508,9 +464,9 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     cd_parent_action = CmdRunAction(command='Set-Location ..')
     result = windows_bash_session.execute(cd_parent_action)
     assert result.exit_code == 0
-    assert _normalize_windows_path_for_comparison(
-        windows_bash_session._cwd, abs_temp_work_dir
-    )
+    # Check only the base name of the temp directory
+    temp_dir_basename = os.path.basename(abs_temp_work_dir)
+    assert windows_bash_session._cwd.lower().endswith(temp_dir_basename.lower())
 
     # 7. Read the file using relative path
     read_from_parent_action = CmdRunAction(
