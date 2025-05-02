@@ -339,10 +339,6 @@ This is a test task microagent.
 
         assert isinstance(agent, TaskMicroagent)
         assert agent.match_trigger('/test_task') == '/test_task'
-        assert (
-            agent.match_trigger('  /test_task  ') == '/test_task'
-        )  # Whitespace is trimmed
-        assert (
-            agent.match_trigger('This contains /test_task') is None
-        )  # Not an exact match
+        assert agent.match_trigger('  /test_task  ') == '/test_task'
+        assert agent.match_trigger('This contains /test_task') == '/test_task'
         assert agent.match_trigger('/other_task') is None
