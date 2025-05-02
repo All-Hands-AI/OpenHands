@@ -123,7 +123,7 @@ def mock_settings_store():
 @patch('openhands.core.cli.display_runtime_initialization_message')
 @patch('openhands.core.cli.display_initialization_animation')
 @patch('openhands.core.cli.create_agent')
-@patch('openhands.core.cli.fetch_mcp_tools_from_config')
+@patch('openhands.core.cli.add_mcp_tools_to_agent')
 @patch('openhands.core.cli.create_runtime')
 @patch('openhands.core.cli.create_controller')
 @patch('openhands.core.cli.create_memory')
@@ -137,7 +137,7 @@ async def test_run_session_without_initial_action(
     mock_create_memory,
     mock_create_controller,
     mock_create_runtime,
-    mock_fetch_mcp_tools,
+    mock_add_mcp_tools,
     mock_create_agent,
     mock_display_animation,
     mock_display_runtime_init,
@@ -153,9 +153,6 @@ async def test_run_session_without_initial_action(
     # Mock objects returned by the setup functions
     mock_agent = AsyncMock()
     mock_create_agent.return_value = mock_agent
-
-    mock_mcp_tools = []
-    mock_fetch_mcp_tools.return_value = mock_mcp_tools
 
     mock_runtime = AsyncMock()
     mock_runtime.event_stream = MagicMock()
@@ -193,8 +190,9 @@ async def test_run_session_without_initial_action(
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
-    mock_fetch_mcp_tools.assert_called_once()
-    mock_agent.set_mcp_tools.assert_called_once_with(mock_mcp_tools)
+    mock_add_mcp_tools.assert_called_once_with(
+        mock_agent, mock_runtime, mock_config.mcp
+    )
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
     mock_create_memory.assert_called_once()
@@ -213,7 +211,7 @@ async def test_run_session_without_initial_action(
 @patch('openhands.core.cli.display_runtime_initialization_message')
 @patch('openhands.core.cli.display_initialization_animation')
 @patch('openhands.core.cli.create_agent')
-@patch('openhands.core.cli.fetch_mcp_tools_from_config')
+@patch('openhands.core.cli.add_mcp_tools_to_agent')
 @patch('openhands.core.cli.create_runtime')
 @patch('openhands.core.cli.create_controller')
 @patch('openhands.core.cli.create_memory')
@@ -227,7 +225,7 @@ async def test_run_session_with_initial_action(
     mock_create_memory,
     mock_create_controller,
     mock_create_runtime,
-    mock_fetch_mcp_tools,
+    mock_add_mcp_tools,
     mock_create_agent,
     mock_display_animation,
     mock_display_runtime_init,
@@ -243,9 +241,6 @@ async def test_run_session_with_initial_action(
     # Mock objects returned by the setup functions
     mock_agent = AsyncMock()
     mock_create_agent.return_value = mock_agent
-
-    mock_mcp_tools = []
-    mock_fetch_mcp_tools.return_value = mock_mcp_tools
 
     mock_runtime = AsyncMock()
     mock_runtime.event_stream = MagicMock()

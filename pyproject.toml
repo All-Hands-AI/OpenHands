@@ -76,6 +76,8 @@ mcp = "1.6.0"
 python-json-logger = "^3.2.1"
 playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
+mcpm = "1.8.0"
+poetry = "^2.1.2"
 anyio = "4.9.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -97,6 +99,7 @@ gevent = ">=24.2.1,<26.0.0"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -126,6 +129,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 
 [tool.poetry.group.evaluation.dependencies]

@@ -16,6 +16,7 @@ import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { selectSystemMessage } from "#/state/chat-slice";
+import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -117,7 +118,10 @@ export function ConversationCard({
         const data = await response.json();
 
         if (data.vscode_url) {
-          window.open(data.vscode_url, "_blank");
+          const transformedUrl = transformVSCodeUrl(data.vscode_url);
+          if (transformedUrl) {
+            window.open(transformedUrl, "_blank");
+          }
         }
         // VS Code URL not available
       } catch (error) {
