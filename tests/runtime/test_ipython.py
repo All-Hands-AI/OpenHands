@@ -21,7 +21,6 @@ from openhands.events.observation import (
     FileWriteObservation,
     IPythonRunCellObservation,
 )
-import os
 
 # ============================================================================================================================
 # ipython-specific tests

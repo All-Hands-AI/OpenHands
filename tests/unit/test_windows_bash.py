@@ -577,19 +577,18 @@ def test_interactive_input(windows_bash_session):
 def test_windows_path_handling(windows_bash_session, temp_work_dir):
     """Test that os.chdir works with both forward slashes and escaped backslashes on Windows."""
     # Create a test directory
-    test_dir = Path(temp_work_dir) / "test_dir"
+    test_dir = Path(temp_work_dir) / 'test_dir'
     test_dir.mkdir()
-    
+
     # Test both path formats
     path_formats = [
-        str(test_dir).replace("\\", "/"),  # Forward slashes
-        str(test_dir).replace("\\", "\\\\"),  # Escaped backslashes
+        str(test_dir).replace('\\', '/'),  # Forward slashes
+        str(test_dir).replace('\\', '\\\\'),  # Escaped backslashes
     ]
-    
+
     for path in path_formats:
         # Test changing directory using os.chdir through PowerShell
         action = CmdRunAction(command=f'python -c "import os; os.chdir(\'{path}\')"')
         result = windows_bash_session.execute(action)
         assert isinstance(result, CmdOutputObservation)
-        assert result.exit_code == 0, f"Failed with path format: {path}"
-        
+        assert result.exit_code == 0, f'Failed with path format: {path}'
