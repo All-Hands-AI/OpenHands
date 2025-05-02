@@ -7,7 +7,7 @@ import { useConversation } from "#/context/conversation-context";
 import {
   initialState as browserInitialState,
   setUrl,
-  setScreenshotSrc
+  setScreenshotSrc,
 } from "#/state/browser-slice";
 
 export function BrowserPanel() {
@@ -20,7 +20,7 @@ export function BrowserPanel() {
   useEffect(() => {
     dispatch(setUrl(browserInitialState.url));
     dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
-  }, [conversationId])
+  }, [conversationId]);
 
   const imgSrc =
     screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
