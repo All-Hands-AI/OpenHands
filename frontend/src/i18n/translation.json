@@ -167,8 +167,8 @@
     "SETTINGS$MCP_NO_SERVERS_CONFIGURED": {
         "en": "No MCP servers are currently configured. Click \"Edit Configuration\" to add servers.",
         "ja": "現在MCPサーバーが設定されていません。「設定を編集」をクリックしてサーバーを追加してください。",
-        "zh-CN": "当前未配置MCP服务器。点击"编辑配置"添加服务器。",
-        "zh-TW": "當前未配置MCP服務器。點擊"編輯配置"添加服務器。",
+        "zh-CN": "当前未配置MCP服务器。点击\"编辑配置\"添加服务器。",
+        "zh-TW": "當前未配置MCP服務器。點擊\"編輯配置\"添加服務器。",
         "ko-KR": "현재 구성된 MCP 서버가 없습니다. \"구성 편집\"을 클릭하여 서버를 추가하세요.",
         "no": "Ingen MCP-servere er konfigurert for øyeblikket. Klikk på \"Rediger konfigurasjon\" for å legge til servere.",
         "it": "Nessun server MCP è attualmente configurato. Fai clic su \"Modifica configurazione\" per aggiungere server.",
