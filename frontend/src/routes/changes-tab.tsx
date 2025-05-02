@@ -61,6 +61,19 @@ function GitChanges() {
             <p>
               <h4 className="font-bold">Protip:</h4>
               {t(randomTip.key)}
+              {randomTip.link && (
+                <>
+                  {" "}
+                  <a 
+                    href={randomTip.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    Learn more
+                  </a>
+                </>
+              )}
             </p>
           </div>
         </div>
