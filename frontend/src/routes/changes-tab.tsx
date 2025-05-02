@@ -29,6 +29,7 @@ function GitChanges() {
   React.useEffect(() => {
     setRandomTip(getRandomTip());
   }, []);
+  console.log('random tip', randomTip);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
@@ -54,7 +55,7 @@ function GitChanges() {
         </StatusMessage>
       )}
 
-      {runtimeIsActive && !isError && gitChanges?.length === 0 && (
+      {!isError && gitChanges?.length === 0 && (
         <StatusMessage>
           <div className="max-w-2xl text-center">
             <div className="mb-4 text-xl font-semibold">Tip</div>
