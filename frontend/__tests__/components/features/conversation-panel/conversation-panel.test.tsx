@@ -37,6 +37,11 @@ describe("ConversationPanel", () => {
   const { endSessionMock } = vi.hoisted(() => ({
     endSessionMock: vi.fn(),
   }));
+  
+  // Mock the hooks/use-end-session module
+  vi.mock("#/hooks/use-end-session", () => ({
+    useEndSession: () => endSessionMock,
+  }));
 
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({

@@ -21,6 +21,11 @@ describe("App", () => {
     vi.mock("#/hooks/use-terminal", () => ({
       useTerminal: vi.fn(),
     }));
+    
+    // Mock the hooks/use-end-session module
+    vi.mock("#/hooks/use-end-session", () => ({
+      useEndSession: () => endSessionMock,
+    }));
   });
 
   afterEach(() => {

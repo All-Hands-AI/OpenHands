@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink } from "react-router";
+import { NavLink, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
@@ -10,6 +10,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { useEndSession } from "#/hooks/use-end-session";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -17,6 +18,8 @@ interface ConversationPanelProps {
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { t } = useTranslation();
+  const { conversationId: currentConversationId } = useParams();
+  const endSession = useEndSession();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
@@ -41,6 +44,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
+      // If we're deleting the current conversation, end the session
+      if (selectedConversationId === currentConversationId) {
+        endSession();
+      }
       deleteConversation({ conversationId: selectedConversationId });
     }
   };
