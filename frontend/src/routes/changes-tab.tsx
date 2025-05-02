@@ -64,9 +64,9 @@ function GitChanges() {
               {randomTip.link && (
                 <>
                   {" "}
-                  <a 
-                    href={randomTip.link} 
-                    target="_blank" 
+                  <a
+                    href={randomTip.link}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
                   >
