@@ -91,8 +91,7 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
 # Install our custom extensions
 # Copy all extensions from source to destination using a recursive approach
 # The extension folders are named to match their package names (openhands-*)
-RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions && \
-    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/* ${OPENVSCODE_SERVER_ROOT}/extensions/
+RUN cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/* ${OPENVSCODE_SERVER_ROOT}/extensions/
 
 # Some extension dirs are removed because they trigger false positives in vulnerability scans.
 RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,ini,npm}
@@ -127,6 +126,7 @@ RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --a
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
 
+{{ setup_vscode_server() }}
 {% endmacro %}
 
 {% if build_from_scratch %}
@@ -172,14 +172,13 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
-{{ setup_vscode_server() }}
+{{ install_vscode_extensions() }}
 
 # ================================================================
 # END: Build from versioned image
 # ================================================================
 {% if build_from_versioned %}
 {{ install_dependencies() }}
-{{ install_vscode_extensions() }}
 {% endif %}
 
 # Install extra dependencies if specified
