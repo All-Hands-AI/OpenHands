@@ -98,6 +98,22 @@ def parse_llm_response_to_json(llm_response: str) -> Dict[str, Any]:
                 # Ensure ids field exists (new format)
                 if 'ids' not in segment:
                     segment['ids'] = []
+                
+                # Ensure ids are integers
+                if 'ids' in segment and isinstance(segment['ids'], list):
+                    # Convert string IDs to integers if possible
+                    processed_ids = []
+                    for id_value in segment['ids']:
+                        try:
+                            if isinstance(id_value, str) and id_value.isdigit():
+                                processed_ids.append(int(id_value))
+                            else:
+                                processed_ids.append(id_value)
+                        except (ValueError, TypeError):
+                            # Keep original value if conversion fails
+                            processed_ids.append(id_value)
+                    
+                    segment['ids'] = processed_ids
 
         return parsed_data
     except json.JSONDecodeError as e:
@@ -127,18 +143,17 @@ class TrajectoryProcessor:
         processed_data = []
 
         for item in trajectory_data:
-            # Skip items with no action or empty content
-            if not item.get('action') or (
-                not item.get('content') and not item.get('message')
-            ):
-                continue
-
-            # Extract relevant information
+            # Extract relevant information - always include id and source even for empty content
+            # This ensures all messages are represented in the trajectory
             processed_item = {
-                'action': item.get('action'),
+                'action': item.get('action', ''),
                 'id': item.get('id'),
-                'source': item.get('source'),
+                'source': item.get('source', ''),
             }
+
+            # Skip completely empty items without any identifiable information
+            if not processed_item['id'] and not processed_item.get('timestamp'):
+                continue
 
             # Add content if available
             if (

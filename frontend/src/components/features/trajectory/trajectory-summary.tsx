@@ -64,7 +64,18 @@ export function TrajectorySummary({
 
     // If we found messages, return them
     if (matchedMessages.length > 0) {
-      return matchedMessages;
+      // Sort messages by their original order in the messages array
+      // This preserves the conversation flow
+      const messageIndices = matchedMessages.map(msg => 
+        messages.findIndex(m => m.eventID === msg.eventID)
+      );
+      
+      // Get the min and max indices to include all messages between them
+      const minIndex = Math.min(...messageIndices);
+      const maxIndex = Math.max(...messageIndices);
+      
+      // Return all messages between min and max indices to include the complete conversation
+      return messages.slice(minIndex, maxIndex + 1);
     }
 
     // If no messages were found by exact ID match, try to match by string conversion
@@ -78,7 +89,18 @@ export function TrajectorySummary({
     });
 
     if (stringMatchedMessages.length > 0) {
-      return stringMatchedMessages;
+      // Sort messages by their original order in the messages array
+      const messageIndices = stringMatchedMessages.map(msg => 
+        messages.findIndex(m => m.eventID !== undefined && 
+          segmentIds.some(id => String(id) === String(m.eventID)))
+      );
+      
+      // Get the min and max indices to include all messages between them
+      const minIndex = Math.min(...messageIndices);
+      const maxIndex = Math.max(...messageIndices);
+      
+      // Return all messages between min and max indices to include the complete conversation
+      return messages.slice(minIndex, maxIndex + 1);
     }
 
     // If we still couldn't find any messages, try to use timestamp ranges if available
@@ -86,59 +108,69 @@ export function TrajectorySummary({
       (segment.start_timestamp && segment.end_timestamp) ||
       segment.timestamp_range
     ) {
-      const timestampFilteredMessages = messages.filter((message) => {
-        if (!message.timestamp) return false;
+      let startTime;
+      let endTime;
 
-        // Try to extract time from timestamp_range if direct timestamps aren't available
-        let startTime;
-        let endTime;
+      try {
+        // First try to use the start_timestamp and end_timestamp directly
+        if (segment.start_timestamp && segment.end_timestamp) {
+          startTime = new Date(
+            `2000-01-01 ${segment.start_timestamp}`,
+          ).getTime();
+          endTime = new Date(`2000-01-01 ${segment.end_timestamp}`).getTime();
+        } else if (segment.timestamp_range) {
+          // If that fails, try to extract from timestamp_range
+          const [startStr, endStr] = segment.timestamp_range.split("-");
+          if (startStr && endStr) {
+            startTime = new Date(`2000-01-01 ${startStr.trim()}`).getTime();
+            endTime = new Date(`2000-01-01 ${endStr.trim()}`).getTime();
+          }
+        }
+      } catch (e) {
+        // If parsing fails, we can't match by timestamp
+        startTime = undefined;
+        endTime = undefined;
+      }
 
-        try {
-          // First try to use the start_timestamp and end_timestamp directly
-          if (segment.start_timestamp && segment.end_timestamp) {
-            startTime = new Date(
-              `2000-01-01 ${segment.start_timestamp}`,
-            ).getTime();
-            endTime = new Date(`2000-01-01 ${segment.end_timestamp}`).getTime();
-          } else if (segment.timestamp_range) {
-            // If that fails, try to extract from timestamp_range
-            const [startStr, endStr] = segment.timestamp_range.split("-");
-            if (startStr && endStr) {
-              startTime = new Date(`2000-01-01 ${startStr.trim()}`).getTime();
-              endTime = new Date(`2000-01-01 ${endStr.trim()}`).getTime();
+      if (startTime && endTime) {
+        const timestampFilteredMessages = messages.filter((message) => {
+          if (!message.timestamp) return false;
+
+          // Convert message timestamp to comparable format
+          let msgTime;
+          try {
+            msgTime = new Date(message.timestamp).getTime();
+          } catch (e) {
+            // If parsing fails, try to extract just the time part
+            const timeMatch = message.timestamp.match(
+              /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/,
+            );
+            if (timeMatch) {
+              const [, hours, minutes, seconds = "0"] = timeMatch;
+              msgTime = new Date(
+                `2000-01-01 ${hours}:${minutes}:${seconds}`,
+              ).getTime();
+            } else {
+              return false;
             }
           }
-        } catch (e) {
-          // If parsing fails, we can't match by timestamp
-          return false;
-        }
 
-        if (!startTime || !endTime) return false;
+          return msgTime >= startTime && msgTime <= endTime;
+        });
 
-        // Convert message timestamp to comparable format
-        let msgTime;
-        try {
-          msgTime = new Date(message.timestamp).getTime();
-        } catch (e) {
-          // If parsing fails, try to extract just the time part
-          const timeMatch = message.timestamp.match(
-            /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/,
+        if (timestampFilteredMessages.length > 0) {
+          // Find the indices of the first and last matching messages
+          const messageIndices = timestampFilteredMessages.map(msg => 
+            messages.findIndex(m => m === msg)
           );
-          if (timeMatch) {
-            const [, hours, minutes, seconds = "0"] = timeMatch;
-            msgTime = new Date(
-              `2000-01-01 ${hours}:${minutes}:${seconds}`,
-            ).getTime();
-          } else {
-            return false;
-          }
+          
+          // Get the min and max indices to include all messages between them
+          const minIndex = Math.min(...messageIndices);
+          const maxIndex = Math.max(...messageIndices);
+          
+          // Return all messages between min and max indices to include the complete conversation
+          return messages.slice(minIndex, maxIndex + 1);
         }
-
-        return msgTime >= startTime && msgTime <= endTime;
-      });
-
-      if (timestampFilteredMessages.length > 0) {
-        return timestampFilteredMessages;
       }
     }
 
