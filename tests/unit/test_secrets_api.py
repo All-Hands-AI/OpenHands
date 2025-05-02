@@ -9,9 +9,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.routes.settings import app as settings_app
 from openhands.server.settings import Settings
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -46,7 +47,7 @@ async def test_load_custom_secrets_names(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(
+        secret_store = UserSecrets(
             custom_secrets=custom_secrets, provider_tokens=provider_tokens
         )
         initial_settings = Settings(
@@ -91,7 +92,7 @@ async def test_load_custom_secrets_names_empty(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(provider_tokens=provider_tokens)
+        secret_store = UserSecrets(provider_tokens=provider_tokens)
         initial_settings = Settings(
             language='en',
             agent='test-agent',
@@ -121,7 +122,7 @@ async def test_add_custom_secret(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(provider_tokens=provider_tokens)
+        secret_store = UserSecrets(provider_tokens=provider_tokens)
         initial_settings = Settings(
             language='en',
             agent='test-agent',
@@ -162,7 +163,7 @@ async def test_update_existing_custom_secret(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(
+        secret_store = UserSecrets(
             custom_secrets=custom_secrets, provider_tokens=provider_tokens
         )
         initial_settings = Settings(
@@ -206,7 +207,7 @@ async def test_add_multiple_custom_secrets(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(
+        secret_store = UserSecrets(
             custom_secrets=custom_secrets, provider_tokens=provider_tokens
         )
         initial_settings = Settings(
@@ -274,7 +275,7 @@ async def test_delete_custom_secret(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(
+        secret_store = UserSecrets(
             custom_secrets=custom_secrets, provider_tokens=provider_tokens
         )
         initial_settings = Settings(
@@ -322,7 +323,7 @@ async def test_delete_nonexistent_custom_secret(test_client):
         provider_tokens = {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
         }
-        secret_store = SecretStore(
+        secret_store = UserSecrets(
             custom_secrets=custom_secrets, provider_tokens=provider_tokens
         )
         initial_settings = Settings(
@@ -366,7 +367,7 @@ async def test_custom_secrets_operations_preserve_settings(test_client):
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab-token')),
         }
-        secret_store = SecretStore(
+        secret_store = UserSecrets(
             custom_secrets=custom_secrets, provider_tokens=provider_tokens
         )
         initial_settings = Settings(

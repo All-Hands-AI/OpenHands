@@ -3,15 +3,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import SecretStr
 
-from openhands.integrations.provider import ProviderToken, SecretStore
+from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
-from openhands.server.routes.settings import (
-    check_provider_tokens,
-    store_llm_settings,
-    store_provider_tokens,
-)
-from openhands.server.settings import POSTSettingsModel
+from openhands.server.routes.secrets import check_provider_tokens, store_provider_tokens
+from openhands.server.routes.settings import store_llm_settings
+from openhands.server.settings import POSTProviderModel
 from openhands.storage.data_models.settings import Settings
+from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 # Mock functions to simulate the actual functions in settings.py
@@ -25,15 +23,15 @@ async def get_settings_store(request):
 async def test_check_provider_tokens_valid():
     """Test check_provider_tokens with valid tokens."""
     provider_token = ProviderToken(token=SecretStr('valid-token'))
-    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
+    providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the validate_provider_token function to return GITHUB for valid tokens
     with patch(
-        'openhands.server.routes.settings.validate_provider_token'
+        'openhands.server.routes.secrets.validate_provider_token'
     ) as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
-        result = await check_provider_tokens(settings)
+        result = await check_provider_tokens(providers)
 
         # Should return empty string for valid token
         assert result == ''
@@ -44,15 +42,15 @@ async def test_check_provider_tokens_valid():
 async def test_check_provider_tokens_invalid():
     """Test check_provider_tokens with invalid tokens."""
     provider_token = ProviderToken(token=SecretStr('invalid-token'))
-    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
+    providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the validate_provider_token function to return None for invalid tokens
     with patch(
-        'openhands.server.routes.settings.validate_provider_token'
+        'openhands.server.routes.secrets.validate_provider_token'
     ) as mock_validate:
         mock_validate.return_value = None
 
-        result = await check_provider_tokens(settings)
+        result = await check_provider_tokens(providers)
 
         # Should return error message for invalid token
         assert 'Invalid token' in result
@@ -64,9 +62,8 @@ async def test_check_provider_tokens_wrong_type():
     """Test check_provider_tokens with unsupported provider type."""
     # We can't test with an unsupported provider type directly since the model enforces valid types
     # Instead, we'll test with an empty provider_tokens dictionary
-    settings = POSTSettingsModel(provider_tokens={})
-
-    result = await check_provider_tokens(settings)
+    providers = POSTProviderModel(provider_tokens={})
+    result = await check_provider_tokens(providers)
 
     # Should return empty string for no providers
     assert result == ''
@@ -75,9 +72,9 @@ async def test_check_provider_tokens_wrong_type():
 @pytest.mark.asyncio
 async def test_check_provider_tokens_no_tokens():
     """Test check_provider_tokens with no tokens."""
-    settings = POSTSettingsModel(provider_tokens={})
+    providers = POSTProviderModel(provider_tokens={})
 
-    result = await check_provider_tokens(settings)
+    result = await check_provider_tokens(providers)
 
     # Should return empty string when no tokens provided
     assert result == ''
@@ -87,7 +84,7 @@ async def test_check_provider_tokens_no_tokens():
 @pytest.mark.asyncio
 async def test_store_llm_settings_new_settings():
     """Test store_llm_settings with new settings."""
-    settings = POSTSettingsModel(
+    settings = Settings(
         llm_model='gpt-4',
         llm_api_key='test-api-key',
         llm_base_url='https://api.example.com',
@@ -108,7 +105,7 @@ async def test_store_llm_settings_new_settings():
 @pytest.mark.asyncio
 async def test_store_llm_settings_update_existing():
     """Test store_llm_settings updates existing settings."""
-    settings = POSTSettingsModel(
+    settings = Settings(
         llm_model='gpt-4',
         llm_api_key='new-api-key',
         llm_base_url='https://new.example.com',
@@ -137,7 +134,7 @@ async def test_store_llm_settings_update_existing():
 @pytest.mark.asyncio
 async def test_store_llm_settings_partial_update():
     """Test store_llm_settings with partial update."""
-    settings = POSTSettingsModel(
+    settings = Settings(
         llm_model='gpt-4'  # Only updating model
     )
 
@@ -167,7 +164,7 @@ async def test_store_llm_settings_partial_update():
 async def test_store_provider_tokens_new_tokens():
     """Test store_provider_tokens with new tokens."""
     provider_token = ProviderToken(token=SecretStr('new-token'))
-    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
+    settings = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the settings store
     mock_store = MagicMock()
@@ -186,7 +183,7 @@ async def test_store_provider_tokens_new_tokens():
 async def test_store_provider_tokens_update_existing():
     """Test store_provider_tokens updates existing tokens."""
     provider_token = ProviderToken(token=SecretStr('updated-token'))
-    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
+    providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the settings store
     mock_store = MagicMock()
@@ -195,15 +192,15 @@ async def test_store_provider_tokens_update_existing():
     github_token = ProviderToken(token=SecretStr('old-token'))
     provider_tokens = {ProviderType.GITHUB: github_token}
 
-    # Create a SecretStore with the provider tokens
-    secrets_store = SecretStore(provider_tokens=provider_tokens)
+    # Create a UserSecrets with the provider tokens
+    secrets_store = UserSecrets(provider_tokens=provider_tokens)
 
     # Create existing settings with the secrets store
     existing_settings = Settings(secrets_store=secrets_store)
 
     mock_store.load = AsyncMock(return_value=existing_settings)
 
-    result = await store_provider_tokens(settings, mock_store)
+    result = await store_provider_tokens(providers, mock_store)
 
     # Should return settings with the updated tokens
     assert (
@@ -215,7 +212,7 @@ async def test_store_provider_tokens_update_existing():
 @pytest.mark.asyncio
 async def test_store_provider_tokens_keep_existing():
     """Test store_provider_tokens keeps existing tokens when empty string provided."""
-    settings = POSTSettingsModel(
+    providers = POSTProviderModel(
         provider_tokens={
             'github': {'token': ''}
         }  # Empty string should keep existing token
@@ -228,15 +225,15 @@ async def test_store_provider_tokens_keep_existing():
     github_token = ProviderToken(token=SecretStr('existing-token'))
     provider_tokens = {ProviderType.GITHUB: github_token}
 
-    # Create a SecretStore with the provider tokens
-    secrets_store = SecretStore(provider_tokens=provider_tokens)
+    # Create a UserSecrets with the provider tokens
+    secrets_store = UserSecrets(provider_tokens=provider_tokens)
 
     # Create existing settings with the secrets store
     existing_settings = Settings(secrets_store=secrets_store)
 
     mock_store.load = AsyncMock(return_value=existing_settings)
 
-    result = await store_provider_tokens(settings, mock_store)
+    result = await store_provider_tokens(providers, mock_store)
 
     # Should return settings with the existing token preserved
     assert (

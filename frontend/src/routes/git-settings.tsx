@@ -20,7 +20,6 @@ import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
 function GitSettingsScreen() {
   const { t } = useTranslation();
 
-  // const { mutate: saveSettings, isPending } = useSaveSettings();
   const { mutate: saveGitProviders, isPending } = useAddGitProviders();
   const { mutate: disconnectGitTokens } = useLogout();
 

@@ -302,7 +302,7 @@ export const handlers = [
         { token?: string }
       >;
 
-      const provider_tokens_set: Partial<Record<Provider, string | null>> =
+      const providerTokensSet: Partial<Record<Provider, string | null>> =
         Object.fromEntries(
           Object.entries(rawTokens)
             .filter(([, val]) => val && val.token)
@@ -311,7 +311,7 @@ export const handlers = [
 
       const newSettings = {
         ...(MOCK_USER_PREFERENCES.settings ?? MOCK_DEFAULT_USER_SETTINGS),
-        provider_tokens_set,
+        provider_tokens_set: providerTokensSet,
       };
       MOCK_USER_PREFERENCES.settings = newSettings;
 
