@@ -9,7 +9,6 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
-import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
 
 const MOCK_TASK_1: SuggestedTask = {
@@ -74,13 +73,10 @@ describe("TaskCard", () => {
   describe("creating suggested task conversation", () => {
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        GitService,
+        OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue({
-        data: MOCK_RESPOSITORIES,
-        nextPage: null,
-      });
+      retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
     });
 
     it("should call create conversation with suggest task trigger and selected suggested task", async () => {

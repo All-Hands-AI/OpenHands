@@ -11,7 +11,9 @@ from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 
@@ -58,7 +60,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock(spec=Runtime)
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -141,7 +143,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock(spec=Runtime)
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):

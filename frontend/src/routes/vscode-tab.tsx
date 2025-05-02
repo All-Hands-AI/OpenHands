@@ -5,6 +5,7 @@ import { useConversation } from "#/context/conversation-context";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 
 function VSCodeTab() {
   const { t } = useTranslation();
@@ -27,7 +28,8 @@ function VSCodeTab() {
         const data = await response.json();
 
         if (data.vscode_url) {
-          setVsCodeUrl(data.vscode_url);
+          const transformedUrl = transformVSCodeUrl(data.vscode_url);
+          setVsCodeUrl(transformedUrl);
         } else {
           setError(t(I18nKey.VSCODE$URL_NOT_AVAILABLE));
         }

@@ -54,7 +54,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
-from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -101,7 +101,7 @@ async def run_session(
 
     sid = str(uuid4())
     is_loaded = asyncio.Event()
-    is_paused = asyncio.Event()
+    is_paused = asyncio.Event()  # Event to track agent pause requests
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -112,8 +112,6 @@ async def run_session(
     )
 
     agent = create_agent(config)
-    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -159,20 +157,15 @@ async def run_session(
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
-        # Pause the agent if the pause event is set (if Ctrl-P is pressed)
-        if is_paused.is_set():
-            event_stream.add_event(
-                ChangeAgentStateAction(AgentState.PAUSED),
-                EventSource.USER,
-            )
-            is_paused.clear()
-
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
-                AgentState.PAUSED,
             ]:
+                # If the agent is paused, do not prompt for input as it's already handled by PAUSED state change
+                if is_paused.is_set():
+                    return
+
                 # Reload microagents after initialization of repo.md
                 if reload_microagents:
                     microagents: list[BaseMicroagent] = (
@@ -183,25 +176,32 @@ async def run_session(
                 await prompt_for_next_task(event.agent_state)
 
             if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
-                # Only display the confirmation prompt if the agent is not paused
-                if not is_paused.is_set():
-                    user_confirmed = await read_confirmation_input()
-                    if user_confirmed:
-                        event_stream.add_event(
-                            ChangeAgentStateAction(AgentState.USER_CONFIRMED),
-                            EventSource.USER,
-                        )
-                    else:
-                        event_stream.add_event(
-                            ChangeAgentStateAction(AgentState.USER_REJECTED),
-                            EventSource.USER,
-                        )
+                # If the agent is paused, do not prompt for confirmation
+                # The confirmation step will re-run after the agent has been resumed
+                if is_paused.is_set():
+                    return
+
+                user_confirmed = await read_confirmation_input()
+                if user_confirmed:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                else:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
+
+            if event.agent_state == AgentState.PAUSED:
+                is_paused.clear()  # Revert the event state before prompting for user input
+                await prompt_for_next_task(event.agent_state)
 
             if event.agent_state == AgentState.RUNNING:
-                # Enable pause/resume functionality only if the confirmation mode is disabled
-                if not config.security.confirmation_mode:
-                    display_agent_running_message()
-                    loop.create_task(process_agent_pause(is_paused))
+                display_agent_running_message()
+                loop.create_task(
+                    process_agent_pause(is_paused, event_stream)
+                )  # Create a task to track agent pause requests from the user
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
@@ -209,6 +209,7 @@ async def run_session(
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
+    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None

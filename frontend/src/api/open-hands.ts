@@ -134,7 +134,7 @@ class OpenHands {
 
   static async getUserConversations(): Promise<Conversation[]> {
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=9",
+      "/api/conversations?limit=20",
     );
     return data.results;
   }
@@ -297,6 +297,23 @@ class OpenHands {
         params: { path },
       },
     );
+    return data;
+  }
+
+  /**
+   * Given a PAT, retrieves the repositories of the user
+   * @returns A list of repositories
+   */
+  static async retrieveUserGitRepositories() {
+    const { data } = await openHands.get<GitRepository[]>(
+      "/api/user/repositories",
+      {
+        params: {
+          sort: "pushed",
+        },
+      },
+    );
+
     return data;
   }
 }
