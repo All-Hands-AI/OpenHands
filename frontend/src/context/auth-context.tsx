@@ -35,7 +35,7 @@ function AuthProvider({
       providersAreSet,
       setProvidersAreSet,
     }),
-    [providerTokensSet, providersAreSet],
+    [providerTokensSet, providersAreSet, setProviderTokensSet, setProvidersAreSet],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -49,4 +49,4 @@ function useAuth() {
   return context;
 }
 
-export { AuthProvider, useAuth };
+export { AuthProvider, useAuth, AuthContext };

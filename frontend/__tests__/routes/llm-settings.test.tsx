@@ -8,7 +8,7 @@ import {
   MOCK_DEFAULT_USER_SETTINGS,
   resetTestHandlersMockSettings,
 } from "#/mocks/handlers";
-import { AuthProvider } from "#/context/auth-context";
+import { AuthProvider, AuthContext } from "#/context/auth-context";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
@@ -16,7 +16,16 @@ const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={new QueryClient()}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthContext.Provider 
+          value={{ 
+            providerTokensSet: ["github"], 
+            setProviderTokensSet: vi.fn(), 
+            providersAreSet: true, 
+            setProvidersAreSet: vi.fn() 
+          }}
+        >
+          {children}
+        </AuthContext.Provider>
       </QueryClientProvider>
     ),
   });

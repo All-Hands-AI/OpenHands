@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import OpenHands from "#/api/open-hands";
 import { PaymentForm } from "#/components/features/payment/payment-form";
+import { AuthContext } from "#/context/auth-context";
 
 describe("PaymentForm", () => {
   const getBalanceSpy = vi.spyOn(OpenHands, "getBalance");
@@ -13,9 +14,18 @@ describe("PaymentForm", () => {
   const renderPaymentForm = () =>
     render(<PaymentForm />, {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
+        <AuthContext.Provider 
+          value={{ 
+            providerTokensSet: ["github"], 
+            setProviderTokensSet: vi.fn(), 
+            providersAreSet: true, 
+            setProvidersAreSet: vi.fn() 
+          }}
+        >
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        </AuthContext.Provider>
       ),
     });
 

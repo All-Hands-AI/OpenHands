@@ -36,12 +36,12 @@ export const useSettings = () => {
   const isOnTosPage = useIsOnTosPage();
   const isLikelyAuthenticated = useAuthState();
   const { data: config } = useConfig();
-  
+
   // Only make the API call if the user is likely authenticated
   // or if we're in OSS mode (where authentication is not required)
   const appMode = config?.APP_MODE;
-  const shouldFetchSettings = (!!appMode && appMode === "oss") || 
-                              (!!appMode && isLikelyAuthenticated);
+  const shouldFetchSettings =
+    (!!appMode && appMode === "oss") || (!!appMode && isLikelyAuthenticated);
 
   const query = useQuery({
     queryKey: ["settings", providerTokensSet],

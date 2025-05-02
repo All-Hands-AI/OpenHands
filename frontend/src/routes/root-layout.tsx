@@ -132,7 +132,11 @@ export default function MainApp() {
 
   // When on TOS page, we don't make any API calls, so we need to handle this case
   // If we haven't fetched auth status yet (because user is not logged in), consider them not authenticated
-  const userIsAuthed = tosPageStatus ? false : (isFetchingAuth ? false : (!!isAuthed && !authError));
+  const userIsAuthed = tosPageStatus
+    ? false
+    : isFetchingAuth
+      ? false
+      : !!isAuthed && !authError;
 
   // Only show the auth modal if:
   // 1. User is not authenticated

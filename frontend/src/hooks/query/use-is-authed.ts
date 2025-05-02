@@ -16,8 +16,8 @@ export const useIsAuthed = () => {
 
   // Only make the API call if the user is likely authenticated
   // or if we're in OSS mode (where authentication is not required)
-  const shouldCheckAuth = (!!appMode && appMode === "oss") || 
-                          (!!appMode && isLikelyAuthenticated);
+  const shouldCheckAuth =
+    (!!appMode && appMode === "oss") || (!!appMode && isLikelyAuthenticated);
 
   return useQuery({
     queryKey: ["user", "authenticated", providersAreSet, appMode],

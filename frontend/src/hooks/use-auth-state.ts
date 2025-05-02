@@ -6,7 +6,7 @@ import { useAuth } from "#/context/auth-context";
  */
 export const useAuthState = () => {
   const { providersAreSet } = useAuth();
-  
+
   // If providers are set, the user is likely authenticated
   return providersAreSet;
 };
