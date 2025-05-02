@@ -38,7 +38,7 @@ function GitChanges() {
     error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
   return (
-    <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
+    <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
       {!runtimeIsActive && (
         <StatusMessage>
           {t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME)}
@@ -56,7 +56,7 @@ function GitChanges() {
       )}
 
       {!isError && gitChanges?.length === 0 && (
-        <div className="max-w-2xl text-center">
+        <div className="max-w-2xl flex">
           <div className="mb-4 text-m bg-tertiary rounded p-4 text-left">
             <p>
               <span>💡</span>
