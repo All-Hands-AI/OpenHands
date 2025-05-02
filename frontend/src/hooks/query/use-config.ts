@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
+// We need to fetch the config regardless of authentication state
+// as it's needed to determine the app mode and other essential settings
 export const useConfig = () => {
   const isOnTosPage = useIsOnTosPage();
 

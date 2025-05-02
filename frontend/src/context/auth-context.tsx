@@ -35,10 +35,10 @@ function AuthProvider({
       providersAreSet,
       setProvidersAreSet,
     }),
-    [providerTokensSet],
+    [providerTokensSet, providersAreSet],
   );
 
-  return <AuthContext value={value}>{children}</AuthContext>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function useAuth() {

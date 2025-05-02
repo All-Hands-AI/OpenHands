@@ -6,6 +6,8 @@ import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { Settings } from "#/types/settings";
+import { useAuthState } from "#/hooks/use-auth-state";
+import { useConfig } from "./use-config";
 
 const getSettingsQueryFn = async (): Promise<Settings> => {
   const apiSettings = await OpenHands.getSettings();
@@ -31,8 +33,15 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
 export const useSettings = () => {
   const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
     useAuth();
-
   const isOnTosPage = useIsOnTosPage();
+  const isLikelyAuthenticated = useAuthState();
+  const { data: config } = useConfig();
+  
+  // Only make the API call if the user is likely authenticated
+  // or if we're in OSS mode (where authentication is not required)
+  const appMode = config?.APP_MODE;
+  const shouldFetchSettings = (!!appMode && appMode === "oss") || 
+                              (!!appMode && isLikelyAuthenticated);
 
   const query = useQuery({
     queryKey: ["settings", providerTokensSet],
@@ -43,7 +52,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
-    enabled: !isOnTosPage,
+    enabled: !isOnTosPage && shouldFetchSettings,
     meta: {
       disableToast: true,
     },
