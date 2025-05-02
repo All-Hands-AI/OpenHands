@@ -22,6 +22,7 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
@@ -213,7 +214,7 @@ class Session:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
-            event, (CmdOutputObservation, AgentStateChangedObservation)
+            event, (CmdOutputObservation, AgentStateChangedObservation, RecallObservation)
         ):
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)
