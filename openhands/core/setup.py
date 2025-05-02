@@ -85,40 +85,41 @@ def create_runtime(
 
 
 def initialize_repository_for_runtime(
-    runtime: Runtime,
-    selected_repository: str | None = None,
-    github_token: SecretStr | None = None,
+    runtime: Runtime, selected_repository: str | None = None
 ) -> str | None:
     """Initialize the repository for the runtime.
 
     Args:
         runtime: The runtime to initialize the repository for.
         selected_repository: (optional) The GitHub repository to use.
-        github_token: (optional) The GitHub token to use.
 
     Returns:
         The repository directory path if a repository was cloned, None otherwise.
     """
     # clone selected repository if provided
-    if github_token is None and 'GITHUB_TOKEN' in os.environ:
+    provider_tokens = {}
+    if 'GITHUB_TOKEN' in os.environ:
         github_token = SecretStr(os.environ['GITHUB_TOKEN'])
+        provider_tokens[ProviderType.GITHUB] = ProviderToken(
+            token=SecretStr(github_token)
+        )
+
+    if 'GITLAB_TOKEN' in os.environ:
+        gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
+        provider_tokens[ProviderType.GITLAB] = ProviderToken(
+            token=SecretStr(gitlab_token)
+        )
 
     secret_store = (
-        SecretStore(
-            provider_tokens={
-                ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))
-            }
-        )
-        if github_token
-        else None
+        SecretStore(provider_tokens=provider_tokens) if provider_tokens else None
     )
-    provider_tokens = secret_store.provider_tokens if secret_store else None
+    immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
     logger.debug(f'Selected repository {selected_repository}.')
     repo_directory = call_async_from_sync(
         runtime.clone_or_init_repo,
         GENERAL_TIMEOUT,
-        provider_tokens,
+        immutable_provider_tokens,
         selected_repository,
         None,
     )
