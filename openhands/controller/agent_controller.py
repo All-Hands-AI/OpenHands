@@ -91,7 +91,6 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    delegateAction: 'AgentDelegateAction | None' = None
     _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -711,7 +710,6 @@ class AgentController:
             is_delegate=True,
             headless_mode=self.headless_mode,
         )
-        self.delegateAction = action
 
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored).
@@ -757,13 +755,18 @@ class AgentController:
 
         # emit the delegate result observation
         obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-        if self.delegateAction:
-            obs.tool_call_metadata = self.delegateAction.tool_call_metadata
+
+        # associate the delegate action with the initiating tool call
+        for event in reversed(self.state.history):
+            if isinstance(event, AgentDelegateAction):
+                delegate_action = event
+                obs.tool_call_metadata = delegate_action.tool_call_metadata
+                break
+
         self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
-        self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
