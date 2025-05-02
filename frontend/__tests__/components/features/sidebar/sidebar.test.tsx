@@ -40,6 +40,8 @@ describe("Sidebar", () => {
     // Mock the useConfig hook to return OSS mode
     vi.spyOn(OpenHands, "getConfig").mockResolvedValue({
       APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "test-github-id",
+      POSTHOG_CLIENT_KEY: "test-posthog-key",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: false
