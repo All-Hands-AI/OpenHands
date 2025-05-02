@@ -38,8 +38,11 @@ async def invalidate_legacy_secrets_store(
         await secrets_store.store(user_secrets)
 
         # Invalidate old tokens via settings store serializer
-        await settings_store.store(settings)
-        
+        invalidated_secrets_settings = settings.model_copy(
+            update={'secrets_store': UserSecrets()}
+        )
+        await settings_store.store(invalidated_secrets_settings)
+
         return user_secrets
     
     return None
