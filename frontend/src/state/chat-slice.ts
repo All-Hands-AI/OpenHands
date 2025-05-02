@@ -318,13 +318,13 @@ export const chatSlice = createSlice({
         causeMessage.content = content;
       } else if (observationID === "mcp") {
         // For MCP observations, we want to show the content as formatted output
-        const { content: originalContent } = causeMessage; // Use object destructuring
-        let content = originalContent; // Keep the original action content
-        content += `\n\n**Result:**\n\`\`\`\n${observation.payload.content}\n\`\`\``;
+        // similar to how run/run_ipython actions are handled
+        let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        causeMessage.content = content;
+        content = `${causeMessage.content}\n\nOutput:\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+        causeMessage.content = content; // Observation content includes the action
         // Set success based on whether there's an error message
         causeMessage.success = !observation.payload.content
           .toLowerCase()
