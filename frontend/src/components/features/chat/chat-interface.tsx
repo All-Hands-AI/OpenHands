@@ -256,7 +256,7 @@ export function ChatInterface() {
               </button>
             )}
 
-            {/* Manual Summarize Button - only show in summary view */}
+            {/* Manual Summarize Button - only show in summary view
             {params.conversationId && showSummary && (
               <button
                 type="button"
@@ -295,7 +295,7 @@ export function ChatInterface() {
                 </svg>
                 Resummarize
               </button>
-            )}
+            )} */}
           </div>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
