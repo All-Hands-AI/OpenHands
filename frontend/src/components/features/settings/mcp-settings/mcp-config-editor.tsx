@@ -7,7 +7,6 @@ interface MCPConfigEditorProps {
 }
 
 export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [configText, setConfigText] = useState(() =>
     mcpConfig
@@ -15,10 +14,6 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       : '{\n  "sse_servers": [],\n  "stdio_servers": []\n}',
   );
   const [error, setError] = useState<string | null>(null);
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
 
   const toggleEdit = () => {
     if (isEditing) {
@@ -157,18 +152,8 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
 
   return (
     <div className="border border-base-tertiary rounded-md p-3">
-      <div className="flex justify-between items-center">
-        <div
-          className="flex items-center cursor-pointer"
-          onClick={toggleExpand}
-        >
-          <button
-            type="button"
-            className="text-xs bg-base-tertiary px-2 py-1 rounded-md"
-          >
-            {isExpanded ? "Hide Details" : "Show Details"}
-          </button>
-        </div>
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-sm font-medium">MCP Configuration</div>
         <div className="flex items-center">
           <a
             href="https://docs.all-hands.dev/modules/usage/mcp"
@@ -189,82 +174,80 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         </div>
       </div>
 
-      {isExpanded && (
-        <div className="mt-2">
-          {isEditing ? (
-            <div>
-              <div className="mb-2 text-xs text-gray-400">
-                Edit the JSON configuration for MCP servers below. The
-                configuration must include both <code>sse_servers</code> and{" "}
-                <code>stdio_servers</code> arrays.
-              </div>
-              <textarea
-                className="w-full h-64 p-2 text-xs font-mono bg-base-tertiary rounded-md border border-base-tertiary focus:border-blue-500 focus:outline-none"
-                value={configText}
-                onChange={handleTextChange}
-                spellCheck="false"
-              />
-              {error && (
-                <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-md text-xs text-red-700">
-                  <strong>Error:</strong> {error}
-                </div>
-              )}
-              <div className="mt-2 text-xs text-gray-400">
-                <strong>Example:</strong>{" "}
-                <code>
-                  {
-                    '{ "sse_servers": ["https://example.com/mcp"], "stdio_servers": [{ "name": "example", "command": "python", "args": ["-m", "mcp_server"] }] }'
-                  }
-                </code>
-              </div>
+      <div>
+        {isEditing ? (
+          <div>
+            <div className="mb-2 text-xs text-gray-400">
+              Edit the JSON configuration for MCP servers below. The
+              configuration must include both <code>sse_servers</code> and{" "}
+              <code>stdio_servers</code> arrays.
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="mb-3">
-                  <h4 className="text-xs font-medium mb-1 flex items-center">
-                    <span className="mr-1">SSE Servers</span>
-                    <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
-                      {config.sse_servers.length}
-                    </span>
-                  </h4>
-                  {config.sse_servers.length > 0 ? (
-                    config.sse_servers.map(renderSSEServer)
-                  ) : (
-                    <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
-                      No SSE servers configured
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-medium mb-1 flex items-center">
-                    <span className="mr-1">Stdio Servers</span>
-                    <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
-                      {config.stdio_servers.length}
-                    </span>
-                  </h4>
-                  {config.stdio_servers.length > 0 ? (
-                    config.stdio_servers.map(renderStdioServer)
-                  ) : (
-                    <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
-                      No stdio servers configured
-                    </div>
-                  )}
-                </div>
+            <textarea
+              className="w-full h-64 p-2 text-xs font-mono bg-base-tertiary rounded-md border border-base-tertiary focus:border-blue-500 focus:outline-none"
+              value={configText}
+              onChange={handleTextChange}
+              spellCheck="false"
+            />
+            {error && (
+              <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-md text-xs text-red-700">
+                <strong>Error:</strong> {error}
               </div>
-
-              {config.sse_servers.length === 0 &&
-                config.stdio_servers.length === 0 && (
-                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700">
-                    No MCP servers are currently configured. Click &quot;Edit
-                    Configuration&quot; to add servers.
+            )}
+            <div className="mt-2 text-xs text-gray-400">
+              <strong>Example:</strong>{" "}
+              <code>
+                {
+                  '{ "sse_servers": ["https://example.com/mcp"], "stdio_servers": [{ "name": "example", "command": "python", "args": ["-m", "mcp_server"] }] }'
+                }
+              </code>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mb-3">
+                <h4 className="text-xs font-medium mb-1 flex items-center">
+                  <span className="mr-1">SSE Servers</span>
+                  <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
+                    {config.sse_servers.length}
+                  </span>
+                </h4>
+                {config.sse_servers.length > 0 ? (
+                  config.sse_servers.map(renderSSEServer)
+                ) : (
+                  <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
+                    No SSE servers configured
                   </div>
                 )}
-            </>
-          )}
-        </div>
-      )}
+              </div>
+
+              <div>
+                <h4 className="text-xs font-medium mb-1 flex items-center">
+                  <span className="mr-1">Stdio Servers</span>
+                  <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
+                    {config.stdio_servers.length}
+                  </span>
+                </h4>
+                {config.stdio_servers.length > 0 ? (
+                  config.stdio_servers.map(renderStdioServer)
+                ) : (
+                  <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
+                    No stdio servers configured
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {config.sse_servers.length === 0 &&
+              config.stdio_servers.length === 0 && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700">
+                  No MCP servers are currently configured. Click &quot;Edit
+                  Configuration&quot; to add servers.
+                </div>
+              )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
