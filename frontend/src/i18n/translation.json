@@ -6924,34 +6924,34 @@
         "de": "Sie können OpenHands als CLI ausführen, ähnlich wie Claude Code."
     },
     "TIPS$GITHUB_HOOK": {
-        "en": "OpenHands Cloud offers a GitHub hook, so you can say \"@openhands fix the merge conflicts\" or \"@openhands fix the feedback on this PR\" right inside the GitHub UI",
+        "en": "OpenHands Cloud offers a GitHub hook, so you can say \"@openhands fix the merge conflicts\" or \"@openhands fix the feedback on this PR\" right inside the GitHub UI.",
         "ja": "OpenHands CloudはGitHubフックを提供しているため、GitHub UI内で「@openhands マージの競合を修正して」や「@openhands このPRのフィードバックを修正して」と言うことができます。",
         "zh-CN": "OpenHands Cloud提供GitHub钩子，因此您可以在GitHub UI中直接说\"@openhands 修复合并冲突\"或\"@openhands 修复此PR上的反馈\"。",
         "zh-TW": "OpenHands Cloud提供GitHub鉤子，因此您可以在GitHub UI中直接說\"@openhands 修復合併衝突\"或\"@openhands 修復此PR上的反饋\"。",
         "ko-KR": "OpenHands Cloud는 GitHub 훅을 제공하므로 GitHub UI 내에서 \"@openhands 병합 충돌 수정\" 또는 \"@openhands 이 PR의 피드백 수정\"이라고 말할 수 있습니다.",
-        "no": "OpenHands Cloud tilbyr en GitHub-hook, så du kan si \"@openhands fix the merge conflicts\" eller \"@openhands fix the feedback on this PR\" direkte i GitHub-grensesnittet",
-        "it": "OpenHands Cloud offre un hook GitHub, così puoi dire \"@openhands fix the merge conflicts\" o \"@openhands fix the feedback on this PR\" direttamente nell'interfaccia di GitHub",
-        "pt": "O OpenHands Cloud oferece um hook do GitHub, para que você possa dizer \"@openhands fix the merge conflicts\" ou \"@openhands fix the feedback on this PR\" diretamente na interface do GitHub",
-        "es": "OpenHands Cloud ofrece un hook de GitHub, por lo que puede decir \"@openhands fix the merge conflicts\" o \"@openhands fix the feedback on this PR\" directamente en la interfaz de GitHub",
-        "ar": "يوفر OpenHands Cloud خطافًا لـ GitHub، لذلك يمكنك قول \"@openhands أصلح تعارضات الدمج\" أو \"@openhands أصلح التعليقات على طلب السحب هذا\" مباشرة داخل واجهة GitHub",
-        "fr": "OpenHands Cloud propose un hook GitHub, vous pouvez donc dire \"@openhands fix the merge conflicts\" ou \"@openhands fix the feedback on this PR\" directement dans l'interface GitHub",
-        "tr": "OpenHands Cloud, GitHub kancası sunar, böylece GitHub arayüzünde doğrudan \"@openhands birleştirme çakışmalarını düzelt\" veya \"@openhands bu PR'daki geri bildirimi düzelt\" diyebilirsiniz",
-        "de": "OpenHands Cloud bietet einen GitHub-Hook, sodass Sie \"@openhands fix the merge conflicts\" oder \"@openhands fix the feedback on this PR\" direkt in der GitHub-Benutzeroberfläche sagen können"
+        "no": "OpenHands Cloud tilbyr en GitHub-hook, så du kan si \"@openhands fix the merge conflicts\" eller \"@openhands fix the feedback on this PR\" direkte i GitHub-grensesnittet.",
+        "it": "OpenHands Cloud offre un hook GitHub, così puoi dire \"@openhands fix the merge conflicts\" o \"@openhands fix the feedback on this PR\" direttamente nell'interfaccia di GitHub.",
+        "pt": "O OpenHands Cloud oferece um hook do GitHub, para que você possa dizer \"@openhands fix the merge conflicts\" ou \"@openhands fix the feedback on this PR\" diretamente na interface do GitHub.",
+        "es": "OpenHands Cloud ofrece un hook de GitHub, por lo que puede decir \"@openhands fix the merge conflicts\" o \"@openhands fix the feedback on this PR\" directamente en la interfaz de GitHub.",
+        "ar": "يوفر OpenHands Cloud خطافًا لـ GitHub، لذلك يمكنك قول \"@openhands أصلح تعارضات الدمج\" أو \"@openhands أصلح التعليقات على طلب السحب هذا\" مباشرة داخل واجهة GitHub.",
+        "fr": "OpenHands Cloud propose un hook GitHub, vous pouvez donc dire \"@openhands fix the merge conflicts\" ou \"@openhands fix the feedback on this PR\" directement dans l'interface GitHub.",
+        "tr": "OpenHands Cloud, GitHub kancası sunar, böylece GitHub arayüzünde doğrudan \"@openhands birleştirme çakışmalarını düzelt\" veya \"@openhands bu PR'daki geri bildirimi düzelt\" diyebilirsiniz.",
+        "de": "OpenHands Cloud bietet einen GitHub-Hook, sodass Sie \"@openhands fix the merge conflicts\" oder \"@openhands fix the feedback on this PR\" direkt in der GitHub-Benutzeroberfläche sagen können."
     },
     "TIPS$BLOG_SIGNUP": {
-        "en": "Sign up for the OpenHands Blog to hear about new features and the latest releases",
+        "en": "Sign up for the OpenHands Blog to hear about new features and the latest releases.",
         "ja": "OpenHandsブログに登録して、新機能や最新リリースについての情報を入手しましょう。",
         "zh-CN": "注册OpenHands博客，了解新功能和最新版本。",
         "zh-TW": "註冊OpenHands博客，了解新功能和最新版本。",
         "ko-KR": "OpenHands 블로그에 가입하여 새로운 기능과 최신 릴리스에 대한 정보를 받아보세요.",
-        "no": "Meld deg på OpenHands-bloggen for å høre om nye funksjoner og de nyeste utgivelsene",
-        "it": "Iscriviti al Blog di OpenHands per conoscere le nuove funzionalità e gli ultimi rilasci",
-        "pt": "Inscreva-se no Blog do OpenHands para ouvir sobre novos recursos e as últimas versões",
-        "es": "Suscríbase al Blog de OpenHands para conocer las nuevas funciones y las últimas versiones",
+        "no": "Meld deg på OpenHands-bloggen for å høre om nye funksjoner og de nyeste utgivelsene.",
+        "it": "Iscriviti al Blog di OpenHands per conoscere le nuove funzionalità e gli ultimi rilasci.",
+        "pt": "Inscreva-se no Blog do OpenHands para ouvir sobre novos recursos e as últimas versões.",
+        "es": "Suscríbase al Blog de OpenHands para conocer las nuevas funciones y las últimas versiones.",
         "ar": "اشترك في مدونة OpenHands للاطلاع على الميزات الجديدة وأحدث الإصدارات",
-        "fr": "Inscrivez-vous au blog OpenHands pour connaître les nouvelles fonctionnalités et les dernières versions",
-        "tr": "Yeni özellikler ve en son sürümler hakkında bilgi almak için OpenHands Blog'a kaydolun",
-        "de": "Melden Sie sich für den OpenHands Blog an, um über neue Funktionen und die neuesten Versionen informiert zu werden"
+        "fr": "Inscrivez-vous au blog OpenHands pour connaître les nouvelles fonctionnalités et les dernières versions.",
+        "tr": "Yeni özellikler ve en son sürümler hakkında bilgi almak için OpenHands Blog'a kaydolun.",
+        "de": "Melden Sie sich für den OpenHands Blog an, um über neue Funktionen und die neuesten Versionen informiert zu werden."
     },
     "TIPS$API_USAGE": {
         "en": "OpenHands has an API! Create OpenHands conversations with simple cURL command.",
@@ -6967,5 +6967,8 @@
         "fr": "OpenHands a une API ! Créez des conversations OpenHands avec une simple commande cURL.",
         "tr": "OpenHands'in bir API'si var! Basit bir cURL komutuyla OpenHands konuşmaları oluşturun.",
         "de": "OpenHands hat eine API! Erstellen Sie OpenHands-Gespräche mit einem einfachen cURL-Befehl."
+    },
+    "TIPS$LEARN_MORE": {
+        "en": "Learn more"
     }
 }

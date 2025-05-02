@@ -37,6 +37,7 @@ function GitChanges() {
   const isNotGitRepoError =
     error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
+  console.log('tip', randomTip);
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
       {!runtimeIsActive && (
@@ -68,7 +69,7 @@ function GitChanges() {
                     href={randomTip.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
+                    className="underline"
                   >
                     {t(I18nKey.TIPS$LEARN_MORE)}
                   </a>
