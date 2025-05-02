@@ -141,10 +141,13 @@ export default function MainApp() {
   // 1. User is not authenticated
   // 2. We're not currently on the TOS page
   // 3. We're in SaaS mode
+  // 4. We're not on the OAuth callback page
+  const isOAuthCallbackPage = pathname.includes("/oauth/keycloak/callback");
   const renderAuthModal =
     !isFetchingAuth &&
     !userIsAuthed &&
     !tosPageStatus &&
+    !isOAuthCallbackPage &&
     config.data?.APP_MODE === "saas";
 
   return (
