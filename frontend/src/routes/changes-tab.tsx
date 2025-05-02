@@ -20,7 +20,7 @@ function StatusMessage({ children }: React.PropsWithChildren) {
   );
 }
 
-function EditorScreen() {
+function GitChanges() {
   const { t } = useTranslation();
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
   const [randomTip, setRandomTip] = React.useState(getRandomTip());
@@ -74,4 +74,4 @@ function EditorScreen() {
   );
 }
 
-export default EditorScreen;
+export default GitChanges;
