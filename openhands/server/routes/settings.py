@@ -150,6 +150,6 @@ def convert_to_settings(settings_with_token_data: Settings) -> Settings:
     # Convert the `llm_api_key` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
 
-    # Create a new Settings instance with empty SecretStore
+    # Create a new Settings instance
     settings = Settings(**filtered_settings_data)
     return settings
