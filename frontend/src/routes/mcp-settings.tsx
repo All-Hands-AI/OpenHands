@@ -56,7 +56,7 @@ function MCPSettings() {
   };
 
   if (isLoading) {
-    return <div className="p-9">Loading...</div>;
+    return <div className="p-9">{t(I18nKey.HOME$LOADING)}</div>;
   }
 
   return (
@@ -68,10 +68,10 @@ function MCPSettings() {
       <div className="p-9 flex flex-col gap-6">
         <div>
           <h2 className="text-lg font-medium mb-2">
-            {t("SETTINGS$MCP_TITLE")}
+            {t(I18nKey.SETTINGS$MCP_TITLE)}
           </h2>
           <p className="text-sm text-gray-400 mb-4">
-            {t("SETTINGS$MCP_DESCRIPTION")}
+            {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
           </p>
         </div>
 
@@ -85,8 +85,8 @@ function MCPSettings() {
           variant="primary"
           isDisabled={!isDirty || isPending}
         >
-          {!isPending && t("SETTINGS$SAVE_CHANGES")}
-          {isPending && t("SETTINGS$SAVING")}
+          {!isPending && t(I18nKey.SETTINGS$SAVE_CHANGES)}
+          {isPending && t(I18nKey.SETTINGS$SAVING)}
         </BrandButton>
       </div>
     </form>

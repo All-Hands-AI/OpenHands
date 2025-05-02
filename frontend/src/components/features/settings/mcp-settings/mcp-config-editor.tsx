@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MCPConfig, MCPSSEServer, MCPStdioServer } from "#/types/settings";
+import { I18nKey } from "#/i18n/declaration";
 
 interface MCPConfigEditorProps {
   mcpConfig?: MCPConfig;
@@ -7,11 +9,12 @@ interface MCPConfigEditorProps {
 }
 
 export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [configText, setConfigText] = useState(() =>
     mcpConfig
       ? JSON.stringify(mcpConfig, null, 2)
-      : '{\n  "sse_servers": [],\n  "stdio_servers": []\n}',
+      : t(I18nKey.SETTINGS$MCP_DEFAULT_CONFIG),
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -23,14 +26,14 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
 
         // Validate the structure
         if (!newConfig.sse_servers || !Array.isArray(newConfig.sse_servers)) {
-          throw new Error("sse_servers must be an array");
+          throw new Error(t(I18nKey.SETTINGS$MCP_ERROR_SSE_ARRAY));
         }
 
         if (
           !newConfig.stdio_servers ||
           !Array.isArray(newConfig.stdio_servers)
         ) {
-          throw new Error("stdio_servers must be an array");
+          throw new Error(t(I18nKey.SETTINGS$MCP_ERROR_STDIO_ARRAY));
         }
 
         // Validate SSE servers
@@ -39,25 +42,25 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             typeof server !== "string" &&
             (!server.url || typeof server.url !== "string")
           ) {
-            throw new Error(
-              "Each SSE server must be a string URL or have a url property",
-            );
+            throw new Error(t(I18nKey.SETTINGS$MCP_ERROR_SSE_URL));
           }
         }
 
         // Validate stdio servers
         for (const server of newConfig.stdio_servers) {
           if (!server.name || !server.command) {
-            throw new Error(
-              "Each stdio server must have name and command properties",
-            );
+            throw new Error(t(I18nKey.SETTINGS$MCP_ERROR_STDIO_PROPS));
           }
         }
 
         onChange(newConfig);
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Invalid JSON");
+        setError(
+          e instanceof Error
+            ? e.message
+            : t(I18nKey.SETTINGS$MCP_ERROR_INVALID_JSON),
+        );
         return; // Don't exit edit mode if there's an error
       }
     }
@@ -99,9 +102,13 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         {server.api_key && (
           <div className="mt-1 text-xs text-gray-500 flex items-center">
             <span className="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded mr-2">
-              API Key
+              {t(I18nKey.SETTINGS$MCP_API_KEY)}
             </span>
-            <span>{server.api_key ? "Configured" : "Not set"}</span>
+            <span>
+              {server.api_key
+                ? "Configured"
+                : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
+            </span>
           </div>
         )}
       </div>
@@ -121,14 +128,14 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       </div>
       <div className="mt-1 text-xs text-gray-500 flex items-center">
         <span className="bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded mr-2">
-          Command
+          {t(I18nKey.SETTINGS$MCP_COMMAND)}
         </span>
         <code className="font-mono">{server.command}</code>
       </div>
       {server.args && server.args.length > 0 && (
         <div className="mt-1 text-xs text-gray-500 flex items-center">
           <span className="bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded mr-2">
-            Args
+            {t(I18nKey.SETTINGS$MCP_ARGS)}
           </span>
           <code className="font-mono">{server.args.join(" ")}</code>
         </div>
@@ -136,7 +143,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       {server.env && Object.keys(server.env).length > 0 && (
         <div className="mt-1 text-xs text-gray-500 flex items-center">
           <span className="bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded mr-2">
-            Env
+            {t(I18nKey.SETTINGS$MCP_ENV)}
           </span>
           <code className="font-mono">
             {Object.entries(server.env)
@@ -153,7 +160,9 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <div className="text-sm font-medium">MCP Configuration</div>
+        <div className="text-sm font-medium">
+          {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
+        </div>
         <div className="flex items-center">
           <a
             href="https://docs.all-hands.dev/modules/usage/mcp"
@@ -169,7 +178,9 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             className="text-xs bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
             onClick={toggleEdit}
           >
-            {isEditing ? "Apply Changes" : "Edit Configuration"}
+            {isEditing
+              ? t(I18nKey.SETTINGS$MCP_APPLY_CHANGES)
+              : t(I18nKey.SETTINGS$MCP_EDIT_CONFIGURATION)}
           </button>
         </div>
       </div>
@@ -178,9 +189,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         {isEditing ? (
           <div>
             <div className="mb-2 text-xs text-gray-400">
-              Edit the JSON configuration for MCP servers below. The
-              configuration must include both <code>sse_servers</code> and{" "}
-              <code>stdio_servers</code> arrays.
+              {t(I18nKey.SETTINGS$MCP_CONFIG_DESCRIPTION)}
             </div>
             <textarea
               className="w-full h-64 p-2 text-xs font-mono bg-base-tertiary rounded-md focus:border-blue-500 focus:outline-none"
@@ -190,11 +199,11 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             />
             {error && (
               <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-md text-xs text-red-700">
-                <strong>Error:</strong> {error}
+                <strong>{t(I18nKey.SETTINGS$MCP_CONFIG_ERROR)}</strong> {error}
               </div>
             )}
             <div className="mt-2 text-xs text-gray-400">
-              <strong>Example:</strong>{" "}
+              <strong>{t(I18nKey.SETTINGS$MCP_CONFIG_EXAMPLE)}</strong>{" "}
               <code>
                 {
                   '{ "sse_servers": ["https://example-mcp-server.com/sse"], "stdio_servers": [{ "name": "fetch", "command": "uvx", "args": ["mcp-server-fetch"] }] }'
@@ -207,7 +216,9 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="mb-3">
                 <h4 className="text-xs font-medium mb-1 flex items-center">
-                  <span className="mr-1">SSE Servers</span>
+                  <span className="mr-1">
+                    {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}
+                  </span>
                   <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
                     {config.sse_servers.length}
                   </span>
@@ -216,14 +227,16 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
                   config.sse_servers.map(renderSSEServer)
                 ) : (
                   <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
-                    No SSE servers configured
+                    {t(I18nKey.SETTINGS$MCP_NO_SSE_SERVERS)}
                   </div>
                 )}
               </div>
 
               <div>
                 <h4 className="text-xs font-medium mb-1 flex items-center">
-                  <span className="mr-1">Stdio Servers</span>
+                  <span className="mr-1">
+                    {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}
+                  </span>
                   <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
                     {config.stdio_servers.length}
                   </span>
@@ -232,7 +245,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
                   config.stdio_servers.map(renderStdioServer)
                 ) : (
                   <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
-                    No stdio servers configured
+                    {t(I18nKey.SETTINGS$MCP_NO_STDIO_SERVERS)}
                   </div>
                 )}
               </div>
@@ -241,8 +254,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             {config.sse_servers.length === 0 &&
               config.stdio_servers.length === 0 && (
                 <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700">
-                  No MCP servers are currently configured. Click &quot;Edit
-                  Configuration&quot; to add servers.
+                  {t(I18nKey.SETTINGS$MCP_NO_SERVERS_CONFIGURED)}
                 </div>
               )}
           </>
