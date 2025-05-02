@@ -6,8 +6,14 @@ export interface Tip {
 }
 
 export const TIPS: Tip[] = [
-  { key: I18nKey.TIPS$CUSTOMIZE_MICROAGENT, link: "https://docs.all-hands.dev/modules/usage/prompting/microagents-repo" },
-  { key: I18nKey.TIPS$SETUP_SCRIPT, link: "https://docs.all-hands.dev/modules/usage/customization/repository" },
+  {
+    key: I18nKey.TIPS$CUSTOMIZE_MICROAGENT,
+    link: "https://docs.all-hands.dev/modules/usage/prompting/microagents-repo",
+  },
+  {
+    key: I18nKey.TIPS$SETUP_SCRIPT,
+    link: "https://docs.all-hands.dev/modules/usage/customization/repository",
+  },
   { key: I18nKey.TIPS$VSCODE_INSTANCE },
   { key: I18nKey.TIPS$SAVE_WORK },
 ];
