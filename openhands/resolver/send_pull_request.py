@@ -169,26 +169,25 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
     Returns:
         bool: True if changes were committed, False if there were no changes to commit
     """
-    # Check if git username is set
-    result = subprocess.run(
-        f'git -C {repo_dir} config user.name',
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
-
-    if not result.stdout.strip():
-        # If username is not set, configure git
-        subprocess.run(
-            f'git -C {repo_dir} config user.name "openhands" && '
-            f'git -C {repo_dir} config user.email "openhands@all-hands.dev" && '
-            f'git -C {repo_dir} config alias.git "git --no-pager"',
-            shell=True,
-            check=True,
-        )
-        logger.info('Git user configured as openhands')
-
     try:
+        # Check if git username is set
+        result = subprocess.run(
+            f'git -C {repo_dir} config user.name',
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+
+        if not result.stdout.strip():
+            # If username is not set, configure git
+            subprocess.run(
+                f'git -C {repo_dir} config user.name "openhands" && '
+                f'git -C {repo_dir} config user.email "openhands@all-hands.dev" && '
+                f'git -C {repo_dir} config alias.git "git --no-pager"',
+                shell=True,
+            )
+            logger.info('Git user configured as openhands')
+
         # Add all changes to the git index
         result = subprocess.run(
             f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
