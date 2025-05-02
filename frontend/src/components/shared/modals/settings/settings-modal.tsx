@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { useState } from "react";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
@@ -8,19 +7,15 @@ import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
 import { Settings } from "#/types/settings";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { cn } from "#/utils/utils";
 
 interface SettingsModalProps {
   settings?: Settings;
   onClose: () => void;
 }
 
-type SettingsTab = "llm" | "mcp";
-
 export function SettingsModal({ onClose, settings }: SettingsModalProps) {
   const aiConfigOptions = useAIConfigOptions();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<SettingsTab>("llm");
 
   return (
     <ModalBackdrop>
@@ -46,32 +41,6 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
           </Link>
         </p>
 
-        {/* Tabs Navigation */}
-        <div className="flex border-b border-tertiary mt-2">
-          <button
-            type="button"
-            data-testid="llm-tab-button"
-            className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
-              activeTab === "llm" && "border-primary",
-            )}
-            onClick={() => setActiveTab("llm")}
-          >
-            {t("SETTINGS$NAV_LLM")}
-          </button>
-          <button
-            type="button"
-            data-testid="mcp-tab-button"
-            className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
-              activeTab === "mcp" && "border-primary",
-            )}
-            onClick={() => setActiveTab("mcp")}
-          >
-            {t("SETTINGS$NAV_MCP")}
-          </button>
-        </div>
-
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
             <LoadingSpinner size="small" />
@@ -82,7 +51,6 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
             settings={settings || DEFAULT_SETTINGS}
             models={aiConfigOptions.data?.models}
             onClose={onClose}
-            activeTab={activeTab}
           />
         )}
       </div>

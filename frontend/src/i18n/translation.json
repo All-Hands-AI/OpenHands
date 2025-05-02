@@ -74,6 +74,21 @@
         "tr": "Yapılandırmayı Düzenle",
         "de": "Konfiguration bearbeiten"
     },
+    "SETTINGS$MCP_CANCEL": {
+        "en": "Cancel",
+        "ja": "キャンセル",
+        "zh-CN": "取消",
+        "zh-TW": "取消",
+        "ko-KR": "취소",
+        "no": "Avbryt",
+        "it": "Annulla",
+        "pt": "Cancelar",
+        "es": "Cancelar",
+        "ar": "إلغاء",
+        "fr": "Annuler",
+        "tr": "İptal",
+        "de": "Abbrechen"
+    },
     "SETTINGS$MCP_APPLY_CHANGES": {
         "en": "Apply Changes",
         "ja": "変更を適用",

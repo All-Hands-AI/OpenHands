@@ -1,3 +1,4 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import posthog from "posthog-js";
@@ -13,10 +14,10 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
-function MCPSettings() {
+function MCPSettingsScreen() {
+  const { t } = useTranslation();
   const { data: settings, isLoading } = useSettings();
   const { mutate: saveSettings, isPending } = useSaveSettings();
-  const { t } = useTranslation();
 
   const [mcpConfig, setMcpConfig] = useState<MCPConfig | undefined>(
     settings?.MCP_CONFIG,
@@ -93,4 +94,4 @@ function MCPSettings() {
   );
 }
 
-export default MCPSettings;
+export default MCPSettingsScreen;
