@@ -197,7 +197,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
               <strong>Example:</strong>{" "}
               <code>
                 {
-                  '{ "sse_servers": ["https://example.com/mcp"], "stdio_servers": [{ "name": "example", "command": "python", "args": ["-m", "mcp_server"] }] }'
+                  '{ "sse_servers": ["https://example-mcp-server.com/sse"], "stdio_servers": [{ "name": "fetch", "command": "uvx", "args": ["mcp-server-fetch"] }] }'
                 }
               </code>
             </div>
