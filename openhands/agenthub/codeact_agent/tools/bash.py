@@ -39,14 +39,12 @@ def refine_prompt(prompt: str):
 def create_cmd_run_tool(
     use_short_description: bool = False,
 ) -> ChatCompletionToolParam:
-    description = refine_prompt(
-        _SHORT_BASH_DESCRIPTION if use_short_description else _DETAILED_BASH_DESCRIPTION
-    )
+    description = _SHORT_BASH_DESCRIPTION if use_short_description else _DETAILED_BASH_DESCRIPTION
     return ChatCompletionToolParam(
         type='function',
         function=ChatCompletionToolParamFunctionChunk(
-            name='execute_bash',
-            description=description,
+            name=refine_prompt('execute_bash'),
+            description=refine_prompt(description),
             parameters={
                 'type': 'object',
                 'properties': {
