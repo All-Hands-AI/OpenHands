@@ -152,7 +152,7 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
-  } else if (message.error === true && typeof message.message === 'string') {
+  } else if (message.error) {
     // Handle error messages from the server
     trackError({
       message: message.message,
