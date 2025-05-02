@@ -56,12 +56,14 @@ function GitChanges() {
       )}
 
       {!isError && gitChanges?.length === 0 && (
-        <StatusMessage>
-          <div className="max-w-2xl text-center">
-            <div className="mb-4 text-xl font-semibold">Tip</div>
-            {t(randomTip.key)}
+        <div className="max-w-2xl text-center">
+          <div className="mb-4 text-m bg-tertiary rounded p-4 text-left">
+            <p>
+              <span>💡</span>
+              {t(randomTip.key)}
+            </p>
           </div>
-        </StatusMessage>
+        </div>
       )}
       {isSuccess &&
         gitChanges.map((change) => (
