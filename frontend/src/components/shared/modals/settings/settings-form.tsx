@@ -1,6 +1,6 @@
 import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-import React from "react";
+import React, { useState } from "react";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
@@ -9,11 +9,12 @@ import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { Settings } from "#/types/settings";
+import { MCPConfig, Settings } from "#/types/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
+import { MCPConfigEditor } from "#/components/features/settings/mcp-settings/mcp-config-editor";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 interface SettingsFormProps {
@@ -28,6 +29,8 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
   const location = useLocation();
   const { t } = useTranslation();
+  
+  const [mcpConfig, setMcpConfig] = useState<MCPConfig | undefined>(settings.MCP_CONFIG);
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -53,6 +56,9 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
           LLM_API_KEY_SET: newSettings.LLM_API_KEY_SET ? "SET" : "UNSET",
           REMOTE_RUNTIME_RESOURCE_FACTOR:
             newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+          HAS_MCP_CONFIG: newSettings.MCP_CONFIG ? "YES" : "NO",
+          MCP_SSE_SERVERS_COUNT: newSettings.MCP_CONFIG?.sse_servers?.length || 0,
+          MCP_STDIO_SERVERS_COUNT: newSettings.MCP_CONFIG?.stdio_servers?.length || 0,
         });
       },
     });
@@ -105,6 +111,26 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
             linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
             href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+          />
+
+          {/* MCP Configuration Section */}
+          <div className="mt-6 mb-2">
+            <h3 className="text-base font-medium">{t("SETTINGS$MCP_TITLE")}</h3>
+            <p className="text-xs text-gray-400 mb-2">
+              {t("SETTINGS$MCP_DESCRIPTION")}
+            </p>
+          </div>
+          
+          <MCPConfigEditor 
+            mcpConfig={mcpConfig} 
+            onChange={setMcpConfig}
+          />
+          
+          {/* Hidden field to store MCP configuration */}
+          <input 
+            type="hidden" 
+            name="mcp-config" 
+            value={mcpConfig ? JSON.stringify(mcpConfig) : ""}
           />
         </div>
 

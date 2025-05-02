@@ -263,6 +263,10 @@ async def store_llm_settings(
             settings.llm_model = existing_settings.llm_model
         if settings.llm_base_url is None:
             settings.llm_base_url = existing_settings.llm_base_url
+        
+        # Keep existing MCP config if not provided
+        if settings.mcp_config is None:
+            settings.mcp_config = existing_settings.mcp_config
 
     return settings
 

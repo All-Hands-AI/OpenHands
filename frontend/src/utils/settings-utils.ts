@@ -73,6 +73,17 @@ export const extractSettings = (
     },
   };
 
+  // Get MCP configuration from hidden field if it exists
+  const mcpConfigStr = formData.get("mcp-config")?.toString();
+  let mcpConfig = undefined;
+  if (mcpConfigStr) {
+    try {
+      mcpConfig = JSON.parse(mcpConfigStr);
+    } catch (e) {
+      console.error("Failed to parse MCP configuration", e);
+    }
+  }
+
   return {
     LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
     LLM_API_KEY_SET: !!LLM_API_KEY,
@@ -84,5 +95,6 @@ export const extractSettings = (
     ENABLE_DEFAULT_CONDENSER,
     PROVIDER_TOKENS: providerTokens,
     llm_api_key: LLM_API_KEY,
+    MCP_CONFIG: mcpConfig,
   };
 };

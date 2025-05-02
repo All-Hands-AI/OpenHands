@@ -1,4 +1,34 @@
 {
+    "SETTINGS$MCP_TITLE": {
+        "en": "Model Context Protocol (MCP)",
+        "ja": "モデルコンテキストプロトコル (MCP)",
+        "zh-CN": "模型上下文协议 (MCP)",
+        "zh-TW": "模型上下文協議 (MCP)",
+        "ko-KR": "모델 컨텍스트 프로토콜 (MCP)",
+        "no": "Modellkontekstprotokoll (MCP)",
+        "it": "Protocollo di Contesto del Modello (MCP)",
+        "pt": "Protocolo de Contexto de Modelo (MCP)",
+        "es": "Protocolo de Contexto de Modelo (MCP)",
+        "ar": "بروتوكول سياق النموذج (MCP)",
+        "fr": "Protocole de Contexte de Modèle (MCP)",
+        "tr": "Model Bağlam Protokolü (MCP)",
+        "de": "Modellkontextprotokoll (MCP)"
+    },
+    "SETTINGS$MCP_DESCRIPTION": {
+        "en": "Configure MCP servers for enhanced model capabilities",
+        "ja": "拡張モデル機能のためのMCPサーバーを設定する",
+        "zh-CN": "配置MCP服务器以增强模型功能",
+        "zh-TW": "配置MCP服務器以增強模型功能",
+        "ko-KR": "향상된 모델 기능을 위한 MCP 서버 구성",
+        "no": "Konfigurer MCP-servere for forbedrede modellfunksjoner",
+        "it": "Configura i server MCP per funzionalità di modello avanzate",
+        "pt": "Configure servidores MCP para capacidades de modelo aprimoradas",
+        "es": "Configure servidores MCP para capacidades mejoradas del modelo",
+        "ar": "قم بتكوين خوادم MCP لتعزيز قدرات النموذج",
+        "fr": "Configurez les serveurs MCP pour des capacités de modèle améliorées",
+        "tr": "Gelişmiş model yetenekleri için MCP sunucularını yapılandırın",
+        "de": "Konfigurieren Sie MCP-Server für erweiterte Modellfunktionen"
+    },
     "HOME$CONNECT_PROVIDER_MESSAGE": {
         "en": "To get started with suggested tasks, please connect your GitHub or GitLab account.",
         "ja": "提案されたタスクを始めるには、GitHubまたはGitLabアカウントを接続してください。",
