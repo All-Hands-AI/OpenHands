@@ -1,12 +1,11 @@
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from openhands.controller.agent import Agent
 from openhands.microagent.microagent import KnowledgeMicroagent, TaskMicroagent
 from openhands.security.options import SecurityAnalyzers
-from openhands.server.session.agent_session_manager import get_agent_session_manager
 from openhands.server.shared import config, server_config
 from openhands.utils.llm import get_supported_llm_models
 
@@ -80,7 +79,6 @@ class MicroagentInfo(BaseModel):
 @app.get('/microagents', response_model=List[Dict[str, str]])
 async def get_microagents(
     request: Request,
-    session_manager=Depends(get_agent_session_manager),
 ) -> List[Dict[str, str]]:
     """Get all available microagents for the current session.
 
@@ -92,17 +90,30 @@ async def get_microagents(
     Returns:
         List[Dict[str, str]]: A list of microagent information including name and trigger.
     """
-    sid = request.cookies.get('sid')
-    if not sid:
+    # Check if we have a conversation in the request state
+    if not hasattr(request.state, 'conversation') or not request.state.conversation:
         return []
 
-    session = session_manager.get_session(sid)
-    if not session or not session.memory:
+    # Get the runtime from the conversation
+    if (
+        not hasattr(request.state.conversation, 'runtime')
+        or not request.state.conversation.runtime
+    ):
+        return []
+
+    # Get the agent session from the runtime
+    runtime = request.state.conversation.runtime
+    if not hasattr(runtime, 'agent_session') or not runtime.agent_session:
+        return []
+
+    # Get the memory from the agent session
+    agent_session = runtime.agent_session
+    if not hasattr(agent_session, 'memory') or not agent_session.memory:
         return []
 
     # Get all knowledge microagents from memory
     microagents = []
-    for agent in session.memory.knowledge_microagents.values():
+    for agent in agent_session.memory.knowledge_microagents.values():
         if isinstance(agent, (KnowledgeMicroagent, TaskMicroagent)) and agent.triggers:
             # Use the first trigger as the main one
             trigger = agent.triggers[0]
