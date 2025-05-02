@@ -23,10 +23,22 @@ class BaseMicroagent(BaseModel):
 
     @classmethod
     def load(
-        cls, path: Union[str, Path], file_content: str | None = None
+        cls,
+        path: Union[str, Path],
+        microagent_dir: Path | None = None,
+        file_content: str | None = None,
     ) -> 'BaseMicroagent':
-        """Load a microagent from a markdown file with frontmatter."""
+        """Load a microagent from a markdown file with frontmatter.
+
+        The agent's name is derived from its path relative to the microagent_dir.
+        """
         path = Path(path) if isinstance(path, str) else path
+
+        # Calculate derived name from relative path if microagent_dir is provided
+        # Otherwise, we will rely on the name from metadata later
+        derived_name = None
+        if microagent_dir is not None:
+            derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -59,18 +71,33 @@ class BaseMicroagent(BaseModel):
         subclass_map = {
             MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
             MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
-            MicroagentType.TASK: TaskMicroagent,
         }
-        if metadata.type not in subclass_map:
-            raise ValueError(f'Unknown microagent type: {metadata.type}')
 
-        agent_class = subclass_map[metadata.type]
+        # Infer the agent type:
+        # 1. If triggers exist -> KNOWLEDGE
+        # 2. Else (no triggers) -> REPO
+        inferred_type: MicroagentType
+        if metadata.triggers:
+            inferred_type = MicroagentType.KNOWLEDGE
+        else:
+            # No triggers, default to REPO unless metadata explicitly says otherwise (which it shouldn't for REPO)
+            # This handles cases where 'type' might be missing or defaulted by Pydantic
+            inferred_type = MicroagentType.REPO_KNOWLEDGE
+
+        if inferred_type not in subclass_map:
+            # This should theoretically not happen with the logic above
+            raise ValueError(f'Could not determine microagent type for: {path}')
+
+        # Use derived_name if available (from relative path), otherwise fallback to metadata.name
+        agent_name = derived_name if derived_name is not None else metadata.name
+
+        agent_class = subclass_map[inferred_type]
         return agent_class(
-            name=metadata.name,
+            name=agent_name,
             content=content,
             metadata=metadata,
             source=str(path),
-            type=metadata.type,
+            type=inferred_type,
         )
 
 
@@ -118,23 +145,14 @@ class RepoMicroagent(BaseMicroagent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroagentType.REPO_KNOWLEDGE:
-            raise ValueError('RepoMicroagent must have type REPO_KNOWLEDGE')
-
-
-class TaskMicroagent(BaseMicroagent):
-    """Microagent specialized for task-based operations."""
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        if self.type != MicroagentType.TASK:
-            raise ValueError('TaskMicroagent must have type TASK')
+            raise ValueError(
+                f'RepoMicroagent initialized with incorrect type: {self.type}'
+            )
 
 
 def load_microagents_from_dir(
     microagent_dir: Union[str, Path],
-) -> tuple[
-    dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent], dict[str, TaskMicroagent]
-]:
+) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
     """Load all microagents from the given directory.
 
     Note, legacy repo instructions will not be loaded here.
@@ -150,9 +168,8 @@ def load_microagents_from_dir(
 
     repo_agents = {}
     knowledge_agents = {}
-    task_agents = {}
 
-    # Load all agents from .openhands/microagents directory
+    # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
         for file in microagent_dir.rglob('*.md'):
@@ -161,15 +178,13 @@ def load_microagents_from_dir(
             if file.name == 'README.md':
                 continue
             try:
-                agent = BaseMicroagent.load(file)
+                agent = BaseMicroagent.load(file, microagent_dir)
                 if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                elif isinstance(agent, TaskMicroagent):
-                    task_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:
                 raise ValueError(f'Error loading agent from {file}: {e}')
 
-    return repo_agents, knowledge_agents, task_agents
+    return repo_agents, knowledge_agents

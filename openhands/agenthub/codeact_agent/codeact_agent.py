@@ -20,10 +20,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.action import (
-    Action,
-    AgentFinishAction,
-)
+from openhands.events.action import Action, AgentFinishAction, MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -108,9 +105,7 @@ class CodeActAgent(Agent):
 
         tools = []
         if self.config.enable_cmd:
-            tools.append(
-                create_cmd_run_tool(use_short_description=use_short_tool_desc)
-            )
+            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
         if self.config.enable_think:
             tools.append(ThinkTool)
         if self.config.enable_finish:
@@ -175,50 +170,65 @@ class CodeActAgent(Agent):
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
         )
 
-        messages = self._get_messages(condensed_history)
+        initial_user_message = self._get_initial_user_message(state.history)
+        messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
 
-        if self.mcp_tools:
-            # Only add tools with unique names
-            existing_names = {tool['function']['name'] for tool in params['tools']}
-            unique_mcp_tools = [
-                tool
-                for tool in self.mcp_tools
-                if tool['function']['name'] not in existing_names
-            ]
-
-            if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
-                logger.info(
-                    f'Removing the default fields from the MCP tools for {self.llm.config.model} '
-                    "since it doesn't support them and the request would crash."
-                )
-                # prevent mutation of input tools
-                unique_mcp_tools = copy.deepcopy(unique_mcp_tools)
-                # Strip off default fields that cause errors with gemini-preview
-                for tool in unique_mcp_tools:
-                    if 'function' in tool and 'parameters' in tool['function']:
-                        if 'properties' in tool['function']['parameters']:
-                            for prop_name, prop in tool['function']['parameters'][
-                                'properties'
-                            ].items():
-                                if 'default' in prop:
-                                    del prop['default']
-
-            params['tools'] += unique_mcp_tools
+        # Special handling for Gemini model which doesn't support default fields
+        if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
+            logger.info(
+                f'Removing the default fields from tools for {self.llm.config.model} '
+                "since it doesn't support them and the request would crash."
+            )
+            # prevent mutation of input tools
+            params['tools'] = copy.deepcopy(params['tools'])
+            # Strip off default fields that cause errors with gemini-preview
+            for tool in params['tools']:
+                if 'function' in tool and 'parameters' in tool['function']:
+                    if 'properties' in tool['function']['parameters']:
+                        for prop_name, prop in tool['function']['parameters'][
+                            'properties'
+                        ].items():
+                            if 'default' in prop:
+                                del prop['default']
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
-        actions = self.response_to_actions_fn(response)
+        actions = self.response_to_actions_fn(
+            response, mcp_tool_names=list(self.mcp_tools.keys())
+        )
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_messages(self, events: list[Event]) -> list[Message]:
+    def _get_initial_user_message(self, history: list[Event]) -> MessageAction:
+        """Finds the initial user message action from the full history."""
+        initial_user_message: MessageAction | None = None
+        for event in history:
+            if isinstance(event, MessageAction) and event.source == 'user':
+                initial_user_message = event
+                break
+
+        if initial_user_message is None:
+            # This should not happen in a valid conversation
+            logger.error(
+                f'CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history.'
+            )
+            # Depending on desired robustness, could raise error or create a dummy action
+            # and log the error
+            raise ValueError(
+                'Initial user message not found in history. Please report this issue.'
+            )
+        return initial_user_message
+
+    def _get_messages(
+        self, events: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -255,6 +265,7 @@ class CodeActAgent(Agent):
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
+            initial_user_action=initial_user_message,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )

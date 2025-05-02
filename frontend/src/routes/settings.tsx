@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import React from "react";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
@@ -7,9 +8,43 @@ import { I18nKey } from "#/i18n/declaration";
 
 function SettingsScreen() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { data: config } = useConfig();
+
   const isSaas = config?.APP_MODE === "saas";
-  const billingIsEnabled = config?.FEATURE_FLAGS.ENABLE_BILLING;
+
+  const saasNavItems = [
+    { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
+    { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
+    { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
+    { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
+  ];
+
+  const ossNavItems = [
+    { to: "/settings", text: t("SETTINGS$NAV_LLM") },
+    { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
+    { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
+  ];
+
+  React.useEffect(() => {
+    if (isSaas) {
+      if (pathname === "/settings") {
+        navigate("/settings/git");
+      }
+    } else {
+      const noEnteringPaths = [
+        "/settings/billing",
+        "/settings/credits",
+        "/settings/api-keys",
+      ];
+      if (noEnteringPaths.includes(pathname)) {
+        navigate("/settings");
+      }
+    }
+  }, [isSaas, pathname]);
+
+  const navItems = isSaas ? saasNavItems : ossNavItems;
 
   return (
     <main
@@ -21,31 +56,26 @@ function SettingsScreen() {
         <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
       </header>
 
-      {isSaas && billingIsEnabled && (
-        <nav
-          data-testid="settings-navbar"
-          className="flex items-end gap-12 px-11 border-b border-tertiary"
-        >
-          {[
-            { to: "/settings", text: "Account" },
-            { to: "/settings/billing", text: "Credits" },
-          ].map(({ to, text }) => (
-            <NavLink
-              end
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "border-b-2 border-transparent py-2.5",
-                  isActive && "border-primary",
-                )
-              }
-            >
-              <ul className="text-[#F9FBFE] text-sm">{text}</ul>
-            </NavLink>
-          ))}
-        </nav>
-      )}
+      <nav
+        data-testid="settings-navbar"
+        className="flex items-end gap-12 px-9 border-b border-tertiary"
+      >
+        {navItems.map(({ to, text }) => (
+          <NavLink
+            end
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                "border-b-2 border-transparent py-2.5",
+                isActive && "border-primary",
+              )
+            }
+          >
+            <ul className="text-[#F9FBFE] text-sm">{text}</ul>
+          </NavLink>
+        ))}
+      </nav>
 
       <div className="flex flex-col grow overflow-auto">
         <Outlet />

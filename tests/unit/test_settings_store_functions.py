@@ -10,7 +10,8 @@ from openhands.server.routes.settings import (
     store_llm_settings,
     store_provider_tokens,
 )
-from openhands.server.settings import POSTSettingsModel, Settings
+from openhands.server.settings import POSTSettingsModel
+from openhands.storage.data_models.settings import Settings
 
 
 # Mock functions to simulate the actual functions in settings.py
@@ -23,8 +24,8 @@ async def get_settings_store(request):
 @pytest.mark.asyncio
 async def test_check_provider_tokens_valid():
     """Test check_provider_tokens with valid tokens."""
-    mock_request = MagicMock()
-    settings = POSTSettingsModel(provider_tokens={'github': 'valid-token'})
+    provider_token = ProviderToken(token=SecretStr('valid-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the validate_provider_token function to return GITHUB for valid tokens
     with patch(
@@ -32,7 +33,7 @@ async def test_check_provider_tokens_valid():
     ) as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
-        result = await check_provider_tokens(mock_request, settings)
+        result = await check_provider_tokens(settings)
 
         # Should return empty string for valid token
         assert result == ''
@@ -42,8 +43,8 @@ async def test_check_provider_tokens_valid():
 @pytest.mark.asyncio
 async def test_check_provider_tokens_invalid():
     """Test check_provider_tokens with invalid tokens."""
-    mock_request = MagicMock()
-    settings = POSTSettingsModel(provider_tokens={'github': 'invalid-token'})
+    provider_token = ProviderToken(token=SecretStr('invalid-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the validate_provider_token function to return None for invalid tokens
     with patch(
@@ -51,7 +52,7 @@ async def test_check_provider_tokens_invalid():
     ) as mock_validate:
         mock_validate.return_value = None
 
-        result = await check_provider_tokens(mock_request, settings)
+        result = await check_provider_tokens(settings)
 
         # Should return error message for invalid token
         assert 'Invalid token' in result
@@ -61,22 +62,22 @@ async def test_check_provider_tokens_invalid():
 @pytest.mark.asyncio
 async def test_check_provider_tokens_wrong_type():
     """Test check_provider_tokens with unsupported provider type."""
-    mock_request = MagicMock()
-    settings = POSTSettingsModel(provider_tokens={'unsupported': 'some-token'})
+    # We can't test with an unsupported provider type directly since the model enforces valid types
+    # Instead, we'll test with an empty provider_tokens dictionary
+    settings = POSTSettingsModel(provider_tokens={})
 
-    result = await check_provider_tokens(mock_request, settings)
+    result = await check_provider_tokens(settings)
 
-    # Should return empty string for unsupported provider
+    # Should return empty string for no providers
     assert result == ''
 
 
 @pytest.mark.asyncio
 async def test_check_provider_tokens_no_tokens():
     """Test check_provider_tokens with no tokens."""
-    mock_request = MagicMock()
     settings = POSTSettingsModel(provider_tokens={})
 
-    result = await check_provider_tokens(mock_request, settings)
+    result = await check_provider_tokens(settings)
 
     # Should return empty string when no tokens provided
     assert result == ''
@@ -86,7 +87,6 @@ async def test_check_provider_tokens_no_tokens():
 @pytest.mark.asyncio
 async def test_store_llm_settings_new_settings():
     """Test store_llm_settings with new settings."""
-    mock_request = MagicMock()
     settings = POSTSettingsModel(
         llm_model='gpt-4',
         llm_api_key='test-api-key',
@@ -94,25 +94,20 @@ async def test_store_llm_settings_new_settings():
     )
 
     # Mock the settings store
-    with patch(
-        'openhands.server.routes.settings.SettingsStoreImpl.get_instance'
-    ) as mock_get_store:
-        mock_store = MagicMock()
-        mock_store.load = AsyncMock(return_value=None)  # No existing settings
-        mock_get_store.return_value = mock_store
+    mock_store = MagicMock()
+    mock_store.load = AsyncMock(return_value=None)  # No existing settings
 
-        result = await store_llm_settings(mock_request, settings)
+    result = await store_llm_settings(settings, mock_store)
 
-        # Should return settings with the provided values
-        assert result.llm_model == 'gpt-4'
-        assert result.llm_api_key.get_secret_value() == 'test-api-key'
-        assert result.llm_base_url == 'https://api.example.com'
+    # Should return settings with the provided values
+    assert result.llm_model == 'gpt-4'
+    assert result.llm_api_key.get_secret_value() == 'test-api-key'
+    assert result.llm_base_url == 'https://api.example.com'
 
 
 @pytest.mark.asyncio
 async def test_store_llm_settings_update_existing():
     """Test store_llm_settings updates existing settings."""
-    mock_request = MagicMock()
     settings = POSTSettingsModel(
         llm_model='gpt-4',
         llm_api_key='new-api-key',
@@ -120,142 +115,131 @@ async def test_store_llm_settings_update_existing():
     )
 
     # Mock the settings store
-    with patch(
-        'openhands.server.routes.settings.SettingsStoreImpl.get_instance'
-    ) as mock_get_store:
-        mock_store = MagicMock()
+    mock_store = MagicMock()
 
-        # Create existing settings
-        existing_settings = Settings(
-            llm_model='gpt-3.5',
-            llm_api_key=SecretStr('old-api-key'),
-            llm_base_url='https://old.example.com',
-        )
+    # Create existing settings
+    existing_settings = Settings(
+        llm_model='gpt-3.5',
+        llm_api_key=SecretStr('old-api-key'),
+        llm_base_url='https://old.example.com',
+    )
 
-        mock_store.load = AsyncMock(return_value=existing_settings)
-        mock_get_store.return_value = mock_store
+    mock_store.load = AsyncMock(return_value=existing_settings)
 
-        result = await store_llm_settings(mock_request, settings)
+    result = await store_llm_settings(settings, mock_store)
 
-        # Should return settings with the updated values
-        assert result.llm_model == 'gpt-4'
-        assert result.llm_api_key.get_secret_value() == 'new-api-key'
-        assert result.llm_base_url == 'https://new.example.com'
+    # Should return settings with the updated values
+    assert result.llm_model == 'gpt-4'
+    assert result.llm_api_key.get_secret_value() == 'new-api-key'
+    assert result.llm_base_url == 'https://new.example.com'
 
 
 @pytest.mark.asyncio
 async def test_store_llm_settings_partial_update():
     """Test store_llm_settings with partial update."""
-    mock_request = MagicMock()
     settings = POSTSettingsModel(
         llm_model='gpt-4'  # Only updating model
     )
 
     # Mock the settings store
-    with patch(
-        'openhands.server.routes.settings.SettingsStoreImpl.get_instance'
-    ) as mock_get_store:
-        mock_store = MagicMock()
+    mock_store = MagicMock()
 
-        # Create existing settings
-        existing_settings = Settings(
-            llm_model='gpt-3.5',
-            llm_api_key=SecretStr('existing-api-key'),
-            llm_base_url='https://existing.example.com',
-        )
+    # Create existing settings
+    existing_settings = Settings(
+        llm_model='gpt-3.5',
+        llm_api_key=SecretStr('existing-api-key'),
+        llm_base_url='https://existing.example.com',
+    )
 
-        mock_store.load = AsyncMock(return_value=existing_settings)
-        mock_get_store.return_value = mock_store
+    mock_store.load = AsyncMock(return_value=existing_settings)
 
-        result = await store_llm_settings(mock_request, settings)
+    result = await store_llm_settings(settings, mock_store)
 
-        # Should return settings with updated model but keep other values
-        assert result.llm_model == 'gpt-4'
-        # For SecretStr objects, we need to compare the secret value
-        assert result.llm_api_key.get_secret_value() == 'existing-api-key'
-        assert result.llm_base_url == 'https://existing.example.com'
+    # Should return settings with updated model but keep other values
+    assert result.llm_model == 'gpt-4'
+    # For SecretStr objects, we need to compare the secret value
+    assert result.llm_api_key.get_secret_value() == 'existing-api-key'
+    assert result.llm_base_url == 'https://existing.example.com'
 
 
 # Tests for store_provider_tokens
 @pytest.mark.asyncio
 async def test_store_provider_tokens_new_tokens():
     """Test store_provider_tokens with new tokens."""
-    mock_request = MagicMock()
-    settings = POSTSettingsModel(provider_tokens={'github': 'new-token'})
+    provider_token = ProviderToken(token=SecretStr('new-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the settings store
-    with patch(
-        'openhands.server.routes.settings.SettingsStoreImpl.get_instance'
-    ) as mock_get_store:
-        mock_store = MagicMock()
-        mock_store.load = AsyncMock(return_value=None)  # No existing settings
-        mock_get_store.return_value = mock_store
+    mock_store = MagicMock()
+    mock_store.load = AsyncMock(return_value=None)  # No existing settings
 
-        result = await store_provider_tokens(mock_request, settings)
+    result = await store_provider_tokens(settings, mock_store)
 
-        # Should return settings with the provided tokens
-        assert result.provider_tokens == {'github': 'new-token'}
+    # Should return settings with the provided tokens
+    assert (
+        result.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'new-token'
+    )
 
 
 @pytest.mark.asyncio
 async def test_store_provider_tokens_update_existing():
     """Test store_provider_tokens updates existing tokens."""
-    mock_request = MagicMock()
-    settings = POSTSettingsModel(provider_tokens={'github': 'updated-token'})
+    provider_token = ProviderToken(token=SecretStr('updated-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the settings store
-    with patch(
-        'openhands.server.routes.settings.SettingsStoreImpl.get_instance'
-    ) as mock_get_store:
-        mock_store = MagicMock()
+    mock_store = MagicMock()
 
-        # Create existing settings with a GitHub token
-        github_token = ProviderToken(token=SecretStr('old-token'))
-        provider_tokens = {ProviderType.GITHUB: github_token}
+    # Create existing settings with a GitHub token
+    github_token = ProviderToken(token=SecretStr('old-token'))
+    provider_tokens = {ProviderType.GITHUB: github_token}
 
-        # Create a SecretStore with the provider tokens
-        secrets_store = SecretStore(provider_tokens=provider_tokens)
+    # Create a SecretStore with the provider tokens
+    secrets_store = SecretStore(provider_tokens=provider_tokens)
 
-        # Create existing settings with the secrets store
-        existing_settings = Settings(secrets_store=secrets_store)
+    # Create existing settings with the secrets store
+    existing_settings = Settings(secrets_store=secrets_store)
 
-        mock_store.load = AsyncMock(return_value=existing_settings)
-        mock_get_store.return_value = mock_store
+    mock_store.load = AsyncMock(return_value=existing_settings)
 
-        result = await store_provider_tokens(mock_request, settings)
+    result = await store_provider_tokens(settings, mock_store)
 
-        # Should return settings with the updated tokens
-        assert result.provider_tokens == {'github': 'updated-token'}
+    # Should return settings with the updated tokens
+    assert (
+        result.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'updated-token'
+    )
 
 
 @pytest.mark.asyncio
 async def test_store_provider_tokens_keep_existing():
     """Test store_provider_tokens keeps existing tokens when empty string provided."""
-    mock_request = MagicMock()
     settings = POSTSettingsModel(
-        provider_tokens={'github': ''}  # Empty string should keep existing token
+        provider_tokens={
+            'github': {'token': ''}
+        }  # Empty string should keep existing token
     )
 
     # Mock the settings store
-    with patch(
-        'openhands.server.routes.settings.SettingsStoreImpl.get_instance'
-    ) as mock_get_store:
-        mock_store = MagicMock()
+    mock_store = MagicMock()
 
-        # Create existing settings with a GitHub token
-        github_token = ProviderToken(token=SecretStr('existing-token'))
-        provider_tokens = {ProviderType.GITHUB: github_token}
+    # Create existing settings with a GitHub token
+    github_token = ProviderToken(token=SecretStr('existing-token'))
+    provider_tokens = {ProviderType.GITHUB: github_token}
 
-        # Create a SecretStore with the provider tokens
-        secrets_store = SecretStore(provider_tokens=provider_tokens)
+    # Create a SecretStore with the provider tokens
+    secrets_store = SecretStore(provider_tokens=provider_tokens)
 
-        # Create existing settings with the secrets store
-        existing_settings = Settings(secrets_store=secrets_store)
+    # Create existing settings with the secrets store
+    existing_settings = Settings(secrets_store=secrets_store)
 
-        mock_store.load = AsyncMock(return_value=existing_settings)
-        mock_get_store.return_value = mock_store
+    mock_store.load = AsyncMock(return_value=existing_settings)
 
-        result = await store_provider_tokens(mock_request, settings)
+    result = await store_provider_tokens(settings, mock_store)
 
-        # Should return settings with the existing token preserved
-        assert result.provider_tokens == {'github': 'existing-token'}
+    # Should return settings with the existing token preserved
+    assert (
+        result.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'existing-token'
+    )

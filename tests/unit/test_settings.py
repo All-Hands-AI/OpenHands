@@ -8,7 +8,8 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.server.routes.settings import convert_to_settings
-from openhands.server.settings import POSTSettingsModel, Settings
+from openhands.server.settings import POSTSettingsModel
+from openhands.storage.data_models.settings import Settings
 
 
 def test_settings_from_config():
@@ -30,7 +31,8 @@ def test_settings_from_config():
     )
 
     with patch(
-        'openhands.server.settings.load_app_config', return_value=mock_app_config
+        'openhands.storage.data_models.settings.load_app_config',
+        return_value=mock_app_config,
     ):
         settings = Settings.from_config()
 
@@ -64,7 +66,8 @@ def test_settings_from_config_no_api_key():
     )
 
     with patch(
-        'openhands.server.settings.load_app_config', return_value=mock_app_config
+        'openhands.storage.data_models.settings.load_app_config',
+        return_value=mock_app_config,
     ):
         settings = Settings.from_config()
         assert settings is None
@@ -107,10 +110,11 @@ def test_settings_handles_sensitive_data():
 
 
 def test_convert_to_settings():
+    github_token = ProviderToken(token=SecretStr('test-token'))
     settings_with_token_data = POSTSettingsModel(
         llm_api_key='test-key',
         provider_tokens={
-            'github': 'test-token',
+            ProviderType.GITHUB: github_token,
         },
     )
 

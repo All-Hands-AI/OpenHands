@@ -21,7 +21,9 @@ from openhands.events.stream import EventStream
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -77,7 +79,7 @@ def mock_agent():
 async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
     # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory method to raise an exception
@@ -106,7 +108,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
     # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory._on_workspace_context_recall to raise an exception
@@ -152,8 +154,9 @@ async def test_memory_with_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # We know 'flarglebargle' exists in the global directory
-    assert 'flarglebargle' in memory.knowledge_microagents
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
+    assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
@@ -187,7 +190,8 @@ async def test_memory_with_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    # Check against the derived name
+    assert observation.microagent_knowledge[0].name == derived_name
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
 
@@ -280,8 +284,9 @@ async def test_memory_with_agent_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # We know 'flarglebargle' exists in the global directory
-    assert 'flarglebargle' in memory.knowledge_microagents
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
+    assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
@@ -315,7 +320,8 @@ async def test_memory_with_agent_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    # Check against the derived name
+    assert observation.microagent_knowledge[0].name == derived_name
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
 
