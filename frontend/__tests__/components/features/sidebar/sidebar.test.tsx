@@ -40,7 +40,10 @@ describe("Sidebar", () => {
     // Mock the useConfig hook to return OSS mode
     vi.spyOn(OpenHands, "getConfig").mockResolvedValue({
       APP_MODE: "oss",
-      FEATURE_FLAGS: {}
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false
+      }
     });
     
     renderSidebar();
