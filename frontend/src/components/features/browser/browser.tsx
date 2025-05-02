@@ -4,7 +4,11 @@ import { RootState } from "#/store";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
 import { useConversation } from "#/context/conversation-context";
-import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
+import {
+  initialState as browserInitialState,
+  setUrl,
+  setScreenshotSrc
+} from "#/state/browser-slice";
 
 export function BrowserPanel() {
   const { url, screenshotSrc } = useSelector(
