@@ -41,16 +41,19 @@ async def invalidate_legacy_secrets_store(
         await settings_store.store(settings)
         
         return user_secrets
+    
+    return None
 
 
 
 async def check_provider_tokens(provider_info: POSTProviderModel) -> str:
+    print(provider_info)
     if provider_info.provider_tokens:
         # Determine whether tokens are valid
         for token_type, token_value in provider_info.provider_tokens.items():
-            if token_value:
+            if token_value.token:
                 confirmed_token_type = await validate_provider_token(
-                    SecretStr(token_value)
+                    token_value.token
                 )
                 if not confirmed_token_type or confirmed_token_type != token_type:
                     return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
