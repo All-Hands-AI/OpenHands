@@ -1,0 +1,65 @@
+{
+    "name": "openhands-changes-viewer",
+    "displayName": "OpenHands Changes Viewer",
+    "description": "A VSCode extension for viewing changes made by the OpenHands agent",
+    "version": "0.1.0",
+    "publisher": "openhands",
+    "engines": {
+        "vscode": "^1.98.2"
+    },
+    "categories": [
+        "Other",
+        "SCM Providers"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "openhands-changes",
+                    "title": "OpenHands Changes",
+                    "icon": "resources/changes.svg"
+                }
+            ]
+        },
+        "views": {
+            "openhands-changes": [
+                {
+                    "id": "openhands-changes-view",
+                    "name": "Changes",
+                    "when": "true"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "openhands-changes-viewer.refreshChanges",
+                "title": "Refresh Changes",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "openhands-changes-viewer.viewDiff",
+                "title": "View Diff"
+            }
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "openhands-changes-viewer.refreshChanges",
+                    "when": "view == openhands-changes-view",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "openhands-changes-viewer.viewDiff",
+                    "when": "view == openhands-changes-view && viewItem == file",
+                    "group": "inline"
+                }
+            ]
+        }
+    }
+}

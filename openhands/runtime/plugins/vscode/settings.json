@@ -1,4 +1,7 @@
 {
     "workbench.colorTheme": "Default Dark Modern",
-    "workbench.startupEditor": "none"
+    "workbench.startupEditor": "none",
+    "workbench.startupEditorAssociations": {
+        "openhands-changes-view": "openhands-changes-viewer.openhands-changes-view"
+    }
 }
