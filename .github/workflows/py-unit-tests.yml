@@ -81,4 +81,4 @@ jobs:
       - name: Run Windows unit tests
         run: poetry run pytest -svv tests/unit/test_windows_bash.py
       - name: Run Windows runtime tests
-        run: $env:TEST_RUNTIME="local"; $env:DEBUG="true"; poetry run pytest -svv tests/runtime/test_bash.py
+        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
