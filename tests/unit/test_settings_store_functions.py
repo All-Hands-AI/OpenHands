@@ -24,7 +24,8 @@ async def get_settings_store(request):
 @pytest.mark.asyncio
 async def test_check_provider_tokens_valid():
     """Test check_provider_tokens with valid tokens."""
-    settings = POSTSettingsModel(provider_tokens={'github': 'valid-token'})
+    provider_token = ProviderToken(token=SecretStr('valid-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the validate_provider_token function to return GITHUB for valid tokens
     with patch(
@@ -42,7 +43,8 @@ async def test_check_provider_tokens_valid():
 @pytest.mark.asyncio
 async def test_check_provider_tokens_invalid():
     """Test check_provider_tokens with invalid tokens."""
-    settings = POSTSettingsModel(provider_tokens={'github': 'invalid-token'})
+    provider_token = ProviderToken(token=SecretStr('invalid-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the validate_provider_token function to return None for invalid tokens
     with patch(
@@ -60,11 +62,13 @@ async def test_check_provider_tokens_invalid():
 @pytest.mark.asyncio
 async def test_check_provider_tokens_wrong_type():
     """Test check_provider_tokens with unsupported provider type."""
-    settings = POSTSettingsModel(provider_tokens={'unsupported': 'some-token'})
+    # We can't test with an unsupported provider type directly since the model enforces valid types
+    # Instead, we'll test with an empty provider_tokens dictionary
+    settings = POSTSettingsModel(provider_tokens={})
 
     result = await check_provider_tokens(settings)
 
-    # Should return empty string for unsupported provider
+    # Should return empty string for no providers
     assert result == ''
 
 
@@ -162,7 +166,8 @@ async def test_store_llm_settings_partial_update():
 @pytest.mark.asyncio
 async def test_store_provider_tokens_new_tokens():
     """Test store_provider_tokens with new tokens."""
-    settings = POSTSettingsModel(provider_tokens={'github': 'new-token'})
+    provider_token = ProviderToken(token=SecretStr('new-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the settings store
     mock_store = MagicMock()
@@ -171,13 +176,17 @@ async def test_store_provider_tokens_new_tokens():
     result = await store_provider_tokens(settings, mock_store)
 
     # Should return settings with the provided tokens
-    assert result.provider_tokens == {'github': 'new-token'}
+    assert (
+        result.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'new-token'
+    )
 
 
 @pytest.mark.asyncio
 async def test_store_provider_tokens_update_existing():
     """Test store_provider_tokens updates existing tokens."""
-    settings = POSTSettingsModel(provider_tokens={'github': 'updated-token'})
+    provider_token = ProviderToken(token=SecretStr('updated-token'))
+    settings = POSTSettingsModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
     # Mock the settings store
     mock_store = MagicMock()
@@ -197,14 +206,19 @@ async def test_store_provider_tokens_update_existing():
     result = await store_provider_tokens(settings, mock_store)
 
     # Should return settings with the updated tokens
-    assert result.provider_tokens == {'github': 'updated-token'}
+    assert (
+        result.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'updated-token'
+    )
 
 
 @pytest.mark.asyncio
 async def test_store_provider_tokens_keep_existing():
     """Test store_provider_tokens keeps existing tokens when empty string provided."""
     settings = POSTSettingsModel(
-        provider_tokens={'github': ''}  # Empty string should keep existing token
+        provider_tokens={
+            'github': {'token': ''}
+        }  # Empty string should keep existing token
     )
 
     # Mock the settings store
@@ -225,4 +239,7 @@ async def test_store_provider_tokens_keep_existing():
     result = await store_provider_tokens(settings, mock_store)
 
     # Should return settings with the existing token preserved
-    assert result.provider_tokens == {'github': 'existing-token'}
+    assert (
+        result.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'existing-token'
+    )

@@ -75,7 +75,7 @@ async def test_settings_api_endpoints(test_client):
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
         'remote_runtime_resource_factor': 2,
-        'provider_tokens': {'github': 'test-token'},
+        'provider_tokens': {'github': {'token': 'test-token'}},
     }
 
     # Make the POST request to store settings
