@@ -620,7 +620,7 @@ class LLM(RetryMixin, DebugMixin):
 
         return cur_cost
 
-    def get_token_count(self, messages: list[dict] | list[Message]) -> int:
+    def get_token_count(self, messages: list[dict] | list[LiteLLMMessage]) -> int:
         """Get the number of tokens in a list of messages. Use dicts for better token counting.
 
         Args:
