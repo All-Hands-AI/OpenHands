@@ -19,6 +19,40 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+def _normalize_windows_path_for_comparison(path1, path2):
+    """
+    Helper function to normalize Windows paths for comparison, handling 8.3 short name vs long name issues.
+
+    This works by splitting both paths at common parts (like Temp) and comparing only the constant parts
+    while ignoring username differences which can vary between short/long form.
+    """
+    # Convert both to lowercase for case-insensitive comparison
+    path1 = os.path.normcase(path1)
+    path2 = os.path.normcase(path2)
+
+    # Check if they're already equal after normcase
+    if path1 == path2:
+        return True
+
+    # Split both paths by common identifiers
+    parts1 = path1.split('\\')
+    parts2 = path2.split('\\')
+
+    # Need same number of parts for a valid path
+    if len(parts1) != len(parts2):
+        return False
+
+    # Compare all parts except user directory which can differ (RUNNER~1 vs runneradmin)
+    for i, (part1, part2) in enumerate(zip(parts1, parts2)):
+        # Skip username part comparison (typically index 1 in C:\Users\username\...)
+        if i == 1 and 'users' in parts1[0].lower() and 'users' in parts2[0].lower():
+            continue
+        if part1 != part2:
+            return False
+
+    return True
+
+
 @pytest.fixture
 def temp_work_dir():
     """Create a temporary directory for testing."""
@@ -263,10 +297,12 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     assert result_cd.exit_code == 0
     # Check that the session's internal CWD state was updated - normalize paths
     # to handle Windows short name vs long name format differences
-    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(sub_dir_str)
+    assert _normalize_windows_path_for_comparison(
+        windows_bash_session._cwd, sub_dir_str
+    )
     # Check that the metadata reflects the directory *after* the command
-    assert os.path.normcase(result_cd.metadata.working_dir) == os.path.normcase(
-        sub_dir_str
+    assert _normalize_windows_path_for_comparison(
+        result_cd.metadata.working_dir, sub_dir_str
     )
 
     # Execute a command in the new directory to confirm
@@ -275,10 +311,12 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     assert isinstance(result_pwd, CmdOutputObservation)
     assert result_pwd.exit_code == 0
     # Check the command output reflects the new directory
-    assert os.path.normcase(result_pwd.content.strip()) == os.path.normcase(sub_dir_str)
+    assert _normalize_windows_path_for_comparison(
+        result_pwd.content.strip(), sub_dir_str
+    )
     # Metadata should also reflect the current directory
-    assert os.path.normcase(result_pwd.metadata.working_dir) == os.path.normcase(
-        sub_dir_str
+    assert _normalize_windows_path_for_comparison(
+        result_pwd.metadata.working_dir, sub_dir_str
     )
 
     # Test changing back to original directory
@@ -286,11 +324,11 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     result_cd_back = windows_bash_session.execute(action_cd_back)
     assert isinstance(result_cd_back, CmdOutputObservation)
     assert result_cd_back.exit_code == 0
-    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(
-        abs_temp_work_dir
+    assert _normalize_windows_path_for_comparison(
+        windows_bash_session._cwd, abs_temp_work_dir
     )
-    assert os.path.normcase(result_cd_back.metadata.working_dir) == os.path.normcase(
-        abs_temp_work_dir
+    assert _normalize_windows_path_for_comparison(
+        result_cd_back.metadata.working_dir, abs_temp_work_dir
     )
 
 
@@ -444,8 +482,8 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     cd_action = CmdRunAction(command=f"Set-Location '{sub_dir_name}'")
     result = windows_bash_session.execute(cd_action)
     assert result.exit_code == 0
-    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(
-        str(sub_dir_path)
+    assert _normalize_windows_path_for_comparison(
+        windows_bash_session._cwd, str(sub_dir_path)
     )
 
     # 3. Create a file in the current directory (which should be the subdirectory)
@@ -470,8 +508,8 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     cd_parent_action = CmdRunAction(command='Set-Location ..')
     result = windows_bash_session.execute(cd_parent_action)
     assert result.exit_code == 0
-    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(
-        abs_temp_work_dir
+    assert _normalize_windows_path_for_comparison(
+        windows_bash_session._cwd, abs_temp_work_dir
     )
 
     # 7. Read the file using relative path
