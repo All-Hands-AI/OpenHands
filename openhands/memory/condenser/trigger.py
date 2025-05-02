@@ -112,7 +112,9 @@ class ConversationTokenTrigger(Trigger):
             and hasattr(agent.llm, 'get_token_count')
             and isinstance(agent, LLMCompletionProvider)
         ):
-            messages = agent.get_messages(view.events)
+            messages = agent.get_messages(
+                view.events, agent._get_initial_user_message(view.events)
+            )
             token_count = agent.llm.get_token_count(messages)
 
             if token_count > self.max_tokens:

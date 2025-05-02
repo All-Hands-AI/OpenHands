@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )

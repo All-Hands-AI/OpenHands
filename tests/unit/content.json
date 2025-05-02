@@ -1,0 +1,107 @@
+[
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.\n\n<ROLE>\nYour primary role is to assist users by executing commands, modifying code, and solving technical problems effectively. You should be thorough, methodical, and prioritize quality over speed.\n* If the user asks a question, like 'why is X happening', don’t try to fix the problem. Just give an answer to the question.\n</ROLE>\n\n<EFFICIENCY>\n* Each action you take is somewhat expensive. Wherever possible, combine multiple actions into a single action, e.g. combine multiple bash commands into one, using sed and grep to edit/view multiple files at once.\n* When exploring the codebase, use efficient tools like find, grep, and git commands with appropriate filters to minimize unnecessary operations.\n</EFFICIENCY>\n\n<FILE_SYSTEM_GUIDELINES>\n* When a user provides a file path, do NOT assume it’s relative to the current working directory. First explore the file system to locate the file before working on it.\n* If asked to edit a file, edit the file directly, rather than creating a new file with a different filename.\n* For global search-and-replace operations, consider using `sed` instead of opening file editors multiple times.\n</FILE_SYSTEM_GUIDELINES>\n\n<CODE_QUALITY>\n* Write clean, efficient code with minimal comments. Avoid redundancy in comments: Do not repeat information that can be easily inferred from the code itself.\n* When implementing solutions, focus on making the minimal changes needed to solve the problem.\n* Before implementing any changes, first thoroughly understand the codebase through exploration.\n* If you are adding a lot of code to a function or file, consider splitting the function or file into smaller pieces when appropriate.\n</CODE_QUALITY>\n\n<VERSION_CONTROL>\n* When configuring git credentials, use 'openhands' as the user.name and 'openhands@all-hands.dev' as the user.email by default, unless explicitly instructed otherwise.\n* Exercise caution with git operations. Do NOT make potentially dangerous changes (e.g., pushing to main, deleting repositories) unless explicitly asked to do so.\n* When committing changes, use `git status` to see all modified files, and stage all files necessary for the commit. Use `git commit -a` whenever possible.\n* Do NOT commit files that typically shouldn’t go into version control (e.g., node_modules/, .env files, build directories, cache files, large binaries) unless explicitly instructed by the user.\n* If unsure about committing certain files, check for the presence of .gitignore files or ask the user for clarification.\n</VERSION_CONTROL>\n\n<PULL_REQUESTS>\n* When creating pull requests, create only ONE per session/issue unless explicitly instructed otherwise.\n* When working with an existing PR, update it with new commits rather than creating additional PRs for the same issue.\n* When updating a PR, preserve the original PR title and purpose, updating description only when necessary.\n</PULL_REQUESTS>\n\n<PROBLEM_SOLVING_WORKFLOW>\n1. EXPLORATION: Thoroughly explore relevant files and understand the context before proposing solutions\n2. ANALYSIS: Consider multiple approaches and select the most promising one\n3. TESTING:\n   * For bug fixes: Create tests to verify issues before implementing fixes\n   * For new features: Consider test-driven development when appropriate\n   * If the repository lacks testing infrastructure and implementing tests would require extensive setup, consult with the user before investing time in building testing infrastructure\n4. IMPLEMENTATION: Make focused, minimal changes to address the problem\n5. VERIFICATION: Test your implementation thoroughly, including edge cases\n</PROBLEM_SOLVING_WORKFLOW>\n\n<SECURITY>\n* Only use GITHUB_TOKEN and other credentials in ways the user has explicitly requested and would expect.\n* Use APIs to work with GitHub or other platforms, unless the user asks otherwise or your task requires browsing.\n</SECURITY>\n\n<ENVIRONMENT_SETUP>\n* When user asks you to run an application, don’t stop if the application is not installed. Instead, please install the application and run the command again.\n* If you encounter missing dependencies:\n  1. First, look around in the repository for existing dependency files (requirements.txt, pyproject.toml, package.json, Gemfile, etc.)\n  2. If dependency files exist, use them to install all dependencies at once (e.g., `pip install -r requirements.txt`, `npm install`, etc.)\n  3. Only install individual packages directly if no dependency files are found or if only specific packages are needed\n* Similarly, if you encounter missing dependencies for essential tools requested by the user, install them when possible.\n</ENVIRONMENT_SETUP>\n\n<TROUBLESHOOTING>\n* If you’ve made repeated attempts to solve a problem but tests still fail or the user reports it’s still broken:\n  1. Step back and reflect on 5-7 different possible sources of the problem\n  2. Assess the likelihood of each possible cause\n  3. Methodically address the most likely causes, starting with the highest probability\n  4. Document your reasoning process\n* When you run into any major issue while executing a plan from the user, please don’t try to directly work around it. Instead, propose a new plan and confirm with the user before proceeding.\n</TROUBLESHOOTING>"
+            }
+        ],
+        "role": "system"
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "hi\n"
+            }
+        ],
+        "role": "user"
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "\n\n<RUNTIME_INFORMATION>\n\nThe user has access to the following hosts for accessing a web application,\neach of which has a corresponding port:\n* http://localhost:53184 (port 53184)\n* http://localhost:56546 (port 56546)\n\nWhen starting a web server, use the corresponding ports. You should also\nset any options to allow iframes and CORS requests, and allow the server to\nbe accessed from any host (e.g. 0.0.0.0).\nFor example, if you are using vite.config.js, you should set server.host and server.allowedHosts to true\n\n\n\nToday's date is 2025-04-25 (UTC).\n\n</RUNTIME_INFORMATION>"
+            }
+        ],
+        "role": "user"
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "Hello! I'm OpenHands, your AI assistant. I'm here to help you with tasks like executing commands, modifying code, solving technical problems, and more.\n\nIs there something specific you'd like me to help you with today? For example:\n- Exploring a codebase\n- Setting up a development environment\n- Debugging an issue\n- Creating or modifying files\n- Running applications\n- Searching for information online\n\nJust let me know what you need, and I'll be happy to assist you!"
+            }
+        ],
+        "role": "assistant"
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "explore the codebase. "
+            }
+        ],
+        "role": "user"
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "I'll explore the codebase to give you an overview of what we're working with. Let's start by looking at the root directory structure."
+            }
+        ],
+        "role": "assistant",
+        "tool_calls": [
+            {
+                "id": "toolu_01NZjJ3e6fzhhbYYcb5k1k4d",
+                "type": "function",
+                "function": {
+                    "name": "str_replace_editor",
+                    "arguments": "{\"command\": \"view\",\"path\": \"/workspace\"}"
+                }
+            }
+        ]
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "Here's the files and directories up to 2 levels deep in /workspace, excluding hidden items:\n/workspace/\n/workspace/__pycache__/\n/workspace/__pycache__/prime_numbers.cpython-312.pyc\n/workspace/app.py\n/workspace/count.txt\n/workspace/favorite_animal.txt\n/workspace/flask_app.log\n/workspace/generate_primes_to_file.py\n/workspace/prime_numbers.py\n/workspace/primes_to_million.txt\n/workspace/static/\n/workspace/static/index.html\n/workspace/tests/\n/workspace/tests/test_prime_numbers.py\n/workspace/tests/test_vocab_trainer.py\n/workspace/vocab_trainer.py\n/workspace/vocabulary.json\n/workspace/vocabulary.json.bak\n\n1 hidden files/directories in this directory are excluded. You can use \"ls -la /workspace\" to see them."
+            }
+        ],
+        "role": "tool",
+        "tool_call_id": "toolu_01NZjJ3e6fzhhbYYcb5k1k4d",
+        "name": "str_replace_editor"
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "Let's examine some of the key files to understand what this codebase is about. First, let's look at the main application file:"
+            }
+        ],
+        "role": "assistant",
+        "tool_calls": [
+            {
+                "id": "toolu_019uNXpy41E28XTyDoY2ttvt",
+                "type": "function",
+                "function": {
+                    "name": "str_replace_editor",
+                    "arguments": "{\"command\": \"view\",\"path\": \"/workspace/app.py\"}"
+                }
+            }
+        ]
+    },
+    {
+        "content": [
+            {
+                "type": "text",
+                "text": "Here's the result of running `cat -n` on /workspace/app.py:\n     1\tfrom flask import Flask, jsonify, request, send_from_directory\n     2\tfrom flask_cors import CORS\n     3\tfrom prime_numbers import is_prime, sieve_of_eratosthenes\n     4\timport os\n     5\t\n     6\tapp = Flask(__name__, static_folder=\"static\")\n     7\tCORS(app)  # Enable CORS for all routes\n     8\t\n     9\t@app.route(\"/\")\n    10\tdef index():\n    11\t    return send_from_directory(app.static_folder,                \"index.html\")\n    12\t\n    13\t@app.route(\"/api/info\")\n    14\tdef get_info():\n    15\t    return jsonify({\n    16\t        \"message\": \"API is working!\",\n    17\t        \"status\": \"success\"\n    18\t"
+            }
+        ],
+        "role": "tool",
+        "tool_call_id": "toolu_019uNXpy41E28XTyDoY2ttvt",
+        "name": "str_replace_editor"
+    }
+]
