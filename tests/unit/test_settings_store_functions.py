@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,9 +12,9 @@ from openhands.server.routes.secrets import (
 )
 from openhands.server.routes.settings import store_llm_settings
 from openhands.server.settings import POSTProviderModel
+from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.settings.file_secrets_store import FileSecretsStore
 
 
@@ -38,9 +37,15 @@ def test_client():
         yield client
 
 
-@contextmanager
-def patch_file_secrets_store():
-    store = FileSecretsStore(InMemoryFileStore())
+@pytest.fixture
+def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('secrets_store'))
+
+
+@pytest.fixture
+def file_secrets_store(temp_dir):
+    file_store = get_file_store('local', temp_dir)
+    store = FileSecretsStore(file_store)
     with patch(
         'openhands.storage.settings.file_secrets_store.FileSecretsStore.get_instance',
         AsyncMock(return_value=store),
@@ -191,80 +196,77 @@ async def test_store_llm_settings_partial_update():
 
 # Tests for store_provider_tokens
 @pytest.mark.asyncio
-async def test_store_provider_tokens_new_tokens(test_client):
+async def test_store_provider_tokens_new_tokens(test_client, file_secrets_store):
     """Test store_provider_tokens with new tokens."""
-    with patch_file_secrets_store() as file_secrets_store:
-        provider_tokens = {'provider_tokens': {'github': {'token': 'new-token'}}}
+    provider_tokens = {'provider_tokens': {'github': {'token': 'new-token'}}}
 
-        # Mock the settings store
-        mock_store = MagicMock()
-        mock_store.load = AsyncMock(return_value=None)  # No existing settings
+    # Mock the settings store
+    mock_store = MagicMock()
+    mock_store.load = AsyncMock(return_value=None)  # No existing settings
 
-        UserSecrets()
+    UserSecrets()
 
-        user_secrets = await file_secrets_store.store(UserSecrets())
+    user_secrets = await file_secrets_store.store(UserSecrets())
 
-        response = test_client.post('/api/add-git-providers', json=provider_tokens)
-        assert response.status_code == 200
+    response = test_client.post('/api/add-git-providers', json=provider_tokens)
+    assert response.status_code == 200
 
-        user_secrets = await file_secrets_store.load()
+    user_secrets = await file_secrets_store.load()
 
-        assert (
-            user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-            == 'new-token'
-        )
+    assert (
+        user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'new-token'
+    )
 
 
 @pytest.mark.asyncio
-async def test_store_provider_tokens_update_existing(test_client):
+async def test_store_provider_tokens_update_existing(test_client, file_secrets_store):
     """Test store_provider_tokens updates existing tokens."""
 
-    with patch_file_secrets_store() as file_secrets_store:
-        # Create existing settings with a GitHub token
-        github_token = ProviderToken(token=SecretStr('old-token'))
-        provider_tokens = {ProviderType.GITHUB: github_token}
+    # Create existing settings with a GitHub token
+    github_token = ProviderToken(token=SecretStr('old-token'))
+    provider_tokens = {ProviderType.GITHUB: github_token}
 
-        # Create a UserSecrets with the provider tokens
-        user_secrets = UserSecrets(provider_tokens=provider_tokens)
+    # Create a UserSecrets with the provider tokens
+    user_secrets = UserSecrets(provider_tokens=provider_tokens)
 
-        await file_secrets_store.store(user_secrets)
+    await file_secrets_store.store(user_secrets)
 
-        response = test_client.post(
-            '/api/add-git-providers',
-            json={'provider_tokens': {'github': {'token': 'updated-token'}}},
-        )
+    response = test_client.post(
+        '/api/add-git-providers',
+        json={'provider_tokens': {'github': {'token': 'updated-token'}}},
+    )
 
-        assert response.status_code == 200
+    assert response.status_code == 200
 
-        user_secrets = await file_secrets_store.load()
+    user_secrets = await file_secrets_store.load()
 
-        assert (
-            user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-            == 'updated-token'
-        )
+    assert (
+        user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'updated-token'
+    )
 
 
 @pytest.mark.asyncio
-async def test_store_provider_tokens_keep_existing(test_client):
+async def test_store_provider_tokens_keep_existing(test_client, file_secrets_store):
     """Test store_provider_tokens keeps existing tokens when empty string provided."""
 
-    with patch_file_secrets_store() as file_secrets_store:
-        # Create existing secrets with a GitHub token
-        github_token = ProviderToken(token=SecretStr('existing-token'))
-        provider_tokens = {ProviderType.GITHUB: github_token}
-        user_secrets = UserSecrets(provider_tokens=provider_tokens)
+    # Create existing secrets with a GitHub token
+    github_token = ProviderToken(token=SecretStr('existing-token'))
+    provider_tokens = {ProviderType.GITHUB: github_token}
+    user_secrets = UserSecrets(provider_tokens=provider_tokens)
 
-        await file_secrets_store.store(user_secrets)
+    await file_secrets_store.store(user_secrets)
 
-        response = test_client.post(
-            '/api/add-git-providers',
-            json={'provider_tokens': {'github': {'token': ''}}},
-        )
-        assert response.status_code == 200
+    response = test_client.post(
+        '/api/add-git-providers',
+        json={'provider_tokens': {'github': {'token': ''}}},
+    )
+    assert response.status_code == 200
 
-        user_secrets = await file_secrets_store.load()
+    user_secrets = await file_secrets_store.load()
 
-        assert (
-            user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-            == 'existing-token'
-        )
+    assert (
+        user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+        == 'existing-token'
+    )
