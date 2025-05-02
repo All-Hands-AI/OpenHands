@@ -7,7 +7,7 @@ import time
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import AppConfig, load_app_config
+from openhands.core.config import AppConfig, MCPConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
@@ -214,6 +214,7 @@ def _load_runtime(
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
+    override_mcp_config: MCPConfig | None = None,
 ) -> tuple[Runtime, AppConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -255,6 +256,9 @@ def _load_runtime(
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
         config.sandbox.runtime_container_image = None
+
+    if override_mcp_config is not None:
+        config.mcp = override_mcp_config
 
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid, file_store)

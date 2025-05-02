@@ -245,8 +245,8 @@ describe("Form submission", () => {
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         provider_tokens: {
-          github: "test-token",
-          gitlab: "",
+          github: { token: "test-token" },
+          gitlab: { token: "" },
         },
       }),
     );
@@ -258,8 +258,8 @@ describe("Form submission", () => {
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         provider_tokens: {
-          github: "",
-          gitlab: "test-token",
+          github: { token: "" },
+          gitlab: { token: "test-token" },
         },
       }),
     );
