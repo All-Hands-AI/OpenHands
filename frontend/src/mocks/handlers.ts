@@ -6,7 +6,7 @@ import {
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitRepository, GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
@@ -291,5 +291,33 @@ export const handlers = [
     await delay();
     MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
     return HttpResponse.json(null, { status: 200 });
+  }),
+
+  http.post("/api/add-git-providers", async ({ request }) => {
+    const body = await request.json();
+
+    if (typeof body === "object" && body?.provider_tokens) {
+      const rawTokens = body.provider_tokens as Record<
+        string,
+        { token?: string }
+      >;
+
+      const provider_tokens_set: Partial<Record<Provider, string | null>> =
+        Object.fromEntries(
+          Object.entries(rawTokens)
+            .filter(([, val]) => val && val.token)
+            .map(([provider]) => [provider as Provider, ""]),
+        );
+
+      const newSettings = {
+        ...(MOCK_USER_PREFERENCES.settings ?? MOCK_DEFAULT_USER_SETTINGS),
+        provider_tokens_set,
+      };
+      MOCK_USER_PREFERENCES.settings = newSettings;
+
+      return HttpResponse.json(true, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 400 });
   }),
 ];
