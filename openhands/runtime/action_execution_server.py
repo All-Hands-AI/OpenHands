@@ -318,9 +318,15 @@ class ActionExecutor:
         if is_local_runtime:
             if is_windows:
                 # Windows, local - split into separate commands
-                INIT_COMMANDS.append('git config --file ./.git_config user.name "openhands"')
-                INIT_COMMANDS.append('git config --file ./.git_config user.email "openhands@all-hands.dev"')
-                INIT_COMMANDS.append('$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")')
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.name "openhands"'
+                )
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
+                )
+                INIT_COMMANDS.append(
+                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
+                )
             else:
                 # Linux/macOS, local
                 base_git_config = (
