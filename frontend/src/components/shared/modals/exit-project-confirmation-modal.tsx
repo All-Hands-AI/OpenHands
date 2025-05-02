@@ -1,7 +1,5 @@
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { setCurrentAgentState } from "#/state/agent-slice";
-import { AgentState } from "#/types/agent-state";
 import { DangerModal } from "./confirmation-modals/danger-modal";
 import { ModalBackdrop } from "./modal-backdrop";
 import { I18nKey } from "#/i18n/declaration";
@@ -14,7 +12,6 @@ export function ExitProjectConfirmationModal({
   onClose,
 }: ExitProjectConfirmationModalProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
 
   const handleEndSession = () => {
     onClose();
