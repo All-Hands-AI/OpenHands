@@ -4,13 +4,14 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from openhands.controller.state.state import State
-from openhands.core.message import Message
 from openhands.events.action.message import MessageAction
 
 if TYPE_CHECKING:
     from openhands.core.config import AgentConfig
     from openhands.events.action import Action
     from openhands.events.action.message import SystemMessageAction
+from litellm import ChatCompletionToolParam, Message
+
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
@@ -45,7 +46,7 @@ class Agent(ABC):
         self.config = config
         self._complete = False
         self.prompt_manager: 'PromptManager | None' = None
-        self.mcp_tools: list[dict] = []
+        self.mcp_tools: dict[str, ChatCompletionToolParam] = {}
         self.tools: list = []
 
     def get_system_message(self) -> 'SystemMessageAction | None':
@@ -164,7 +165,21 @@ class Agent(ABC):
         Args:
             mcp_tools: The list of MCP tools.
         """
-        self.mcp_tools = mcp_tools
+        logger.info(
+            f'Setting {len(mcp_tools)} MCP tools for agent {self.name}: {[tool["function"]["name"] for tool in mcp_tools]}'
+        )
+        for tool in mcp_tools:
+            _tool = ChatCompletionToolParam(**tool)
+            if _tool['function']['name'] in self.mcp_tools:
+                logger.warning(
+                    f'Tool {_tool["function"]["name"]} already exists, skipping'
+                )
+                continue
+            self.mcp_tools[_tool['function']['name']] = _tool
+            self.tools.append(_tool)
+        logger.info(
+            f'Tools updated for agent {self.name}, total {len(self.tools)}: {[tool["function"]["name"] for tool in self.tools]}'
+        )
 
 
 class LLMCompletionParams(TypedDict, total=False):

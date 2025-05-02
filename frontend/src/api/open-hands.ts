@@ -297,6 +297,23 @@ class OpenHands {
     );
     return data;
   }
+
+  /**
+   * Given a PAT, retrieves the repositories of the user
+   * @returns A list of repositories
+   */
+  static async retrieveUserGitRepositories() {
+    const { data } = await openHands.get<GitRepository[]>(
+      "/api/user/repositories",
+      {
+        params: {
+          sort: "pushed",
+        },
+      },
+    );
+
+    return data;
+  }
 }
 
 export default OpenHands;

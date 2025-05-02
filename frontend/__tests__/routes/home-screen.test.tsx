@@ -8,7 +8,6 @@ import { setupStore } from "test-utils";
 import { AxiosError } from "axios";
 import HomeScreen from "#/routes/home";
 import { AuthProvider } from "#/context/auth-context";
-import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
@@ -102,13 +101,10 @@ describe("HomeScreen", () => {
 
   it("should filter the suggested tasks based on the selected repository", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderHomeScreen();
 
@@ -140,13 +136,10 @@ describe("HomeScreen", () => {
 
   it("should reset the filtered tasks when the selected repository is cleared", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderHomeScreen();
 
@@ -218,13 +211,10 @@ describe("HomeScreen", () => {
 
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        GitService,
+        OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue({
-        data: MOCK_RESPOSITORIES,
-        nextPage: null,
-      });
+      retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
     });
 
     it("should disable the other launch buttons when the header launch button is clicked", async () => {
