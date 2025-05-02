@@ -27,7 +27,7 @@ AvailableLanguages.forEach(({ value }) => {
   resources[value] = {
     translation: {
       ...translations,
-      ...tipTranslations
+      ...(tipTranslations[value] || {}) // Merge language-specific tip translations
     }
   };
 });
