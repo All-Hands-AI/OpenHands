@@ -89,16 +89,10 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
 
 {% macro install_vscode_extensions() %}
 # Install our custom extensions
-# Create directories for all extensions with the openhands- prefix
-RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
-    mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor && \
-    mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-changes-viewer
-
-# Copy all extensions from source to destination
-# Note: Source directories don't have the openhands- prefix, but destination directories do
-RUN cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/hello-world/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world/ && \
-    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/memory-monitor/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor/ && \
-    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/changes-viewer/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-changes-viewer/
+# Copy all extensions from source to destination using a recursive approach
+# The extension folders are named to match their package names (openhands-*)
+RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions && \
+    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/* ${OPENVSCODE_SERVER_ROOT}/extensions/
 
 # Some extension dirs are removed because they trigger false positives in vulnerability scans.
 RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,ini,npm}
