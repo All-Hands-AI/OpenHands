@@ -1,6 +1,6 @@
 import React from "react";
 import posthog from "posthog-js";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
