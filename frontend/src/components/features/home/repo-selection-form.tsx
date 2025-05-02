@@ -7,6 +7,9 @@ import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation"
 import { GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
+import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
+import { useDebounce } from "#/hooks/use-debounce";
+import { sanitizeQuery } from "#/utils/sanitize-query";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repoTitle: string | null) => void;
@@ -44,12 +47,14 @@ interface RepositoryDropdownProps {
   items: { key: React.Key; label: string }[];
   onSelectionChange: (key: React.Key | null) => void;
   onInputChange: (value: string) => void;
+  defaultFilter?: (textValue: string, inputValue: string) => boolean;
 }
 
 function RepositoryDropdown({
   items,
   onSelectionChange,
   onInputChange,
+  defaultFilter,
 }: RepositoryDropdownProps) {
   return (
     <SettingsDropdownInput
@@ -60,6 +65,7 @@ function RepositoryDropdown({
       wrapperClassName="max-w-[500px]"
       onSelectionChange={onSelectionChange}
       onInputChange={onInputChange}
+      defaultFilter={defaultFilter}
     />
   );
 }
@@ -82,18 +88,23 @@ export function RepositorySelectionForm({
   const isCreatingConversationElsewhere = useIsCreatingConversation();
   const { t } = useTranslation();
 
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const { data: searchedRepos } = useSearchRepositories(debouncedSearchQuery);
+
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  const repositoriesItems = repositories?.map((repo) => ({
+  const allRepositories = repositories?.concat(searchedRepos || []);
+  const repositoriesItems = allRepositories?.map((repo) => ({
     key: repo.id,
     label: repo.full_name,
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = repositories?.find(
+    const selectedRepo = allRepositories?.find(
       (repo) => repo.id.toString() === key,
     );
 
@@ -105,6 +116,9 @@ export function RepositorySelectionForm({
     if (value === "") {
       setSelectedRepository(null);
       onRepoSelection(null);
+    } else if (value.startsWith("https://github.com/")) {
+      const repoName = sanitizeQuery(value);
+      setSearchQuery(repoName);
     }
   };
 
@@ -123,6 +137,15 @@ export function RepositorySelectionForm({
         items={repositoriesItems || []}
         onSelectionChange={handleRepoSelection}
         onInputChange={handleInputChange}
+        defaultFilter={(textValue, inputValue) => {
+          if (!inputValue) return true;
+
+          const repo = allRepositories?.find((r) => r.full_name === textValue);
+          if (!repo) return false;
+
+          const sanitizedInput = sanitizeQuery(inputValue);
+          return sanitizeQuery(textValue).includes(sanitizedInput);
+        }}
       />
     );
   };
