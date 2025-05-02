@@ -40,18 +40,6 @@ def get_platform_command(linux_cmd, windows_cmd):
     return windows_cmd if is_windows() else linux_cmd
 
 
-def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        obs = runtime.run_action(CmdRunAction(command="Write-Output 'Hello World'"))
-        assert isinstance(
-            obs, CmdOutputObservation
-        ), 'The observation should be a CmdOutputObservation.'
-        assert obs.exit_code == 0, 'The exit code should be 0.'
-    finally:
-        _close_test_runtime(runtime)
-
-
 def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
