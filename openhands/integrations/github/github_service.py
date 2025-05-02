@@ -390,6 +390,18 @@ class GitHubService(BaseGitService, GitService):
         except Exception:
             return []
 
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('full_name'),
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+        )
+
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
