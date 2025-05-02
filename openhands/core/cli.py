@@ -54,7 +54,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
-from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -112,8 +112,6 @@ async def run_session(
     )
 
     agent = create_agent(config)
-    mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-    agent.set_mcp_tools(mcp_tools)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -209,6 +207,7 @@ async def run_session(
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
+    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None

@@ -34,9 +34,11 @@ RUN apt-get update && \
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
-    curl -fsSL --compressed https://install.python-poetry.org | python - && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -fsSL --compressed https://install.python-poetry.org | python -
 {% endif %}
+
+# Install uv (required by MCP)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Remove UID 1000 named pn or ubuntu, so the 'openhands' user can be created from ubuntu hosts
 RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
