@@ -151,7 +151,9 @@ export function ChatInput({
         setShowMicroagentSuggestions(false);
       }, 200);
     }
-    onBlur?.();
+    if (onBlur) {
+      onBlur();
+    }
   };
 
   return (

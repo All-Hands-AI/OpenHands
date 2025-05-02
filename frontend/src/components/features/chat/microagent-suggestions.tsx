@@ -68,13 +68,17 @@ export function MicroagentSuggestions({
   return (
     <div
       className={cn(
-        "absolute bottom-full left-0 w-full max-h-60 overflow-y-auto bg-neutral-800 rounded-md shadow-lg z-10 mb-1",
+        "absolute bottom-full left-0 w-full max-h-60 overflow-y-auto bg-neutral-800 rounded-md shadow-lg z-10 mb-1 border border-neutral-600",
         className,
       )}
     >
-      {loading ? (
+      {loading && (
         <div className="p-2 text-neutral-400">Loading microagents...</div>
-      ) : (
+      )}
+      {!loading && filteredMicroagents.length === 0 && (
+        <div className="p-2 text-neutral-400">No microagents found</div>
+      )}
+      {!loading && filteredMicroagents.length > 0 && (
         <ul className="py-1">
           {filteredMicroagents.map((agent) => (
             <div
