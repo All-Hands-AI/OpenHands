@@ -24,8 +24,8 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
           key={`sse-${index}`}
           className="mb-2 p-2 bg-base-tertiary rounded-md"
         >
-          <div className="text-sm font-medium">
-            {t(I18nKey.SETTINGS$MCP_URL)}: {server}
+          <div className="text-sm">
+            <span className="font-medium">{t(I18nKey.SETTINGS$MCP_URL)}:</span> {server}
           </div>
         </div>
       );
@@ -35,12 +35,12 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
         key={`sse-${index}`}
         className="mb-2 p-2 bg-base-tertiary rounded-md"
       >
-        <div className="text-sm font-medium">
-          {t(I18nKey.SETTINGS$MCP_URL)}: {server.url}
+        <div className="text-sm">
+          <span className="font-medium">{t(I18nKey.SETTINGS$MCP_URL)}:</span> {server.url}
         </div>
         {server.api_key && (
-          <div className="text-xs text-gray-400">
-            {t(I18nKey.SETTINGS$MCP_API_KEY)}:{" "}
+          <div className="text-sm text-gray-500">
+            <span className="font-medium">{t(I18nKey.SETTINGS$MCP_API_KEY)}:</span>{" "}
             {server.api_key ? "Set" : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
           </div>
         )}
@@ -53,20 +53,20 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
       key={`stdio-${index}`}
       className="mb-2 p-2 bg-base-tertiary rounded-md"
     >
-      <div className="text-sm font-medium">
-        {t(I18nKey.SETTINGS$MCP_NAME)}: {server.name}
+      <div className="text-sm">
+        <span className="font-medium">{t(I18nKey.SETTINGS$MCP_NAME)}:</span> {server.name}
       </div>
-      <div className="text-xs">
-        {t(I18nKey.SETTINGS$MCP_COMMAND)}: {server.command}
+      <div className="text-sm text-gray-500">
+        <span className="font-medium">{t(I18nKey.SETTINGS$MCP_COMMAND)}:</span> {server.command}
       </div>
       {server.args && server.args.length > 0 && (
-        <div className="text-xs">
-          {t(I18nKey.SETTINGS$MCP_ARGS)}: {server.args.join(" ")}
+        <div className="text-sm text-gray-500">
+          <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ARGS)}:</span> {server.args.join(" ")}
         </div>
       )}
       {server.env && Object.keys(server.env).length > 0 && (
-        <div className="text-xs">
-          {t(I18nKey.SETTINGS$MCP_ENV)}:{" "}
+        <div className="text-sm text-gray-500">
+          <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ENV)}:</span>{" "}
           {Object.entries(server.env)
             .map(([key, value]) => `${key}=${value}`)
             .join(", ")}
@@ -93,23 +93,27 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
       </div>
 
       <div className="mt-2">
-        {mcpConfig.sse_servers.length > 0 && (
-          <div className="mb-3">
-            <h4 className="text-xs font-medium mb-1">
-              {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}
-            </h4>
-            {mcpConfig.sse_servers.map(renderSSEServer)}
-          </div>
-        )}
+        <div className="flex flex-col gap-4">
+          {mcpConfig.sse_servers.length > 0 && (
+            <div className="mb-3">
+              <h4 className="text-sm font-medium mb-1">
+                {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}{" "}
+                <span className="text-gray-500">({mcpConfig.sse_servers.length})</span>
+              </h4>
+              {mcpConfig.sse_servers.map(renderSSEServer)}
+            </div>
+          )}
 
-        {mcpConfig.stdio_servers.length > 0 && (
-          <div>
-            <h4 className="text-xs font-medium mb-1">
-              {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}
-            </h4>
-            {mcpConfig.stdio_servers.map(renderStdioServer)}
-          </div>
-        )}
+          {mcpConfig.stdio_servers.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-1">
+                {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}{" "}
+                <span className="text-gray-500">({mcpConfig.stdio_servers.length})</span>
+              </h4>
+              {mcpConfig.stdio_servers.map(renderStdioServer)}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

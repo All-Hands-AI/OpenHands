@@ -79,11 +79,8 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           key={`sse-${index}`}
           className="mb-2 p-2 bg-base-tertiary rounded-md"
         >
-          <div className="text-xs font-medium flex items-center">
-            <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-2">
-              SSE
-            </span>
-            {server}
+          <div className="text-sm">
+            <span className="font-medium">SSE:</span> {server}
           </div>
         </div>
       );
@@ -93,22 +90,15 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         key={`sse-${index}`}
         className="mb-2 p-2 bg-base-tertiary rounded-md"
       >
-        <div className="text-xs font-medium flex items-center">
-          <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded mr-2">
-            SSE
-          </span>
-          {server.url}
+        <div className="text-sm">
+          <span className="font-medium">SSE:</span> {server.url}
         </div>
         {server.api_key && (
-          <div className="mt-1 text-xs text-gray-500 flex items-center">
-            <span className="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded mr-2">
-              {t(I18nKey.SETTINGS$MCP_API_KEY)}
-            </span>
-            <span>
-              {server.api_key
-                ? "Configured"
-                : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
-            </span>
+          <div className="mt-1 text-sm text-gray-500">
+            <span className="font-medium">{t(I18nKey.SETTINGS$MCP_API_KEY)}:</span>{" "}
+            {server.api_key
+              ? "Configured"
+              : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
           </div>
         )}
       </div>
@@ -120,31 +110,22 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       key={`stdio-${index}`}
       className="mb-2 p-2 bg-base-tertiary rounded-md"
     >
-      <div className="text-xs font-medium flex items-center">
-        <span className="bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded mr-2">
-          STDIO
-        </span>
-        {server.name}
+      <div className="text-sm">
+        <span className="font-medium">Name:</span> {server.name}
       </div>
-      <div className="mt-1 text-xs text-gray-500 flex items-center">
-        <span className="bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded mr-2">
-          {t(I18nKey.SETTINGS$MCP_COMMAND)}
-        </span>
+      <div className="mt-1 text-sm text-gray-500">
+        <span className="font-medium">{t(I18nKey.SETTINGS$MCP_COMMAND)}:</span>{" "}
         <code className="font-mono">{server.command}</code>
       </div>
       {server.args && server.args.length > 0 && (
-        <div className="mt-1 text-xs text-gray-500 flex items-center">
-          <span className="bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded mr-2">
-            {t(I18nKey.SETTINGS$MCP_ARGS)}
-          </span>
+        <div className="mt-1 text-sm text-gray-500">
+          <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ARGS)}:</span>{" "}
           <code className="font-mono">{server.args.join(" ")}</code>
         </div>
       )}
       {server.env && Object.keys(server.env).length > 0 && (
-        <div className="mt-1 text-xs text-gray-500 flex items-center">
-          <span className="bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded mr-2">
-            {t(I18nKey.SETTINGS$MCP_ENV)}
-          </span>
+        <div className="mt-1 text-sm text-gray-500">
+          <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ENV)}:</span>{" "}
           <code className="font-mono">
             {Object.entries(server.env)
               .map(([key, value]) => `${key}=${value}`)
@@ -188,21 +169,21 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       <div>
         {isEditing ? (
           <div>
-            <div className="mb-2 text-xs text-gray-400">
+            <div className="mb-2 text-sm text-gray-400">
               {t(I18nKey.SETTINGS$MCP_CONFIG_DESCRIPTION)}
             </div>
             <textarea
-              className="w-full h-64 p-2 text-xs font-mono bg-base-tertiary rounded-md focus:border-blue-500 focus:outline-none"
+              className="w-full h-64 p-2 text-sm font-mono bg-base-tertiary rounded-md focus:border-blue-500 focus:outline-none"
               value={configText}
               onChange={handleTextChange}
               spellCheck="false"
             />
             {error && (
-              <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-md text-xs text-red-700">
+              <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-md text-sm text-red-700">
                 <strong>{t(I18nKey.SETTINGS$MCP_CONFIG_ERROR)}</strong> {error}
               </div>
             )}
-            <div className="mt-2 text-xs text-gray-400">
+            <div className="mt-2 text-sm text-gray-400">
               <strong>{t(I18nKey.SETTINGS$MCP_CONFIG_EXAMPLE)}</strong>{" "}
               <code>
                 {
@@ -213,38 +194,30 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <div className="mb-3">
-                <h4 className="text-xs font-medium mb-1 flex items-center">
-                  <span className="mr-1">
-                    {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}
-                  </span>
-                  <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
-                    {config.sse_servers.length}
-                  </span>
+                <h4 className="text-sm font-medium mb-1">
+                  {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}{" "}
+                  <span className="text-gray-500">({config.sse_servers.length})</span>
                 </h4>
                 {config.sse_servers.length > 0 ? (
                   config.sse_servers.map(renderSSEServer)
                 ) : (
-                  <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
+                  <div className="p-2 bg-base-tertiary rounded-md text-sm text-gray-400">
                     {t(I18nKey.SETTINGS$MCP_NO_SSE_SERVERS)}
                   </div>
                 )}
               </div>
 
               <div>
-                <h4 className="text-xs font-medium mb-1 flex items-center">
-                  <span className="mr-1">
-                    {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}
-                  </span>
-                  <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full">
-                    {config.stdio_servers.length}
-                  </span>
+                <h4 className="text-sm font-medium mb-1">
+                  {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}{" "}
+                  <span className="text-gray-500">({config.stdio_servers.length})</span>
                 </h4>
                 {config.stdio_servers.length > 0 ? (
                   config.stdio_servers.map(renderStdioServer)
                 ) : (
-                  <div className="p-2 bg-base-tertiary rounded-md text-xs text-gray-400">
+                  <div className="p-2 bg-base-tertiary rounded-md text-sm text-gray-400">
                     {t(I18nKey.SETTINGS$MCP_NO_STDIO_SERVERS)}
                   </div>
                 )}
@@ -253,7 +226,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
 
             {config.sse_servers.length === 0 &&
               config.stdio_servers.length === 0 && (
-                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700">
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
                   {t(I18nKey.SETTINGS$MCP_NO_SERVERS_CONFIGURED)}
                 </div>
               )}
