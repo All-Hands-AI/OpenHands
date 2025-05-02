@@ -314,16 +314,13 @@ class ActionExecutor:
         is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
 
-        # Determine base git config command
+        # Determine git config commands based on platform and runtime mode
         if is_local_runtime:
             if is_windows:
-                # Windows, local
-                base_git_config = (
-                    'git config --file ./.git_config user.name "openhands" && '
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
-                    # TODO: fix this later
-                    # '$env:GIT_CONFIG = (Get-Location).Path + "\\\\.git_config"'
-                )
+                # Windows, local - split into separate commands
+                INIT_COMMANDS.append('git config --file ./.git_config user.name "openhands"')
+                INIT_COMMANDS.append('git config --file ./.git_config user.email "openhands@all-hands.dev"')
+                INIT_COMMANDS.append('$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")')
             else:
                 # Linux/macOS, local
                 base_git_config = (
@@ -331,23 +328,22 @@ class ActionExecutor:
                     'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
                     'export GIT_CONFIG=$(pwd)/.git_config'
                 )
+                INIT_COMMANDS.append(base_git_config)
         else:
             # Non-local (implies Linux/macOS)
             base_git_config = (
                 'git config --global user.name "openhands" && '
                 'git config --global user.email "openhands@all-hands.dev"'
             )
+            INIT_COMMANDS.append(base_git_config)
 
         # Determine no-pager command
         if is_windows:
-            # TODO: fix this later
-            no_pager_cmd = 'Write-Output "Hello World"'  # '$function:git = { git.exe --no-pager $args }'
+            no_pager_cmd = 'function git { git.exe --no-pager $args }'
         else:
             no_pager_cmd = 'alias git="git --no-pager"'
 
-        command_to_run = f'{base_git_config} && {no_pager_cmd}'
-
-        INIT_COMMANDS.append(command_to_run)
+        INIT_COMMANDS.append(no_pager_cmd)
 
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
