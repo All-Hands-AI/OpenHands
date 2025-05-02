@@ -37,6 +37,7 @@ Follow these steps to use this workflow in your own repository:
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
      - `LLM_BASE_URL`: Base URL for LLM API (only if using a proxy)
+     - `TARGET_RUNNER`: Target runner to execute the agent workflow (default ubuntu-latest)
 
    Note: You can set these secrets at the organization level to use across multiple repositories.
 
