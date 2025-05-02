@@ -6982,5 +6982,20 @@
         "fr": "En savoir plus",
         "tr": "Daha fazla bilgi",
         "de": "Mehr erfahren"
+    },
+    "TIPS$PROTIP": {
+        "en": "Protip",
+        "ja": "プロのヒント",
+        "zh-CN": "专业提示",
+        "zh-TW": "專業提示",
+        "ko-KR": "프로팁",
+        "no": "Proffetips",
+        "it": "Consiglio pro",
+        "pt": "Dica profissional",
+        "es": "Consejo profesional",
+        "ar": "نصيحة احترافية",
+        "fr": "Astuce pro",
+        "tr": "Uzman ipucu",
+        "de": "Profi-Tipp"
     }
 }
