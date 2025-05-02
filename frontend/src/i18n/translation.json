@@ -29,6 +29,21 @@
         "tr": "Gelişmiş model yetenekleri için MCP sunucularını yapılandırın",
         "de": "Konfigurieren Sie MCP-Server für erweiterte Modellfunktionen"
     },
+    "SETTINGS$NAV_MCP": {
+        "en": "MCP",
+        "ja": "MCP",
+        "zh-CN": "MCP",
+        "zh-TW": "MCP",
+        "ko-KR": "MCP",
+        "no": "MCP",
+        "it": "MCP",
+        "pt": "MCP",
+        "es": "MCP",
+        "ar": "MCP",
+        "fr": "MCP",
+        "tr": "MCP",
+        "de": "MCP"
+    },
     "HOME$CONNECT_PROVIDER_MESSAGE": {
         "en": "To get started with suggested tasks, please connect your GitHub or GitLab account.",
         "ja": "提案されたタスクを始めるには、GitHubまたはGitLabアカウントを接続してください。",

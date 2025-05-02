@@ -50,23 +50,25 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         <div className="flex border-b border-tertiary mt-2">
           <button
             type="button"
+            data-testid="llm-tab-button"
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
               activeTab === "llm" && "border-primary",
             )}
             onClick={() => setActiveTab("llm")}
           >
-            LLM
+            {t("SETTINGS$NAV_LLM")}
           </button>
           <button
             type="button"
+            data-testid="mcp-tab-button"
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 border-transparent",
               activeTab === "mcp" && "border-primary",
             )}
             onClick={() => setActiveTab("mcp")}
           >
-            MCP
+            {t("SETTINGS$NAV_MCP")}
           </button>
         </div>
 
