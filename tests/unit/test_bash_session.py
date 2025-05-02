@@ -387,3 +387,38 @@ def test_python_interactive_input():
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
+
+
+def test_execute_long_running_command_with_stream_callback():
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=10)
+    session.initialize()
+
+    streamed_outputs = []
+
+    # Test command with stream callback
+    def stream_callback(output: str, metadata: dict):
+        logger.info(
+            f'Streamed output: {output}, Metadata: {metadata}',
+            extra={'msg_type': 'OBSERVATION'},
+        )
+        streamed_outputs.append((output, metadata))
+
+    obs = session.execute(
+        CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done'),
+        stream_callback=stream_callback,
+    )
+
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert '1' in obs.content
+    assert '2' in obs.content
+    assert '3' in obs.content
+
+    # Assert that stream_callback was called multiple times
+    assert len(streamed_outputs) > 1
+    assert any('1' in output for output, _ in streamed_outputs)
+    assert any('2' in output for output, _ in streamed_outputs)
+    assert any('3' in output for output, _ in streamed_outputs)
+    # Assert the full output is also captured in the final observation
+    assert any('1\n2\n3' in output for output, _ in streamed_outputs)
+
+    session.close()

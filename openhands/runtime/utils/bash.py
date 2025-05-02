@@ -4,7 +4,7 @@ import time
 import traceback
 import uuid
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 
 import bashlex  # type: ignore
 import libtmux
@@ -467,8 +467,19 @@ class BashSession:
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
-    def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
-        """Execute a command in the bash session."""
+    def execute(
+        self,
+        action: CmdRunAction,
+        stream_callback: Callable[[str, dict], None] | None = None,
+    ) -> CmdOutputObservation | ErrorObservation:
+        """
+        Execute a command in the bash session.
+
+        Args:
+            action: The command action to execute
+            stream_callback: Optional callback function that will be called with partial output
+                             as it becomes available. The callback receives (content, metadata_dict).
+        """
         if not self._initialized:
             raise RuntimeError('Bash session is not initialized')
 
@@ -584,6 +595,7 @@ class BashSession:
                 )
 
         # Loop until the command completes or times out
+        last_combined_output: str | None = None
         while should_continue():
             _start_time = time.time()
             logger.debug(f'GETTING PANE CONTENT at {_start_time}')
@@ -594,26 +606,66 @@ class BashSession:
             logger.debug(f"BEGIN OF PANE CONTENT: {cur_pane_output.split('\n')[:10]}")
             logger.debug(f"END OF PANE CONTENT: {cur_pane_output.split('\n')[-10:]}")
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
-            current_ps1_count = len(ps1_matches)
+            # current_ps1_count = len(ps1_matches)
 
             if cur_pane_output != last_pane_output:
+                cur_combined_output = self._combine_outputs_between_matches(
+                    cur_pane_output, ps1_matches
+                )
+                delta_output = (
+                    cur_combined_output.removeprefix(last_combined_output)
+                    if last_combined_output is not None
+                    else last_combined_output
+                )
+                last_combined_output = cur_combined_output
+
                 last_pane_output = cur_pane_output
                 last_change_time = time.time()
                 logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
+
+                # Call the stream callback with the new content if provided
+                if stream_callback and delta_output:
+                    # Create a simple metadata dict with basic info
+                    chunk_metadata = {
+                        'command': command,
+                        'is_complete': False,
+                        'timestamp': last_change_time,
+                    }
+
+                    # Process the new content to remove command prefix if it's the first update
+                    if self.prev_output == '':
+                        delta_output = _remove_command_prefix(delta_output, command)
+
+                    if delta_output:
+                        # Call the callback with the new content and metadata
+                        stream_callback(delta_output, chunk_metadata)
 
             # 1) Execution completed:
             # Condition 1: A new prompt has appeared since the command started.
             # Condition 2: The prompt count hasn't increased (potentially because the initial one scrolled off),
             # BUT the *current* visible pane ends with a prompt, indicating completion.
             if (
-                current_ps1_count > initial_ps1_count
-                or cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
+                # current_ps1_count > initial_ps1_count
+                cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
             ):
-                return self._handle_completed_command(
+                result = self._handle_completed_command(
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                 )
+                # Send a final callback with the complete result and is_complete=True
+                if stream_callback:
+                    chunk_metadata = {
+                        'command': command,
+                        'is_complete': True,
+                        'timestamp': time.time(),
+                        'exit_code': result.metadata.exit_code
+                        if hasattr(result, 'metadata')
+                        else None,
+                    }
+                    stream_callback(result.content, chunk_metadata)
+
+                return result
 
             # Timeout checks should only trigger if a new prompt hasn't appeared yet.
 
@@ -628,11 +680,24 @@ class BashSession:
                 not action.blocking
                 and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
             ):
-                return self._handle_nochange_timeout_command(
+                result = self._handle_nochange_timeout_command(
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                 )
+
+                # Send a final callback with the timeout result
+                if stream_callback:
+                    chunk_metadata = {
+                        'command': command,
+                        'is_complete': False,
+                        'is_timeout': True,
+                        'timeout_type': 'no_change',
+                        'timestamp': time.time(),
+                    }
+                    stream_callback(result.content, chunk_metadata)
+
+                return result
 
             # 3) Execution timed out due to hard timeout
             elapsed_time = time.time() - start_time
@@ -641,12 +706,26 @@ class BashSession:
             )
             if action.timeout and elapsed_time >= action.timeout:
                 logger.debug('Hard timeout triggered.')
-                return self._handle_hard_timeout_command(
+                result = self._handle_hard_timeout_command(
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                     timeout=action.timeout,
                 )
+
+                # Send a final callback with the hard timeout result
+                if stream_callback:
+                    chunk_metadata = {
+                        'command': command,
+                        'is_complete': False,
+                        'is_timeout': True,
+                        'timeout_type': 'hard',
+                        'timeout_seconds': action.timeout,
+                        'timestamp': time.time(),
+                    }
+                    stream_callback(result.content, chunk_metadata)
+
+                return result
 
             logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
             time.sleep(self.POLL_INTERVAL)
