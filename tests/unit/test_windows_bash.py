@@ -261,10 +261,13 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     result_cd = windows_bash_session.execute(action_cd)
     assert isinstance(result_cd, CmdOutputObservation)
     assert result_cd.exit_code == 0
-    # Check that the session's internal CWD state was updated
-    assert windows_bash_session._cwd == sub_dir_str
+    # Check that the session's internal CWD state was updated - normalize paths
+    # to handle Windows short name vs long name format differences
+    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(sub_dir_str)
     # Check that the metadata reflects the directory *after* the command
-    assert result_cd.metadata.working_dir == sub_dir_str
+    assert os.path.normcase(result_cd.metadata.working_dir) == os.path.normcase(
+        sub_dir_str
+    )
 
     # Execute a command in the new directory to confirm
     action_pwd = CmdRunAction(command='(Get-Location).Path')
@@ -272,17 +275,23 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     assert isinstance(result_pwd, CmdOutputObservation)
     assert result_pwd.exit_code == 0
     # Check the command output reflects the new directory
-    assert result_pwd.content.strip() == sub_dir_str
+    assert os.path.normcase(result_pwd.content.strip()) == os.path.normcase(sub_dir_str)
     # Metadata should also reflect the current directory
-    assert result_pwd.metadata.working_dir == sub_dir_str
+    assert os.path.normcase(result_pwd.metadata.working_dir) == os.path.normcase(
+        sub_dir_str
+    )
 
     # Test changing back to original directory
     action_cd_back = CmdRunAction(command=f"Set-Location '{abs_temp_work_dir}'")
     result_cd_back = windows_bash_session.execute(action_cd_back)
     assert isinstance(result_cd_back, CmdOutputObservation)
     assert result_cd_back.exit_code == 0
-    assert windows_bash_session._cwd == abs_temp_work_dir
-    assert result_cd_back.metadata.working_dir == abs_temp_work_dir
+    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(
+        abs_temp_work_dir
+    )
+    assert os.path.normcase(result_cd_back.metadata.working_dir) == os.path.normcase(
+        abs_temp_work_dir
+    )
 
 
 def test_cleanup(windows_bash_session):
@@ -435,7 +444,9 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     cd_action = CmdRunAction(command=f"Set-Location '{sub_dir_name}'")
     result = windows_bash_session.execute(cd_action)
     assert result.exit_code == 0
-    assert windows_bash_session._cwd == str(sub_dir_path)
+    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(
+        str(sub_dir_path)
+    )
 
     # 3. Create a file in the current directory (which should be the subdirectory)
     test_content = 'This is a test file created by PowerShell'
@@ -459,7 +470,9 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     cd_parent_action = CmdRunAction(command='Set-Location ..')
     result = windows_bash_session.execute(cd_parent_action)
     assert result.exit_code == 0
-    assert windows_bash_session._cwd == abs_temp_work_dir
+    assert os.path.normcase(windows_bash_session._cwd) == os.path.normcase(
+        abs_temp_work_dir
+    )
 
     # 7. Read the file using relative path
     read_from_parent_action = CmdRunAction(
