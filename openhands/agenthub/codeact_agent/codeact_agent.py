@@ -1,5 +1,6 @@
 import copy
 import os
+import sys
 from collections import deque
 
 from litellm import ChatCompletionToolParam
@@ -111,8 +112,11 @@ class CodeActAgent(Agent):
         if self.config.enable_finish:
             tools.append(FinishTool)
         if self.config.enable_browsing:
-            tools.append(WebReadTool)
-            tools.append(BrowserTool)
+            if sys.platform == 'win32':
+                logger.warning('Windows runtime does not support browsing yet')
+            else:
+                tools.append(WebReadTool)
+                tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:
