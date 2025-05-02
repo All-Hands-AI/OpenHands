@@ -6,13 +6,15 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 1. Parse the provided agent trajectory data
 2. Identify distinct segments in the interaction based on subtasks or phases
 3. Create a concise, informative summary for each segment. Be as concise as possible
-4. IMPORTANT: Include ALL message IDs that belong to each segment in the "ids" array
+4. CRITICAL: Include ALL message IDs that belong to each segment in the "ids" array
 5. CRITICAL: Make sure to include IDs for BOTH user and agent messages in each segment
 6. Include timestamps that belong to each segment
 7. For messages with missing IDs (None or null), rely on timestamps for grouping
 8. DO NOT include any additional summaries.
-9. IMPORTANT: Be comprehensive in including ALL message IDs in each segment. Do not skip any IDs that belong to the conversation flow within a segment.
+9. CRITICAL: Be comprehensive in including ALL message IDs in each segment. Do not skip any IDs that belong to the conversation flow within a segment.
 10. Each segment should contain a complete conversation thread with all user and agent messages.
+11. IMPORTANT: When creating segments, ensure that ALL messages between the first and last message of a segment are included in that segment's IDs array.
+12. CRITICAL: Check your work to ensure no message IDs are missing from any segment.
 
 ## Example:
 

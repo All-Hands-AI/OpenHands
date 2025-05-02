@@ -64,18 +64,33 @@ export function TrajectorySummary({
 
     // If we found messages, return them
     if (matchedMessages.length > 0) {
-      // Sort messages by their original order in the messages array
-      // This preserves the conversation flow
-      const messageIndices = matchedMessages.map(msg => 
-        messages.findIndex(m => m.eventID === msg.eventID)
-      );
+      // Find all message IDs in this segment
+      const numericIds = segmentIds.filter(id => typeof id === 'number');
       
-      // Get the min and max indices to include all messages between them
-      const minIndex = Math.min(...messageIndices);
-      const maxIndex = Math.max(...messageIndices);
-      
-      // Return all messages between min and max indices to include the complete conversation
-      return messages.slice(minIndex, maxIndex + 1);
+      if (numericIds.length > 1) {
+        // Get the min and max IDs to include all messages between them
+        const minId = Math.min(...numericIds);
+        const maxId = Math.max(...numericIds);
+        
+        // Return all messages with IDs in the range [minId, maxId]
+        return messages.filter(msg => {
+          const id = msg.eventID;
+          return id !== undefined && id >= minId && id <= maxId;
+        });
+      } else {
+        // If we only have one numeric ID or none, use the original approach
+        // Sort messages by their original order in the messages array
+        const messageIndices = matchedMessages.map(msg => 
+          messages.findIndex(m => m.eventID === msg.eventID)
+        );
+        
+        // Get the min and max indices to include all messages between them
+        const minIndex = Math.min(...messageIndices);
+        const maxIndex = Math.max(...messageIndices);
+        
+        // Return all messages between min and max indices to include the complete conversation
+        return messages.slice(minIndex, maxIndex + 1);
+      }
     }
 
     // If no messages were found by exact ID match, try to match by string conversion
@@ -89,18 +104,39 @@ export function TrajectorySummary({
     });
 
     if (stringMatchedMessages.length > 0) {
-      // Sort messages by their original order in the messages array
-      const messageIndices = stringMatchedMessages.map(msg => 
-        messages.findIndex(m => m.eventID !== undefined && 
-          segmentIds.some(id => String(id) === String(m.eventID)))
-      );
+      // Try to convert string IDs to numbers for comparison
+      const numericIds = segmentIds
+        .map(id => {
+          if (typeof id === 'number') return id;
+          if (typeof id === 'string' && !isNaN(Number(id))) return Number(id);
+          return null;
+        })
+        .filter(id => id !== null) as number[];
       
-      // Get the min and max indices to include all messages between them
-      const minIndex = Math.min(...messageIndices);
-      const maxIndex = Math.max(...messageIndices);
-      
-      // Return all messages between min and max indices to include the complete conversation
-      return messages.slice(minIndex, maxIndex + 1);
+      if (numericIds.length > 1) {
+        // Get the min and max IDs to include all messages between them
+        const minId = Math.min(...numericIds);
+        const maxId = Math.max(...numericIds);
+        
+        // Return all messages with IDs in the range [minId, maxId]
+        return messages.filter(msg => {
+          const id = msg.eventID;
+          return id !== undefined && id >= minId && id <= maxId;
+        });
+      } else {
+        // If we only have one numeric ID or none, use the original approach
+        // Get the indices of each matched message in the original messages array
+        const messageIndices = stringMatchedMessages.map(msg => 
+          messages.findIndex(m => m === msg)
+        );
+        
+        // Get the min and max indices to include all messages between them
+        const minIndex = Math.min(...messageIndices);
+        const maxIndex = Math.max(...messageIndices);
+        
+        // Return all messages between min and max indices to include the complete conversation
+        return messages.slice(minIndex, maxIndex + 1);
+      }
     }
 
     // If we still couldn't find any messages, try to use timestamp ranges if available
@@ -159,17 +195,35 @@ export function TrajectorySummary({
         });
 
         if (timestampFilteredMessages.length > 0) {
-          // Find the indices of the first and last matching messages
-          const messageIndices = timestampFilteredMessages.map(msg => 
-            messages.findIndex(m => m === msg)
-          );
+          // Try to find message IDs in the filtered messages
+          const messageIds = timestampFilteredMessages
+            .map(msg => msg.eventID)
+            .filter(id => id !== undefined) as number[];
           
-          // Get the min and max indices to include all messages between them
-          const minIndex = Math.min(...messageIndices);
-          const maxIndex = Math.max(...messageIndices);
-          
-          // Return all messages between min and max indices to include the complete conversation
-          return messages.slice(minIndex, maxIndex + 1);
+          if (messageIds.length > 1) {
+            // Get the min and max IDs to include all messages between them
+            const minId = Math.min(...messageIds);
+            const maxId = Math.max(...messageIds);
+            
+            // Return all messages with IDs in the range [minId, maxId]
+            return messages.filter(msg => {
+              const id = msg.eventID;
+              return id !== undefined && id >= minId && id <= maxId;
+            });
+          } else {
+            // If we don't have enough message IDs, use the original approach
+            // Find the indices of the first and last matching messages
+            const messageIndices = timestampFilteredMessages.map(msg => 
+              messages.findIndex(m => m === msg)
+            );
+            
+            // Get the min and max indices to include all messages between them
+            const minIndex = Math.min(...messageIndices);
+            const maxIndex = Math.max(...messageIndices);
+            
+            // Return all messages between min and max indices to include the complete conversation
+            return messages.slice(minIndex, maxIndex + 1);
+          }
         }
       }
     }
@@ -283,6 +337,25 @@ export function TrajectorySummary({
                       content: m.content?.substring(0, 50) + (m.content?.length > 50 ? '...' : '')
                     }))
                   });
+                  
+                  // Additional debugging to check for missing messages
+                  const allMessageIds = messages.map(m => m.eventID);
+                  const segmentMessageIds = segmentMessages.map(m => m.eventID);
+                  const missingIds = segment.ids.filter(id => 
+                    !segmentMessageIds.includes(id) && allMessageIds.includes(id)
+                  );
+                  
+                  if (missingIds.length > 0) {
+                    console.warn(`Segment ${index} is missing messages with IDs:`, missingIds);
+                    console.warn(`Messages that should be included:`, 
+                      messages.filter(m => missingIds.includes(m.eventID))
+                        .map(m => ({
+                          id: m.eventID,
+                          sender: m.sender,
+                          content: m.content?.substring(0, 50) + (m.content?.length > 50 ? '...' : '')
+                        }))
+                    );
+                  }
 
                   if (segmentMessages.length === 0) {
                     return (

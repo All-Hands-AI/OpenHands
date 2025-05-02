@@ -315,7 +315,36 @@ class TrajectorySummarizer:
 
         # Parse the response
         parsed_response = parse_llm_response_to_json(response_text)
-
+        
+        # Post-process to ensure all IDs between min and max are included in each segment
+        if 'segments' in parsed_response and isinstance(parsed_response['segments'], list):
+            for segment in parsed_response['segments']:
+                if 'ids' in segment and isinstance(segment['ids'], list) and len(segment['ids']) > 1:
+                    # Get numeric IDs only
+                    numeric_ids = [id_val for id_val in segment['ids'] 
+                                  if isinstance(id_val, (int, float)) or 
+                                  (isinstance(id_val, str) and id_val.isdigit())]
+                    
+                    if numeric_ids:
+                        # Convert string IDs to integers
+                        numeric_ids = [int(id_val) if isinstance(id_val, str) else id_val 
+                                      for id_val in numeric_ids]
+                        
+                        # Find min and max IDs
+                        min_id = min(numeric_ids)
+                        max_id = max(numeric_ids)
+                        
+                        # Create a complete range of IDs
+                        complete_range = list(range(min_id, max_id + 1))
+                        
+                        # Add any missing IDs to the segment
+                        for id_val in complete_range:
+                            if id_val not in numeric_ids:
+                                segment['ids'].append(id_val)
+                        
+                        # Sort the IDs for clarity
+                        segment['ids'].sort()
+        
         return parsed_response
 
     def batch_summarize_trajectories(
