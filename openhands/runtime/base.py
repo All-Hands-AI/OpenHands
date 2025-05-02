@@ -308,6 +308,166 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
+    async def clone_user_and_org_microagents(
+        self,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        selected_repository: str | None,
+    ) -> list[str]:
+        """Clone user and organization .openhands repositories if they exist.
+
+        Args:
+            git_provider_tokens: Dictionary mapping provider types to tokens
+            selected_repository: The repository being worked on
+
+        Returns:
+            List of cloned repository names
+        """
+        cloned_repos: list[str] = []
+
+        if not git_provider_tokens or not selected_repository:
+            return cloned_repos
+
+        # Get the user
+        try:
+            provider_handler = ProviderHandler(git_provider_tokens)
+            user = await provider_handler.get_user()
+            user_name = user.login
+
+            # Try to clone user's .openhands repository
+            user_openhands_repo = f'{user_name}/.openhands'
+            try:
+                # Use the same domain and token as the main repository
+                if '/' in selected_repository:
+                    provider = None
+                    for prov_type in git_provider_tokens:
+                        try:
+                            service = provider_handler._get_service(prov_type)
+                            await service.get_repository_details_from_repo_name(
+                                selected_repository
+                            )
+                            provider = prov_type
+                            break
+                        except Exception:
+                            continue
+
+                    if provider:
+                        # Clone the user's .openhands repository
+                        provider_domains = {
+                            ProviderType.GITHUB: 'github.com',
+                            ProviderType.GITLAB: 'gitlab.com',
+                        }
+                        domain = provider_domains[provider]
+                        git_token = git_provider_tokens[provider].token
+
+                        if git_token:
+                            if provider == ProviderType.GITLAB:
+                                remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{user_openhands_repo}.git'
+                            else:
+                                remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{user_openhands_repo}.git'
+                        else:
+                            remote_repo_url = (
+                                f'https://{domain}/{user_openhands_repo}.git'
+                            )
+
+                        # Clone the repository
+                        dir_name = user_openhands_repo.split('/')[-1]
+                        clone_command = f'git clone {remote_repo_url} {dir_name}'
+
+                        action = CmdRunAction(
+                            command=clone_command,
+                        )
+                        self.log(
+                            'info',
+                            f'Cloning user microagents repo: {user_openhands_repo}',
+                        )
+                        obs = self.run_action(action)
+
+                        if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                            cloned_repos.append(user_openhands_repo)
+                            self.log(
+                                'info',
+                                f"Cloned user's .openhands repository: {user_openhands_repo}",
+                            )
+            except Exception as e:
+                self.log(
+                    'debug',
+                    f"User doesn't have a .openhands repository or it's not accessible: {e}",
+                )
+
+            # If selected repository is from an organization, try to clone org's .openhands repository
+            if selected_repository and '/' in selected_repository:
+                org_name = selected_repository.split('/')[0]
+                # Skip if org_name is the same as user_login (user's own repo)
+                if org_name != user_name:
+                    org_openhands_repo = f'{org_name}/.openhands'
+                    try:
+                        # Use the same domain and token as the main repository
+                        provider = None
+                        for prov_type in git_provider_tokens:
+                            try:
+                                service = provider_handler._get_service(prov_type)
+                                await service.get_repository_details_from_repo_name(
+                                    selected_repository
+                                )
+                                provider = prov_type
+                                break
+                            except Exception:
+                                continue
+
+                        if provider:
+                            # Clone the organization's .openhands repository
+                            provider_domains = {
+                                ProviderType.GITHUB: 'github.com',
+                                ProviderType.GITLAB: 'gitlab.com',
+                            }
+                            domain = provider_domains[provider]
+                            git_token = git_provider_tokens[provider].token
+
+                            if git_token:
+                                if provider == ProviderType.GITLAB:
+                                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{org_openhands_repo}.git'
+                                else:
+                                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{org_openhands_repo}.git'
+                            else:
+                                remote_repo_url = (
+                                    f'https://{domain}/{org_openhands_repo}.git'
+                                )
+
+                            # Clone the repository
+                            dir_name = org_openhands_repo.split('/')[-1]
+                            clone_command = f'git clone {remote_repo_url} {dir_name}'
+
+                            action = CmdRunAction(
+                                command=clone_command,
+                            )
+                            self.log(
+                                'info',
+                                f'Cloning organization microagents repo: {org_openhands_repo}',
+                            )
+                            obs = self.run_action(action)
+
+                            if (
+                                isinstance(obs, CmdOutputObservation)
+                                and obs.exit_code == 0
+                            ):
+                                cloned_repos.append(org_openhands_repo)
+                                self.log(
+                                    'info',
+                                    f"Cloned organization's .openhands repository: {org_openhands_repo}",
+                                )
+                    except Exception as e:
+                        self.log(
+                            'debug',
+                            f"Organization doesn't have a .openhands repository or it's not accessible: {e}",
+                        )
+        except Exception as e:
+            self.log(
+                'warning',
+                f'Failed to get user information or clone .openhands repositories: {e}',
+            )
+
+        return cloned_repos
+
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
@@ -401,6 +561,13 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
+
+        # After cloning the main repository, clone user and org microagents repositories
+        if git_provider_tokens and selected_repository:
+            await self.clone_user_and_org_microagents(
+                git_provider_tokens, selected_repository
+            )
+
         return dir_name
 
     def maybe_run_setup_script(self):
