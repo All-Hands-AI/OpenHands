@@ -15,6 +15,9 @@ vi.mock("react-i18next", async () => {
         changeLanguage: () => new Promise(() => {}),
         language: "en",
         exists: () => true,
+        isInitialized: true,
+        on: vi.fn(),
+        off: vi.fn(),
       },
     }),
   };
