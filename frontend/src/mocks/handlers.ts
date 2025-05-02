@@ -102,7 +102,7 @@ const openHandsHandlers = [
   http.get("/api/options/security-analyzers", async () =>
     HttpResponse.json(["mock-invariant"]),
   ),
-  
+
   http.get("/api/options/microagents", async () =>
     HttpResponse.json([
       {
