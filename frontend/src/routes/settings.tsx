@@ -16,7 +16,6 @@ function SettingsScreen() {
 
   const saasNavItems = [
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
-    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
     { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
     { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
