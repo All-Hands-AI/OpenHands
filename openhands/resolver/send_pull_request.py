@@ -526,34 +526,34 @@ def process_single_issue(
 
     # If there are no changes, we still want to post a comment with the result explanation
     if not has_changes:
-        if issue_type == 'pr':
-            handler = (
-                ServiceContextIssue(
-                    GithubIssueHandler(
-                        resolver_output.issue.owner,
-                        resolver_output.issue.repo,
-                        token,
-                        username,
-                        base_domain,
-                    ),
-                    llm_config,
-                )
-                if platform == ProviderType.GITHUB
-                else ServiceContextIssue(
-                    GitlabIssueHandler(
-                        resolver_output.issue.owner,
-                        resolver_output.issue.repo,
-                        token,
-                        username,
-                        base_domain,
-                    ),
-                    llm_config,
-                )
+        # Create a handler to post comments for both issues and PRs
+        handler = (
+            ServiceContextIssue(
+                GithubIssueHandler(
+                    resolver_output.issue.owner,
+                    resolver_output.issue.repo,
+                    token,
+                    username,
+                    base_domain,
+                ),
+                llm_config,
             )
-            if resolver_output.result_explanation:
-                handler.send_comment_msg(
-                    resolver_output.issue.number, resolver_output.result_explanation
-                )
+            if platform == ProviderType.GITHUB
+            else ServiceContextIssue(
+                GitlabIssueHandler(
+                    resolver_output.issue.owner,
+                    resolver_output.issue.repo,
+                    token,
+                    username,
+                    base_domain,
+                ),
+                llm_config,
+            )
+        )
+        if resolver_output.result_explanation:
+            handler.send_comment_msg(
+                resolver_output.issue.number, resolver_output.result_explanation
+            )
         return
 
     if issue_type == 'pr':

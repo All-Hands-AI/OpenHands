@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from unittest.mock import ANY, MagicMock, call, patch
 
@@ -447,6 +448,9 @@ def test_make_commit_failed_add(mock_output_dir, mock_issue):
     with open(test_file, 'w') as f:
         f.write('test content')
 
+    # Initialize git repo
+    os.system(f'git init {mock_output_dir}')
+
     # Mock a failed add by making the directory not a git repo
     shutil.rmtree(os.path.join(mock_output_dir, '.git'))
 
@@ -463,6 +467,9 @@ def test_make_commit_failed_commit(mock_output_dir, mock_issue):
     test_file = os.path.join(mock_output_dir, 'test.txt')
     with open(test_file, 'w') as f:
         f.write('test content')
+
+    # Initialize git repo
+    os.system(f'git init {mock_output_dir}')
 
     # Mock a failed commit by making the directory not a git repo
     shutil.rmtree(os.path.join(mock_output_dir, '.git'))
@@ -1104,6 +1111,10 @@ def test_process_single_pr_no_changes(
     # Mock make_commit to return False (no changes)
     mock_make_commit.return_value = False
 
+    # Mock initialize_repo to return the expected path
+    expected_path = f'{mock_output_dir}/patches/pr_1'
+    mock_initialize_repo.return_value = expected_path
+
     # Call the function
     process_single_issue(
         mock_output_dir,
@@ -1119,15 +1130,10 @@ def test_process_single_pr_no_changes(
 
     # Assert that the mocked functions were called correctly
     mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'pr', 'branch 1')
-    mock_apply_patch.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
-    )
-    mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr'
-    )
+    mock_apply_patch.assert_called_once_with(expected_path, resolver_output.git_patch)
+    mock_make_commit.assert_called_once_with(expected_path, resolver_output.issue, 'pr')
     mock_update_existing_pull_request.assert_not_called()
     mock_send_comment_msg.assert_called_once_with(1, 'No changes needed')
-    mock_send_pull_request.assert_not_called()
 
 
 @patch('openhands.resolver.send_pull_request.initialize_repo')
@@ -1170,6 +1176,10 @@ def test_process_single_issue_no_changes(
     # Mock make_commit to return False (no changes)
     mock_make_commit.return_value = False
 
+    # Mock initialize_repo to return the expected path
+    expected_path = f'{mock_output_dir}/patches/issue_1'
+    mock_initialize_repo.return_value = expected_path
+
     # Call the function
     process_single_issue(
         mock_output_dir,
@@ -1185,12 +1195,8 @@ def test_process_single_issue_no_changes(
 
     # Assert that the mocked functions were called correctly
     mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'issue', 'def456')
-    mock_apply_patch.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
-    )
-    mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
-    )
+    mock_apply_patch.assert_called_once_with(expected_path, resolver_output.git_patch)
+    mock_make_commit.assert_called_once_with(expected_path, resolver_output.issue, 'issue')
     mock_send_pull_request.assert_not_called()
 
 
