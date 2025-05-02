@@ -40,12 +40,7 @@ def windows_bash_session(temp_work_dir):
     session.close()
 
 
-# Helper function to determine if running on Windows
-def is_windows():
-    return sys.platform == 'win32'
-
-
-if is_windows():
+if sys.platform == 'win32':
     from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 
