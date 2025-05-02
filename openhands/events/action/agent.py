@@ -142,7 +142,8 @@ class CondensationAction(Action):
     """An optional summary of the events being forgotten."""
 
     summary_offset: int | None = None
-    """An optional offset to the start of the resulting view indicating where the summary should be inserted."""
+    """An optional offset to the start of the resulting view indicating where the CondensationObservation with the summary should be inserted.
+    If summary_offset=None, but summary is not None, the summary will be inserted behind this action."""
 
     def _validate_field_polymorphism(self) -> bool:
         """Check if the optional fields are instantiated in a valid configuration."""
