@@ -14,7 +14,6 @@ interface MCPConfigEditorProps {
 export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
-  
   const handleConfigChange = (newConfig: MCPConfig) => {
     onChange(newConfig);
     setIsEditing(false);

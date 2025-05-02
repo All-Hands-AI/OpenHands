@@ -18,7 +18,6 @@ describe("SettingsForm", () => {
           settings={DEFAULT_SETTINGS}
           models={[DEFAULT_SETTINGS.LLM_MODEL]}
           onClose={onCloseMock}
-          activeTab="llm"
         />
       ),
       path: "/",

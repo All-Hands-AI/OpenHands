@@ -34,18 +34,24 @@ export function MCPStdioServers({ servers }: MCPStdioServersProps) {
             {server.name}
           </div>
           <div className="mt-1 text-sm text-gray-500">
-            <span className="font-medium">{t(I18nKey.SETTINGS$MCP_COMMAND)}:</span>{" "}
+            <span className="font-medium">
+              {t(I18nKey.SETTINGS$MCP_COMMAND)}:
+            </span>{" "}
             <code className="font-mono">{server.command}</code>
           </div>
           {server.args && server.args.length > 0 && (
             <div className="mt-1 text-sm text-gray-500">
-              <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ARGS)}:</span>{" "}
+              <span className="font-medium">
+                {t(I18nKey.SETTINGS$MCP_ARGS)}:
+              </span>{" "}
               <code className="font-mono">{server.args.join(" ")}</code>
             </div>
           )}
           {server.env && Object.keys(server.env).length > 0 && (
             <div className="mt-1 text-sm text-gray-500">
-              <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ENV)}:</span>{" "}
+              <span className="font-medium">
+                {t(I18nKey.SETTINGS$MCP_ENV)}:
+              </span>{" "}
               <code className="font-mono">
                 {Object.entries(server.env)
                   .map(([key, value]) => `${key}=${value}`)

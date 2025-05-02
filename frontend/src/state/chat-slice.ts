@@ -257,7 +257,6 @@ export const chatSlice = createSlice({
         (message) => message.eventID === causeID,
       );
       if (!causeMessage) {
-        console.log("No cause message found for observation", observationID);
         return;
       }
       causeMessage.translationID = translationID;

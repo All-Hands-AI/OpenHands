@@ -22,11 +22,7 @@ interface SettingsFormProps {
   onClose: () => void;
 }
 
-export function SettingsForm({
-  settings,
-  models,
-  onClose,
-}: SettingsFormProps) {
+export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   const { mutate: saveUserSettings } = useSaveSettings();
   const endSession = useEndSession();
 
@@ -101,9 +97,7 @@ export function SettingsForm({
             type="password"
             className="w-[680px]"
             placeholder={isLLMKeySet ? "<hidden>" : ""}
-            startContent={
-              isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
-            }
+            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />
 
           <HelpLink

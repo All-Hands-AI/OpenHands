@@ -30,10 +30,7 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
         throw new Error(t(I18nKey.SETTINGS$MCP_ERROR_SSE_ARRAY));
       }
 
-      if (
-        !newConfig.stdio_servers ||
-        !Array.isArray(newConfig.stdio_servers)
-      ) {
+      if (!newConfig.stdio_servers || !Array.isArray(newConfig.stdio_servers)) {
         throw new Error(t(I18nKey.SETTINGS$MCP_ERROR_STDIO_ARRAY));
       }
 
