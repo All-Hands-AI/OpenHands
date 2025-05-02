@@ -210,7 +210,9 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
 
         # If there are no changes, log it and return False
         if not status_result.stdout.strip():
-            logger.info(f'No changes to commit for issue #{issue.number}. Skipping commit.')
+            logger.info(
+                f'No changes to commit for issue #{issue.number}. Skipping commit.'
+            )
             return False
 
         # Prepare the commit message
