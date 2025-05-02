@@ -59,7 +59,7 @@ function GitChanges() {
         <div className="max-w-2xl flex">
           <div className="mb-4 text-m bg-tertiary rounded p-4 text-left">
             <p>
-              <span>💡</span>
+              <h4 className="font-bold">Protip:</h4>
               {t(randomTip.key)}
             </p>
           </div>
