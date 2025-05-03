@@ -127,6 +127,12 @@ class GitHubService(BaseGitService, GitService):
             email=response.get('email'),
         )
 
+    async def verify_access(self) -> bool:
+        """Verify if the token is valid by making a simple request."""
+        url = f'{self.BASE_URL}'
+        await self._make_request(url)
+        return True
+
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
@@ -365,6 +371,20 @@ class GitHubService(BaseGitService, GitService):
                          extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
 
         return tasks
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('full_name'),
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+        )
 
 
 github_service_cls = os.environ.get(

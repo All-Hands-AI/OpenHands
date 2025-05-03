@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { Settings } from "#/types/settings";
 
 const getSettingsQueryFn = async (): Promise<Settings> => {
@@ -22,7 +23,6 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
-    PROVIDER_TOKENS: apiSettings.provider_tokens,
     IS_NEW_USER: false,
   };
 };
@@ -30,6 +30,8 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
 export const useSettings = () => {
   const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
     useAuth();
+
+  const isOnTosPage = useIsOnTosPage();
 
   const query = useQuery({
     queryKey: ["settings", providerTokensSet],
@@ -40,6 +42,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
+    enabled: !isOnTosPage,
     meta: {
       disableToast: true,
     },
@@ -54,13 +57,11 @@ export const useSettings = () => {
   React.useEffect(() => {
     if (query.data?.PROVIDER_TOKENS_SET) {
       const providers = query.data.PROVIDER_TOKENS_SET;
-      const setProviders = (
-        Object.keys(providers) as Array<keyof typeof providers>
-      ).filter((key) => providers[key]);
+      const setProviders = Object.keys(providers) as Array<
+        keyof typeof providers
+      >;
       setProviderTokensSet(setProviders);
-      const atLeastOneSet = Object.values(query.data.PROVIDER_TOKENS_SET).some(
-        (value) => value,
-      );
+      const atLeastOneSet = setProviders.length > 0;
       setProvidersAreSet(atLeastOneSet);
     }
   }, [query.data?.PROVIDER_TOKENS_SET, query.isFetched]);
