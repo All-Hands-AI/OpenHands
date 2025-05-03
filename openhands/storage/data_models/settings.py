@@ -56,7 +56,7 @@ class Settings(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def convert_provider_tokens(cls, data: dict | object) -> dict | object:
-        """Convert provider tokens from JSON format to SecretStore format."""
+        """Convert provider tokens from JSON format to UserSecrets format."""
         if not isinstance(data, dict):
             return data
 

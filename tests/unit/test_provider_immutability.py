@@ -34,7 +34,7 @@ def test_provider_token_immutability():
 
 
 def test_secret_store_immutability():
-    """Test that SecretStore is immutable"""
+    """Test that UserSecrets is immutable"""
     store = UserSecrets(
         provider_tokens={ProviderType.GITHUB: ProviderToken(token=SecretStr('test'))}
     )

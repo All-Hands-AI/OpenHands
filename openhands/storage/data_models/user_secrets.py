@@ -78,7 +78,7 @@ class UserSecrets(BaseModel):
     ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
-            raise ValueError('SecretStore must be initialized with a dictionary')
+            raise ValueError('UserSecrets must be initialized with a dictionary')
 
         new_data: dict[str, MappingProxyType | None] = {}
 

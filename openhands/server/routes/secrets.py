@@ -189,7 +189,7 @@ async def create_custom_secret(
             
                 custom_secrets[secret_name] = secret_value
         
-            # Create a new SecretStore that preserves provider tokens
+            # Create a new UserSecrets that preserves provider tokens
             updated_user_secrets = UserSecrets(
                 custom_secrets=custom_secrets,
                 provider_tokens=existing_secrets.provider_tokens,
@@ -230,7 +230,7 @@ async def update_custom_secret(
             for secret_name, secret_value in incoming_secret.custom_secrets.items():
                 custom_secrets[secret_name] = secret_value
 
-            # Create a new SecretStore that preserves provider tokens
+            # Create a new UserSecrets that preserves provider tokens
             updated_secrets = UserSecrets(
                 custom_secrets=custom_secrets,
                 provider_tokens=existing_secrets.provider_tokens,
