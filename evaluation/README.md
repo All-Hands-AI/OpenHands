@@ -44,7 +44,7 @@ temperature = 0.0
 
 ### Configuring Condensers for Evaluation
 
-For benchmarks that support condenser configuration (like SWE-Bench), you can define multiple condenser configurations in your `config.toml` file:
+For benchmarks that support condenser configuration (like SWE-Bench), you can define multiple condenser configurations in your `config.toml` file. A condenser is responsible for managing conversation history to maintain context while staying within token limits - you can learn more about how it works [here](https://www.all-hands.dev/blog/openhands-context-condensensation-for-more-efficient-ai-agents):
 
 ```toml
 # LLM-based summarizing condenser for evaluation
