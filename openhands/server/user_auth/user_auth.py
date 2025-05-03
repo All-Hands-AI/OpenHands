@@ -14,8 +14,8 @@ from openhands.utils.import_utils import get_impl
 
 
 class AuthType(Enum):
-    COOKIE = "cookie"
-    BEARER = "bearer"
+    COOKIE = 'cookie'
+    BEARER = 'bearer'
 
 
 class UserAuth(ABC):
