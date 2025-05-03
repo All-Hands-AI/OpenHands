@@ -1,14 +1,15 @@
 import json
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.integrations.service_types import (
+    AuthenticationError,
     ProviderType,
-    Repository,
     SuggestedTask,
     TaskType,
 )
@@ -25,6 +26,7 @@ from openhands.server.routes.manage_conversations import (
     update_conversation,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
+from openhands.server.user_auth.user_auth import AuthType
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
@@ -60,6 +62,28 @@ def _patch_store():
             file_store,
         ):
             yield
+
+
+def create_new_test_conversation(
+    test_request: InitSessionRequest, auth_type: AuthType | None = None
+):
+    return new_conversation(
+        data=test_request,
+        user_id='test_user',
+        provider_tokens=MappingProxyType({'github': 'token123'}),
+        auth_type=auth_type,
+    )
+
+
+@pytest.fixture
+def provider_handler_mock():
+    with patch(
+        'openhands.server.routes.manage_conversations.ProviderHandler'
+    ) as mock_cls:
+        mock_instance = MagicMock()
+        mock_instance.verify_repo_provider = AsyncMock(return_value=ProviderType.GITHUB)
+        mock_cls.return_value = mock_instance
+        yield mock_instance
 
 
 @pytest.mark.asyncio
@@ -232,7 +256,7 @@ async def test_update_conversation():
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_success():
+async def test_new_conversation_success(provider_handler_mock):
     """Test successful creation of a new conversation."""
     with _patch_store():
         # Mock the _create_new_conversation function directly
@@ -242,26 +266,16 @@ async def test_new_conversation_success():
             # Set up the mock to return a conversation ID
             mock_create_conversation.return_value = 'test_conversation_id'
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                selected_repository=test_repo,
+                repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
                 image_urls=['https://example.com/image.jpg'],
             )
 
             # Call new_conversation
-            response = await new_conversation(
-                data=test_request, user_id='test_user', provider_tokens={}
-            )
+            response = await create_new_test_conversation(test_request)
 
             # Verify the response
             assert isinstance(response, JSONResponse)
@@ -275,7 +289,7 @@ async def test_new_conversation_success():
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['user_id'] == 'test_user'
-            assert call_args['selected_repository'] == test_repo
+            assert call_args['selected_repository'] == 'test/repo'
             assert call_args['selected_branch'] == 'main'
             assert call_args['initial_user_msg'] == 'Hello, agent!'
             assert call_args['image_urls'] == ['https://example.com/image.jpg']
@@ -283,7 +297,7 @@ async def test_new_conversation_success():
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_with_suggested_task():
+async def test_new_conversation_with_suggested_task(provider_handler_mock):
     """Test creating a new conversation with a suggested task."""
     with _patch_store():
         # Mock the _create_new_conversation function directly
@@ -301,14 +315,6 @@ async def test_new_conversation_with_suggested_task():
                     'Please fix the failing checks in PR #123'
                 )
 
-                # Create test data
-                test_repo = Repository(
-                    id=12345,
-                    full_name='test/repo',
-                    git_provider=ProviderType.GITHUB,
-                    is_public=True,
-                )
-
                 test_task = SuggestedTask(
                     git_provider=ProviderType.GITHUB,
                     task_type=TaskType.FAILING_CHECKS,
@@ -319,15 +325,13 @@ async def test_new_conversation_with_suggested_task():
 
                 test_request = InitSessionRequest(
                     conversation_trigger=ConversationTrigger.SUGGESTED_TASK,
-                    selected_repository=test_repo,
+                    repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
                 )
 
                 # Call new_conversation
-                response = await new_conversation(
-                    data=test_request, user_id='test_user', provider_tokens={}
-                )
+                response = await create_new_test_conversation(test_request)
 
                 # Verify the response
                 assert isinstance(response, JSONResponse)
@@ -341,7 +345,7 @@ async def test_new_conversation_with_suggested_task():
                 mock_create_conversation.assert_called_once()
                 call_args = mock_create_conversation.call_args[1]
                 assert call_args['user_id'] == 'test_user'
-                assert call_args['selected_repository'] == test_repo
+                assert call_args['selected_repository'] == 'test/repo'
                 assert call_args['selected_branch'] == 'main'
                 assert (
                     call_args['initial_user_msg']
@@ -357,7 +361,7 @@ async def test_new_conversation_with_suggested_task():
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_missing_settings():
+async def test_new_conversation_missing_settings(provider_handler_mock):
     """Test creating a new conversation when settings are missing."""
     with _patch_store():
         # Mock the _create_new_conversation function to raise MissingSettingsError
@@ -369,25 +373,15 @@ async def test_new_conversation_missing_settings():
                 'Settings not found'
             )
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                selected_repository=test_repo,
+                repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
             )
 
             # Call new_conversation
-            response = await new_conversation(
-                data=test_request, user_id='test_user', provider_tokens={}
-            )
+            response = await create_new_test_conversation(test_request)
 
             # Verify the response
             assert isinstance(response, JSONResponse)
@@ -409,17 +403,9 @@ async def test_new_conversation_invalid_api_key():
                 'Error authenticating with the LLM provider. Please check your API key'
             )
 
-            # Create test data
-            test_repo = Repository(
-                id=12345,
-                full_name='test/repo',
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                selected_repository=test_repo,
+                repo='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
             )
@@ -496,3 +482,120 @@ async def test_delete_conversation():
                     mock_runtime_cls.delete.assert_called_once_with(
                         'some_conversation_id'
                     )
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_bearer_auth(provider_handler_mock):
+    """Test creating a new conversation with bearer authentication."""
+    with _patch_store():
+        # Mock the _create_new_conversation function
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Create the request object
+            test_request = InitSessionRequest(
+                conversation_trigger=ConversationTrigger.GUI,  # This should be overridden
+                repository='test/repo',
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+            )
+
+            # Call new_conversation with auth_type=BEARER
+            response = await create_new_test_conversation(test_request, AuthType.BEARER)
+
+            # Verify the response
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 200
+
+            # Verify that _create_new_conversation was called with REMOTE_API_KEY trigger
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert (
+                call_args['conversation_trigger'] == ConversationTrigger.REMOTE_API_KEY
+            )
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_null_repository():
+    """Test creating a new conversation with null repository."""
+    with _patch_store():
+        # Mock the _create_new_conversation function
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Create the request object with null repository
+            test_request = InitSessionRequest(
+                conversation_trigger=ConversationTrigger.GUI,
+                repository=None,  # Explicitly set to None
+                selected_branch=None,
+                initial_user_msg='Hello, agent!',
+            )
+
+            # Call new_conversation
+            response = await create_new_test_conversation(test_request)
+
+            # Verify the response
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 200
+
+            # Verify that _create_new_conversation was called with None repository
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert call_args['selected_repository'] is None
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_provider_authentication_error(
+    provider_handler_mock,
+):
+    provider_handler_mock.verify_repo_provider = AsyncMock(
+        side_effect=AuthenticationError('auth error')
+    )
+
+    """Test creating a new conversation when provider authentication fails."""
+    with _patch_store():
+        # Mock the _create_new_conversation function
+        with patch(
+            'openhands.server.routes.manage_conversations._create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = 'test_conversation_id'
+
+            # Create the request object
+            test_request = InitSessionRequest(
+                conversation_trigger=ConversationTrigger.GUI,
+                repository='test/repo',
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+            )
+
+            # Call new_conversation
+            response = await new_conversation(
+                data=test_request,
+                user_id='test_user',
+                provider_tokens={'github': 'token123'},
+                auth_type=None,
+            )
+
+            # Verify the response
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 400
+            assert json.loads(response.body.decode('utf-8')) == {
+                'status': 'error',
+                'message': 'auth error',
+                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
+            }
+
+            # Verify that verify_repo_provider was called with the repository
+            provider_handler_mock.verify_repo_provider.assert_called_once_with(
+                'test/repo', None
+            )
+
+            # Verify that _create_new_conversation was not called
+            mock_create_conversation.assert_not_called()
