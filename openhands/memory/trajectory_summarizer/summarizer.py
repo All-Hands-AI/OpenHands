@@ -181,6 +181,16 @@ class TrajectoryProcessor:
             ):
                 processed_item['observation'] = item['observation']
 
+            # Add thought if available in args
+            if (
+                item.get('args')
+                and isinstance(item['args'], dict)
+                and item['args'].get('thought')
+                and isinstance(item['args']['thought'], str)
+                and item['args']['thought'].strip()
+            ):
+                processed_item['thought'] = item['args']['thought']
+
             # Format timestamp if available
             if item.get('timestamp'):
                 try:

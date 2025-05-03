@@ -18,6 +18,7 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
+  eventID?: number; // add id
 }
 
 export function ExpandableMessage({
@@ -25,6 +26,7 @@ export function ExpandableMessage({
   message,
   type,
   success,
+  eventID, // add id
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -36,7 +38,12 @@ export function ExpandableMessage({
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
       setDetails(message);
-      setShowDetails(false);
+
+      // If the message contains a thought (indicated by multiple paragraphs),
+      // we want to show the details by default
+      const hasThought =
+        message.includes("\n\n") && message.split("\n\n").length > 1;
+      setShowDetails(hasThought);
     }
   }, [id, message, i18n.language]);
 
@@ -75,6 +82,9 @@ export function ExpandableMessage({
       )}
     >
       <div className="text-sm w-full">
+        {eventID !== undefined && ( // add id
+          <div className="text-xs text-tertiary-light mb-1">ID: {eventID}</div>
+        )}
         <div className="flex flex-row justify-between items-center w-full">
           <span
             className={cn(
@@ -94,14 +104,18 @@ export function ExpandableMessage({
                     <ArrowUp
                       className={cn(
                         "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-tertiary-light",
+                        type === "error"
+                          ? "fill-danger"
+                          : "fill-tertiary-light",
                       )}
                     />
                   ) : (
                     <ArrowDown
                       className={cn(
                         "h-4 w-4 ml-2 inline",
-                        type === "error" ? "fill-danger" : "fill-tertiary-light",
+                        type === "error"
+                          ? "fill-danger"
+                          : "fill-tertiary-light",
                       )}
                     />
                   )}

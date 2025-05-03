@@ -10,11 +10,13 @@ import { anchor } from "../markdown/anchor";
 interface ChatMessageProps {
   type: "user" | "assistant";
   message: string;
+  id?: number;  // add id
 }
 
 export function ChatMessage({
   type,
   message,
+  id, // add id
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
@@ -57,6 +59,9 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
+      {id !== undefined && ( // add id
+        <div className="text-xs text-tertiary-light mb-1">ID: {id}</div>
+      )}
       <div className="text-sm overflow-auto break-words">
         <Markdown
           components={{

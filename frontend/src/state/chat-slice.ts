@@ -44,6 +44,10 @@ const initialState: SliceState = {
   messages: [],
 };
 
+function hasThought(args: any): args is { thought: string } {
+  return args && typeof args.thought === 'string';
+}
+
 export const chatSlice = createSlice({
   name: "chat",
   initialState,
@@ -127,6 +131,8 @@ export const chatSlice = createSlice({
       } else if (actionID === "think") {
         text = action.payload.args.thought;
       }
+
+      // Create the message object
       const message: Message = {
         type: "action",
         sender: "assistant",
@@ -136,6 +142,11 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
       };
+
+      // Add thought as a separate property if available
+      if (hasThought(action.payload.args) && actionID !== "think") {
+        message.thought = action.payload.args.thought;
+      }
 
       state.messages.push(message);
     },

@@ -26,6 +26,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               id={message.translationID}
               message={message.content}
               success={message.success}
+              eventID={message.eventID} // add id
             />
             {shouldShowConfirmationButtons && <ConfirmationButtons />}
           </div>
@@ -37,6 +38,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           key={index}
           type={message.sender}
           message={message.content}
+          id={message.eventID} // add id
         >
           {message.imageUrls && message.imageUrls.length > 0 && (
             <ImageCarousel size="small" images={message.imageUrls} />
