@@ -159,8 +159,13 @@ async def load_custom_secrets_names(
                 content={'error': 'User secrets not found'},
             )
         
-        custom_secrets = list(user_secrets.custom_secrets.keys())
+        custom_secrets = {}
+        if user_secrets.custom_secrets:
+            for secret_name, secret_value in user_secrets.custom_secrets.items():
+                custom_secrets[secret_name] = secret_value.description
+        
         return GETCustomSecrets(custom_secrets=custom_secrets)
+
     
     except Exception as e:
         logger.warning(f'Invalid token: {e}')

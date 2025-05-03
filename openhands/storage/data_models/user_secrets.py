@@ -10,7 +10,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.json import pydantic_encoder
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA, ProviderToken
+from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA, CustomSecret, ProviderToken
 from openhands.integrations.service_types import ProviderType
 
 
@@ -23,11 +23,11 @@ class UserSecrets(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    model_config = ConfigDict(
-        frozen=True,
-        validate_assignment=True,
-        arbitrary_types_allowed=True,
-    )
+    model_config = {
+        'frozen': True,
+        'validate_assignment': True,
+        'arbitrary_types_allowed': True,
+    }
 
 
     @field_serializer('provider_tokens')
@@ -63,12 +63,14 @@ class UserSecrets(BaseModel):
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
         if custom_secrets:
-            for secret_name, secret_key in custom_secrets.items():
-                secrets[secret_name] = (
-                    secret_key.get_secret_value()
+            for secret_name, secret_value in custom_secrets.items():
+                secrets[secret_name] = {
+                    'secret': secret_value.secret.get_secret_value()
                     if expose_secrets
-                    else pydantic_encoder(secret_key)
-                )
+                    else pydantic_encoder(secret_value.secret),
+                    'description': secret_value.description,
+                }
+
         return secrets
 
     @model_validator(mode='before')
@@ -110,10 +112,10 @@ class UserSecrets(BaseModel):
             if isinstance(secrets, dict):
                 converted_secrets = {}
                 for key, value in secrets.items():
-                    if isinstance(value, str):
-                        converted_secrets[key] = SecretStr(value)
-                    elif isinstance(value, SecretStr):
-                        converted_secrets[key] = value
+                    try:
+                        converted_secrets[key] = CustomSecret.from_value(value)
+                    except ValueError:
+                        continue
 
                 new_data['custom_secrets'] = MappingProxyType(converted_secrets)
             elif isinstance(secrets, MappingProxyType):
