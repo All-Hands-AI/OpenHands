@@ -24,22 +24,20 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <div className="text-sm font-medium">
-          {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
-        </div>
+        <div>{t(I18nKey.SETTINGS$MCP_CONFIGURATION)}</div>
         <div className="flex items-center">
           <a
             href="https://docs.all-hands.dev/modules/usage/mcp"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-blue-400 hover:underline mr-3"
+            className="text-sm text-blue-400 hover:underline mr-3"
             onClick={(e) => e.stopPropagation()}
           >
             Documentation
           </a>
           <button
             type="button"
-            className="text-xs bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
+            className="text-sm bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
             onClick={() => setIsEditing(!isEditing)}
           >
             {isEditing
@@ -55,18 +53,13 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         ) : (
           <>
             <div className="flex flex-col gap-4">
-              <div className="mb-3">
-                <MCPSSEServers servers={config.sse_servers} />
-              </div>
-
-              <div>
-                <MCPStdioServers servers={config.stdio_servers} />
-              </div>
+              <MCPSSEServers servers={config.sse_servers} />
+              <MCPStdioServers servers={config.stdio_servers} />
             </div>
 
             {config.sse_servers.length === 0 &&
               config.stdio_servers.length === 0 && (
-                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
+                <div className="mt-2 text-sm font-medium text-white">
                   {t(I18nKey.SETTINGS$MCP_NO_SERVERS_CONFIGURED)}
                 </div>
               )}
