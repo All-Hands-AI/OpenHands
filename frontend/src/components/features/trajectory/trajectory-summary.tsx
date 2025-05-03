@@ -23,180 +23,151 @@ export function TrajectorySummary({
     Record<string, boolean>
   >({});
 
-  // Initialize all segments as expanded
+  // Only expand the latest segment on mount / whenever `segments` changes
   React.useEffect(() => {
-    const initialExpandedState: Record<string, boolean> = {};
-    segments.forEach((segment, index) => {
-      initialExpandedState[index.toString()] = true;
+    const init: Record<string, boolean> = {};
+    segments.forEach((_, i) => {
+      init[i.toString()] = i === segments.length - 1;
     });
-    setExpandedSegments(initialExpandedState);
+    setExpandedSegments(init);
   }, [segments]);
 
-  const toggleSegment = (index: string) => {
+  const toggleSegment = (idx: string) => {
     setExpandedSegments((prev) => ({
       ...prev,
-      [index]: !prev[index],
+      [idx]: !prev[idx],
     }));
   };
 
-  // Group messages by segment
   const getMessagesForSegment = (
     segmentIds: number[],
     segmentIndex: number,
     totalSegments: number,
-    segment: TrajectorySummarySegment,
-  ) => {
-    // If no segment IDs are provided, try to estimate which messages belong to this segment
+    segment: TrajectorySummarySegment
+  ): Message[] => {
+    // 0) No IDs ⇒ just evenly split
     if (!segmentIds || segmentIds.length === 0) {
-      // If we have no IDs, try to divide messages evenly among segments
-      const messagesPerSegment = Math.ceil(messages.length / totalSegments);
-      const startIdx = segmentIndex * messagesPerSegment;
-      const endIdx = Math.min(startIdx + messagesPerSegment, messages.length);
-
-      return messages.slice(startIdx, endIdx);
+      const per = Math.ceil(messages.length / totalSegments);
+      const start = segmentIndex * per;
+      const end = Math.min(start + per, messages.length);
+      return messages.slice(start, end);
     }
 
-    // First try to match by exact event ID
-    const matchedMessages = messages.filter((message) => {
-      const messageId = message.eventID;
-      return messageId !== undefined && segmentIds.includes(messageId);
-    });
-
-    // If we found messages, return them
-    if (matchedMessages.length > 0) {
-      // Sort messages by their original order in the messages array
-      // This preserves the conversation flow
-      const messageIndices = matchedMessages.map((msg) =>
-        messages.findIndex((m) => m.eventID === msg.eventID),
+    // 1) exact-ID matching
+    const byId = messages.filter(
+      (m) => m.eventID !== undefined && segmentIds.includes(m.eventID!)
+    );
+    if (byId.length > 0) {
+      const seen = new Set<string>();
+      const unique = byId.filter((m) => {
+        const key = `${m.eventID}_${m.type}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return unique.sort(
+        (a, b) =>
+          messages.findIndex((m) => m === a) -
+          messages.findIndex((m) => m === b)
       );
-
-      // Get the min and max indices to include all messages between them
-      const minIndex = Math.min(...messageIndices);
-      const maxIndex = Math.max(...messageIndices);
-
-      // Return all messages between min and max indices to include the complete conversation
-      return messages.slice(minIndex, maxIndex + 1);
     }
 
-    // If no messages were found by exact ID match, try to match by string conversion
-    // This handles cases where IDs might be stored as strings in one place and numbers in another
-    const stringMatchedMessages = messages.filter((message) => {
-      const messageId = message.eventID;
-      if (messageId === undefined) return false;
-
-      // Try to match by converting both to strings
-      return segmentIds.some((id) => String(id) === String(messageId));
-    });
-
-    if (stringMatchedMessages.length > 0) {
-      // Sort messages by their original order in the messages array
-      const messageIndices = stringMatchedMessages.map(() =>
-        messages.findIndex(
-          (m) =>
-            m.eventID !== undefined &&
-            segmentIds.some((id) => String(id) === String(m.eventID)),
-        ),
+    // 2) string-ID fallback
+    const byStringId = messages.filter((m) => {
+      return (
+        m.eventID !== undefined &&
+        segmentIds.some((id) => String(id) === String(m.eventID))
       );
-
-      // Get the min and max indices to include all messages between them
-      const minIndex = Math.min(...messageIndices);
-      const maxIndex = Math.max(...messageIndices);
-
-      // Return all messages between min and max indices to include the complete conversation
-      return messages.slice(minIndex, maxIndex + 1);
+    });
+    if (byStringId.length > 0) {
+      const seen2 = new Set<string>();
+      const unique2 = byStringId.filter((m) => {
+        const key = `${m.eventID}_${m.type}`;
+        if (seen2.has(key)) return false;
+        seen2.add(key);
+        return true;
+      });
+      return unique2.sort(
+        (a, b) =>
+          messages.findIndex((m) => m === a) -
+          messages.findIndex((m) => m === b)
+      );
     }
 
-    // If we still couldn't find any messages, try to use timestamp ranges if available
+    // 3) timestamp-range matching
     if (
       (segment.start_timestamp && segment.end_timestamp) ||
       segment.timestamp_range
     ) {
-      let startTime;
-      let endTime;
-
+      let startTime: number | undefined;
+      let endTime: number | undefined;
       try {
-        // First try to use the start_timestamp and end_timestamp directly
         if (segment.start_timestamp && segment.end_timestamp) {
           startTime = new Date(
-            `2000-01-01 ${segment.start_timestamp}`,
+            `2000-01-01 ${segment.start_timestamp}`
           ).getTime();
           endTime = new Date(`2000-01-01 ${segment.end_timestamp}`).getTime();
         } else if (segment.timestamp_range) {
-          // If that fails, try to extract from timestamp_range
-          const [startStr, endStr] = segment.timestamp_range.split("-");
-          if (startStr && endStr) {
-            startTime = new Date(`2000-01-01 ${startStr.trim()}`).getTime();
-            endTime = new Date(`2000-01-01 ${endStr.trim()}`).getTime();
+          const [s, e] = segment.timestamp_range.split("-");
+          if (s && e) {
+            startTime = new Date(`2000-01-01 ${s.trim()}`).getTime();
+            endTime = new Date(`2000-01-01 ${e.trim()}`).getTime();
           }
         }
-      } catch (e) {
-        // If parsing fails, we can't match by timestamp
-        startTime = undefined;
-        endTime = undefined;
+      } catch {
+        startTime = endTime = undefined;
       }
 
-      if (startTime && endTime) {
-        const timestampFilteredMessages = messages.filter((message) => {
-          if (!message.timestamp) return false;
-
-          // Convert message timestamp to comparable format
-          let msgTime;
+      if (startTime !== undefined && endTime !== undefined) {
+        const tsMatched = messages.filter((m) => {
+          if (!m.timestamp) return false;
+          let t: number;
           try {
-            msgTime = new Date(message.timestamp).getTime();
-          } catch (e) {
-            // If parsing fails, try to extract just the time part
-            const timeMatch = message.timestamp.match(
-              /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/,
+            t = new Date(m.timestamp).getTime();
+          } catch {
+            const match = m.timestamp.match(
+              /(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/
             );
-            if (timeMatch) {
-              const [, hours, minutes, seconds = "0"] = timeMatch;
-              msgTime = new Date(
-                `2000-01-01 ${hours}:${minutes}:${seconds}`,
-              ).getTime();
-            } else {
-              return false;
-            }
+            if (!match) return false;
+            const [, hh, mm, ss = "0"] = match;
+            t = new Date(`2000-01-01 ${hh}:${mm}:${ss}`).getTime();
           }
-
-          return msgTime >= startTime && msgTime <= endTime;
+          return t >= startTime! && t <= endTime!;
         });
 
-        if (timestampFilteredMessages.length > 0) {
-          // Find the indices of the first and last matching messages
-          const messageIndices = timestampFilteredMessages.map((msg) =>
-            messages.findIndex((m) => m === msg),
+        if (tsMatched.length > 0) {
+          const seen3 = new Set<string>();
+          const unique3 = tsMatched.filter((m) => {
+            const key = `${m.eventID}_${m.type}`;
+            if (seen3.has(key)) return false;
+            seen3.add(key);
+            return true;
+          });
+          return unique3.sort(
+            (a, b) =>
+              messages.findIndex((m) => m === a) -
+              messages.findIndex((m) => m === b)
           );
-
-          // Get the min and max indices to include all messages between them
-          const minIndex = Math.min(...messageIndices);
-          const maxIndex = Math.max(...messageIndices);
-
-          // Return all messages between min and max indices to include the complete conversation
-          return messages.slice(minIndex, maxIndex + 1);
         }
       }
     }
 
-    // If we have a timestamp range but couldn't match any messages, try to estimate based on the segment index
+    // 4) timestamp-only fallback
     if (segment.timestamp_range) {
-      // Calculate approximate position in the message array based on segment index
-      const segmentPosition =
-        totalSegments > 1 ? segmentIndex / (totalSegments - 1) : 0; // 0 to 1
-      const startIdx = Math.floor(segmentPosition * messages.length * 0.5); // Start at half the proportional position
+      const pos = totalSegments > 1 ? segmentIndex / (totalSegments - 1) : 0;
+      const startIdx = Math.floor(pos * messages.length * 0.5);
       const endIdx = Math.min(
         startIdx + Math.ceil(messages.length / totalSegments),
-        messages.length,
+        messages.length
       );
-
+      // … if you really want this split, you could dedupe+sort here too …
       return messages.slice(startIdx, endIdx);
     }
 
-    // If there's only one segment, return all messages
-    if (totalSegments === 1) {
-      return messages;
-    }
+    // 5) single segment ⇒ all
+    if (totalSegments === 1) return messages;
 
-    // If all else fails, return an empty array
+    // fallback: nothing
     return [];
   };
 
@@ -211,15 +182,14 @@ export function TrajectorySummary({
       </div>
 
       {/* Segments */}
-      {segments.map((segment, index) => (
+      {segments.map((segment, idx) => (
         <div
-          key={index}
+          key={idx}
           className="border border-tertiary rounded-lg overflow-hidden"
         >
-          {/* Segment Header */}
           <div
             className="bg-base-secondary p-3 flex justify-between items-center cursor-pointer hover:bg-tertiary transition-colors"
-            onClick={() => toggleSegment(index.toString())}
+            onClick={() => toggleSegment(idx.toString())}
           >
             <div>
               <h3 className="font-medium text-content">{segment.title}</h3>
@@ -228,7 +198,8 @@ export function TrajectorySummary({
               </p>
             </div>
             <div className="text-tertiary-light">
-              {expandedSegments[index.toString()] ? (
+              {expandedSegments[idx.toString()] ? (
+                /* Chevron up */
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5"
@@ -242,6 +213,7 @@ export function TrajectorySummary({
                   />
                 </svg>
               ) : (
+                /* Chevron down */
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5"
@@ -258,95 +230,64 @@ export function TrajectorySummary({
             </div>
           </div>
 
-          {/* Segment Content */}
-          {expandedSegments[index.toString()] && (
+          {expandedSegments[idx.toString()] && (
             <div className="p-3 bg-base">
               <div className="mb-3">
                 <p className="text-content">{segment.summary}</p>
               </div>
 
-              {/* Messages in this segment */}
               <div className="flex flex-col gap-2 mt-4">
                 {(() => {
-                  const segmentMessages = getMessagesForSegment(
+                  const segMsgs = getMessagesForSegment(
                     segment.ids,
-                    index,
+                    idx,
                     segments.length,
-                    segment,
+                    segment
                   );
-
-                  // Debug information is commented out for production
-                  /*
-                  console.log(`Segment ${index} - ${segment.title}:`, {
-                    ids: segment.ids,
-                    timestamp_range: segment.timestamp_range,
-                    messageCount: segmentMessages.length,
-                    messages: segmentMessages.map((m) => ({
-                      id: m.eventID,
-                      sender: m.sender,
-                      content: m.content
-                        ? m.content.substring(0, 50) + (m.content.length > 50 ? "..." : "")
-                        : "",
-                    })),
-                  });
-                  */
-
-                  if (segmentMessages.length === 0) {
+                  if (segMsgs.length === 0) {
                     return (
                       <div className="text-tertiary-light italic text-sm p-2">
-                        No messages found for this segment. This may be due to
-                        missing message IDs in the summary.
+                        No messages found for this segment.
                       </div>
                     );
                   }
-
-                  return segmentMessages.map((message, msgIndex) => {
-                    const shouldShowConfirmationButtons =
-                      messages.length - 1 === msgIndex &&
-                      message.sender === "assistant" &&
+                  return segMsgs.map((msg, mi) => {
+                    const showConfirm =
+                      messages.length - 1 === mi &&
+                      msg.sender === "assistant" &&
                       isAwaitingUserConfirmation;
-
-                    if (message.type === "error" || message.type === "action") {
+                    if (msg.type === "error" || msg.type === "action") {
                       return (
-                        <div key={msgIndex} className="text-content">
-                          {/* Display thought as a separate message if it exists */}
-                          {message.thought && (
+                        <div key={mi} className="text-content">
+                          {msg.thought && (
                             <ChatMessage
                               type="assistant"
-                              message={message.thought}
-                              id={message.eventID}
+                              message={msg.thought}
+                              id={msg.eventID}
                             />
                           )}
                           <ExpandableMessage
-                            type={message.type}
-                            id={message.translationID}
-                            message={message.content}
-                            success={message.success}
-                            eventID={message.eventID} // display message id
+                            type={msg.type}
+                            id={msg.translationID}
+                            message={msg.content}
+                            success={msg.success}
+                            eventID={msg.eventID}
                           />
-                          {shouldShowConfirmationButtons && (
-                            <ConfirmationButtons />
-                          )}
+                          {showConfirm && <ConfirmationButtons />}
                         </div>
                       );
                     }
-
                     return (
                       <ChatMessage
-                        key={msgIndex}
-                        type={message.sender}
-                        message={message.content}
-                        id={message.eventID} // display message id
+                        key={mi}
+                        type={msg.sender}
+                        message={msg.content}
+                        id={msg.eventID}
                       >
-                        {message.imageUrls && message.imageUrls.length > 0 && (
-                          <ImageCarousel
-                            size="small"
-                            images={message.imageUrls}
-                          />
+                        {msg.imageUrls && msg.imageUrls.length > 0 && (
+                          <ImageCarousel size="small" images={msg.imageUrls} />
                         )}
-                        {shouldShowConfirmationButtons && (
-                          <ConfirmationButtons />
-                        )}
+                        {showConfirm && <ConfirmationButtons />}
                       </ChatMessage>
                     );
                   });
