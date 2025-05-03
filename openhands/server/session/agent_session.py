@@ -17,7 +17,6 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.integrations.service_types import Repository
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -420,9 +419,7 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(
-                    selected_repository, repo_directory
-                )
+                memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:

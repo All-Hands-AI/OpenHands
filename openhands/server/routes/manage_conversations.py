@@ -14,7 +14,11 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
-from openhands.integrations.service_types import AuthenticationError, ProviderType, Repository, SuggestedTask
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    ProviderType,
+    SuggestedTask,
+)
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -45,7 +49,6 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 
-
 app = APIRouter(prefix='/api')
 
 
@@ -58,7 +61,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
-    
+
 
 async def _create_new_conversation(
     user_id: str | None,
@@ -71,10 +74,13 @@ async def _create_new_conversation(
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ):
-    
     logger.info(
         'Creating conversation',
-        extra={'signal': 'create_conversation', 'user_id': user_id, 'trigger': conversation_trigger.value},
+        extra={
+            'signal': 'create_conversation',
+            'user_id': user_id,
+            'trigger': conversation_trigger.value,
+        },
     )
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -163,7 +169,7 @@ async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
-    auth_type: AuthType | None = Depends(get_auth_type)
+    auth_type: AuthType | None = Depends(get_auth_type),
 ):
     """Initialize a new session or join an existing one.
 
@@ -202,7 +208,7 @@ async def new_conversation(
             initial_user_msg=initial_user_msg,
             image_urls=image_urls,
             replay_json=replay_json,
-            conversation_trigger=conversation_trigger
+            conversation_trigger=conversation_trigger,
         )
 
         return JSONResponse(
@@ -227,13 +233,13 @@ async def new_conversation(
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    
+
     except AuthenticationError as e:
         return JSONResponse(
             content={
                 'status': 'error',
                 'message': str(e),
-                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
+                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )

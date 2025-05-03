@@ -1,4 +1,3 @@
-import asyncio
 import os
 import tempfile
 import threading
@@ -45,6 +44,7 @@ from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
+
 
 def _is_retryable_error(exception):
     return isinstance(
@@ -358,26 +358,27 @@ class ActionExecutionClient(Runtime):
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         # Import here to avoid circular imports
-        from openhands.mcp.utils import create_mcp_clients, call_tool_mcp as call_tool_mcp_handler
-        
+        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+        from openhands.mcp.utils import create_mcp_clients
+
         # Get the updated MCP config
         updated_mcp_config = self.get_updated_mcp_config()
         self.log(
             'debug',
             f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
         )
-        
+
         # Create clients for this specific operation
         mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
-        
+
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
         result = await call_tool_mcp_handler(mcp_clients, action)
-        
+
         # Reset client state (no active connections to worry about)
         for client in mcp_clients:
             await client.disconnect()
-            
+
         return result
 
     def close(self) -> None:
