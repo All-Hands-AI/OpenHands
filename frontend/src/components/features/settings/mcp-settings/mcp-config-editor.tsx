@@ -31,7 +31,6 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
         </p>
       </div>
-      
       <div className="flex justify-between items-center mb-4">
         <div className="text-sm font-medium">
           {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
