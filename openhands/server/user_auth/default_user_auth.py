@@ -49,21 +49,24 @@ class DefaultUserAuth(UserAuth):
         self._settings = settings
         return settings
 
-    async def get_secrets_store(self) -> SecretsStore:
+    async def get_secrets_store(self):
         secrets_store = self._secrets_store
         if secrets_store:
             return secrets_store
         user_id = await self.get_user_id()
-        secret_store: SecretsStore = await shared.SecretStoreImpl.get_instance(
+        secret_store = await shared.SecretsStoreImpl.get_instance(
             shared.config, user_id
         )
         self._secrets_store = secret_store
         return secret_store
 
     async def get_user_secrets(self) -> UserSecrets | None:
+        user_secrets = self._user_secrets
+        if user_secrets:
+            return user_secrets
         secrets_store = await self.get_secrets_store()
-        if secrets_store: 
-            user_secrets = await secrets_store.load()
+        user_secrets = await secrets_store.load()
+        self._user_secrets = user_secrets
         return user_secrets
 
 

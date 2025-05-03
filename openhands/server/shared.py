@@ -52,7 +52,7 @@ conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
 
 SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 
-SecretStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
+SecretsStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
 
 ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
