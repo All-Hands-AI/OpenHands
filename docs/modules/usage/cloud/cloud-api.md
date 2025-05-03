@@ -10,7 +10,7 @@ For more detailed information about the API, refer to the [OpenHands API Referen
 To use the OpenHands Cloud API, you'll need to generate an API key:
 
 1. Log in to your [OpenHands Cloud](https://app.all-hands.dev) account
-2. Navigate to the [Settings page](https://app.all-hands.dev/settings) by clicking on your profile icon in the bottom-left corner
+2. Navigate to the [Settings page](https://app.all-hands.dev/settings)
 3. Locate the "API Keys" section
 4. Click "Generate New Key"
 5. Give your key a descriptive name (e.g., "Development", "Production")
@@ -172,6 +172,6 @@ The response is formatted as follows:
 
 ## Rate Limits
 
-The API has a limit of 3 simultaneous conversations per account. If you need a higher limit for your use case, please contact us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
+The API has a limit of 10 simultaneous conversations per account. If you need a higher limit for your use case, please contact us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
 
 If you exceed this limit, the API will return a 429 Too Many Requests response.

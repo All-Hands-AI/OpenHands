@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
-    ProviderToken,
     ProviderType,
     SecretStore,
 )
@@ -20,7 +18,6 @@ from openhands.server.shared import config
 from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
-    get_user_id,
     get_user_settings,
     get_user_settings_store,
 )
@@ -31,7 +28,6 @@ app = APIRouter(prefix='/api')
 
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(
-    user_id: str | None = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings: Settings | None = Depends(get_user_settings),
 ) -> GETSettingsModel | JSONResponse:
@@ -42,19 +38,11 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-        provider_tokens_set = {}
-
-        if bool(user_id):
-            provider_tokens_set[ProviderType.GITHUB.value] = True
-
+        provider_tokens_set: dict[ProviderType, str | None]  = {}
         if provider_tokens:
-            all_provider_types = [provider.value for provider in ProviderType]
-            provider_tokens_types = [provider.value for provider in provider_tokens]
-            for provider_type in all_provider_types:
-                if provider_type in provider_tokens_types:
-                    provider_tokens_set[provider_type] = True
-                else:
-                    provider_tokens_set[provider_type] = False
+            for provider_type, provider_token in provider_tokens.items():
+                if provider_token.token or provider_token.user_id:
+                    provider_tokens_set[provider_type] = None
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
@@ -220,20 +208,14 @@ async def reset_settings() -> JSONResponse:
 
 async def check_provider_tokens(settings: POSTSettingsModel) -> str:
     if settings.provider_tokens:
-        # Remove extraneous token types
-        provider_types = [provider.value for provider in ProviderType]
-        settings.provider_tokens = {
-            k: v for k, v in settings.provider_tokens.items() if k in provider_types
-        }
-
         # Determine whether tokens are valid
-        for token_type, token_value in settings.provider_tokens.items():
-            if token_value:
+        for provider_type, provider_token in settings.provider_tokens.items():
+            if provider_token.token:
                 confirmed_token_type = await validate_provider_token(
-                    SecretStr(token_value)
+                    provider_token.token
                 )
-                if not confirmed_token_type or confirmed_token_type.value != token_type:
-                    return f'Invalid token. Please make sure it is a valid {token_type} token.'
+                if not confirmed_token_type or confirmed_token_type != provider_type:
+                    return f'Invalid token. Please make sure it is a valid {provider_type.value} token.'
 
     return ''
 
@@ -243,33 +225,27 @@ async def store_provider_tokens(
 ):
     existing_settings = await settings_store.load()
     if existing_settings:
-        if settings.provider_tokens:
-            if existing_settings.secrets_store:
-                existing_providers = [
-                    provider.value
-                    for provider in existing_settings.secrets_store.provider_tokens
-                ]
+        if existing_settings.secrets_store:
+            existing_providers = [
+                provider
+                for provider in existing_settings.secrets_store.provider_tokens
+            ]
 
-                # Merge incoming settings store with the existing one
-                for provider, token_value in list(settings.provider_tokens.items()):
-                    if provider in existing_providers and not token_value:
-                        provider_type = ProviderType(provider)
-                        existing_token = (
-                            existing_settings.secrets_store.provider_tokens.get(
-                                provider_type
-                            )
+            # Merge incoming settings store with the existing one
+            for provider_type, provider_value in list(settings.provider_tokens.items()):
+                if provider_type in existing_providers and not provider_value.token:
+                    existing_token = (
+                        existing_settings.secrets_store.provider_tokens.get(
+                            provider_type
                         )
-                        if existing_token and existing_token.token:
-                            settings.provider_tokens[provider] = (
-                                existing_token.token.get_secret_value()
-                            )
-        else:  # nothing passed in means keep current settings
-            provider_tokens = existing_settings.secrets_store.provider_tokens
-            settings.provider_tokens = {
-                provider.value: data.token.get_secret_value() if data.token else None
-                for provider, data in provider_tokens.items()
-            }
+                    )
+                    if existing_token and existing_token.token:
+                        settings.provider_tokens[provider_type] = existing_token
 
+        else:  # nothing passed in means keep current settings
+            provider_tokens = dict(existing_settings.secrets_store.provider_tokens)
+            settings.provider_tokens = provider_tokens
+        
     return settings
 
 
@@ -357,17 +333,8 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
 
     # Create new provider tokens immutably
     if settings_with_token_data.provider_tokens:
-        tokens = {}
-        for token_type, token_value in settings_with_token_data.provider_tokens.items():
-            if token_value:
-                provider = ProviderType(token_type)
-                tokens[provider] = ProviderToken(
-                    token=SecretStr(token_value), user_id=None
-                )
-
-        # Create new SecretStore with tokens
         settings = settings.model_copy(
-            update={'secrets_store': SecretStore(provider_tokens=tokens)}
+            update={'secrets_store': SecretStore(provider_tokens=settings_with_token_data.provider_tokens)}
         )
 
     return settings

@@ -60,6 +60,10 @@ PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
+CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
+    CUSTOM_SECRETS_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class SecretStore(BaseModel):
@@ -67,8 +71,8 @@ class SecretStore(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
-        default_factory=lambda: MappingProxyType({})
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
+        default_factory=lambda: MappingProxyType({}),
     )
 
     model_config = {
@@ -393,3 +397,22 @@ class ProviderHandler:
         Map ProviderType value to the environment variable name in the runtime
         """
         return f'{provider.value}_token'.lower()
+
+    async def verify_repo_provider(
+        self, repository: str, specified_provider: ProviderType | None = None
+    ):
+        if specified_provider:
+            try:
+                service = self._get_service(specified_provider)
+                return await service.get_repository_details_from_repo_name(repository)
+            except Exception:
+                pass
+
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                return await service.get_repository_details_from_repo_name(repository)
+            except Exception:
+                pass
+
+        raise AuthenticationError(f'Unable to access repo {repository}')
