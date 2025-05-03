@@ -163,9 +163,7 @@ def test_multiple_custom_volumes():
 
     # Test with multiple custom volumes
     runtime.config = MagicMock()
-    runtime.config.custom_volumes = (
-        '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
-    )
+    runtime.config.custom_volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 
