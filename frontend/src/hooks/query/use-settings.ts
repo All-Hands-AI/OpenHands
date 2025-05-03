@@ -23,7 +23,6 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
-    PROVIDER_TOKENS: apiSettings.provider_tokens,
     IS_NEW_USER: false,
   };
 };
@@ -58,13 +57,11 @@ export const useSettings = () => {
   React.useEffect(() => {
     if (query.data?.PROVIDER_TOKENS_SET) {
       const providers = query.data.PROVIDER_TOKENS_SET;
-      const setProviders = (
-        Object.keys(providers) as Array<keyof typeof providers>
-      ).filter((key) => providers[key]);
+      const setProviders = Object.keys(providers) as Array<
+        keyof typeof providers
+      >;
       setProviderTokensSet(setProviders);
-      const atLeastOneSet = Object.values(query.data.PROVIDER_TOKENS_SET).some(
-        (value) => value,
-      );
+      const atLeastOneSet = setProviders.length > 0;
       setProvidersAreSet(atLeastOneSet);
     }
   }, [query.data?.PROVIDER_TOKENS_SET, query.isFetched]);

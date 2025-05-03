@@ -27,7 +27,7 @@ describe("AuthModal", () => {
 
   it("should render the GitHub and GitLab buttons", () => {
     render(<AuthModal githubAuthUrl="mock-url" appMode="saas" />);
-    
+
     const githubButton = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
     const gitlabButton = screen.getByRole("button", { name: "GITLAB$CONNECT_TO_GITLAB" });
 
