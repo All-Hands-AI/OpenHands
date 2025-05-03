@@ -50,6 +50,9 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
         event_dict = event_to_dict(action)
         args = event_dict.get('args', {})
         thought = args.pop('thought', None)
+        # Remove prompt field from arguments for AgentDelegateAction
+        if hasattr(action, 'prompt'):
+            args.pop('prompt', None)
         function = Function(name=action.action, arguments=args)
         if thought is not None:
             inv_trace.append(Message(role='assistant', content=thought))
