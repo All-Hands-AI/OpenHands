@@ -29,7 +29,7 @@ To start a new conversation with OpenHands performing a task, you'll need to mak
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `initial_user_msg` | string | Yes | The initial message to start the conversation |
-| `repository` | string | No | GitHub repository URL to provide context (must be a repository you've granted access to) |
+| `repository` | string | No | GitHub repository name to provide context in the format `owner/repo`. You must have access to the repo. |
 
 #### Examples
 
@@ -42,7 +42,7 @@ curl -X POST "https://app.all-hands.dev/api/conversations" \
   -H "Content-Type: application/json" \
   -d '{
     "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-    "repository": "https://github.com/yourusername/your-repo"
+    "repository": "yourusername/your-repo"
   }'
 ```
 </details>
@@ -63,7 +63,7 @@ headers = {
 
 data = {
     "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-    "repository": "https://github.com/yourusername/your-repo"
+    "repository": "yourusername/your-repo"
 }
 
 response = requests.post(url, headers=headers, json=data)
@@ -88,7 +88,7 @@ const headers = {
 
 const data = {
   initial_user_msg: "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-  repository: "https://github.com/yourusername/your-repo"
+  repository: "yourusername/your-repo"
 };
 
 async function startConversation() {
@@ -126,6 +126,13 @@ The API will return a JSON object with details about the created conversation:
 }
 ```
 
+You may also receive an `AuthenticationError` if:
+
+1. You provided an invalid API key
+2. You provided the wrong repo name
+3. You don't have access to the repo
+
+
 ### Retrieving Conversation Status
 
 You can check the status of a conversation by making a GET request to the conversation endpoint.
@@ -149,6 +156,8 @@ curl -X GET "https://app.all-hands.dev/api/conversations/{conversation_id}" \
 
 #### Response
 
+The response is formatted as follows:
+
 ```json
 {
   "conversation_id":"abc1234",
@@ -156,7 +165,7 @@ curl -X GET "https://app.all-hands.dev/api/conversations/{conversation_id}" \
   "created_at":"2025-04-29T15:13:51.370706Z",
   "last_updated_at":"2025-04-29T15:13:57.199210Z",
   "status":"RUNNING",
-  "selected_repository":"https://github.com/yourusername/your-repo",
+  "selected_repository":"yourusername/your-repo",
   "trigger":"gui"
 }
 ```
