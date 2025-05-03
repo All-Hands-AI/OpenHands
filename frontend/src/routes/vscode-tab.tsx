@@ -60,12 +60,15 @@ export function VSCodeProvider({ children }: { children: React.ReactNode }) {
     fetchVSCodeUrl();
   }, [fetchVSCodeUrl]);
 
-  const contextValue = React.useMemo(() => ({
-    vsCodeUrl,
-    isLoading,
-    error,
-    refetch: fetchVSCodeUrl,
-  }), [vsCodeUrl, isLoading, error, fetchVSCodeUrl]);
+  const contextValue = React.useMemo(
+    () => ({
+      vsCodeUrl,
+      isLoading,
+      error,
+      refetch: fetchVSCodeUrl,
+    }),
+    [vsCodeUrl, isLoading, error, fetchVSCodeUrl],
+  );
 
   return (
     <VSCodeContext.Provider value={contextValue}>

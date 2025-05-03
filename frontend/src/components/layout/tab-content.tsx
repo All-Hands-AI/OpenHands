@@ -1,6 +1,5 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { useLocation } from "react-router";
-import { lazy, Suspense } from "react";
 import { LoadingSpinner } from "../shared/loading-spinner";
 import { VSCodeProvider } from "../../routes/vscode-tab";
 
@@ -19,7 +18,7 @@ interface TabContentProps {
 export function TabContent({ conversationPath }: TabContentProps) {
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   // Determine which tab is active based on the current path
   const isEditorActive = currentPath === conversationPath;
   const isBrowserActive = currentPath === `${conversationPath}/browser`;
@@ -32,23 +31,41 @@ export function TabContent({ conversationPath }: TabContentProps) {
     <VSCodeProvider>
       <div className="h-full w-full relative">
         {/* Each tab content is always loaded but only visible when active */}
-        <Suspense fallback={<div className="flex items-center justify-center h-full"><LoadingSpinner /></div>}>
-          <div className={`absolute inset-0 ${isEditorActive ? 'block' : 'hidden'}`}>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-full">
+              <LoadingSpinner size="large" />
+            </div>
+          }
+        >
+          <div
+            className={`absolute inset-0 ${isEditorActive ? "block" : "hidden"}`}
+          >
             <EditorTab />
           </div>
-          <div className={`absolute inset-0 ${isBrowserActive ? 'block' : 'hidden'}`}>
+          <div
+            className={`absolute inset-0 ${isBrowserActive ? "block" : "hidden"}`}
+          >
             <BrowserTab />
           </div>
-          <div className={`absolute inset-0 ${isJupyterActive ? 'block' : 'hidden'}`}>
+          <div
+            className={`absolute inset-0 ${isJupyterActive ? "block" : "hidden"}`}
+          >
             <JupyterTab />
           </div>
-          <div className={`absolute inset-0 ${isServedActive ? 'block' : 'hidden'}`}>
+          <div
+            className={`absolute inset-0 ${isServedActive ? "block" : "hidden"}`}
+          >
             <ServedTab />
           </div>
-          <div className={`absolute inset-0 ${isTerminalActive ? 'block' : 'hidden'}`}>
+          <div
+            className={`absolute inset-0 ${isTerminalActive ? "block" : "hidden"}`}
+          >
             <TerminalTab />
           </div>
-          <div className={`absolute inset-0 ${isVSCodeActive ? 'block' : 'hidden'}`}>
+          <div
+            className={`absolute inset-0 ${isVSCodeActive ? "block" : "hidden"}`}
+          >
             <VSCodeTab />
           </div>
         </Suspense>

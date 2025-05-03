@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -114,9 +114,8 @@ function AppContent() {
   } = useDisclosure();
 
   function renderMain() {
-    const location = useLocation();
     const basePath = `/conversations/${conversationId}`;
-    
+
     if (width <= 640) {
       return (
         <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
