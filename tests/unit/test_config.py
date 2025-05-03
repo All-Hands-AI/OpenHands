@@ -389,6 +389,52 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates == initial_defaults
 
 
+def test_runtime_mount_config(monkeypatch, default_config):
+    # Test the new RUNTIME_MOUNT parameter
+    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path:/container/path:ro')
+    
+    load_from_env(default_config, os.environ)
+    finalize_config(default_config)
+    
+    # Check that runtime_mount is set correctly
+    assert default_config.runtime_mount == '/host/path:/container/path:ro'
+    
+    # Check that the old parameters are set for backward compatibility
+    assert default_config.workspace_base == os.path.abspath('/host/path')
+    assert default_config.workspace_mount_path == os.path.abspath('/host/path')
+    assert default_config.workspace_mount_path_in_sandbox == '/container/path'
+
+
+def test_runtime_mount_with_default_mode(monkeypatch, default_config):
+    # Test RUNTIME_MOUNT without specifying mode (should default to 'rw')
+    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path:/container/path')
+    
+    load_from_env(default_config, os.environ)
+    finalize_config(default_config)
+    
+    # Check that runtime_mount is set correctly
+    assert default_config.runtime_mount == '/host/path:/container/path'
+    
+    # Check that the old parameters are set for backward compatibility
+    assert default_config.workspace_base == os.path.abspath('/host/path')
+    assert default_config.workspace_mount_path == os.path.abspath('/host/path')
+    assert default_config.workspace_mount_path_in_sandbox == '/container/path'
+
+
+def test_runtime_mount_invalid_format(monkeypatch, default_config):
+    # Test RUNTIME_MOUNT with invalid format
+    monkeypatch.setenv('RUNTIME_MOUNT', '/single/path')
+    
+    load_from_env(default_config, os.environ)
+    
+    # Check that runtime_mount is set
+    assert default_config.runtime_mount == '/single/path'
+    
+    # Finalize config should raise a ValueError for invalid format
+    with pytest.raises(ValueError, match="Invalid runtime_mount format"):
+        finalize_config(default_config)
+
+
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     # Invalid TOML format doesn't break the configuration
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')

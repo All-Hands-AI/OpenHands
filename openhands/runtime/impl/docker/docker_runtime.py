@@ -272,14 +272,23 @@ class DockerRuntime(ActionExecutionClient):
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
         ):
+            # Determine the mount mode
+            mount_mode = 'rw'  # Default mode
+            
+            # If runtime_mount is set, extract the mode from it
+            if self.config.runtime_mount is not None:
+                parts = self.config.runtime_mount.split(':')
+                if len(parts) > 2:
+                    mount_mode = parts[2]
+            
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
             volumes = {
                 self.config.workspace_mount_path: {
                     'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': 'rw',
+                    'mode': mount_mode,
                 }
             }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
+            logger.debug(f'Mount dir: {self.config.workspace_mount_path} with mode: {mount_mode}')
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'

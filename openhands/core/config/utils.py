@@ -294,10 +294,39 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 
 def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
-    if cfg.workspace_base is not None:
-        cfg.workspace_base = os.path.abspath(cfg.workspace_base)
-        if cfg.workspace_mount_path is None:
-            cfg.workspace_mount_path = cfg.workspace_base
+    # Handle the new runtime_mount parameter
+    if cfg.runtime_mount is not None:
+        # Parse the runtime_mount parameter
+        parts = cfg.runtime_mount.split(':')
+        if len(parts) < 2 or len(parts) > 3:
+            raise ValueError(
+                f"Invalid runtime_mount format: {cfg.runtime_mount}. "
+                f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
+            )
+        
+        host_path = os.path.abspath(parts[0])
+        container_path = parts[1]
+        # Default mode is 'rw' if not specified
+        mode = parts[2] if len(parts) > 2 else 'rw'
+        
+        # Set the workspace_mount_path and workspace_mount_path_in_sandbox for backward compatibility
+        cfg.workspace_mount_path = host_path
+        cfg.workspace_mount_path_in_sandbox = container_path
+        
+        # Also set workspace_base for backward compatibility
+        cfg.workspace_base = host_path
+    
+    # Handle the deprecated workspace_* parameters
+    elif cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
+        logger.openhands_logger.warning(
+            "DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. "
+            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
+        )
+        
+        if cfg.workspace_base is not None:
+            cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+            if cfg.workspace_mount_path is None:
+                cfg.workspace_mount_path = cfg.workspace_base
 
         if cfg.workspace_mount_rewrite:
             base = cfg.workspace_base or os.getcwd()

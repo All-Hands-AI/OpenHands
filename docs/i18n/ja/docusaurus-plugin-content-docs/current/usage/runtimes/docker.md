@@ -8,19 +8,47 @@ nikolaik の `SANDBOX_RUNTIME_CONTAINER_IMAGE` は、ランタイムサーバー
 
 ## ファイルシステムへの接続
 ここでの便利な機能の1つは、ローカルファイルシステムに接続する機能です。ファイルシステムをランタイムにマウントするには：
+
+### RUNTIME_MOUNT の使用（推奨）
+
+ローカルファイルシステムをマウントする最も簡単な方法は、`RUNTIME_MOUNT` 環境変数を使用することです：
+
+```bash
+docker run # ...
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e RUNTIME_MOUNT=/path/to/your/code:/workspace:rw \
+    # ...
+```
+
+`RUNTIME_MOUNT` の形式は：`ホストパス:コンテナパス[:モード]`
+
+- `ホストパス`：マウントしたいホストマシン上のパス
+- `コンテナパス`：ホストパスがマウントされるコンテナ内のパス（通常は `/workspace`）
+- `モード`：オプションのマウントモード、`rw`（読み書き可能、デフォルト）または `ro`（読み取り専用）
+
+例：
+
+```bash
+# Linux と Mac の例
+export RUNTIME_MOUNT=$HOME/OpenHands:/workspace:rw
+
+# Windows の WSL の例
+export RUNTIME_MOUNT=/mnt/c/dev/OpenHands:/workspace:rw
+
+# 読み取り専用マウントの例
+export RUNTIME_MOUNT=/path/to/reference/code:/workspace:ro
+```
+
+### WORKSPACE_* 変数の使用（非推奨）
+
+> **注意：** この方法は非推奨であり、将来のバージョンで削除される予定です。代わりに `RUNTIME_MOUNT` を使用してください。
+
 1. `WORKSPACE_BASE` を設定します：
 
     ```bash
     export WORKSPACE_BASE=/path/to/your/code
-
-    # Linux と Mac の例
-    # export WORKSPACE_BASE=$HOME/OpenHands
-    # $WORKSPACE_BASE を /home/<username>/OpenHands に設定します
-    #
-    # Windows の WSL の例
-    # export WORKSPACE_BASE=/mnt/c/dev/OpenHands
-    # $WORKSPACE_BASE を C:\dev\OpenHands に設定します
     ```
+
 2. 以下のオプションを `docker run` コマンドに追加します：
 
     ```bash
