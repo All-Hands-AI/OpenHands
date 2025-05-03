@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
 import { GitRepositorySelector } from "./git-repo-selector";
-import { useAppRepositories } from "#/hooks/query/use-app-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { sanitizeQuery } from "#/utils/sanitize-query";
@@ -31,20 +30,12 @@ export function GitRepositoriesSuggestionBox({
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // TODO: Use `useQueries` to fetch all repositories in parallel
-  const { data: appRepositories, isLoading: isAppReposLoading } =
-    useAppRepositories();
   const { data: userRepositories, isLoading: isUserReposLoading } =
     useUserRepositories();
   const { data: searchedRepos, isLoading: isSearchReposLoading } =
     useSearchRepositories(sanitizeQuery(debouncedSearchQuery));
 
-  const isLoading =
-    isAppReposLoading || isUserReposLoading || isSearchReposLoading;
-
-  const repositories =
-    userRepositories?.pages.flatMap((page) => page.data) ||
-    appRepositories?.pages.flatMap((page) => page.data) ||
-    [];
+  const isLoading = isUserReposLoading || isSearchReposLoading;
 
   const handleConnectToGitHub = () => {
     if (gitHubAuthUrl) {
@@ -65,7 +56,7 @@ export function GitRepositoriesSuggestionBox({
             onInputChange={setSearchQuery}
             onSelect={handleSubmit}
             publicRepositories={searchedRepos || []}
-            userRepositories={repositories}
+            userRepositories={userRepositories || []}
             isLoading={isLoading}
           />
         ) : (

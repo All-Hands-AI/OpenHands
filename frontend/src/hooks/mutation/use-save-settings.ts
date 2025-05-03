@@ -4,15 +4,7 @@ import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
 
-const saveSettingsMutationFn = async (
-  settings: Partial<PostSettings> | null,
-) => {
-  // If settings is null, we're resetting
-  if (settings === null) {
-    await OpenHands.resetSettings();
-    return;
-  }
-
+const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
@@ -28,7 +20,6 @@ const saveSettingsMutationFn = async (
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
-    provider_tokens: settings.provider_tokens,
   };
 
   await OpenHands.saveSettings(apiSettings);
@@ -39,12 +30,7 @@ export const useSaveSettings = () => {
   const { data: currentSettings } = useSettings();
 
   return useMutation({
-    mutationFn: async (settings: Partial<PostSettings> | null) => {
-      if (settings === null) {
-        await saveSettingsMutationFn(null);
-        return;
-      }
-
+    mutationFn: async (settings: Partial<PostSettings>) => {
       const newSettings = { ...currentSettings, ...settings };
       await saveSettingsMutationFn(newSettings);
     },

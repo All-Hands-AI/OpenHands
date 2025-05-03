@@ -6,6 +6,10 @@ class ActionType(str, Enum):
     """Represents a message.
     """
 
+    SYSTEM = 'system'
+    """Represents a system message.
+    """
+
     START = 'start'
     """Starts a new development task OR send chat from the user. Only sent by the client.
     """
@@ -36,6 +40,10 @@ class ActionType(str, Enum):
 
     BROWSE_INTERACTIVE = 'browse_interactive'
     """Interact with the browser instance.
+    """
+
+    MCP = 'call_tool_mcp'
+    """Interact with the MCP server.
     """
 
     DELEGATE = 'delegate'

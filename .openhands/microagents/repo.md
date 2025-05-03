@@ -54,3 +54,20 @@ Frontend:
 ## Template for Github Pull Request
 
 If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
+
+## Implementation Details
+
+These details may or may not be useful for your current task.
+
+### Frontend
+
+#### Action Handling:
+- Actions are defined in `frontend/src/types/action-type.ts`
+- The `HANDLED_ACTIONS` array in `frontend/src/state/chat-slice.ts` determines which actions are displayed as collapsible UI elements
+- To add a new action type to the UI:
+  1. Add the action type to the `HANDLED_ACTIONS` array
+  2. Implement the action handling in `addAssistantAction` function in chat-slice.ts
+  3. Add a translation key in the format `ACTION_MESSAGE$ACTION_NAME` to the i18n files
+- Actions with `thought` property are displayed in the UI based on their action type:
+  - Regular actions (like "run", "edit") display the thought as a separate message
+  - Special actions (like "think") are displayed as collapsible elements only

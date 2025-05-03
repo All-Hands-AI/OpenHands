@@ -14,7 +14,6 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.agent import (
     AgentStateChangedObservation,
-    RecallObservation,
 )
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
@@ -46,10 +45,21 @@ def create_provider_tokens_object(
 async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
-    latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
+    latest_event_id_str = query_params.get('latest_event_id', [-1])[0]
+    try:
+        latest_event_id = int(latest_event_id_str)
+    except ValueError:
+        logger.debug(
+            f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
+        )
+        latest_event_id = -1
     conversation_id = query_params.get('conversation_id', [None])[0]
-    providers_raw: list[str] = query_params.get('providers_set', [])
-    providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
+    raw_list = query_params.get('providers_set', [])
+    providers_list = []
+    for item in raw_list:
+        providers_list.extend(item.split(',') if isinstance(item, str) else [])
+    providers_list = [p for p in providers_list if p]
+    providers_set = [ProviderType(p) for p in providers_list]
 
     if not conversation_id:
         logger.error('No conversation_id in query params')
@@ -88,10 +98,10 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('Failed to join conversation')
     async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
     async for event in async_store:
-        logger.info(f'oh_event: {event.__class__.__name__}')
+        logger.debug(f'oh_event: {event.__class__.__name__}')
         if isinstance(
             event,
-            (NullAction, NullObservation, RecallAction, RecallObservation),
+            (NullAction, NullObservation, RecallAction),
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):
