@@ -7,7 +7,23 @@ import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 
-function VSCodeTab() {
+// Create a context to store the VS Code URL globally
+interface VSCodeContextType {
+  vsCodeUrl: string | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+const VSCodeContext = React.createContext<VSCodeContextType>({
+  vsCodeUrl: null,
+  isLoading: true,
+  error: null,
+  refetch: async () => {},
+});
+
+// Provider component to fetch and store the VS Code URL
+export function VSCodeProvider({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { conversationId } = useConversation();
   const [vsCodeUrl, setVsCodeUrl] = React.useState<string | null>(null);
@@ -16,33 +32,59 @@ function VSCodeTab() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
-  React.useEffect(() => {
-    async function fetchVSCodeUrl() {
-      if (!conversationId || isRuntimeInactive) return;
+  const fetchVSCodeUrl = React.useCallback(async () => {
+    if (!conversationId || isRuntimeInactive) return;
 
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/conversations/${conversationId}/vscode-url`,
-        );
-        const data = await response.json();
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `/api/conversations/${conversationId}/vscode-url`,
+      );
+      const data = await response.json();
 
-        if (data.vscode_url) {
-          const transformedUrl = transformVSCodeUrl(data.vscode_url);
-          setVsCodeUrl(transformedUrl);
-        } else {
-          setError(t(I18nKey.VSCODE$URL_NOT_AVAILABLE));
-        }
-      } catch (err) {
-        setError(t(I18nKey.VSCODE$FETCH_ERROR));
-        // Error is handled by setting the error state
-      } finally {
-        setIsLoading(false);
+      if (data.vscode_url) {
+        const transformedUrl = transformVSCodeUrl(data.vscode_url);
+        setVsCodeUrl(transformedUrl);
+      } else {
+        setError(t(I18nKey.VSCODE$URL_NOT_AVAILABLE));
       }
+    } catch (err) {
+      setError(t(I18nKey.VSCODE$FETCH_ERROR));
+      // Error is handled by setting the error state
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchVSCodeUrl();
   }, [conversationId, isRuntimeInactive, t]);
+
+  React.useEffect(() => {
+    fetchVSCodeUrl();
+  }, [fetchVSCodeUrl]);
+
+  const contextValue = React.useMemo(() => ({
+    vsCodeUrl,
+    isLoading,
+    error,
+    refetch: fetchVSCodeUrl,
+  }), [vsCodeUrl, isLoading, error, fetchVSCodeUrl]);
+
+  return (
+    <VSCodeContext.Provider value={contextValue}>
+      {children}
+    </VSCodeContext.Provider>
+  );
+}
+
+// Hook to use the VS Code context
+export function useVSCode() {
+  return React.useContext(VSCodeContext);
+}
+
+function VSCodeTab() {
+  const { t } = useTranslation();
+  const { vsCodeUrl, isLoading, error } = useVSCode();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   if (isRuntimeInactive) {
     return (
@@ -71,6 +113,7 @@ function VSCodeTab() {
   return (
     <div className="h-full w-full">
       <iframe
+        ref={iframeRef}
         title={t(I18nKey.VSCODE$TITLE)}
         src={vsCodeUrl}
         className="w-full h-full border-0"
@@ -80,4 +123,5 @@ function VSCodeTab() {
   );
 }
 
+// Export the VSCodeTab directly since we're using the provider at a higher level
 export default VSCodeTab;
