@@ -40,17 +40,7 @@ def file_secrets_store(temp_dir):
         'openhands.storage.settings.file_secrets_store.FileSecretsStore.get_instance',
         AsyncMock(return_value=store),
     ):
-        # Create a mock for the get_user_settings_store dependency
-        with patch(
-            'openhands.server.user_auth.get_user_settings_store',
-            new=AsyncMock(return_value=store),
-        ):
-            # Create a mock for the get_user_settings dependency
-            with patch(
-                'openhands.server.user_auth.get_user_settings',
-                new=AsyncMock(side_effect=lambda request=None: store.load()),
-            ):
-                yield store
+        yield store
 
 
 @pytest.mark.asyncio
