@@ -307,17 +307,20 @@ export function TrajectorySummary({
                       isAwaitingUserConfirmation;
 
                     if (message.type === "error" || message.type === "action") {
-                      // If there's a thought, display it before the action
-                      const displayContent = message.thought
-                        ? `${message.thought}\n\n${message.content}`
-                        : message.content;
-
                       return (
                         <div key={msgIndex} className="text-content">
+                          {/* Display thought as a separate message if it exists */}
+                          {message.thought && (
+                            <ChatMessage
+                              type="assistant"
+                              message={message.thought}
+                              id={message.eventID}
+                            />
+                          )}
                           <ExpandableMessage
                             type={message.type}
                             id={message.translationID}
-                            message={displayContent}
+                            message={message.content}
                             success={message.success}
                             eventID={message.eventID} // display message id
                           />
