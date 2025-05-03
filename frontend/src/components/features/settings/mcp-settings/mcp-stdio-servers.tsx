@@ -10,14 +10,6 @@ interface MCPStdioServersProps {
 export function MCPStdioServers({ servers }: MCPStdioServersProps) {
   const { t } = useTranslation();
 
-  if (servers.length === 0) {
-    return (
-      <div className="p-2 bg-base-tertiary rounded-md text-sm text-gray-400">
-        {t(I18nKey.SETTINGS$MCP_NO_STDIO_SERVERS)}
-      </div>
-    );
-  }
-
   return (
     <div>
       <h4 className="text-sm font-medium mb-1">

@@ -149,36 +149,6 @@
         "tr": "Örnek:",
         "de": "Beispiel:"
     },
-    "SETTINGS$MCP_NO_SSE_SERVERS": {
-        "en": "No SSE servers configured",
-        "ja": "SSEサーバーが設定されていません",
-        "zh-CN": "未配置SSE服务器",
-        "zh-TW": "未配置SSE服務器",
-        "ko-KR": "구성된 SSE 서버 없음",
-        "no": "Ingen SSE-servere konfigurert",
-        "it": "Nessun server SSE configurato",
-        "pt": "Nenhum servidor SSE configurado",
-        "es": "No hay servidores SSE configurados",
-        "ar": "لم يتم تكوين خوادم SSE",
-        "fr": "Aucun serveur SSE configuré",
-        "tr": "SSE sunucusu yapılandırılmadı",
-        "de": "Keine SSE-Server konfiguriert"
-    },
-    "SETTINGS$MCP_NO_STDIO_SERVERS": {
-        "en": "No stdio servers configured",
-        "ja": "stdioサーバーが設定されていません",
-        "zh-CN": "未配置stdio服务器",
-        "zh-TW": "未配置stdio服務器",
-        "ko-KR": "구성된 stdio 서버 없음",
-        "no": "Ingen stdio-servere konfigurert",
-        "it": "Nessun server stdio configurato",
-        "pt": "Nenhum servidor stdio configurado",
-        "es": "No hay servidores stdio configurados",
-        "ar": "لم يتم تكوين خوادم stdio",
-        "fr": "Aucun serveur stdio configuré",
-        "tr": "stdio sunucusu yapılandırılmadı",
-        "de": "Keine stdio-Server konfiguriert"
-    },
     "SETTINGS$MCP_NO_SERVERS_CONFIGURED": {
         "en": "No MCP servers are currently configured. Click \"Edit Configuration\" to add servers.",
         "ja": "現在MCPサーバーが設定されていません。「設定を編集」をクリックしてサーバーを追加してください。",
