@@ -268,28 +268,65 @@ class DockerRuntime(ActionExecutionClient):
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
-        if (
-            self.config.workspace_mount_path is not None
-            and self.config.workspace_mount_path_in_sandbox is not None
+        
+        # Initialize volumes dictionary
+        volumes = {}
+        
+        # Process RUNTIME_MOUNT (semicolon-delimited)
+        if self.config.runtime_mount is not None:
+            # Handle multiple mounts with semicolon delimiter
+            mounts = self.config.runtime_mount.split(';')
+            
+            for mount in mounts:
+                parts = mount.split(':')
+                if len(parts) >= 2:
+                    host_path = os.path.abspath(parts[0])
+                    container_path = parts[1]
+                    # Default mode is 'rw' if not specified
+                    mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                    
+                    volumes[host_path] = {
+                        'bind': container_path,
+                        'mode': mount_mode,
+                    }
+                    logger.debug(f'Mount dir (runtime_mount): {host_path} to {container_path} with mode: {mount_mode}')
+        
+        # Process CUSTOM_VOLUMES (comma-delimited)
+        if self.config.custom_volumes is not None:
+            # Handle multiple mounts with comma delimiter
+            mounts = self.config.custom_volumes.split(',')
+            
+            for mount in mounts:
+                parts = mount.split(':')
+                if len(parts) >= 2:
+                    host_path = os.path.abspath(parts[0])
+                    container_path = parts[1]
+                    # Default mode is 'rw' if not specified
+                    mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                    
+                    volumes[host_path] = {
+                        'bind': container_path,
+                        'mode': mount_mode,
+                    }
+                    logger.debug(f'Mount dir (custom_volumes): {host_path} to {container_path} with mode: {mount_mode}')
+            
+        # Legacy mounting with workspace_* parameters
+        elif (
+            self.config.runtime_mount is None and
+            self.config.workspace_mount_path is not None and
+            self.config.workspace_mount_path_in_sandbox is not None
         ):
-            # Determine the mount mode
             mount_mode = 'rw'  # Default mode
             
-            # If runtime_mount is set, extract the mode from it
-            if self.config.runtime_mount is not None:
-                parts = self.config.runtime_mount.split(':')
-                if len(parts) > 2:
-                    mount_mode = parts[2]
-            
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes = {
-                self.config.workspace_mount_path: {
-                    'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': mount_mode,
-                }
+            volumes[self.config.workspace_mount_path] = {
+                'bind': self.config.workspace_mount_path_in_sandbox,
+                'mode': mount_mode,
             }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path} with mode: {mount_mode}')
-        else:
+            logger.debug(f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}')
+        
+        # If no volumes were configured, set to None
+        if not volumes:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )

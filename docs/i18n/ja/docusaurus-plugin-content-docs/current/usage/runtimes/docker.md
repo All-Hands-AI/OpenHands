@@ -26,6 +26,12 @@ docker run # ...
 - `コンテナパス`：ホストパスがマウントされるコンテナ内のパス（通常は `/workspace`）
 - `モード`：オプションのマウントモード、`rw`（読み書き可能、デフォルト）または `ro`（読み取り専用）
 
+セミコロン（`;`）で区切ることで、複数のマウントを指定することもできます：
+
+```bash
+export RUNTIME_MOUNT=/path1:/workspace/path1;/path2:/workspace/path2:ro
+```
+
 例：
 
 ```bash
@@ -37,7 +43,37 @@ export RUNTIME_MOUNT=/mnt/c/dev/OpenHands:/workspace:rw
 
 # 読み取り専用マウントの例
 export RUNTIME_MOUNT=/path/to/reference/code:/workspace:ro
+
+# 複数マウントの例
+export RUNTIME_MOUNT=$HOME/projects:/workspace/projects;$HOME/reference:/workspace/reference:ro
 ```
+
+> **注意：** 複数のマウントを使用する場合、最初のマウントが主要なワークスペースと見なされ、単一のワークスペースを想定するツールとの後方互換性のために使用されます。
+
+### CUSTOM_VOLUMES の使用（代替方法）
+
+`RUNTIME_MOUNT` の代わりに、複数のマウントにカンマ（`,`）をデリミタとして使用する `CUSTOM_VOLUMES` 環境変数を使用することもできます：
+
+```bash
+docker run # ...
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e CUSTOM_VOLUMES=/path/to/your/code:/workspace:rw,/path/to/reference:/workspace/reference:ro \
+    # ...
+```
+
+各マウントの形式は `RUNTIME_MOUNT` と同じです：`ホストパス:コンテナパス[:モード]`
+
+例：
+
+```bash
+# 単一マウント
+export CUSTOM_VOLUMES=$HOME/OpenHands:/workspace:rw
+
+# 異なるモードを持つ複数のマウント
+export CUSTOM_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
+```
+
+> **注意：** `RUNTIME_MOUNT` と `CUSTOM_VOLUMES` の両方が指定されている場合、両方が使用されますが、後方互換性の設定には `RUNTIME_MOUNT` が優先されます。
 
 ### WORKSPACE_* 変数の使用（非推奨）
 

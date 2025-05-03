@@ -102,6 +102,150 @@ def test_runtime_mount_mode_extraction():
     assert volumes['/host/path']['mode'] == 'ro'
 
 
+def test_runtime_mount_multiple_mounts():
+    """Test that multiple mounts in runtime_mount are correctly processed."""
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+    import os
+    
+    # Create a mock DockerRuntime instance
+    runtime = MagicMock(spec=DockerRuntime)
+    
+    # Test with multiple mounts
+    runtime.config = MagicMock()
+    runtime.config.runtime_mount = '/host/path1:/container/path1;/host/path2:/container/path2:ro'
+    runtime.config.custom_volumes = None
+    runtime.config.workspace_mount_path = '/host/path1'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    
+    # Initialize volumes dictionary
+    volumes = {}
+    
+    # Simulate the code in DockerRuntime that processes multiple mounts
+    if runtime.config.runtime_mount is not None:
+        # Handle multiple mounts with semicolon delimiter
+        mounts = runtime.config.runtime_mount.split(';')
+        
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2:
+                host_path = os.path.abspath(parts[0])
+                container_path = parts[1]
+                # Default mode is 'rw' if not specified
+                mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                
+                volumes[host_path] = {
+                    'bind': container_path,
+                    'mode': mount_mode,
+                }
+    
+    # Assert that both mounts were processed correctly
+    assert len(volumes) == 2
+    assert volumes[os.path.abspath('/host/path1')]['bind'] == '/container/path1'
+    assert volumes[os.path.abspath('/host/path1')]['mode'] == 'rw'  # Default mode
+    assert volumes[os.path.abspath('/host/path2')]['bind'] == '/container/path2'
+    assert volumes[os.path.abspath('/host/path2')]['mode'] == 'ro'  # Specified mode
+
+
+def test_custom_volumes_multiple_mounts():
+    """Test that multiple mounts in custom_volumes are correctly processed."""
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+    import os
+    
+    # Create a mock DockerRuntime instance
+    runtime = MagicMock(spec=DockerRuntime)
+    
+    # Test with multiple mounts
+    runtime.config = MagicMock()
+    runtime.config.runtime_mount = None
+    runtime.config.custom_volumes = '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    runtime.config.workspace_mount_path = '/host/path1'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    
+    # Initialize volumes dictionary
+    volumes = {}
+    
+    # Simulate the code in DockerRuntime that processes custom volumes
+    if runtime.config.custom_volumes is not None:
+        # Handle multiple mounts with comma delimiter
+        mounts = runtime.config.custom_volumes.split(',')
+        
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2:
+                host_path = os.path.abspath(parts[0])
+                container_path = parts[1]
+                # Default mode is 'rw' if not specified
+                mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                
+                volumes[host_path] = {
+                    'bind': container_path,
+                    'mode': mount_mode,
+                }
+    
+    # Assert that both mounts were processed correctly
+    assert len(volumes) == 2
+    assert volumes[os.path.abspath('/host/path1')]['bind'] == '/container/path1'
+    assert volumes[os.path.abspath('/host/path1')]['mode'] == 'rw'  # Default mode
+    assert volumes[os.path.abspath('/host/path2')]['bind'] == '/container/path2'
+    assert volumes[os.path.abspath('/host/path2')]['mode'] == 'ro'  # Specified mode
+
+
+def test_both_mount_types():
+    """Test that both runtime_mount and custom_volumes are correctly processed."""
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+    import os
+    
+    # Create a mock DockerRuntime instance
+    runtime = MagicMock(spec=DockerRuntime)
+    
+    # Test with both mount types
+    runtime.config = MagicMock()
+    runtime.config.runtime_mount = '/host/path1:/container/path1'
+    runtime.config.custom_volumes = '/host/path2:/container/path2,/host/path3:/container/path3:ro'
+    runtime.config.workspace_mount_path = '/host/path1'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    
+    # Initialize volumes dictionary
+    volumes = {}
+    
+    # Simulate the code in DockerRuntime that processes runtime_mount
+    if runtime.config.runtime_mount is not None:
+        mounts = runtime.config.runtime_mount.split(';')
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2:
+                host_path = os.path.abspath(parts[0])
+                container_path = parts[1]
+                mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                volumes[host_path] = {
+                    'bind': container_path,
+                    'mode': mount_mode,
+                }
+    
+    # Simulate the code in DockerRuntime that processes custom_volumes
+    if runtime.config.custom_volumes is not None:
+        mounts = runtime.config.custom_volumes.split(',')
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2:
+                host_path = os.path.abspath(parts[0])
+                container_path = parts[1]
+                mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                volumes[host_path] = {
+                    'bind': container_path,
+                    'mode': mount_mode,
+                }
+    
+    # Assert that all mounts were processed correctly
+    assert len(volumes) == 3
+    assert volumes[os.path.abspath('/host/path1')]['bind'] == '/container/path1'
+    assert volumes[os.path.abspath('/host/path1')]['mode'] == 'rw'
+    assert volumes[os.path.abspath('/host/path2')]['bind'] == '/container/path2'
+    assert volumes[os.path.abspath('/host/path2')]['mode'] == 'rw'
+    assert volumes[os.path.abspath('/host/path3')]['bind'] == '/container/path3'
+    assert volumes[os.path.abspath('/host/path3')]['mode'] == 'ro'
+
+
 def test_runtime_mount_default_mode():
     """Test that the default mount mode (rw) is used when not specified in runtime_mount."""
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime

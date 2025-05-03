@@ -435,6 +435,56 @@ def test_runtime_mount_invalid_format(monkeypatch, default_config):
         finalize_config(default_config)
 
 
+def test_runtime_mount_multiple_mounts(monkeypatch, default_config):
+    # Test RUNTIME_MOUNT with multiple mounts
+    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path1:/container/path1;/host/path2:/container/path2:ro')
+    
+    load_from_env(default_config, os.environ)
+    finalize_config(default_config)
+    
+    # Check that runtime_mount is set correctly
+    assert default_config.runtime_mount == '/host/path1:/container/path1;/host/path2:/container/path2:ro'
+    
+    # Check that the old parameters are set from the first mount for backward compatibility
+    assert default_config.workspace_base == os.path.abspath('/host/path1')
+    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
+    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+
+
+def test_custom_volumes(monkeypatch, default_config):
+    # Test CUSTOM_VOLUMES with multiple mounts
+    monkeypatch.setenv('CUSTOM_VOLUMES', '/host/path1:/container/path1,/host/path2:/container/path2:ro')
+    
+    load_from_env(default_config, os.environ)
+    finalize_config(default_config)
+    
+    # Check that custom_volumes is set correctly
+    assert default_config.custom_volumes == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    
+    # Check that the old parameters are set from the first mount for backward compatibility
+    assert default_config.workspace_base == os.path.abspath('/host/path1')
+    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
+    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+
+
+def test_custom_volumes_with_runtime_mount(monkeypatch, default_config):
+    # Test both CUSTOM_VOLUMES and RUNTIME_MOUNT together
+    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path1:/container/path1')
+    monkeypatch.setenv('CUSTOM_VOLUMES', '/host/path2:/container/path2,/host/path3:/container/path3:ro')
+    
+    load_from_env(default_config, os.environ)
+    finalize_config(default_config)
+    
+    # Check that both parameters are set correctly
+    assert default_config.runtime_mount == '/host/path1:/container/path1'
+    assert default_config.custom_volumes == '/host/path2:/container/path2,/host/path3:/container/path3:ro'
+    
+    # Check that the old parameters are set from RUNTIME_MOUNT for backward compatibility
+    assert default_config.workspace_base == os.path.abspath('/host/path1')
+    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
+    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+
+
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     # Invalid TOML format doesn't break the configuration
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')

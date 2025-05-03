@@ -296,18 +296,20 @@ def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the new runtime_mount parameter
     if cfg.runtime_mount is not None:
-        # Parse the runtime_mount parameter
-        parts = cfg.runtime_mount.split(':')
+        # Split by semicolons to handle multiple mounts
+        mounts = cfg.runtime_mount.split(';')
+        
+        # Process the first mount as the primary one for backward compatibility
+        primary_mount = mounts[0]
+        parts = primary_mount.split(':')
         if len(parts) < 2 or len(parts) > 3:
             raise ValueError(
-                f"Invalid runtime_mount format: {cfg.runtime_mount}. "
+                f"Invalid runtime_mount format: {primary_mount}. "
                 f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
             )
         
         host_path = os.path.abspath(parts[0])
         container_path = parts[1]
-        # Default mode is 'rw' if not specified
-        mode = parts[2] if len(parts) > 2 else 'rw'
         
         # Set the workspace_mount_path and workspace_mount_path_in_sandbox for backward compatibility
         cfg.workspace_mount_path = host_path
@@ -315,6 +317,49 @@ def finalize_config(cfg: AppConfig) -> None:
         
         # Also set workspace_base for backward compatibility
         cfg.workspace_base = host_path
+        
+        # Validate all mounts
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) < 2 or len(parts) > 3:
+                raise ValueError(
+                    f"Invalid mount format in runtime_mount: {mount}. "
+                    f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
+                )
+    
+    # Handle the new custom_volumes parameter
+    if cfg.custom_volumes is not None:
+        # Split by commas to handle multiple mounts
+        mounts = cfg.custom_volumes.split(',')
+        
+        # If runtime_mount is not set, use the first custom volume for backward compatibility
+        if cfg.runtime_mount is None and mounts:
+            primary_mount = mounts[0]
+            parts = primary_mount.split(':')
+            if len(parts) < 2 or len(parts) > 3:
+                raise ValueError(
+                    f"Invalid custom_volumes format: {primary_mount}. "
+                    f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
+                )
+            
+            host_path = os.path.abspath(parts[0])
+            container_path = parts[1]
+            
+            # Set the workspace_mount_path and workspace_mount_path_in_sandbox for backward compatibility
+            cfg.workspace_mount_path = host_path
+            cfg.workspace_mount_path_in_sandbox = container_path
+            
+            # Also set workspace_base for backward compatibility
+            cfg.workspace_base = host_path
+        
+        # Validate all mounts
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) < 2 or len(parts) > 3:
+                raise ValueError(
+                    f"Invalid mount format in custom_volumes: {mount}. "
+                    f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
+                )
     
     # Handle the deprecated workspace_* parameters
     elif cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
