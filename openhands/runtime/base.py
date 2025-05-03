@@ -712,6 +712,11 @@ class Runtime(FileEditRuntimeMixin):
         """
         loaded_microagents: list[BaseMicroagent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
+        selected_repo_root = (
+            workspace_root / selected_repository.split('/')[-1]
+            if selected_repository
+            else None
+        )
 
         # 1. Load from custom microagents directory
         custom_microagents_path = os.path.expanduser(self.config.custom_microagents_dir)
@@ -738,71 +743,38 @@ class Runtime(FileEditRuntimeMixin):
 
         # 2. Load from user's .openhands repository if it exists
         # We need to check all user directories in the workspace root
-        user_dirs = []
         try:
             # List all directories in workspace root
+            # This will include selected_repo_root
             workspace_files = self.list_files(str(workspace_root))
-            for item in workspace_files:
-                if item.endswith('/'):  # It's a directory
-                    user_dir = workspace_root / item.rstrip('/')
-                    # Check if it has a .openhands directory
-                    user_openhands_dir = user_dir / '.openhands'
-                    check_dir_command = f'[ -d "{user_openhands_dir}" ] && echo "exists" || echo "not exists"'
-                    check_obs = self.run_action(CmdRunAction(command=check_dir_command))
-
-                    if (
-                        isinstance(check_obs, CmdOutputObservation)
-                        and 'exists' in check_obs.content
-                    ):
-                        user_dirs.append(user_dir)
+            for user_dir in workspace_files:
+                # FIXME Check if user_dir is a directory
+                # FIXME Make this a Path, not a string or fix the code below to be better code!
+                user_microagents_dir = Path(f'{user_dir} / .openhands / microagents')
+                self.log(
+                    'info',
+                    f'Loading repository microagents from {user_microagents_dir}',
+                )
+                repo_microagents = self._load_microagents_from_dir(user_microagents_dir)
+                loaded_microagents.extend(repo_microagents)
         except Exception as e:
-            self.log('debug', f'Error checking for user directories: {e}')
-
-        # Load microagents from each user's .openhands/microagents directory
-        for user_dir in user_dirs:
-            user_microagents_dir = user_dir / '.openhands' / 'microagents'
-            self.log('info', f'Loading user microagents from {user_microagents_dir}')
-            user_microagents = self._load_microagents_from_dir(user_microagents_dir)
-            loaded_microagents.extend(user_microagents)
-
-        # 3 & 4. Load from selected repository and its .openhands/microagents directory
-        repo_root = None
-        if selected_repository:
-            repo_root = workspace_root / selected_repository.split('/')[-1]
-            repo_microagents_dir = repo_root / '.openhands' / 'microagents'
-            self.log(
-                'info', f'Loading repository microagents from {repo_microagents_dir}'
-            )
-            repo_microagents = self._load_microagents_from_dir(repo_microagents_dir)
-            loaded_microagents.extend(repo_microagents)
+            self.log('debug', f'Error loading microagents from user directories: {e}')
 
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
-        if repo_root is not None:
+        obs: Observation | None = None
+        if selected_repo_root is not None:
             # First try to load from the repo root
             obs = self.read(
-                FileReadAction(path=str(repo_root / '.openhands_instructions'))
+                FileReadAction(path=str(selected_repo_root / '.openhands_instructions'))
             )
-            if isinstance(obs, ErrorObservation):
-                # If not found in repo root, try workspace root
-                obs = self.read(
-                    FileReadAction(path=str(workspace_root / '.openhands_instructions'))
-                )
 
-            if isinstance(obs, FileReadObservation):
-                self.log('info', 'openhands_instructions microagent loaded.')
-                loaded_microagents.append(
-                    BaseMicroagent.load(
-                        path='.openhands_instructions',
-                        microagent_dir=None,
-                        file_content=obs.content,
-                    )
-                )
-        else:
-            # If no repo_root, just try workspace root
+        if selected_repo_root is None or (obs and isinstance(obs, ErrorObservation)):
+            # If not found in repo root, try workspace root
             obs = self.read(
                 FileReadAction(path=str(workspace_root / '.openhands_instructions'))
             )
+
             if isinstance(obs, FileReadObservation):
                 self.log('info', 'openhands_instructions microagent loaded.')
                 loaded_microagents.append(
