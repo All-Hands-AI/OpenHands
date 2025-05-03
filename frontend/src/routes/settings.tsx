@@ -67,7 +67,7 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[80px] flex items-center justify-center",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
                 isActive && "border-primary",
               )
             }
