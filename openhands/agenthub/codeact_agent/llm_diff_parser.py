@@ -28,7 +28,33 @@ class DiffBlock:
 
 
 def strip_filename(filename: str, fence: tuple[str, str] = DEFAULT_FENCE) -> str | None:
-    """Strips potential wrapping characters from a filename line."""
+    """
+    Strips potential wrapping characters from a filename line.
+
+    The function handles various common formats that LLMs might use to specify filenames:
+    - Markdown backticks: `filename.py`
+    - Emphasis markers: *filename.py*
+    - File prefixes: # filename.py
+    - Trailing colons: filename.py:
+    - Leading/trailing whitespace
+
+    Examples:
+        strip_filename(' file.py ') -> 'file.py'
+        strip_filename('`file.py`') -> 'file.py'
+        strip_filename('*file.py*') -> 'file.py'
+        strip_filename('file.py:') -> 'file.py'
+        strip_filename('# file.py') -> 'file.py'
+        strip_filename('`*# file.py:*` ') -> 'file.py'
+        strip_filename('...') -> None
+        strip_filename('```') -> None
+
+    Args:
+        filename: The string containing a potential filename
+        fence: tuple of opening and closing fence markers (e.g., ('```', '```'))
+
+    Returns:
+        The cleaned filename string, or None if no valid filename found
+    """
     filename = filename.strip()
 
     if filename == '...':
@@ -55,6 +81,45 @@ def find_filename(
     """
     Searches preceding lines for a filename, handling potential fences.
     Adapted from Aider's find_filename.
+
+    The function looks through the provided lines (up to 3 lines back) to find a filename,
+    using several strategies in order:
+
+    1. Direct filename search:
+       - Looks for a filename in each line
+       - Stops at non-fence lines if no filename found
+       - Continues past fences only if no filename found yet
+
+    2. Validation against valid_fnames (if provided):
+       a. Exact match: Returns first filename that exactly matches a valid filename
+       b. Fuzzy match: Uses difflib to find close matches (cutoff=0.8)
+       c. Extension heuristic: If no match, accepts any filename with an extension
+
+    3. Fallback: Returns the last potential filename found if no better match
+
+    Examples:
+        # Simple case
+        find_filename(['file.py', '```python']) -> 'file.py'
+
+        # With path
+        find_filename(['src/core/file.py', '```python']) -> 'src/core/file.py'
+
+        # With valid_fnames
+        find_filename(['appz.py', '```python'], valid_fnames=['app.py']) -> 'app.py'
+
+        # No valid filename
+        find_filename(['Just some text', '```python']) -> None
+
+        # Too far back
+        find_filename(['file.py', 'another line', 'yet another', '```python']) -> None
+
+    Args:
+        lines: List of lines to search through (usually preceding a diff block)
+        fence: tuple of opening and closing fence markers (e.g., ('```', '```'))
+        valid_fnames: Optional list of valid filenames to match against
+
+    Returns:
+        The best matching filename found, or None if no valid filename found
     """
     if valid_fnames is None:
         valid_fnames = []
@@ -117,7 +182,57 @@ def parse_llm_response_for_diffs(
     valid_fnames: list[str] | None = None,
 ) -> list[DiffBlock]:
     """
-    Parses LLM response content to find fenced diff blocks.
+    Parses LLM response content to find fenced diff blocks in the format:
+
+    ```language
+    filename.ext
+    <<<<<<< SEARCH
+    old code
+    =======
+    new code
+    >>>>>>> REPLACE
+    ```
+
+    The parser supports:
+    1. Multiple diff blocks in a single response
+    2. Different file types (indicated by fence language)
+    3. Empty SEARCH blocks for new files
+    4. Empty REPLACE blocks for deletions
+    5. Filename inference from context
+    6. Fuzzy filename matching with valid_fnames
+
+    Examples:
+        # Edit existing file
+        ```python
+        app.py
+        <<<<<<< SEARCH
+        def old_func():
+            pass
+        =======
+        def new_func():
+            return True
+        >>>>>>> REPLACE
+        ```
+
+        # Create new file
+        ```python
+        new_file.py
+        <<<<<<< SEARCH
+        =======
+        def new_func():
+            return True
+        >>>>>>> REPLACE
+        ```
+
+        # Delete content
+        ```python
+        file.py
+        <<<<<<< SEARCH
+        def unused_func():
+            pass
+        =======
+        >>>>>>> REPLACE
+        ```
 
     Args:
         content: The LLM response string.
@@ -128,7 +243,11 @@ def parse_llm_response_for_diffs(
         A list of DiffBlock objects representing the parsed blocks.
 
     Raises:
-        LLMMalformedActionError: If malformed blocks are detected.
+        LLMMalformedActionError: If malformed blocks are detected, such as:
+            - Missing filename before block
+            - Missing SEARCH/REPLACE markers
+            - Missing divider
+            - Unexpected divider in REPLACE block
     """
     logger.info(f'Parsing LLM response for diffs:\n{content}')
 

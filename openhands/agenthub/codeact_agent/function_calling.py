@@ -65,13 +65,75 @@ def response_to_actions(
     """
     Parses the LLM response and converts it into a list of OpenHands Actions.
 
+    The function handles two main types of responses:
+    1. Tool calls - When the LLM response contains function calls
+    2. Diff blocks - When is_llm_diff_enabled=True and the response contains code diffs
+
+    For tool calls, it converts each function call into a corresponding Action:
+    - execute_bash -> CmdRunAction
+    - execute_ipython_cell -> IPythonRunCellAction
+    - browser -> BrowseInteractiveAction
+    - web_read -> BrowseURLAction
+    - str_replace_editor -> FileEditAction/FileReadAction
+    - think -> AgentThinkAction
+    - finish -> AgentFinishAction
+    - delegate_to_browsing_agent -> AgentDelegateAction
+
+    For diff blocks (when is_llm_diff_enabled=True), it parses blocks in the format:
+    ```language
+    filename.ext
+    <<<<<<< SEARCH
+    old code
+    =======
+    new code
+    >>>>>>> REPLACE
+    ```
+    Each diff block is converted to a FileEditAction with:
+    - path = filename
+    - search = old code
+    - replace = new code
+    - impl_source = FileEditSource.LLM_DIFF
+
+    Examples:
+        # Tool call response
+        response = {
+            "tool_calls": [{
+                "function": {
+                    "name": "execute_bash",
+                    "arguments": {"command": "ls", "is_input": "false"}
+                }
+            }]
+        }
+        -> [CmdRunAction(command="ls", is_input=False)]
+
+        # Diff block response
+        response = {
+            "content": '''
+            ```python
+            app.py
+            <<<<<<< SEARCH
+            old_code
+            =======
+            new_code
+            >>>>>>> REPLACE
+            ```
+            '''
+        }
+        -> [FileEditAction(path="app.py", search="old_code", replace="new_code")]
+
     Args:
         response: The ModelResponse from the LLM.
+        mcp_tool_names: Optional list of MCP tool names to handle.
         is_llm_diff_enabled: If True, will attempt to parse diff blocks from message
-                             content if no tool calls exist. Defaults to False.
+                           content if no tool calls exist. Defaults to False.
 
     Returns:
         A list of Action objects.
+
+    Note:
+        - If both tool calls and diff blocks exist, tool calls take precedence
+        - Message content outside of tool calls/diff blocks becomes MessageAction
+        - At least one action is always returned (AgentThinkAction as fallback)
     """
     all_actions: list[Action] = []
     parsed_llm_diff_actions: list[Action] = []

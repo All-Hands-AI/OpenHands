@@ -452,7 +452,89 @@ ignored new
 ```
 """
 
-    actions = response_to_actions(response, is_llm_diff_enabled=True)  # Enable flag
+    actions = response_to_actions(response, is_llm_diff_enabled=True)
+    assert len(actions) == 1
+    assert isinstance(actions[0], CmdRunAction)
+    assert actions[0].command == 'echo hello'
+
+
+def test_response_to_actions_llm_diff_mode_multiple_errors():
+    """Test handling of multiple errors in diff blocks."""
+    content = """
+```python
+file1.py
+<<<<<<< SEARCH
+old content
+# Missing divider
+new content
+>>>>>>> REPLACE
+```
+```python
+# Missing filename
+<<<<<<< SEARCH
+more old content
+=======
+more new content
+>>>>>>> REPLACE
+```
+"""
+    response = create_mock_response_no_tools(content)
+    actions = response_to_actions(response, is_llm_diff_enabled=True)
+
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert 'Error parsing block #1' in actions[0].content
+    assert 'Expected `=======`' in actions[0].content
+
+
+def test_response_to_actions_llm_diff_mode_whitespace_edge_cases():
+    """Test handling of whitespace edge cases in diff blocks."""
+    content = """
+```python
+file.py
+<<<<<<< SEARCH
+
+    indented line
+trailing space
+=======
+
+    new indented line
+new trailing space
+>>>>>>> REPLACE
+```
+"""
+    response = create_mock_response_no_tools(content)
+    actions = response_to_actions(response, is_llm_diff_enabled=True)
+
+    assert len(actions) == 1
+    assert isinstance(actions[0], FileEditAction)
+    assert actions[0].path == 'file.py'
+    assert actions[0].search == '\n    indented line\ntrailing space   \n'
+    assert actions[0].replace == '\n    new indented line\nnew trailing space   \n'
+
+
+def test_response_to_actions_llm_diff_mode_empty_lines():
+    """Test handling of empty lines in diff blocks."""
+    content = """
+```python
+file.py
+<<<<<<< SEARCH
+
+
+=======
+
+
+>>>>>>> REPLACE
+```
+"""
+    response = create_mock_response_no_tools(content)
+    actions = response_to_actions(response, is_llm_diff_enabled=True)
+
+    assert len(actions) == 1
+    assert isinstance(actions[0], FileEditAction)
+    assert actions[0].path == 'file.py'
+    assert actions[0].search == '\n\n\n'
+    assert actions[0].replace == '\n\n\n'_diff_enabled=True)  # Enable flag
 
     # Should process the tool call, not the diff block
     assert len(actions) == 1
