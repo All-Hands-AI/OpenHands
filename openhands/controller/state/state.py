@@ -188,19 +188,39 @@ class State:
         if not hasattr(self, 'history'):
             self.history = []
 
-    def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
-        """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
-        last_user_message = None
-        last_user_message_image_urls: list[str] | None = []
-        for event in reversed(self.view):
-            if isinstance(event, MessageAction) and event.source == 'user':
-                last_user_message = event.content
-                last_user_message_image_urls = event.image_urls
-            elif isinstance(event, AgentFinishAction):
-                if last_user_message is not None:
-                    return last_user_message, None
+    def get_current_user_intent(self) -> MessageAction:
+        """Returns the latest user MessageAction that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
+        likely_task: MessageAction | None = None
 
-        return last_user_message, last_user_message_image_urls
+        # Search in the view for the latest user message after the last finish action
+        for event in reversed(self.view):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                likely_task = event
+            elif isinstance(event, AgentFinishAction):
+                # If a FinishAction is found, the user message after it is the one we just found (if any)
+                break
+
+        # If a user message was found in the view after the last finish action, return it
+        if likely_task is not None:
+            return likely_task
+
+        # If no user message was found in the view after the last finish action,
+        # it means either there were no user messages in the view, or the last event in the view was a FinishAction
+        # In this case, we fall back to finding the very first user message in the full history.
+        logger.warning(
+            'No user message found in the view after the last FinishAction. Returning the first message in history.'
+        )
+        if self.history:
+            # Look for the very first user message in the full history
+            for event in self.history:
+                if (
+                    isinstance(event, MessageAction)
+                    and event.source == EventSource.USER
+                ):
+                    return event
+
+        # If no user message is found in the entire history, raise an error
+        raise ValueError('No user message found in history. This should not happen.')
 
     def get_last_agent_message(self) -> MessageAction | None:
         for event in reversed(self.view):

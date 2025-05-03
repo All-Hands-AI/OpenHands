@@ -105,7 +105,8 @@ def response_to_actions(
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
-                    inputs=arguments,
+                    prompt=arguments.get('prompt', ''),
+                    inputs={},
                 )
 
             # ================================================
