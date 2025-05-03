@@ -7,12 +7,8 @@ from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    SerializationInfo,
     WithJsonSchema,
-    field_serializer,
-    model_validator,
 )
-from pydantic.json import pydantic_encoder
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
@@ -25,6 +21,7 @@ from openhands.integrations.service_types import (
     GitService,
     ProviderType,
     Repository,
+    SuggestedTask,
     User,
 )
 from openhands.server.types import AppMode
@@ -59,77 +56,10 @@ PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
-
-
-class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
-        default_factory=lambda: MappingProxyType({})
-    )
-
-    model_config = {
-        'frozen': True,
-        'validate_assignment': True,
-        'arbitrary_types_allowed': True,
-    }
-
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(
-        self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
-    ) -> dict[str, dict[str, str | Any]]:
-        tokens = {}
-        expose_secrets = info.context and info.context.get('expose_secrets', False)
-
-        for token_type, provider_token in provider_tokens.items():
-            if not provider_token or not provider_token.token:
-                continue
-
-            token_type_str = (
-                token_type.value
-                if isinstance(token_type, ProviderType)
-                else str(token_type)
-            )
-            tokens[token_type_str] = {
-                'token': provider_token.token.get_secret_value()
-                if expose_secrets
-                else pydantic_encoder(provider_token.token),
-                'user_id': provider_token.user_id,
-            }
-
-        return tokens
-
-    @model_validator(mode='before')
-    @classmethod
-    def convert_dict_to_mappingproxy(
-        cls, data: dict[str, dict[str, dict[str, str]]] | PROVIDER_TOKEN_TYPE
-    ) -> dict[str, MappingProxyType[Any, Any]]:
-        """Custom deserializer to convert dictionary into MappingProxyType"""
-        if not isinstance(data, dict):
-            raise ValueError('SecretStore must be initialized with a dictionary')
-
-        new_data: dict[str, MappingProxyType[Any, Any]] = {}
-
-        if 'provider_tokens' in data:
-            tokens = data['provider_tokens']
-            if isinstance(
-                tokens, dict
-            ):  # Ensure conversion happens only for dict inputs
-                converted_tokens = {}
-                for key, value in tokens.items():
-                    try:
-                        provider_type = (
-                            ProviderType(key) if isinstance(key, str) else key
-                        )
-                        converted_tokens[provider_type] = ProviderToken.from_value(
-                            value
-                        )
-                    except ValueError:
-                        # Skip invalid provider types or tokens
-                        continue
-
-                # Convert to MappingProxyType
-                new_data['provider_tokens'] = MappingProxyType(converted_tokens)
-
-        return new_data
+CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
+    CUSTOM_SECRETS_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class ProviderHandler:
@@ -191,7 +121,7 @@ class ProviderHandler:
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
-        Get repositories from a selected providers with pagination support
+        Get repositories from providers
         """
 
         all_repos: list[Repository] = []
@@ -204,6 +134,21 @@ class ProviderHandler:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
 
         return all_repos
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """
+        Get suggested tasks from providers
+        """
+        tasks: list[SuggestedTask] = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                service_repos = await service.get_suggested_tasks()
+                tasks.extend(service_repos)
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {provider}: {e}')
+
+        return tasks
 
     async def search_repositories(
         self,
@@ -341,3 +286,22 @@ class ProviderHandler:
         Map ProviderType value to the environment variable name in the runtime
         """
         return f'{provider.value}_token'.lower()
+
+    async def verify_repo_provider(
+        self, repository: str, specified_provider: ProviderType | None = None
+    ):
+        if specified_provider:
+            try:
+                service = self._get_service(specified_provider)
+                return await service.get_repository_details_from_repo_name(repository)
+            except Exception:
+                pass
+
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                return await service.get_repository_details_from_repo_name(repository)
+            except Exception:
+                pass
+
+        raise AuthenticationError(f'Unable to access repo {repository}')

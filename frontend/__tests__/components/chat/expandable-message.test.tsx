@@ -95,6 +95,23 @@ describe("ExpandableMessage", () => {
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
+  it("should render with neutral border and no icon for action messages with undefined success (timeout case)", () => {
+    renderWithProviders(
+      <ExpandableMessage
+        id="OBSERVATION_MESSAGE$RUN"
+        message="Command timed out"
+        type="action"
+        success={undefined}
+      />,
+    );
+    const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
+    const container = element.closest(
+      "div.flex.gap-2.items-center.justify-start",
+    );
+    expect(container).toHaveClass("border-neutral-300");
+    expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
+  });
+
   it("should render the out of credits message when the user is out of credits", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - We only care about the APP_MODE and FEATURE_FLAGS fields
