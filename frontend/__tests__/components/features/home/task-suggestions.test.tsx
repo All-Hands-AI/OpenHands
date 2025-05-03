@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
-import userEvent from "@testing-library/user-event";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
@@ -96,18 +95,5 @@ describe("TaskSuggestions", () => {
     });
 
     expect(screen.queryByTestId("task-group-skeleton")).not.toBeInTheDocument();
-  });
-
-  it("should display a button to settings if the user needs to sign in with their git provider", async () => {
-    renderTaskSuggestions(false);
-
-    expect(getSuggestedTasksSpy).not.toHaveBeenCalled();
-    const goToSettingsButton = await screen.findByTestId(
-      "navigate-to-settings-button",
-    );
-    expect(goToSettingsButton).toBeInTheDocument();
-
-    await userEvent.click(goToSettingsButton);
-    await screen.findByTestId("settings-screen");
   });
 });

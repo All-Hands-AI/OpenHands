@@ -234,7 +234,7 @@ async def git_diff(
     request: Request,
     path: str,
     conversation_id: str,
-    conversation_store = Depends(get_conversation_store),
+    conversation_store=Depends(get_conversation_store),
 ):
     runtime: Runtime = request.state.conversation.runtime
 

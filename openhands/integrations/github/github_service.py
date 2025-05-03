@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -119,6 +120,12 @@ class GitHubService(BaseGitService, GitService):
             email=response.get('email'),
         )
 
+    async def verify_access(self) -> bool:
+        """Verify if the token is valid by making a simple request."""
+        url = f'{self.BASE_URL}'
+        await self._make_request(url)
+        return True
+
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
@@ -157,6 +164,10 @@ class GitHubService(BaseGitService, GitService):
 
         return repos[:max_repos]  # Trim to max_repos if needed
 
+    def parse_pushed_at_date(self, repo):
+        ts = repo.get('pushed_at')
+        return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
+
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
@@ -183,6 +194,9 @@ class GitHubService(BaseGitService, GitService):
                 # If we've already reached MAX_REPOS, no need to check other installations
                 if len(all_repos) >= MAX_REPOS:
                     break
+
+            if sort == 'pushed':
+                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
         else:
             # Original behavior for non-SaaS mode
             params = {'per_page': str(PER_PAGE), 'sort': sort}
@@ -375,6 +389,18 @@ class GitHubService(BaseGitService, GitService):
             return tasks
         except Exception:
             return []
+
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('full_name'),
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+        )
 
 
 github_service_cls = os.environ.get(

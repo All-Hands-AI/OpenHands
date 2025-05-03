@@ -10,10 +10,12 @@ import {
   GetTrajectoryResponse,
   GitChangeDiff,
   GitChange,
+  ConversationTrigger,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository } from "#/types/git";
+import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
   /**
@@ -132,7 +134,7 @@ class OpenHands {
 
   static async getUserConversations(): Promise<Conversation[]> {
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=9",
+      "/api/conversations?limit=20",
     );
     return data.results;
   }
@@ -149,17 +151,23 @@ class OpenHands {
   }
 
   static async createConversation(
-    selectedRepository?: GitRepository,
+    conversation_trigger: ConversationTrigger = "gui",
+    selectedRepository?: string,
+    git_provider?: Provider,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
+    suggested_task?: SuggestedTask,
   ): Promise<Conversation> {
     const body = {
-      selected_repository: selectedRepository,
+      conversation_trigger,
+      repository: selectedRepository,
+      git_provider,
       selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
       replay_json: replayJson,
+      suggested_task,
     };
 
     const { data } = await openHands.post<Conversation>(
@@ -289,6 +297,23 @@ class OpenHands {
         params: { path },
       },
     );
+    return data;
+  }
+
+  /**
+   * Given a PAT, retrieves the repositories of the user
+   * @returns A list of repositories
+   */
+  static async retrieveUserGitRepositories() {
+    const { data } = await openHands.get<GitRepository[]>(
+      "/api/user/repositories",
+      {
+        params: {
+          sort: "pushed",
+        },
+      },
+    );
+
     return data;
   }
 }
