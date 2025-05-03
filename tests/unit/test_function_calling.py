@@ -266,7 +266,7 @@ def test_invalid_json_arguments():
         ],
         usage={'prompt_tokens': 10, 'completion_tokens': 10, 'total_tokens': 20},
     )
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Failed to parse tool call arguments' in str(exc_info.value)
 

@@ -44,10 +44,9 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -61,7 +60,7 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 
 def response_to_actions(
-    response: ModelResponse, is_llm_diff_enabled: bool = False
+    response: ModelResponse, mcp_tool_names: list[str] | None = None, is_llm_diff_enabled: bool = False
 ) -> list[Action]:
     """
     Parses the LLM response and converts it into a list of OpenHands Actions.
@@ -134,7 +133,7 @@ def response_to_actions(
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
-                raise RuntimeError(
+                raise FunctionCallValidationError(
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
 
@@ -287,12 +286,12 @@ def response_to_actions(
                 action = BrowseURLAction(url=arguments['url'])
 
             # ================================================
-            # McpAction (MCP)
+            # MCPAction (MCP)
             # ================================================
-            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
-                action = McpAction(
-                    name=tool_call.function.name.removesuffix(MCPClientTool.postfix()),
-                    arguments=tool_call.function.arguments,
+            elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
+                action = MCPAction(
+                    name=tool_call.function.name,
+                    arguments=arguments,
                 )
             else:
                 raise FunctionCallNotExistsError(
