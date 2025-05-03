@@ -12,7 +12,7 @@ export function MCPSSEServers({ servers }: MCPSSEServersProps) {
 
   return (
     <div>
-      <h4 className="text-sm font-medium mb-1">
+      <h4 className="text-sm font-medium mb-2">
         {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}{" "}
         <span className="text-gray-500">({servers.length})</span>
       </h4>

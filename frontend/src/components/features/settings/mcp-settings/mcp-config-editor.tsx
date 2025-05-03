@@ -23,8 +23,18 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-3">
-        <div>{t(I18nKey.SETTINGS$MCP_CONFIGURATION)}</div>
+      <div className="flex flex-col gap-2 mb-6">
+        <div className="text-sm font-medium">
+          {t(I18nKey.SETTINGS$MCP_TITLE)}
+        </div>
+        <p className="text-xs text-[#A3A3A3]">
+          {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
+        </p>
+      </div>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm font-medium">
+          {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
+        </div>
         <div className="flex items-center">
           <a
             href="https://docs.all-hands.dev/modules/usage/mcp"
@@ -52,14 +62,19 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           <MCPJsonEditor mcpConfig={mcpConfig} onChange={handleConfigChange} />
         ) : (
           <>
-            <div className="flex flex-col gap-4">
-              <MCPSSEServers servers={config.sse_servers} />
-              <MCPStdioServers servers={config.stdio_servers} />
+            <div className="flex flex-col gap-6">
+              <div>
+                <MCPSSEServers servers={config.sse_servers} />
+              </div>
+
+              <div>
+                <MCPStdioServers servers={config.stdio_servers} />
+              </div>
             </div>
 
             {config.sse_servers.length === 0 &&
               config.stdio_servers.length === 0 && (
-                <div className="mt-2 text-sm font-medium text-white">
+                <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
                   {t(I18nKey.SETTINGS$MCP_NO_SERVERS_CONFIGURED)}
                 </div>
               )}
