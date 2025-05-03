@@ -23,7 +23,16 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex flex-col gap-2 mb-6">
+        <div className="text-sm font-medium">
+          {t(I18nKey.SETTINGS$MCP_TITLE)}
+        </div>
+        <p className="text-xs text-[#A3A3A3]">
+          {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
+        </p>
+      </div>
+      
+      <div className="flex justify-between items-center mb-4">
         <div className="text-sm font-medium">
           {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
         </div>
@@ -54,8 +63,8 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           <MCPJsonEditor mcpConfig={mcpConfig} onChange={handleConfigChange} />
         ) : (
           <>
-            <div className="flex flex-col gap-4">
-              <div className="mb-3">
+            <div className="flex flex-col gap-6">
+              <div>
                 <MCPSSEServers servers={config.sse_servers} />
               </div>
 
@@ -66,7 +75,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
 
             {config.sse_servers.length === 0 &&
               config.stdio_servers.length === 0 && (
-                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
+                <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
                   {t(I18nKey.SETTINGS$MCP_NO_SERVERS_CONFIGURED)}
                 </div>
               )}

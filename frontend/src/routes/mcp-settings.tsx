@@ -65,16 +65,7 @@ function MCPSettingsScreen() {
       action={formAction}
       className="flex flex-col h-full justify-between"
     >
-      <div className="p-9 flex flex-col gap-6">
-        <div>
-          <h2 className="text-lg font-medium mb-2">
-            {t(I18nKey.SETTINGS$MCP_TITLE)}
-          </h2>
-          <p className="text-sm text-gray-400 mb-4">
-            {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
-          </p>
-        </div>
-
+      <div className="p-9 flex flex-col gap-12">
         <MCPConfigEditor mcpConfig={mcpConfig} onChange={handleConfigChange} />
       </div>
 

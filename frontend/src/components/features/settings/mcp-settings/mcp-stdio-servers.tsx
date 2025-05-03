@@ -20,7 +20,7 @@ export function MCPStdioServers({ servers }: MCPStdioServersProps) {
 
   return (
     <div>
-      <h4 className="text-sm font-medium mb-1">
+      <h4 className="text-sm font-medium mb-2">
         {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}{" "}
         <span className="text-gray-500">({servers.length})</span>
       </h4>
