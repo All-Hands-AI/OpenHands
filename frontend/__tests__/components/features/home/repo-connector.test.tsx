@@ -4,11 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
-import { createRoutesStub } from "react-router";
+import { createRoutesStub, Outlet } from "react-router";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { GitRepository } from "#/types/git";
-import * as GitService from "#/api/git";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 
 const renderRepoConnector = (initialProvidersAreSet = true) => {
@@ -23,8 +22,18 @@ const renderRepoConnector = (initialProvidersAreSet = true) => {
       path: "/conversations/:conversationId",
     },
     {
-      Component: () => <div data-testid="settings-screen" />,
+      Component: Outlet,
       path: "/settings",
+      children: [
+        {
+          Component: () => <div data-testid="settings-screen" />,
+          path: "/settings",
+        },
+        {
+          Component: () => <div data-testid="git-settings-screen" />,
+          path: "/settings/git",
+        },
+      ],
     },
   ]);
 
@@ -64,13 +73,10 @@ describe("RepoConnector", () => {
 
   it("should render the available repositories in the dropdown", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -86,13 +92,10 @@ describe("RepoConnector", () => {
 
   it("should only enable the launch button if a repo is selected", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -135,13 +138,10 @@ describe("RepoConnector", () => {
   it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -165,12 +165,8 @@ describe("RepoConnector", () => {
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
       "gui",
-      {
-        full_name: "rbren/polaris",
-        git_provider: "github",
-        id: 1,
-        is_public: true,
-      },
+      "rbren/polaris",
+      "github",
       undefined,
       [],
       undefined,
@@ -180,13 +176,10 @@ describe("RepoConnector", () => {
 
   it("should change the launch button text to 'Loading...' when creating a conversation", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderRepoConnector();
 
@@ -226,6 +219,6 @@ describe("RepoConnector", () => {
     expect(goToSettingsButton).toBeInTheDocument();
 
     await userEvent.click(goToSettingsButton);
-    await screen.findByTestId("settings-screen");
+    await screen.findByTestId("git-settings-screen");
   });
 });

@@ -1,5 +1,10 @@
 import { openHands } from "./open-hands-axios";
-import { CustomSecret, GetSecretsResponse } from "./secrets-service.types";
+import {
+  CustomSecret,
+  GetSecretsResponse,
+  POSTProviderTokens,
+} from "./secrets-service.types";
+import { Provider, ProviderToken } from "#/types/settings";
 
 export class SecretsService {
   static async getSecrets() {
@@ -29,6 +34,17 @@ export class SecretsService {
 
   static async deleteSecret(id: string) {
     const { data } = await openHands.delete<boolean>(`/api/secrets/${id}`);
+    return data;
+  }
+
+  static async addGitProvider(providers: Record<Provider, ProviderToken>) {
+    const tokens: POSTProviderTokens = {
+      provider_tokens: providers,
+    };
+    const { data } = await openHands.post<boolean>(
+      "/api/add-git-providers",
+      tokens,
+    );
     return data;
   }
 }
