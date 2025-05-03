@@ -255,6 +255,11 @@ enable_history_truncation = true
 # useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3'
 
+[agent.CustomAgent]
+# Example: use a custom agent from a different package
+# This will be automatically be registered as a new agent named "CustomAgent"
+classpath = "my_package.my_module.MyCustomAgent"
+
 #################################### Sandbox ###################################
 # Configuration for the sandbox
 ##############################################################################
