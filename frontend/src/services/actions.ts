@@ -104,7 +104,12 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.source === "agent") {
-    if (message.args && message.args.thought) {
+    // Only add thought as a message if it's not a "think" action
+    if (
+      message.args &&
+      message.args.thought &&
+      message.action !== ActionType.THINK
+    ) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     // Need to convert ActionMessage to RejectAction
@@ -147,6 +152,22 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
+  } else if (message.error) {
+    // Handle error messages from the server
+    const errorMessage =
+      typeof message.message === "string"
+        ? message.message
+        : String(message.message || "Unknown error");
+    trackError({
+      message: errorMessage,
+      source: "websocket",
+      metadata: { raw_message: message },
+    });
+    store.dispatch(
+      addErrorMessage({
+        message: errorMessage,
+      }),
+    );
   } else {
     const errorMsg = "Unknown message type received";
     trackError({

@@ -59,7 +59,7 @@ async def test_github_service_fetch_data():
 
     with patch('httpx.AsyncClient', return_value=mock_client):
         service = GitHubService(user_id=None, token=SecretStr('test-token'))
-        _ = await service._fetch_data('https://api.github.com/user')
+        _ = await service._make_request('https://api.github.com/user')
 
         # Verify the request was made with correct headers
         mock_client.get.assert_called_once()
@@ -78,4 +78,4 @@ async def test_github_service_fetch_data():
         mock_client.get.return_value = mock_response
 
         with pytest.raises(AuthenticationError):
-            _ = await service._fetch_data('https://api.github.com/user')
+            _ = await service._make_request('https://api.github.com/user')

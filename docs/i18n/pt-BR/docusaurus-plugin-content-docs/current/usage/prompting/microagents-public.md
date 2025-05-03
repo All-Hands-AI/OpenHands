@@ -4,7 +4,7 @@
 
 Microagentes públicos são diretrizes especializadas acionadas por palavras-chave para todos os usuários do OpenHands.
 Eles são definidos em arquivos markdown no diretório
-[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
+[`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents).
 
 Microagentes públicos:
 - Monitoram comandos recebidos em busca de suas palavras-chave de acionamento.
@@ -15,7 +15,7 @@ Microagentes públicos:
 ## Microagentes Públicos Atuais
 
 Para mais informações sobre microagentes específicos, consulte seus arquivos de documentação individuais no
-diretório [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/).
+diretório [`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/).
 
 ### Agente GitHub
 **Arquivo**: `github.md`
@@ -59,7 +59,7 @@ yes | npm install package-name
 ## Contribuindo com um Microagente Público
 
 Você pode criar seus próprios microagentes públicos adicionando novos arquivos markdown ao
-diretório [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/).
+diretório [`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/).
 
 ### Melhores Práticas para Microagentes Públicos
 
@@ -81,7 +81,7 @@ Antes de criar um microagente público, considere:
 
 #### 2. Crie o Arquivo
 
-Crie um novo arquivo markdown em [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/)
+Crie um novo arquivo markdown em [`microagents/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/)
 com um nome descritivo (por exemplo, `docker.md` para um agente focado em Docker).
 
 Atualize o arquivo com o frontmatter necessário [de acordo com o formato exigido](./microagents-overview#microagent-format)
@@ -149,5 +149,5 @@ Lembre-se de:
 - Otimizar para tempo de build e tamanho da imagem
 ```
 
-Veja os [microagentes públicos atuais](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) para
+Veja os [microagentes públicos atuais](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents) para
 mais exemplos.

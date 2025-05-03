@@ -1,11 +1,10 @@
 import os
-import tempfile
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Request,
-    UploadFile,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -17,27 +16,33 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileReadAction,
-    FileWriteAction,
 )
 from openhands.events.observation import (
     ErrorObservation,
     FileReadObservation,
-    FileWriteObservation,
 )
 from openhands.runtime.base import Runtime
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
-    MAX_FILE_SIZE_MB,
-    is_extension_allowed,
-    sanitize_filename,
 )
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    config,
+    conversation_manager,
+)
+from openhands.server.user_auth import get_user_id
+from openhands.server.utils import get_conversation_store
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/list-files')
-async def list_files(request: Request, conversation_id: str, path: str | None = None):
+async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -142,174 +147,21 @@ async def select_file(file: str, request: Request):
         return {'code': content}
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
+
+        if 'ERROR_BINARY_FILE' in observation.message:
+            return JSONResponse(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                content={'error': f'Unable to open binary file: {file}'},
+            )
+
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
         )
 
 
-@app.post('/upload-files')
-async def upload_file(request: Request, conversation_id: str, files: list[UploadFile]):
-    """Upload a list of files to the workspace.
-
-    To upload a files:
-    ```sh
-    curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/conversations/{conversation_id}/upload-files
-    ```
-
-    Args:
-        request (Request): The incoming request object.
-        files (list[UploadFile]): A list of files to be uploaded.
-
-    Returns:
-        dict: A message indicating the success of the upload operation.
-
-    Raises:
-        HTTPException: If there's an error saving the files.
-    """
-    try:
-        uploaded_files = []
-        skipped_files = []
-        for file in files:
-            safe_filename = sanitize_filename(file.filename)
-            file_contents = await file.read()
-
-            if (
-                MAX_FILE_SIZE_MB > 0
-                and len(file_contents) > MAX_FILE_SIZE_MB * 1024 * 1024
-            ):
-                skipped_files.append(
-                    {
-                        'name': safe_filename,
-                        'reason': f'Exceeds maximum size limit of {MAX_FILE_SIZE_MB}MB',
-                    }
-                )
-                continue
-
-            if not is_extension_allowed(safe_filename):
-                skipped_files.append(
-                    {'name': safe_filename, 'reason': 'File type not allowed'}
-                )
-                continue
-
-            # copy the file to the runtime
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                tmp_file_path = os.path.join(tmp_dir, safe_filename)
-                with open(tmp_file_path, 'wb') as tmp_file:
-                    tmp_file.write(file_contents)
-                    tmp_file.flush()
-
-                runtime: Runtime = request.state.conversation.runtime
-                try:
-                    await call_sync_from_async(
-                        runtime.copy_to,
-                        tmp_file_path,
-                        runtime.config.workspace_mount_path_in_sandbox,
-                    )
-                except AgentRuntimeUnavailableError as e:
-                    logger.error(f'Error saving file {safe_filename}: {e}')
-                    return JSONResponse(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        content={'error': f'Error saving file: {e}'},
-                    )
-            uploaded_files.append(safe_filename)
-
-        response_content = {
-            'message': 'File upload process completed',
-            'uploaded_files': uploaded_files,
-            'skipped_files': skipped_files,
-        }
-
-        if not uploaded_files and skipped_files:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    **response_content,
-                    'error': 'No files were uploaded successfully',
-                },
-            )
-
-        return JSONResponse(status_code=status.HTTP_200_OK, content=response_content)
-
-    except Exception as e:
-        logger.error(f'Error during file upload: {e}')
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                'error': f'Error during file upload: {str(e)}',
-                'uploaded_files': [],
-                'skipped_files': [],
-            },
-        )
-
-
-@app.post('/save-file')
-async def save_file(request: Request):
-    """Save a file to the agent's runtime file store.
-
-    This endpoint allows saving a file when the agent is in a paused, finished,
-    or awaiting user input state. It checks the agent's state before proceeding
-    with the file save operation.
-
-    Args:
-        request (Request): The incoming FastAPI request object.
-
-    Returns:
-        JSONResponse: A JSON response indicating the success of the operation.
-
-    Raises:
-        HTTPException:
-            - 403 error if the agent is not in an allowed state for editing.
-            - 400 error if the file path or content is missing.
-            - 500 error if there's an unexpected error during the save operation.
-    """
-    try:
-        # Extract file path and content from the request
-        data = await request.json()
-        file_path = data.get('filePath')
-        content = data.get('content')
-
-        # Validate the presence of required data
-        if not file_path or content is None:
-            raise HTTPException(status_code=400, detail='Missing filePath or content')
-
-        # Save the file to the agent's runtime file store
-        runtime: Runtime = request.state.conversation.runtime
-        file_path = os.path.join(
-            runtime.config.workspace_mount_path_in_sandbox, file_path
-        )
-        write_action = FileWriteAction(file_path, content)
-        try:
-            observation = await call_sync_from_async(runtime.run_action, write_action)
-        except AgentRuntimeUnavailableError as e:
-            logger.error(f'Error saving file: {e}')
-            return JSONResponse(
-                status_code=500,
-                content={'error': f'Error saving file: {e}'},
-            )
-
-        if isinstance(observation, FileWriteObservation):
-            return JSONResponse(
-                status_code=200, content={'message': 'File saved successfully'}
-            )
-        elif isinstance(observation, ErrorObservation):
-            return JSONResponse(
-                status_code=500,
-                content={'error': f'Failed to save file: {observation}'},
-            )
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={'error': f'Unexpected observation: {observation}'},
-            )
-    except Exception as e:
-        # Log the error and return a 500 response
-        logger.error(f'Error saving file: {e}')
-        raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
-
-
 @app.get('/zip-directory')
-def zip_current_workspace(request: Request, conversation_id: str):
+def zip_current_workspace(request: Request):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
@@ -334,3 +186,113 @@ def zip_current_workspace(request: Request, conversation_id: str):
             status_code=500,
             detail='Failed to zip workspace',
         )
+
+
+@app.get('/git/changes')
+async def git_changes(
+    request: Request,
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+):
+    runtime: Runtime = request.state.conversation.runtime
+    conversation_store = await ConversationStoreImpl.get_instance(
+        config,
+        user_id,
+    )
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    logger.info(f'Getting git changes in {cwd}')
+
+    try:
+        changes = await call_sync_from_async(runtime.get_git_changes, cwd)
+        if changes is None:
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Not a git repository'},
+            )
+        return changes
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting changes: {e}'},
+        )
+    except Exception as e:
+        logger.error(f'Error getting changes: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)},
+        )
+
+
+@app.get('/git/diff')
+async def git_diff(
+    request: Request,
+    path: str,
+    conversation_id: str,
+    conversation_store=Depends(get_conversation_store),
+):
+    runtime: Runtime = request.state.conversation.runtime
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation_id,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+
+    try:
+        diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
+        return diff
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error getting diff: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting diff: {e}'},
+        )
+
+
+async def get_cwd(
+    conversation_store: ConversationStore,
+    conversation_id: str,
+    workspace_mount_path_in_sandbox: str,
+):
+    metadata = await conversation_store.get_metadata(conversation_id)
+    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+    conversation_info = await _get_conversation_info(metadata, is_running)
+
+    cwd = workspace_mount_path_in_sandbox
+    if conversation_info and conversation_info.selected_repository:
+        repo_dir = conversation_info.selected_repository.split('/')[-1]
+        cwd = os.path.join(cwd, repo_dir)
+
+    return cwd
+
+
+async def _get_conversation_info(
+    conversation: ConversationMetadata,
+    is_running: bool,
+) -> ConversationInfo | None:
+    try:
+        title = conversation.title
+        if not title:
+            title = f'Conversation {conversation.conversation_id[:5]}'
+        return ConversationInfo(
+            conversation_id=conversation.conversation_id,
+            title=title,
+            last_updated_at=conversation.last_updated_at,
+            created_at=conversation.created_at,
+            selected_repository=conversation.selected_repository,
+            status=ConversationStatus.RUNNING
+            if is_running
+            else ConversationStatus.STOPPED,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+            extra={'session_id': conversation.conversation_id},
+        )
+        return None

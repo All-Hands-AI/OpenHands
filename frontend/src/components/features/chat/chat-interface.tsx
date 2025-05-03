@@ -127,7 +127,7 @@ export function ChatInterface() {
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-        className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
+        className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
       >
         {isLoadingMessages && (
           <div className="flex justify-center">

@@ -93,7 +93,8 @@ class RemoteRuntime(ActionExecutionClient):
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.runtime_url
 
     async def connect(self):
@@ -193,7 +194,10 @@ class RemoteRuntime(ActionExecutionClient):
             'debug',
             f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}',
         )
-
+        if self.config.sandbox.base_container_image is None:
+            raise ValueError(
+                'base_container_image is required to build the runtime image. '
+            )
         if self.config.sandbox.runtime_extra_deps:
             self.log(
                 'debug',

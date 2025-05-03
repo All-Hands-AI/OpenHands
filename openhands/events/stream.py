@@ -52,6 +52,7 @@ class EventStream(EventStore):
     _queue_loop: asyncio.AbstractEventLoop | None
     _thread_pools: dict[str, dict[str, ThreadPoolExecutor]]
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
+    _write_page_cache: list[dict]
 
     def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
         super().__init__(sid, file_store, user_id)
@@ -66,6 +67,7 @@ class EventStream(EventStore):
         self._subscribers = {}
         self._lock = threading.Lock()
         self.secrets = {}
+        self._write_page_cache = []
 
     def _init_thread_loop(self, subscriber_id: str, callback_id: str) -> None:
         loop = asyncio.new_event_loop()
@@ -158,20 +160,43 @@ class EventStream(EventStore):
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
+        event._timestamp = datetime.now().isoformat()
+        event._source = source  # type: ignore [attr-defined]
         with self._lock:
             event._id = self.cur_id  # type: ignore [attr-defined]
             self.cur_id += 1
-        logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
-        event._timestamp = datetime.now().isoformat()
-        event._source = source  # type: ignore [attr-defined]
-        data = event_to_dict(event)
-        data = self._replace_secrets(data)
-        event = event_from_dict(data)
+
+            # Take a copy of the current write page
+            current_write_page = self._write_page_cache
+
+            data = event_to_dict(event)
+            data = self._replace_secrets(data)
+            event = event_from_dict(data)
+            current_write_page.append(data)
+
+            # If the page is full, create a new page for future events / other threads to use
+            if len(current_write_page) == self.cache_size:
+                self._write_page_cache = []
+
         if event.id is not None:
+            # Write the event to the store - this can take some time
             self.file_store.write(
                 self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
             )
+
+            # Store the cache page last - if it is not present during reads then it will simply be bypassed.
+            self._store_cache_page(current_write_page)
         self._queue.put(event)
+
+    def _store_cache_page(self, current_write_page: list[dict]):
+        """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
+        if len(current_write_page) < self.cache_size:
+            return
+        start = current_write_page[0]['id']
+        end = start + self.cache_size
+        contents = json.dumps(current_write_page)
+        cache_filename = self._get_filename_for_cache(start, end)
+        self.file_store.write(cache_filename, contents)
 
     def set_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets = secrets.copy()
@@ -207,11 +232,17 @@ class EventStream(EventStore):
             # pass each event to each callback in order
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
-                for callback_id in callbacks:
-                    callback = callbacks[callback_id]
-                    pool = self._thread_pools[key][callback_id]
-                    future = pool.submit(callback, event)
-                    future.add_done_callback(self._make_error_handler(callback_id, key))
+                # Create a copy of the keys to avoid "dictionary changed size during iteration" error
+                callback_ids = list(callbacks.keys())
+                for callback_id in callback_ids:
+                    # Check if callback_id still exists (might have been removed during iteration)
+                    if callback_id in callbacks:
+                        callback = callbacks[callback_id]
+                        pool = self._thread_pools[key][callback_id]
+                        future = pool.submit(callback, event)
+                        future.add_done_callback(
+                            self._make_error_handler(callback_id, key)
+                        )
 
     def _make_error_handler(
         self, callback_id: str, subscriber_id: str

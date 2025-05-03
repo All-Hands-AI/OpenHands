@@ -5,3 +5,15 @@
 .button-base {
   @apply bg-tertiary border border-neutral-600 rounded;
 }
+
+.skeleton {
+  @apply bg-gray-400 rounded-md animate-pulse;
+}
+
+.skeleton-round {
+  @apply bg-gray-400 rounded-full animate-pulse;
+}
+
+.heading {
+  @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
+}

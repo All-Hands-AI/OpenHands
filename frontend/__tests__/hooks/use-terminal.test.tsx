@@ -1,29 +1,29 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
-import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command } from "#/state/command-slice";
+import { AgentState } from "#/types/agent-state";
+import { renderWithProviders } from "../../test-utils";
+
+// Mock the WsClient context
+vi.mock("#/context/ws-client-provider", () => ({
+  useWsClient: () => ({
+    send: vi.fn(),
+    status: "CONNECTED",
+    isLoadingMessages: false,
+    events: [],
+  }),
+}));
 
 interface TestTerminalComponentProps {
   commands: Command[];
-  secrets: string[];
 }
 
 function TestTerminalComponent({
   commands,
-  secrets,
 }: TestTerminalComponentProps) {
-  const ref = useTerminal({ commands, secrets, disabled: false });
+  const ref = useTerminal({ commands });
   return <div ref={ref} />;
-}
-
-interface WrapperProps {
-  children: ReactNode;
-}
-
-function Wrapper({ children }: WrapperProps) {
-  return <div>{children}</div>;
 }
 
 describe("useTerminal", () => {
@@ -57,8 +57,11 @@ describe("useTerminal", () => {
   });
 
   it("should render", () => {
-    render(<TestTerminalComponent commands={[]} secrets={[]} />, {
-      wrapper: Wrapper,
+    renderWithProviders(<TestTerminalComponent commands={[]} />, {
+      preloadedState: {
+        agent: { curAgentState: AgentState.RUNNING },
+        cmd: { commands: [] },
+      },
     });
   });
 
@@ -68,15 +71,19 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    render(<TestTerminalComponent commands={commands} secrets={[]} />, {
-      wrapper: Wrapper,
+    renderWithProviders(<TestTerminalComponent commands={commands} />, {
+      preloadedState: {
+        agent: { curAgentState: AgentState.RUNNING },
+        cmd: { commands },
+      },
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
   });
 
-  it("should hide secrets in the terminal", () => {
+  // This test is no longer relevant as secrets filtering has been removed
+  it.skip("should hide secrets in the terminal", () => {
     const secret = "super_secret_github_token";
     const anotherSecret = "super_secret_another_token";
     const commands: Command[] = [
@@ -87,23 +94,18 @@ describe("useTerminal", () => {
       { content: secret, type: "output" },
     ];
 
-    render(
+    renderWithProviders(
       <TestTerminalComponent
         commands={commands}
-        secrets={[secret, anotherSecret]}
       />,
       {
-        wrapper: Wrapper,
+        preloadedState: {
+          agent: { curAgentState: AgentState.RUNNING },
+          cmd: { commands },
+        },
       },
     );
 
-    // BUG: `vi.clearAllMocks()` does not clear the number of calls
-    // therefore, we need to assume the order of the calls based
-    // on the test order
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(
-      3,
-      `export GITHUB_TOKEN=${"*".repeat(10)},${"*".repeat(10)},${"*".repeat(10)}`,
-    );
-    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(4, "*".repeat(10));
+    // This test is no longer relevant as secrets filtering has been removed
   });
 });
