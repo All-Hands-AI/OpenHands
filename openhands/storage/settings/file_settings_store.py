@@ -9,14 +9,16 @@ from pydantic import SecretStr
 
 from openhands.core import logger
 from openhands.core.config.app_config import AppConfig
+
 from openhands.core.config.config_save import (
     _get_value_from_path, # Use helper to read from AppConfig
     save_setting_to_user_toml,
 )
 from openhands.integrations.provider import ProviderType, SecretStore
 from openhands.server.settings import Settings
-# from openhands.storage import get_file_store # No longer needed directly by FileSettingsStore
-# from openhands.storage.files import FileStore # No longer needed directly by FileSettingsStore
+from openhands.storage import get_file_store
+from openhands.storage.data_models.settings import Settings
+from openhands.storage.files import FileStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import call_sync_from_async
 
