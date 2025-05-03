@@ -1224,8 +1224,9 @@ def test_has_agent_in_earlier_events(conversation_memory):
     )
 
 
-def test_process_events_with_empty_content(conversation_memory):
-    """Test that empty string content is handled correctly and not included in messages."""
+def test_process_events_with_empty_content_and_tool_calls(conversation_memory):
+    """Test that empty string content is handled correctly when tool calls are present.
+    The message should be kept because it has tool calls, even though content is empty."""
     # Create a tool call for the execute_bash function
     tool_call = ChatCompletionMessageToolCall(
         id='test_call_id',
@@ -1253,6 +1254,64 @@ def test_process_events_with_empty_content(conversation_memory):
         total_calls_in_response=1,
     )
 
+    # Create a mock tool response observation
+    obs = CmdOutputObservation(
+        command='test',
+        content='Command output',
+        command_id=1,
+        exit_code=0,
+    )
+    obs.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='test_call_id',
+        function_name='execute_bash',
+        model_response=mock_response,
+        total_calls_in_response=1,
+    )
+
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+
+    # Process events
+    messages = conversation_memory.process_events(
+        condensed_history=[action, obs],  # Include both action and observation
+        initial_user_action=initial_user_message,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Verify that the message with empty content but tool calls is kept
+    assert len(messages) == 4  # System + initial user + assistant with tool call + tool response
+    assert messages[2].role == 'assistant'  # Assistant message with tool call
+    assert not messages[2].content  # Content should be empty
+    assert messages[2].tool_calls  # But tool_calls should be present
+    assert messages[2].tool_calls[0].id == 'test_call_id'
+    assert messages[3].role == 'tool'  # Tool response
+    assert messages[3].tool_call_id == 'test_call_id'
+    assert messages[3].content[0].text == 'Command output'
+
+
+def test_process_events_with_empty_content_no_tool_calls(conversation_memory):
+    """Test that empty string content is filtered out when there are no tool calls."""
+    # Create a mock ModelResponse with empty string content and no tool calls
+    mock_response = {
+        'id': 'mock_response_id',
+        'choices': [{'message': {'content': '', 'tool_calls': []}}],
+        'created': 0,
+        'model': '',
+        'object': '',
+        'usage': {'completion_tokens': 0, 'prompt_tokens': 0, 'total_tokens': 0},
+    }
+
+    # Create an action with empty content and no tool calls
+    action = MessageAction(content='')
+    action._source = EventSource.AGENT
+    action.tool_call_metadata = ToolCallMetadata(
+        tool_call_id='test_call_id',
+        function_name='execute_bash',
+        model_response=mock_response,
+        total_calls_in_response=0,
+    )
+
     initial_user_message = MessageAction(content='Initial user message')
     initial_user_message._source = EventSource.USER
 
@@ -1264,17 +1323,22 @@ def test_process_events_with_empty_content(conversation_memory):
         vision_is_active=False,
     )
 
-    # Verify that the empty content is not included
+    # Verify that the empty content message is filtered out
     assert len(messages) == 2  # Only system message and initial user message
-    assert all(
-        len(msg.content) > 0 for msg in messages
-    )  # All messages should have non-empty content
+    assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
+    assert messages[1].content[0].text == 'Initial user message'
 
 
 class TestFilterUnmatchedToolCalls:
     @pytest.fixture
-    def processor(self):
-        return ConversationMemory()
+    def processor(self, agent_config):
+        prompt_manager = MagicMock(spec=PromptManager)
+        prompt_manager.get_system_message.return_value = 'System message'
+        prompt_manager.build_workspace_context.return_value = (
+            'Formatted repository and runtime info'
+        )
+        return ConversationMemory(agent_config, prompt_manager)
 
     def test_empty_is_unchanged(self):
         assert list(ConversationMemory._filter_unmatched_tool_calls([])) == []
