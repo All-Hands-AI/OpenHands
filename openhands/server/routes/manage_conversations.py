@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -59,6 +59,9 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
     
+    model_config = {
+        "extra": "forbid"
+    }
 
 async def _create_new_conversation(
     user_id: str | None,
@@ -236,6 +239,16 @@ async def new_conversation(
                 'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR'
             },
             status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "status": "error",
+                "message": "Validation error: " + str(e.errors()),
+                "msg_id": "STATUS$VALIDATION_ERROR",
+            },
         )
 
 
