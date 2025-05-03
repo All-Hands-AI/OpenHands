@@ -133,8 +133,10 @@ This is a test repo microagent.
             if temp_zip_file and temp_zip_file.exists():
                 temp_zip_file.unlink()
 
+    @mock.patch('os.path.exists')
     def test_get_microagents_loads_from_custom_dir(
         self,
+        mock_os_path_exists,
         mock_runtime_instance,
         temp_user_microagents_dir,
     ):
@@ -144,6 +146,8 @@ This is a test repo microagent.
         configures the mock Runtime instance to use this directory as the custom
         microagents directory, and verifies that the microagents are loaded correctly.
         """
+        # Set up os.path.exists to return True for the custom directory
+        mock_os_path_exists.return_value = True
         # Create actual microagent files in the temporary directory
         knowledge_agent_content = """---
 name: custom-knowledge-agent
