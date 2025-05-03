@@ -382,9 +382,10 @@ class GitLabService(BaseGitService, GitService):
         except Exception:
             return []
 
-
-    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
-        encoded_name = repository.replace("/", "%2F")
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        encoded_name = repository.replace('/', '%2F')
 
         url = f'{self.BASE_URL}/projects/{encoded_name}'
         repo, _ = await self._make_request(url)
@@ -396,8 +397,6 @@ class GitLabService(BaseGitService, GitService):
             git_provider=ProviderType.GITLAB,
             is_public=repo.get('visibility') == 'public',
         )
-        
-       
 
 
 gitlab_service_cls = os.environ.get(

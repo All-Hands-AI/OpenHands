@@ -15,7 +15,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.llm.llm import LLM
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -23,6 +23,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
@@ -111,7 +112,7 @@ def initialize_repository_for_runtime(
         )
 
     secret_store = (
-        SecretStore(provider_tokens=provider_tokens) if provider_tokens else None
+        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
     )
     immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
