@@ -324,7 +324,7 @@ class Runtime(FileEditRuntimeMixin):
         """
         cloned_repos: list[str] = []
 
-        if not git_provider_tokens or not selected_repository:
+        if not git_provider_tokens:
             return cloned_repos
 
         # Get the user
@@ -337,14 +337,15 @@ class Runtime(FileEditRuntimeMixin):
             user_openhands_repo = f'{user_name}/.openhands'
             try:
                 # Use the same domain and token as the main repository
-                if '/' in selected_repository:
+                if selected_repository is not None and '/' in selected_repository:
                     provider = None
                     for prov_type in git_provider_tokens:
                         try:
                             service = provider_handler._get_service(prov_type)
-                            await service.get_repository_details_from_repo_name(
-                                selected_repository
-                            )
+                            if selected_repository is not None:
+                                await service.get_repository_details_from_repo_name(
+                                    selected_repository
+                                )
                             provider = prov_type
                             break
                         except Exception:
@@ -369,25 +370,51 @@ class Runtime(FileEditRuntimeMixin):
                                 f'https://{domain}/{user_openhands_repo}.git'
                             )
 
-                        # Clone the repository
-                        dir_name = user_openhands_repo.split('/')[-1]
-                        clone_command = f'git clone {remote_repo_url} {dir_name}'
+                        # Clone the repository to user-specific directory
+                        # Create user directory if it doesn't exist
+                        mkdir_command = f'mkdir -p {user_name}'
+                        self.run_action(CmdRunAction(command=mkdir_command))
 
-                        action = CmdRunAction(
-                            command=clone_command,
-                        )
-                        self.log(
-                            'info',
-                            f'Cloning user microagents repo: {user_openhands_repo}',
-                        )
-                        obs = self.run_action(action)
+                        # Clone into user directory
+                        dir_name = f'{user_name}/.openhands'
 
-                        if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
-                            cloned_repos.append(user_openhands_repo)
+                        # Check if directory already exists
+                        check_dir_command = (
+                            f'[ -d "{dir_name}" ] && echo "exists" || echo "not exists"'
+                        )
+                        check_obs = self.run_action(
+                            CmdRunAction(command=check_dir_command)
+                        )
+
+                        if (
+                            isinstance(check_obs, CmdOutputObservation)
+                            and 'exists' in check_obs.content
+                        ):
                             self.log(
                                 'info',
-                                f"Cloned user's .openhands repository: {user_openhands_repo}",
+                                f"User's .openhands repository already exists at {dir_name}",
                             )
+                            cloned_repos.append(user_openhands_repo)
+                        else:
+                            clone_command = f'git clone {remote_repo_url} {dir_name}'
+                            action = CmdRunAction(
+                                command=clone_command,
+                            )
+                            self.log(
+                                'info',
+                                f'Cloning user microagents repo: {user_openhands_repo}',
+                            )
+                            obs = self.run_action(action)
+
+                            if (
+                                isinstance(obs, CmdOutputObservation)
+                                and obs.exit_code == 0
+                            ):
+                                cloned_repos.append(user_openhands_repo)
+                                self.log(
+                                    'info',
+                                    f"Cloned user's .openhands repository: {user_openhands_repo}",
+                                )
             except Exception as e:
                 self.log(
                     'debug',
@@ -395,7 +422,7 @@ class Runtime(FileEditRuntimeMixin):
                 )
 
             # If selected repository is from an organization, try to clone org's .openhands repository
-            if selected_repository and '/' in selected_repository:
+            if selected_repository is not None and '/' in selected_repository:
                 org_name = selected_repository.split('/')[0]
                 # Skip if org_name is the same as user_login (user's own repo)
                 if org_name != user_name:
@@ -433,28 +460,51 @@ class Runtime(FileEditRuntimeMixin):
                                     f'https://{domain}/{org_openhands_repo}.git'
                                 )
 
-                            # Clone the repository
-                            dir_name = org_openhands_repo.split('/')[-1]
-                            clone_command = f'git clone {remote_repo_url} {dir_name}'
+                            # Clone the repository to org-specific directory
+                            # Create org directory if it doesn't exist
+                            mkdir_command = f'mkdir -p {org_name}'
+                            self.run_action(CmdRunAction(command=mkdir_command))
 
-                            action = CmdRunAction(
-                                command=clone_command,
+                            # Clone into org directory
+                            dir_name = f'{org_name}/.openhands'
+
+                            # Check if directory already exists
+                            check_dir_command = f'[ -d "{dir_name}" ] && echo "exists" || echo "not exists"'
+                            check_obs = self.run_action(
+                                CmdRunAction(command=check_dir_command)
                             )
-                            self.log(
-                                'info',
-                                f'Cloning organization microagents repo: {org_openhands_repo}',
-                            )
-                            obs = self.run_action(action)
 
                             if (
-                                isinstance(obs, CmdOutputObservation)
-                                and obs.exit_code == 0
+                                isinstance(check_obs, CmdOutputObservation)
+                                and 'exists' in check_obs.content
                             ):
-                                cloned_repos.append(org_openhands_repo)
                                 self.log(
                                     'info',
-                                    f"Cloned organization's .openhands repository: {org_openhands_repo}",
+                                    f"Organization's .openhands repository already exists at {dir_name}",
                                 )
+                                cloned_repos.append(org_openhands_repo)
+                            else:
+                                clone_command = (
+                                    f'git clone {remote_repo_url} {dir_name}'
+                                )
+                                action = CmdRunAction(
+                                    command=clone_command,
+                                )
+                                self.log(
+                                    'info',
+                                    f'Cloning organization microagents repo: {org_openhands_repo}',
+                                )
+                                obs = self.run_action(action)
+
+                                if (
+                                    isinstance(obs, CmdOutputObservation)
+                                    and obs.exit_code == 0
+                                ):
+                                    cloned_repos.append(org_openhands_repo)
+                                    self.log(
+                                        'info',
+                                        f"Cloned organization's .openhands repository: {org_openhands_repo}",
+                                    )
                     except Exception as e:
                         self.log(
                             'debug',
@@ -503,6 +553,12 @@ class Runtime(FileEditRuntimeMixin):
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
                 )
+
+            # Even if no repository is selected, try to clone user's .openhands repository
+            # if we have a token
+            if git_provider_tokens:
+                await self.clone_user_and_org_microagents(git_provider_tokens, None)
+
             return ''
 
         # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
@@ -591,81 +647,171 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
+    def _load_microagents_from_dir(self, directory_path: Path) -> list[BaseMicroagent]:
+        """Helper method to load microagents from a directory."""
+        loaded_agents: list[BaseMicroagent] = []
+
+        # Check if directory exists
+        try:
+            files = self.list_files(str(directory_path))
+            if not files:
+                return loaded_agents
+
+            self.log('info', f'Found {len(files)} files in {directory_path}.')
+
+            # Copy files from sandbox to local filesystem
+            zip_path = self.copy_from(str(directory_path))
+            microagent_folder = tempfile.mkdtemp()
+
+            try:
+                # Extract files
+                with ZipFile(zip_path, 'r') as zip_file:
+                    zip_file.extractall(microagent_folder)
+
+                # Add debug print of directory structure
+                self.log('debug', f'Microagent folder structure for {directory_path}:')
+                for root, _, files in os.walk(microagent_folder):
+                    relative_path = os.path.relpath(root, microagent_folder)
+                    self.log('debug', f'Directory: {relative_path}/')
+                    for file in files:
+                        self.log(
+                            'debug', f'  File: {os.path.join(relative_path, file)}'
+                        )
+
+                # Load microagents
+                repo_agents, knowledge_agents = load_microagents_from_dir(
+                    microagent_folder
+                )
+                loaded_agents.extend(repo_agents.values())
+                loaded_agents.extend(knowledge_agents.values())
+
+                self.log(
+                    'info',
+                    f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {directory_path}',
+                )
+            finally:
+                # Clean up
+                if os.path.exists(zip_path):
+                    zip_path.unlink()
+                shutil.rmtree(microagent_folder)
+        except Exception as e:
+            self.log('debug', f'Error loading microagents from {directory_path}: {e}')
+
+        return loaded_agents
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroagent]:
-        """Load microagents from the selected repository.
-        If selected_repository is None, load microagents from the current workspace.
+        """Load microagents from all sources:
+        1. Custom microagents directory (~/.openhands/microagents/)
+        2. User's .openhands repository
+        3. Organization's .openhands repository
+        4. Selected repository's .openhands/microagents directory
+
         This is the main entry point for loading microagents.
         """
-
         loaded_microagents: list[BaseMicroagent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
-        microagents_dir = workspace_root / '.openhands' / 'microagents'
+
+        # 1. Load from custom microagents directory
+        custom_microagents_path = os.path.expanduser(self.config.custom_microagents_dir)
+        if os.path.exists(custom_microagents_path):
+            # Copy the custom microagents directory to the sandbox
+            sandbox_custom_dir = workspace_root / '.custom_microagents'
+            try:
+                # Create the directory if it doesn't exist
+                self.run_action(CmdRunAction(f'mkdir -p {sandbox_custom_dir}'))
+
+                # Copy files from host to sandbox
+                self.copy_to(
+                    custom_microagents_path, str(sandbox_custom_dir), recursive=True
+                )
+
+                # Load microagents from the copied directory
+                self.log(
+                    'info', f'Loading custom microagents from {sandbox_custom_dir}'
+                )
+                custom_microagents = self._load_microagents_from_dir(sandbox_custom_dir)
+                loaded_microagents.extend(custom_microagents)
+            except Exception as e:
+                self.log('warning', f'Failed to load custom microagents: {e}')
+
+        # 2. Load from user's .openhands repository if it exists
+        # We need to check all user directories in the workspace root
+        user_dirs = []
+        try:
+            # List all directories in workspace root
+            workspace_files = self.list_files(str(workspace_root))
+            for item in workspace_files:
+                if item.endswith('/'):  # It's a directory
+                    user_dir = workspace_root / item.rstrip('/')
+                    # Check if it has a .openhands directory
+                    user_openhands_dir = user_dir / '.openhands'
+                    check_dir_command = f'[ -d "{user_openhands_dir}" ] && echo "exists" || echo "not exists"'
+                    check_obs = self.run_action(CmdRunAction(command=check_dir_command))
+
+                    if (
+                        isinstance(check_obs, CmdOutputObservation)
+                        and 'exists' in check_obs.content
+                    ):
+                        user_dirs.append(user_dir)
+        except Exception as e:
+            self.log('debug', f'Error checking for user directories: {e}')
+
+        # Load microagents from each user's .openhands/microagents directory
+        for user_dir in user_dirs:
+            user_microagents_dir = user_dir / '.openhands' / 'microagents'
+            self.log('info', f'Loading user microagents from {user_microagents_dir}')
+            user_microagents = self._load_microagents_from_dir(user_microagents_dir)
+            loaded_microagents.extend(user_microagents)
+
+        # 3 & 4. Load from selected repository and its .openhands/microagents directory
         repo_root = None
         if selected_repository:
             repo_root = workspace_root / selected_repository.split('/')[-1]
-            microagents_dir = repo_root / '.openhands' / 'microagents'
-        self.log(
-            'info',
-            f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
-        )
+            repo_microagents_dir = repo_root / '.openhands' / 'microagents'
+            self.log(
+                'info', f'Loading repository microagents from {repo_microagents_dir}'
+            )
+            repo_microagents = self._load_microagents_from_dir(repo_microagents_dir)
+            loaded_microagents.extend(repo_microagents)
 
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
-        obs = self.read(
-            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
-        )
-        if isinstance(obs, ErrorObservation) and repo_root is not None:
-            # If the instructions file is not found in the workspace root, try to load it from the repo root
-            self.log(
-                'debug',
-                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
-            )
+        if repo_root is not None:
+            # First try to load from the repo root
             obs = self.read(
                 FileReadAction(path=str(repo_root / '.openhands_instructions'))
             )
-
-        if isinstance(obs, FileReadObservation):
-            self.log('info', 'openhands_instructions microagent loaded.')
-            loaded_microagents.append(
-                BaseMicroagent.load(
-                    path='.openhands_instructions',
-                    microagent_dir=None,
-                    file_content=obs.content,
+            if isinstance(obs, ErrorObservation):
+                # If not found in repo root, try workspace root
+                obs = self.read(
+                    FileReadAction(path=str(workspace_root / '.openhands_instructions'))
                 )
+
+            if isinstance(obs, FileReadObservation):
+                self.log('info', 'openhands_instructions microagent loaded.')
+                loaded_microagents.append(
+                    BaseMicroagent.load(
+                        path='.openhands_instructions',
+                        microagent_dir=None,
+                        file_content=obs.content,
+                    )
+                )
+        else:
+            # If no repo_root, just try workspace root
+            obs = self.read(
+                FileReadAction(path=str(workspace_root / '.openhands_instructions'))
             )
-
-        # Load microagents from directory
-        files = self.list_files(str(microagents_dir))
-        if files:
-            self.log('info', f'Found {len(files)} files in microagents directory.')
-            zip_path = self.copy_from(str(microagents_dir))
-            microagent_folder = tempfile.mkdtemp()
-
-            # Properly handle the zip file
-            with ZipFile(zip_path, 'r') as zip_file:
-                zip_file.extractall(microagent_folder)
-
-            # Add debug print of directory structure
-            self.log('debug', 'Microagent folder structure:')
-            for root, _, files in os.walk(microagent_folder):
-                relative_path = os.path.relpath(root, microagent_folder)
-                self.log('debug', f'Directory: {relative_path}/')
-                for file in files:
-                    self.log('debug', f'  File: {os.path.join(relative_path, file)}')
-
-            # Clean up the temporary zip file
-            zip_path.unlink()
-            # Load all microagents using the existing function
-            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
-            self.log(
-                'info',
-                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents',
-            )
-            loaded_microagents.extend(repo_agents.values())
-            loaded_microagents.extend(knowledge_agents.values())
-            shutil.rmtree(microagent_folder)
+            if isinstance(obs, FileReadObservation):
+                self.log('info', 'openhands_instructions microagent loaded.')
+                loaded_microagents.append(
+                    BaseMicroagent.load(
+                        path='.openhands_instructions',
+                        microagent_dir=None,
+                        file_content=obs.content,
+                    )
+                )
 
         return loaded_microagents
 

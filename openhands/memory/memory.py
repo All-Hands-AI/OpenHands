@@ -2,7 +2,6 @@ import asyncio
 import os
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Callable
 
 import openhands
@@ -29,9 +28,6 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(openhands.__file__)),
     'microagents',
 )
-
-# User-specific global microagents directory that applies to all repos
-USER_GLOBAL_MICROAGENTS_DIR = os.path.expanduser('~/.openhands/microagents')
 
 
 class Memory:
@@ -74,13 +70,6 @@ class Memory:
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
-
-        # Load user global microagents from ~/.openhands/microagents
-        self._load_user_global_microagents()
-
-        # Load user microagents (Knowledge + Repo)
-        # from typically user-defined repo
-        self._load_user_microagents()
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -245,9 +234,9 @@ class Memory:
         self, user_microagents: list[BaseMicroagent]
     ) -> None:
         """
-        This method loads microagents from a user's cloned repo or workspace directory.
+        This method loads microagents from a user workspace/repo/.openhands/microagents
 
-        This is typically called from agent_session or setup once the workspace is cloned.
+        This is typically called from agent_session or setup session.
         """
         logger.info(
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
@@ -260,7 +249,7 @@ class Memory:
 
     def _load_global_microagents(self) -> None:
         """
-        Loads microagents from the global microagents_dir
+        Loads microagents from the global microagents_dir openhands/microagents
         """
         repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
@@ -271,61 +260,6 @@ class Memory:
         for name, agent in repo_agents.items():
             if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
-
-    def _load_user_global_microagents(self) -> None:
-        """
-        Loads user global microagents from ~/.openhands/microagents
-        These microagents apply to all repos that the user works with
-        """
-        # Create the directory if it doesn't exist
-        user_microagents_dir = Path(USER_GLOBAL_MICROAGENTS_DIR)
-        if not user_microagents_dir.exists():
-            try:
-                user_microagents_dir.mkdir(parents=True, exist_ok=True)
-                logger.info(
-                    f'Created user global microagents directory at {USER_GLOBAL_MICROAGENTS_DIR}'
-                )
-            except Exception as e:
-                logger.error(f'Failed to create user global microagents directory: {e}')
-                return
-
-        # Only load if the directory exists
-        if user_microagents_dir.exists():
-            try:
-                repo_agents, knowledge_agents = load_microagents_from_dir(
-                    USER_GLOBAL_MICROAGENTS_DIR
-                )
-
-                # Log what we found
-                if repo_agents or knowledge_agents:
-                    logger.info(
-                        f'Loaded user global microagents: {len(repo_agents)} repo agents, '
-                        f'{len(knowledge_agents)} knowledge agents'
-                    )
-
-                for name, agent in knowledge_agents.items():
-                    if isinstance(agent, KnowledgeMicroagent):
-                        self.knowledge_microagents[name] = agent
-                        logger.debug(f'Loaded user global knowledge microagent: {name}')
-
-                for name, agent in repo_agents.items():
-                    if isinstance(agent, RepoMicroagent):
-                        self.repo_microagents[name] = agent
-                        logger.debug(f'Loaded user global repo microagent: {name}')
-            except Exception as e:
-                logger.error(f'Error loading user global microagents: {e}')
-
-    def _load_user_microagents(self) -> None:
-        """
-        Loads user microagents from the user git .openhands repo
-        """
-        if self.custom_microagents_dir:
-            custom_agents, _ = load_microagents_from_dir(self.custom_microagents_dir)
-            for name, agent in custom_agents.items():
-                if isinstance(agent, KnowledgeMicroagent):
-                    self.knowledge_microagents[name] = agent
-                elif isinstance(agent, RepoMicroagent):
-                    self.repo_microagents[name] = agent
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
