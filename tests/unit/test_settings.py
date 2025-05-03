@@ -10,14 +10,14 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.server.routes.settings import convert_to_settings
-from openhands.server.settings import POSTSettingsModel, Settings
+from openhands.server.settings import Settings
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import (
     SECRETS_STORE_TO_APPCONFIG_MAP,
     SETTINGS_TO_APPCONFIG_MAP,
     FileSettingsStore,
 )
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.storage.data_models.settings import Settings
 
 
 def test_settings_from_config():
