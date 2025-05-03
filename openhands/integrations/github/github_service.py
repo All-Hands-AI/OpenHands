@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Any
 
 import httpx
-from httpx import ReadTimeout
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
@@ -20,7 +19,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-from openhands.integrations.github.github_queries import suggested_task_pr_graphql_query, suggested_task_issue_graphql_query
+from openhands.integrations.github.queries import suggested_task_pr_graphql_query, suggested_task_issue_graphql_query
 from datetime import datetime
 from openhands.core.logger import openhands_logger as logger
 
