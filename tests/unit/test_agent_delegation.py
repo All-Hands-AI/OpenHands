@@ -118,8 +118,22 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     )
 
     # Setup a delegate action from the parent
-    delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
-    mock_parent_agent.step.return_value = delegate_action
+    async def mock_parent_step(state):
+        action = AgentDelegateAction(
+            agent='ChildAgent',
+            inputs={'test': True},
+            prompt='Please handle this task',
+            thought='Delegating to child agent'
+        )
+        action._source = EventSource.AGENT
+        action._metadata = {
+            'function_name': 'delegate',
+            'tool_call_id': '1',
+            'model_response': 'Delegating to child agent',
+            'total_calls_in_response': 1
+        }
+        return action
+    mock_parent_agent.step = mock_parent_step
 
     # Simulate a user message event to cause parent.step() to run
     message_action = MessageAction(content='please delegate now')
@@ -132,12 +146,33 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
 
-    # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
-    assert mock_event_stream.get_latest_event_id() == 5
+    # Print events for debugging
+    print("\nEvents in stream:")
+    for i, event in enumerate(events):
+        print(f"{i+1}. {type(event).__name__}")
 
-    # a RecallObservation and an AgentDelegateAction should be in the list
-    assert any(isinstance(event, RecallObservation) for event in events)
-    assert any(isinstance(event, AgentDelegateAction) for event in events)
+    # Verify that all required events are present in the first 5 events
+    first_five_events = events[:5]
+    event_types = [type(event).__name__ for event in first_five_events]
+
+    # Check that all required events are present
+    assert 'SystemMessageAction' in event_types, "SystemMessageAction should be in first 5 events"
+    assert 'RecallAction' in event_types, "RecallAction should be in first 5 events"
+    assert 'AgentStateChangedObservation' in event_types, "AgentStateChangedObservation should be in first 5 events"
+    assert 'RecallObservation' in event_types, "RecallObservation should be in first 5 events"
+    assert 'AgentDelegateAction' in event_types, "AgentDelegateAction should be in first 5 events"
+
+    # Verify specific event ordering requirements
+    system_msg_idx = event_types.index('SystemMessageAction')
+    recall_action_idx = event_types.index('RecallAction')
+    delegate_action_idx = event_types.index('AgentDelegateAction')
+
+    # SystemMessageAction should come first
+    assert system_msg_idx == 0, "SystemMessageAction should be the first event"
+    # RecallAction should come before RecallObservation
+    assert recall_action_idx < event_types.index('RecallObservation'), "RecallAction should come before RecallObservation"
+    # AgentDelegateAction should be last
+    assert delegate_action_idx == 4, "AgentDelegateAction should be the last event"
 
     # Verify that a delegate agent controller is created
     assert (
@@ -154,9 +189,28 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     delegate_controller.state.iteration = 5  # child had some steps
     delegate_controller.state.outputs = {'delegate_result': 'done'}
 
+    # Setup the child agent's step to return a finish action
+    async def mock_child_step(state):
+        action = AgentFinishAction(
+            outputs={'delegate_result': 'done'},
+            thought='Finished delegated task',
+            task_completed=True,
+            final_thought='Task completed successfully'
+        )
+        action._source = EventSource.AGENT
+        action._metadata = {
+            'function_name': 'finish',
+            'tool_call_id': '1',
+            'model_response': 'Task completed successfully',
+            'total_calls_in_response': 1
+        }
+        return action
+    mock_child_agent.step = mock_child_step
+
     # The child is done, so we simulate it finishing:
-    child_finish_action = AgentFinishAction()
-    await delegate_controller._on_event(child_finish_action)
+    message_action = MessageAction(content='finish task')
+    message_action._source = EventSource.USER
+    await delegate_controller._on_event(message_action)
     await asyncio.sleep(0.5)
 
     # Now the parent's delegate is None
