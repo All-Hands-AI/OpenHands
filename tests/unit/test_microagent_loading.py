@@ -8,12 +8,13 @@ from unittest import mock
 import pytest
 
 from openhands.core.config import AppConfig
-from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation import CmdOutputObservation, FileReadObservation, FileWriteObservation
 from openhands.microagent import (
     KnowledgeMicroagent,
     RepoMicroagent,
 )
 from openhands.runtime.base import Runtime
+from openhands.runtime.utils.git_handler import CommandResult
 
 
 class TestMicroagentLoading:
@@ -35,6 +36,25 @@ class TestMicroagentLoading:
         # Set a dummy workspace path
         mock_config.workspace_mount_path_in_sandbox = '/workspace'
         runtime_instance.config = mock_config
+
+        # Mock the abstract methods
+        runtime_instance.run = mock.MagicMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
+        runtime_instance.run_action = mock.MagicMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
+        runtime_instance.call_tool_mcp = mock.AsyncMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
+        runtime_instance.list_files = mock.MagicMock(return_value=[])
+        runtime_instance.copy_from = mock.MagicMock(return_value=Path('/tmp/test.zip'))
+        runtime_instance.copy_to = mock.MagicMock()
+        runtime_instance._execute_shell_fn_git_handler = mock.MagicMock(return_value=CommandResult(content='', exit_code=0))
+        runtime_instance.read = mock.MagicMock(return_value=FileReadObservation(content='', path=''))
+        runtime_instance.write = mock.MagicMock(return_value=FileWriteObservation(path='', content=''))
+        runtime_instance.run_ipython = mock.MagicMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
+
+        # Mock the _load_microagents_from_dir method to call the actual implementation
+        runtime_instance._load_microagents_from_dir = Runtime._load_microagents_from_dir.__get__(runtime_instance)
+
+        # Mock the get_microagents_from_selected_repo method to call the actual implementation
+        runtime_instance.get_microagents_from_selected_repo = Runtime.get_microagents_from_selected_repo.__get__(runtime_instance)
+
         return runtime_instance
 
     def test_runtime_loads_microagents_from_directory(self):
@@ -67,10 +87,15 @@ This is a test repo microagent.
         runtime_instance.config = mock.MagicMock(spec=AppConfig)
 
         # Mock list_files to return the simulated files in the sandbox directory
-        runtime_instance.list_files.return_value = [
-            knowledge_sandbox_path,
-            repo_sandbox_path,
-        ]
+        def list_files_side_effect(path):
+            if path == str(sandbox_dir_path):
+                return [
+                    knowledge_sandbox_path,
+                    repo_sandbox_path,
+                ]
+            return []
+
+        runtime_instance.list_files.side_effect = list_files_side_effect
 
         # Mock copy_from to return a path to a temporary zip file containing the agents
         temp_zip_file = None
@@ -188,10 +213,19 @@ This is a custom repo microagent.
         )
 
         # Mock list_files to return the simulated files in the sandbox directory
-        mock_runtime_instance.list_files.return_value = [
-            str(sandbox_custom_dir / 'custom-knowledge-agent.md'),
-            str(sandbox_custom_dir / 'custom-repo-agent.md'),
-        ]
+        def list_files_side_effect(path):
+            if path == str(
+                mock_runtime_instance.config.workspace_mount_path_in_sandbox
+            ):
+                return []  # No user directories for this test
+            elif path == str(sandbox_custom_dir):
+                return [
+                    str(sandbox_custom_dir / 'custom-knowledge-agent.md'),
+                    str(sandbox_custom_dir / 'custom-repo-agent.md'),
+                ]
+            return []
+
+        mock_runtime_instance.list_files.side_effect = list_files_side_effect
 
         # Mock copy_from to return a path to a temporary zip file containing the agents
         temp_zip_file = None
