@@ -241,16 +241,6 @@ async def new_conversation(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     
-    except ValidationError as e:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "status": "error",
-                "message": "Validation error: " + str(e.errors()),
-                "msg_id": "STATUS$VALIDATION_ERROR",
-            },
-        )
-
 
 @app.get('/conversations')
 async def search_conversations(
