@@ -15,12 +15,12 @@ from openhands.server.settings import (
     POSTSettingsModel,
 )
 from openhands.server.shared import config
-from openhands.storage.data_models.settings import Settings
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_settings,
     get_user_settings_store,
 )
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
@@ -38,7 +38,7 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-        provider_tokens_set: dict[ProviderType, str | None]  = {}
+        provider_tokens_set: dict[ProviderType, str | None] = {}
         if provider_tokens:
             for provider_type, provider_token in provider_tokens.items():
                 if provider_token.token or provider_token.user_id:
@@ -227,8 +227,7 @@ async def store_provider_tokens(
     if existing_settings:
         if existing_settings.secrets_store:
             existing_providers = [
-                provider
-                for provider in existing_settings.secrets_store.provider_tokens
+                provider for provider in existing_settings.secrets_store.provider_tokens
             ]
 
             # Merge incoming settings store with the existing one
@@ -245,7 +244,7 @@ async def store_provider_tokens(
         else:  # nothing passed in means keep current settings
             provider_tokens = dict(existing_settings.secrets_store.provider_tokens)
             settings.provider_tokens = provider_tokens
-        
+
     return settings
 
 
@@ -334,7 +333,11 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     # Create new provider tokens immutably
     if settings_with_token_data.provider_tokens:
         settings = settings.model_copy(
-            update={'secrets_store': SecretStore(provider_tokens=settings_with_token_data.provider_tokens)}
+            update={
+                'secrets_store': SecretStore(
+                    provider_tokens=settings_with_token_data.provider_tokens
+                )
+            }
         )
 
     return settings
