@@ -29,7 +29,7 @@ To start a new conversation with OpenHands performing a task, you'll need to mak
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `initial_user_msg` | string | Yes | The initial message to start the conversation |
-| `repository` | string | No | GitHub repository name to provide context in the format `owner/repo`. You must have access to the repo. |
+| `repository` | string | No | Git repository name to provide context in the format `owner/repo`. You must have access to the repo. |
 
 #### Examples
 
