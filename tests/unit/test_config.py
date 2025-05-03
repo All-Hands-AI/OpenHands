@@ -389,97 +389,41 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates == initial_defaults
 
 
-def test_runtime_mount_config(monkeypatch, default_config):
-    # Test the new RUNTIME_MOUNT parameter
-    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path:/container/path:ro')
-    
-    load_from_env(default_config, os.environ)
-    finalize_config(default_config)
-    
-    # Check that runtime_mount is set correctly
-    assert default_config.runtime_mount == '/host/path:/container/path:ro'
-    
-    # Check that the old parameters are set for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path'
-
-
-def test_runtime_mount_with_default_mode(monkeypatch, default_config):
-    # Test RUNTIME_MOUNT without specifying mode (should default to 'rw')
-    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path:/container/path')
-    
-    load_from_env(default_config, os.environ)
-    finalize_config(default_config)
-    
-    # Check that runtime_mount is set correctly
-    assert default_config.runtime_mount == '/host/path:/container/path'
-    
-    # Check that the old parameters are set for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path'
-
-
-def test_runtime_mount_invalid_format(monkeypatch, default_config):
-    # Test RUNTIME_MOUNT with invalid format
-    monkeypatch.setenv('RUNTIME_MOUNT', '/single/path')
-    
-    load_from_env(default_config, os.environ)
-    
-    # Check that runtime_mount is set
-    assert default_config.runtime_mount == '/single/path'
-    
-    # Finalize config should raise a ValueError for invalid format
-    with pytest.raises(ValueError, match="Invalid runtime_mount format"):
-        finalize_config(default_config)
-
-
-def test_runtime_mount_multiple_mounts(monkeypatch, default_config):
-    # Test RUNTIME_MOUNT with multiple mounts
-    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path1:/container/path1;/host/path2:/container/path2:ro')
-    
-    load_from_env(default_config, os.environ)
-    finalize_config(default_config)
-    
-    # Check that runtime_mount is set correctly
-    assert default_config.runtime_mount == '/host/path1:/container/path1;/host/path2:/container/path2:ro'
-    
-    # Check that the old parameters are set from the first mount for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+# Tests for CUSTOM_VOLUMES have replaced the RUNTIME_MOUNT tests
 
 
 def test_custom_volumes(monkeypatch, default_config):
     # Test CUSTOM_VOLUMES with multiple mounts
-    monkeypatch.setenv('CUSTOM_VOLUMES', '/host/path1:/container/path1,/host/path2:/container/path2:ro')
-    
+    monkeypatch.setenv(
+        'CUSTOM_VOLUMES', '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    )
+
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
-    
+
     # Check that custom_volumes is set correctly
-    assert default_config.custom_volumes == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
-    
+    assert (
+        default_config.custom_volumes
+        == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    )
+
     # Check that the old parameters are set from the first mount for backward compatibility
     assert default_config.workspace_base == os.path.abspath('/host/path1')
     assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
     assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
 
 
-def test_custom_volumes_with_runtime_mount(monkeypatch, default_config):
-    # Test both CUSTOM_VOLUMES and RUNTIME_MOUNT together
-    monkeypatch.setenv('RUNTIME_MOUNT', '/host/path1:/container/path1')
-    monkeypatch.setenv('CUSTOM_VOLUMES', '/host/path2:/container/path2,/host/path3:/container/path3:ro')
-    
+def test_custom_volumes_with_mode(monkeypatch, default_config):
+    # Test CUSTOM_VOLUMES with read-only mode
+    monkeypatch.setenv('CUSTOM_VOLUMES', '/host/path1:/container/path1:ro')
+
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
-    
-    # Check that both parameters are set correctly
-    assert default_config.runtime_mount == '/host/path1:/container/path1'
-    assert default_config.custom_volumes == '/host/path2:/container/path2,/host/path3:/container/path3:ro'
-    
-    # Check that the old parameters are set from RUNTIME_MOUNT for backward compatibility
+
+    # Check that custom_volumes is set correctly
+    assert default_config.custom_volumes == '/host/path1:/container/path1:ro'
+
+    # Check that the old parameters are set for backward compatibility
     assert default_config.workspace_base == os.path.abspath('/host/path1')
     assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
     assert default_config.workspace_mount_path_in_sandbox == '/container/path1'

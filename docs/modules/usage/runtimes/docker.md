@@ -10,75 +10,50 @@ You can also [build your own runtime image](../how-to/custom-sandbox-guide).
 ## Connecting to Your filesystem
 A useful feature is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
 
-### Using RUNTIME_MOUNT (Recommended)
+### Using CUSTOM_VOLUMES
 
-The simplest way to mount your local filesystem is to use the `RUNTIME_MOUNT` environment variable:
+The simplest way to mount your local filesystem is to use the `CUSTOM_VOLUMES` environment variable:
 
 ```bash
 docker run # ...
     -e SANDBOX_USER_ID=$(id -u) \
-    -e RUNTIME_MOUNT=/path/to/your/code:/workspace:rw \
+    -e CUSTOM_VOLUMES=/path/to/your/code:/workspace:rw \
     # ...
 ```
 
-The `RUNTIME_MOUNT` format is: `host_path:container_path[:mode]`
+The `CUSTOM_VOLUMES` format is: `host_path:container_path[:mode]`
 
 - `host_path`: The path on your host machine that you want to mount
 - `container_path`: The path inside the container where the host path will be mounted (typically `/workspace`)
 - `mode`: Optional mount mode, either `rw` (read-write, default) or `ro` (read-only)
 
-You can also specify multiple mounts by separating them with semicolons (`;`):
+You can also specify multiple mounts by separating them with commas (`,`):
 
 ```bash
-export RUNTIME_MOUNT=/path1:/workspace/path1;/path2:/workspace/path2:ro
+export CUSTOM_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
 ```
 
 Examples:
 
 ```bash
 # Linux and Mac Example
-export RUNTIME_MOUNT=$HOME/OpenHands:/workspace:rw
+export CUSTOM_VOLUMES=$HOME/OpenHands:/workspace:rw
 
 # WSL on Windows Example
-export RUNTIME_MOUNT=/mnt/c/dev/OpenHands:/workspace:rw
+export CUSTOM_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
 
 # Read-only mount example
-export RUNTIME_MOUNT=/path/to/reference/code:/workspace:ro
+export CUSTOM_VOLUMES=/path/to/reference/code:/workspace:ro
 
 # Multiple mounts example
-export RUNTIME_MOUNT=$HOME/projects:/workspace/projects;$HOME/reference:/workspace/reference:ro
+export CUSTOM_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
 ```
 
 > **Note:** When using multiple mounts, the first mount is considered the primary workspace and will be used for backward compatibility with tools that expect a single workspace.
 
-### Using CUSTOM_VOLUMES (Alternative)
-
-As an alternative to `RUNTIME_MOUNT`, you can use the `CUSTOM_VOLUMES` environment variable, which uses commas (`,`) as a delimiter for multiple mounts:
-
-```bash
-docker run # ...
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e CUSTOM_VOLUMES=/path/to/your/code:/workspace:rw,/path/to/reference:/workspace/reference:ro \
-    # ...
-```
-
-The format for each mount is the same as `RUNTIME_MOUNT`: `host_path:container_path[:mode]`
-
-Examples:
-
-```bash
-# Single mount
-export CUSTOM_VOLUMES=$HOME/OpenHands:/workspace:rw
-
-# Multiple mounts with different modes
-export CUSTOM_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
-```
-
-> **Note:** If both `RUNTIME_MOUNT` and `CUSTOM_VOLUMES` are specified, both will be used, but `RUNTIME_MOUNT` takes precedence for backward compatibility settings.
-
 ### Using WORKSPACE_* variables (Deprecated)
 
-> **Note:** This method is deprecated and will be removed in a future version. Please use `RUNTIME_MOUNT` instead.
+> **Note:** This method is deprecated and will be removed in a future version. Please use `CUSTOM_VOLUMES` instead.
 
 1. Set `WORKSPACE_BASE`:
 

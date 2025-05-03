@@ -272,27 +272,6 @@ class DockerRuntime(ActionExecutionClient):
         # Initialize volumes dictionary
         volumes: dict[str, dict[str, str]] = {}
 
-        # Process RUNTIME_MOUNT (semicolon-delimited)
-        if self.config.runtime_mount is not None:
-            # Handle multiple mounts with semicolon delimiter
-            mounts = self.config.runtime_mount.split(';')
-
-            for mount in mounts:
-                parts = mount.split(':')
-                if len(parts) >= 2:
-                    host_path = os.path.abspath(parts[0])
-                    container_path = parts[1]
-                    # Default mode is 'rw' if not specified
-                    mount_mode = parts[2] if len(parts) > 2 else 'rw'
-
-                    volumes[host_path] = {
-                        'bind': container_path,
-                        'mode': mount_mode,
-                    }
-                    logger.debug(
-                        f'Mount dir (runtime_mount): {host_path} to {container_path} with mode: {mount_mode}'
-                    )
-
         # Process CUSTOM_VOLUMES (comma-delimited)
         if self.config.custom_volumes is not None:
             # Handle multiple mounts with comma delimiter
@@ -316,8 +295,7 @@ class DockerRuntime(ActionExecutionClient):
 
         # Legacy mounting with workspace_* parameters
         elif (
-            self.config.runtime_mount is None
-            and self.config.workspace_mount_path is not None
+            self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
         ):
             mount_mode = 'rw'  # Default mode

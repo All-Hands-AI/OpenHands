@@ -63,12 +63,12 @@ class AppConfig(BaseModel):
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
-    # New mount parameter that replaces the workspace_* parameters
-    runtime_mount: str | None = Field(default=None, description="Mount specification in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using semicolons, e.g. '/path1:/workspace/path1;/path2:/workspace/path2:ro'")
-    
-    # Custom volumes parameter for more flexible mounting
-    custom_volumes: str | None = Field(default=None, description="Custom volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'")
-    
+    # Custom volumes parameter for mounting directories
+    custom_volumes: str | None = Field(
+        default=None,
+        description="Custom volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
+    )
+
     # Deprecated parameters - will be removed in a future version
     workspace_base: str | None = Field(default=None, deprecated=True)
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
