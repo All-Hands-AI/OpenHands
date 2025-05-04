@@ -97,8 +97,8 @@ class TestCliPauseResumeInRunSession:
         config = MagicMock()
 
         # Patch the display_event function
-        with patch('openhands.core.cli.display_event') as mock_display_event, patch(
-            'openhands.core.cli.update_usage_metrics'
+        with patch('openhands.cli.main.display_event') as mock_display_event, patch(
+            'openhands.cli.main.update_usage_metrics'
         ) as mock_update_metrics:
             # Create a closure to capture the current context
             async def test_func():
@@ -273,8 +273,8 @@ class TestCliCommandsPauseResume:
 
 class TestAgentStatePauseResume:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli.display_agent_running_message')
-    @patch('openhands.core.cli.process_agent_pause')
+    @patch('openhands.cli.main.display_agent_running_message')
+    @patch('openhands.cli.main.process_agent_pause')
     async def test_agent_running_enables_pause(
         self, mock_process_agent_pause, mock_display_message
     ):
@@ -317,8 +317,8 @@ class TestAgentStatePauseResume:
         await test_func()
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli.display_event')
-    @patch('openhands.core.cli.update_usage_metrics')
+    @patch('openhands.cli.main.display_event')
+    @patch('openhands.cli.main.update_usage_metrics')
     async def test_pause_event_changes_agent_state(
         self, mock_update_metrics, mock_display_event
     ):
