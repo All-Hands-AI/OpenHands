@@ -6169,6 +6169,21 @@
         "fr": "Fenêtre de contexte",
         "tr": "Bağlam Penceresi"
     },
+    "CONVERSATION$USED": {
+        "en": "used",
+        "ja": "使用済み",
+        "zh-CN": "已使用",
+        "zh-TW": "已使用",
+        "ko-KR": "사용됨",
+        "de": "verwendet",
+        "no": "brukt",
+        "it": "usato",
+        "pt": "usado",
+        "es": "usado",
+        "ar": "مستخدم",
+        "fr": "utilisé",
+        "tr": "kullanıldı"
+    },
     "SETTINGS$RUNTIME_SETTINGS": {
         "en": "Runtime Settings (",
         "ja": "ランタイム設定 (",
