@@ -28,6 +28,11 @@ function AuthProvider({
     initialProvidersAreSet,
   );
 
+  // Update localStorage when providersAreSet changes
+  React.useEffect(() => {
+    localStorage.setItem("providersAreSet", providersAreSet.toString());
+  }, [providersAreSet]);
+
   const value = React.useMemo(
     () => ({
       providerTokensSet,
@@ -35,10 +40,10 @@ function AuthProvider({
       providersAreSet,
       setProvidersAreSet,
     }),
-    [providerTokensSet],
+    [providerTokensSet, providersAreSet],
   );
 
-  return <AuthContext value={value}>{children}</AuthContext>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function useAuth() {

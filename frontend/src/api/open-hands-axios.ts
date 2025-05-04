@@ -14,8 +14,12 @@ openHands.interceptors.response.use(
       // Get app mode from localStorage or default to "oss"
       const appMode = localStorage.getItem("appMode") || "oss";
 
-      // Only handle logout and refresh for "saas" mode
-      if (appMode === "saas") {
+      // Check if user is logged in by checking if providersAreSet is true
+      const providersAreSet =
+        localStorage.getItem("providersAreSet") === "true";
+
+      // Only handle logout and refresh for "saas" mode and if user is logged in
+      if (appMode === "saas" && providersAreSet) {
         await handleLogoutAndRefresh(appMode);
       }
     }
