@@ -324,7 +324,7 @@ async def store_settings(
         )
 
 
-def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
+def convert_to_settings(settings_with_token_data: POSTSettingsModel | Settings) -> Settings:
     settings_data = settings_with_token_data.model_dump()
 
     # Filter out additional fields from `SettingsWithTokenData`
@@ -340,8 +340,8 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     # Create a new Settings instance with empty SecretStore
     settings = Settings(**filtered_settings_data)
 
-    # Create new provider tokens immutably
-    if settings_with_token_data.provider_tokens:
+    # Create new provider tokens immutably if the input is a POSTSettingsModel
+    if hasattr(settings_with_token_data, 'provider_tokens') and settings_with_token_data.provider_tokens:
         settings = settings.model_copy(
             update={
                 'secrets_store': UserSecrets(
