@@ -32,6 +32,7 @@ numpy = "*"
 json-repair = "*"
 browsergym-core = { git = "https://github.com/adityasoni9998/browsergym.git", subdirectory = "browsergym/core", branch = "browsergym_update" } # integrate browsergym-core as the browsing interface
 exa-py = "*"
+tavily-python = "*"
 html2text = "*"
 e2b = ">=1.0.5,<1.2.0"
 pexpect = "*"
