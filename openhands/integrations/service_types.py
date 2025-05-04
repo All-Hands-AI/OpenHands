@@ -206,3 +206,8 @@ class GitService(Protocol):
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories"""
         ...
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        """Gets all repository details from repository name"""

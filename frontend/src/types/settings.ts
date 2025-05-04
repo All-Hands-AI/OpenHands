@@ -39,7 +39,6 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
-  PROVIDER_TOKENS: Record<Provider, ProviderToken>;
   IS_NEW_USER?: boolean;
   MCP_CONFIG?: MCPConfig;
 };
@@ -57,7 +56,6 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
-  provider_tokens: Record<Provider, ProviderToken>;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
   mcp_config?: {
     sse_servers: (string | MCPSSEServer)[];
@@ -66,14 +64,12 @@ export type ApiSettings = {
 };
 
 export type PostSettings = Settings & {
-  provider_tokens: Record<Provider, ProviderToken>;
   user_consents_to_analytics: boolean | null;
   llm_api_key?: string | null;
   mcp_config?: MCPConfig;
 };
 
 export type PostApiSettings = ApiSettings & {
-  provider_tokens: Record<Provider, ProviderToken>;
   user_consents_to_analytics: boolean | null;
   mcp_config?: MCPConfig;
 };

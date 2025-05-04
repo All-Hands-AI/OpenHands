@@ -1,4 +1,4 @@
-import { Provider, ProviderToken, Settings } from "#/types/settings";
+import { Settings } from "#/types/settings";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider-input")?.toString();
@@ -83,7 +83,6 @@ export const extractSettings = (
       // Failed to parse MCP configuration, using default empty config
     }
   }
-
   return {
     LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
     LLM_API_KEY_SET: !!LLM_API_KEY,
@@ -93,7 +92,6 @@ export const extractSettings = (
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
-    PROVIDER_TOKENS: providerTokens,
     llm_api_key: LLM_API_KEY,
     MCP_CONFIG: mcpConfig,
   };
