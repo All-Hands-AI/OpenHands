@@ -391,7 +391,7 @@ type = "noop"
 #[llm.condenser]
 #model = "gpt-4o"
 #temperature = 0.1
-#max_tokens = 1024
+#max_input_tokens = 1024
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation

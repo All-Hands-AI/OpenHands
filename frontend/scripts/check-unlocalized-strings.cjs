@@ -39,6 +39,7 @@ const IGNORE_PATHS = [
   "entry.client.tsx", // Client entry point
   "utils/scan-unlocalized-strings.ts", // Original scanner
   "utils/scan-unlocalized-strings-ast.ts", // This file itself
+  "frontend/src/components/features/home/tasks/get-prompt-for-query.ts", // Only contains agent prompts
 ];
 
 // Extensions to scan
@@ -106,6 +107,10 @@ function isRawTranslationKey(str) {
 const EXCLUDED_TECHNICAL_STRINGS = [
   "openid email profile", // OAuth scope string - not user-facing
   "OPEN_ISSUE", // Task type identifier, not a UI string
+  "Merge Request", // Git provider specific terminology
+  "GitLab API", // Git provider specific terminology
+  "Pull Request", // Git provider specific terminology
+  "GitHub API", // Git provider specific terminology
 ];
 
 function isExcludedTechnicalString(str) {
