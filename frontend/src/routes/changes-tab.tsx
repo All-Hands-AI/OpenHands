@@ -36,23 +36,30 @@ function GitChanges() {
   const isNotGitRepoError =
     error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
+  let statusMessage = "";
+  if (!runtimeIsActive) {
+    statusMessage = t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME);
+  } else if (isNotGitRepoError) {
+    if (error) {
+      statusMessage = retrieveAxiosErrorMessage(error);
+    } else {
+      statusMessage = (
+        <span>
+          {t(I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO)}
+          <br />
+          {t(I18nKey.DIFF_VIEWER$ASK_OH)}
+        </span>
+      );
+    }
+  }
+
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
       <div className="relative flex h-full w-full items-center">
         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-          {!runtimeIsActive && (
+          {statusMessage && (
             <StatusMessage>
-              {t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME)}
-            </StatusMessage>
-          )}
-          {!isNotGitRepoError && error && (
-            <StatusMessage>{retrieveAxiosErrorMessage(error)}</StatusMessage>
-          )}
-          {isNotGitRepoError && (
-            <StatusMessage>
-              {t(I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO)}
-              <br />
-              {t(I18nKey.DIFF_VIEWER$ASK_OH)}
+              {statusMessage}
             </StatusMessage>
           )}
         </div>
