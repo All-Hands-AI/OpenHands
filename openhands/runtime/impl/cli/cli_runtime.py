@@ -10,7 +10,13 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Tuple
+
+from binaryornot.check import is_binary
+from openhands_aci.editor.editor import OHEditor
+from openhands_aci.editor.exceptions import ToolError
+from openhands_aci.editor.results import ToolResult
+from openhands_aci.utils.diff import get_diff
 
 from openhands.core.config import AppConfig
 from openhands.core.config.mcp_config import MCPConfig
@@ -20,14 +26,17 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
 )
 from openhands.events.action.mcp import MCPAction
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
     Observation,
@@ -98,6 +107,7 @@ class CLIRuntime(Runtime):
 
         # Initialize runtime state
         self._runtime_initialized = False
+        self.file_editor = OHEditor(workspace_root=self._workspace_path)
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -202,11 +212,29 @@ class CLIRuntime(Runtime):
         return filename
 
     def read(self, action: FileReadAction) -> Observation:
-        """Read a file using Python's standard library."""
+        """Read a file using Python's standard library or OHEditor."""
         if not self._runtime_initialized:
             return ErrorObservation('Runtime not initialized')
 
         file_path = self._sanitize_filename(action.path)
+
+        # Cannot read binary files
+        if os.path.exists(file_path) and is_binary(file_path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
+        # Use OHEditor for OH_ACI implementation source
+        if action.impl_source == FileReadSource.OH_ACI:
+            result_str, _ = self._execute_file_editor(
+                command='view',
+                path=file_path,
+                view_range=action.view_range,
+            )
+
+            return FileReadObservation(
+                content=result_str,
+                path=action.path,
+                impl_source=FileReadSource.OH_ACI,
+            )
 
         try:
             # Check if the file exists
@@ -256,6 +284,93 @@ class CLIRuntime(Runtime):
         """Not implemented for CLI runtime."""
         return ErrorObservation(
             'Browser functionality is not implemented in CLIRuntime'
+        )
+
+    def _execute_file_editor(
+        self,
+        command: str,
+        path: str,
+        file_text: str | None = None,
+        view_range: list[int] | None = None,
+        old_str: str | None = None,
+        new_str: str | None = None,
+        insert_line: int | None = None,
+        enable_linting: bool = False,
+    ) -> Tuple[str, Tuple[str | None, str | None]]:
+        """Execute file editor command and handle exceptions.
+
+        Args:
+            command: Editor command to execute
+            path: File path
+            file_text: Optional file text content
+            view_range: Optional view range tuple (start, end)
+            old_str: Optional string to replace
+            new_str: Optional replacement string
+            insert_line: Optional line number for insertion
+            enable_linting: Whether to enable linting
+
+        Returns:
+            tuple: A tuple containing the output string and a tuple of old and new file content
+        """
+        result: ToolResult | None = None
+        try:
+            result = self.file_editor(
+                command=command,
+                path=path,
+                file_text=file_text,
+                view_range=view_range,
+                old_str=old_str,
+                new_str=new_str,
+                insert_line=insert_line,
+                enable_linting=enable_linting,
+            )
+        except ToolError as e:
+            result = ToolResult(error=e.message)
+
+        if result.error:
+            return f'ERROR:\n{result.error}', (None, None)
+
+        if not result.output:
+            logger.warning(f'No output from file_editor for {path}')
+            return '', (None, None)
+
+        return result.output, (result.old_content, result.new_content)
+
+    def edit(self, action: FileEditAction) -> Observation:
+        """Edit a file using the OHEditor."""
+        if not self._runtime_initialized:
+            return ErrorObservation('Runtime not initialized')
+
+        # Ensure the path is within the workspace
+        file_path = self._sanitize_filename(action.path)
+
+        # Check if it's a binary file
+        if os.path.exists(file_path) and is_binary(file_path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
+        assert action.impl_source == FileEditSource.OH_ACI
+
+        result_str, (old_content, new_content) = self._execute_file_editor(
+            command=action.command,
+            path=file_path,
+            file_text=action.file_text,
+            old_str=action.old_str,
+            new_str=action.new_str,
+            insert_line=action.insert_line,
+            enable_linting=False,
+        )
+
+        return FileEditObservation(
+            content=result_str,
+            path=action.path,
+            old_content=action.old_str,
+            new_content=action.new_str,
+            impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
+                old_contents=old_content or '',
+                new_contents=new_content or '',
+                filepath=action.path,
+            ),
         )
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
