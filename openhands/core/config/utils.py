@@ -628,7 +628,6 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         config.sandbox.selected_repo = args.selected_repo
 
     if args.cli:
-        print('SETTING CLI MODE')
         config.runtime = 'cli'
         config.workspace_base = os.getcwd()
 
