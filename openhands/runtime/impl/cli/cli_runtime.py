@@ -5,7 +5,6 @@ It does not implement browser functionality.
 
 import asyncio
 import os
-import shlex
 import shutil
 import subprocess
 import tempfile
@@ -137,41 +136,41 @@ class CLIRuntime(Runtime):
     def _execute_shell_command(self, command: str) -> CmdOutputObservation:
         """
         Execute a shell command and stream its output to a callback function.
-
         Args:
             command: The shell command to execute
-            stream_callback: A callback function that receives output lines as they're produced
-
         Returns:
             CmdOutputObservation containing the complete output and exit code
         """
-        args = shlex.split(command)
-
         full_output = []
 
+        # Use shell=True to run complex bash commands
         process = subprocess.Popen(
-            args,
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Merge stderr into stdout for interleaved output
             text=True,
-            bufsize=1,  # Line buffered
+            bufsize=0,  # Unbuffered output
             universal_newlines=True,
+            shell=True,  # Run through a shell
         )
 
-        while True:
+        while process.poll() is None:
             if not process.stdout:
                 continue
-            line = process.stdout.readline()
-            if not line and process.poll() is not None:
-                break
-
-            if line:
-                full_output.append(line)
-
+            output = process.stdout.readline()
+            if output:
+                full_output.append(output)
                 if self._shell_stream_callback:
-                    self._shell_stream_callback(line)
+                    self._shell_stream_callback(output)
 
-        exit_code = process.wait()
+        # Make sure we get any remaining output after process exits
+        remaining_output, _ = process.communicate()
+        if remaining_output:
+            full_output.append(remaining_output)
+            if self._shell_stream_callback:
+                self._shell_stream_callback(remaining_output)
+
+        exit_code = process.returncode
 
         complete_output = ''.join(full_output)
 
