@@ -137,7 +137,6 @@ export function RepositorySelectionForm({
     isLoading: isLoadingBranches,
     isError: isBranchesError,
   } = useRepositoryBranches(selectedRepository?.full_name || null);
-  console.log('branches', branches);
   const {
     mutate: createConversation,
     isPending,
