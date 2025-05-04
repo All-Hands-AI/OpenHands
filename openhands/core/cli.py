@@ -307,7 +307,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     if not args.override_cli_mode:
         config.runtime = 'cli'
         config.workspace_base = os.getcwd()
-        config.security.confirmation_mode = True
+        config.security.confirmation_mode = False
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base

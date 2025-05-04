@@ -17,7 +17,6 @@ from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
-    Action,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -363,24 +362,3 @@ class CLIRuntime(Runtime):
     def get_mcp_config(self) -> MCPConfig:
         # TODO: Load MCP config from a local file
         return MCPConfig()
-
-    def run_action(self, action: Action) -> Observation:
-        """Run an action based on its type."""
-        if isinstance(action, CmdRunAction):
-            return self.run(action)
-        elif isinstance(action, IPythonRunCellAction):
-            return self.run_ipython(action)
-        elif isinstance(action, FileReadAction):
-            return self.read(action)
-        elif isinstance(action, FileWriteAction):
-            return self.write(action)
-        elif isinstance(action, BrowseURLAction):
-            return self.browse(action)
-        elif isinstance(action, BrowseInteractiveAction):
-            return self.browse_interactive(action)
-        elif isinstance(action, MCPAction):
-            return ErrorObservation(
-                'MCP functionality is not implemented in CLIRuntime'
-            )
-        else:
-            return ErrorObservation(f'Unsupported action type: {type(action).__name__}')
