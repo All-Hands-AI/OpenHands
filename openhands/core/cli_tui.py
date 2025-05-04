@@ -37,6 +37,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileEditObservation,
     FileReadObservation,
 )
@@ -181,6 +182,8 @@ def display_event(event: Event, config: AppConfig) -> None:
         display_file_read(event)
     if isinstance(event, AgentStateChangedObservation):
         display_agent_paused_message(event.agent_state)
+    if isinstance(event, ErrorObservation):
+        display_error(event.content)
 
 
 def display_message(message: str):
@@ -189,6 +192,24 @@ def display_message(message: str):
 
     if message:
         print_formatted_text(f'\n{message}')
+
+
+def display_error(error: str):
+    error = error.strip()
+
+    if error:
+        container = Frame(
+            TextArea(
+                text=error,
+                read_only=True,
+                style='ansired',
+                wrap_lines=True,
+            ),
+            title='Error',
+            style='ansired',
+        )
+        print_formatted_text('')
+        print_container(container)
 
 
 def display_command(event: CmdRunAction):
