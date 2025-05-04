@@ -11,7 +11,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.monitoring import MonitoringListener
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.settings.secret_store import SecretsStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
