@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )
@@ -196,7 +197,7 @@ class StructuredSummaryCondenser(RollingCondenser):
         """Truncate the content to fit within the specified maximum event length."""
         return truncate_content(content, max_chars=self.max_event_length)
 
-    def get_condensation(self, view: View) -> Condensation:
+    def get_condensation(self, view: View, state=None, agent=None) -> Condensation:
         head = view[: self.keep_first]
         target_size = self.max_size // 2
         # Number of events to keep from the tail -- target size, minus however many
@@ -304,7 +305,7 @@ Capture all relevant information, especially:
             )
         )
 
-    def should_condense(self, view: View) -> bool:
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
         return len(view) > self.max_size
 
     @classmethod

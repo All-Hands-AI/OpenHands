@@ -53,23 +53,18 @@ class View(BaseModel):
 
         kept_events = [event for event in events if event.id not in forgotten_event_ids]
 
-        # If we have a summary, insert it at the specified offset.
-        summary: str | None = None
-        summary_offset: int | None = None
-
         # The relevant summary is always in the last condensation event (i.e., the most recent one).
         for event in reversed(events):
             if isinstance(event, CondensationAction):
-                if event.summary is not None and event.summary_offset is not None:
-                    summary = event.summary
-                    summary_offset = event.summary_offset
+                if event.summary is not None:
+                    summary_obs = AgentCondensationObservation(content=event.summary)
+                    if event.summary_offset is not None:
+                        offset = event.summary_offset
+                    else:
+                        # insert after action
+                        offset = kept_events.index(event) + 1
+                    logger.info(f'Inserting summary at offset {offset}')
+                    kept_events.insert(offset, summary_obs)
                     break
-
-        if summary is not None and summary_offset is not None:
-            logger.info(f'Inserting summary at offset {summary_offset}')
-
-            kept_events.insert(
-                summary_offset, AgentCondensationObservation(content=summary)
-            )
 
         return View(events=kept_events)

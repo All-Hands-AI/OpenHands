@@ -3,6 +3,7 @@ from __future__ import annotations
 from litellm import supports_response_schema
 from pydantic import BaseModel
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.action.agent import CondensationAction
 from openhands.llm.llm import LLM
@@ -47,7 +48,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         super().__init__()
 
-    def get_condensation(self, view: View) -> Condensation:
+    def get_condensation(self, view: View, state: State, agent=None) -> Condensation:
         target_size = self.max_size // 2
         head_event_ids = [event.id for event in view.events[: self.keep_first]]
 
@@ -109,7 +110,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         return Condensation(action=event)
 
-    def should_condense(self, view: View) -> bool:
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
         return len(view) > self.max_size
 
     @classmethod

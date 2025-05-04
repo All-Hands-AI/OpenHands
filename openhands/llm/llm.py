@@ -40,14 +40,14 @@ __all__ = ['LLM']
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     RateLimitError,
-    litellm.Timeout,
-    litellm.InternalServerError,
+    litellm.Timeout,  # type: ignore
+    litellm.InternalServerError,  # type: ignore
     LLMNoResponseError,
 )
 
-# cache prompt supporting models
-# remove this when we gemini and deepseek are supported
-CACHE_PROMPT_SUPPORTED_MODELS = [
+# these models require special treatment so that caching
+# works
+EXPLICIT_CACHE_MODELS = [
     'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
@@ -249,9 +249,15 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
-            if not messages:
+            if not messages or len(messages) < 1:
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
+                )
+
+            # anthropic requires at least one user message.
+            if not any(message.get('role') == 'user' for message in messages):
+                raise ValueError(
+                    'At least one message with role "user" is required for the completion.'
                 )
 
             # log the entire LLM prompt
@@ -523,8 +529,8 @@ class LLM(RetryMixin, DebugMixin):
         return (
             self.config.caching_prompt is True
             and (
-                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
-                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
+                self.config.model in EXPLICIT_CACHE_MODELS
+                or self.config.model.split('/')[-1] in EXPLICIT_CACHE_MODELS
             )
             # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
         )
@@ -614,7 +620,7 @@ class LLM(RetryMixin, DebugMixin):
 
         return cur_cost
 
-    def get_token_count(self, messages: list[dict] | list[Message]) -> int:
+    def get_token_count(self, messages: list[dict] | list[LiteLLMMessage]) -> int:
         """Get the number of tokens in a list of messages. Use dicts for better token counting.
 
         Args:
@@ -655,6 +661,35 @@ class LLM(RetryMixin, DebugMixin):
             )
             return 0
 
+    def get_token_count_params(self, params: dict[str, Any]) -> int:
+        """Get the number of tokens for a llm-call
+
+        Args:
+            params: The parameters for the LLM call. Same as the return value of LLMCompletionProvider.build_llm_completion_params.
+        Returns:
+            int: The number of tokens.
+        """
+        try:
+            return int(
+                litellm.token_counter(
+                    model=self.config.model,
+                    messages=params['messages'],
+                    tools=params.get('tools', None),
+                    custom_tokenizer=self.tokenizer,
+                )
+            )
+        except Exception as e:
+            # limit logspam in case token count is not supported
+            logger.error(
+                f'Error getting token count for\n model {self.config.model}\n{e}'
+                + (
+                    f'\ncustom_tokenizer: {self.config.custom_tokenizer}'
+                    if self.config.custom_tokenizer is not None
+                    else ''
+                )
+            )
+            return 0
+
     def _is_local(self) -> bool:
         """Determines if the system is using a locally running LLM.
 
@@ -662,7 +697,7 @@ class LLM(RetryMixin, DebugMixin):
             boolean: True if executing a local model.
         """
         if self.config.base_url is not None:
-            for substring in ['localhost', '127.0.0.1' '0.0.0.0']:
+            for substring in ['localhost', '127.0.0.1', '0.0.0.0']:
                 if substring in self.config.base_url:
                     return True
         elif self.config.model is not None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.events.action.agent import CondensationAction
 from openhands.memory.condenser.condenser import (
@@ -36,7 +37,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         super().__init__()
 
-    def get_condensation(self, view: View) -> Condensation:
+    def get_condensation(self, view: View, state: State, agent=None) -> Condensation:
         target_size = self.max_size // 2
         head = view[: self.keep_first]
 
@@ -53,7 +54,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         return Condensation(action=event)
 
-    def should_condense(self, view: View) -> bool:
+    def should_condense(self, view: View, state: State, agent=None) -> bool:
         return len(view) > self.max_size
 
     @classmethod

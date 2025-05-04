@@ -1,21 +1,23 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, TypedDict
+
+from openhands.controller.state.state import State
+from openhands.events.action.message import MessageAction
 
 if TYPE_CHECKING:
-    from openhands.controller.state.state import State
     from openhands.core.config import AgentConfig
     from openhands.events.action import Action
     from openhands.events.action.message import SystemMessageAction
-from litellm import ChatCompletionToolParam
+from litellm import ChatCompletionToolParam, Message
 
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
 
@@ -32,7 +34,7 @@ class Agent(ABC):
     It tracks the execution status and maintains a history of interactions.
     """
 
-    _registry: dict[str, Type['Agent']] = {}
+    _registry: dict[str, type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
 
     def __init__(
@@ -43,13 +45,13 @@ class Agent(ABC):
         self.llm = llm
         self.config = config
         self._complete = False
-        self.prompt_manager: 'PromptManager' | None = None
+        self.prompt_manager: 'PromptManager | None' = None
         self.mcp_tools: dict[str, ChatCompletionToolParam] = {}
         self.tools: list = []
 
     def get_system_message(self) -> 'SystemMessageAction | None':
-        """
-        Returns a SystemMessageAction containing the system message and tools.
+        """Returns a SystemMessageAction containing the system message and tools.
+
         This will be added to the event stream as the first message.
 
         Returns:
@@ -93,15 +95,16 @@ class Agent(ABC):
 
     @abstractmethod
     def step(self, state: 'State') -> 'Action':
-        """Starts the execution of the assigned instruction. This method should
-        be implemented by subclasses to define the specific execution logic.
+        """Starts the execution of the assigned instruction.
+
+        This method should be implemented by subclasses to define the specific execution logic.
         """
         pass
 
     def reset(self) -> None:
-        """Resets the agent's execution status and clears the history. This method can be used
-        to prepare the agent for restarting the instruction or cleaning up before destruction.
+        """Resets the agent's execution status and clears the history.
 
+        This method can be used to prepare the agent for restarting the instruction or cleaning up before destruction.
         """
         # TODO clear history
         self._complete = False
@@ -114,12 +117,12 @@ class Agent(ABC):
         return self.__class__.__name__
 
     @classmethod
-    def register(cls, name: str, agent_cls: Type['Agent']) -> None:
+    def register(cls, name: str, agent_cls: type['Agent']) -> None:
         """Registers an agent class in the registry.
 
         Parameters:
         - name (str): The name to register the class under.
-        - agent_cls (Type['Agent']): The class to register.
+        - agent_cls (type['Agent']): The class to register.
 
         Raises:
         - AgentAlreadyRegisteredError: If name already registered
@@ -129,14 +132,14 @@ class Agent(ABC):
         cls._registry[name] = agent_cls
 
     @classmethod
-    def get_cls(cls, name: str) -> Type['Agent']:
+    def get_cls(cls, name: str) -> type['Agent']:
         """Retrieves an agent class from the registry.
 
         Parameters:
         - name (str): The name of the class to retrieve
 
         Returns:
-        - agent_cls (Type['Agent']): The class registered under the specified name.
+        - agent_cls (type['Agent']): The class registered under the specified name.
 
         Raises:
         - AgentNotRegisteredError: If name not registered
@@ -160,20 +163,79 @@ class Agent(ABC):
         """Sets the list of MCP tools for the agent.
 
         Args:
-        - mcp_tools (list[dict]): The list of MCP tools.
+            mcp_tools: The list of MCP tools.
         """
         logger.info(
-            f"Setting {len(mcp_tools)} MCP tools for agent {self.name}: {[tool['function']['name'] for tool in mcp_tools]}"
+            f'Setting {len(mcp_tools)} MCP tools for agent {self.name}: {[tool["function"]["name"] for tool in mcp_tools]}'
         )
         for tool in mcp_tools:
             _tool = ChatCompletionToolParam(**tool)
             if _tool['function']['name'] in self.mcp_tools:
                 logger.warning(
-                    f"Tool {_tool['function']['name']} already exists, skipping"
+                    f'Tool {_tool["function"]["name"]} already exists, skipping'
                 )
                 continue
             self.mcp_tools[_tool['function']['name']] = _tool
             self.tools.append(_tool)
         logger.info(
-            f"Tools updated for agent {self.name}, total {len(self.tools)}: {[tool['function']['name'] for tool in self.tools]}"
+            f'Tools updated for agent {self.name}, total {len(self.tools)}: {[tool["function"]["name"] for tool in self.tools]}'
         )
+
+
+class LLMCompletionParams(TypedDict, total=False):
+    messages: list[Message]
+    tools: list[Any] | None
+    extra_body: dict[str, Any] | None
+    extra: dict[str, Any] | None
+
+
+class LLMCompletionProvider(ABC):
+    """Mixin interface for agents that can expose their LLM call generation details.
+
+    This interface is used by condensers that need to use the agent's LLM completion
+    parameters to ensure consistent caching between the agent and condenser.
+    """
+
+    llm: LLM
+
+    @abstractmethod
+    def get_messages(
+        self, condensed_history: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
+        """Convert events to messages for the LLM."""
+        pass
+
+    @abstractmethod
+    def build_llm_completion_params(
+        self, condensed_history: list[Event], state: State
+    ) -> dict[str, Any]:
+        """Build parameters for LLM completion.
+
+        Args:
+            condensed_history: list of events to convert to messages for the LLM
+            state: Current state
+
+        Returns:
+            dict of parameters for LLM completion
+        """
+        pass
+
+    def _get_initial_user_message(self, history: list[Event]) -> MessageAction:
+        """Finds the initial user message action from the full history."""
+        initial_user_message: MessageAction | None = None
+        for event in history:
+            if isinstance(event, MessageAction) and event.source == 'user':
+                initial_user_message = event
+                break
+
+        if initial_user_message is None:
+            # This should not happen in a valid conversation
+            logger.error(
+                f'CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history.'
+            )
+            # Depending on desired robustness, could raise error or create a dummy action
+            # and log the error
+            raise ValueError(
+                'Initial user message not found in history. Please report this issue.'
+            )
+        return initial_user_message
