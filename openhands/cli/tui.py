@@ -248,7 +248,7 @@ def display_command_output(output: str):
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Action Output',
+        title='Command Output',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
