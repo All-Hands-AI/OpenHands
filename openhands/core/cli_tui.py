@@ -28,7 +28,6 @@ from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
-    ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
     FileEditAction,
@@ -193,19 +192,18 @@ def display_message(message: str):
 
 
 def display_command(event: CmdRunAction):
-    if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
-        container = Frame(
-            TextArea(
-                text=f'$ {event.command}',
-                read_only=True,
-                style=COLOR_GREY,
-                wrap_lines=True,
-            ),
-            title='Action',
-            style='ansired',
-        )
-        print_formatted_text('')
-        print_container(container)
+    container = Frame(
+        TextArea(
+            text=f'$ {event.command}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Action',
+        style='ansired',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_command_output(output: str):
