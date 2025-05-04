@@ -30,10 +30,10 @@ class CondenserPipeline(Condenser):
             for condenser in self.condensers:
                 condenser.write_metadata(state)
 
-    def condense(self, view: View) -> View | Condensation:
+    def condense(self, view: View, state: State, agent=None) -> View | Condensation:
         result: View | Condensation = view
         for condenser in self.condensers:
-            result = condenser.condense(result)
+            result = condenser.condense(result, state, agent)
             if isinstance(result, Condensation):
                 break
         return result
