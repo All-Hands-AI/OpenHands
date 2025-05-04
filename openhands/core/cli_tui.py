@@ -273,7 +273,7 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
 def display_file_read(event: FileReadObservation):
     container = Frame(
         TextArea(
-            text=f'{event}',
+            text=f'{event.content}',
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
