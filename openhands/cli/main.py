@@ -23,6 +23,7 @@ from openhands.cli.tui import (
     process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    update_streaming_output,
 )
 from openhands.cli.utils import (
     update_usage_metrics,
@@ -121,8 +122,8 @@ async def run_session(
     )
 
     def stream_to_console(output: str) -> None:
-        sys.stdout.write(output)
-        sys.stdout.flush()
+        # Instead of printing to stdout, pass the string to the TUI module
+        update_streaming_output(output)
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 

@@ -43,6 +43,9 @@ from openhands.events.observation import (
 )
 from openhands.llm.metrics import Metrics
 
+# Global TextArea for streaming output
+streaming_output_text_area: TextArea | None = None
+
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -282,6 +285,36 @@ def display_file_read(event: FileReadObservation):
         style=f'fg:{COLOR_GREY}',
     )
     print_container(container)
+
+
+def initialize_streaming_output():
+    """Initialize the streaming output TextArea."""
+    global streaming_output_text_area
+    streaming_output_text_area = TextArea(
+        text='',
+        read_only=True,
+        style=COLOR_GREY,
+        wrap_lines=True,
+    )
+    container = Frame(
+        streaming_output_text_area,
+        title='Streaming Output',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def update_streaming_output(text: str):
+    """Update the streaming output TextArea with new text."""
+    global streaming_output_text_area
+    if streaming_output_text_area is None:
+        initialize_streaming_output()
+
+    # Append the new text to the existing content
+    if streaming_output_text_area is not None:
+        current_text = streaming_output_text_area.text
+        streaming_output_text_area.text = current_text + text
 
 
 # Interactive command output display functions
