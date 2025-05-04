@@ -8,14 +8,19 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from typing import Callable
 
 import httpx
+import libtmux
 import tenacity
 
 import openhands
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import AgentRuntimeDisconnectedError
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeNotReadyError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -25,6 +30,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
+from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -65,8 +71,6 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
 
     # Check libtmux is installed
     logger.debug('Checking dependencies: libtmux')
-    import libtmux
-
     server = libtmux.Server()
     try:
         session = server.new_session(session_name='test-session')
@@ -81,7 +85,6 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
 
     # Check browser works
     logger.debug('Checking dependencies: browser')
-    from openhands.runtime.browser.browser_env import BrowserEnv
 
     browser = BrowserEnv()
     browser.close()
@@ -234,15 +237,19 @@ class LocalRuntime(ActionExecutionClient):
 
         # Start a thread to read and log server output
         def log_output():
-            while (
-                self.server_process
-                and self.server_process.poll()
-                and self.server_process.stdout
-            ):
-                line = self.server_process.stdout.readline()
-                if not line:
-                    break
-                self.log('debug', f'Server: {line.strip()}')
+            while self.server_process:
+                if self.server_process.poll() is None:
+                    time.sleep(0.1)
+                    continue
+                if self.server_process.stdout:
+                    line = self.server_process.stdout.readline()
+                    if line:
+                        self.log('debug', f'Server stdout: {line.strip()}')
+                if self.server_process.stderr:
+                    line = self.server_process.stderr.readline()
+                    if line:
+                        self.log('debug', f'Server stderr: {line.strip()}')
+                time.sleep(0.1)
 
         self._log_thread = threading.Thread(target=log_output, daemon=True)
         self._log_thread.start()
@@ -273,6 +280,7 @@ class LocalRuntime(ActionExecutionClient):
     @tenacity.retry(
         wait=tenacity.wait_exponential(min=1, max=10),
         stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
+        retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
         before_sleep=lambda retry_state: logger.debug(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
         ),
@@ -288,7 +296,7 @@ class LocalRuntime(ActionExecutionClient):
             return True
         except Exception as e:
             self.log('debug', f'Server not ready yet: {e}')
-            raise
+            raise AgentRuntimeNotReadyError('Action Execution Server not ready yet')
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
