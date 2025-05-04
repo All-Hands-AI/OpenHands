@@ -98,7 +98,7 @@ interface BranchDropdownProps {
   onSelectionChange: (key: React.Key | null) => void;
   onInputChange: (value: string) => void;
   isDisabled: boolean;
-  defaultSelectedKey?: string;
+  selectedKey?: string;
 }
 
 function BranchDropdown({
@@ -106,7 +106,7 @@ function BranchDropdown({
   onSelectionChange,
   onInputChange,
   isDisabled,
-  defaultSelectedKey,
+  selectedKey,
 }: BranchDropdownProps) {
   return (
     <SettingsDropdownInput
@@ -118,7 +118,7 @@ function BranchDropdown({
       onSelectionChange={onSelectionChange}
       onInputChange={onInputChange}
       isDisabled={isDisabled}
-      defaultSelectedKey={defaultSelectedKey}
+      selectedKey={selectedKey}
     />
   );
 }
@@ -260,7 +260,7 @@ export function RepositorySelectionForm({
         onSelectionChange={handleBranchSelection}
         onInputChange={handleBranchInputChange}
         isDisabled={false}
-        defaultSelectedKey={selectedBranch?.name}
+        selectedKey={selectedBranch?.name}
       />
     );
   };
