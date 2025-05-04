@@ -25,10 +25,11 @@ from prompt_toolkit.widgets import Frame, TextArea
 from openhands import __version__
 from openhands.core.config import AppConfig
 from openhands.core.schema import AgentState
-from openhands.events import EventSource
+from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ChangeAgentStateAction,
     CmdRunAction,
     FileEditAction,
     MessageAction,
@@ -60,7 +61,7 @@ COMMANDS = {
     '/status': 'Display session details and usage metrics',
     '/new': 'Create a new session',
     '/settings': 'Display and modify current settings',
-    '/resume': 'Resume the agent',
+    '/resume': 'Resume the agent when paused',
 }
 
 
@@ -396,7 +397,7 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
 def display_agent_running_message():
     print_formatted_text('')
     print_formatted_text(
-        HTML('<gold>Agent running...</gold> <grey>(Ctrl-P to pause)</grey>')
+        HTML('<gold>Agent running...</gold> <grey>(Press Ctrl-P to pause)</grey>')
     )
 
 
@@ -405,7 +406,7 @@ def display_agent_paused_message(agent_state: str):
         return
     print_formatted_text('')
     print_formatted_text(
-        HTML('<gold>Agent paused</gold> <grey>(type /resume to resume)</grey>')
+        HTML('<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>')
     )
 
 
@@ -430,7 +431,7 @@ class CommandCompleter(Completer):
                         command,
                         start_position=-len(text),
                         display_meta=description,
-                        style='bg:ansidarkgray fg:ansiwhite',
+                        style='bg:ansidarkgray fg:gold',
                     )
 
 
@@ -488,7 +489,7 @@ async def read_confirmation_input() -> bool:
         return False
 
 
-async def process_agent_pause(done: asyncio.Event) -> None:
+async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
     input = create_input()
 
     def keys_ready():
@@ -496,6 +497,10 @@ async def process_agent_pause(done: asyncio.Event) -> None:
             if key_press.key == Keys.ControlP:
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+                event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.PAUSED),
+                    EventSource.USER,
+                )
                 done.set()
 
     with input.raw_mode():

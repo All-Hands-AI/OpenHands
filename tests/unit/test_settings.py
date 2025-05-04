@@ -6,9 +6,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 from openhands.server.routes.settings import convert_to_settings
-from openhands.server.settings import POSTSettingsModel
 from openhands.storage.data_models.settings import Settings
 
 
@@ -84,45 +82,17 @@ def test_settings_handles_sensitive_data():
         llm_api_key='test-key',
         llm_base_url='https://test.example.com',
         remote_runtime_resource_factor=2,
-        secrets_store=SecretStore(
-            provider_tokens={
-                ProviderType.GITHUB: ProviderToken(
-                    token=SecretStr('test-token'),
-                    user_id=None,
-                )
-            }
-        ),
     )
 
     assert str(settings.llm_api_key) == '**********'
-    assert (
-        str(settings.secrets_store.provider_tokens[ProviderType.GITHUB].token)
-        == '**********'
-    )
-
     assert settings.llm_api_key.get_secret_value() == 'test-key'
-    assert (
-        settings.secrets_store.provider_tokens[
-            ProviderType.GITHUB
-        ].token.get_secret_value()
-        == 'test-token'
-    )
 
 
 def test_convert_to_settings():
-    settings_with_token_data = POSTSettingsModel(
+    settings_with_token_data = Settings(
         llm_api_key='test-key',
-        provider_tokens={
-            'github': 'test-token',
-        },
     )
 
     settings = convert_to_settings(settings_with_token_data)
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'
-    assert (
-        settings.secrets_store.provider_tokens[
-            ProviderType.GITHUB
-        ].token.get_secret_value()
-        == 'test-token'
-    )

@@ -18,9 +18,9 @@ from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
-from openhands.storage.data_models.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
 from openhands.utils.import_utils import get_impl
