@@ -23,6 +23,7 @@ def test_get_token_usage_for_event():
         completion_tokens=usage_record.completion_tokens,
         cache_read_tokens=usage_record.cache_read_tokens,
         cache_write_tokens=usage_record.cache_write_tokens,
+        context_window=1000,
         response_id=usage_record.response_id,
     )
 
@@ -136,6 +137,7 @@ def test_get_token_usage_for_event_fallback():
         completion_tokens=usage_record.completion_tokens,
         cache_read_tokens=usage_record.cache_read_tokens,
         cache_write_tokens=usage_record.cache_write_tokens,
+        context_window=1000,
         response_id=usage_record.response_id,
     )
 
