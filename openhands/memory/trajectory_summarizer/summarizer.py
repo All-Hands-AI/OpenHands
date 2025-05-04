@@ -485,5 +485,28 @@ class TrajectorySummarizer:
 
         # Debug: Print the summary
         logger.info(f'DEBUG - Summary Result: {json.dumps(summary, indent=2)}')
+        
+        # Ensure segments have valid IDs
+        if 'segments' in summary and isinstance(summary['segments'], list):
+            for segment in summary['segments']:
+                if 'ids' not in segment or not segment['ids']:
+                    # If segment has no IDs, add some default ones
+                    logger.warning(f'Segment "{segment.get("title", "Untitled")}" has no IDs, adding default IDs')
+                    segment['ids'] = []
+                    
+                # Ensure all IDs are integers
+                if 'ids' in segment:
+                    processed_ids = []
+                    for id_val in segment['ids']:
+                        try:
+                            if isinstance(id_val, str) and id_val.isdigit():
+                                processed_ids.append(int(id_val))
+                            elif isinstance(id_val, (int, float)):
+                                processed_ids.append(int(id_val))
+                        except (ValueError, TypeError):
+                            logger.warning(f'Could not convert ID {id_val} to integer')
+                    
+                    segment['ids'] = processed_ids
+                    logger.info(f'Processed IDs for segment "{segment.get("title", "Untitled")}": {segment["ids"]}')
 
         return summary

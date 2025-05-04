@@ -45,18 +45,36 @@ export function TrajectorySummary({
     totalSegments: number,
     segment: TrajectorySummarySegment
   ): Message[] => {
+    console.log(`Debug - Getting messages for segment ${segmentIndex}:`, {
+      segmentIds,
+      segmentTitle: segment.title,
+      totalSegments
+    });
+    
     // 0) No IDs ⇒ just evenly split
     if (!segmentIds || segmentIds.length === 0) {
+      console.log(`Debug - No IDs for segment ${segmentIndex}, using even split`);
       const per = Math.ceil(messages.length / totalSegments);
       const start = segmentIndex * per;
       const end = Math.min(start + per, messages.length);
-      return messages.slice(start, end);
+      const result = messages.slice(start, end);
+      console.log(`Debug - Even split result for segment ${segmentIndex}:`, {
+        messageCount: result.length,
+        start,
+        end
+      });
+      return result;
     }
 
     // 1) exact-ID matching
     const byId = messages.filter(
       (m) => m.eventID !== undefined && segmentIds.includes(m.eventID!)
     );
+    console.log(`Debug - Exact ID matching for segment ${segmentIndex}:`, {
+      matchCount: byId.length,
+      messageIDs: byId.map(m => m.eventID)
+    });
+    
     if (byId.length > 0) {
       const seen = new Set<string>();
       const unique = byId.filter((m) => {
@@ -65,11 +83,15 @@ export function TrajectorySummary({
         seen.add(key);
         return true;
       });
-      return unique.sort(
+      const result = unique.sort(
         (a, b) =>
           messages.findIndex((m) => m === a) -
           messages.findIndex((m) => m === b)
       );
+      console.log(`Debug - Exact ID matching result for segment ${segmentIndex}:`, {
+        uniqueCount: result.length
+      });
+      return result;
     }
 
     // 2) string-ID fallback
@@ -79,6 +101,11 @@ export function TrajectorySummary({
         segmentIds.some((id) => String(id) === String(m.eventID))
       );
     });
+    console.log(`Debug - String ID fallback for segment ${segmentIndex}:`, {
+      matchCount: byStringId.length,
+      messageIDs: byStringId.map(m => m.eventID)
+    });
+    
     if (byStringId.length > 0) {
       const seen2 = new Set<string>();
       const unique2 = byStringId.filter((m) => {
@@ -87,11 +114,33 @@ export function TrajectorySummary({
         seen2.add(key);
         return true;
       });
-      return unique2.sort(
+      const result = unique2.sort(
         (a, b) =>
           messages.findIndex((m) => m === a) -
           messages.findIndex((m) => m === b)
       );
+      console.log(`Debug - String ID fallback result for segment ${segmentIndex}:`, {
+        uniqueCount: result.length
+      });
+      return result;
+    }
+    
+    // 3) If we still have no matches, try a more lenient approach
+    console.log(`Debug - No matches found for segment ${segmentIndex}, trying lenient approach`);
+    const agentMessages = messages.filter(m => m.sender === "assistant" && m.type !== "message");
+    
+    if (agentMessages.length > 0) {
+      // Take a portion of agent messages based on segment index
+      const messagesPerSegment = Math.ceil(agentMessages.length / totalSegments);
+      const start = segmentIndex * messagesPerSegment;
+      const end = Math.min(start + messagesPerSegment, agentMessages.length);
+      const result = agentMessages.slice(start, end);
+      console.log(`Debug - Lenient approach result for segment ${segmentIndex}:`, {
+        messageCount: result.length,
+        start,
+        end
+      });
+      return result;
     }
 
     // 3) timestamp-range matching
@@ -175,18 +224,26 @@ export function TrajectorySummary({
   const summarizedIds = React.useMemo(() => {
     const ids = new Set<number>();
     segments.forEach(segment => {
-      segment.ids.forEach(id => {
-        ids.add(id);
-      });
+      if (segment.ids && Array.isArray(segment.ids)) {
+        segment.ids.forEach(id => {
+          if (typeof id === 'number') {
+            ids.add(id);
+          }
+        });
+      }
     });
+    console.log("Debug - Summarized IDs:", Array.from(ids));
     return ids;
   }, [segments]);
 
   // Get unsummarized messages (messages not included in any segment)
   const unsummarizedMessages = React.useMemo(() => {
-    return messages.filter(msg => {
+    const filtered = messages.filter(msg => {
       return !msg.eventID || !summarizedIds.has(msg.eventID);
     });
+    console.log("Debug - Unsummarized messages count:", filtered.length);
+    console.log("Debug - Total messages count:", messages.length);
+    return filtered;
   }, [messages, summarizedIds]);
 
   return (

@@ -87,20 +87,42 @@ export function ChatInterface() {
       localStepCount - lastSummarizedCount >= 10 &&
       curAgentState !== AgentState.RUNNING;
 
+    console.log("Debug - Summarization check:", {
+      localStepCount,
+      lastSummarizedCount,
+      shouldSummarize,
+      agentState: curAgentState
+    });
+
     // Check if summarization should be triggered
     if (shouldSummarize && params.conversationId) {
       const { conversationId } = params;
+      console.log("Debug - Triggering summarization for conversation:", conversationId);
+      
       // Attempt to summarize conversation
       getTrajectorySummary(conversationId, {
         onSuccess: (data) => {
           // Summary received
+          console.log("Debug - Summary received:", data);
           setOverallSummary(data.overall_summary);
-          setSummarySegments(data.segments);
+          setSummarySegments(data.segments || []);
           setShowSummary(true);
           setLastSummarizedCount(localStepCount);
+          
+          // Log segments for debugging
+          if (data.segments && data.segments.length > 0) {
+            console.log(`Debug - Received ${data.segments.length} segments`);
+            data.segments.forEach((segment, i) => {
+              console.log(`Debug - Segment ${i}: ${segment.title} with ${segment.ids?.length || 0} IDs`);
+              console.log(`Debug - Segment ${i} IDs:`, segment.ids);
+            });
+          } else {
+            console.log("Debug - No segments received in summary");
+          }
         },
-        onError: () => {
+        onError: (error) => {
           // Handle error fetching summary
+          console.error("Error fetching trajectory summary:", error);
         },
       });
     }
