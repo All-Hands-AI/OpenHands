@@ -30,12 +30,12 @@ function GitChanges() {
   const isNotGitRepoError =
     error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
-  let statusMessage = "";
+  let statusMessage: React.ReactNode = null;
   if (!runtimeIsActive) {
-    statusMessage = t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME);
+    statusMessage = <span>{t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME)}</span>;
   } else if (isNotGitRepoError) {
     if (error) {
-      statusMessage = retrieveAxiosErrorMessage(error);
+      statusMessage = <span>{retrieveAxiosErrorMessage(error)}</span>;
     } else {
       statusMessage = (
         <span>
