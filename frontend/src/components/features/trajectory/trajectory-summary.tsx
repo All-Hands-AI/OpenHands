@@ -171,15 +171,35 @@ export function TrajectorySummary({
     return [];
   };
 
+  // Find all message IDs that are included in segments
+  const summarizedIds = React.useMemo(() => {
+    const ids = new Set<number>();
+    segments.forEach(segment => {
+      segment.ids.forEach(id => {
+        ids.add(id);
+      });
+    });
+    return ids;
+  }, [segments]);
+
+  // Get unsummarized messages (messages not included in any segment)
+  const unsummarizedMessages = React.useMemo(() => {
+    return messages.filter(msg => {
+      return !msg.eventID || !summarizedIds.has(msg.eventID);
+    });
+  }, [messages, summarizedIds]);
+
   return (
     <div className="flex flex-col gap-4 w-full">
-      {/* Overall Summary */}
-      <div className="bg-base-secondary p-4 rounded-lg border border-tertiary">
-        <h2 className="text-lg font-semibold mb-2 text-content">
-          Conversation Summary
-        </h2>
-        <p className="text-content">{overallSummary}</p>
-      </div>
+      {/* Overall Summary - only show if we have segments */}
+      {segments.length > 0 && (
+        <div className="bg-base-secondary p-4 rounded-lg border border-tertiary">
+          <h2 className="text-lg font-semibold mb-2 text-content">
+            Conversation Summary
+          </h2>
+          <p className="text-content">{overallSummary}</p>
+        </div>
+      )}
 
       {/* Segments */}
       {segments.map((segment, idx) => (
@@ -297,6 +317,53 @@ export function TrajectorySummary({
           )}
         </div>
       ))}
+
+      {/* Display unsummarized messages */}
+      {unsummarizedMessages.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {unsummarizedMessages.map((msg, idx) => {
+            const showConfirm =
+              messages.length - 1 === messages.indexOf(msg) &&
+              msg.sender === "assistant" &&
+              isAwaitingUserConfirmation;
+            
+            if (msg.type === "error" || msg.type === "action") {
+              return (
+                <div key={idx} className="text-content">
+                  {msg.thought && (
+                    <ChatMessage
+                      type="assistant"
+                      message={msg.thought}
+                      id={msg.eventID}
+                    />
+                  )}
+                  <ExpandableMessage
+                    type={msg.type}
+                    id={msg.translationID}
+                    message={msg.content}
+                    success={msg.success}
+                    eventID={msg.eventID}
+                  />
+                  {showConfirm && <ConfirmationButtons />}
+                </div>
+              );
+            }
+            return (
+              <ChatMessage
+                key={idx}
+                type={msg.sender}
+                message={msg.content}
+                id={msg.eventID}
+              >
+                {msg.imageUrls && msg.imageUrls.length > 0 && (
+                  <ImageCarousel size="small" images={msg.imageUrls} />
+                )}
+                {showConfirm && <ConfirmationButtons />}
+              </ChatMessage>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

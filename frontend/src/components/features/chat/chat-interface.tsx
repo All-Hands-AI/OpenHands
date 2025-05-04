@@ -67,25 +67,27 @@ export function ChatInterface() {
   const [summarySegments, setSummarySegments] = React.useState<
     TrajectorySummarySegment[]
   >([]);
-  const [userMessageCount, setUserMessageCount] = React.useState(0);
+  const [localStepCount, setLocalStepCount] = React.useState(0);
   const [lastSummarizedCount, setLastSummarizedCount] = React.useState(0);
 
-  // Count user messages
+  // Count local steps (agent actions)
   React.useEffect(() => {
-    const userMessages = messages.filter((msg) => msg.sender === "user");
-    setUserMessageCount(userMessages.length);
+    // Count all agent messages that are actions (not regular messages)
+    const agentActions = messages.filter(
+      (msg) => msg.sender === "assistant" && msg.type !== undefined && msg.type !== "message"
+    );
+    setLocalStepCount(agentActions.length);
   }, [messages]);
 
-  // Trigger summarization after every 2 user messages
+  // Trigger summarization after every 10 local steps
   React.useEffect(() => {
     const shouldSummarize =
-      userMessageCount > 0 &&
-      userMessageCount % 2 === 0 &&
-      userMessageCount !== lastSummarizedCount &&
+      localStepCount > 0 &&
+      localStepCount >= 10 &&
+      localStepCount - lastSummarizedCount >= 10 &&
       curAgentState !== AgentState.RUNNING;
 
     // Check if summarization should be triggered
-
     if (shouldSummarize && params.conversationId) {
       const { conversationId } = params;
       // Attempt to summarize conversation
@@ -95,7 +97,7 @@ export function ChatInterface() {
           setOverallSummary(data.overall_summary);
           setSummarySegments(data.segments);
           setShowSummary(true);
-          setLastSummarizedCount(userMessageCount);
+          setLastSummarizedCount(localStepCount);
         },
         onError: () => {
           // Handle error fetching summary
@@ -103,7 +105,7 @@ export function ChatInterface() {
       });
     }
   }, [
-    userMessageCount,
+    localStepCount,
     lastSummarizedCount,
     curAgentState,
     params.conversationId,
@@ -198,14 +200,25 @@ export function ChatInterface() {
         )}
 
         {!isLoadingMessages && showSummary && (
-          <TrajectorySummary
-            overallSummary={overallSummary}
-            segments={summarySegments}
-            messages={messages}
-            isAwaitingUserConfirmation={
-              curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-            }
-          />
+          <>
+            {summarySegments.length > 0 ? (
+              <TrajectorySummary
+                overallSummary={overallSummary}
+                segments={summarySegments}
+                messages={messages}
+                isAwaitingUserConfirmation={
+                  curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+                }
+              />
+            ) : (
+              <Messages
+                messages={messages}
+                isAwaitingUserConfirmation={
+                  curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+                }
+              />
+            )}
+          </>
         )}
 
         {isWaitingForUserInput && (
@@ -228,33 +241,31 @@ export function ChatInterface() {
               onExportTrajectory={() => onClickExportTrajectoryButton()}
             />
 
-            {/* Summary Toggle Button - only show if summary is available */}
-            {summarySegments.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowSummary(!showSummary)}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-tertiary hover:bg-base-secondary transition-colors text-content"
-                title={
-                  showSummary
-                    ? "Show original messages"
-                    : "Show conversation summary"
-                }
+            {/* Summary Toggle Button - always available */}
+            <button
+              type="button"
+              onClick={() => setShowSummary(!showSummary)}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-tertiary hover:bg-base-secondary transition-colors text-content"
+              title={
+                showSummary
+                  ? "Show original messages"
+                  : "Show conversation summary"
+              }
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {showSummary ? "Original View" : "Summary View"}
-              </button>
-            )}
+                <path
+                  fillRule="evenodd"
+                  d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {showSummary ? "Original View" : "Summary View"}
+            </button>
 
             {/* Manual Summarize Button - only show in summary view
             {params.conversationId && showSummary && (

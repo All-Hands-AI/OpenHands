@@ -422,6 +422,7 @@ class TrajectorySummarizer:
         event_stream: EventStream,
         llm: Optional[LLM] = None,
         filter_hidden: bool = True,
+        max_local_steps: int = 10,
     ) -> Dict[str, Any]:
         """
         Summarize a conversation from its event stream.
@@ -430,26 +431,57 @@ class TrajectorySummarizer:
             event_stream: The event stream of the conversation
             llm: Optional LLM instance to use for summarization
             filter_hidden: Whether to filter out hidden events
+            max_local_steps: Maximum number of local steps to include in summarization
 
         Returns:
             A dictionary containing the summarization
         """
         # Get the trajectory from the event stream
-        trajectory = await self.get_trajectory_from_event_stream(
+        full_trajectory = await self.get_trajectory_from_event_stream(
             event_stream, filter_hidden=filter_hidden
         )
 
+        # Extract user messages and agent actions
+        user_messages = [item for item in full_trajectory if item.get('source') == 'user']
+        agent_actions = [
+            item for item in full_trajectory 
+            if item.get('source') == 'agent' and item.get('action') != 'message'
+        ]
+
+        # Get the last N local steps (agent actions)
+        last_n_agent_actions = agent_actions[-max_local_steps:] if agent_actions else []
+        
+        # Find the minimum ID from the last N agent actions
+        min_id = float('inf')
+        for action in last_n_agent_actions:
+            if action.get('id') is not None and action.get('id') < min_id:
+                min_id = action.get('id')
+        
+        # Include all user messages and agent actions with ID >= min_id
+        trajectory_to_summarize = user_messages + [
+            item for item in full_trajectory 
+            if item.get('source') == 'agent' and (
+                item.get('id') is None or item.get('id') >= min_id
+            )
+        ]
+        
+        # Sort by ID to maintain chronological order
+        trajectory_to_summarize.sort(
+            key=lambda x: x.get('id', float('inf')) 
+            if x.get('id') is not None else float('inf')
+        )
+
         # Debug: Print the trajectory
-        logger.info(f'DEBUG - Raw Trajectory: {json.dumps(trajectory, indent=2)}')
+        logger.info(f'DEBUG - Raw Trajectory (last {max_local_steps} steps): {json.dumps(trajectory_to_summarize, indent=2)}')
 
         # Preprocess the trajectory
-        processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory)
+        processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory_to_summarize)
         logger.info(
             f'DEBUG - Processed Trajectory: {json.dumps(processed_trajectory, indent=2)}'
         )
 
         # Summarize the trajectory
-        summary = self.summarize_trajectory(trajectory, llm=llm)
+        summary = self.summarize_trajectory(trajectory_to_summarize, llm=llm)
 
         # Debug: Print the summary
         logger.info(f'DEBUG - Summary Result: {json.dumps(summary, indent=2)}')
