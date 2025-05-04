@@ -317,14 +317,13 @@ class OpenHands {
 
     return data;
   }
-  
+
   static async getRepositoryBranches(repository: string): Promise<Branch[]> {
     const { data } = await openHands.get<Branch[]>(
       `/api/user/repository/${encodeURIComponent(repository)}/branches`
     );
-    
+
     return data;
-  }
   }
 }
 
