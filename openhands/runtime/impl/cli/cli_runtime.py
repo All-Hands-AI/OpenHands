@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
+from queue import Queue
+from threading import Thread
 from typing import Callable, Optional, Tuple
 
 from binaryornot.check import is_binary
@@ -151,29 +153,64 @@ class CLIRuntime(Runtime):
 
                 stdout_output: list[str] = []
                 stderr_output: list[str] = []
+                output_queues: dict[str, Queue] = {
+                    'stdout': Queue(),
+                    'stderr': Queue(),
+                }
 
-                # Stream stdout if available
+                def stream_reader(pipe, queue, output_list):
+                    try:
+                        for line in iter(pipe.readline, ''):
+                            if not line:
+                                break
+                            line_stripped = line.rstrip('\n')
+                            output_list.append(line_stripped)
+                            queue.put(line)
+                    finally:
+                        pipe.close()
+                        queue.put(None)  # Signal that we're done
+
+                # Start reader threads
+                threads = []
                 if process.stdout is not None:
-                    for line in iter(process.stdout.readline, ''):
-                        if not line:
-                            break
-                        line_stripped = line.rstrip('\n')
-                        stdout_output.append(line_stripped)
-                        if self._shell_stream_callback is not None:
-                            self._shell_stream_callback(line)
+                    stdout_thread = Thread(
+                        target=stream_reader,
+                        args=(process.stdout, output_queues['stdout'], stdout_output),
+                        daemon=True,
+                    )
+                    stdout_thread.start()
+                    threads.append(stdout_thread)
 
-                # Stream stderr if available
                 if process.stderr is not None:
-                    for line in iter(process.stderr.readline, ''):
-                        if not line:
-                            break
-                        line_stripped = line.rstrip('\n')
-                        stderr_output.append(line_stripped)
-                        if self._shell_stream_callback is not None:
-                            self._shell_stream_callback(line)
+                    stderr_thread = Thread(
+                        target=stream_reader,
+                        args=(process.stderr, output_queues['stderr'], stderr_output),
+                        daemon=True,
+                    )
+                    stderr_thread.start()
+                    threads.append(stderr_thread)
+
+                # Stream output in real-time from both pipes
+                streams_active = len(threads)
+                while streams_active > 0:
+                    line = output_queues['stdout'].get_nowait()
+                    if line is None:
+                        streams_active -= 1
+                    elif self._shell_stream_callback is not None:
+                        self._shell_stream_callback(line)
+
+                    line = output_queues['stderr'].get_nowait()
+                    if line is None:
+                        streams_active -= 1
+                    elif self._shell_stream_callback is not None:
+                        self._shell_stream_callback(line)
 
                 # Wait for process to complete
                 return_code = process.wait()
+
+                # Wait for reader threads to finish
+                for thread in threads:
+                    thread.join()
 
                 # Combine stdout and stderr
                 output = '\n'.join(stdout_output)

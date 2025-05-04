@@ -306,6 +306,7 @@ def initialize_streaming_output():
 
 
 def update_streaming_output(text: str):
+    print('UPDATE', text)
     """Update the streaming output TextArea with new text."""
     global streaming_output_text_area
     if streaming_output_text_area is None:
