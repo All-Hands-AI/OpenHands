@@ -551,7 +551,7 @@ class CLIRuntime(Runtime):
 
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None
-    ) -> None:
+    ) -> bool:
         """
         Subscribe to shell command output stream.
 
@@ -560,4 +560,4 @@ class CLIRuntime(Runtime):
                      If None, any existing subscription will be removed.
         """
         self._shell_stream_callback = callback
-        return None
+        return True
