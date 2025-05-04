@@ -168,17 +168,17 @@ async def get_suggested_tasks(
     )
 
 
-@app.get('/repository/{repository}/branches', response_model=list[Branch])
+@app.get('/repository/branches', response_model=list[Branch])
 async def get_repository_branches(
     repository: str,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
     """Get branches for a repository.
-    
+
     Args:
         repository: The repository name in the format 'owner/repo'
-        
+
     Returns:
         A list of branches for the repository
     """
