@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 from binaryornot.check import is_binary
 from openhands_aci.editor.editor import OHEditor
@@ -108,6 +108,7 @@ class CLIRuntime(Runtime):
         # Initialize runtime state
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
+        self._shell_stream_callback: Optional[Callable[[str], None]] = None
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -132,33 +133,89 @@ class CLIRuntime(Runtime):
         self.send_status_message('STATUS$CONTAINER_STARTED')
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
-    def _execute_shell_command(self, cmd: str) -> CmdOutputObservation:
+    def _execute_shell_command(self, cmd: str) -> CmdOutputObservation:  # type: ignore
         """Execute a shell command and return the result as a CmdOutputObservation."""
         try:
-            process = subprocess.run(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                cwd=self._workspace_path,
-            )
+            # If we have a stream callback, use Popen to stream output in real-time
+            if self._shell_stream_callback is not None:
+                # Stream output in real-time
+                process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    cwd=self._workspace_path,
+                    bufsize=1,  # Line buffered
+                )
 
-            # Combine stdout and stderr
-            output = process.stdout
-            if process.stderr:
-                if output:
-                    output += '\n'
-                output += process.stderr
+                stdout_output: list[str] = []
+                stderr_output: list[str] = []
 
-            return CmdOutputObservation(
-                content=output,
-                command=cmd,
-                exit_code=process.returncode,
-            )
+                # Stream stdout if available
+                if process.stdout is not None:
+                    for line in iter(process.stdout.readline, ''):
+                        if not line:
+                            break
+                        line_stripped = line.rstrip('\n')
+                        stdout_output.append(line_stripped)
+                        if self._shell_stream_callback is not None:
+                            self._shell_stream_callback(line)
+
+                # Stream stderr if available
+                if process.stderr is not None:
+                    for line in iter(process.stderr.readline, ''):
+                        if not line:
+                            break
+                        line_stripped = line.rstrip('\n')
+                        stderr_output.append(line_stripped)
+                        if self._shell_stream_callback is not None:
+                            self._shell_stream_callback(line)
+
+                # Wait for process to complete
+                return_code = process.wait()
+
+                # Combine stdout and stderr
+                output = '\n'.join(stdout_output)
+                if stderr_output:
+                    if output:
+                        output += '\n'
+                    output += '\n'.join(stderr_output)
+
+                return CmdOutputObservation(
+                    content=output,
+                    command=cmd,
+                    exit_code=return_code,
+                )
+            else:
+                # Use subprocess.run for non-streaming execution
+                completed_process = subprocess.run(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    cwd=self._workspace_path,
+                )
+
+                # Combine stdout and stderr
+                output = completed_process.stdout
+                if completed_process.stderr:
+                    if output:
+                        output += '\n'
+                    output += completed_process.stderr
+
+                return CmdOutputObservation(
+                    content=output,
+                    command=cmd,
+                    exit_code=completed_process.returncode,
+                )
         except Exception as e:
+            error_message = f'Error executing command: {str(e)}'
+            if self._shell_stream_callback is not None:
+                self._shell_stream_callback(error_message + '\n')
             return CmdOutputObservation(
-                content=f'Error executing command: {str(e)}',
+                content=error_message,
                 command=cmd,
                 exit_code=1,
             )
@@ -491,3 +548,16 @@ class CLIRuntime(Runtime):
     def get_mcp_config(self) -> MCPConfig:
         # TODO: Load MCP config from a local file
         return MCPConfig()
+
+    def subscribe_to_shell_stream(
+        self, callback: Callable[[str], None] | None = None
+    ) -> None:
+        """
+        Subscribe to shell command output stream.
+
+        Args:
+            callback: A function that will be called with each line of output from shell commands.
+                     If None, any existing subscription will be removed.
+        """
+        self._shell_stream_callback = callback
+        return None

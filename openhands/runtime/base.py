@@ -668,3 +668,19 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def additional_agent_instructions(self) -> str:
         return ''
+
+    def subscribe_to_shell_stream(
+        self, callback: Callable[[str], None] | None = None
+    ) -> None:
+        """
+        Subscribe to shell command output stream.
+        This method is meant to be overridden by runtime implementations
+        that want to stream shell command output to external consumers.
+
+        Args:
+            callback: A function that will be called with each line of output from shell commands.
+                     If None, any existing subscription will be removed.
+
+        Returns None by default.
+        """
+        return None

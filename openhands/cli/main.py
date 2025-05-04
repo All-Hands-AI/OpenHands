@@ -120,6 +120,16 @@ async def run_session(
         agent=agent,
     )
 
+    # Set up shell output streaming directly to console
+    if hasattr(runtime, 'subscribe_to_shell_stream'):
+
+        def stream_to_console(output: str) -> None:
+            # Print directly to stdout without buffering
+            sys.stdout.write(output)
+            sys.stdout.flush()
+
+        runtime.subscribe_to_shell_stream(stream_to_console)
+
     controller, _ = create_controller(agent, runtime, config)
 
     event_stream = runtime.event_stream
