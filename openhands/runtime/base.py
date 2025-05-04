@@ -430,6 +430,11 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
+    @property
+    def workspace_root(self) -> Path:
+        """Return the workspace root path."""
+        return Path(self.config.workspace_mount_path_in_sandbox)
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroagent]:
@@ -439,11 +444,10 @@ class Runtime(FileEditRuntimeMixin):
         """
 
         loaded_microagents: list[BaseMicroagent] = []
-        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
-        microagents_dir = workspace_root / '.openhands' / 'microagents'
+        microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
-            repo_root = workspace_root / selected_repository.split('/')[-1]
+            repo_root = self.workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
         self.log(
             'info',
@@ -453,7 +457,7 @@ class Runtime(FileEditRuntimeMixin):
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
         obs = self.read(
-            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
+            FileReadAction(path=str(self.workspace_root / '.openhands_instructions'))
         )
         if isinstance(obs, ErrorObservation) and repo_root is not None:
             # If the instructions file is not found in the workspace root, try to load it from the repo root

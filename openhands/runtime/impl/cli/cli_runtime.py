@@ -190,12 +190,23 @@ class CLIRuntime(Runtime):
             except Exception:
                 pass
 
+    def _sanitize_filename(self, filename: str) -> str:
+        # if path is absolute, ensure it starts with _workspace_path
+        if filename.startswith('/'):
+            if not filename.startswith(self._workspace_path):
+                raise ValueError(
+                    f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
+                )
+        else:
+            filename = os.path.join(self._workspace_path, filename.lstrip('/'))
+        return filename
+
     def read(self, action: FileReadAction) -> Observation:
         """Read a file using Python's standard library."""
         if not self._runtime_initialized:
             return ErrorObservation('Runtime not initialized')
 
-        file_path = os.path.join(self._workspace_path, action.path.lstrip('/'))
+        file_path = self._sanitize_filename(action.path)
 
         try:
             # Check if the file exists
@@ -220,7 +231,7 @@ class CLIRuntime(Runtime):
         if not self._runtime_initialized:
             return ErrorObservation('Runtime not initialized')
 
-        file_path = os.path.join(self._workspace_path, action.path.lstrip('/'))
+        file_path = self._sanitize_filename(action.path)
 
         try:
             # Create parent directories if they don't exist
@@ -250,6 +261,11 @@ class CLIRuntime(Runtime):
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         """Not implemented for CLI runtime."""
         return ErrorObservation('MCP functionality is not implemented in CLIRuntime')
+
+    @property
+    def workspace_root(self) -> Path:
+        """Return the workspace root path."""
+        return Path(os.path.abspath(self._workspace_path))
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         """Copy a file or directory from the host to the sandbox."""
@@ -358,6 +374,10 @@ class CLIRuntime(Runtime):
                         logger.info(f'Deleted workspace directory: {path}')
                 except Exception as e:
                     logger.error(f'Error deleting workspace directory: {str(e)}')
+
+    @property
+    def additional_agent_instructions(self) -> str:
+        return f'Your working directory is {self._workspace_path}. You can only read and write files in this directory.'
 
     def get_mcp_config(self) -> MCPConfig:
         # TODO: Load MCP config from a local file
