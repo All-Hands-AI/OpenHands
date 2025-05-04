@@ -90,11 +90,7 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
         </code>
       </div>
       <div className="mt-4 flex justify-end">
-        <BrandButton
-          type="button"
-          variant="primary"
-          onClick={handleSave}
-        >
+        <BrandButton type="button" variant="primary" onClick={handleSave}>
           {t(I18nKey.SETTINGS$MCP_APPLY_CHANGES)}
         </BrandButton>
       </div>
