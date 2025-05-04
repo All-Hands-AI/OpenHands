@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from openhands.events.action import CmdRunAction, FileReadAction, FileWriteAction
+from openhands.events.action import CmdRunAction, FileReadAction
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -17,7 +17,7 @@ class TestGitHooks:
         # Create a mock runtime
         mock_runtime = MagicMock(spec=Runtime)
         mock_runtime.status_callback = None
-        
+
         # Set up read to return different values based on the path
         def mock_read(action):
             if action.path == '.openhands/pre-commit.sh':
@@ -29,9 +29,9 @@ class TestGitHooks:
                 # Simulate no existing pre-commit hook
                 return ErrorObservation(content='File not found')
             return ErrorObservation(content='Unexpected path')
-            
+
         mock_runtime.read.side_effect = mock_read
-        
+
         mock_runtime.run_action.return_value = CmdOutputObservation(
             content='', exit_code=0, command='test command'
         )
@@ -69,7 +69,9 @@ class TestGitHooks:
 
     def test_maybe_setup_git_hooks_no_script(self, mock_runtime):
         # Test when pre-commit script doesn't exist
-        mock_runtime.read.side_effect = lambda action: ErrorObservation(content='File not found')
+        mock_runtime.read.side_effect = lambda action: ErrorObservation(
+            content='File not found'
+        )
 
         Runtime.maybe_setup_git_hooks(mock_runtime)
 
@@ -85,12 +87,17 @@ class TestGitHooks:
     def test_maybe_setup_git_hooks_mkdir_failure(self, mock_runtime):
         # Test failure to create git hooks directory
         def mock_run_action(action):
-            if isinstance(action, CmdRunAction) and action.command == 'mkdir -p .git/hooks':
+            if (
+                isinstance(action, CmdRunAction)
+                and action.command == 'mkdir -p .git/hooks'
+            ):
                 return CmdOutputObservation(
-                    content='Permission denied', exit_code=1, command='mkdir -p .git/hooks'
+                    content='Permission denied',
+                    exit_code=1,
+                    command='mkdir -p .git/hooks',
                 )
             return CmdOutputObservation(content='', exit_code=0, command=action.command)
-            
+
         mock_runtime.run_action.side_effect = mock_run_action
 
         Runtime.maybe_setup_git_hooks(mock_runtime)
@@ -105,7 +112,7 @@ class TestGitHooks:
 
         # Verify that no other actions were taken
         mock_runtime.write.assert_not_called()
-        
+
     def test_maybe_setup_git_hooks_with_existing_hook(self, mock_runtime):
         # Test when there's an existing pre-commit hook
         def mock_read(action):
@@ -121,27 +128,30 @@ class TestGitHooks:
                     path='.git/hooks/pre-commit',
                 )
             return ErrorObservation(content='Unexpected path')
-            
+
         mock_runtime.read.side_effect = mock_read
 
         Runtime.maybe_setup_git_hooks(mock_runtime)
 
         # Verify that the runtime tried to read both scripts
         assert len(mock_runtime.read.call_args_list) >= 2
-        
+
         # Verify that the runtime preserved the existing hook
-        assert mock_runtime.log.call_args_list[0] == call('info', 'Preserving existing pre-commit hook')
-        
+        assert mock_runtime.log.call_args_list[0] == call(
+            'info', 'Preserving existing pre-commit hook'
+        )
+
         # Verify that the runtime moved the existing hook
         move_calls = [
-            call for call in mock_runtime.run_action.call_args_list 
+            call
+            for call in mock_runtime.run_action.call_args_list
             if isinstance(call[0][0], CmdRunAction) and 'mv' in call[0][0].command
         ]
         assert len(move_calls) > 0
-        
+
         # Verify that the runtime wrote the new pre-commit hook
         assert mock_runtime.write.called
-        
+
         # Verify that the runtime logged success
         assert mock_runtime.log.call_args_list[-1] == call(
             'info', 'Git pre-commit hook installed successfully'
