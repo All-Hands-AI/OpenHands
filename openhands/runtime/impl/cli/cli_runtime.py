@@ -360,7 +360,7 @@ class CLIRuntime(Runtime):
                 except Exception as e:
                     logger.error(f'Error deleting workspace directory: {str(e)}')
 
-    def get_updated_mcp_config(self) -> MCPConfig:
+    def get_mcp_config(self) -> MCPConfig:
         return MCPConfig()
 
     def run_action(self, action: Action) -> Observation:

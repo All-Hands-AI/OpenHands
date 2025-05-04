@@ -555,7 +555,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    def get_updated_mcp_config(self) -> MCPConfig:
+    def get_mcp_config(self) -> MCPConfig:
         pass
 
     # ====================================================================
