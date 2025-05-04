@@ -14,7 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
-import { GitUser, GitRepository } from "#/types/git";
+import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
