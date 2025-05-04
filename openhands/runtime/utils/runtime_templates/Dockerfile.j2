@@ -79,69 +79,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install common development tools and libraries
-RUN apt-get update && \
-    apt-get install -y \
-    sqlite3 \
-    postgresql-client \
-    redis-tools \
-    libsqlite3-dev \
-    libpq-dev \
-    libssl-dev \
-    zlib1g-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libffi-dev \
-    liblzma-dev \
-    libncurses-dev \
-    libxml2-dev \
-    libxslt-dev \
-    unixodbc-dev \
-    freetds-dev \
-    protobuf-compiler \
-    && apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    # Install MySQL client packages - try different package names based on distribution
-    apt-get update && \
-    (apt-get install -y default-mysql-client default-libmysqlclient-dev || \
-     apt-get install -y mysql-client libmysqlclient-dev || \
-     apt-get install -y mariadb-client libmariadb-dev) && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install common Python packages globally
-RUN pip3 install --no-cache-dir \
-    ipython \
-    jupyter \
-    pandas \
-    numpy \
-    matplotlib \
-    scikit-learn \
-    tensorflow \
-    torch \
-    flask \
-    django \
-    fastapi \
-    sqlalchemy \
-    pytest \
-    black \
-    mypy \
-    pylint \
-    isort
-
-# Install common Node.js packages globally
-RUN npm install -g \
-    typescript \
-    ts-node \
-    eslint \
-    prettier \
-    jest \
-    mocha \
-    express-generator \
-    create-react-app \
-    @angular/cli \
-    @vue/cli \
-    next
 
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
