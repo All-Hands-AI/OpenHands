@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MCPConfig } from "#/types/settings";
 import { I18nKey } from "#/i18n/declaration";
+import { BrandButton } from "../brand-button";
 
 interface MCPJsonEditorProps {
   mcpConfig?: MCPConfig;
@@ -89,13 +90,13 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
         </code>
       </div>
       <div className="mt-4 flex justify-end">
-        <button
+        <BrandButton
           type="button"
-          className="text-xs bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
+          variant="primary"
           onClick={handleSave}
         >
           {t(I18nKey.SETTINGS$MCP_APPLY_CHANGES)}
-        </button>
+        </BrandButton>
       </div>
     </div>
   );

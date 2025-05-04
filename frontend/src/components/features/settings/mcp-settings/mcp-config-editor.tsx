@@ -5,6 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { MCPSSEServers } from "./mcp-sse-servers";
 import { MCPStdioServers } from "./mcp-stdio-servers";
 import { MCPJsonEditor } from "./mcp-json-editor";
+import { BrandButton } from "../brand-button";
 
 interface MCPConfigEditorProps {
   mcpConfig?: MCPConfig;
@@ -32,9 +33,6 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
         </p>
       </div>
       <div className="flex justify-between items-center mb-4">
-        <div className="text-sm font-medium">
-          {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
-        </div>
         <div className="flex items-center">
           <a
             href="https://docs.all-hands.dev/modules/usage/mcp"
@@ -45,15 +43,15 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           >
             Documentation
           </a>
-          <button
+          <BrandButton
             type="button"
-            className="text-sm bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
+            variant="primary"
             onClick={() => setIsEditing(!isEditing)}
           >
             {isEditing
               ? t(I18nKey.SETTINGS$MCP_CANCEL)
               : t(I18nKey.SETTINGS$MCP_EDIT_CONFIGURATION)}
-          </button>
+          </BrandButton>
         </div>
       </div>
 
