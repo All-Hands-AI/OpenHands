@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, Mock, patch
 
-from openhands.core.cli_tui import (
+from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
@@ -33,7 +33,7 @@ from openhands.llm.metrics import Metrics
 
 
 class TestDisplayFunctions:
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_runtime_initialization_message_local(self, mock_print):
         display_runtime_initialization_message('local')
         assert mock_print.call_count == 3
@@ -41,7 +41,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[1]
         assert 'Starting local runtime' in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_runtime_initialization_message_docker(self, mock_print):
         display_runtime_initialization_message('docker')
         assert mock_print.call_count == 3
@@ -49,7 +49,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[1]
         assert 'Starting Docker runtime' in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_banner(self, mock_print):
         session_id = 'test-session-id'
 
@@ -62,7 +62,7 @@ class TestDisplayFunctions:
         assert session_id in str(args[0])
         assert 'Initialized session' in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_welcome_message(self, mock_print):
         display_welcome_message()
         assert mock_print.call_count == 2
@@ -70,7 +70,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[0]
         assert "Let's start building" in str(args[0])
 
-    @patch('openhands.core.cli_tui.display_message')
+    @patch('openhands.cli.tui.display_message')
     def test_display_event_message_action(self, mock_display_message):
         config = MagicMock(spec=AppConfig)
         message = MessageAction(content='Test message')
@@ -80,7 +80,7 @@ class TestDisplayFunctions:
 
         mock_display_message.assert_called_once_with('Test message')
 
-    @patch('openhands.core.cli_tui.display_command')
+    @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
         config = MagicMock(spec=AppConfig)
         cmd_action = CmdRunAction(command='echo test')
@@ -89,7 +89,7 @@ class TestDisplayFunctions:
 
         mock_display_command.assert_called_once_with(cmd_action)
 
-    @patch('openhands.core.cli_tui.display_command_output')
+    @patch('openhands.cli.tui.display_command_output')
     def test_display_event_cmd_output(self, mock_display_output):
         config = MagicMock(spec=AppConfig)
         cmd_output = CmdOutputObservation(content='Test output', command='echo test')
@@ -98,7 +98,7 @@ class TestDisplayFunctions:
 
         mock_display_output.assert_called_once_with('Test output')
 
-    @patch('openhands.core.cli_tui.display_file_edit')
+    @patch('openhands.cli.tui.display_file_edit')
     def test_display_event_file_edit_action(self, mock_display_file_edit):
         config = MagicMock(spec=AppConfig)
         file_edit = FileEditAction(path='test.py', content="print('hello')")
@@ -107,7 +107,7 @@ class TestDisplayFunctions:
 
         mock_display_file_edit.assert_called_once_with(file_edit)
 
-    @patch('openhands.core.cli_tui.display_file_edit')
+    @patch('openhands.cli.tui.display_file_edit')
     def test_display_event_file_edit_observation(self, mock_display_file_edit):
         config = MagicMock(spec=AppConfig)
         file_edit_obs = FileEditObservation(path='test.py', content="print('hello')")
@@ -116,7 +116,7 @@ class TestDisplayFunctions:
 
         mock_display_file_edit.assert_called_once_with(file_edit_obs)
 
-    @patch('openhands.core.cli_tui.display_file_read')
+    @patch('openhands.cli.tui.display_file_read')
     def test_display_event_file_read(self, mock_display_file_read):
         config = MagicMock(spec=AppConfig)
         file_read = FileReadObservation(path='test.py', content="print('hello')")
@@ -125,7 +125,7 @@ class TestDisplayFunctions:
 
         mock_display_file_read.assert_called_once_with(file_read)
 
-    @patch('openhands.core.cli_tui.display_message')
+    @patch('openhands.cli.tui.display_message')
     def test_display_event_thought(self, mock_display_message):
         config = MagicMock(spec=AppConfig)
         action = Action()
@@ -135,8 +135,8 @@ class TestDisplayFunctions:
 
         mock_display_message.assert_called_once_with('Thinking about this...')
 
-    @patch('openhands.core.cli_tui.time.sleep')
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.time.sleep')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_message(self, mock_print, mock_sleep):
         message = 'Test message'
         display_message(message)
@@ -146,7 +146,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_container')
+    @patch('openhands.cli.tui.print_container')
     def test_display_command_awaiting_confirmation(self, mock_print_container):
         cmd_action = CmdRunAction(command='echo test')
         cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
@@ -159,7 +159,7 @@ class TestDisplayFunctions:
 
 
 class TestInteractiveCommandFunctions:
-    @patch('openhands.core.cli_tui.print_container')
+    @patch('openhands.cli.tui.print_container')
     def test_display_usage_metrics(self, mock_print_container):
         metrics = UsageMetrics()
         metrics.total_cost = 1.25
@@ -182,8 +182,8 @@ class TestInteractiveCommandFunctions:
         assert '0m' in duration
         assert '0s' in duration
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
-    @patch('openhands.core.cli_tui.get_session_duration')
+    @patch('openhands.cli.tui.print_formatted_text')
+    @patch('openhands.cli.tui.get_session_duration')
     def test_display_shutdown_message(self, mock_get_duration, mock_print):
         mock_get_duration.return_value = '1 hour 5 minutes'
 
@@ -196,7 +196,7 @@ class TestInteractiveCommandFunctions:
         assert mock_print.call_count >= 3  # At least 3 print calls
         assert mock_get_duration.call_count == 1
 
-    @patch('openhands.core.cli_tui.display_usage_metrics')
+    @patch('openhands.cli.tui.display_usage_metrics')
     def test_display_status(self, mock_display_metrics):
         metrics = UsageMetrics()
         session_id = 'test-session-id'
