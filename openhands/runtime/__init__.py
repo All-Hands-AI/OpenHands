@@ -1,6 +1,7 @@
 from typing import Type
 
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
@@ -22,6 +23,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
     'runloop': RunloopRuntime,
     'local': LocalRuntime,
     'daytona': DaytonaRuntime,
+    'cli': CLIRuntime,
 }
 
 
@@ -50,5 +52,6 @@ __all__ = [
     'RunloopRuntime',
     'DockerRuntime',
     'DaytonaRuntime',
+    'CLIRuntime',
     'get_runtime_cls',
 ]
