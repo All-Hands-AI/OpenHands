@@ -5,7 +5,7 @@ import pytest
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.keys import Keys
 
-from openhands.core.cli_tui import process_agent_pause
+from openhands.cli.tui import process_agent_pause
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction
@@ -14,8 +14,8 @@ from openhands.events.observation import AgentStateChangedObservation
 
 class TestProcessAgentPause:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_tui.create_input')
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.print_formatted_text')
     async def test_process_agent_pause_ctrl_p(self, mock_print, mock_create_input):
         """Test that process_agent_pause sets the done event when Ctrl+P is pressed."""
         # Create the done event
@@ -233,11 +233,11 @@ class TestCliPauseResumeInRunSession:
 
 class TestCliCommandsPauseResume:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_resume_command')
+    @patch('openhands.cli.commands.handle_resume_command')
     async def test_handle_commands_resume(self, mock_handle_resume):
         """Test that the handle_commands function properly calls handle_resume_command."""
         # Import here to avoid circular imports in test
-        from openhands.core.cli_commands import handle_commands
+        from openhands.cli.commands import handle_commands
 
         # Create mocks
         message = '/resume'
