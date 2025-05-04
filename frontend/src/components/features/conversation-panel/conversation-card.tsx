@@ -327,6 +327,26 @@ export function ConversationCard({
                         {metrics.usage.context_window.toLocaleString()}
                       </span>
                     </div>
+
+                    <div className="flex flex-col gap-2 border-t border-neutral-700 pt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-400">
+                          {t(I18nKey.CONVERSATION$CONTEXT_WINDOW)}
+                        </span>
+                        <span className="text-sm">
+                          {metrics.usage.per_turn_token.toLocaleString()} /{" "}
+                          {metrics.usage.context_window.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, (metrics.usage.per_turn_token / metrics.usage.context_window) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
