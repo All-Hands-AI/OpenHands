@@ -23,7 +23,7 @@ To run OpenHands in Headless mode with Docker:
 
 1. Set the following environmental variables in your terminal:
 
-- `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
+- `CUSTOM_VOLUMES` to specify the directory you want OpenHands to access (Ex: `export CUSTOM_VOLUMES=$(pwd)/workspace:/workspace:rw`).
 - `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
 - `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
 
@@ -34,11 +34,10 @@ docker run -it \
     --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.36-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -e CUSTOM_VOLUMES=$CUSTOM_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
     -e LLM_MODEL=$LLM_MODEL \
     -e LOG_ALL_EVENTS=true \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \

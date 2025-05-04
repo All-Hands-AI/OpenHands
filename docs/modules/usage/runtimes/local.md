@@ -27,7 +27,7 @@ Via environment variables:
 export RUNTIME=local
 
 # Optional but recommended
-export WORKSPACE_BASE=/path/to/your/workspace
+export CUSTOM_VOLUMES=/path/to/your/workspace:/workspace:rw
 ```
 
 Via `config.toml`:
@@ -35,10 +35,10 @@ Via `config.toml`:
 ```toml
 [core]
 runtime = "local"
-workspace_base = "/path/to/your/workspace"
+custom_volumes = "/path/to/your/workspace:/workspace:rw"
 ```
 
-If `WORKSPACE_BASE` is not set, the runtime will create a temporary directory for the agent to work in.
+If `CUSTOM_VOLUMES` is not set, the runtime will create a temporary directory for the agent to work in.
 
 ## Example Usage
 
@@ -49,7 +49,7 @@ Here's an example of how to start OpenHands with the Local Runtime in Headless M
 export RUNTIME=local
 
 # Optionally set a workspace directory
-export WORKSPACE_BASE=/path/to/your/project
+export CUSTOM_VOLUMES=/path/to/your/project:/workspace:rw
 
 # Start OpenHands
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
