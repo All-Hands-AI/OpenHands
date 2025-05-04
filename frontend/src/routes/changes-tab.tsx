@@ -29,7 +29,6 @@ function GitChanges() {
   React.useEffect(() => {
     setRandomTip(getRandomTip());
   }, []);
-  console.log("random tip", randomTip);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
@@ -37,7 +36,6 @@ function GitChanges() {
   const isNotGitRepoError =
     error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
-  console.log("tip", randomTip);
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
       {!runtimeIsActive && (
