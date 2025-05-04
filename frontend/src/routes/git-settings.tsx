@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -16,11 +15,12 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
 import { useAuth } from "#/context/auth-context";
+import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
 
-  const { mutate: saveSettings, isPending } = useSaveSettings();
+  const { mutate: saveGitProviders, isPending } = useAddGitProviders();
   const { mutate: disconnectGitTokens } = useLogout();
 
   const { providerTokensSet } = useAuth();
@@ -48,9 +48,9 @@ function GitSettingsScreen() {
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
 
-    saveSettings(
+    saveGitProviders(
       {
-        provider_tokens: {
+        providers: {
           github: { token: githubToken },
           gitlab: { token: gitlabToken },
         },

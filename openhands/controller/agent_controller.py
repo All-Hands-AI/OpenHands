@@ -741,10 +741,6 @@ class AgentController:
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
             )
-
-            # emit the delegate result observation
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
             # emit AgentDelegateObservation with error content
@@ -755,13 +751,22 @@ class AgentController:
                 f'{self.delegate.agent.name} encountered an error during execution.'
             )
 
-            # emit the delegate result observation
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+        content = f'Delegated agent finished with result:\n\n{content}'
+
+        # emit the delegate result observation
+        obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+
+        # associate the delegate action with the initiating tool call
+        for event in reversed(self.state.history):
+            if isinstance(event, AgentDelegateAction):
+                delegate_action = event
+                obs.tool_call_metadata = delegate_action.tool_call_metadata
+                break
+
+        self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
-        self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
