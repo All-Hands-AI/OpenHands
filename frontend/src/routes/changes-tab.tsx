@@ -7,7 +7,7 @@ import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { getRandomTip } from "#/utils/tips";
+import { RandomTip } from "#/components/features/tips/random-tip";
 
 // Error message patterns
 const GIT_REPO_ERROR_PATTERN = /not a git repository/i;
@@ -23,12 +23,6 @@ function StatusMessage({ children }: React.PropsWithChildren) {
 function GitChanges() {
   const { t } = useTranslation();
   const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
-  const [randomTip, setRandomTip] = React.useState(getRandomTip());
-
-  // Update the random tip when the component mounts
-  React.useEffect(() => {
-    setRandomTip(getRandomTip());
-  }, []);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
@@ -63,23 +57,7 @@ function GitChanges() {
         <div className="absolute inset-x-0 bottom-0">
           {!isError && gitChanges?.length === 0 && (
             <div className="max-w-2xl mb-4 text-m bg-tertiary rounded-xl p-4 text-left mx-auto">
-              <p>
-                <h4 className="font-bold">{t(I18nKey.TIPS$PROTIP)}:</h4>
-                {t(randomTip.key)}
-                {randomTip.link && (
-                  <>
-                    {" "}
-                    <a
-                      href={randomTip.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline"
-                    >
-                      {t(I18nKey.TIPS$LEARN_MORE)}
-                    </a>
-                  </>
-                )}
-              </p>
+              <RandomTip />
             </div>
           )}
         </div>
