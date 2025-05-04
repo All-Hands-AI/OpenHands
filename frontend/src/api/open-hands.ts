@@ -320,7 +320,7 @@ class OpenHands {
 
   static async getRepositoryBranches(repository: string): Promise<Branch[]> {
     const { data } = await openHands.get<Branch[]>(
-      `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`
+      `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`,
     );
 
     return data;

@@ -125,8 +125,9 @@ export function RepositorySelectionForm({
 }: RepositorySelectionFormProps) {
   const [selectedRepository, setSelectedRepository] =
     React.useState<GitRepository | null>(null);
-  const [selectedBranch, setSelectedBranch] =
-    React.useState<Branch | null>(null);
+  const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
+    null,
+  );
   const {
     data: repositories,
     isLoading: isLoadingRepositories,
@@ -171,9 +172,7 @@ export function RepositorySelectionForm({
   };
 
   const handleBranchSelection = (key: React.Key | null) => {
-    const selectedBranchObj = branches?.find(
-      (branch) => branch.name === key,
-    );
+    const selectedBranchObj = branches?.find((branch) => branch.name === key);
     setSelectedBranch(selectedBranchObj || null);
   };
 
@@ -218,7 +217,7 @@ export function RepositorySelectionForm({
           items={[]}
           onSelectionChange={() => {}}
           onInputChange={() => {}}
-          isDisabled={true}
+          isDisabled
         />
       );
     }
