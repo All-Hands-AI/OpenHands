@@ -77,6 +77,18 @@ class CLIRuntime(Runtime):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
+        self._shell_process = subprocess.Popen(
+            ['/bin/bash'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=0,
+            universal_newlines=True,
+        )
+        self._terminator = f'__CMD_COMPLETE__{os.urandom(4).hex()}'
+        self._setup_shell()
+
         super().__init__(
             config,
             event_stream,
@@ -116,6 +128,52 @@ class CLIRuntime(Runtime):
             'Use with caution in untrusted environments.'
         )
 
+    def _setup_shell(self):
+        """Set up shell environment and command termination detection"""
+        # Set up a trap to echo the terminator string and exit code after each command
+        setup_cmd = f"""
+        trap 'echo "{self._terminator}$?";' EXIT
+        trap 'exit' SIGINT SIGTERM
+        export PS1=""
+        export PS2=""
+        """
+        if not self._shell_process.stdin:
+            raise RuntimeError('Shell process stdin is not available')
+        self._shell_process.stdin.write(setup_cmd + '\n')
+        self._shell_process.stdin.flush()
+
+        # Clear any output from the setup
+        self._read_until_next_prompt()
+
+    def _read_until_next_prompt(self):
+        """Read all output until we see the terminator string"""
+        output = []
+        exit_code = 0
+
+        while True:
+            if self._shell_process.stdout is None:
+                break
+            line = self._shell_process.stdout.readline()
+            if not line:
+                break
+
+            # Check if this line contains our terminator and exit code
+            if self._terminator in line:
+                # Extract the exit code from the terminator line
+                try:
+                    exit_code = int(line.strip().split(self._terminator)[1])
+                except (IndexError, ValueError):
+                    exit_code = -1
+                break
+
+            output.append(line)
+
+            # Pass to callback if one is registered
+            if self._shell_stream_callback:
+                self._shell_stream_callback(line)
+
+        return ''.join(output), exit_code
+
     async def connect(self) -> None:
         """Initialize the runtime connection."""
         self.send_status_message('STATUS$STARTING_RUNTIME')
@@ -135,49 +193,29 @@ class CLIRuntime(Runtime):
 
     def _execute_shell_command(self, command: str) -> CmdOutputObservation:
         """
-        Execute a shell command and stream its output to a callback function.
+        Execute a command in the persistent shell.
+
         Args:
             command: The shell command to execute
+
         Returns:
-            CmdOutputObservation containing the complete output and exit code
+            CmdOutputObservation containing the output and exit code
         """
-        full_output = []
+        # Make sure the command ends with a newline
+        if not command.endswith('\n'):
+            command += '\n'
 
-        # Use shell=True to run complex bash commands
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # Merge stderr into stdout for interleaved output
-            text=True,
-            bufsize=0,  # Unbuffered output
-            universal_newlines=True,
-            shell=True,  # Run through a shell
-        )
+        # Write the command to the shell's stdin
+        if self._shell_process.stdin is None:
+            raise RuntimeError('Shell process stdin is not available')
+        self._shell_process.stdin.write(command)
+        self._shell_process.stdin.flush()
 
-        while process.poll() is None:
-            if not process.stdout:
-                continue
-            output = process.stdout.readline()
-            if output:
-                full_output.append(output)
-                if self._shell_stream_callback:
-                    self._shell_stream_callback(output)
-
-        # Make sure we get any remaining output after process exits
-        remaining_output, _ = process.communicate()
-        if remaining_output:
-            full_output.append(remaining_output)
-            if self._shell_stream_callback:
-                self._shell_stream_callback(remaining_output)
-
-        exit_code = process.returncode
-
-        complete_output = ''.join(full_output)
+        # Read output until we get our terminator
+        output, exit_code = self._read_until_next_prompt()
 
         return CmdOutputObservation(
-            command=command,
-            content=complete_output,
-            exit_code=exit_code,
+            command=command.strip(), content=output, exit_code=exit_code
         )
 
     def run(self, action: CmdRunAction) -> Observation:
