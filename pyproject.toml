@@ -79,6 +79,7 @@ prompt-toolkit = "^3.0.50"
 mcpm = "1.8.0"
 poetry = "^2.1.2"
 anyio = "4.9.0"
+pre-commit = "^4.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.8"
@@ -99,6 +100,7 @@ gevent = ">=24.2.1,<26.0.0"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -128,6 +130,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 
 [tool.poetry.group.evaluation.dependencies]
