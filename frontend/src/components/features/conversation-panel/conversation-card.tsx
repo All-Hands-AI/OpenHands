@@ -318,6 +318,15 @@ export function ConversationCard({
                         ).toLocaleString()}
                       </span>
                     </div>
+
+                    <div className="flex justify-between items-center border-t border-neutral-700 pt-2">
+                      <span className="font-semibold">
+                        {t(I18nKey.CONVERSATION$CONTEXT_WINDOW)}:
+                      </span>
+                      <span className="font-bold">
+                        {metrics.usage.context_window.toLocaleString()}
+                      </span>
+                    </div>
                   </>
                 )}
               </div>

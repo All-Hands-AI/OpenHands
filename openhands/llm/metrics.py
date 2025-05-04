@@ -27,6 +27,7 @@ class TokenUsage(BaseModel):
     cache_read_tokens: int = Field(default=0)
     cache_write_tokens: int = Field(default=0)
     context_window: int = Field(default=0)
+    per_turn_token: int = Field(default=0)
     response_id: str = Field(default='')
 
     def __add__(self, other: 'TokenUsage') -> 'TokenUsage':
@@ -38,6 +39,7 @@ class TokenUsage(BaseModel):
             cache_read_tokens=self.cache_read_tokens + other.cache_read_tokens,
             cache_write_tokens=self.cache_write_tokens + other.cache_write_tokens,
             context_window=max(self.context_window, other.context_window),
+            per_turn_token=other.per_turn_token,
             response_id=self.response_id,
         )
 
@@ -138,6 +140,10 @@ class Metrics:
         response_id: str,
     ) -> None:
         """Add a single usage record."""
+
+        # Token each turn for calculating context usage.
+        per_turn_token = prompt_tokens + completion_tokens + cache_read_tokens + cache_write_tokens
+        
         usage = TokenUsage(
             model=self.model_name,
             prompt_tokens=prompt_tokens,
@@ -145,6 +151,7 @@ class Metrics:
             cache_read_tokens=cache_read_tokens,
             cache_write_tokens=cache_write_tokens,
             context_window=context_window,
+            per_turn_token=per_turn_token,
             response_id=response_id,
         )
         self._token_usages.append(usage)
@@ -157,6 +164,7 @@ class Metrics:
             cache_read_tokens=cache_read_tokens,
             cache_write_tokens=cache_write_tokens,
             context_window=context_window,
+            per_turn_token=per_turn_token,
             response_id='',
         )
 
