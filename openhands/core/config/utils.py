@@ -627,8 +627,4 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
     if args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
 
-    if args.cli:
-        config.runtime = 'cli'
-        config.workspace_base = os.getcwd()
-
     return config

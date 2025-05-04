@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 from uuid import uuid4
 
@@ -302,6 +303,11 @@ async def main(loop: asyncio.AbstractEventLoop):
             agent_config.condenser = NoOpCondenserConfig(type='noop')
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
+
+    if args.cli:
+        config.runtime = 'cli'
+        config.workspace_base = os.getcwd()
+        config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
