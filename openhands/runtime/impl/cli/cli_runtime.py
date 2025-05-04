@@ -5,13 +5,12 @@ It does not implement browser functionality.
 
 import asyncio
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from queue import Queue
-from threading import Thread
 from typing import Callable, Optional, Tuple
 
 from binaryornot.check import is_binary
@@ -135,127 +134,52 @@ class CLIRuntime(Runtime):
         self.send_status_message('STATUS$CONTAINER_STARTED')
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
-    def _execute_shell_command(self, cmd: str) -> CmdOutputObservation:  # type: ignore
-        """Execute a shell command and return the result as a CmdOutputObservation."""
-        try:
-            # If we have a stream callback, use Popen to stream output in real-time
-            if self._shell_stream_callback is not None:
-                # Stream output in real-time
-                process = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    cwd=self._workspace_path,
-                    bufsize=1,  # Line buffered
-                )
+    def _execute_shell_command(self, command: str) -> CmdOutputObservation:
+        """
+        Execute a shell command and stream its output to a callback function.
 
-                stdout_output: list[str] = []
-                stderr_output: list[str] = []
-                output_queues: dict[str, Queue] = {
-                    'stdout': Queue(),
-                    'stderr': Queue(),
-                }
+        Args:
+            command: The shell command to execute
+            stream_callback: A callback function that receives output lines as they're produced
 
-                def stream_reader(pipe, queue, output_list):
-                    try:
-                        for line in iter(pipe.readline, ''):
-                            if not line:
-                                break
-                            line_stripped = line.rstrip('\n')
-                            output_list.append(line_stripped)
-                            queue.put(line)
-                    finally:
-                        pipe.close()
-                        queue.put(None)  # Signal that we're done
+        Returns:
+            CmdOutputObservation containing the complete output and exit code
+        """
+        args = shlex.split(command)
 
-                # Start reader threads
-                threads = []
-                if process.stdout is not None:
-                    stdout_thread = Thread(
-                        target=stream_reader,
-                        args=(process.stdout, output_queues['stdout'], stdout_output),
-                        daemon=True,
-                    )
-                    stdout_thread.start()
-                    threads.append(stdout_thread)
+        full_output = []
 
-                if process.stderr is not None:
-                    stderr_thread = Thread(
-                        target=stream_reader,
-                        args=(process.stderr, output_queues['stderr'], stderr_output),
-                        daemon=True,
-                    )
-                    stderr_thread.start()
-                    threads.append(stderr_thread)
+        process = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Merge stderr into stdout for interleaved output
+            text=True,
+            bufsize=1,  # Line buffered
+            universal_newlines=True,
+        )
 
-                # Stream output in real-time from both pipes
-                streams_active = len(threads)
-                while streams_active > 0:
-                    line = output_queues['stdout'].get_nowait()
-                    if line is None:
-                        streams_active -= 1
-                    elif self._shell_stream_callback is not None:
-                        self._shell_stream_callback(line)
+        while True:
+            if not process.stdout:
+                continue
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
 
-                    line = output_queues['stderr'].get_nowait()
-                    if line is None:
-                        streams_active -= 1
-                    elif self._shell_stream_callback is not None:
-                        self._shell_stream_callback(line)
+            if line:
+                full_output.append(line)
 
-                # Wait for process to complete
-                return_code = process.wait()
+                if self._shell_stream_callback:
+                    self._shell_stream_callback(line)
 
-                # Wait for reader threads to finish
-                for thread in threads:
-                    thread.join()
+        exit_code = process.wait()
 
-                # Combine stdout and stderr
-                output = '\n'.join(stdout_output)
-                if stderr_output:
-                    if output:
-                        output += '\n'
-                    output += '\n'.join(stderr_output)
+        complete_output = ''.join(full_output)
 
-                return CmdOutputObservation(
-                    content=output,
-                    command=cmd,
-                    exit_code=return_code,
-                )
-            else:
-                # Use subprocess.run for non-streaming execution
-                completed_process = subprocess.run(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    cwd=self._workspace_path,
-                )
-
-                # Combine stdout and stderr
-                output = completed_process.stdout
-                if completed_process.stderr:
-                    if output:
-                        output += '\n'
-                    output += completed_process.stderr
-
-                return CmdOutputObservation(
-                    content=output,
-                    command=cmd,
-                    exit_code=completed_process.returncode,
-                )
-        except Exception as e:
-            error_message = f'Error executing command: {str(e)}'
-            if self._shell_stream_callback is not None:
-                self._shell_stream_callback(error_message + '\n')
-            return CmdOutputObservation(
-                content=error_message,
-                command=cmd,
-                exit_code=1,
-            )
+        return CmdOutputObservation(
+            command=command,
+            content=complete_output,
+            exit_code=exit_code,
+        )
 
     def run(self, action: CmdRunAction) -> Observation:
         """Run a command using subprocess."""
