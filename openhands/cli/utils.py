@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import toml
 
-from openhands.core.cli_tui import (
+from openhands.cli.tui import (
     UsageMetrics,
 )
 from openhands.events.event import Event

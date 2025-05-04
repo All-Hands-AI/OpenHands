@@ -5,19 +5,19 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 from pydantic import SecretStr
 
-from openhands.controller.agent import Agent
-from openhands.core.cli_tui import (
+from openhands.cli.tui import (
     COLOR_GREY,
     UserCancelledError,
     cli_confirm,
     kb_cancel,
 )
-from openhands.core.cli_utils import (
+from openhands.cli.utils import (
     VERIFIED_ANTHROPIC_MODELS,
     VERIFIED_OPENAI_MODELS,
     VERIFIED_PROVIDERS,
     organize_models_and_providers,
 )
+from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import OH_DEFAULT_AGENT
