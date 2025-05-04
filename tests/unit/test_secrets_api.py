@@ -12,7 +12,7 @@ from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.routes.secrets import app as secrets_app
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.settings.file_secrets_store import FileSecretsStore
+from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 
 @pytest.fixture

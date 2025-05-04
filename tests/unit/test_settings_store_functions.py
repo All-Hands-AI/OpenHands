@@ -15,7 +15,7 @@ from openhands.server.settings import POSTProviderModel
 from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.settings.file_secrets_store import FileSecretsStore
+from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 
 # Mock functions to simulate the actual functions in settings.py
