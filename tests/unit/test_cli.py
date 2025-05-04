@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio
 
-from openhands.core import cli
+from openhands.cli import main as cli
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 
