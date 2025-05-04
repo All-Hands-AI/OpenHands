@@ -8,6 +8,7 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     BaseGitService,
+    Branch,
     GitService,
     ProviderType,
     Repository,
@@ -403,6 +404,32 @@ class GitHubService(BaseGitService, GitService):
             git_provider=ProviderType.GITHUB,
             is_public=not repo.get('private', True),
         )
+        
+    async def get_branches(
+        self, repository: str
+    ) -> list[Branch]:
+        """Get branches for a repository"""
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
+        response, _ = await self._make_request(url)
+        
+        branches = []
+        for branch_data in response:
+            # Extract the last commit date if available
+            last_push_date = None
+            if branch_data.get('commit') and branch_data['commit'].get('commit'):
+                commit_info = branch_data['commit']['commit']
+                if commit_info.get('committer') and commit_info['committer'].get('date'):
+                    last_push_date = commit_info['committer']['date']
+            
+            branch = Branch(
+                name=branch_data.get('name'),
+                commit_sha=branch_data.get('commit', {}).get('sha', ''),
+                protected=branch_data.get('protected', False),
+                last_push_date=last_push_date,
+            )
+            branches.append(branch)
+            
+        return branches
 
 
 github_service_cls = os.environ.get(

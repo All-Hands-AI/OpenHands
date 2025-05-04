@@ -6,6 +6,7 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     BaseGitService,
+    Branch,
     GitService,
     ProviderType,
     Repository,
@@ -397,6 +398,26 @@ class GitLabService(BaseGitService, GitService):
             git_provider=ProviderType.GITLAB,
             is_public=repo.get('visibility') == 'public',
         )
+        
+    async def get_branches(
+        self, repository: str
+    ) -> list[Branch]:
+        """Get branches for a repository"""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+        response, _ = await self._make_request(url)
+        
+        branches = []
+        for branch_data in response:
+            branch = Branch(
+                name=branch_data.get('name'),
+                commit_sha=branch_data.get('commit', {}).get('id', ''),
+                protected=branch_data.get('protected', False),
+                last_push_date=branch_data.get('commit', {}).get('committed_date'),
+            )
+            branches.append(branch)
+            
+        return branches
 
 
 gitlab_service_cls = os.environ.get(

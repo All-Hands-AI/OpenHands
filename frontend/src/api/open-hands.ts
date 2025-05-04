@@ -158,12 +158,13 @@ class OpenHands {
     imageUrls?: string[],
     replayJson?: string,
     suggested_task?: SuggestedTask,
+    selected_branch?: string,
   ): Promise<Conversation> {
     const body = {
       conversation_trigger,
       repository: selectedRepository,
       git_provider,
-      selected_branch: undefined,
+      selected_branch,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
       replay_json: replayJson,
@@ -315,6 +316,15 @@ class OpenHands {
     );
 
     return data;
+  }
+  
+  static async getRepositoryBranches(repository: string): Promise<Branch[]> {
+    const { data } = await openHands.get<Branch[]>(
+      `/api/user/repository/${encodeURIComponent(repository)}/branches`
+    );
+    
+    return data;
+  }
   }
 }
 
