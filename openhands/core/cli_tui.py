@@ -220,7 +220,7 @@ def display_command(event: CmdRunAction):
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Action',
+        title='Command',
         style='ansiblue',
     )
     print_formatted_text('')
