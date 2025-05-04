@@ -5,7 +5,9 @@ from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.testclient import TestClient
 
 from openhands.integrations.service_types import (
     AuthenticationError,
@@ -25,6 +27,7 @@ from openhands.server.routes.manage_conversations import (
     search_conversations,
     update_conversation,
 )
+from openhands.server.routes.manage_conversations import app as conversation_app
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth.user_auth import AuthType
 from openhands.storage.data_models.conversation_metadata import (
@@ -62,6 +65,14 @@ def _patch_store():
             file_store,
         ):
             yield
+
+
+@pytest.fixture
+def test_client():
+    """Create a test client for the settings API."""
+    app = FastAPI()
+    app.include_router(conversation_app)
+    return TestClient(app)
 
 
 def create_new_test_conversation(
@@ -391,7 +402,7 @@ async def test_new_conversation_missing_settings(provider_handler_mock):
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_invalid_api_key():
+async def test_new_conversation_invalid_api_key(provider_handler_mock):
     """Test creating a new conversation with an invalid API key."""
     with _patch_store():
         # Mock the _create_new_conversation function to raise LLMAuthenticationError
@@ -405,15 +416,13 @@ async def test_new_conversation_invalid_api_key():
 
             test_request = InitSessionRequest(
                 conversation_trigger=ConversationTrigger.GUI,
-                repo='test/repo',
+                repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
             )
 
             # Call new_conversation
-            response = await new_conversation(
-                data=test_request, user_id='test_user', provider_tokens={}
-            )
+            response = await create_new_test_conversation(test_request)
 
             # Verify the response
             assert isinstance(response, JSONResponse)
@@ -576,12 +585,7 @@ async def test_new_conversation_with_provider_authentication_error(
             )
 
             # Call new_conversation
-            response = await new_conversation(
-                data=test_request,
-                user_id='test_user',
-                provider_tokens={'github': 'token123'},
-                auth_type=None,
-            )
+            response = await create_new_test_conversation(test_request)
 
             # Verify the response
             assert isinstance(response, JSONResponse)
@@ -599,3 +603,22 @@ async def test_new_conversation_with_provider_authentication_error(
 
             # Verify that _create_new_conversation was not called
             mock_create_conversation.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_unsupported_params(test_client):
+    test_request_data = {
+        'conversation_trigger': 'GUI',  # This is a valid parameter
+        'repository': 'test/repo',  # This is valid
+        'selected_branch': 'main',  # This is valid
+        'initial_user_msg': 'Hello, agent!',  # Valid parameter
+        'unsupported_param': 'unsupported param',  # Invalid, unsupported parameter
+    }
+
+    # Send the POST request to the appropriate endpoint
+    response = test_client.post('/api/conversations', json=test_request_data)
+
+    assert response.status_code == 422  # Validation error
+
+    assert 'Extra inputs are not permitted' in response.text
+    assert 'unsupported param' in response.text
