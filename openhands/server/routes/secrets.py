@@ -14,7 +14,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.settings.secret_store import SecretsStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
@@ -78,34 +78,31 @@ async def store_provider_tokens(
 
     try:
         user_secrets = await secrets_store.load()
+        if not user_secrets:
+            user_secrets = UserSecrets()
 
-        if user_secrets:
-            if provider_info.provider_tokens:
-                existing_providers = [
-                    provider for provider in user_secrets.provider_tokens
-                ]
+        if provider_info.provider_tokens:
+            existing_providers = [provider for provider in user_secrets.provider_tokens]
 
-                # Merge incoming settings store with the existing one
-                for provider, token_value in list(
-                    provider_info.provider_tokens.items()
-                ):
-                    if provider in existing_providers and not token_value.token:
-                        existing_token = user_secrets.provider_tokens.get(provider)
-                        if existing_token and existing_token.token:
-                            provider_info.provider_tokens[provider] = existing_token
+            # Merge incoming settings store with the existing one
+            for provider, token_value in list(provider_info.provider_tokens.items()):
+                if provider in existing_providers and not token_value.token:
+                    existing_token = user_secrets.provider_tokens.get(provider)
+                    if existing_token and existing_token.token:
+                        provider_info.provider_tokens[provider] = existing_token
 
-            else:  # nothing passed in means keep current settings
-                provider_info.provider_tokens = dict(user_secrets.provider_tokens)
+        else:  # nothing passed in means keep current settings
+            provider_info.provider_tokens = dict(user_secrets.provider_tokens)
 
-            updated_secrets = user_secrets.model_copy(
-                update={'provider_tokens': provider_info.provider_tokens}
-            )
-            await secrets_store.store(updated_secrets)
+        updated_secrets = user_secrets.model_copy(
+            update={'provider_tokens': provider_info.provider_tokens}
+        )
+        await secrets_store.store(updated_secrets)
 
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content={'message': 'Git providers stored'},
-            )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Git providers stored'},
+        )
     except Exception as e:
         logger.warning(f'Something went wrong storing git providers: {e}')
         return JSONResponse(

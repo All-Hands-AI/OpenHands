@@ -17,7 +17,7 @@ from openhands.server.user_auth import (
     get_user_settings_store,
 )
 from openhands.storage.data_models.settings import Settings
-from openhands.storage.settings.secret_store import SecretsStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
