@@ -555,8 +555,8 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
     )
     parser.add_argument(
-        '--cli',
-        help='Set default settings for CLI mode',
+        '--override-cli-mode',
+        help='Override the default settings for CLI mode',
         type=bool,
         default=False,
     )

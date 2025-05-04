@@ -304,7 +304,7 @@ async def main(loop: asyncio.AbstractEventLoop):
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
 
-    if args.cli:
+    if not args.override_cli_mode:
         config.runtime = 'cli'
         config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
