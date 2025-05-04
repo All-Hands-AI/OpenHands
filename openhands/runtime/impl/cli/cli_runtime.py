@@ -37,7 +37,6 @@ from openhands.events.observation import (
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.git_handler import CommandResult
 
 
 class CLIRuntime(Runtime):
@@ -123,12 +122,12 @@ class CLIRuntime(Runtime):
         self.send_status_message("STATUS$CONTAINER_STARTED")
         logger.info(f"CLIRuntime initialized with workspace at {self._workspace_path}")
 
-    def _execute_shell_fn_git_handler(self, cmd: str) -> CommandResult:
+    def _execute_shell_fn_git_handler(self, cmd: str) -> CmdOutputObservation:
         """Execute a shell command for the git handler."""
         return self._execute_shell_command(cmd)
 
-    def _execute_shell_command(self, cmd: str) -> CommandResult:
-        """Execute a shell command and return the result."""
+    def _execute_shell_command(self, cmd: str) -> CmdOutputObservation:
+        """Execute a shell command and return the result as a CmdOutputObservation."""
         try:
             process = subprocess.run(
                 cmd,
@@ -138,16 +137,22 @@ class CLIRuntime(Runtime):
                 text=True,
                 cwd=self._workspace_path,
             )
-            return CommandResult(
+            
+            # Combine stdout and stderr
+            output = process.stdout
+            if process.stderr:
+                if output:
+                    output += "\n"
+                output += process.stderr
+            
+            return CmdOutputObservation(
+                content=output,
                 exit_code=process.returncode,
-                stdout=process.stdout,
-                stderr=process.stderr,
             )
         except Exception as e:
-            return CommandResult(
+            return CmdOutputObservation(
+                content=f"Error executing command: {str(e)}",
                 exit_code=1,
-                stdout="",
-                stderr=f"Error executing command: {str(e)}",
             )
 
     def run(self, action: CmdRunAction) -> Observation:
@@ -158,20 +163,8 @@ class CLIRuntime(Runtime):
         try:
             logger.debug(f"Running command: {action.command}")
             
-            # Execute the command
-            result = self._execute_shell_command(action.command)
-            
-            # Combine stdout and stderr
-            output = result.stdout
-            if result.stderr:
-                if output:
-                    output += "\n"
-                output += result.stderr
-            
-            return CmdOutputObservation(
-                content=output,
-                exit_code=result.exit_code,
-            )
+            # Execute the command and return the CmdOutputObservation
+            return self._execute_shell_command(action.command)
         except Exception as e:
             logger.error(f"Error running command: {str(e)}")
             return ErrorObservation(f"Error running command: {str(e)}")
