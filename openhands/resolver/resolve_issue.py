@@ -107,9 +107,9 @@ class IssueResolver:
             args.base_domain,
         )
 
-        api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
-        model = my_args.llm_model or os.environ['LLM_MODEL']
-        base_url = my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
+        api_key = args.llm_api_key or os.environ['LLM_API_KEY']
+        model = args.llm_model or os.environ['LLM_MODEL']
+        base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
         api_version = os.environ.get('LLM_API_VERSION', None)
         llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
         llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT','5'))
