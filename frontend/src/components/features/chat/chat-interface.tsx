@@ -74,7 +74,7 @@ export function ChatInterface() {
   React.useEffect(() => {
     // Count all agent messages that are actions (not regular messages)
     const agentActions = messages.filter(
-      (msg) => msg.sender === "assistant" && msg.type !== undefined && msg.type !== "message"
+      (msg) => msg.sender === "assistant" && msg.type !== undefined
     );
     setLocalStepCount(agentActions.length);
   }, [messages]);
@@ -98,7 +98,7 @@ export function ChatInterface() {
     if (shouldSummarize && params.conversationId) {
       const { conversationId } = params;
       console.log("Debug - Triggering summarization for conversation:", conversationId);
-      
+
       // Attempt to summarize conversation
       getTrajectorySummary(conversationId, {
         onSuccess: (data) => {
@@ -108,7 +108,7 @@ export function ChatInterface() {
           setSummarySegments(data.segments || []);
           setShowSummary(true);
           setLastSummarizedCount(localStepCount);
-          
+
           // Log segments for debugging
           if (data.segments && data.segments.length > 0) {
             console.log(`Debug - Received ${data.segments.length} segments`);

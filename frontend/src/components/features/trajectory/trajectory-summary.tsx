@@ -50,7 +50,7 @@ export function TrajectorySummary({
       segmentTitle: segment.title,
       totalSegments
     });
-    
+
     // 0) No IDs ⇒ just evenly split
     if (!segmentIds || segmentIds.length === 0) {
       console.log(`Debug - No IDs for segment ${segmentIndex}, using even split`);
@@ -74,7 +74,7 @@ export function TrajectorySummary({
       matchCount: byId.length,
       messageIDs: byId.map(m => m.eventID)
     });
-    
+
     if (byId.length > 0) {
       const seen = new Set<string>();
       const unique = byId.filter((m) => {
@@ -105,7 +105,7 @@ export function TrajectorySummary({
       matchCount: byStringId.length,
       messageIDs: byStringId.map(m => m.eventID)
     });
-    
+
     if (byStringId.length > 0) {
       const seen2 = new Set<string>();
       const unique2 = byStringId.filter((m) => {
@@ -124,11 +124,11 @@ export function TrajectorySummary({
       });
       return result;
     }
-    
+
     // 3) If we still have no matches, try a more lenient approach
     console.log(`Debug - No matches found for segment ${segmentIndex}, trying lenient approach`);
-    const agentMessages = messages.filter(m => m.sender === "assistant" && m.type !== "message");
-    
+    const agentMessages = messages.filter(m => m.sender === "assistant" && m.type !== undefined);
+
     if (agentMessages.length > 0) {
       // Take a portion of agent messages based on segment index
       const messagesPerSegment = Math.ceil(agentMessages.length / totalSegments);
@@ -228,6 +228,12 @@ export function TrajectorySummary({
         segment.ids.forEach(id => {
           if (typeof id === 'number') {
             ids.add(id);
+          } else if (typeof id === 'string') {
+            // Handle string IDs too, convert to number if possible
+            const numId = Number(id);
+            if (!isNaN(numId)) {
+              ids.add(numId);
+            }
           }
         });
       }
@@ -236,15 +242,72 @@ export function TrajectorySummary({
     return ids;
   }, [segments]);
 
-  // Get unsummarized messages (messages not included in any segment)
-  const unsummarizedMessages = React.useMemo(() => {
-    const filtered = messages.filter(msg => {
+  // Organize messages by their position in the original message list
+  const organizedContent = React.useMemo(() => {
+    // Store segments by their start timestamp or first message index for ordering
+    const segmentPositions = segments.map((segment, idx) => {
+      // Get the messages for this segment
+      const segmentMessages = getMessagesForSegment(
+        segment.ids || [],
+        idx,
+        segments.length,
+        segment
+      );
+
+      // Find the index of the first message in this segment
+      let firstMessageIndex = Infinity;
+      if (segmentMessages.length > 0) {
+        segmentMessages.forEach(msg => {
+          const msgIndex = messages.findIndex(m => m.eventID === msg.eventID);
+          if (msgIndex !== -1 && msgIndex < firstMessageIndex) {
+            firstMessageIndex = msgIndex;
+          }
+        });
+      } else if (segment.start_timestamp) {
+        // Use timestamp as fallback for ordering
+        firstMessageIndex = idx * 1000; // Just to ensure some ordering
+      } else {
+        // No messages or timestamp, use segment index for ordering
+        firstMessageIndex = idx * 1000;
+      }
+
+      return {
+        segmentIndex: idx,
+        firstMessageIndex: firstMessageIndex !== Infinity ? firstMessageIndex : idx * 1000,
+        segment,
+        messages: segmentMessages
+      };
+    });
+
+    // Sort segments by their position in the original message flow
+    segmentPositions.sort((a, b) => a.firstMessageIndex - b.firstMessageIndex);
+
+    // Find the first user message for special display
+    const firstUserMessage = messages.find(msg => msg.sender === "user");
+
+    // Find messages not included in any segment
+    const unsummarizedMessages = messages.filter(msg => {
       return !msg.eventID || !summarizedIds.has(msg.eventID);
     });
-    console.log("Debug - Unsummarized messages count:", filtered.length);
-    console.log("Debug - Total messages count:", messages.length);
-    return filtered;
-  }, [messages, summarizedIds]);
+
+    console.log("Debug - Organized content:", {
+      segmentCount: segmentPositions.length,
+      unsummarizedCount: unsummarizedMessages.length,
+      hasFirstUserMessage: !!firstUserMessage
+    });
+
+    return {
+      firstUserMessage,
+      segments: segmentPositions,
+      unsummarizedMessages
+    };
+  }, [messages, segments, summarizedIds]);
+
+  // Extract user messages for display before segments
+  const userMessages = React.useMemo(
+    () => messages.filter((msg) => msg.sender === "user"),
+    [messages]
+  );
 
   return (
     <div className="flex flex-col gap-4 w-full">
@@ -258,15 +321,35 @@ export function TrajectorySummary({
         </div>
       )}
 
-      {/* Segments */}
-      {segments.map((segment, idx) => (
+      {/* First User Message - Display at the top */}
+      {organizedContent.firstUserMessage && (
+        <div className="flex flex-col gap-2">
+          <ChatMessage
+            key="initial-user-message"
+            type="user"
+            message={organizedContent.firstUserMessage.content}
+            id={organizedContent.firstUserMessage.eventID}
+          >
+            {organizedContent.firstUserMessage.imageUrls &&
+             organizedContent.firstUserMessage.imageUrls.length > 0 && (
+              <ImageCarousel
+                size="small"
+                images={organizedContent.firstUserMessage.imageUrls}
+              />
+            )}
+          </ChatMessage>
+        </div>
+      )}
+
+      {/* Organized Content: Segments in chronological order with unsummarized messages */}
+      {organizedContent.segments.map(({ segment, segmentIndex, messages: segmentMessages }) => (
         <div
-          key={idx}
+          key={segmentIndex}
           className="border border-tertiary rounded-lg overflow-hidden"
         >
           <div
             className="bg-base-secondary p-3 flex justify-between items-center cursor-pointer hover:bg-tertiary transition-colors"
-            onClick={() => toggleSegment(idx.toString())}
+            onClick={() => toggleSegment(segmentIndex.toString())}
           >
             <div>
               <h3 className="font-medium text-content">{segment.title}</h3>
@@ -275,7 +358,7 @@ export function TrajectorySummary({
               </p>
             </div>
             <div className="text-tertiary-light">
-              {expandedSegments[idx.toString()] ? (
+              {expandedSegments[segmentIndex.toString()] ? (
                 /* Chevron up */
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -307,7 +390,7 @@ export function TrajectorySummary({
             </div>
           </div>
 
-          {expandedSegments[idx.toString()] && (
+          {expandedSegments[segmentIndex.toString()] && (
             <div className="p-3 bg-base">
               <div className="mb-3">
                 <p className="text-content">{segment.summary}</p>
@@ -315,24 +398,20 @@ export function TrajectorySummary({
 
               <div className="flex flex-col gap-2 mt-4">
                 {(() => {
-                  const segMsgs = getMessagesForSegment(
-                    segment.ids,
-                    idx,
-                    segments.length,
-                    segment
-                  );
-                  if (segMsgs.length === 0) {
+                  if (segmentMessages.length === 0) {
                     return (
                       <div className="text-tertiary-light italic text-sm p-2">
                         No messages found for this segment.
                       </div>
                     );
                   }
-                  return segMsgs.map((msg, mi) => {
+
+                  return segmentMessages.map((msg, mi) => {
                     const showConfirm =
-                      messages.length - 1 === mi &&
+                      mi === segmentMessages.length - 1 &&
                       msg.sender === "assistant" &&
                       isAwaitingUserConfirmation;
+
                     if (msg.type === "error" || msg.type === "action") {
                       return (
                         <div key={mi} className="text-content">
@@ -354,6 +433,7 @@ export function TrajectorySummary({
                         </div>
                       );
                     }
+
                     return (
                       <ChatMessage
                         key={mi}
@@ -375,15 +455,23 @@ export function TrajectorySummary({
         </div>
       ))}
 
-      {/* Display unsummarized messages */}
-      {unsummarizedMessages.length > 0 && (
+      {/* Display unsummarized messages ONLY if they aren't already included in segments */}
+      {organizedContent.unsummarizedMessages.length > 0 && (
         <div className="flex flex-col gap-2">
-          {unsummarizedMessages.map((msg, idx) => {
+          {organizedContent.unsummarizedMessages.map((msg, idx) => {
+            // Skip the first user message as it's already displayed at the top
+            if (
+              organizedContent.firstUserMessage &&
+              msg.eventID === organizedContent.firstUserMessage.eventID
+            ) {
+              return null;
+            }
+
             const showConfirm =
               messages.length - 1 === messages.indexOf(msg) &&
               msg.sender === "assistant" &&
               isAwaitingUserConfirmation;
-            
+
             if (msg.type === "error" || msg.type === "action") {
               return (
                 <div key={idx} className="text-content">
@@ -405,6 +493,7 @@ export function TrajectorySummary({
                 </div>
               );
             }
+
             return (
               <ChatMessage
                 key={idx}

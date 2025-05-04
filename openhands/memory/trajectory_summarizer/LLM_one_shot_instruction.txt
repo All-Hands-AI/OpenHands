@@ -10,11 +10,12 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 5. CRITICAL: Make sure to include IDs for BOTH user and agent messages in each segment
 6. Include timestamps that belong to each segment
 7. For messages with missing IDs (None or null), rely on timestamps for grouping
-8. DO NOT include any additional summaries.
-9. CRITICAL: Be comprehensive in including ALL message IDs in each segment. Do not skip any IDs that belong to the conversation flow within a segment.
-10. Each segment should contain a complete conversation thread with all user and agent messages.
-11. IMPORTANT: When creating segments, ensure that ALL messages between the first and last message of a segment are included in that segment's IDs array.
-12. CRITICAL: Check your work to ensure no message IDs are missing from any segment.
+8. DO NOT include any additional summaries
+9. CRITICAL: Be comprehensive in including ALL message IDs in each segment. Do not skip any IDs that belong to the conversation flow within a segment
+10. Each segment should contain a complete conversation thread with all user and agent messages
+11. IMPORTANT: When creating segments, ensure that ALL messages between the first and last message of a segment are included in that segment's IDs array
+12. CRITICAL: Check your work to ensure no message IDs are missing from any segment
+13. CRITICAL: Segments MUST NOT span across multiple user interactions. If a segment contains a user message, the next user message must be in a new segment. This ensures clear boundaries between user interactions while still allowing for fine-grained segmentation of agent activities
 
 ## Example:
 
@@ -124,27 +125,45 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 
 ### Expected Output:
 {
-  "overall_summary": "The user requested creation of a CSV file containing profile data for all stargazers of the OpenDevin/OpenDevin GitHub repository. The agent then worked through several steps to implement this functionality.",
+  "overall_summary": "The user requested creation of a CSV file containing profile data for all stargazers of the OpenDevin/OpenDevin GitHub repository. The agent worked through several steps to implement this functionality, responding to the user's instructions along the way.",
   "segments": [
     {
-      "title": "Task Understanding & Environment Check",
-      "summary": "Agent recognized need for GitHub API access, checked for GitHub token in environment. User responded with \"Continue\" to move forward.",
-      "ids": [5, 8, 11, 14, 17],
-      "timestamp_range": "18:06:31-18:06:51"
+      "segment": 0,
+      "title": "Initial Task Request",
+      "summary": "User requested creation of a CSV file with profile data for stargazers of the OpenDevin/OpenDevin repo. Agent identified the need for GitHub API access and a GitHub token.",
+      "ids": [5, 8],
+      "timestamp_range": "18:06:31-18:06:35"
     },
     {
-      "title": "Script Creation",
-      "summary": "Agent created the fetch_stargazers.py file and implemented functionality to fetch stargazer data from GitHub API and save to CSV. Script initially used a placeholder for the GitHub token.",
-      "ids": [20, 22, 24],
-      "timestamp_range": "18:06:58-18:07:18"
+      "segment": 1,
+      "title": "First Continuation",
+      "summary": "User responded with 'Continue'. Agent explained inability to check environment variables directly and requested confirmation that $GITHUB_TOKEN is set.",
+      "ids": [11, 14],
+      "timestamp_range": "18:06:40-18:06:44"
     },
     {
-      "title": "Script Modification to Use Environment Variable",
-      "summary": "User requested use of $GITHUB_TOKEN environment variable. Agent modified script to read token from environment using os.getenv().",
+      "segment": 2,
+      "title": "Second Continuation",
+      "summary": "User responded with 'Continue' again. Agent began implementation by creating the fetch_stargazers.py file.",
+      "ids": [17, 20],
+      "timestamp_range": "18:06:51-18:06:58"
+    },
+    {
+      "segment": 3,
+      "title": "Script Implementation",
+      "summary": "Agent wrote code to fetch stargazer data from GitHub API and save to CSV, using a placeholder for the GitHub token.",
+      "ids": [22, 24],
+      "timestamp_range": "18:07:12-18:07:18"
+    },
+    {
+      "segment": 4,
+      "title": "Environment Variable Implementation",
+      "summary": "User requested use of $GITHUB_TOKEN environment variable. Agent modified script to use the environment variable.",
       "ids": [27, 30],
       "timestamp_range": "18:08:13-18:08:17"
     },
     {
+      "segment": 5,
       "title": "Debugging & Import Fixes",
       "summary": "Agent encountered and fixed multiple import errors, adding necessary imports for 'os' and 'csv' modules to make the script functional.",
       "ids": [32, 34, 36, 46],
@@ -152,7 +171,6 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
     }
   ]
 }
-
 
 ## Your Task:
 Now summarize the following agent trajectory in the same format:

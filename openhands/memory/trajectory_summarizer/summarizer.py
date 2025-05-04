@@ -442,40 +442,56 @@ class TrajectorySummarizer:
         )
 
         # Extract user messages and agent actions
-        user_messages = [item for item in full_trajectory if item.get('source') == 'user']
+        user_messages = [
+            item for item in full_trajectory if item.get('source') == 'user'
+        ]
         agent_actions = [
-            item for item in full_trajectory 
+            item
+            for item in full_trajectory
             if item.get('source') == 'agent' and item.get('action') != 'message'
         ]
 
         # Get the last N local steps (agent actions)
         last_n_agent_actions = agent_actions[-max_local_steps:] if agent_actions else []
-        
+
         # Find the minimum ID from the last N agent actions
-        min_id = float('inf')
+        min_id: float = float('inf')
         for action in last_n_agent_actions:
-            if action.get('id') is not None and action.get('id') < min_id:
-                min_id = action.get('id')
-        
+            action_id = action.get('id')
+            # Fixed: Add proper type checking before comparison
+            if action_id is not None and isinstance(action_id, (int, float)):
+                min_id = min(min_id, float(action_id))
+
         # Include all user messages and agent actions with ID >= min_id
-        trajectory_to_summarize = user_messages + [
-            item for item in full_trajectory 
-            if item.get('source') == 'agent' and (
-                item.get('id') is None or item.get('id') >= min_id
-            )
-        ]
-        
+        filtered_agent_items = []
+        for item in full_trajectory:
+            if item.get('source') == 'agent':
+                item_id = item.get('id')
+                if item_id is None or (
+                    isinstance(item_id, (int, float)) and item_id >= min_id
+                ):
+                    filtered_agent_items.append(item)
+
+        trajectory_to_summarize = user_messages + filtered_agent_items
+
         # Sort by ID to maintain chronological order
-        trajectory_to_summarize.sort(
-            key=lambda x: x.get('id', float('inf')) 
-            if x.get('id') is not None else float('inf')
-        )
+        def get_sort_key(item: Dict[str, Any]) -> float:
+            item_id = item.get('id')
+            if item_id is not None and isinstance(item_id, (int, float)):
+                return float(item_id)
+            return float('inf')
+
+        trajectory_to_summarize.sort(key=get_sort_key)
 
         # Debug: Print the trajectory
-        logger.info(f'DEBUG - Raw Trajectory (last {max_local_steps} steps): {json.dumps(trajectory_to_summarize, indent=2)}')
+        logger.info(
+            f'DEBUG - Raw Trajectory (last {max_local_steps} steps): {json.dumps(trajectory_to_summarize, indent=2)}'
+        )
 
         # Preprocess the trajectory
-        processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory_to_summarize)
+        processed_trajectory = TrajectoryProcessor.preprocess_trajectory(
+            trajectory_to_summarize
+        )
         logger.info(
             f'DEBUG - Processed Trajectory: {json.dumps(processed_trajectory, indent=2)}'
         )
@@ -483,17 +499,24 @@ class TrajectorySummarizer:
         # Summarize the trajectory
         summary = self.summarize_trajectory(trajectory_to_summarize, llm=llm)
 
+        # Print all ids to be summarized
+        logger.info(
+            f'DEBUG - IDs to be summarized: {json.dumps([item.get("id") for item in trajectory_to_summarize], indent=2)}'
+        )
+
         # Debug: Print the summary
         logger.info(f'DEBUG - Summary Result: {json.dumps(summary, indent=2)}')
-        
+
         # Ensure segments have valid IDs
         if 'segments' in summary and isinstance(summary['segments'], list):
             for segment in summary['segments']:
                 if 'ids' not in segment or not segment['ids']:
                     # If segment has no IDs, add some default ones
-                    logger.warning(f'Segment "{segment.get("title", "Untitled")}" has no IDs, adding default IDs')
+                    logger.warning(
+                        f'Segment "{segment.get("title", "Untitled")}" has no IDs, adding default IDs'
+                    )
                     segment['ids'] = []
-                    
+
                 # Ensure all IDs are integers
                 if 'ids' in segment:
                     processed_ids = []
@@ -505,8 +528,10 @@ class TrajectorySummarizer:
                                 processed_ids.append(int(id_val))
                         except (ValueError, TypeError):
                             logger.warning(f'Could not convert ID {id_val} to integer')
-                    
+
                     segment['ids'] = processed_ids
-                    logger.info(f'Processed IDs for segment "{segment.get("title", "Untitled")}": {segment["ids"]}')
+                    logger.info(
+                        f'Processed IDs for segment "{segment.get("title", "Untitled")}": {segment["ids"]}'
+                    )
 
         return summary
