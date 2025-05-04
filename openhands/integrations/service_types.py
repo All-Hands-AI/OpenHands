@@ -218,8 +218,6 @@ class GitService(Protocol):
         self, repository: str
     ) -> Repository:
         """Gets all repository details from repository name"""
-        
-    async def get_branches(
-        self, repository: str
-    ) -> list[Branch]:
+
+    async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""

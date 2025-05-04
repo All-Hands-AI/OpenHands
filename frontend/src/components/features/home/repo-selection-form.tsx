@@ -146,6 +146,27 @@ export function RepositorySelectionForm({
   const isCreatingConversationElsewhere = useIsCreatingConversation();
   const { t } = useTranslation();
 
+  // Auto-select main or master branch if it exists
+  React.useEffect(() => {
+    if (
+      branches &&
+      branches.length > 0 &&
+      !selectedBranch &&
+      !isLoadingBranches
+    ) {
+      // Look for main or master branch
+      const mainBranch = branches.find((branch) => branch.name === "main");
+      const masterBranch = branches.find((branch) => branch.name === "master");
+
+      // Select main if it exists, otherwise select master if it exists
+      if (mainBranch) {
+        setSelectedBranch(mainBranch);
+      } else if (masterBranch) {
+        setSelectedBranch(masterBranch);
+      }
+    }
+  }, [branches, selectedBranch, isLoadingBranches]);
+
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
   const isCreatingConversation =
