@@ -138,18 +138,6 @@ If you've installed the package from source using poetry, you can use:
 poetry run python openhands/resolver/resolve_issue.py --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
-For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
-
-```bash
-python -m openhands.resolver.resolve_all_issues --selected-repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
-```
-
-For example:
-
-```bash
-python -m openhands.resolver.resolve_all_issues --selected-repo all-hands-ai/openhands --issue-numbers 100,101,102
-```
-
 ## Responding to PR Comments
 
 The resolver can also respond to comments on pull requests using:
@@ -195,7 +183,7 @@ python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --use
 
 ## Providing Custom Instructions
 
-You can customize how the AI agent approaches issue resolution by adding a `.openhands_instructions` file to the root of your repository. If present, this file's contents will be injected into the prompt for openhands edits.
+You can customize how the AI agent approaches issue resolution by adding a repository microagent file at `.openhands/microagents/repo.md` in your repository. This file's contents will be automatically loaded in the prompt when working with your repository. For more information about repository microagents, see [Repository Instructions](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents#2-repository-instructions-private).
 
 ## Troubleshooting
 

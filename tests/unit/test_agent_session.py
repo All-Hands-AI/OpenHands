@@ -11,7 +11,9 @@ from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 
@@ -58,7 +60,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock(spec=Runtime)
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -127,7 +129,6 @@ async def test_agent_session_start_with_no_state(mock_agent):
         assert session.controller.agent.name == 'test-agent'
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
-        assert session.controller.state.truncation_id == -1
 
 
 @pytest.mark.asyncio
@@ -142,7 +143,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock(spec=Runtime)
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -164,7 +165,6 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     mock_restored_state = MagicMock(spec=State)
     mock_restored_state.start_id = -1
     mock_restored_state.end_id = -1
-    mock_restored_state.truncation_id = -1
     mock_restored_state.max_iterations = 5
 
     # Create a spy on set_initial_state by subclassing AgentController
@@ -211,4 +211,3 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         assert session.controller.state.max_iterations == 5
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
-        assert session.controller.state.truncation_id == -1

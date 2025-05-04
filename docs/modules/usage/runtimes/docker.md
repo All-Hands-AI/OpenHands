@@ -8,7 +8,7 @@ that contains our Runtime server, as well as some basic utilities for Python and
 You can also [build your own runtime image](../how-to/custom-sandbox-guide).
 
 ## Connecting to Your filesystem
-One useful feature here is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
+A useful feature is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
 1. Set `WORKSPACE_BASE`:
 
     ```bash
@@ -35,25 +35,25 @@ One useful feature here is the ability to connect to your local filesystem. To m
 Be careful! There's nothing stopping the OpenHands agent from deleting or modifying
 any files that are mounted into its workspace.
 
-This setup can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
-but seems to work well on most systems.
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
 ## Hardened Docker Installation
 
-When deploying OpenHands in environments where security is a priority, you should consider implementing a hardened Docker configuration. This section provides recommendations for securing your OpenHands Docker deployment beyond the default configuration.
+When deploying OpenHands in environments where security is a priority, you should consider implementing a hardened
+Docker configuration. This section provides recommendations for securing your OpenHands Docker deployment beyond the default configuration.
 
 ### Security Considerations
 
-The default Docker configuration in the README is designed for ease of use on a local development machine. If you're running on a public network (e.g. airport WiFi),
-you should implement additional security measures.
+The default Docker configuration in the README is designed for ease of use on a local development machine. If you're
+running on a public network (e.g. airport WiFi), you should implement additional security measures.
 
 ### Network Binding Security
 
-By default, OpenHands binds to all network interfaces (`0.0.0.0`), which can expose your instance to all networks the host is connected to. For a more secure setup:
+By default, OpenHands binds to all network interfaces (`0.0.0.0`), which can expose your instance to all networks the
+host is connected to. For a more secure setup:
 
-1. **Restrict Network Binding**:
-
-   Use the `runtime_binding_address` configuration to restrict which network interfaces OpenHands listens on:
+1. **Restrict Network Binding**: Use the `runtime_binding_address` configuration to restrict which network interfaces OpenHands listens on:
 
    ```bash
    docker run # ...
@@ -63,9 +63,7 @@ By default, OpenHands binds to all network interfaces (`0.0.0.0`), which can exp
 
    This configuration ensures OpenHands only listens on the loopback interface (`127.0.0.1`), making it accessible only from the local machine.
 
-2. **Secure Port Binding**:
-
-   Modify the `-p` flag to bind only to localhost instead of all interfaces:
+2. **Secure Port Binding**: Modify the `-p` flag to bind only to localhost instead of all interfaces:
 
    ```bash
    docker run # ... \

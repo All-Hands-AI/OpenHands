@@ -1,3 +1,4 @@
+import copy
 import time
 
 from pydantic import BaseModel, Field
@@ -177,7 +178,7 @@ class Metrics:
             'token_usages': [usage.model_dump() for usage in self._token_usages],
         }
 
-    def reset(self):
+    def reset(self) -> None:
         self._accumulated_cost = 0.0
         self._costs = []
         self._response_latencies = []
@@ -192,7 +193,7 @@ class Metrics:
             response_id='',
         )
 
-    def log(self):
+    def log(self) -> str:
         """Log the metrics."""
         metrics = self.get()
         logs = ''
@@ -200,5 +201,9 @@ class Metrics:
             logs += f'{key}: {value}\n'
         return logs
 
-    def __repr__(self):
+    def copy(self) -> 'Metrics':
+        """Create a deep copy of the Metrics object."""
+        return copy.deepcopy(self)
+
+    def __repr__(self) -> str:
         return f'Metrics({self.get()}'

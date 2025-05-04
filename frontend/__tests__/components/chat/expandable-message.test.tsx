@@ -23,7 +23,7 @@ vi.mock("react-i18next", async () => {
 describe("ExpandableMessage", () => {
   it("should render with neutral border for non-action messages", () => {
     renderWithProviders(<ExpandableMessage message="Hello" type="thought" />);
-    const element = screen.getByText("Hello");
+    const element = screen.getAllByText("Hello")[0];
     const container = element.closest(
       "div.flex.gap-2.items-center.justify-start",
     );
@@ -35,7 +35,7 @@ describe("ExpandableMessage", () => {
     renderWithProviders(
       <ExpandableMessage message="Error occurred" type="error" />,
     );
-    const element = screen.getByText("Error occurred");
+    const element = screen.getAllByText("Error occurred")[0];
     const container = element.closest(
       "div.flex.gap-2.items-center.justify-start",
     );
@@ -85,6 +85,23 @@ describe("ExpandableMessage", () => {
         id="OBSERVATION_MESSAGE$RUN"
         message="Running command"
         type="action"
+      />,
+    );
+    const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
+    const container = element.closest(
+      "div.flex.gap-2.items-center.justify-start",
+    );
+    expect(container).toHaveClass("border-neutral-300");
+    expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
+  });
+
+  it("should render with neutral border and no icon for action messages with undefined success (timeout case)", () => {
+    renderWithProviders(
+      <ExpandableMessage
+        id="OBSERVATION_MESSAGE$RUN"
+        message="Command timed out"
+        type="action"
+        success={undefined}
       />,
     );
     const element = screen.getByText("OBSERVATION_MESSAGE$RUN");

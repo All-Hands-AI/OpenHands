@@ -20,12 +20,44 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'OpenHands Cloud',
+      items: [
+        {
+          type: 'doc',
+          label: 'Openhands Cloud',
+          id: 'usage/cloud/openhands-cloud',
+        },
+        {
+          type: 'doc',
+          label: 'Cloud API',
+          id: 'usage/cloud/cloud-api',
+        },
+        {
+          type: 'doc',
+          label: 'Cloud GitHub Resolver',
+          id: 'usage/cloud/cloud-github-resolver',
+        },
+      ],
+    },
+    {
+      type: 'category',
       label: 'Prompting',
       items: [
         {
           type: 'doc',
           label: 'Best Practices',
           id: 'usage/prompting/prompting-best-practices',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
         },
         {
           type: 'category',
@@ -38,31 +70,20 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Repository-specific',
+              label: 'General Repository Microagents',
               id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
+              label: 'Keyword-Triggered Microagents',
+              id: 'usage/prompting/microagents-keyword',
             },
             {
               type: 'doc',
-              label: 'Syntax',
-              id: 'usage/prompting/microagents-syntax',
+              label: 'Global Microagents',
+              id: 'usage/prompting/microagents-public',
             },
           ],
-        },
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Customization',
-      items: [
-        {
-          type: 'doc',
-          label: 'Repository Customization',
-          id: 'usage/customization/repository',
         },
       ],
     },
@@ -89,23 +110,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Github Action',
           id: 'usage/how-to/github-action',
-        },
-        {
-          type: 'category',
-          label: 'Cloud',
-          items: [
-            {
-              type: 'doc',
-              label: 'Openhands Cloud',
-              id: 'usage/cloud/openhands-cloud',
-            },
-
-            {
-              type: 'doc',
-              label: 'Cloud GitHub Resolver',
-              id: 'usage/cloud/cloud-github-resolver',
-            },
-          ],
         },
       ],
     },
@@ -140,6 +144,11 @@ const sidebars: SidebarsConfig = {
                   type: 'doc',
                   label: 'Groq',
                   id: 'usage/llms/groq',
+                },
+                {
+                  type: 'doc',
+                  label: 'Local LLMs with SGLang or vLLM',
+                  id: 'usage/llms/local-llms',
                 },
                 {
                   type: 'doc',

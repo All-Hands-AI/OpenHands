@@ -1,5 +1,9 @@
 # 🤖 LLM Backends
 
+:::note
+This section is for users who want to connect OpenHands to different LLMs.
+:::
+
 OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
 
 ## Model Recommendations
@@ -9,10 +13,14 @@ recommendations for model selection. Our latest benchmarking results can be foun
 
 Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
-- anthropic/claude-3-5-sonnet-20241022 (recommended)
-- anthropic/claude-3-5-haiku-20241022
-- deepseek/deepseek-chat
-- gpt-4o
+- [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api) (recommended)
+- [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
+- [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
+- [openai/o3-mini](https://openai.com/index/openai-o3-mini/)
+- [openai/o3](https://openai.com/index/introducing-o3-and-o4-mini/)
+- [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
+- [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
+
 
 :::warning
 OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
@@ -56,6 +64,7 @@ We have a few guides for running OpenHands with specific model providers:
 - [Azure](llms/azure-llms)
 - [Google](llms/google-llms)
 - [Groq](llms/groq)
+- [Local LLMs with SGLang or vLLM](llms/../local-llms.md)
 - [LiteLLM Proxy](llms/litellm-proxy)
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)

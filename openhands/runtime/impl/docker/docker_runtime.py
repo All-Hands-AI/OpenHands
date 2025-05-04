@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
@@ -43,7 +44,13 @@ def _is_retryable_wait_until_alive_error(exception):
         return _is_retryable_wait_until_alive_error(cause)
 
     return isinstance(
-        exception, (ConnectionError, httpx.NetworkError, httpx.RemoteProtocolError)
+        exception,
+        (
+            ConnectionError,
+            httpx.NetworkError,
+            httpx.RemoteProtocolError,
+            httpx.HTTPStatusError,
+        ),
     )
 
 
@@ -79,13 +86,20 @@ class DockerRuntime(ActionExecutionClient):
             )
 
         self.config = config
-        self._runtime_initialized: bool = False
         self.status_callback = status_callback
 
         self._host_port = -1
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+
+        if os.environ.get('DOCKER_HOST_ADDR'):
+            logger.info(
+                f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url'
+            )
+            self.config.sandbox.local_runtime_url = (
+                f'http://{os.environ["DOCKER_HOST_ADDR"]}'
+            )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -118,7 +132,8 @@ class DockerRuntime(ActionExecutionClient):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -243,8 +258,9 @@ class DockerRuntime(ActionExecutionClient):
         # Combine environment variables
         environment = {
             'port': str(self._container_port),
-            'PYTHONUNBUFFERED': 1,
+            'PYTHONUNBUFFERED': '1',
             'VSCODE_PORT': str(self._vscode_port),
+            'PIP_BREAK_SYSTEM_PACKAGES': '1',
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
@@ -284,6 +300,8 @@ class DockerRuntime(ActionExecutionClient):
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
+                # Override the default 'bash' entrypoint because the command is a binary.
+                entrypoint=[],
                 network_mode=network_mode,
                 ports=port_mapping,
                 working_dir='/openhands/code/',  # do not change this!

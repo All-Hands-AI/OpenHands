@@ -17,8 +17,9 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
-from openhands.microagent.microagent import BaseMicroAgent
+from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -123,6 +124,11 @@ class AgentSession:
                 selected_branch=selected_branch,
             )
 
+            # NOTE: this needs to happen before controller is created
+            # so MCP tools can be included into the SystemMessageAction
+            if self.runtime and runtime_connected:
+                await add_mcp_tools_to_agent(agent, self.runtime, config.mcp)
+
             if replay_json:
                 initial_message = self._run_replay(
                     initial_message,
@@ -147,6 +153,7 @@ class AgentSession:
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.split('/')[-1]
+
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
@@ -322,14 +329,10 @@ class AgentSession:
                 )
             return False
 
-        if selected_repository and git_provider_tokens:
-            await call_sync_from_async(
-                self.runtime.clone_repo,
-                git_provider_tokens,
-                selected_repository,
-                selected_branch,
-            )
-            await call_sync_from_async(self.runtime.maybe_run_setup_script)
+        await self.runtime.clone_or_init_repo(
+            git_provider_tokens, selected_repository, selected_branch
+        )
+        await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -409,8 +412,9 @@ class AgentSession:
             memory.set_runtime_info(self.runtime)
 
             # loads microagents from repo/.openhands/microagents
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
+            microagents: list[BaseMicroagent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo,
+                selected_repository or None,
             )
             memory.load_user_workspace_microagents(microagents)
 
