@@ -411,7 +411,7 @@ class CLIRuntime(Runtime):
         if path is None:
             dir_path = self._workspace_path
         else:
-            dir_path = os.path.join(self._workspace_path, path.lstrip('/'))
+            dir_path = self._sanitize_filename(path)
 
         try:
             if not os.path.exists(dir_path):
@@ -431,7 +431,7 @@ class CLIRuntime(Runtime):
         if not self._runtime_initialized:
             raise RuntimeError('Runtime not initialized')
 
-        source_path = os.path.join(self._workspace_path, path.lstrip('/'))
+        source_path = self._sanitize_filename(path)
 
         if not os.path.exists(source_path):
             raise FileNotFoundError(f'Path not found: {path}')
@@ -459,17 +459,6 @@ class CLIRuntime(Runtime):
             raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
-        """Clean up resources."""
-        if (
-            hasattr(self, '_workspace_path')
-            and self._workspace_path != self.config.workspace_base
-        ):
-            try:
-                shutil.rmtree(self._workspace_path)
-                logger.info(f'Removed temporary workspace at {self._workspace_path}')
-            except Exception as e:
-                logger.error(f'Error removing temporary workspace: {str(e)}')
-
         self._runtime_initialized = False
         super().close()
 
@@ -492,7 +481,12 @@ class CLIRuntime(Runtime):
 
     @property
     def additional_agent_instructions(self) -> str:
-        return f'Your working directory is {self._workspace_path}. You can only read and write files in this directory.'
+        return '\n\n'.join(
+            [
+                f'Your working directory is {self._workspace_path}. You can only read and write files in this directory.',
+                "You are working directly on the user's machine. In most cases, the working environment is already set up.",
+            ]
+        )
 
     def get_mcp_config(self) -> MCPConfig:
         # TODO: Load MCP config from a local file
