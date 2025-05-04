@@ -16,6 +16,7 @@ from zipfile import ZipFile
 import httpx
 
 from openhands.core.config import AppConfig, SandboxConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -98,6 +99,7 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
+    _runtime_initialized: bool = False
 
     def __init__(
         self,
@@ -159,6 +161,10 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+
+    @property
+    def runtime_initialized(self) -> bool:
+        return self._runtime_initialized
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -546,6 +552,10 @@ class Runtime(FileEditRuntimeMixin):
 
     @abstractmethod
     async def connect(self) -> None:
+        pass
+
+    @abstractmethod
+    def get_updated_mcp_config(self) -> MCPConfig:
         pass
 
     # ====================================================================

@@ -74,7 +74,6 @@ class ActionExecutionClient(Runtime):
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         super().__init__(
@@ -93,10 +92,6 @@ class ActionExecutionClient(Runtime):
     @property
     def action_execution_server_url(self) -> str:
         raise NotImplementedError('Action execution server URL is not implemented')
-
-    @property
-    def runtime_initialized(self) -> bool:
-        return self._runtime_initialized
 
     @retry(
         retry=retry_if_exception(_is_retryable_error),
