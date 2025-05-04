@@ -221,7 +221,7 @@ def display_command(event: CmdRunAction):
             wrap_lines=True,
         ),
         title='Action',
-        style='ansired',
+        style='ansiblue',
     )
     print_formatted_text('')
     print_container(container)
