@@ -361,6 +361,7 @@ class CLIRuntime(Runtime):
                     logger.error(f'Error deleting workspace directory: {str(e)}')
 
     def get_mcp_config(self) -> MCPConfig:
+        # TODO: Load MCP config from a local file
         return MCPConfig()
 
     def run_action(self, action: Action) -> Observation:
