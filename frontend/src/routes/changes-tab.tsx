@@ -49,27 +49,29 @@ function GitChanges() {
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
-      <div className="relative flex h-full w-full items-center">
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-          {statusMessage && <StatusMessage>{statusMessage}</StatusMessage>}
-        </div>
+      {(!isSuccess || !gitChanges.length) ? (
+        <div className="relative flex h-full w-full items-center">
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+            {statusMessage && <StatusMessage>{statusMessage}</StatusMessage>}
+          </div>
 
-        <div className="absolute inset-x-0 bottom-0">
-          {!isError && gitChanges?.length === 0 && (
-            <div className="max-w-2xl mb-4 text-m bg-tertiary rounded-xl p-4 text-left mx-auto">
-              <RandomTip />
-            </div>
-          )}
+          <div className="absolute inset-x-0 bottom-0">
+            {!isError && gitChanges?.length === 0 && (
+              <div className="max-w-2xl mb-4 text-m bg-tertiary rounded-xl p-4 text-left mx-auto">
+                <RandomTip />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      {isSuccess &&
+      ) : (
         gitChanges.map((change) => (
           <FileDiffViewer
             key={change.path}
             path={change.path}
             type={change.status}
           />
-        ))}
+        ))
+      )}
     </main>
   );
 }
