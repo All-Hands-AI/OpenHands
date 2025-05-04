@@ -137,6 +137,7 @@ export function RepositorySelectionForm({
     isLoading: isLoadingBranches,
     isError: isBranchesError,
   } = useRepositoryBranches(selectedRepository?.full_name || null);
+  console.log('branches', branches);
   const {
     mutate: createConversation,
     isPending,
@@ -154,7 +155,7 @@ export function RepositorySelectionForm({
     key: repo.id,
     label: repo.full_name,
   }));
-  
+
   const branchesItems = branches?.map((branch) => ({
     key: branch.name,
     label: branch.name,
@@ -184,7 +185,7 @@ export function RepositorySelectionForm({
       onRepoSelection(null);
     }
   };
-  
+
   const handleBranchInputChange = (value: string) => {
     if (value === "") {
       setSelectedBranch(null);
@@ -209,7 +210,7 @@ export function RepositorySelectionForm({
       />
     );
   };
-  
+
   // Render the appropriate UI for branch selector based on the loading/error state
   const renderBranchSelector = () => {
     if (!selectedRepository) {
@@ -222,7 +223,7 @@ export function RepositorySelectionForm({
         />
       );
     }
-    
+
     if (isLoadingBranches) {
       return <BranchLoadingState />;
     }
@@ -244,7 +245,7 @@ export function RepositorySelectionForm({
   return (
     <div className="flex flex-col gap-4">
       {renderRepositorySelector()}
-      
+
       {renderBranchSelector()}
 
       <BrandButton

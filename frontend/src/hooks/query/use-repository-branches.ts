@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getRepositoryBranches } from "#/api/repository-branches";
+import OpenHands from "#/api/open-hands";
 import { Branch } from "#/types/git";
 
 export const useRepositoryBranches = (repository: string | null) => {
@@ -7,7 +7,7 @@ export const useRepositoryBranches = (repository: string | null) => {
     queryKey: ["repository", repository, "branches"],
     queryFn: async () => {
       if (!repository) return [];
-      return getRepositoryBranches(repository);
+      return OpenHands.getRepositoryBranches(repository);
     },
     enabled: !!repository,
     staleTime: 1000 * 60 * 5, // 5 minutes
