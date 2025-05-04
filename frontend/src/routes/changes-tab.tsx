@@ -38,45 +38,49 @@ function GitChanges() {
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
-      {!runtimeIsActive && (
-        <StatusMessage>
-          {t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME)}
-        </StatusMessage>
-      )}
-      {!isNotGitRepoError && error && (
-        <StatusMessage>{retrieveAxiosErrorMessage(error)}</StatusMessage>
-      )}
-      {isNotGitRepoError && (
-        <StatusMessage>
-          {t(I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO)}
-          <br />
-          {t(I18nKey.DIFF_VIEWER$ASK_OH)}
-        </StatusMessage>
-      )}
-
-      {!isError && gitChanges?.length === 0 && (
-        <div className="max-w-2xl flex">
-          <div className="mb-4 text-m bg-tertiary rounded-xl p-4 text-left">
-            <p>
-              <h4 className="font-bold">{t(I18nKey.TIPS$PROTIP)}:</h4>
-              {t(randomTip.key)}
-              {randomTip.link && (
-                <>
-                  {" "}
-                  <a
-                    href={randomTip.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline"
-                  >
-                    {t(I18nKey.TIPS$LEARN_MORE)}
-                  </a>
-                </>
-              )}
-            </p>
-          </div>
+      <div className="relative flex h-full w-full items-center">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+          {!runtimeIsActive && (
+            <StatusMessage>
+              {t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME)}
+            </StatusMessage>
+          )}
+          {!isNotGitRepoError && error && (
+            <StatusMessage>{retrieveAxiosErrorMessage(error)}</StatusMessage>
+          )}
+          {isNotGitRepoError && (
+            <StatusMessage>
+              {t(I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO)}
+              <br />
+              {t(I18nKey.DIFF_VIEWER$ASK_OH)}
+            </StatusMessage>
+          )}
         </div>
-      )}
+
+        <div className="absolute inset-x-0 bottom-0">
+          {!isError && gitChanges?.length === 0 && (
+            <div className="max-w-2xl mb-4 text-m bg-tertiary rounded-xl p-4 text-left mx-auto">
+              <p>
+                <h4 className="font-bold">{t(I18nKey.TIPS$PROTIP)}:</h4>
+                {t(randomTip.key)}
+                {randomTip.link && (
+                  <>
+                    {" "}
+                    <a
+                      href={randomTip.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {t(I18nKey.TIPS$LEARN_MORE)}
+                    </a>
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
       {isSuccess &&
         gitChanges.map((change) => (
           <FileDiffViewer
