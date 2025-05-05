@@ -23,7 +23,9 @@ docker run # ...
 `SANDBOX_VOLUMES` の形式は：`ホストパス:コンテナパス[:モード]`
 
 - `ホストパス`：マウントしたいホストマシン上のパス
-- `コンテナパス`：ホストパスがマウントされるコンテナ内のパス（通常は `/workspace`）
+- `コンテナパス`：ホストパスがマウントされるコンテナ内のパス
+  - エージェントに変更させたいファイルには `/workspace` を使用してください。エージェントはデフォルトで `/workspace` で作業します。
+  - 読み取り専用の参照資料や大きなデータセットには、別のパス（例：`/data`）を使用してください
 - `モード`：オプションのマウントモード、`rw`（読み書き可能、デフォルト）または `ro`（読み取り専用）
 
 カンマ（`,`）で区切ることで、複数のマウントを指定することもできます：
@@ -35,20 +37,22 @@ export SANDBOX_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
 例：
 
 ```bash
-# Linux と Mac の例
+# Linux と Mac の例 - 書き込み可能なワークスペース
 export SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
 
-# Windows の WSL の例
+# Windows の WSL の例 - 書き込み可能なワークスペース
 export SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
 
-# 読み取り専用マウントの例
-export SANDBOX_VOLUMES=/path/to/reference/code:/workspace:ro
+# 読み取り専用参照コードの例
+export SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
 
-# 複数マウントの例
-export SANDBOX_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
+# 複数マウントの例 - 書き込み可能なワークスペースと読み取り専用データ
+export SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
 ```
 
 > **注意：** 複数のマウントを使用する場合、最初のマウントが主要なワークスペースと見なされ、単一のワークスペースを想定するツールとの後方互換性のために使用されます。
+
+> **重要：** エージェントはデフォルトで `/workspace` で作業します。ローカルディレクトリ内のファイルをエージェントに変更させたい場合は、そのディレクトリを `/workspace` にマウントする必要があります。エージェントにアクセスさせたいが変更させたくない読み取り専用データがある場合は、別のパス（例：`/data`）にマウントし、エージェントにそこを見るよう明示的に指示してください。
 
 ### WORKSPACE_* 変数の使用（非推奨）
 
