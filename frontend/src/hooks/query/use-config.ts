@@ -7,16 +7,7 @@ export const useConfig = () => {
 
   return useQuery({
     queryKey: ["config"],
-    queryFn: async () => {
-      const config = await OpenHands.getConfig();
-
-      // Store app mode in localStorage for use in 401 handler
-      if (config && config.APP_MODE) {
-        localStorage.setItem("appMode", config.APP_MODE);
-      }
-
-      return config;
-    },
+    queryFn: OpenHands.getConfig,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes,
     enabled: !isOnTosPage,

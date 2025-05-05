@@ -17,6 +17,7 @@ import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import OpenHands from "./api/open-hands";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
+import { AxiosInterceptorSetup } from "./components/AxiosInterceptorSetup";
 
 function PosthogInit() {
   const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
@@ -71,6 +72,7 @@ prepareApp().then(() =>
             <QueryClientProvider client={queryClient}>
               <HydratedRouter />
               <PosthogInit />
+              <AxiosInterceptorSetup />
             </QueryClientProvider>
           </AuthProvider>
         </Provider>

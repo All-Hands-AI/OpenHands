@@ -3,27 +3,25 @@
  */
 
 /**
- * Handles logout and browser refresh
+ * Creates a logout handler function
  * @param appMode The current app mode
+ * @returns A function that handles logout and browser refresh
  */
-export const handleLogoutAndRefresh = async (
-  appMode: string,
-): Promise<void> => {
-  try {
-    // Construct the endpoint based on app mode
-    const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-provider-tokens";
-
-    // Make a direct axios call to the logout endpoint
-    const baseURL = `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host}`;
-    await fetch(`${baseURL}${endpoint}`, {
-      method: "POST",
-      credentials: "include",
-    });
-  } catch (error) {
-    console.error("Error during logout:", error);
-  } finally {
-    // Always refresh the browser
-    window.location.reload();
-  }
-};
+export const createLogoutHandler =
+  (appMode: string | undefined) => async (): Promise<void> => {
+    if (appMode === "saas") {
+      try {
+        const baseURL = `${window.location.protocol}//${
+          import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host
+        }`;
+        await fetch(`${baseURL}/api/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (error) {
+        // Error during logout is not critical as we'll refresh anyway
+      } finally {
+        window.location.reload();
+      }
+    }
+  };
