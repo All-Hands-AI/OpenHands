@@ -1,3 +1,5 @@
+from typing import List, Optional, Union
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
@@ -24,13 +26,13 @@ from openhands.server.user_auth import (
 app = APIRouter(prefix='/api/user')
 
 
-@app.get('/repositories', response_model=list[Repository])
+@app.get('/repositories', response_model=List[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-    user_id: str | None = Depends(get_user_id),
-):
+    provider_tokens: Optional[PROVIDER_TOKEN_TYPE] = Depends(get_provider_tokens),
+    access_token: Optional[SecretStr] = Depends(get_access_token),
+    user_id: Optional[str] = Depends(get_user_id),
+) -> Union[List[Repository], JSONResponse]:
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens,
@@ -39,7 +41,7 @@ async def get_user_repositories(
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(
+            repos: List[Repository] = await client.get_repositories(
                 sort, server_config.app_mode
             )
             return repos
@@ -64,9 +66,9 @@ async def get_user_repositories(
 
 @app.get('/info', response_model=User)
 async def get_user(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-):
+    provider_tokens: Optional[PROVIDER_TOKEN_TYPE] = Depends(get_provider_tokens),
+    access_token: Optional[SecretStr] = Depends(get_access_token),
+) -> Union[User, JSONResponse]:
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
@@ -94,21 +96,21 @@ async def get_user(
     )
 
 
-@app.get('/search/repositories', response_model=list[Repository])
+@app.get('/search/repositories', response_model=List[Repository])
 async def search_repositories(
     query: str,
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-):
+    provider_tokens: Optional[PROVIDER_TOKEN_TYPE] = Depends(get_provider_tokens),
+    access_token: Optional[SecretStr] = Depends(get_access_token),
+) -> Union[List[Repository], JSONResponse]:
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            repos: list[Repository] = await client.search_repositories(
+            repos: List[Repository] = await client.search_repositories(
                 query, per_page, sort, order
             )
             return repos
@@ -131,11 +133,11 @@ async def search_repositories(
     )
 
 
-@app.get('/suggested-tasks', response_model=list[SuggestedTask])
+@app.get('/suggested-tasks', response_model=List[SuggestedTask])
 async def get_suggested_tasks(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-):
+    provider_tokens: Optional[PROVIDER_TOKEN_TYPE] = Depends(get_provider_tokens),
+    access_token: Optional[SecretStr] = Depends(get_access_token),
+) -> Union[List[SuggestedTask], JSONResponse]:
     """Get suggested tasks for the authenticated user across their most recently pushed repositories.
 
     Returns:
@@ -147,7 +149,7 @@ async def get_suggested_tasks(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            tasks: list[SuggestedTask] = await client.get_suggested_tasks()
+            tasks: List[SuggestedTask] = await client.get_suggested_tasks()
             return tasks
 
         except AuthenticationError as e:
@@ -168,12 +170,12 @@ async def get_suggested_tasks(
     )
 
 
-@app.get('/repository/branches', response_model=list[Branch])
+@app.get('/repository/branches', response_model=List[Branch])
 async def get_repository_branches(
     repository: str,
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-):
+    provider_tokens: Optional[PROVIDER_TOKEN_TYPE] = Depends(get_provider_tokens),
+    access_token: Optional[SecretStr] = Depends(get_access_token),
+) -> Union[List[Branch], JSONResponse]:
     """Get branches for a repository.
 
     Args:
@@ -187,7 +189,7 @@ async def get_repository_branches(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            branches: list[Branch] = await client.get_branches(repository)
+            branches: List[Branch] = await client.get_branches(repository)
             return branches
 
         except AuthenticationError as e:

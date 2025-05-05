@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import (
     APIRouter,
@@ -42,7 +43,9 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/list-files')
-async def list_files(request: Request, path: str | None = None):
+async def list_files(
+    request: Request, path: Optional[str] = None
+) -> Union[List[str], JSONResponse]:
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -83,7 +86,7 @@ async def list_files(request: Request, path: str | None = None):
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    async def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list: List[str], base_path: str) -> List[str]:
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
@@ -110,7 +113,9 @@ async def list_files(request: Request, path: str | None = None):
 
 
 @app.get('/select-file')
-async def select_file(file: str, request: Request):
+async def select_file(
+    file: str, request: Request
+) -> Union[Dict[str, str], JSONResponse]:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -159,9 +164,15 @@ async def select_file(file: str, request: Request):
             content={'error': f'Error opening file: {observation}'},
         )
 
+    # Default case if observation is neither FileReadObservation nor ErrorObservation
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={'error': f'Unexpected observation type: {type(observation)}'},
+    )
+
 
 @app.get('/zip-directory')
-def zip_current_workspace(request: Request):
+def zip_current_workspace(request: Request) -> Union[FileResponse, JSONResponse]:
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
@@ -193,7 +204,7 @@ async def git_changes(
     request: Request,
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-):
+) -> Union[Dict[str, Any], JSONResponse]:
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
         config,
@@ -234,8 +245,8 @@ async def git_diff(
     request: Request,
     path: str,
     conversation_id: str,
-    conversation_store=Depends(get_conversation_store),
-):
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+) -> Union[Dict[str, Any], JSONResponse]:
     runtime: Runtime = request.state.conversation.runtime
 
     cwd = await get_cwd(
@@ -259,7 +270,7 @@ async def get_cwd(
     conversation_store: ConversationStore,
     conversation_id: str,
     workspace_mount_path_in_sandbox: str,
-):
+) -> str:
     metadata = await conversation_store.get_metadata(conversation_id)
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     conversation_info = await _get_conversation_info(metadata, is_running)
@@ -275,7 +286,7 @@ async def get_cwd(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> ConversationInfo | None:
+) -> Optional[ConversationInfo]:
     try:
         title = conversation.title
         if not title:

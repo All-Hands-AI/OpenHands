@@ -1,3 +1,5 @@
+from typing import Dict, Optional, Union
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -25,10 +27,10 @@ app = APIRouter(prefix='/api')
 
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    provider_tokens: Optional[PROVIDER_TOKEN_TYPE] = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
     secrets_store: SecretsStore = Depends(get_secrets_store),
-) -> GETSettingsModel | JSONResponse:
+) -> Union[GETSettingsModel, JSONResponse]:
     settings = await settings_store.load()
 
     try:
@@ -47,7 +49,7 @@ async def load_settings(
             user_secrets.provider_tokens if user_secrets else provider_tokens
         )
 
-        provider_tokens_set: dict[ProviderType, str | None] = {}
+        provider_tokens_set: Dict[ProviderType, Optional[str]] = {}
         if git_providers:
             for provider_type, provider_token in git_providers.items():
                 if provider_token.token or provider_token.user_id:
@@ -69,7 +71,7 @@ async def load_settings(
         )
 
 
-@app.post('/reset-settings', response_model=dict[str, str])
+@app.post('/reset-settings', response_model=Dict[str, str])
 async def reset_settings() -> JSONResponse:
     """
     Resets user settings. (Deprecated)
@@ -99,7 +101,7 @@ async def store_llm_settings(
     return settings
 
 
-@app.post('/settings', response_model=dict[str, str])
+@app.post('/settings', response_model=Dict[str, str])
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),

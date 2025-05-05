@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
@@ -8,14 +10,16 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/config')
-async def get_remote_runtime_config(request: Request):
+async def get_remote_runtime_config(request: Request) -> JSONResponse:
     """Retrieve the runtime configuration.
 
     Currently, this is the session ID and runtime ID (if available).
     """
     runtime = request.state.conversation.runtime
-    runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
-    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    runtime_id: Optional[str] = (
+        runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
+    )
+    session_id: Optional[str] = runtime.sid if hasattr(runtime, 'sid') else None
     return JSONResponse(
         content={
             'runtime_id': runtime_id,
@@ -25,7 +29,7 @@ async def get_remote_runtime_config(request: Request):
 
 
 @app.get('/vscode-url')
-async def get_vscode_url(request: Request):
+async def get_vscode_url(request: Request) -> JSONResponse:
     """Get the VSCode URL.
 
     This endpoint allows getting the VSCode URL.
@@ -55,7 +59,7 @@ async def get_vscode_url(request: Request):
 
 
 @app.get('/web-hosts')
-async def get_hosts(request: Request):
+async def get_hosts(request: Request) -> JSONResponse:
     """Get the hosts used by the runtime.
 
     This endpoint allows getting the hosts used by the runtime.

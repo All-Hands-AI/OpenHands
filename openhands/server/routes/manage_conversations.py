@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
@@ -54,28 +55,28 @@ app = APIRouter(prefix='/api')
 
 class InitSessionRequest(BaseModel):
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
-    repository: str | None = None
-    git_provider: ProviderType | None = None
-    selected_branch: str | None = None
-    initial_user_msg: str | None = None
-    image_urls: list[str] | None = None
-    replay_json: str | None = None
-    suggested_task: SuggestedTask | None = None
+    repository: Optional[str] = None
+    git_provider: Optional[ProviderType] = None
+    selected_branch: Optional[str] = None
+    initial_user_msg: Optional[str] = None
+    image_urls: Optional[List[str]] = None
+    replay_json: Optional[str] = None
+    suggested_task: Optional[SuggestedTask] = None
 
     model_config = {'extra': 'forbid'}
 
 
 async def _create_new_conversation(
-    user_id: str | None,
-    git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    selected_repository: str | None,
-    selected_branch: str | None,
-    initial_user_msg: str | None,
-    image_urls: list[str] | None,
-    replay_json: str | None,
+    user_id: Optional[str],
+    git_provider_tokens: Optional[PROVIDER_TOKEN_TYPE],
+    selected_repository: Optional[str],
+    selected_branch: Optional[str],
+    initial_user_msg: Optional[str],
+    image_urls: Optional[List[str]],
+    replay_json: Optional[str],
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
-):
+) -> Tuple[str, ConversationInitData]:
     logger.info(
         'Creating conversation',
         extra={
@@ -163,7 +164,7 @@ async def _create_new_conversation(
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
-    return conversation_id
+    return conversation_id, conversation_init_data
 
 
 @app.post('/conversations')
@@ -171,8 +172,8 @@ async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
-    auth_type: AuthType | None = Depends(get_auth_type),
-):
+    auth_type: Optional[AuthType] = Depends(get_auth_type),
+) -> JSONResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -249,9 +250,9 @@ async def new_conversation(
 
 @app.get('/conversations')
 async def search_conversations(
-    page_id: str | None = None,
+    page_id: Optional[str] = None,
     limit: int = 20,
-    user_id: str | None = Depends(get_user_id),
+    user_id: Optional[str] = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
@@ -290,7 +291,7 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str,
     conversation_store: ConversationStore = Depends(get_conversation_store),
-) -> ConversationInfo | None:
+) -> Optional[ConversationInfo]:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
@@ -313,7 +314,7 @@ def get_default_conversation_title(conversation_id: str) -> str:
     return f'Conversation {conversation_id[:5]}'
 
 
-async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
+async def auto_generate_title(conversation_id: str, user_id: Optional[str]) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
     Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
@@ -406,7 +407,7 @@ async def update_conversation(
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
     conversation_id: str,
-    user_id: str | None = Depends(get_user_id),
+    user_id: Optional[str] = Depends(get_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
@@ -425,7 +426,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> ConversationInfo | None:
+) -> Optional[ConversationInfo]:
     try:
         title = conversation.title
         if not title:

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, List
 
 from fastapi import APIRouter
 
@@ -10,8 +10,8 @@ from openhands.utils.llm import get_supported_llm_models
 app = APIRouter(prefix='/api/options')
 
 
-@app.get('/models', response_model=list[str])
-async def get_litellm_models() -> list[str]:
+@app.get('/models', response_model=List[str])
+async def get_litellm_models() -> List[str]:
     """Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
@@ -28,8 +28,8 @@ async def get_litellm_models() -> list[str]:
     return get_supported_llm_models(config)
 
 
-@app.get('/agents', response_model=list[str])
-async def get_agents() -> list[str]:
+@app.get('/agents', response_model=List[str])
+async def get_agents() -> List[str]:
     """Get all agents supported by LiteLLM.
 
     To get the agents:
@@ -43,8 +43,8 @@ async def get_agents() -> list[str]:
     return sorted(Agent.list_agents())
 
 
-@app.get('/security-analyzers', response_model=list[str])
-async def get_security_analyzers() -> list[str]:
+@app.get('/security-analyzers', response_model=List[str])
+async def get_security_analyzers() -> List[str]:
     """Get all supported security analyzers.
 
     To get the security analyzers:
@@ -58,8 +58,8 @@ async def get_security_analyzers() -> list[str]:
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get('/config', response_model=dict[str, Any])
-async def get_config() -> dict[str, Any]:
+@app.get('/config', response_model=Dict[str, Any])
+async def get_config() -> Dict[str, Any]:
     """Get current config.
 
     Returns:
