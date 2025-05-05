@@ -7,6 +7,7 @@ import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
+import { getTerminalStreamService } from "#/services/terminal-stream-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 
 /*
@@ -45,6 +46,7 @@ export const useTerminal = ({
   const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
   const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const streamInitialized = React.useRef<boolean>(false);
 
   const createTerminal = () =>
     new Terminal({
@@ -108,6 +110,32 @@ export const useTerminal = ({
     terminal.current?.write("\b \b");
     return command.slice(0, -1);
   };
+
+  // Initialize terminal streaming service
+  React.useEffect(() => {
+    if (!streamInitialized.current && !disabled) {
+      try {
+        // Get the base URL for the terminal stream service
+        const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.origin;
+        const streamService = getTerminalStreamService(baseUrl);
+        streamService.connect();
+        streamInitialized.current = true;
+      } catch (error) {
+        console.error("Failed to initialize terminal stream service:", error);
+      }
+    }
+
+    return () => {
+      if (streamInitialized.current) {
+        try {
+          const streamService = getTerminalStreamService();
+          streamService.disconnect();
+        } catch (error) {
+          console.error("Error disconnecting terminal stream:", error);
+        }
+      }
+    };
+  }, [disabled]);
 
   // Initialize terminal and handle cleanup
   React.useEffect(() => {
