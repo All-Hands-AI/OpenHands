@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from fastapi import (
     APIRouter,
@@ -112,8 +112,8 @@ async def list_files(request: Request, path: str | None = None) -> Dict[str, Any
     return file_list
 
 
-@app.get('/select-file')
-async def select_file(file: str, request: Request) -> Union[FileResponse, JSONResponse]:
+@app.get('/select-file', response_model=None)
+async def select_file(file: str, request: Request) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
