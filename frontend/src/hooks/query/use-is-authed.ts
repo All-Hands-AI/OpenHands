@@ -6,13 +6,13 @@ import { useAuth } from "#/context/auth-context";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
 export const useIsAuthed = () => {
-  const { providersAreSet } = useAuth();
+  const { providersAreSet, clear } = useAuth();
   const { data: config } = useConfig();
   const isOnTosPage = useIsOnTosPage();
 
   const appMode = React.useMemo(() => config?.APP_MODE, [config]);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["user", "authenticated", providersAreSet, appMode],
     queryFn: () => OpenHands.authenticate(appMode!),
     enabled: !!appMode && !isOnTosPage,
@@ -23,4 +23,12 @@ export const useIsAuthed = () => {
       disableToast: true,
     },
   });
+
+  React.useEffect(() => {
+    if (!query.isFetching && query.isSuccess && !query.data) {
+      clear();
+    }
+  }, [query.isFetching, query.isSuccess, query.data, clear]);
+
+  return query;
 };
