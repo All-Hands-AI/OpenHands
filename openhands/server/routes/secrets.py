@@ -90,6 +90,8 @@ async def store_provider_tokens(
     secrets_store: SecretsStore = Depends(get_secrets_store),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens)
 ) -> JSONResponse:
+
+    print('incoming tokens', provider_info)
     provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
         return JSONResponse(

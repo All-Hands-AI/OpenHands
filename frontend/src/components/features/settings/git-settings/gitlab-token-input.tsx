@@ -47,6 +47,8 @@ export function GitLabTokenInput({
 
       <SettingsInput
         onChange={onGitLabHostChange || (() => {})}
+        name="gitlab-host-input"
+        testId="gitlab-host-input"
         label="GitLab Host"
         type="text"
         className="w-[680px]"

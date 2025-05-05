@@ -47,6 +47,8 @@ export function GitHubTokenInput({
 
       <SettingsInput
         onChange={onGitHubHostChange || (() => {})}
+        name="github-host-input"
+        testId="github-host-input"
         label="GitHub Host"
         type="text"
         className="w-[680px]"

@@ -55,10 +55,8 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
-    const githubHost =
-      formData.get("github-base-domain-input")?.toString() || "";
-    const gitlabHost =
-      formData.get("gitlab-base-domain-input")?.toString() || "";
+    const githubHost = formData.get("github-host-input")?.toString() || "";
+    const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
 
     saveGitProviders(
       {
