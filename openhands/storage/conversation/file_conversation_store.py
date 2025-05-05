@@ -68,7 +68,10 @@ class FileConversationStore(ConversationStore):
         self,
         page_id: str | None = None,
         limit: int = 20,
+        filter_conversation_ids: list[str] | None = None,
     ) -> ConversationMetadataResultSet:
+        print('filter_conversation_ids', filter_conversation_ids)
+
         conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
         try:
@@ -79,6 +82,12 @@ class FileConversationStore(ConversationStore):
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
+
+        if filter_conversation_ids:
+            conversation_ids = list(
+                set(conversation_ids) & set(filter_conversation_ids)
+            )
+
         num_conversations = len(conversation_ids)
         start = page_id_to_offset(page_id)
         end = min(limit + start, num_conversations)
@@ -97,6 +106,8 @@ class FileConversationStore(ConversationStore):
                     f'Could not load conversation metadata: {conversation_id}'
                 )
         conversations.sort(key=_sort_key, reverse=True)
+        if filter_conversation_ids:
+            return ConversationMetadataResultSet(conversations, None)
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)

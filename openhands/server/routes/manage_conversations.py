@@ -1,10 +1,18 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
-from fastapi import APIRouter, Body, HTTPException, Request, status, UploadFile, File, Form
+from fastapi import (
+    APIRouter,
+    Body,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -15,7 +23,6 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
 from openhands.integrations.service_types import Repository
-from openhands.runtime import get_runtime_cls
 from openhands.server.auth import (
     get_github_user_id,
     get_provider_tokens,
@@ -33,6 +40,7 @@ from openhands.server.shared import (
     config,
     conversation_manager,
     file_store,
+    s3_handler,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -40,7 +48,6 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
-from openhands.server.shared import s3_handler
 
 app = APIRouter(prefix='/api')
 
@@ -214,7 +221,12 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
         if conversation_id and user_id is not None:
             await conversation_module._update_conversation_visibility(
-                conversation_id, False, user_id, {'hidden_prompt': True}, '', 'available'
+                conversation_id,
+                False,
+                user_id,
+                {'hidden_prompt': True},
+                '',
+                'available',
             )
 
         return JSONResponse(
@@ -256,11 +268,26 @@ async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
 ) -> ConversationInfoResultSet:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
-    conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
+    # get conversation visibility by user id
+    visible_conversations = (
+        await conversation_module._get_conversation_visibility_by_user_id(
+            user_id, 1, limit
+        )
+    )
+    if len(visible_conversations) == 0:
+        return ConversationInfoResultSet(results=[], next_page_id=None)
+    visible_conversation_ids = [
+        conversation['conversation_id'] for conversation in visible_conversations
+    ]
+
+    conversation_metadata_result_set = await conversation_store.search(
+        page_id, limit, filter_conversation_ids=visible_conversation_ids
+    )
     # Filter out conversations older than max_age
     now = datetime.now(timezone.utc)
     max_age = config.conversation_max_age_seconds
@@ -427,9 +454,11 @@ async def delete_conversation(
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)
-    runtime_cls = get_runtime_cls(config.runtime)
-    await runtime_cls.delete(conversation_id)
-    await conversation_store.delete_metadata(conversation_id)
+
+    # disable delete conversation from runtime
+    # runtime_cls = get_runtime_cls(config.runtime)
+    # await runtime_cls.delete(conversation_id)
+    # await conversation_store.delete_metadata(conversation_id)
 
     # delete conversation from database
     await conversation_module._delete_conversation(conversation_id, str(user_id))
@@ -442,7 +471,7 @@ async def change_visibility(
     request: Request,
     is_published: bool = Form(...),
     hidden_prompt: bool = Form(...),
-    file: Optional[UploadFile] = File(None),
+    file: Optional[UploadFile] = None,
 ) -> bool:
     user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
@@ -458,8 +487,8 @@ async def change_visibility(
     }
 
     if file and s3_handler is not None:
-        print("processing file:", file)
-        folder_path = f"conversations/{conversation_id}"
+        print('processing file:', file)
+        folder_path = f'conversations/{conversation_id}'
         file_url = await s3_handler.upload_file(file, folder_path)
         if file_url:
             extra_data['thumbnail_url'] = file_url
