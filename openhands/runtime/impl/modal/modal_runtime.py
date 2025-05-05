@@ -12,6 +12,7 @@ from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.a2a.A2AManager import A2AManager
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.runtime_build import (
@@ -52,6 +53,8 @@ class ModalRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        a2a_manager: A2AManager | None = None,
+        mnemonic: str | None = None,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -59,6 +62,7 @@ class ModalRuntime(ActionExecutionClient):
         self.config = config
         self.sandbox = None
         self.sid = sid
+        self.mnemonic = mnemonic
 
         self.modal_client = modal.Client.from_credentials(
             config.modal_api_token_id.get_secret_value(),
@@ -99,6 +103,8 @@ class ModalRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            a2a_manager=a2a_manager,
+            mnemonic=mnemonic,
         )
 
     async def connect(self):
