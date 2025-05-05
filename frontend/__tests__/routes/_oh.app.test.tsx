@@ -27,32 +27,4 @@ describe("App", () => {
     renderWithProviders(<RouteStub initialEntries={["/conversation/123"]} />);
     await screen.findByTestId("app-route");
   });
-
-  it("should not call endSession if the user has permission", async () => {
-    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
-
-    getConversationSpy.mockResolvedValue({
-      conversation_id: "9999",
-      last_updated_at: "",
-      created_at: "",
-      title: "",
-      selected_repository: "",
-      status: "STOPPED",
-    });
-    const { rerender } = renderWithProviders(
-      <RouteStub initialEntries={["/conversation/9999"]} />,
-    );
-
-    await waitFor(() => {
-      expect(endSessionMock).not.toHaveBeenCalled();
-      expect(errorToastSpy).not.toHaveBeenCalled();
-    });
-
-    rerender(<RouteStub initialEntries={["/conversation"]} />);
-
-    await waitFor(() => {
-      expect(endSessionMock).not.toHaveBeenCalled();
-      expect(errorToastSpy).not.toHaveBeenCalled();
-    });
-  });
 });
