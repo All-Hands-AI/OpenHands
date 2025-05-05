@@ -4,29 +4,12 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { Provider } from "react-redux";
-import { setupStore } from "test-utils";
-import { AxiosError } from "axios";
+import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { AuthProvider } from "#/context/auth-context";
 import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
-
-const createAxiosNotFoundErrorObject = () =>
-  new AxiosError(
-    "Request failed with status code 404",
-    "ERR_BAD_REQUEST",
-    undefined,
-    undefined,
-    {
-      status: 404,
-      statusText: "Not Found",
-      data: { message: "Settings not found" },
-      headers: {},
-      // @ts-expect-error - we only need the response object for this test
-      config: {},
-    },
-  );
 
 const RouterStub = createRoutesStub([
   {
