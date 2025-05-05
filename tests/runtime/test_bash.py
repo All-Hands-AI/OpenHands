@@ -333,7 +333,7 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
             _run_cmd_action(runtime, 'Remove-Item -Recurse -Force test')
             assert obs.exit_code == 0
         else:
-            # Original Linux version
+            # Unix version
             obs = _run_cmd_action(
                 runtime, f'ls -l {config.workspace_mount_path_in_sandbox}'
             )
