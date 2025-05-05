@@ -27,7 +27,11 @@ const sidebars: SidebarsConfig = {
           label: 'Openhands Cloud',
           id: 'usage/cloud/openhands-cloud',
         },
-
+        {
+          type: 'doc',
+          label: 'Cloud API',
+          id: 'usage/cloud/cloud-api',
+        },
         {
           type: 'doc',
           label: 'Cloud GitHub Resolver',
@@ -66,18 +70,18 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Repository-specific',
+              label: 'General Repository Microagents',
               id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
+              label: 'Keyword-Triggered Microagents',
+              id: 'usage/prompting/microagents-keyword',
             },
             {
               type: 'doc',
-              label: 'Syntax',
-              id: 'usage/prompting/microagents-syntax',
+              label: 'Global Microagents',
+              id: 'usage/prompting/microagents-public',
             },
           ],
         },
@@ -211,6 +215,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'MCP',
+          id: 'usage/mcp',
+        }
       ],
     },
     {

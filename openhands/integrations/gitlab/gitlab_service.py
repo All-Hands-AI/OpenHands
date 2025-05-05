@@ -6,10 +6,13 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     BaseGitService,
+    Branch,
     GitService,
     ProviderType,
     Repository,
     RequestMethod,
+    SuggestedTask,
+    TaskType,
     UnknownException,
     User,
 )
@@ -106,7 +109,9 @@ class GitLabService(BaseGitService, GitService):
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
 
-    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> Any:
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any] | None = None
+    ) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
 
@@ -117,6 +122,8 @@ class GitLabService(BaseGitService, GitService):
         Returns:
             The data portion of the GraphQL response
         """
+        if variables is None:
+            variables = {}
         try:
             async with httpx.AsyncClient() as client:
                 gitlab_headers = await self._get_gitlab_headers()
@@ -125,7 +132,7 @@ class GitLabService(BaseGitService, GitService):
 
                 payload = {
                     'query': query,
-                    'variables': variables,
+                    'variables': variables if variables is not None else {},
                 }
 
                 response = await client.post(
@@ -243,6 +250,192 @@ class GitLabService(BaseGitService, GitService):
             )
             for repo in all_repos
         ]
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """Get suggested tasks for the authenticated user across all repositories.
+
+        Returns:
+        - Merge requests authored by the user.
+        - Issues assigned to the user.
+        """
+        # Get user info to use in queries
+        user = await self.get_user()
+        username = user.login
+
+        # GraphQL query to get merge requests
+        query = """
+        query GetUserTasks {
+          currentUser {
+            authoredMergeRequests(state: opened, sort: UPDATED_DESC, first: 100) {
+              nodes {
+                id
+                iid
+                title
+                project {
+                  fullPath
+                }
+                conflicts
+                mergeStatus
+                pipelines(first: 1) {
+                  nodes {
+                    status
+                  }
+                }
+                discussions(first: 100) {
+                  nodes {
+                    notes {
+                      nodes {
+                        resolvable
+                        resolved
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+
+        try:
+            tasks: list[SuggestedTask] = []
+
+            # Get merge requests using GraphQL
+            response = await self.execute_graphql_query(query)
+            data = response.get('currentUser', {})
+
+            # Process merge requests
+            merge_requests = data.get('authoredMergeRequests', {}).get('nodes', [])
+            for mr in merge_requests:
+                repo_name = mr.get('project', {}).get('fullPath', '')
+                mr_number = mr.get('iid')
+                title = mr.get('title', '')
+
+                # Start with default task type
+                task_type = TaskType.OPEN_PR
+
+                # Check for specific states
+                if mr.get('conflicts'):
+                    task_type = TaskType.MERGE_CONFLICTS
+                elif (
+                    mr.get('pipelines', {}).get('nodes', [])
+                    and mr.get('pipelines', {}).get('nodes', [])[0].get('status')
+                    == 'FAILED'
+                ):
+                    task_type = TaskType.FAILING_CHECKS
+                else:
+                    # Check for unresolved comments
+                    has_unresolved_comments = False
+                    for discussion in mr.get('discussions', {}).get('nodes', []):
+                        for note in discussion.get('notes', {}).get('nodes', []):
+                            if note.get('resolvable') and not note.get('resolved'):
+                                has_unresolved_comments = True
+                                break
+                        if has_unresolved_comments:
+                            break
+
+                    if has_unresolved_comments:
+                        task_type = TaskType.UNRESOLVED_COMMENTS
+
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            git_provider=ProviderType.GITLAB,
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=mr_number,
+                            title=title,
+                        )
+                    )
+
+            # Get assigned issues using REST API
+            url = f'{self.BASE_URL}/issues'
+            params = {
+                'assignee_username': username,
+                'state': 'opened',
+                'scope': 'assigned_to_me',
+            }
+
+            issues_response, _ = await self._make_request(
+                method=RequestMethod.GET, url=url, params=params
+            )
+
+            # Process issues
+            for issue in issues_response:
+                repo_name = (
+                    issue.get('references', {}).get('full', '').split('#')[0].strip()
+                )
+                issue_number = issue.get('iid')
+                title = issue.get('title', '')
+
+                tasks.append(
+                    SuggestedTask(
+                        git_provider=ProviderType.GITLAB,
+                        task_type=TaskType.OPEN_ISSUE,
+                        repo=repo_name,
+                        issue_number=issue_number,
+                        title=title,
+                    )
+                )
+
+            return tasks
+        except Exception:
+            return []
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        encoded_name = repository.replace('/', '%2F')
+
+        url = f'{self.BASE_URL}/projects/{encoded_name}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('path_with_namespace'),
+            stargazers_count=repo.get('star_count'),
+            git_provider=ProviderType.GITLAB,
+            is_public=repo.get('visibility') == 'public',
+        )
+
+    async def get_branches(self, repository: str) -> list[Branch]:
+        """Get branches for a repository"""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        # Set maximum branches to fetch (10 pages with 100 per page)
+        MAX_BRANCHES = 1000
+        PER_PAGE = 100
+
+        all_branches: list[Branch] = []
+        page = 1
+
+        # Fetch up to 10 pages of branches
+        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+            params = {'per_page': str(PER_PAGE), 'page': str(page)}
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more branches
+                break
+
+            for branch_data in response:
+                branch = Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('id', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=branch_data.get('commit', {}).get('committed_date'),
+                )
+                all_branches.append(branch)
+
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        return all_branches
 
 
 gitlab_service_cls = os.environ.get(

@@ -46,9 +46,13 @@ describe("HomeHeader", () => {
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
+      "gui",
+      undefined,
       undefined,
       undefined,
       [],
+      undefined,
+      undefined,
       undefined,
     );
 

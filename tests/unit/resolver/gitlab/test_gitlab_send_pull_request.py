@@ -14,12 +14,12 @@ from openhands.resolver.send_pull_request import (
     apply_patch,
     initialize_repo,
     load_single_resolver_output,
+    main,
     make_commit,
     process_single_issue,
     send_pull_request,
     update_existing_pull_request,
 )
-from openhands.resolver.send_pull_request import main
 
 
 @pytest.fixture
@@ -1007,7 +1007,6 @@ def test_main(
     mock_process_single_issue,
     mock_parser,
 ):
-
     # Setup mock parser
     mock_args = MagicMock()
     mock_args.token = None

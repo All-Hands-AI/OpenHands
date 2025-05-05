@@ -6,11 +6,12 @@
 - Displays the conversation between the user and OpenHands.
 - OpenHands explains its actions in this panel.
 
-### Workspace
-- Browse project files and directories.
-- Use the `Open in VS Code` option to:
-  * Modify files
-  * Upload and download files
+### Changes
+- Shows the file changes performed by OpenHands.
+
+### VS Code
+- Embedded VS Code for browsing and modifying files.
+- Can also be used to upload and download files.
 
 ### Terminal
 - A space for OpenHands and users to run terminal commands.
@@ -20,7 +21,7 @@
 - Particularly handy when using OpenHands to perform data visualization tasks.
 
 ### App
-- Shows the web server when OpenHands runs an application.
+- Displays the web server when OpenHands runs an application.
 - Users can interact with the running application.
 
 ### Browser
