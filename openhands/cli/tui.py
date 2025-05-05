@@ -4,6 +4,7 @@
 
 import asyncio
 import sys
+import threading
 import time
 
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -28,6 +29,7 @@ from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
+    ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
     FileEditAction,
@@ -42,6 +44,8 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.llm.metrics import Metrics
+
+ENABLE_STREAMING = False  # FIXME: this doesn't really work
 
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
@@ -66,6 +70,8 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
 }
+
+print_lock = threading.Lock()
 
 
 class UsageMetrics:
@@ -168,27 +174,29 @@ def display_initial_user_prompt(prompt: str):
 # Prompt output display functions
 def display_event(event: Event, config: AppConfig) -> None:
     global streaming_output_text_area
-    if isinstance(event, Action):
-        if hasattr(event, 'thought'):
-            display_message(event.thought)
-    if isinstance(event, MessageAction):
-        if event.source == EventSource.AGENT:
-            display_message(event.content)
-    if isinstance(event, CmdRunAction):
-        display_command(event)
-        initialize_streaming_output()
-    if isinstance(event, CmdOutputObservation):
-        display_command_output(event.content)
-    if isinstance(event, FileEditAction):
-        display_file_edit(event)
-    if isinstance(event, FileEditObservation):
-        display_file_edit(event)
-    if isinstance(event, FileReadObservation):
-        display_file_read(event)
-    if isinstance(event, AgentStateChangedObservation):
-        display_agent_paused_message(event.agent_state)
-    if isinstance(event, ErrorObservation):
-        display_error(event.content)
+    with print_lock:
+        if isinstance(event, Action):
+            if hasattr(event, 'thought'):
+                display_message(event.thought)
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                display_message(event.content)
+        if isinstance(event, CmdRunAction):
+            display_command(event)
+            if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
+                initialize_streaming_output()
+        if isinstance(event, CmdOutputObservation):
+            display_command_output(event.content)
+        if isinstance(event, FileEditAction):
+            display_file_edit(event)
+        if isinstance(event, FileEditObservation):
+            display_file_edit(event)
+        if isinstance(event, FileReadObservation):
+            display_file_read(event)
+        if isinstance(event, AgentStateChangedObservation):
+            display_agent_paused_message(event.agent_state)
+        if isinstance(event, ErrorObservation):
+            display_error(event.content)
 
 
 def display_message(message: str):
@@ -291,6 +299,8 @@ def display_file_read(event: FileReadObservation):
 
 def initialize_streaming_output():
     """Initialize the streaming output TextArea."""
+    if not ENABLE_STREAMING:
+        return
     global streaming_output_text_area
     streaming_output_text_area = TextArea(
         text='',
@@ -315,7 +325,6 @@ def update_streaming_output(text: str):
     if streaming_output_text_area is not None:
         current_text = streaming_output_text_area.text
         streaming_output_text_area.text = current_text + text
-        print('APPENDED', streaming_output_text_area.text)
 
 
 # Interactive command output display functions
