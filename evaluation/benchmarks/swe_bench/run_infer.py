@@ -110,7 +110,6 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
-# TODO
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     mode = metadata.details['mode']
@@ -171,8 +170,8 @@ Phase 2. EXPLORATION: find the files that are related to the problem and possibl
    2.2 Identify all files related to the problem statement.
    2.3 Propose the methods and files to fix the issue and explain why.
 
-Phase 3. [IMPORTANT] REPRODUCTION: before you implement any fix, you MUST write comphrensive tests that will be used to visually analyse the issue and test your proposed changes. Do NOT assume that existing tests in the repository are sufficient for testing your implementation.
-   3.1 Create a comprehensive test file which checks all possible edge cases for your fix. Whenever applicable, you MUST try to visually verify the issue using the browser.
+Phase 3. [IMPORTANT] REPRODUCTION: before you implement any fix, you MUST write comprehensive tests that will be used to visually analyse the issue and test your proposed changes. Do NOT assume that existing tests in the repository are sufficient for testing your implementation.
+   3.1 Create a comprehensive test file which checks all possible edge cases for your fix. Whenever applicable, you MUST visually verify the issue using the browser.
    3.2 Run the test file to confirm that the issue exists.
    3.3 If the issue description contains links to online IDEs containing code for reproducing the error, you should refer to these as well.
 
@@ -187,7 +186,7 @@ Phase 5. IMPLEMENTATION: Edit the source code to implement your chosen solution.
    5.1 Make minimal, focused changes to fix the issue.
    5.2 Check the versions of programming languages and packages to ensure that your code is syntactically correct.
 
-Phase 6. [IMPORTANT] VERIFICATION: Test your implementation thoroughly and visually verify that your implementation works whenever applicable.
+Phase 6. [IMPORTANT] VERIFICATION: Test your implementation thoroughly and whenever applicable visually verify that your implementation is correct by launching the website or app, inspecting the relevant UI component, and ensuring the expected behavior or layout is achieved.
    6.1 Run your tests from Phase 3 to verify your implementation.
    6.2 Add more edge cases to your tests to ensure comprehensive coverage.
    6.3 You MUST run existing tests in the repository which are related to the modified code to ensure you have not broken existing functionality. Do NOT modify existing test files in the repository.
@@ -206,8 +205,8 @@ Be thorough in your exploration, testing, and reasoning. It is fine if your thin
     if RUN_WITH_BROWSING:
         instruction += (
             '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to access GitHub via the browser.\n'
-            'Since you are dealing with front-end code, it is extremely important that you MUST visually verify if your implementation works.\n'
+            'You SHOULD NEVER attempt to access GitHub.\n'
+            'Since you are dealing with front-end code, it is extremely important that you MUST visually verify the correctness of your implementation.\n'
             'You MUST check the versions of programming languages and packages to ensure that all your code is syntactically correct.\n'
             'The bash terminal may not generate any output for commands that run servers or host websites. You MUST access them using the browser.\n'
             '</IMPORTANT!>\n'
@@ -637,11 +636,51 @@ def complete_runtime(
         f'Failed to remove binary files: {str(obs)}',
     )
 
+    # action = CmdRunAction(command='git reset -- package-lock.json **/package-lock.json "**/*.pdf')
+    # action.set_hard_timeout(600)
+    # logger.info(action, extra={'msg_type': 'ACTION'})
+    # obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # assert_and_raise(
+    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+    #     f'Failed to reset package-lock.json and PDF files: {str(obs)}',
+    # )
+
+    # # Remove new package-lock.json files from staging
+    # action = CmdRunAction(command='git rm --cached -f --ignore-unmatch package-lock.json **/package-lock.json')
+    # action.set_hard_timeout(600)
+    # logger.info(action, extra={'msg_type': 'ACTION'})
+    # obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # assert_and_raise(
+    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+    #     f'Failed to remove newly added package-lock.json files: {str(obs)}',
+    # )
+
+    # # Remove new PDF files from staging
+    # action = CmdRunAction(command='git rm --cached -f --ignore-unmatch "**/*.pdf"')
+    # action.set_hard_timeout(600)
+    # logger.info(action, extra={'msg_type': 'ACTION'})
+    # obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # assert_and_raise(
+    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+    #     f'Failed to remove newly added PDF files: {str(obs)}',
+    # )
+    action = CmdRunAction(
+        command=f'git diff --no-color --cached {instance["base_commit"]}'
+    )
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs)
+
     n_retries = 0
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
+            command=f'git diff --no-color --cached {instance["base_commit"]} -- ":(exclude)package-lock.json" ":(exclude)**/package-lock.json" ":(exclude)**.pdf" ":(exclude)**/*.pdf" > patch.diff'
+            # command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
         )
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
         logger.info(action, extra={'msg_type': 'ACTION'})
