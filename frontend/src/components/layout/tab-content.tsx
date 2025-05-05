@@ -3,12 +3,12 @@ import { useLocation } from "react-router";
 import { LoadingSpinner } from "../shared/loading-spinner";
 
 // Lazy load all tab components
-const EditorTab = lazy(() => import("../../routes/editor"));
-const BrowserTab = lazy(() => import("../../routes/browser-tab"));
-const JupyterTab = lazy(() => import("../../routes/jupyter-tab"));
-const ServedTab = lazy(() => import("../../routes/served-tab"));
-const TerminalTab = lazy(() => import("../../routes/terminal-tab"));
-const VSCodeTab = lazy(() => import("../../routes/vscode-tab"));
+const EditorTab = lazy(() => import("#/routes/changes-tab"));
+const BrowserTab = lazy(() => import("#/routes/browser-tab"));
+const JupyterTab = lazy(() => import("#/routes/jupyter-tab"));
+const ServedTab = lazy(() => import("#/routes/served-tab"));
+const TerminalTab = lazy(() => import("#/routes/terminal-tab"));
+const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 
 interface TabContentProps {
   conversationPath: string;
