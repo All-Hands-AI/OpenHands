@@ -1,18 +1,17 @@
 # Repository Customization
 
-You can customize how OpenHands works with your repository by creating a
+You can customize how OpenHands interacts with your repository by creating a
 `.openhands` directory at the root level.
 
 ## Microagents
-You can use microagents to extend the OpenHands prompts with information
-about your project and how you want OpenHands to work. See
-[Repository Microagents](../prompting/microagents-repo) for more information.
+
+Microagents allow you to extend OpenHands prompts with information specific to your project and define how OpenHands
+should function. See [Microagents Overview](../prompting/microagents-overview) for more information.
 
 
 ## Setup Script
-You can add `.openhands/setup.sh`, which will be run every time OpenHands begins
-working with your repository. This is a good place to install dependencies, set
-environment variables, etc.
+You can add a `.openhands/setup.sh` file, which will run every time OpenHands begins working with your repository.
+This is an ideal location for installing dependencies, setting environment variables, and performing other setup tasks.
 
 For example:
 ```bash

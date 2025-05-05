@@ -1,4 +1,5 @@
 from types import MappingProxyType
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
@@ -8,13 +9,21 @@ from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import ProviderToken, ProviderType
+from openhands.integrations.provider import ProviderHandler, ProviderToken, ProviderType
+from openhands.integrations.service_types import AuthenticationError, Repository
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 
 
 class TestRuntime(Runtime):
     """A concrete implementation of Runtime for testing"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.run_action_calls = []
+        self._execute_shell_fn_git_handler = MagicMock(
+            return_value=MagicMock(exit_code=0, stdout='', stderr='')
+        )
 
     async def connect(self):
         pass
@@ -23,22 +32,22 @@ class TestRuntime(Runtime):
         pass
 
     def browse(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
     def browse_interactive(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
     def run(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
     def run_ipython(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
     def read(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
     def write(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
     def copy_from(self, path):
         return ''
@@ -50,10 +59,11 @@ class TestRuntime(Runtime):
         return []
 
     def run_action(self, action: Action) -> Observation:
-        return NullObservation()
+        self.run_action_calls.append(action)
+        return NullObservation(content='')
 
     def call_tool_mcp(self, action):
-        return NullObservation()
+        return NullObservation(content='')
 
 
 @pytest.fixture
@@ -78,6 +88,20 @@ def runtime(temp_dir):
         git_provider_tokens=git_provider_tokens,
     )
     return runtime
+
+
+def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=True):
+    repo = Repository(
+        id=123, full_name='owner/repo', git_provider=provider, is_public=is_public
+    )
+
+    async def mock_verify_repo_provider(*_args, **_kwargs):
+        return repo
+
+    monkeypatch.setattr(
+        ProviderHandler, 'verify_repo_provider', mock_verify_repo_provider
+    )
+    return repo
 
 
 @pytest.mark.asyncio
@@ -183,3 +207,200 @@ async def test_export_latest_git_provider_tokens_token_update(runtime):
 
     # Verify that the new token was exported
     assert runtime.event_stream.secrets == {'github_token': new_token}
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
+    """Test that git init is run when no repository is selected and user_id is set"""
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+    )
+
+    # Call the function with no repository
+    result = await runtime.clone_or_init_repo(None, None, None)
+
+    # Verify that git init was called
+    assert len(runtime.run_action_calls) == 1
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert runtime.run_action_calls[0].command == 'git init'
+    assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir):
+    """Test that git init is run when no repository is selected, no user_id, and no workspace_base"""
+    config = AppConfig()
+    config.workspace_base = None  # Ensure workspace_base is not set
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, sid='test', user_id=None
+    )
+
+    # Call the function with no repository
+    result = await runtime.clone_or_init_repo(None, None, None)
+
+    # Verify that git init was called
+    assert len(runtime.run_action_calls) == 1
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert runtime.run_action_calls[0].command == 'git init'
+    assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_dir):
+    """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
+    config = AppConfig()
+    config.workspace_base = '/some/path'  # Set workspace_base
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, sid='test', user_id=None
+    )
+
+    # Call the function with no repository
+    result = await runtime.clone_or_init_repo(None, None, None)
+
+    # Verify that git init was not called
+    assert len(runtime.run_action_calls) == 0
+    assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_auth_error(temp_dir):
+    """Test that RuntimeError is raised when authentication fails"""
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+    )
+
+    # Mock the verify_repo_provider method to raise AuthenticationError
+    with patch.object(
+        ProviderHandler,
+        'verify_repo_provider',
+        side_effect=AuthenticationError('Auth failed'),
+    ):
+        # Call the function with a repository
+        with pytest.raises(RuntimeError) as excinfo:
+            await runtime.clone_or_init_repo(None, 'owner/repo', None)
+
+        # Verify the error message
+        assert 'Git provider authentication issue when cloning repo' in str(
+            excinfo.value
+        )
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    github_token = 'github_test_token'
+    git_provider_tokens = MappingProxyType(
+        {ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))}
+    )
+
+    runtime = TestRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid='test',
+        user_id='test_user',
+        git_provider_tokens=git_provider_tokens,
+    )
+
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
+
+    result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
+
+    cmd = runtime.run_action_calls[0].command
+    assert f'git clone https://{github_token}@github.com/owner/repo.git repo' in cmd
+    assert result == 'repo'
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
+    """Test cloning a GitHub repository without a token"""
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+    )
+
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
+    result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
+
+    # Verify that git clone was called with the public URL
+    assert len(runtime.run_action_calls) == 1
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+
+    # Check that the command contains the correct URL format without token
+    cmd = runtime.run_action_calls[0].command
+    assert 'git clone https://github.com/owner/repo.git repo' in cmd
+    assert 'cd repo' in cmd
+    assert 'git checkout -b openhands-workspace-' in cmd
+    assert result == 'repo'
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    gitlab_token = 'gitlab_test_token'
+    git_provider_tokens = MappingProxyType(
+        {ProviderType.GITLAB: ProviderToken(token=SecretStr(gitlab_token))}
+    )
+
+    runtime = TestRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid='test',
+        user_id='test_user',
+        git_provider_tokens=git_provider_tokens,
+    )
+
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITLAB)
+
+    result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
+
+    cmd = runtime.run_action_calls[0].command
+    assert (
+        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in cmd
+    )
+    assert result == 'repo'
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
+    """Test cloning a repository with a specified branch"""
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+    )
+
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
+    result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')
+
+    # Verify that git clone was called with the correct branch checkout
+    assert len(runtime.run_action_calls) == 1
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+
+    # Check that the command contains the correct branch checkout
+    cmd = runtime.run_action_calls[0].command
+    assert 'git clone https://github.com/owner/repo.git repo' in cmd
+    assert 'cd repo' in cmd
+    assert 'git checkout feature-branch' in cmd
+    assert 'git checkout -b' not in cmd  # Should not create a new branch
+    assert result == 'repo'
