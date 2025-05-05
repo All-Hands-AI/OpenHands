@@ -165,7 +165,9 @@ default_agent = "TestAgent"
     finalize_config(default_config)
 
     # after finalize_config, workspace_mount_path is set based on custom_volumes
-    assert default_config.workspace_mount_path == os.path.abspath('/opt/files2/workspace')
+    assert default_config.workspace_mount_path == os.path.abspath(
+        '/opt/files2/workspace'
+    )
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
 
@@ -331,7 +333,9 @@ user_id = 1001
 
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.custom_volumes == '/opt/files/workspace:/workspace:rw'
-    assert default_config.workspace_mount_path == os.path.abspath('/opt/files/workspace')
+    assert default_config.workspace_mount_path == os.path.abspath(
+        '/opt/files/workspace'
+    )
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
     assert default_config.sandbox.timeout == 1
     assert default_config.sandbox.base_container_image == 'custom_image'
