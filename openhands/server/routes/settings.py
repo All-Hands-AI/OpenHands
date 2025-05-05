@@ -42,14 +42,11 @@ async def load_settings(
         user_secrets = await invalidate_legacy_secrets_store(
             settings, settings_store, secrets_store
         )
-
         
         # If invalidation is successful, then the returned user secrets holds the most recent values
         git_providers = (
             user_secrets.provider_tokens if user_secrets else provider_tokens
         )
-
-        print(git_providers)
 
         provider_tokens_set: dict[ProviderType, str | None] = {}
         if git_providers:
