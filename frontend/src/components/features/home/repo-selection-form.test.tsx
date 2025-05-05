@@ -4,6 +4,7 @@ import { RepositorySelectionForm } from "./repo-selection-form";
 
 // Create mock functions
 const mockUseUserRepositories = vi.fn();
+const mockUseRepositoryBranches = vi.fn();
 const mockUseCreateConversation = vi.fn();
 const mockUseIsCreatingConversation = vi.fn();
 const mockUseTranslation = vi.fn();
@@ -11,6 +12,12 @@ const mockUseAuth = vi.fn();
 
 // Setup default mock returns
 mockUseUserRepositories.mockReturnValue({
+  data: [],
+  isLoading: false,
+  isError: false,
+});
+
+mockUseRepositoryBranches.mockReturnValue({
   data: [],
   isLoading: false,
   isError: false,
@@ -45,6 +52,10 @@ mockUseAuth.mockReturnValue({
 // Mock the modules
 vi.mock("#/hooks/query/use-user-repositories", () => ({
   useUserRepositories: () => mockUseUserRepositories(),
+}));
+
+vi.mock("#/hooks/query/use-repository-branches", () => ({
+  useRepositoryBranches: () => mockUseRepositoryBranches(),
 }));
 
 vi.mock("#/hooks/mutation/use-create-conversation", () => ({

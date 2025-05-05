@@ -11,10 +11,10 @@ import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import { AuthProvider } from "./context/auth-context";
-import { queryClientConfig } from "./query-client-config";
+import { queryClient } from "./query-client-config";
 import OpenHands from "./api/open-hands";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 
@@ -58,8 +58,6 @@ async function prepareApp() {
     });
   }
 }
-
-export const queryClient = new QueryClient(queryClientConfig);
 
 prepareApp().then(() =>
   startTransition(() => {
