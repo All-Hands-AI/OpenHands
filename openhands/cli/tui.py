@@ -4,6 +4,7 @@
 
 import asyncio
 import sys
+import threading
 import time
 
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -63,6 +64,8 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
 }
+
+print_lock = threading.Lock()
 
 
 class UsageMetrics:
@@ -164,28 +167,28 @@ def display_initial_user_prompt(prompt: str):
 
 # Prompt output display functions
 def display_event(event: Event, config: AppConfig) -> None:
-    if isinstance(event, Action):
-        if hasattr(event, 'thought'):
-            display_message(event.thought)
-    if isinstance(event, MessageAction):
-        if event.source == EventSource.AGENT:
-            display_message(event.content)
-    if isinstance(event, CmdRunAction):
-        display_command(event)
-    if isinstance(event, CmdOutputObservation):
-        display_command_output(event.content)
-    if isinstance(event, FileEditAction):
-        display_file_edit(event)
-    if isinstance(event, FileEditObservation):
-        display_file_edit(event)
-    if isinstance(event, FileReadObservation):
-        display_file_read(event)
-    if isinstance(event, AgentStateChangedObservation):
-        display_agent_paused_message(event.agent_state)
+    with print_lock:
+        if isinstance(event, Action):
+            if hasattr(event, 'thought'):
+                display_message(event.thought)
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                display_message(event.content)
+        if isinstance(event, CmdRunAction):
+            display_command(event)
+        if isinstance(event, CmdOutputObservation):
+            display_command_output(event.content)
+        if isinstance(event, FileEditAction):
+            display_file_edit(event)
+        if isinstance(event, FileEditObservation):
+            display_file_edit(event)
+        if isinstance(event, FileReadObservation):
+            display_file_read(event)
+        if isinstance(event, AgentStateChangedObservation):
+            display_agent_paused_message(event.agent_state)
 
 
 def display_message(message: str):
-    time.sleep(0.2)
     message = message.strip()
 
     if message:
@@ -248,6 +251,7 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
             title='File Edit',
             style=f'fg:{COLOR_GREY}',
         )
+        print_formatted_text('')
         print_container(container)
 
 
@@ -262,6 +266,7 @@ def display_file_read(event: FileReadObservation):
         title='File Read',
         style=f'fg:{COLOR_GREY}',
     )
+    print_formatted_text('')
     print_container(container)
 
 
