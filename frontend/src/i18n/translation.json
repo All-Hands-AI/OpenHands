@@ -4388,6 +4388,21 @@
         "tr": "Çalışma alanı ayarlanıyor...",
         "ja": "ワークスペースを設定中..."
     },
+    "STATUS$SETTING_UP_GIT_HOOKS": {
+        "en": "Setting up git hooks...",
+        "zh-CN": "正在设置 git 钩子...",
+        "zh-TW": "正在設置 git 鉤子...",
+        "de": "Git-Hooks werden eingerichtet...",
+        "ko-KR": "git 훅을 설정하는 중...",
+        "no": "Setter opp git-hooks...",
+        "it": "Configurazione degli hook git...",
+        "pt": "Configurando hooks do git...",
+        "es": "Configurando hooks de git...",
+        "ar": "جاري إعداد خطافات git...",
+        "fr": "Configuration des hooks git...",
+        "tr": "Git kancaları ayarlanıyor...",
+        "ja": "git フックを設定中..."
+    },
     "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
         "en": "Disconnect",
         "es": "Desconectar",
