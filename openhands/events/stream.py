@@ -104,8 +104,11 @@ class EventStream(EventStore):
         ):
             loop = self._thread_loops[subscriber_id][callback_id]
             try:
-                loop.stop()
-                loop.close()
+                if loop.is_running():
+                    loop.call_soon_threadsafe(loop.stop)
+                else:
+                    loop.stop()
+                    loop.close()
             except Exception as e:
                 logger.warning(
                     f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
