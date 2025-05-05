@@ -95,6 +95,7 @@ describe("TaskCard", () => {
         [],
         undefined,
         MOCK_TASK_1,
+        undefined,
       );
     });
   });
