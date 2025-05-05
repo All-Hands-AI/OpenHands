@@ -41,7 +41,9 @@ class GitLabService(BaseGitService, GitService):
             self.token = token
 
         if base_domain:
+            print('prev', self.BASE_URL)
             self.BASE_URL = f'https://{base_domain}/api/v4'
+            print("afteer", self.BASE_URL)
             self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
     @property
