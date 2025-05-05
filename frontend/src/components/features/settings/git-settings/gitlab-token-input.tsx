@@ -6,38 +6,55 @@ import { KeyStatusIcon } from "../key-status-icon";
 
 interface GitLabTokenInputProps {
   onChange: (value: string) => void;
+  onGitLabHostChange: (value: string) => void;
   isGitLabTokenSet: boolean;
   name: string;
+  gitlabHostSet: string | null | undefined;
+  isSaas: boolean;
 }
 
 export function GitLabTokenInput({
   onChange,
+  onGitLabHostChange,
   isGitLabTokenSet,
   name,
+  gitlabHostSet,
+  isSaas,
 }: GitLabTokenInputProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-col gap-6">
+      {!isSaas && (
+        <SettingsInput
+          testId={name}
+          name={name}
+          onChange={onChange}
+          label={t(I18nKey.GITLAB$TOKEN_LABEL)}
+          type="password"
+          className="w-[680px]"
+          placeholder={isGitLabTokenSet ? "<hidden>" : ""}
+          startContent={
+            isGitLabTokenSet && (
+              <KeyStatusIcon
+                testId="gl-set-token-indicator"
+                isSet={isGitLabTokenSet}
+              />
+            )
+          }
+        />
+      )}
+
       <SettingsInput
-        testId={name}
-        name={name}
-        onChange={onChange}
-        label={t(I18nKey.GITLAB$TOKEN_LABEL)}
-        type="password"
+        onChange={onGitLabHostChange || (() => {})}
+        label={t(I18nKey.GITLAB$BASE_DOMAIN_LABEL)}
+        type="text"
         className="w-[680px]"
-        placeholder={isGitLabTokenSet ? "<hidden>" : ""}
-        startContent={
-          isGitLabTokenSet && (
-            <KeyStatusIcon
-              testId="gl-set-token-indicator"
-              isSet={isGitLabTokenSet}
-            />
-          )
-        }
+        placeholder={"gitlab.com"}
+        defaultValue={gitlabHostSet ? gitlabHostSet : undefined}
       />
 
-      <GitLabTokenHelpAnchor />
+      {!isSaas && <GitLabTokenHelpAnchor />}
     </div>
   );
 }

@@ -24,13 +24,21 @@ function GitSettingsScreen() {
   const { mutate: disconnectGitTokens } = useLogout();
 
   const { providerTokensSet } = useAuth();
-  const { isLoading } = useSettings();
+  const { data: settings, isLoading } = useSettings();
   const { data: config } = useConfig();
 
   const [githubTokenInputHasValue, setGithubTokenInputHasValue] =
     React.useState(false);
   const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
     React.useState(false);
+
+  const [githubHostInputHasValue, setGithubHostInputHasValue] =
+    React.useState(false);
+  const [gitlabHostInputHasValue, setGitlabHostInputHasValue] =
+    React.useState(false);
+
+  const existingGithubHost = settings?.PROVIDER_TOKENS_SET["github"];
+  const existingGitlabHost = settings?.PROVIDER_TOKENS_SET["gitlab"];
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providerTokensSet.includes("github");
@@ -47,12 +55,16 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
+    const githubHost =
+      formData.get("github-base-domain-input")?.toString() || "";
+    const gitlabHost =
+      formData.get("gitlab-base-domain-input")?.toString() || "";
 
     saveGitProviders(
       {
         providers: {
-          github: { token: githubToken },
-          gitlab: { token: gitlabToken },
+          github: { token: githubToken, host: githubHost },
+          gitlab: { token: gitlabToken, host: gitlabHost },
         },
       },
       {
@@ -66,12 +78,18 @@ function GitSettingsScreen() {
         onSettled: () => {
           setGithubTokenInputHasValue(false);
           setGitlabTokenInputHasValue(false);
+          setGithubHostInputHasValue(false);
+          setGitlabHostInputHasValue(false);
         },
       },
     );
   };
 
-  const formIsClean = !githubTokenInputHasValue && !gitlabTokenInputHasValue;
+  const formIsClean =
+    !githubTokenInputHasValue &&
+    !gitlabTokenInputHasValue &&
+    !githubHostInputHasValue &&
+    !gitlabHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
 
   return (
@@ -94,6 +112,11 @@ function GitSettingsScreen() {
             onChange={(value) => {
               setGithubTokenInputHasValue(!!value);
             }}
+            onGitHubHostChange={(value) => {
+              setGitlabHostInputHasValue(!!value);
+            }}
+            githubHostSet={existingGithubHost}
+            isSaas={isSaas}
           />
 
           <GitLabTokenInput
@@ -102,6 +125,11 @@ function GitSettingsScreen() {
             onChange={(value) => {
               setGitlabTokenInputHasValue(!!value);
             }}
+            onGitLabHostChange={(value) => {
+              setGitlabHostInputHasValue(!!value);
+            }}
+            gitlabHostSet={existingGitlabHost}
+            isSaas={isSaas}
           />
         </div>
       )}
