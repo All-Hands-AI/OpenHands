@@ -22,6 +22,8 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     PROVIDER_TOKENS_SET: apiSettings.provider_tokens_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
+    ENABLE_PROACTIVE_CONVERSATION_STARTERS:
+      apiSettings.enable_proactive_conversation_starters,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     IS_NEW_USER: false,
   };
