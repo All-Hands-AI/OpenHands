@@ -73,33 +73,21 @@ def test_container_not_stopped_when_keep_runtime_alive_true(
 
 def test_custom_volumes_mode_extraction():
     """Test that the mount mode is correctly extracted from custom_volumes."""
+    import os
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-    # Create a mock DockerRuntime instance
-    runtime = MagicMock(spec=DockerRuntime)
-
-    # Test with read-only mode
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
     runtime.config.custom_volumes = '/host/path:/container/path:ro'
     runtime.config.workspace_mount_path = '/host/path'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path'
 
-    # Call the _create_container method directly
-    volumes = {
-        runtime.config.workspace_mount_path: {
-            'bind': runtime.config.workspace_mount_path_in_sandbox,
-            'mode': 'rw',  # Default mode
-        }
-    }
-
-    # Simulate the code in DockerRuntime that extracts the mode
-    if runtime.config.custom_volumes is not None:
-        parts = runtime.config.custom_volumes.split(':')
-        if len(parts) > 2:
-            volumes[runtime.config.workspace_mount_path]['mode'] = parts[2]
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
 
     # Assert that the mode was correctly set to 'ro'
-    assert volumes['/host/path']['mode'] == 'ro'
+    assert volumes[os.path.abspath('/host/path')]['mode'] == 'ro'
 
 
 # This test has been replaced by test_custom_volumes_multiple_mounts
@@ -111,10 +99,8 @@ def test_custom_volumes_multiple_mounts():
 
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-    # Create a mock DockerRuntime instance
-    runtime = MagicMock(spec=DockerRuntime)
-
-    # Test with multiple mounts
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
     runtime.config.runtime_mount = None
     runtime.config.custom_volumes = (
@@ -123,26 +109,8 @@ def test_custom_volumes_multiple_mounts():
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 
-    # Initialize volumes dictionary
-    volumes = {}
-
-    # Simulate the code in DockerRuntime that processes custom volumes
-    if runtime.config.custom_volumes is not None:
-        # Handle multiple mounts with comma delimiter
-        mounts = runtime.config.custom_volumes.split(',')
-
-        for mount in mounts:
-            parts = mount.split(':')
-            if len(parts) >= 2:
-                host_path = os.path.abspath(parts[0])
-                container_path = parts[1]
-                # Default mode is 'rw' if not specified
-                mount_mode = parts[2] if len(parts) > 2 else 'rw'
-
-                volumes[host_path] = {
-                    'bind': container_path,
-                    'mode': mount_mode,
-                }
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
 
     # Assert that both mounts were processed correctly
     assert len(volumes) == 2
@@ -158,31 +126,15 @@ def test_multiple_custom_volumes():
 
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-    # Create a mock DockerRuntime instance
-    runtime = MagicMock(spec=DockerRuntime)
-
-    # Test with multiple custom volumes
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
     runtime.config.custom_volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 
-    # Initialize volumes dictionary
-    volumes = {}
-
-    # Simulate the code in DockerRuntime that processes custom_volumes
-    if runtime.config.custom_volumes is not None:
-        mounts = runtime.config.custom_volumes.split(',')
-        for mount in mounts:
-            parts = mount.split(':')
-            if len(parts) >= 2:
-                host_path = os.path.abspath(parts[0])
-                container_path = parts[1]
-                mount_mode = parts[2] if len(parts) > 2 else 'rw'
-                volumes[host_path] = {
-                    'bind': container_path,
-                    'mode': mount_mode,
-                }
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
 
     # Assert that all mounts were processed correctly
     assert len(volumes) == 3
@@ -196,30 +148,18 @@ def test_multiple_custom_volumes():
 
 def test_custom_volumes_default_mode():
     """Test that the default mount mode (rw) is used when not specified in custom_volumes."""
+    import os
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-    # Create a mock DockerRuntime instance
-    runtime = MagicMock(spec=DockerRuntime)
-
-    # Test with no mode specified (should default to 'rw')
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
     runtime.config.custom_volumes = '/host/path:/container/path'
     runtime.config.workspace_mount_path = '/host/path'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path'
 
-    # Call the _create_container method directly
-    volumes = {
-        runtime.config.workspace_mount_path: {
-            'bind': runtime.config.workspace_mount_path_in_sandbox,
-            'mode': 'rw',  # Default mode
-        }
-    }
-
-    # Simulate the code in DockerRuntime that extracts the mode
-    if runtime.config.custom_volumes is not None:
-        parts = runtime.config.custom_volumes.split(':')
-        if len(parts) > 2:
-            volumes[runtime.config.workspace_mount_path]['mode'] = parts[2]
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
 
     # Assert that the mode remains 'rw' (default)
-    assert volumes['/host/path']['mode'] == 'rw'
+    assert volumes[os.path.abspath('/host/path')]['mode'] == 'rw'
