@@ -171,20 +171,24 @@ async def modify_llm_settings_basic(
             error_message='Invalid provider selected',
         )
 
-        model_list = organized_models[provider]['models']
+        provider_models = organized_models[provider]['models']
         if provider == 'openai':
-            model_list = [m for m in model_list if m not in VERIFIED_OPENAI_MODELS]
-            model_list = VERIFIED_OPENAI_MODELS + model_list
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_OPENAI_MODELS
+            ]
+            provider_models = VERIFIED_OPENAI_MODELS + provider_models
         if provider == 'anthropic':
-            model_list = [m for m in model_list if m not in VERIFIED_ANTHROPIC_MODELS]
-            model_list = VERIFIED_ANTHROPIC_MODELS + model_list
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_ANTHROPIC_MODELS
+            ]
+            provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
-        model_completer = FuzzyWordCompleter(model_list)
+        model_completer = FuzzyWordCompleter(provider_models)
         model = await get_validated_input(
             session,
             '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
             completer=model_completer,
-            validator=lambda x: x in organized_models[provider]['models'],
+            validator=lambda x: x in provider_models,
             error_message=f'Invalid model selected for provider {provider}',
         )
 
@@ -203,7 +207,8 @@ async def modify_llm_settings_basic(
 
     # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
-    if provider is None or model is None or api_key is None:
+    if provider is None or model is None or api_key is None:  # type: ignore[unreachable]
+        print('Error: One or more required inputs were not provided.')
         return
 
     save_settings = save_settings_confirmation()
@@ -212,7 +217,7 @@ async def modify_llm_settings_basic(
         return
 
     llm_config = config.get_llm_config()
-    llm_config.model = provider + organized_models[provider]['separator'] + model
+    llm_config.model = f"{provider}{organized_models[provider]['separator']}{model}"
     llm_config.api_key = SecretStr(api_key)
     llm_config.base_url = None
     config.set_llm_config(llm_config)
@@ -232,7 +237,7 @@ async def modify_llm_settings_basic(
     if not settings:
         settings = Settings()
 
-    settings.llm_model = provider + organized_models[provider]['separator'] + model
+    settings.llm_model = f"{provider}{organized_models[provider]['separator']}{model}"
     settings.llm_api_key = SecretStr(api_key)
     settings.llm_base_url = None
     settings.agent = OH_DEFAULT_AGENT
@@ -306,7 +311,8 @@ async def modify_llm_settings_advanced(
 
     # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
-    if custom_model is None or base_url is None or api_key is None or agent is None:
+    if custom_model is None or base_url is None or api_key is None or agent is None:  # type: ignore[unreachable]
+        print('Error: One or more required inputs were not provided.')
         return
 
     save_settings = save_settings_confirmation()

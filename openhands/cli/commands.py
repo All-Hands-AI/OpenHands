@@ -214,7 +214,7 @@ async def init_repository(current_dir: str) -> bool:
     if repo_file_path.exists():
         try:
             content = await asyncio.get_event_loop().run_in_executor(
-                None, read_file, repo_file_path
+                None, read_file, str(repo_file_path)
             )
 
             print_formatted_text(
@@ -243,7 +243,7 @@ async def init_repository(current_dir: str) -> bool:
             )
 
             if init_repo:
-                write_to_file(repo_file_path, '')
+                write_to_file(str(repo_file_path), '')
         except Exception:
             print_formatted_text('Error reading repository instructions file (repo.md)')
             init_repo = False
