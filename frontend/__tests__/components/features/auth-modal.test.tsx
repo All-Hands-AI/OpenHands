@@ -6,7 +6,7 @@ import * as AuthHook from "#/context/auth-context";
 
 // Mock the useAuthUrl hook
 vi.mock("#/hooks/use-auth-url", () => ({
-  useAuthUrl: () => "https://gitlab.com/oauth/authorize"
+  useAuthUrl: () => "https://gitlab.com/oauth/authorize",
 }));
 
 describe("AuthModal", () => {
@@ -16,7 +16,8 @@ describe("AuthModal", () => {
       providersAreSet: false,
       setProvidersAreSet: vi.fn(),
       providerTokensSet: [],
-      setProviderTokensSet: vi.fn()
+      setProviderTokensSet: vi.fn(),
+      clear: vi.fn(),
     });
   });
 
@@ -28,8 +29,12 @@ describe("AuthModal", () => {
   it("should render the GitHub and GitLab buttons", () => {
     render(<AuthModal githubAuthUrl="mock-url" appMode="saas" />);
 
-    const githubButton = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
-    const gitlabButton = screen.getByRole("button", { name: "GITLAB$CONNECT_TO_GITLAB" });
+    const githubButton = screen.getByRole("button", {
+      name: "GITHUB$CONNECT_TO_GITHUB",
+    });
+    const gitlabButton = screen.getByRole("button", {
+      name: "GITLAB$CONNECT_TO_GITLAB",
+    });
 
     expect(githubButton).toBeInTheDocument();
     expect(gitlabButton).toBeInTheDocument();
@@ -40,7 +45,9 @@ describe("AuthModal", () => {
     const mockUrl = "https://github.com/login/oauth/authorize";
     render(<AuthModal githubAuthUrl={mockUrl} appMode="saas" />);
 
-    const githubButton = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
+    const githubButton = screen.getByRole("button", {
+      name: "GITHUB$CONNECT_TO_GITHUB",
+    });
     await user.click(githubButton);
 
     expect(window.location.href).toBe(mockUrl);
