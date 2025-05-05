@@ -156,7 +156,7 @@ function AppSettingsScreen() {
               defaultIsToggled={!!settings.ENABLE_PROACTIVE_CONVERSATIONS}
               onToggle={checkIfProactiveConversationsSwitchHasChanged}
             >
-              {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
+              {"Proactive Conversation Starters"}
             </SettingsSwitch>
           )}
         </div>
