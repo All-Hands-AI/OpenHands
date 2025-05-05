@@ -2,8 +2,12 @@ import { useEffect } from "react";
 import { openHands } from "#/api/open-hands-axios";
 import { useLogoutHandler } from "#/hooks/useLogoutHandler";
 
-export function AxiosInterceptorSetup() {
-  const handleLogoutAndRefresh = useLogoutHandler();
+interface AxiosInterceptorSetupProps {
+  appMode?: string;
+}
+
+export function AxiosInterceptorSetup({ appMode }: AxiosInterceptorSetupProps) {
+  const handleLogoutAndRefresh = useLogoutHandler(appMode);
 
   useEffect(() => {
     const interceptor = openHands.interceptors.response.use(
