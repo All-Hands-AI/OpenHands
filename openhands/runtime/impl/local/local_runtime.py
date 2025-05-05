@@ -228,7 +228,7 @@ class LocalRuntime(ActionExecutionClient):
             override_username=self._username,
         )
 
-        logger.info(f'Starting server with command: {cmd}')
+        self.log('debug', f'Starting server with command: {cmd}')
         env = os.environ.copy()
         # Get the code repo path
         code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
@@ -311,7 +311,7 @@ class LocalRuntime(ActionExecutionClient):
             await call_sync_from_async(self.setup_initial_env)
 
         self.log(
-            'info',
+            'debug',
             f'Server initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
         if not self.attach_to_existing:
