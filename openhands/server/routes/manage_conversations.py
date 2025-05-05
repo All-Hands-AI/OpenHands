@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime, timezone
 
@@ -162,7 +163,8 @@ async def _create_new_conversation(
         replay_json=replay_json,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
-
+    
+    asyncio.create_task(auto_generate_title(conversation_id, user_id))
     return conversation_id
 
 
