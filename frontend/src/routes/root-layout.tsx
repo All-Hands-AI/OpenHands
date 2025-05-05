@@ -21,6 +21,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -58,6 +59,7 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const tosPageStatus = useIsOnTosPage();
   const [searchParams] = useSearchParams();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
@@ -71,65 +73,96 @@ export default function MainApp() {
     isError: authError,
   } = useIsAuthed();
 
+  // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
 
+  // When on TOS page, we don't use the GitHub auth URL
+  const effectiveGitHubAuthUrl = tosPageStatus ? null : gitHubAuthUrl;
+
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
-    if (settings?.LANGUAGE) {
+    // Don't change language when on TOS page
+    if (!tosPageStatus && settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings?.LANGUAGE]);
+  }, [settings?.LANGUAGE, tosPageStatus]);
 
   React.useEffect(() => {
-    const consentFormModalIsOpen =
-      settings?.USER_CONSENTS_TO_ANALYTICS === null;
+    // Don't show consent form when on TOS page
+    if (!tosPageStatus) {
+      const consentFormModalIsOpen =
+        settings?.USER_CONSENTS_TO_ANALYTICS === null;
 
-    setConsentFormIsOpen(consentFormModalIsOpen);
-  }, [settings]);
-
-  React.useEffect(() => {
-    // Migrate user consent to the server if it was previously stored in localStorage
-    migrateUserConsent({
-      handleAnalyticsWasPresentInLocalStorage: () => {
-        setConsentFormIsOpen(false);
-      },
-    });
-  }, []);
-
-  React.useEffect(() => {
-    // Don't allow users to use the app if it 402s
-    if (error?.status === 402 && pathname !== "/") {
-      navigate("/");
-    } else if (!isFetching && searchParams.get("free_credits") === "success") {
-      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
-      searchParams.delete("free_credits");
-      navigate("/");
+      setConsentFormIsOpen(consentFormModalIsOpen);
     }
-  }, [error?.status, pathname, isFetching]);
+  }, [settings, tosPageStatus]);
 
-  const userIsAuthed = !!isAuthed && !authError;
+  React.useEffect(() => {
+    // Don't migrate user consent when on TOS page
+    if (!tosPageStatus) {
+      // Migrate user consent to the server if it was previously stored in localStorage
+      migrateUserConsent({
+        handleAnalyticsWasPresentInLocalStorage: () => {
+          setConsentFormIsOpen(false);
+        },
+      });
+    }
+  }, [tosPageStatus]);
+
+  React.useEffect(() => {
+    // Don't do any redirects when on TOS page
+    if (!tosPageStatus) {
+      // Don't allow users to use the app if it 402s
+      if (error?.status === 402 && pathname !== "/") {
+        navigate("/");
+      } else if (
+        !isFetching &&
+        searchParams.get("free_credits") === "success"
+      ) {
+        displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
+        searchParams.delete("free_credits");
+        navigate("/");
+      }
+    }
+  }, [error?.status, pathname, isFetching, tosPageStatus]);
+
+  // When on TOS page, we don't make any API calls, so we need to handle this case
+  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
+
+  // Only show the auth modal if:
+  // 1. User is not authenticated
+  // 2. We're not currently on the TOS page
+  // 3. We're in SaaS mode
   const renderAuthModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+    !isFetchingAuth &&
+    !userIsAuthed &&
+    !tosPageStatus &&
+    config.data?.APP_MODE === "saas";
 
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
+      className="bg-base p-3 h-screen md:min-w-[1024px] flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
       <div
         id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative"
+        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
       >
         <Outlet />
       </div>
 
-      {renderAuthModal && <AuthModal githubAuthUrl={gitHubAuthUrl} />}
+      {renderAuthModal && (
+        <AuthModal
+          githubAuthUrl={effectiveGitHubAuthUrl}
+          appMode={config.data?.APP_MODE}
+        />
+      )}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {

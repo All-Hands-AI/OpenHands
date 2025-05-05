@@ -6,7 +6,7 @@ import pytest
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
-from openhands.microagent import BaseMicroAgent
+from openhands.microagent import BaseMicroagent
 from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
@@ -72,7 +72,7 @@ def test_prompt_manager_file_not_found(prompt_dir):
     """Test PromptManager behavior when a template file is not found."""
     # Test with a non-existent template
     with pytest.raises(FileNotFoundError):
-        BaseMicroAgent.load(
+        BaseMicroagent.load(
             os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md')
         )
 
@@ -145,30 +145,6 @@ This is information from agent 2
     # Test with no triggered agents
     result = manager.build_microagent_info([])
     assert result.strip() == ''
-
-
-def test_add_examples_to_initial_message(prompt_dir):
-    """Test adding example messages to an initial message."""
-    # Create a user_prompt.j2 template file
-    with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
-        f.write('This is an example user message')
-
-    # Initialize the PromptManager
-    manager = PromptManager(prompt_dir=prompt_dir)
-
-    # Create a message
-    message = Message(role='user', content=[TextContent(text='Original content')])
-
-    # Add examples to the message
-    manager.add_examples_to_initial_message(message)
-
-    # Check that the example was added at the beginning
-    assert len(message.content) == 2
-    assert message.content[0].text == 'This is an example user message'
-    assert message.content[1].text == 'Original content'
-
-    # Clean up
-    os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
 
 
 def test_add_turns_left_reminder(prompt_dir):

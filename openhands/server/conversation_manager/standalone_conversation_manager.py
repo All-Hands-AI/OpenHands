@@ -18,9 +18,9 @@ from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
-from openhands.server.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
 from openhands.utils.import_utils import get_impl
@@ -202,9 +202,7 @@ class StandaloneConversationManager(ConversationManager):
                 ConversationStore,  # type: ignore
                 self.server_config.conversation_store_class,
             )
-        store = await conversation_store_class.get_instance(
-            self.config, user_id, github_user_id
-        )
+        store = await conversation_store_class.get_instance(self.config, user_id)
         return store
 
     async def get_running_agent_loops(
@@ -257,49 +255,10 @@ class StandaloneConversationManager(ConversationManager):
         github_user_id: str | None = None,
     ) -> EventStore:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
-        session: Session | None = None
         if not await self.is_agent_loop_running(sid):
-            logger.info(f'start_agent_loop:{sid}', extra={'session_id': sid})
-
-            response_ids = await self.get_running_agent_loops(user_id)
-            if len(response_ids) >= self.config.max_concurrent_conversations:
-                logger.info(
-                    'too_many_sessions_for:{user_id}',
-                    extra={'session_id': sid, 'user_id': user_id},
-                )
-                # Get the conversations sorted (oldest first)
-                conversation_store = await self._get_conversation_store(
-                    user_id, github_user_id
-                )
-                conversations = await conversation_store.get_all_metadata(response_ids)
-                conversations.sort(key=_last_updated_at_key, reverse=True)
-
-                while len(conversations) >= self.config.max_concurrent_conversations:
-                    oldest_conversation_id = conversations.pop().conversation_id
-                    await self.close_session(oldest_conversation_id)
-
-            session = Session(
-                sid=sid,
-                file_store=self.file_store,
-                config=self.config,
-                sio=self.sio,
-                user_id=user_id,
+            await self._start_agent_loop(
+                sid, settings, user_id, initial_user_msg, replay_json, github_user_id
             )
-            self._local_agent_loops_by_sid[sid] = session
-            asyncio.create_task(
-                session.initialize_agent(settings, initial_user_msg, replay_json)
-            )
-            # This does not get added when resuming an existing conversation
-            try:
-                session.agent_session.event_stream.subscribe(
-                    EventStreamSubscriber.SERVER,
-                    self._create_conversation_update_callback(
-                        user_id, github_user_id, sid
-                    ),
-                    UPDATED_AT_CALLBACK_ID,
-                )
-            except ValueError:
-                pass  # Already subscribed - take no action
 
         event_store = await self._get_event_store(sid, user_id)
         if not event_store:
@@ -309,6 +268,72 @@ class StandaloneConversationManager(ConversationManager):
             )
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_store
+
+    async def _start_agent_loop(
+        self,
+        sid: str,
+        settings: Settings,
+        user_id: str | None,
+        initial_user_msg: MessageAction | None = None,
+        replay_json: str | None = None,
+        github_user_id: str | None = None,
+    ) -> Session:
+        logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+
+        response_ids = await self.get_running_agent_loops(user_id)
+        if len(response_ids) >= self.config.max_concurrent_conversations:
+            logger.info(
+                f'too_many_sessions_for:{user_id or ''}',
+                extra={'session_id': sid, 'user_id': user_id},
+            )
+            # Get the conversations sorted (oldest first)
+            conversation_store = await self._get_conversation_store(
+                user_id, github_user_id
+            )
+            conversations = await conversation_store.get_all_metadata(response_ids)
+            conversations.sort(key=_last_updated_at_key, reverse=True)
+
+            while len(conversations) >= self.config.max_concurrent_conversations:
+                oldest_conversation_id = conversations.pop().conversation_id
+                logger.debug(
+                    f'closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}',
+                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+                )
+                # Send status message to client and close session.
+                status_update_dict = {
+                    'status_update': True,
+                    'type': 'error',
+                    'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
+                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
+                }
+                await self.sio.emit(
+                    'oh_event',
+                    status_update_dict,
+                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                )
+                await self.close_session(oldest_conversation_id)
+
+        session = Session(
+            sid=sid,
+            file_store=self.file_store,
+            config=self.config,
+            sio=self.sio,
+            user_id=user_id,
+        )
+        self._local_agent_loops_by_sid[sid] = session
+        asyncio.create_task(
+            session.initialize_agent(settings, initial_user_msg, replay_json)
+        )
+        # This does not get added when resuming an existing conversation
+        try:
+            session.agent_session.event_stream.subscribe(
+                EventStreamSubscriber.SERVER,
+                self._create_conversation_update_callback(user_id, github_user_id, sid),
+                UPDATED_AT_CALLBACK_ID,
+            )
+        except ValueError:
+            pass  # Already subscribed - take no action
+        return session
 
     async def _get_event_store(
         self, sid: str, user_id: str | None
@@ -370,8 +395,8 @@ class StandaloneConversationManager(ConversationManager):
             f'removing connections: {connection_ids_to_remove}',
             extra={'session_id': sid},
         )
-        for connnnection_id in connection_ids_to_remove:
-            self._local_connection_id_to_session_id.pop(connnnection_id, None)
+        for connection_id in connection_ids_to_remove:
+            self._local_connection_id_to_session_id.pop(connection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
@@ -420,22 +445,24 @@ class StandaloneConversationManager(ConversationManager):
         conversation_store = await self._get_conversation_store(user_id, github_user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
-        
+
         # Update cost/token metrics if event has llm_metrics
         if event and hasattr(event, 'llm_metrics') and event.llm_metrics:
             metrics = event.llm_metrics
-            
+
             # Update accumulated cost
             if hasattr(metrics, 'accumulated_cost'):
                 conversation.accumulated_cost = metrics.accumulated_cost
-            
+
             # Update token usage
             if hasattr(metrics, 'accumulated_token_usage'):
                 token_usage = metrics.accumulated_token_usage
                 conversation.prompt_tokens = token_usage.prompt_tokens
                 conversation.completion_tokens = token_usage.completion_tokens
-                conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
-        
+                conversation.total_tokens = (
+                    token_usage.prompt_tokens + token_usage.completion_tokens
+                )
+
         await conversation_store.save_metadata(conversation)
 
 

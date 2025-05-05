@@ -8,6 +8,8 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
+import logging
 import mimetypes
 import os
 import shutil
@@ -18,10 +20,13 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from mcpm import MCPRouter, RouterConfig
+from mcpm.router.router import logger as mcp_router_logger
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -56,14 +61,19 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
-from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
+
+# Set MCP router logger to the same level as the main logger
+mcp_router_logger.setLevel(logger.getEffectiveLevel())
 
 
 class ActionRequest(BaseModel):
@@ -257,6 +267,7 @@ class ActionExecutor:
 
         logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+
         logger.debug('Runtime client initialized.')
         self._initialized = True
 
@@ -299,17 +310,29 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
             return observation
 
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        assert self.bash_session is not None
-        obs = await call_sync_from_async(self.bash_session.execute, action)
-        return obs
+        try:
+            if action.is_static:
+                path = action.cwd or self._initial_cwd
+                result = await AsyncBashSession.execute(action.command, path)
+                obs = CmdOutputObservation(
+                    content=result.content,
+                    exit_code=result.exit_code,
+                    command=action.command,
+                )
+                return obs
+
+            assert self.bash_session is not None
+            obs = await call_sync_from_async(self.bash_session.execute, action)
+            return obs
+        except Exception as e:
+            logger.error(f'Error running command: {e}')
+            return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
@@ -356,6 +379,11 @@ class ActionExecutor:
 
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
+
+        # Cannot read binary files
+        if is_binary(action.path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
@@ -515,6 +543,8 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
+    logger.warning('Starting Action Execution Server')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -529,13 +559,17 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
+
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
-    port_path = '/tmp/oh-server-url'
-    os.makedirs(os.path.dirname(port_path), exist_ok=True)
-    with open(port_path, 'w') as f:
-        f.write(f'http://127.0.0.1:{args.port}')
+    # Start the file viewer server in a separate thread
+    logger.info('Starting file viewer server')
+    _file_viewer_port = find_available_tcp_port(
+        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
+    )
+    server_url, _ = start_file_viewer_server(port=_file_viewer_port)
+    logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -545,10 +579,15 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
+    mcp_router: MCPRouter | None = None
+    MCP_ROUTER_PROFILE_PATH = os.path.join(
+        os.path.dirname(__file__), 'mcp', 'config.json'
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        global client
+        global client, mcp_router
+        logger.info('Initializing ActionExecutor...')
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -557,9 +596,70 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        logger.info('ActionExecutor initialized.')
+
+        # Initialize and mount MCP Router
+        logger.info('Initializing MCP Router...')
+        mcp_router = MCPRouter(
+            profile_path=MCP_ROUTER_PROFILE_PATH,
+            router_config=RouterConfig(
+                api_key=SESSION_API_KEY,
+                auth_enabled=bool(SESSION_API_KEY),
+            ),
+        )
+        allowed_origins = ['*']
+        sse_app = await mcp_router.get_sse_server_app(
+            allow_origins=allowed_origins, include_lifespan=False
+        )
+
+        # Check for route conflicts before mounting
+        main_app_routes = {route.path for route in app.routes}
+        sse_app_routes = {route.path for route in sse_app.routes}
+        conflicting_routes = main_app_routes.intersection(sse_app_routes)
+
+        if conflicting_routes:
+            logger.error(f'Route conflicts detected: {conflicting_routes}')
+            raise RuntimeError(
+                f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+            )
+
+        app.mount('/', sse_app)
+        logger.info(
+            f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
+        )
+
+        # Additional debug logging
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Main app routes:')
+            for route in main_app_routes:
+                logger.debug(f'  {route}')
+            logger.debug('MCP SSE server app routes:')
+            for route in sse_app_routes:
+                logger.debug(f'  {route}')
+
         yield
+
         # Clean up & release the resources
-        client.close()
+        logger.info('Shutting down MCP Router...')
+        if mcp_router:
+            try:
+                await mcp_router.shutdown()
+                logger.info('MCP Router shutdown successfully.')
+            except Exception as e:
+                logger.error(f'Error shutting down MCP Router: {e}', exc_info=True)
+        else:
+            logger.info('MCP Router instance not found for shutdown.')
+
+        logger.info('Closing ActionExecutor...')
+        if client:
+            try:
+                client.close()
+                logger.info('ActionExecutor closed successfully.')
+            except Exception as e:
+                logger.error(f'Error closing ActionExecutor: {e}', exc_info=True)
+        else:
+            logger.info('ActionExecutor instance not found for closing.')
+        logger.info('Shutdown complete.')
 
     app = FastAPI(lifespan=lifespan)
 
@@ -626,6 +726,7 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
+
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
@@ -634,6 +735,51 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
+
+    @app.post('/update_mcp_server')
+    async def update_mcp_server(request: Request):
+        assert mcp_router is not None
+        assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
+
+        # Use synchronous file operations outside of async function
+        def read_profile():
+            with open(MCP_ROUTER_PROFILE_PATH, 'r') as f:
+                return json.load(f)
+
+        current_profile = read_profile()
+        assert 'default' in current_profile
+        assert isinstance(current_profile['default'], list)
+
+        # Get the request body
+        mcp_tools_to_sync = await request.json()
+        if not isinstance(mcp_tools_to_sync, list):
+            raise HTTPException(
+                status_code=400, detail='Request must be a list of MCP tools to sync'
+            )
+
+        logger.info(
+            f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious profile: {json.dumps(current_profile, indent=2)}'
+        )
+        current_profile['default'] = mcp_tools_to_sync
+
+        # Use synchronous file operations outside of async function
+        def write_profile(profile):
+            with open(MCP_ROUTER_PROFILE_PATH, 'w') as f:
+                json.dump(profile, f)
+
+        write_profile(current_profile)
+
+        # Manually reload the profile and update the servers
+        mcp_router.profile_manager.reload()
+        servers_wait_for_update = mcp_router.get_unique_servers()
+        await mcp_router.update_servers(servers_wait_for_update)
+        logger.info(
+            f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
+        )
+
+        return JSONResponse(
+            status_code=200, content={'detail': 'MCP server updated successfully'}
+        )
 
     @app.post('/upload_file')
     async def upload_file(
@@ -819,54 +965,6 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
-
-    @app.get('/view')
-    async def view_file(path: str, request: Request):
-        """View a file using an embedded viewer.
-
-        Args:
-            path (str): The absolute path of the file to view.
-            request (Request): The FastAPI request object.
-
-        Returns:
-            HTMLResponse: An HTML page with an appropriate viewer for the file.
-        """
-        # Security check: Only allow requests from localhost
-        client_host = request.client.host if request.client else None
-        if client_host not in ['127.0.0.1', 'localhost', '::1']:
-            logger.warning(f'Unauthorized file view attempt from {client_host}')
-            return HTMLResponse(
-                content='<h1>Access Denied</h1><p>This endpoint is only accessible from localhost</p>',
-                status_code=403,
-            )
-
-        if not os.path.isabs(path):
-            return HTMLResponse(
-                content=f'<h1>Error: Path must be absolute</h1><p>{path}</p>',
-                status_code=400,
-            )
-
-        if not os.path.exists(path):
-            return HTMLResponse(
-                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
-            )
-
-        if os.path.isdir(path):
-            return HTMLResponse(
-                content=f'<h1>Error: Path is a directory</h1><p>{path}</p>',
-                status_code=400,
-            )
-
-        try:
-            html_content = generate_file_viewer_html(path)
-            return HTMLResponse(content=html_content)
-
-        except Exception as e:
-            logger.error(f'Error serving file viewer: {str(e)}')
-            return HTMLResponse(
-                content=f'<h1>Error viewing file</h1><p>{path}</p><p>{str(e)}</p>',
-                status_code=500,
-            )
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

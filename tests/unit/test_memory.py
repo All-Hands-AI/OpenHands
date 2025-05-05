@@ -11,7 +11,7 @@ from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
@@ -21,7 +21,9 @@ from openhands.events.stream import EventStream
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -58,17 +60,26 @@ def prompt_dir(tmp_path):
     return tmp_path
 
 
-@pytest.mark.asyncio
-async def test_memory_on_event_exception_handling(memory, event_stream):
-    """Test that exceptions in Memory.on_event are properly handled via status callback."""
+@pytest.fixture
+def mock_agent():
     # Create a dummy agent for the controller
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
 
+    # Add a proper system message mock
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
+
+@pytest.mark.asyncio
+async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
+    """Test that exceptions in Memory.on_event are properly handled via status callback."""
     # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory method to raise an exception
@@ -80,7 +91,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=agent,
+            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
         )
@@ -93,18 +104,11 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
 
 @pytest.mark.asyncio
 async def test_memory_on_workspace_context_recall_exception_handling(
-    memory, event_stream
+    memory, event_stream, mock_agent
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
-
-    # Create a dummy agent for the controller
-    agent = MagicMock(spec=Agent)
-    agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
-    agent.llm.config = AppConfig().get_llm_config()
-
     # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory._on_workspace_context_recall to raise an exception
@@ -118,7 +122,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=agent,
+            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
         )
@@ -150,8 +154,9 @@ async def test_memory_with_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # We know 'flarglebargle' exists in the global directory
-    assert 'flarglebargle' in memory.knowledge_microagents
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
+    assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
@@ -185,7 +190,8 @@ async def test_memory_with_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    # Check against the derived name
+    assert observation.microagent_knowledge[0].name == derived_name
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
 
@@ -264,9 +270,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
 @pytest.mark.asyncio
 async def test_memory_with_agent_microagents():
-    """
-    Test that Memory processes microagent based on trigger words from agent messages.
-    """
+    """Test that Memory processes microagent based on trigger words from agent messages."""
     # Create a mock event stream
     event_stream = MagicMock(spec=EventStream)
 
@@ -280,8 +284,9 @@ async def test_memory_with_agent_microagents():
     # from the global directory that's in the repo
     assert len(memory.knowledge_microagents) > 0
 
-    # We know 'flarglebargle' exists in the global directory
-    assert 'flarglebargle' in memory.knowledge_microagents
+    # Check for the derived name 'flarglebargle'
+    derived_name = 'flarglebargle'
+    assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
@@ -315,7 +320,8 @@ async def test_memory_with_agent_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    # Check against the derived name
+    assert observation.microagent_knowledge[0].name == derived_name
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
     assert 'magic word' in observation.microagent_knowledge[0].content
 

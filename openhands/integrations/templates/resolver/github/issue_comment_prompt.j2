@@ -1,0 +1,21 @@
+You are requested to fix issue number #{{ issue_number }} in a repository.
+
+A comment on the issue has been addressed to you.
+
+# Comment
+{{ issue_comment }}
+
+
+# Steps to Handle the Comment
+
+1. Address the comment. Use the GitHub API to read issue title, body, and comments if you need more context
+2. For all changes to actual application code (e.g. in Python or Javascript), add an appropriate test to the testing directory to make sure that the issue has been fixed
+3. Run the tests, and if they pass you are done!
+4. You do NOT need to write new tests if there are only changes to documentation or configuration files.
+
+When you're done, make sure to
+
+1. Use the `GITHUB_TOKEN` environment variable and GitHub API to open a new PR
+2. Name the branch using `openhands/` as a prefix (e.g `openhands/update-readme`)
+3. The PR description should mention that it "fixes" or "closes" the issue number
+4. Make sure to leave the following sentence at the end of the PR description: `@{{ username }} can click here to [continue refining the PR]({{ conversation_url }})`

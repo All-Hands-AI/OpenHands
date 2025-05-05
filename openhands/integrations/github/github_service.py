@@ -1,16 +1,17 @@
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
-    AuthenticationError,
+    BaseGitService,
     GitService,
     ProviderType,
     Repository,
+    RequestMethod,
     SuggestedTask,
     TaskType,
     UnknownException,
@@ -18,9 +19,12 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
+from openhands.integrations.github.queries import suggested_task_pr_graphql_query, suggested_task_issue_graphql_query
+from datetime import datetime
+from openhands.core.logger import openhands_logger as logger
 
 
-class GitHubService(GitService):
+class GitHubService(BaseGitService, GitService):
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -32,6 +36,7 @@ class GitHubService(GitService):
         external_auth_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_domain: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
@@ -39,9 +44,19 @@ class GitHubService(GitService):
         if token:
             self.token = token
 
+        if base_domain:
+            self.BASE_URL = f'https://{base_domain}/api/v3'
+
+        self.external_auth_id = external_auth_id
+        self.external_auth_token = external_auth_token
+
+    @property
+    def provider(self) -> str:
+        return ProviderType.GITHUB.value
+
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
-        if self.user_id and not self.token:
+        if not self.token:
             self.token = await self.get_latest_token()
 
         return {
@@ -55,18 +70,35 @@ class GitHubService(GitService):
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
-    async def _fetch_data(
-        self, url: str, params: dict | None = None
+    async def _make_request(
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
-                response = await client.get(url, headers=github_headers, params=params)
+
+                # Make initial request
+                response = await self.execute_request(
+                    client=client,
+                    url=url,
+                    headers=github_headers,
+                    params=params,
+                    method=method,
+                )
+
+                # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
-                    response = await client.get(
-                        url, headers=github_headers, params=params
+                    response = await self.execute_request(
+                        client=client,
+                        url=url,
+                        headers=github_headers,
+                        params=params,
+                        method=method,
                     )
 
                 response.raise_for_status()
@@ -77,19 +109,13 @@ class GitHubService(GitService):
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid Github token')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
 
         return User(
             id=response.get('id'),
@@ -99,6 +125,12 @@ class GitHubService(GitService):
             name=response.get('name'),
             email=response.get('email'),
         )
+
+    async def verify_access(self) -> bool:
+        """Verify if the token is valid by making a simple request."""
+        url = f'{self.BASE_URL}'
+        await self._make_request(url)
+        return True
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
@@ -120,7 +152,7 @@ class GitHubService(GitService):
 
         while len(repos) < max_repos:
             page_params = {**params, 'page': str(page)}
-            response, headers = await self._fetch_data(url, page_params)
+            response, headers = await self._make_request(url, page_params)
 
             # Extract repositories from response
             page_repos = response.get(extract_key, []) if extract_key else response
@@ -137,6 +169,10 @@ class GitHubService(GitService):
                 break
 
         return repos[:max_repos]  # Trim to max_repos if needed
+
+    def parse_pushed_at_date(self, repo):
+        ts = repo.get('pushed_at')
+        return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         MAX_REPOS = 1000
@@ -164,6 +200,9 @@ class GitHubService(GitService):
                 # If we've already reached MAX_REPOS, no need to check other installations
                 if len(all_repos) >= MAX_REPOS:
                     break
+
+            if sort == 'pushed':
+                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
         else:
             # Original behavior for non-SaaS mode
             params = {'per_page': str(PER_PAGE), 'sort': sort}
@@ -179,13 +218,14 @@ class GitHubService(GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
+                is_public=not repo.get('private', True),
             )
             for repo in all_repos
         ]
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
         installations = response.get('installations', [])
         return [i['id'] for i in installations]
 
@@ -202,7 +242,7 @@ class GitHubService(GitService):
             'order': order,
         }
 
-        response, _ = await self._fetch_data(url, params)
+        response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
 
         repos = [
@@ -240,15 +280,9 @@ class GitHubService(GitService):
                 return dict(result)
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise AuthenticationError('Invalid Github token')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise UnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise UnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -256,63 +290,24 @@ class GitHubService(GitService):
         Returns:
         - PRs authored by the user.
         - Issues assigned to the user.
+        
+        Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
         user = await self.get_user()
         login = user.login
-
-        query = """
-        query GetUserTasks($login: String!) {
-          user(login: $login) {
-            pullRequests(first: 100, states: [OPEN], orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-                mergeable
-                commits(last: 1) {
-                  nodes {
-                    commit {
-                      statusCheckRollup {
-                        state
-                      }
-                    }
-                  }
-                }
-                reviews(first: 100, states: [CHANGES_REQUESTED, COMMENTED]) {
-                  nodes {
-                    state
-                  }
-                }
-              }
-            }
-            issues(first: 100, states: [OPEN], filterBy: {assignee: $login}, orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-              }
-            }
-          }
-        }
-        """
-
+        tasks: list[SuggestedTask] = []
         variables = {'login': login}
 
         try:
-            response = await self.execute_graphql_query(query, variables)
-            data = response['data']['user']
-            tasks: list[SuggestedTask] = []
-
+            pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
+            pr_data = pr_response['data']['user']
+            
             # Process pull requests
-            for pr in data['pullRequests']['nodes']:
+            for pr in pr_data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
 
-                # Always add open PRs
+                # Start with default task type
                 task_type = TaskType.OPEN_PR
 
                 # Check for specific states
@@ -333,20 +328,34 @@ class GitHubService(GitService):
                 ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
-                tasks.append(
-                    SuggestedTask(
-                        task_type=task_type,
-                        repo=repo_name,
-                        issue_number=pr['number'],
-                        title=pr['title'],
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            git_provider=ProviderType.GITHUB,
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=pr['number'],
+                            title=pr['title'],
+                        )
                     )
-                )
 
+            
+        except Exception as e:
+            logger.info(f"Error fetching suggested task for PRs: {e}", 
+                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
+            
+        try:
+            # Execute issue query
+            issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
+            issue_data = issue_response['data']['user']
+            
             # Process issues
-            for issue in data['issues']['nodes']:
+            for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
                         task_type=TaskType.OPEN_ISSUE,
                         repo=repo_name,
                         issue_number=issue['number'],
@@ -355,8 +364,26 @@ class GitHubService(GitService):
                 )
 
             return tasks
-        except Exception:
-            return []
+        
+        except Exception as e:
+            logger.info(f"Error fetching suggested task for issues: {e}", 
+                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
+
+        return tasks
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('full_name'),
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+        )
 
 
 github_service_cls = os.environ.get(
