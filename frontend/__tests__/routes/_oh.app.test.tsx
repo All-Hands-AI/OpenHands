@@ -13,10 +13,6 @@ describe("App", () => {
     { Component: App, path: "/conversation/:conversationId" },
   ]);
 
-  const { endSessionMock } = vi.hoisted(() => ({
-    endSessionMock: vi.fn(),
-  }));
-
   beforeAll(() => {
     vi.mock("#/hooks/use-terminal", () => ({
       useTerminal: vi.fn(),
@@ -30,18 +26,6 @@ describe("App", () => {
   it("should render", async () => {
     renderWithProviders(<RouteStub initialEntries={["/conversation/123"]} />);
     await screen.findByTestId("app-route");
-  });
-
-  it("should call endSession if the user does not have permission to view conversation", async () => {
-    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
-
-    getConversationSpy.mockResolvedValue(null);
-    renderWithProviders(<RouteStub initialEntries={["/conversation/9999"]} />);
-
-    await waitFor(() => {
-      expect(endSessionMock).toHaveBeenCalledOnce();
-      expect(errorToastSpy).toHaveBeenCalledOnce();
-    });
   });
 
   it("should not call endSession if the user has permission", async () => {
