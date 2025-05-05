@@ -1022,6 +1022,21 @@
         "fr": "Notifications sonores",
         "tr": "Ses Bildirimleri"
     },
+    "SETTINGS$PROACTIVE_CONVERSATION_STARTERS": {
+        "en": "Proactive Conversation Starters",
+        "ja": "プロアクティブな会話スターター",
+        "zh-CN": "主动对话启动器",
+        "zh-TW": "主動對話啟動器",
+        "ko-KR": "능동적 대화 시작 도구",
+        "de": "Proaktive Gesprächsstarter",
+        "no": "Proaktive samtalestarterne",
+        "it": "Iniziatori di conversazione proattivi",
+        "pt": "Iniciadores de conversa proativos",
+        "es": "Iniciadores de conversación proactivos",
+        "ar": "بادئات المحادثة الاستباقية",
+        "fr": "Démarreurs de conversation proactifs",
+        "tr": "Proaktif Konuşma Başlatıcıları"
+    },
     "SETTINGS$CUSTOM_MODEL": {
         "en": "Custom Model",
         "ja": "カスタムモデル",

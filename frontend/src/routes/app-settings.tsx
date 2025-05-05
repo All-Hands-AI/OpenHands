@@ -102,9 +102,10 @@ function AppSettingsScreen() {
   };
 
   const checkIfProactiveConversationsSwitchHasChanged = (checked: boolean) => {
-    const currentSoundNotifications = !!settings?.ENABLE_SOUND_NOTIFICATIONS;
+    const currentProactiveConversations =
+      !!settings?.ENABLE_PROACTIVE_CONVERSATION_STARTERS;
     setProactiveConversationsSwitchHasChanged(
-      checked !== currentSoundNotifications,
+      checked !== currentProactiveConversations,
     );
   };
 
@@ -158,7 +159,7 @@ function AppSettingsScreen() {
               }
               onToggle={checkIfProactiveConversationsSwitchHasChanged}
             >
-              Proactive Conversation Starters
+              {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
             </SettingsSwitch>
           )}
         </div>
