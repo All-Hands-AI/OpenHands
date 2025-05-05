@@ -54,14 +54,12 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
 
       onChange(newConfig);
       setError(null);
-      return true;
     } catch (e) {
       setError(
         e instanceof Error
           ? e.message
           : t(I18nKey.SETTINGS$MCP_ERROR_INVALID_JSON),
       );
-      return false;
     }
   };
 

@@ -31,28 +31,24 @@ function MCPSettingsScreen() {
   const formAction = () => {
     if (!settings) return;
 
-    const newSettings = {
-      ...settings,
-      MCP_CONFIG: mcpConfig,
-    };
-
-    saveSettings(newSettings, {
-      onSuccess: () => {
-        displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-        posthog.capture("settings_saved", {
-          HAS_MCP_CONFIG: newSettings.MCP_CONFIG ? "YES" : "NO",
-          MCP_SSE_SERVERS_COUNT:
-            newSettings.MCP_CONFIG?.sse_servers?.length || 0,
-          MCP_STDIO_SERVERS_COUNT:
-            newSettings.MCP_CONFIG?.stdio_servers?.length || 0,
-        });
-        setIsDirty(false);
+    saveSettings(
+      { MCP_CONFIG: mcpConfig },
+      {
+        onSuccess: () => {
+          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
+          posthog.capture("settings_saved", {
+            HAS_MCP_CONFIG: mcpConfig ? "YES" : "NO",
+            MCP_SSE_SERVERS_COUNT: mcpConfig?.sse_servers?.length || 0,
+            MCP_STDIO_SERVERS_COUNT: mcpConfig?.stdio_servers?.length || 0,
+          });
+          setIsDirty(false);
+        },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
+        },
       },
-      onError: (error) => {
-        const errorMessage = retrieveAxiosErrorMessage(error);
-        displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-      },
-    });
+    );
   };
 
   if (isLoading) {

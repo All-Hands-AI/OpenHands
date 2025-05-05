@@ -1,4 +1,4 @@
-import { Settings, Provider } from "#/types/settings";
+import { Settings } from "#/types/settings";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider-input")?.toString();
@@ -61,17 +61,6 @@ export const extractSettings = (
     ENABLE_DEFAULT_CONDENSER,
   } = extractAdvancedFormData(formData);
 
-  // Extract provider tokens
-  const githubToken = formData.get("github-token")?.toString();
-  const gitlabToken = formData.get("gitlab-token")?.toString();
-  const providerTokens: Partial<Record<Provider, string | null>> = {};
-  if (githubToken) {
-    providerTokens.github = githubToken;
-  }
-  if (gitlabToken) {
-    providerTokens.gitlab = gitlabToken;
-  }
-
   // Get MCP configuration from hidden field if it exists
   const mcpConfigStr = formData.get("mcp-config")?.toString();
   let mcpConfig;
@@ -92,7 +81,6 @@ export const extractSettings = (
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
     llm_api_key: LLM_API_KEY,
-    PROVIDER_TOKENS_SET: providerTokens,
     MCP_CONFIG: mcpConfig,
   };
 };

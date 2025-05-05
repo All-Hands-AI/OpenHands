@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import posthog from "posthog-js";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
@@ -40,23 +41,17 @@ export const useSaveSettings = () => {
         settings.MCP_CONFIG &&
         currentSettings?.MCP_CONFIG !== settings.MCP_CONFIG
       ) {
-        try {
-          const hasMcpConfig = !!settings.MCP_CONFIG;
-          const sseServersCount = settings.MCP_CONFIG?.sse_servers?.length || 0;
-          const stdioServersCount =
-            settings.MCP_CONFIG?.stdio_servers?.length || 0;
+        const hasMcpConfig = !!settings.MCP_CONFIG;
+        const sseServersCount = settings.MCP_CONFIG?.sse_servers?.length || 0;
+        const stdioServersCount =
+          settings.MCP_CONFIG?.stdio_servers?.length || 0;
 
-          // Track MCP configuration usage
-          if (window.posthog) {
-            window.posthog.capture("mcp_config_updated", {
-              has_mcp_config: hasMcpConfig,
-              sse_servers_count: sseServersCount,
-              stdio_servers_count: stdioServersCount,
-            });
-          }
-        } catch (e) {
-          // Error tracking MCP configuration, silently continue
-        }
+        // Track MCP configuration usage
+        posthog.capture("mcp_config_updated", {
+          has_mcp_config: hasMcpConfig,
+          sse_servers_count: sseServersCount,
+          stdio_servers_count: stdioServersCount,
+        });
       }
 
       await saveSettingsMutationFn(newSettings);

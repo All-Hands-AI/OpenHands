@@ -7,56 +7,51 @@ interface MCPConfigViewerProps {
   mcpConfig?: MCPConfig;
 }
 
-export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
+interface SSEServerDisplayProps {
+  server: string | MCPSSEServer;
+}
+
+function SSEServerDisplay({ server }: SSEServerDisplayProps) {
   const { t } = useTranslation();
 
-  if (
-    !mcpConfig ||
-    (mcpConfig.sse_servers.length === 0 && mcpConfig.stdio_servers.length === 0)
-  ) {
-    return null;
-  }
-
-  const renderSSEServer = (server: string | MCPSSEServer, index: number) => {
-    if (typeof server === "string") {
-      return (
-        <div
-          key={`sse-${index}`}
-          className="mb-2 p-2 bg-base-tertiary rounded-md"
-        >
-          <div className="text-sm">
-            <span className="font-medium">{t(I18nKey.SETTINGS$MCP_URL)}:</span>{" "}
-            {server}
-          </div>
-        </div>
-      );
-    }
+  if (typeof server === "string") {
     return (
-      <div
-        key={`sse-${index}`}
-        className="mb-2 p-2 bg-base-tertiary rounded-md"
-      >
+      <div className="mb-2 p-2 bg-base-tertiary rounded-md">
         <div className="text-sm">
           <span className="font-medium">{t(I18nKey.SETTINGS$MCP_URL)}:</span>{" "}
-          {server.url}
+          {server}
         </div>
-        {server.api_key && (
-          <div className="text-sm text-gray-500">
-            <span className="font-medium">
-              {t(I18nKey.SETTINGS$MCP_API_KEY)}:
-            </span>{" "}
-            {server.api_key ? "Set" : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
-          </div>
-        )}
       </div>
     );
-  };
+  }
 
-  const renderStdioServer = (server: MCPStdioServer, index: number) => (
-    <div
-      key={`stdio-${index}`}
-      className="mb-2 p-2 bg-base-tertiary rounded-md"
-    >
+  return (
+    <div className="mb-2 p-2 bg-base-tertiary rounded-md">
+      <div className="text-sm">
+        <span className="font-medium">{t(I18nKey.SETTINGS$MCP_URL)}:</span>{" "}
+        {server.url}
+      </div>
+      {server.api_key && (
+        <div className="text-sm text-gray-500">
+          <span className="font-medium">
+            {t(I18nKey.SETTINGS$MCP_API_KEY)}:
+          </span>{" "}
+          {server.api_key ? "Set" : t(I18nKey.SETTINGS$MCP_API_KEY_NOT_SET)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface StdioServerDisplayProps {
+  server: MCPStdioServer;
+}
+
+function StdioServerDisplay({ server }: StdioServerDisplayProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="mb-2 p-2 bg-base-tertiary rounded-md">
       <div className="text-sm">
         <span className="font-medium">{t(I18nKey.SETTINGS$MCP_NAME)}:</span>{" "}
         {server.name}
@@ -81,6 +76,17 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
       )}
     </div>
   );
+}
+
+export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
+  const { t } = useTranslation();
+
+  if (
+    !mcpConfig ||
+    (mcpConfig.sse_servers.length === 0 && mcpConfig.stdio_servers.length === 0)
+  ) {
+    return null;
+  }
 
   return (
     <div className="mt-4 border border-base-tertiary rounded-md p-3">
@@ -109,7 +115,9 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
                   ({mcpConfig.sse_servers.length})
                 </span>
               </h4>
-              {mcpConfig.sse_servers.map(renderSSEServer)}
+              {mcpConfig.sse_servers.map((server, index) => (
+                <SSEServerDisplay key={`sse-${index}`} server={server} />
+              ))}
             </div>
           )}
 
@@ -121,7 +129,9 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
                   ({mcpConfig.stdio_servers.length})
                 </span>
               </h4>
-              {mcpConfig.stdio_servers.map(renderStdioServer)}
+              {mcpConfig.stdio_servers.map((server, index) => (
+                <StdioServerDisplay key={`stdio-${index}`} server={server} />
+              ))}
             </div>
           )}
         </div>
