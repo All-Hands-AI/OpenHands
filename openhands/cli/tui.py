@@ -58,8 +58,8 @@ COMMANDS = {
     '/exit': 'Exit the application',
     '/help': 'Display available commands',
     '/init': 'Initialize a new repository',
-    '/status': 'Display session details and usage metrics',
-    '/new': 'Create a new session',
+    '/status': 'Display conversation details and usage metrics',
+    '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
 }
@@ -136,7 +136,7 @@ def display_banner(session_id: str):
     print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
 
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Initialized session {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Initialized conversation {session_id}</grey>'))
     print_formatted_text('')
 
 
@@ -374,13 +374,13 @@ def get_session_duration(session_init_time: float) -> str:
 def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
-    print_formatted_text(HTML('<grey>Closing current session...</grey>'))
+    print_formatted_text(HTML('<grey>Closing current conversation...</grey>'))
     print_formatted_text('')
     display_usage_metrics(usage_metrics)
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Session duration: {duration_str}</grey>'))
+    print_formatted_text(HTML(f'<grey>Conversation duration: {duration_str}</grey>'))
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Closed conversation {session_id}</grey>'))
     print_formatted_text('')
 
 
@@ -388,8 +388,8 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
-    print_formatted_text(HTML(f'<grey>Uptime:     {duration_str}</grey>'))
+    print_formatted_text(HTML(f'<grey>Conversation ID: {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Uptime:          {duration_str}</grey>'))
     print_formatted_text('')
     display_usage_metrics(usage_metrics)
 
