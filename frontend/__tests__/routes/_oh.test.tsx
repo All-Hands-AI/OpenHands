@@ -177,7 +177,7 @@ describe("frontend/routes/_oh", () => {
     expect(localStorage.getItem("ghToken")).toBeNull();
   });
 
-  it.only("should render a you're in toast if it is a new user and in saas mode", async () => {
+  it("should render a you're in toast if it is a new user and in saas mode", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const displaySuccessToastSpy = vi.spyOn(
