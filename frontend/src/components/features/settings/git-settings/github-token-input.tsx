@@ -47,11 +47,11 @@ export function GitHubTokenInput({
 
       <SettingsInput
         onChange={onGitHubHostChange || (() => {})}
-        label={t(I18nKey.GITHUB$BASE_DOMAIN_LABEL)}
+        label="GitHub Host"
         type="text"
         className="w-[680px]"
-        placeholder={"github.com"}
-        defaultValue={githubHostSet ? githubHostSet : undefined}
+        placeholder="github.com"
+        defaultValue={githubHostSet || undefined}
       />
 
       {!isSaas && <GitHubTokenHelpAnchor />}

@@ -37,8 +37,8 @@ function GitSettingsScreen() {
   const [gitlabHostInputHasValue, setGitlabHostInputHasValue] =
     React.useState(false);
 
-  const existingGithubHost = settings?.PROVIDER_TOKENS_SET["github"];
-  const existingGitlabHost = settings?.PROVIDER_TOKENS_SET["gitlab"];
+  const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
+  const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providerTokensSet.includes("github");

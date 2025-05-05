@@ -47,11 +47,11 @@ export function GitLabTokenInput({
 
       <SettingsInput
         onChange={onGitLabHostChange || (() => {})}
-        label={t(I18nKey.GITLAB$BASE_DOMAIN_LABEL)}
+        label="GitLab Host"
         type="text"
         className="w-[680px]"
-        placeholder={"gitlab.com"}
-        defaultValue={gitlabHostSet ? gitlabHostSet : undefined}
+        placeholder="gitlab.com"
+        defaultValue={gitlabHostSet || undefined}
       />
 
       {!isSaas && <GitLabTokenHelpAnchor />}
