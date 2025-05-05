@@ -57,6 +57,7 @@ class UserSecrets(BaseModel):
                 if expose_secrets
                 else pydantic_encoder(provider_token.token),
                 'user_id': provider_token.user_id,
+                'host': provider_token.host
             }
 
         return tokens
