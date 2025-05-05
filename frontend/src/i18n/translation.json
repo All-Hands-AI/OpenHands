@@ -119,6 +119,36 @@
         "tr": "Depolar yüklenemedi",
         "de": "Fehler beim Laden der Repositories"
     },
+    "HOME$LOADING_BRANCHES": {
+        "en": "Loading branches...",
+        "ja": "ブランチを読み込み中...",
+        "zh-CN": "正在加载分支...",
+        "zh-TW": "正在加載分支...",
+        "ko-KR": "브랜치 로딩 중...",
+        "no": "Laster inn branches...",
+        "it": "Caricamento dei branch...",
+        "pt": "Carregando branches...",
+        "es": "Cargando ramas...",
+        "ar": "جاري تحميل الفروع...",
+        "fr": "Chargement des branches...",
+        "tr": "Dallar yükleniyor...",
+        "de": "Lade Branches..."
+    },
+    "HOME$FAILED_TO_LOAD_BRANCHES": {
+        "en": "Failed to load branches",
+        "ja": "ブランチの読み込みに失敗しました",
+        "zh-CN": "加载分支失败",
+        "zh-TW": "加載分支失敗",
+        "ko-KR": "브랜치 로딩 실패",
+        "no": "Kunne ikke laste inn branches",
+        "it": "Impossibile caricare i branch",
+        "pt": "Falha ao carregar branches",
+        "es": "Error al cargar ramas",
+        "ar": "فشل في تحميل الفروع",
+        "fr": "Échec du chargement des branches",
+        "tr": "Dallar yüklenemedi",
+        "de": "Fehler beim Laden der Branches"
+    },
     "HOME$OPEN_ISSUE": {
         "en": "Open issue",
         "ja": "オープンな課題",
@@ -4387,6 +4417,21 @@
         "fr": "Configuration de l'espace de travail...",
         "tr": "Çalışma alanı ayarlanıyor...",
         "ja": "ワークスペースを設定中..."
+    },
+    "STATUS$SETTING_UP_GIT_HOOKS": {
+        "en": "Setting up git hooks...",
+        "zh-CN": "正在设置 git 钩子...",
+        "zh-TW": "正在設置 git 鉤子...",
+        "de": "Git-Hooks werden eingerichtet...",
+        "ko-KR": "git 훅을 설정하는 중...",
+        "no": "Setter opp git-hooks...",
+        "it": "Configurazione degli hook git...",
+        "pt": "Configurando hooks do git...",
+        "es": "Configurando hooks de git...",
+        "ar": "جاري إعداد خطافات git...",
+        "fr": "Configuration des hooks git...",
+        "tr": "Git kancaları ayarlanıyor...",
+        "ja": "git フックを設定中..."
     },
     "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
         "en": "Disconnect",
