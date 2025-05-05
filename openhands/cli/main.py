@@ -6,13 +6,11 @@ from uuid import uuid4
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands.controller import AgentController
-from openhands.controller.agent import Agent
-from openhands.core.cli_commands import (
+from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
-from openhands.core.cli_tui import (
+from openhands.cli.tui import (
     UsageMetrics,
     display_agent_running_message,
     display_banner,
@@ -25,9 +23,11 @@ from openhands.core.cli_tui import (
     read_confirmation_input,
     read_prompt_input,
 )
-from openhands.core.cli_utils import (
+from openhands.cli.utils import (
     update_usage_metrics,
 )
+from openhands.controller import AgentController
+from openhands.controller.agent import Agent
 from openhands.core.config import (
     AppConfig,
     parse_arguments,

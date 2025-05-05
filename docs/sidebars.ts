@@ -27,7 +27,11 @@ const sidebars: SidebarsConfig = {
           label: 'Openhands Cloud',
           id: 'usage/cloud/openhands-cloud',
         },
-
+        {
+          type: 'doc',
+          label: 'Cloud API',
+          id: 'usage/cloud/cloud-api',
+        },
         {
           type: 'doc',
           label: 'Cloud GitHub Resolver',
@@ -211,6 +215,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'MCP',
+          id: 'usage/mcp',
+        }
       ],
     },
     {
