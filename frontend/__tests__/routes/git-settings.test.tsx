@@ -244,8 +244,8 @@ describe("Form submission", () => {
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
-      github: { token: "test-token" },
-      gitlab: { token: "" },
+      github: { token: "test-token", host: "" },
+      gitlab: { token: "", host: "" },
     });
 
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
@@ -253,8 +253,8 @@ describe("Form submission", () => {
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
-      github: { token: "test-token" },
-      gitlab: { token: "" },
+      github: { token: "test-token", host: "" },
+      gitlab: { token: "", host: "" },
     });
   });
 
