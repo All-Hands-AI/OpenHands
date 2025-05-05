@@ -163,8 +163,8 @@ async def _create_new_conversation(
         replay_json=replay_json,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
-    
-    asyncio.create_task(auto_generate_title(conversation_id, user_id))
+
+    asyncio.create_task(auto_generate_title(conversation_id, user_id, initial_user_msg))
     return conversation_id
 
 
@@ -315,7 +315,11 @@ def get_default_conversation_title(conversation_id: str) -> str:
     return f'Conversation {conversation_id[:5]}'
 
 
-async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
+async def auto_generate_title(
+    conversation_id: str, 
+    user_id: str | None,
+    initial_user_msg: str | None = None
+) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
     Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
@@ -329,12 +333,11 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
     """
     logger.info(f'Auto-generating title for conversation {conversation_id}')
 
-    try:
-        # Create an event stream for the conversation
+    first_user_message = initial_user_msg
+    if not first_user_message:
         event_stream = EventStream(conversation_id, file_store, user_id)
 
         # Find the first user message
-        first_user_message = None
         for event in event_stream.get_events():
             if (
                 event.source == EventSource.USER
@@ -344,7 +347,8 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
             ):
                 first_user_message = event.content
                 break
-
+    
+    try:
         if first_user_message:
             # Get LLM config from user settings
             try:
@@ -376,6 +380,7 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
                 title += '...'
             logger.info(f'Generated title using truncation: {title}')
             return title
+        
     except Exception as e:
         logger.error(f'Error generating title: {str(e)}')
     return ''
