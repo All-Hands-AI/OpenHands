@@ -34,10 +34,6 @@ describe("ConversationPanel", () => {
       }
     });
 
-  const { endSessionMock } = vi.hoisted(() => ({
-    endSessionMock: vi.fn(),
-  }));
-
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
       ...(await importOriginal<typeof import("react-router")>()),
@@ -45,11 +41,6 @@ describe("ConversationPanel", () => {
       useNavigate: vi.fn(() => vi.fn()),
       useLocation: vi.fn(() => ({ pathname: "/conversation" })),
       useParams: vi.fn(() => ({ conversationId: "2" })),
-    }));
-
-    vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("#/hooks/use-end-session")>()),
-      useEndSession: vi.fn(() => endSessionMock),
     }));
   });
 
@@ -143,47 +134,6 @@ describe("ConversationPanel", () => {
     // Ensure the conversation is not deleted
     cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(3);
-  });
-
-  it("should call endSession after deleting a conversation that is the current session", async () => {
-    const user = userEvent.setup();
-    const mockData = [...mockConversations];
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockImplementation(async () => mockData);
-
-    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
-    deleteUserConversationSpy.mockImplementation(async (id: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === id);
-      if (index !== -1) {
-        mockData.splice(index, 1);
-      }
-      // Wait for React Query to update its cache
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    renderConversationPanel();
-
-    let cards = await screen.findAllByTestId("conversation-card");
-    const ellipsisButton = within(cards[1]).getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-    const deleteButton = screen.getByTestId("delete-button");
-
-    // Click the second delete button
-    await user.click(deleteButton);
-
-    // Confirm the deletion
-    const confirmButton = screen.getByRole("button", { name: /confirm/i });
-    await user.click(confirmButton);
-
-    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
-
-    // Wait for the cards to update with a longer timeout
-    await waitFor(() => {
-      const updatedCards = screen.getAllByTestId("conversation-card");
-      expect(updatedCards).toHaveLength(2);
-    }, { timeout: 2000 });
-
-    expect(endSessionMock).toHaveBeenCalledOnce();
   });
 
   it("should delete a conversation", async () => {

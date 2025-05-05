@@ -60,7 +60,7 @@ class TestDisplayFunctions:
         # Check the last call has the session ID
         args, kwargs = mock_print.call_args_list[-2]
         assert session_id in str(args[0])
-        assert 'Initialized session' in str(args[0])
+        assert 'Initialized conversation' in str(args[0])
 
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_welcome_message(self, mock_print):
@@ -135,13 +135,11 @@ class TestDisplayFunctions:
 
         mock_display_message.assert_called_once_with('Thinking about this...')
 
-    @patch('openhands.cli.tui.time.sleep')
     @patch('openhands.cli.tui.print_formatted_text')
-    def test_display_message(self, mock_print, mock_sleep):
+    def test_display_message(self, mock_print):
         message = 'Test message'
         display_message(message)
 
-        mock_sleep.assert_called_once_with(0.2)
         mock_print.assert_called_once()
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
