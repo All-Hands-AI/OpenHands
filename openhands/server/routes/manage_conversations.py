@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -61,10 +61,9 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
-    
-    model_config = {
-        "extra": "forbid"
-    }
+
+    model_config = {'extra': 'forbid'}
+
 
 async def _create_new_conversation(
     user_id: str | None,
@@ -246,7 +245,7 @@ async def new_conversation(
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    
+
 
 @app.get('/conversations')
 async def search_conversations(

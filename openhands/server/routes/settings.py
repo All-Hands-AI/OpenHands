@@ -7,6 +7,7 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.integrations.utils import validate_provider_token
+from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETCustomSecrets as GETSettingsCustomSecrets,
 )
@@ -22,11 +23,13 @@ from openhands.server.settings import (
 from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
+    get_secrets_store,
     get_user_settings,
     get_user_settings_store,
 )
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api')
@@ -35,8 +38,11 @@ app = APIRouter(prefix='/api')
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    settings: Settings | None = Depends(get_user_settings),
+    settings_store: SettingsStore = Depends(get_user_settings_store),
+    secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> GETSettingsModel | JSONResponse:
+    settings = await settings_store.load()
+
     try:
         if not settings:
             return JSONResponse(
@@ -44,9 +50,18 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
+        # On initial load, user secrets may not be populated with values migrated from settings store
+        user_secrets = await invalidate_legacy_secrets_store(
+            settings, settings_store, secrets_store
+        )
+        # If invalidation is successful, then the returned user secrets holds the most recent values
+        git_providers = (
+            user_secrets.provider_tokens if user_secrets else provider_tokens
+        )
+
         provider_tokens_set: dict[ProviderType, str | None] = {}
-        if provider_tokens:
-            for provider_type, provider_token in provider_tokens.items():
+        if git_providers:
+            for provider_type, provider_token in git_providers.items():
                 if provider_token.token or provider_token.user_id:
                     provider_tokens_set[provider_type] = None
 

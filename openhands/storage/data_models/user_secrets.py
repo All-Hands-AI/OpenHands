@@ -1,5 +1,6 @@
 from types import MappingProxyType
 from typing import Any
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -10,7 +11,13 @@ from pydantic import (
     model_validator,
 )
 from pydantic.json import pydantic_encoder
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA, ProviderToken
+
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE,
+    PROVIDER_TOKEN_TYPE,
+    PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA,
+    ProviderToken,
+)
 from openhands.integrations.service_types import ProviderType
 
 
@@ -28,7 +35,6 @@ class UserSecrets(BaseModel):
         validate_assignment=True,
         arbitrary_types_allowed=True,
     )
-
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(

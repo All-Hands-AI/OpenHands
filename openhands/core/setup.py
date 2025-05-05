@@ -126,6 +126,8 @@ def initialize_repository_for_runtime(
     )
     # Run setup script if it exists
     runtime.maybe_run_setup_script()
+    # Set up git hooks if pre-commit.sh exists
+    runtime.maybe_setup_git_hooks()
 
     return repo_directory
 

@@ -39,6 +39,8 @@ class SandboxConfig(BaseModel):
         docker_runtime_kwargs: Additional keyword arguments to pass to the Docker runtime when running containers.
             This should be a JSON string that will be parsed into a dictionary.
         trusted_dirs: List of directories that can be trusted to run the OpenHands CLI.
+        vscode_port: The port to use for VSCode. If None, a random port will be chosen.
+            This is useful when deploying OpenHands in a remote machine where you need to expose a specific port.
     """
 
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
@@ -77,6 +79,7 @@ class SandboxConfig(BaseModel):
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
     trusted_dirs: list[str] = Field(default_factory=list)
+    vscode_port: int | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
