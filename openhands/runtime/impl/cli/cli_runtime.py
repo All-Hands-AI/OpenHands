@@ -145,13 +145,12 @@ class CLIRuntime(Runtime):
 
         # Use shell=True to run complex bash commands
         process = subprocess.Popen(
-            command,
+            ['bash', '-c', command],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Merge stderr into stdout for interleaved output
             text=True,
             bufsize=0,  # Unbuffered output
             universal_newlines=True,
-            shell=True,  # Run through a shell
         )
 
         while process.poll() is None:
