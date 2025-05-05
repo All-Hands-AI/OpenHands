@@ -43,9 +43,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 def get_user_info():
     """Get user ID and username in a cross-platform way."""
-    import getpass
-
-    username = getpass.getuser()
+    username = os.getenv('USER')
     if sys.platform == 'win32':
         # On Windows, we don't use user IDs the same way
         # Return a default value that won't cause issues
