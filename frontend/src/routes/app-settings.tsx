@@ -58,7 +58,7 @@ function AppSettingsScreen() {
         LANGUAGE: language,
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-        ENABLE_PROACTIVE_CONVERSATIONS: enableProactiveConversations,
+        ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
       },
       {
         onSuccess: () => {
@@ -153,10 +153,12 @@ function AppSettingsScreen() {
             <SettingsSwitch
               testId="enable-proactive-conversations-switch"
               name="enable-proactive-conversations-switch"
-              defaultIsToggled={!!settings.ENABLE_PROACTIVE_CONVERSATIONS}
+              defaultIsToggled={
+                !!settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS
+              }
               onToggle={checkIfProactiveConversationsSwitchHasChanged}
             >
-              {"Proactive Conversation Starters"}
+              Proactive Conversation Starters
             </SettingsSwitch>
           )}
         </div>
