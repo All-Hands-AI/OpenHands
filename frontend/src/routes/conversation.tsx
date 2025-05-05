@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -16,8 +16,6 @@ import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import { useEndSession } from "#/hooks/use-end-session";
-
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
@@ -55,7 +53,7 @@ function AppContent() {
   );
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
-  const endSession = useEndSession();
+  const navigate = useNavigate();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -67,10 +65,9 @@ function AppContent() {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
-      // End the session when the conversation is not found
-      endSession();
+      navigate("/");
     }
-  }, [conversation, isFetched, endSession]);
+  }, [conversation, isFetched]);
 
   React.useEffect(() => {
     dispatch(clearMessages());
