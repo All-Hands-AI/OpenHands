@@ -19,7 +19,6 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
 from zipfile import ZipFile
 
 from binaryornot.check import is_binary
@@ -173,7 +172,7 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session: Any = None
+        self.bash_session: BashSession | 'WindowsPowershellSession' | None = None  # type: ignore[name-defined]
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
