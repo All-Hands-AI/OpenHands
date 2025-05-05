@@ -16,7 +16,11 @@ const shownErrors = new Set<string>();
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
-      handle401Error(error, queryClient);
+      const isAuthQuery =
+        query.queryKey[0] === "user" && query.queryKey[1] === "authenticated";
+      if (!isAuthQuery) {
+        handle401Error(error, queryClient);
+      }
 
       if (!query.meta?.disableToast) {
         const errorMessage = retrieveAxiosErrorMessage(error);
