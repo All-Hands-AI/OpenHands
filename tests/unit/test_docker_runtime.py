@@ -74,6 +74,7 @@ def test_container_not_stopped_when_keep_runtime_alive_true(
 def test_custom_volumes_mode_extraction():
     """Test that the mount mode is correctly extracted from custom_volumes."""
     import os
+
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
     # Create a DockerRuntime instance with a mock config
@@ -149,6 +150,7 @@ def test_multiple_custom_volumes():
 def test_custom_volumes_default_mode():
     """Test that the default mount mode (rw) is used when not specified in custom_volumes."""
     import os
+
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
     # Create a DockerRuntime instance with a mock config
