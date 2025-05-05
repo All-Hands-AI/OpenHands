@@ -13,7 +13,7 @@ vi.mock("react-router", async () => {
 
 vi.mock("#/context/conversation-context", () => ({
   useConversation: () => ({ conversationId: "test-conversation-id" }),
-  ConversationProvider: ({ children }) => children,
+  ConversationProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock("react-i18next", async () => {
