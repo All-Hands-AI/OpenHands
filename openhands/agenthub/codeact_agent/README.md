@@ -53,9 +53,9 @@ The agent provides several built-in tools:
 ## Configuration
 
 Tools can be enabled/disabled through configuration parameters:
-- `codeact_enable_browsing`: Enable browser interaction tools
-- `codeact_enable_jupyter`: Enable IPython code execution
-- `codeact_enable_llm_editor`: Enable LLM-based file editing (falls back to string replacement editor if disabled)
+- `enable_browsing`: Enable browser interaction tools
+- `enable_jupyter`: Enable IPython code execution
+- `enable_llm_editor`: Enable LLM-based file editing (falls back to string replacement editor if disabled)
 
 ## Micro-agents
 

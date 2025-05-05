@@ -8,8 +8,9 @@ import socketio
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
+    BrowserOutputCondenserConfig,
+    CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
-    StructuredSummaryCondenserConfig,
 )
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -20,13 +21,14 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.settings import Settings
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -128,20 +130,19 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            # If function-calling is active we can use the structured summary
-            # condenser for more reliable summaries.
-            if llm.is_function_calling_active():
-                default_condenser_config = StructuredSummaryCondenserConfig(
-                    llm_config=llm.config, keep_first=3, max_size=80
-                )
-
-            # Otherwise, we'll fall back to the unstructured summary condenser.
-            # This is a good default but struggles more than the structured
-            # summary condenser with long messages.
-            else:
-                default_condenser_config = LLMSummarizingCondenserConfig(
-                    llm_config=llm.config, keep_first=3, max_size=80
-                )
+            # Default condenser chains a condenser that limits browser the total
+            # size of browser observations with a condenser that limits the size
+            # of the view given to the LLM. The order matters: with the browser
+            # output first, the summarizer will only see the most recent browser
+            # output, which should keep the summarization cost down.
+            default_condenser_config = CondenserPipelineConfig(
+                condensers=[
+                    BrowserOutputCondenserConfig(),
+                    LLMSummarizingCondenserConfig(
+                        llm_config=llm.config, keep_first=4, max_size=80
+                    ),
+                ]
+            )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
@@ -181,8 +182,9 @@ class Session:
         """
         Initialize LLM, extracted for testing.
         """
+        agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
-            config=self.config.get_llm_config_from_agent(agent_cls),
+            config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
         )
 
@@ -212,7 +214,8 @@ class Session:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
-            event, (CmdOutputObservation, AgentStateChangedObservation)
+            event,
+            (CmdOutputObservation, AgentStateChangedObservation, RecallObservation),
         ):
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)

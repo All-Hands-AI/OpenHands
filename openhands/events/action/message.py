@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from typing import Any
 
+import openhands
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
 
@@ -31,4 +33,31 @@ class MessageAction(Action):
         if self.image_urls:
             for url in self.image_urls:
                 ret += f'\nIMAGE_URL: {url}'
+        return ret
+
+
+@dataclass
+class SystemMessageAction(Action):
+    """
+    Action that represents a system message for an agent, including the system prompt
+    and available tools. This should be the first message in the event stream.
+    """
+
+    content: str
+    tools: list[Any] | None = None
+    openhands_version: str | None = openhands.__version__
+    agent_class: str | None = None
+    action: ActionType = ActionType.SYSTEM
+
+    @property
+    def message(self) -> str:
+        return self.content
+
+    def __str__(self) -> str:
+        ret = f'**SystemMessageAction** (source={self.source})\n'
+        ret += f'CONTENT: {self.content}'
+        if self.tools:
+            ret += f'\nTOOLS: {len(self.tools)} tools available'
+        if self.agent_class:
+            ret += f'\nAGENT_CLASS: {self.agent_class}'
         return ret

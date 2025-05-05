@@ -57,3 +57,9 @@ code {
 .markdown-body td {
   padding: 0.1rem 1rem;
 }
+
+/* Fast smooth scrolling for chat interface */
+.fast-smooth-scroll {
+  scroll-behavior: smooth;
+  scroll-timeline: 100ms;
+}

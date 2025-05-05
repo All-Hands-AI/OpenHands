@@ -6,8 +6,10 @@ import {
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { GitUser } from "#/types/git";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
+import { GitRepository, GitUser } from "#/types/git";
+import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -24,13 +26,21 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-  provider_tokens: DEFAULT_SETTINGS.PROVIDER_TOKENS,
 };
 
 const MOCK_USER_PREFERENCES: {
   settings: ApiSettings | PostApiSettings | null;
 } = {
   settings: null,
+};
+
+/**
+ * Set the user settings to the default settings
+ *
+ * Useful for resetting the settings in tests
+ */
+export const resetTestHandlersMockSettings = () => {
+  MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
 };
 
 const conversations: Conversation[] = [
@@ -78,6 +88,7 @@ const openHandsHandlers = [
     HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
+      "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-3-5-sonnet-20241022",
     ]),
@@ -91,52 +102,6 @@ const openHandsHandlers = [
     HttpResponse.json(["mock-invariant"]),
   ),
 
-  http.get(
-    "http://localhost:3001/api/conversations/:conversationId/list-files",
-    async ({ params }) => {
-      await delay();
-
-      const cid = params.conversationId?.toString();
-      if (!cid) return HttpResponse.json([], { status: 404 });
-
-      let data = ["file1.txt", "file2.txt", "file3.txt"];
-      if (cid === "3") {
-        data = [
-          "reboot_skynet.exe",
-          "target_list.txt",
-          "terminator_blueprint.txt",
-        ];
-      }
-
-      return HttpResponse.json(data);
-    },
-  ),
-
-  http.post("http://localhost:3001/api/save-file", () =>
-    HttpResponse.json(null, { status: 200 }),
-  ),
-
-  http.get("http://localhost:3001/api/select-file", async ({ request }) => {
-    await delay();
-
-    const token = request.headers
-      .get("Authorization")
-      ?.replace("Bearer", "")
-      .trim();
-
-    if (!token) {
-      return HttpResponse.json([], { status: 401 });
-    }
-
-    const url = new URL(request.url);
-    const file = url.searchParams.get("file")?.toString();
-    if (file) {
-      return HttpResponse.json({ code: `Content of ${file}` });
-    }
-
-    return HttpResponse.json(null, { status: 404 });
-  }),
-
   http.post("http://localhost:3001/api/submit-feedback", async () => {
     await delay(1200);
 
@@ -149,13 +114,27 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
+  ...FILE_SERVICE_HANDLERS,
+  ...TASK_SUGGESTIONS_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/user/repositories", () =>
-    HttpResponse.json([
-      { id: 1, full_name: "octocat/hello-world" },
-      { id: 2, full_name: "octocat/earth" },
-    ]),
-  ),
+  http.get("/api/user/repositories", () => {
+    const data: GitRepository[] = [
+      {
+        id: 1,
+        full_name: "octocat/hello-world",
+        git_provider: "github",
+        is_public: true,
+      },
+      {
+        id: 2,
+        full_name: "octocat/earth",
+        git_provider: "github",
+        is_public: true,
+      },
+    ];
+
+    return HttpResponse.json(data);
+  }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
       id: 1,
@@ -198,11 +177,12 @@ export const handlers = [
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
     if (Object.keys(settings.provider_tokens_set).length > 0)
-      settings.provider_tokens_set = { github: false, gitlab: false };
+      settings.provider_tokens_set = {};
 
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
+    await delay();
     const body = await request.json();
 
     if (body) {
@@ -275,7 +255,9 @@ export const handlers = [
     },
   ),
 
-  http.post("/api/conversations", () => {
+  http.post("/api/conversations", async () => {
+    await delay();
+
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",
@@ -309,5 +291,33 @@ export const handlers = [
     await delay();
     MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
     return HttpResponse.json(null, { status: 200 });
+  }),
+
+  http.post("/api/add-git-providers", async ({ request }) => {
+    const body = await request.json();
+
+    if (typeof body === "object" && body?.provider_tokens) {
+      const rawTokens = body.provider_tokens as Record<
+        string,
+        { token?: string }
+      >;
+
+      const providerTokensSet: Partial<Record<Provider, string | null>> =
+        Object.fromEntries(
+          Object.entries(rawTokens)
+            .filter(([, val]) => val && val.token)
+            .map(([provider]) => [provider as Provider, ""]),
+        );
+
+      const newSettings = {
+        ...(MOCK_USER_PREFERENCES.settings ?? MOCK_DEFAULT_USER_SETTINGS),
+        provider_tokens_set: providerTokensSet,
+      };
+      MOCK_USER_PREFERENCES.settings = newSettings;
+
+      return HttpResponse.json(true, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 400 });
   }),
 ];
