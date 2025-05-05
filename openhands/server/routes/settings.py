@@ -1,5 +1,3 @@
-from typing import Dict
-
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -71,7 +69,7 @@ async def load_settings(
         )
 
 
-@app.post('/reset-settings', response_model=Dict)
+@app.post('/reset-settings', response_model=dict[str, str])
 async def reset_settings() -> JSONResponse:
     """
     Resets user settings. (Deprecated)
@@ -101,7 +99,7 @@ async def store_llm_settings(
     return settings
 
 
-@app.post('/settings', response_model=Dict)
+@app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),

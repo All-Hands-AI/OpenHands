@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
@@ -59,7 +59,7 @@ class InitSessionRequest(BaseModel):
     git_provider: ProviderType | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
-    image_urls: List[str] | None = None
+    image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
 
@@ -72,7 +72,7 @@ async def _create_new_conversation(
     selected_repository: Optional[str],
     selected_branch: Optional[str],
     initial_user_msg: Optional[str],
-    image_urls: Optional[List[str]],
+    image_urls: Optional[list[str]],
     replay_json: Optional[str],
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
@@ -90,7 +90,7 @@ async def _create_new_conversation(
     settings = await settings_store.load()
     logger.info('Settings loaded')
 
-    session_init_args: Dict[str, Any] = {}
+    session_init_args: dict[str, Any] = {}
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,

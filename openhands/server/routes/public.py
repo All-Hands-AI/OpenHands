@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -10,8 +10,8 @@ from openhands.utils.llm import get_supported_llm_models
 app = APIRouter(prefix='/api/options')
 
 
-@app.get('/models', response_model=List)
-async def get_litellm_models() -> List[str]:
+@app.get('/models', response_model=list[str])
+async def get_litellm_models() -> list[str]:
     """Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
@@ -23,13 +23,13 @@ async def get_litellm_models() -> List[str]:
     ```
 
     Returns:
-        List[str]: A sorted list of unique model names.
+        list[str]: A sorted list of unique model names.
     """
     return get_supported_llm_models(config)
 
 
-@app.get('/agents', response_model=List)
-async def get_agents() -> List[str]:
+@app.get('/agents', response_model=list[str])
+async def get_agents() -> list[str]:
     """Get all agents supported by LiteLLM.
 
     To get the agents:
@@ -38,13 +38,13 @@ async def get_agents() -> List[str]:
     ```
 
     Returns:
-        List[str]: A sorted list of agent names.
+        list[str]: A sorted list of agent names.
     """
     return sorted(Agent.list_agents())
 
 
-@app.get('/security-analyzers', response_model=List)
-async def get_security_analyzers() -> List[str]:
+@app.get('/security-analyzers', response_model=list[str])
+async def get_security_analyzers() -> list[str]:
     """Get all supported security analyzers.
 
     To get the security analyzers:
@@ -53,16 +53,16 @@ async def get_security_analyzers() -> List[str]:
     ```
 
     Returns:
-        List[str]: A sorted list of security analyzer names.
+        list[str]: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get('/config', response_model=Dict)
-async def get_config() -> Dict[str, Any]:
+@app.get('/config', response_model=dict[str, Any])
+async def get_config() -> dict[str, Any]:
     """Get current config.
 
     Returns:
-        Dict[str, Any]: The current server configuration.
+        dict[str, Any]: The current server configuration.
     """
     return server_config.get_config()
