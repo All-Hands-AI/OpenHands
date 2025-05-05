@@ -406,7 +406,6 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates == initial_defaults
 
 
-
 def test_sandbox_volumes(monkeypatch, default_config):
     # Test SANDBOX_VOLUMES with multiple mounts
     monkeypatch.setenv(
