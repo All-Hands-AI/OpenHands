@@ -4,6 +4,7 @@
 
 import asyncio
 import sys
+import threading
 import time
 
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -58,11 +59,13 @@ COMMANDS = {
     '/exit': 'Exit the application',
     '/help': 'Display available commands',
     '/init': 'Initialize a new repository',
-    '/status': 'Display session details and usage metrics',
-    '/new': 'Create a new session',
+    '/status': 'Display conversation details and usage metrics',
+    '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
 }
+
+print_lock = threading.Lock()
 
 
 class UsageMetrics:
@@ -136,7 +139,7 @@ def display_banner(session_id: str):
     print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
 
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Initialized session {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Initialized conversation {session_id}</grey>'))
     print_formatted_text('')
 
 
@@ -164,28 +167,28 @@ def display_initial_user_prompt(prompt: str):
 
 # Prompt output display functions
 def display_event(event: Event, config: AppConfig) -> None:
-    if isinstance(event, Action):
-        if hasattr(event, 'thought'):
-            display_message(event.thought)
-    if isinstance(event, MessageAction):
-        if event.source == EventSource.AGENT:
-            display_message(event.content)
-    if isinstance(event, CmdRunAction):
-        display_command(event)
-    if isinstance(event, CmdOutputObservation):
-        display_command_output(event.content)
-    if isinstance(event, FileEditAction):
-        display_file_edit(event)
-    if isinstance(event, FileEditObservation):
-        display_file_edit(event)
-    if isinstance(event, FileReadObservation):
-        display_file_read(event)
-    if isinstance(event, AgentStateChangedObservation):
-        display_agent_paused_message(event.agent_state)
+    with print_lock:
+        if isinstance(event, Action):
+            if hasattr(event, 'thought'):
+                display_message(event.thought)
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                display_message(event.content)
+        if isinstance(event, CmdRunAction):
+            display_command(event)
+        if isinstance(event, CmdOutputObservation):
+            display_command_output(event.content)
+        if isinstance(event, FileEditAction):
+            display_file_edit(event)
+        if isinstance(event, FileEditObservation):
+            display_file_edit(event)
+        if isinstance(event, FileReadObservation):
+            display_file_read(event)
+        if isinstance(event, AgentStateChangedObservation):
+            display_agent_paused_message(event.agent_state)
 
 
 def display_message(message: str):
-    time.sleep(0.2)
     message = message.strip()
 
     if message:
@@ -248,6 +251,7 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
             title='File Edit',
             style=f'fg:{COLOR_GREY}',
         )
+        print_formatted_text('')
         print_container(container)
 
 
@@ -262,6 +266,7 @@ def display_file_read(event: FileReadObservation):
         title='File Read',
         style=f'fg:{COLOR_GREY}',
     )
+    print_formatted_text('')
     print_container(container)
 
 
@@ -374,13 +379,13 @@ def get_session_duration(session_init_time: float) -> str:
 def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
-    print_formatted_text(HTML('<grey>Closing current session...</grey>'))
+    print_formatted_text(HTML('<grey>Closing current conversation...</grey>'))
     print_formatted_text('')
     display_usage_metrics(usage_metrics)
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Session duration: {duration_str}</grey>'))
+    print_formatted_text(HTML(f'<grey>Conversation duration: {duration_str}</grey>'))
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Closed session {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Closed conversation {session_id}</grey>'))
     print_formatted_text('')
 
 
@@ -388,8 +393,8 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
-    print_formatted_text(HTML(f'<grey>Uptime:     {duration_str}</grey>'))
+    print_formatted_text(HTML(f'<grey>Conversation ID: {session_id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Uptime:          {duration_str}</grey>'))
     print_formatted_text('')
     display_usage_metrics(usage_metrics)
 
