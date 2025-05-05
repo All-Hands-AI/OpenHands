@@ -90,7 +90,7 @@ describe("HomeScreen", () => {
     screen.getByTestId("task-suggestions");
   });
 
-  it.only("should have responsive layout for mobile and desktop screens", async () => {
+  it("should have responsive layout for mobile and desktop screens", () => {
     renderHomeScreen();
 
     const mainContainer = screen

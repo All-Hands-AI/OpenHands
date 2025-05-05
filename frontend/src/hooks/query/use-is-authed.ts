@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
 import OpenHands from "#/api/open-hands";
 import { useConfig } from "./use-config";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
@@ -8,7 +7,7 @@ export const useIsAuthed = () => {
   const { data: config } = useConfig();
   const isOnTosPage = useIsOnTosPage();
 
-  const appMode = React.useMemo(() => config?.APP_MODE, [config]);
+  const appMode = config?.APP_MODE;
 
   return useQuery({
     queryKey: ["user", "authenticated", appMode],

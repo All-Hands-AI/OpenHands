@@ -77,7 +77,6 @@ export default function MainApp() {
 
   // When on TOS page, we don't make any API calls, so we need to handle this case
   const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
-
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
@@ -136,10 +135,10 @@ export default function MainApp() {
   }, [error?.status, pathname, isFetching, tosPageStatus]);
 
   React.useEffect(() => {
-    if (!userIsAuthed && !isFetchingAuth) {
+    if (!userIsAuthed && !isFetchingAuth && authError) {
       clear();
     }
-  }, [userIsAuthed, isFetchingAuth, clear]);
+  }, [userIsAuthed, isFetchingAuth, authError, clear]);
 
   // Only show the auth modal if:
   // 1. User is not authenticated
