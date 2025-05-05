@@ -7,7 +7,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
-from openhands.storage.settings.secret_store import SecretsStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.utils.async_utils import call_sync_from_async
 
 
