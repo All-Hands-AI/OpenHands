@@ -148,6 +148,7 @@ class CodeActAgent(Agent):
 
         # if we're done, go back
         latest_user_message = state.get_last_user_message()
+
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
@@ -168,6 +169,14 @@ class CodeActAgent(Agent):
         )
 
         messages = self._get_messages(condensed_history)
+
+        # process the user input and check chatmode
+        if latest_user_message and (
+            latest_user_message.mode is None or latest_user_message.mode == 'chat'
+        ):
+            # process the user input
+            pass
+
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
