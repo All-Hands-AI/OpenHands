@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List
 
 import docker
-from dirhash import dirhash  # type: ignore
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -284,8 +284,9 @@ def prep_build_folder(
         build_from=build_from,
         extra_deps=extra_deps,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
-        file.write(dockerfile_content)  # type: ignore
+    dockerfile_path = Path(build_folder, 'Dockerfile')
+    with open(str(dockerfile_path), 'w') as f:
+        f.write(dockerfile_content)
 
 
 _ALPHABET = string.digits + string.ascii_lowercase
