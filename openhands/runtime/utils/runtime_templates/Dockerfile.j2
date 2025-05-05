@@ -63,10 +63,6 @@ RUN curl -OL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz && \
     echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && \
     echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/bash.bashrc
 
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    echo "source $HOME/.cargo/env" >> /etc/bash.bashrc
-
 # Install PHP
 RUN apt-get update && \
     apt-get install -y php && \
