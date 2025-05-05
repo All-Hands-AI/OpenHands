@@ -8,20 +8,24 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
 import mimetypes
 import os
 import shutil
 import tempfile
 import time
 import traceback
+from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncIterator
 from zipfile import ZipFile
 
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -171,6 +175,13 @@ class ActionExecutor:
         self.last_execution_time = self.start_time
         self._initialized = False
 
+        # Queue for terminal output streaming
+        self.terminal_output_queue: deque = deque(
+            maxlen=1000
+        )  # Limit queue size to prevent memory issues
+        self.terminal_output_event = asyncio.Event()
+        self.current_command_id: str | None = None
+
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
             self.max_memory_gb = int(_override_max_memory_gb)
@@ -309,6 +320,13 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
+        # Generate a unique ID for this command execution
+        command_id = str(time.time())
+        self.current_command_id = command_id
+
+        # Clear the queue for the new command
+        self.terminal_output_queue.clear()
+
         if action.is_static:
             path = action.cwd or self._initial_cwd
             result = await AsyncBashSession.execute(action.command, path)
@@ -317,11 +335,46 @@ class ActionExecutor:
                 exit_code=result.exit_code,
                 command=action.command,
             )
+
+            # Add the complete output to the queue
+            self._add_to_output_queue(
+                command_id,
+                result.content,
+                {
+                    'command': action.command,
+                    'is_complete': True,
+                    'exit_code': result.exit_code,
+                    'timestamp': time.time(),
+                },
+            )
             return obs
 
         assert self.bash_session is not None
-        obs = await call_sync_from_async(self.bash_session.execute, action)
+
+        # Define the stream callback function
+        def stream_callback(content: str, metadata: dict):
+            self._add_to_output_queue(
+                command_id, content, {**metadata, 'command_id': command_id}
+            )
+
+        # Execute the command with streaming enabled
+        obs = await call_sync_from_async(
+            self.bash_session.execute, action, stream_callback
+        )
         return obs
+
+    def _add_to_output_queue(self, command_id: str, content: str, metadata: dict):
+        """Add output chunk to the queue and set the event to notify listeners."""
+        if self.current_command_id != command_id:
+            # This is from an old command, ignore it
+            return
+
+        # Add to queue
+        self.terminal_output_queue.append({'content': content, 'metadata': metadata})
+
+        # Notify listeners
+        self.terminal_output_event.set()
+        self.terminal_output_event.clear()
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
@@ -586,6 +639,15 @@ if __name__ == '__main__':
 
     app = FastAPI(lifespan=lifespan)
 
+    # Add CORS middleware to allow cross-origin requests
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=['*'],  # Allow all origins
+        allow_credentials=True,
+        allow_methods=['*'],  # Allow all methods
+        allow_headers=['*'],  # Allow all headers
+    )
+
     # TODO below 3 exception handlers were recommended by Sonnet.
     # Are these something we should keep?
     @app.exception_handler(Exception)
@@ -843,6 +905,61 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
+
+    # ================================
+    # Bash command output streaming
+    # ================================
+    @app.get('/terminal-stream')
+    async def terminal_stream(request: Request):
+        """
+        Server-Sent Events (SSE) endpoint for streaming terminal output.
+
+        This endpoint streams terminal output in real-time as commands are executed.
+        Each event contains the output chunk and metadata about the command execution.
+        """
+        assert client is not None
+
+        async def event_generator() -> AsyncIterator[str]:
+            # Send any existing output chunks first
+            for chunk in client.terminal_output_queue:
+                yield format_sse_event(chunk)
+
+            # Then listen for new chunks
+            while True:
+                # Wait for new output
+                await client.terminal_output_event.wait()
+
+                # Get the latest chunk (should be the last one in the queue)
+                if client.terminal_output_queue:
+                    latest_chunk = client.terminal_output_queue[-1]
+                    yield format_sse_event(latest_chunk)
+
+                    # If this is the final chunk (command completed), we can stop streaming
+                    if latest_chunk.get('metadata', {}).get('is_complete', False):
+                        break
+
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    logger.debug('Client disconnected from terminal stream')
+                    break
+
+                # Small delay to prevent CPU spinning
+                await asyncio.sleep(0.01)
+
+        return StreamingResponse(
+            event_generator(),
+            media_type='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Content-Type': 'text/event-stream',
+            },
+        )
+
+    def format_sse_event(data: dict) -> str:
+        """Format data as a Server-Sent Event."""
+        json_data = json.dumps(data)
+        return f'data: {json_data}\n\n'
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
