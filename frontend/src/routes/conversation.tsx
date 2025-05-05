@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -16,7 +16,6 @@ import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
@@ -32,7 +31,6 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -56,7 +54,7 @@ function AppContent() {
   );
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
-  const endSession = useEndSession();
+  const navigate = useNavigate();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -68,7 +66,7 @@ function AppContent() {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
-      endSession();
+      navigate("/");
     }
   }, [conversation, isFetched]);
 
