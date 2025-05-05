@@ -8,11 +8,14 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
     EDITOR=code \
     VISUAL=code \
     GIT_EDITOR="code --wait" \
-    OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server \
-    GOPATH=/go \
+    OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server
+
+{% if include_programming_languages %}
+ENV GOPATH=/go \
     GOROOT=/usr/local/go \
     PATH="/usr/local/go/bin:/go/bin:/root/.cargo/bin:${PATH}" \
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+{% endif %}
 
 {% macro setup_base_system() %}
 
@@ -50,6 +53,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+{% if include_programming_languages %}
 # Install Java
 RUN apt-get update && \
     apt-get install -y openjdk-17-jdk maven gradle && \
@@ -74,6 +78,7 @@ RUN apt-get update && \
     apt-get install -y ruby-full ruby-bundler && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+{% endif %}
 
 
 {% if 'ubuntu' in base_image %}
@@ -93,9 +98,12 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 # Create necessary directories
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
-    mkdir -p /openhands/poetry && \
-    mkdir -p /go && \
+    mkdir -p /openhands/poetry
+
+{% if include_programming_languages %}
+RUN mkdir -p /go && \
     chmod -R 777 /go
+{% endif %}
 
 {% endmacro %}
 
