@@ -206,20 +206,20 @@ class DockerRuntime(ActionExecutionClient):
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
-            
+
     def _process_volumes(self) -> dict[str, dict[str, str]]:
         """Process volume mounts based on configuration.
-        
+
         Returns:
             A dictionary mapping host paths to container bind mounts with their modes.
         """
         # Initialize volumes dictionary
         volumes: dict[str, dict[str, str]] = {}
 
-        # Process CUSTOM_VOLUMES (comma-delimited)
-        if self.config.custom_volumes is not None:
+        # Process volumes (comma-delimited)
+        if self.config.sandbox.volumes is not None:
             # Handle multiple mounts with comma delimiter
-            mounts = self.config.custom_volumes.split(',')
+            mounts = self.config.sandbox.volumes.split(',')
 
             for mount in mounts:
                 parts = mount.split(':')
@@ -234,7 +234,7 @@ class DockerRuntime(ActionExecutionClient):
                         'mode': mount_mode,
                     }
                     logger.debug(
-                        f'Mount dir (custom_volumes): {host_path} to {container_path} with mode: {mount_mode}'
+                        f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
                     )
 
         # Legacy mounting with workspace_* parameters
@@ -252,7 +252,7 @@ class DockerRuntime(ActionExecutionClient):
             logger.debug(
                 f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
             )
-            
+
         return volumes
 
     def _init_container(self):

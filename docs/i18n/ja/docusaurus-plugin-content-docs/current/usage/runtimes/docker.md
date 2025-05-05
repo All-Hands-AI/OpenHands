@@ -9,18 +9,18 @@ nikolaik の `SANDBOX_RUNTIME_CONTAINER_IMAGE` は、ランタイムサーバー
 ## ファイルシステムへの接続
 ここでの便利な機能の1つは、ローカルファイルシステムに接続する機能です。ファイルシステムをランタイムにマウントするには：
 
-### CUSTOM_VOLUMES の使用
+### SANDBOX_VOLUMES の使用
 
-ローカルファイルシステムをマウントする最も簡単な方法は、`CUSTOM_VOLUMES` 環境変数を使用することです：
+ローカルファイルシステムをマウントする最も簡単な方法は、`SANDBOX_VOLUMES` 環境変数を使用することです：
 
 ```bash
 docker run # ...
     -e SANDBOX_USER_ID=$(id -u) \
-    -e CUSTOM_VOLUMES=/path/to/your/code:/workspace:rw \
+    -e SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw \
     # ...
 ```
 
-`CUSTOM_VOLUMES` の形式は：`ホストパス:コンテナパス[:モード]`
+`SANDBOX_VOLUMES` の形式は：`ホストパス:コンテナパス[:モード]`
 
 - `ホストパス`：マウントしたいホストマシン上のパス
 - `コンテナパス`：ホストパスがマウントされるコンテナ内のパス（通常は `/workspace`）
@@ -29,30 +29,30 @@ docker run # ...
 カンマ（`,`）で区切ることで、複数のマウントを指定することもできます：
 
 ```bash
-export CUSTOM_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
+export SANDBOX_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
 ```
 
 例：
 
 ```bash
 # Linux と Mac の例
-export CUSTOM_VOLUMES=$HOME/OpenHands:/workspace:rw
+export SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
 
 # Windows の WSL の例
-export CUSTOM_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
+export SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
 
 # 読み取り専用マウントの例
-export CUSTOM_VOLUMES=/path/to/reference/code:/workspace:ro
+export SANDBOX_VOLUMES=/path/to/reference/code:/workspace:ro
 
 # 複数マウントの例
-export CUSTOM_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
+export SANDBOX_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
 ```
 
 > **注意：** 複数のマウントを使用する場合、最初のマウントが主要なワークスペースと見なされ、単一のワークスペースを想定するツールとの後方互換性のために使用されます。
 
 ### WORKSPACE_* 変数の使用（非推奨）
 
-> **注意：** この方法は非推奨であり、将来のバージョンで削除される予定です。代わりに `CUSTOM_VOLUMES` を使用してください。
+> **注意：** この方法は非推奨であり、将来のバージョンで削除される予定です。代わりに `SANDBOX_VOLUMES` を使用してください。
 
 1. `WORKSPACE_BASE` を設定します：
 

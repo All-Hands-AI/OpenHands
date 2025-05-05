@@ -294,18 +294,18 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 
 def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
-    # Handle the custom_volumes parameter
-    if cfg.custom_volumes is not None:
+    # Handle the sandbox.volumes parameter
+    if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
-        mounts = cfg.custom_volumes.split(',')
+        mounts = cfg.sandbox.volumes.split(',')
 
-        # Use the first custom volume for backward compatibility
+        # Use the first volume for backward compatibility
         if mounts:
             primary_mount = mounts[0]
             parts = primary_mount.split(':')
             if len(parts) < 2 or len(parts) > 3:
                 raise ValueError(
-                    f'Invalid custom_volumes format: {primary_mount}. '
+                    f'Invalid sandbox.volumes format: {primary_mount}. '
                     f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
                 )
 
@@ -315,7 +315,7 @@ def finalize_config(cfg: AppConfig) -> None:
             # Set the workspace_mount_path and workspace_mount_path_in_sandbox for backward compatibility
             cfg.workspace_mount_path = host_path
             cfg.workspace_mount_path_in_sandbox = container_path
-            
+
             # Also set workspace_base for backward compatibility
             cfg.workspace_base = host_path
 
@@ -324,7 +324,7 @@ def finalize_config(cfg: AppConfig) -> None:
             parts = mount.split(':')
             if len(parts) < 2 or len(parts) > 3:
                 raise ValueError(
-                    f'Invalid mount format in custom_volumes: {mount}. '
+                    f'Invalid mount format in sandbox.volumes: {mount}. '
                     f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
                 )
 

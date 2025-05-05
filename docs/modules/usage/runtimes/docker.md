@@ -10,18 +10,18 @@ You can also [build your own runtime image](../how-to/custom-sandbox-guide).
 ## Connecting to Your filesystem
 A useful feature is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
 
-### Using CUSTOM_VOLUMES
+### Using SANDBOX_VOLUMES
 
-The simplest way to mount your local filesystem is to use the `CUSTOM_VOLUMES` environment variable:
+The simplest way to mount your local filesystem is to use the `SANDBOX_VOLUMES` environment variable:
 
 ```bash
 docker run # ...
     -e SANDBOX_USER_ID=$(id -u) \
-    -e CUSTOM_VOLUMES=/path/to/your/code:/workspace:rw \
+    -e SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw \
     # ...
 ```
 
-The `CUSTOM_VOLUMES` format is: `host_path:container_path[:mode]`
+The `SANDBOX_VOLUMES` format is: `host_path:container_path[:mode]`
 
 - `host_path`: The path on your host machine that you want to mount
 - `container_path`: The path inside the container where the host path will be mounted (typically `/workspace`)
@@ -30,30 +30,30 @@ The `CUSTOM_VOLUMES` format is: `host_path:container_path[:mode]`
 You can also specify multiple mounts by separating them with commas (`,`):
 
 ```bash
-export CUSTOM_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
+export SANDBOX_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
 ```
 
 Examples:
 
 ```bash
 # Linux and Mac Example
-export CUSTOM_VOLUMES=$HOME/OpenHands:/workspace:rw
+export SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
 
 # WSL on Windows Example
-export CUSTOM_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
+export SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
 
 # Read-only mount example
-export CUSTOM_VOLUMES=/path/to/reference/code:/workspace:ro
+export SANDBOX_VOLUMES=/path/to/reference/code:/workspace:ro
 
 # Multiple mounts example
-export CUSTOM_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
+export SANDBOX_VOLUMES=$HOME/projects:/workspace/projects,$HOME/reference:/workspace/reference:ro
 ```
 
 > **Note:** When using multiple mounts, the first mount is considered the primary workspace and will be used for backward compatibility with tools that expect a single workspace.
 
 ### Using WORKSPACE_* variables (Deprecated)
 
-> **Note:** This method is deprecated and will be removed in a future version. Please use `CUSTOM_VOLUMES` instead.
+> **Note:** This method is deprecated and will be removed in a future version. Please use `SANDBOX_VOLUMES` instead.
 
 1. Set `WORKSPACE_BASE`:
 
