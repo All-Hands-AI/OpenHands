@@ -19,6 +19,9 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
+from openhands.integrations.github.queries import suggested_task_pr_graphql_query, suggested_task_issue_graphql_query
+from datetime import datetime
+from openhands.core.logger import openhands_logger as logger
 
 
 class GitHubService(BaseGitService, GitService):
@@ -43,6 +46,9 @@ class GitHubService(BaseGitService, GitService):
 
         if base_domain:
             self.BASE_URL = f'https://{base_domain}/api/v3'
+
+        self.external_auth_id = external_auth_id
+        self.external_auth_token = external_auth_token
 
     @property
     def provider(self) -> str:
@@ -284,60 +290,21 @@ class GitHubService(BaseGitService, GitService):
         Returns:
         - PRs authored by the user.
         - Issues assigned to the user.
+        
+        Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
         user = await self.get_user()
         login = user.login
-
-        query = """
-        query GetUserTasks($login: String!) {
-          user(login: $login) {
-            pullRequests(first: 100, states: [OPEN], orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-                mergeable
-                commits(last: 1) {
-                  nodes {
-                    commit {
-                      statusCheckRollup {
-                        state
-                      }
-                    }
-                  }
-                }
-                reviews(first: 100, states: [CHANGES_REQUESTED, COMMENTED]) {
-                  nodes {
-                    state
-                  }
-                }
-              }
-            }
-            issues(first: 100, states: [OPEN], filterBy: {assignee: $login}, orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-              }
-            }
-          }
-        }
-        """
-
+        tasks: list[SuggestedTask] = []
         variables = {'login': login}
 
         try:
-            response = await self.execute_graphql_query(query, variables)
-            data = response['data']['user']
-            tasks: list[SuggestedTask] = []
-
+            pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
+            pr_data = pr_response['data']['user']
+            
             # Process pull requests
-            for pr in data['pullRequests']['nodes']:
+            for pr in pr_data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
 
                 # Start with default task type
@@ -373,8 +340,18 @@ class GitHubService(BaseGitService, GitService):
                         )
                     )
 
+            
+        except Exception as e:
+            logger.info(f"Error fetching suggested task for PRs: {e}", 
+                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
+            
+        try:
+            # Execute issue query
+            issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
+            issue_data = issue_response['data']['user']
+            
             # Process issues
-            for issue in data['issues']['nodes']:
+            for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
@@ -387,8 +364,12 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-        except Exception:
-            return []
+        
+        except Exception as e:
+            logger.info(f"Error fetching suggested task for issues: {e}", 
+                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
+
+        return tasks
 
     async def get_repository_details_from_repo_name(
         self, repository: str

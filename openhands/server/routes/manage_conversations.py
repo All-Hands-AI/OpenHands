@@ -62,6 +62,8 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
 
+    model_config = {'extra': 'forbid'}
+
 
 async def _create_new_conversation(
     user_id: str | None,
