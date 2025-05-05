@@ -1,126 +1,22 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Spinner } from "@heroui/react";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
-import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
+import {
+  RepositoryDropdown,
+  RepositoryLoadingState,
+  RepositoryErrorState,
+  BranchDropdown,
+  BranchLoadingState,
+  BranchErrorState,
+} from "./repository-selection";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repoTitle: string | null) => void;
-}
-
-// Loading state component
-function RepositoryLoadingState() {
-  const { t } = useTranslation();
-  return (
-    <div
-      data-testid="repo-dropdown-loading"
-      className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded"
-    >
-      <Spinner size="sm" />
-      <span className="text-sm">{t("HOME$LOADING_REPOSITORIES")}</span>
-    </div>
-  );
-}
-
-// Error state component
-function RepositoryErrorState() {
-  const { t } = useTranslation();
-  return (
-    <div
-      data-testid="repo-dropdown-error"
-      className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded text-red-500"
-    >
-      <span className="text-sm">{t("HOME$FAILED_TO_LOAD_REPOSITORIES")}</span>
-    </div>
-  );
-}
-
-// Repository dropdown component
-interface RepositoryDropdownProps {
-  items: { key: React.Key; label: string }[];
-  onSelectionChange: (key: React.Key | null) => void;
-  onInputChange: (value: string) => void;
-}
-
-function RepositoryDropdown({
-  items,
-  onSelectionChange,
-  onInputChange,
-}: RepositoryDropdownProps) {
-  return (
-    <SettingsDropdownInput
-      testId="repo-dropdown"
-      name="repo-dropdown"
-      placeholder="Select a repo"
-      items={items}
-      wrapperClassName="max-w-[500px]"
-      onSelectionChange={onSelectionChange}
-      onInputChange={onInputChange}
-    />
-  );
-}
-
-// Branch loading state component
-function BranchLoadingState() {
-  const { t } = useTranslation();
-  return (
-    <div
-      data-testid="branch-dropdown-loading"
-      className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded"
-    >
-      <Spinner size="sm" />
-      <span className="text-sm">{t("HOME$LOADING_BRANCHES")}</span>
-    </div>
-  );
-}
-
-// Branch error state component
-function BranchErrorState() {
-  const { t } = useTranslation();
-  return (
-    <div
-      data-testid="branch-dropdown-error"
-      className="flex items-center gap-2 max-w-[500px] h-10 px-3 bg-tertiary border border-[#717888] rounded text-red-500"
-    >
-      <span className="text-sm">{t("HOME$FAILED_TO_LOAD_BRANCHES")}</span>
-    </div>
-  );
-}
-
-// Branch dropdown component
-interface BranchDropdownProps {
-  items: { key: React.Key; label: string }[];
-  onSelectionChange: (key: React.Key | null) => void;
-  onInputChange: (value: string) => void;
-  isDisabled: boolean;
-  selectedKey?: string;
-}
-
-function BranchDropdown({
-  items,
-  onSelectionChange,
-  onInputChange,
-  isDisabled,
-  selectedKey,
-}: BranchDropdownProps) {
-  return (
-    <SettingsDropdownInput
-      testId="branch-dropdown"
-      name="branch-dropdown"
-      placeholder="Select a branch"
-      items={items}
-      wrapperClassName="max-w-[500px]"
-      onSelectionChange={onSelectionChange}
-      onInputChange={onInputChange}
-      isDisabled={isDisabled}
-      selectedKey={selectedKey}
-    />
-  );
 }
 
 export function RepositorySelectionForm({
