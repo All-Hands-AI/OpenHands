@@ -25,7 +25,7 @@ def get_local_config_trusted_dirs() -> list[str]:
     return []
 
 
-def add_local_config_trusted_dir(folder_path: str):
+def add_local_config_trusted_dir(folder_path: str) -> None:
     config = _DEFAULT_CONFIG
     if _LOCAL_CONFIG_FILE_PATH.exists():
         try:
@@ -48,7 +48,7 @@ def add_local_config_trusted_dir(folder_path: str):
         toml.dump(config, f)
 
 
-def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
+def update_usage_metrics(event: Event, usage_metrics: UsageMetrics) -> None:
     if not hasattr(event, 'llm_metrics'):
         return
 
@@ -59,7 +59,7 @@ def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
     usage_metrics.metrics = llm_metrics
 
 
-def extract_model_and_provider(model):
+def extract_model_and_provider(model: str) -> dict[str, str]:
     separator = '/'
     split = model.split(separator)
 
@@ -84,8 +84,10 @@ def extract_model_and_provider(model):
     return {'provider': provider, 'model': model_id, 'separator': separator}
 
 
-def organize_models_and_providers(models):
-    result = {}
+def organize_models_and_providers(
+    models: list[str],
+) -> dict[str, dict[str, str | list[str]]]:
+    result: dict[str, dict[str, str | list[str]]] = {}
 
     for model in models:
         extracted = extract_model_and_provider(model)
@@ -134,19 +136,19 @@ VERIFIED_ANTHROPIC_MODELS = [
 ]
 
 
-def is_number(char):
+def is_number(char: str) -> bool:
     return char.isdigit()
 
 
-def split_is_actually_version(split):
+def split_is_actually_version(split: list[str]) -> bool:
     return len(split) > 1 and split[1] and split[1][0] and is_number(split[1][0])
 
 
-def read_file(file_path):
+def read_file(file_path: str) -> str:
     with open(file_path, 'r') as f:
         return f.read()
 
 
-def write_to_file(file_path, content):
+def write_to_file(file_path: str, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)

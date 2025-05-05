@@ -29,7 +29,7 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.utils.llm import get_supported_llm_models
 
 
-def display_settings(config: AppConfig):
+def display_settings(config: AppConfig) -> None:
     llm_config = config.get_llm_config()
     advanced_llm_settings = True if llm_config.base_url else False
 
@@ -108,8 +108,8 @@ async def get_validated_input(
     prompt_text: str,
     completer=None,
     validator=None,
-    error_message='Input cannot be empty',
-):
+    error_message: str = 'Input cannot be empty',
+) -> str:
     session.completer = completer
     value = None
 
@@ -146,7 +146,7 @@ def save_settings_confirmation() -> bool:
 
 async def modify_llm_settings_basic(
     config: AppConfig, settings_store: FileSettingsStore
-):
+) -> None:
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
 
@@ -244,7 +244,7 @@ async def modify_llm_settings_basic(
 
 async def modify_llm_settings_advanced(
     config: AppConfig, settings_store: FileSettingsStore
-):
+) -> None:
     session = PromptSession(key_bindings=kb_cancel())
 
     custom_model = None
