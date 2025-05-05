@@ -75,12 +75,12 @@ export function ChatMessage({
           {message}
         </Markdown>
       </div>
-      
+
       {/* Add feedback buttons only for assistant messages */}
       {type === "assistant" && messageId && (
         <MessageFeedback messageId={messageId} feedback={feedback} />
       )}
-      
+
       {children}
     </article>
   );

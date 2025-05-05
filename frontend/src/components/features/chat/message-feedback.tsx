@@ -7,6 +7,7 @@ import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 import { TrajectoryActionButton } from "#/components/shared/buttons/trajectory-action-button";
 import { createUserFeedback } from "#/services/chat-service";
 import { setMessageFeedback } from "#/state/chat-slice";
+import { I18nKey } from "#/i18n/declaration";
 
 interface MessageFeedbackProps {
   messageId: number;
