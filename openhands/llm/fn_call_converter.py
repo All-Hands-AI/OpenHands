@@ -359,7 +359,8 @@ def convert_fncall_messages_to_non_fncall_messages(
                     and any(
                         (
                             tool['type'] == 'function'
-                            and tool['function']['name'] == refine_prompt('execute_bash')
+                            and tool['function']['name']
+                            == refine_prompt('execute_bash')
                             and 'command'
                             in tool['function']['parameters']['properties']
                         )
