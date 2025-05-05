@@ -18,7 +18,7 @@ class Conversation:
 
     def __init__(
         self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
-    ):
+    ) -> None:
         self.sid = sid
         self.config = config
         self.file_store = file_store

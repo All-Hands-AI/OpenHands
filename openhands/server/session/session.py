@@ -53,7 +53,7 @@ class Session:
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
-    ):
+    ) -> None:
         self.sid = sid
         self.sio = sio
         self.last_active_ts = int(time.time())

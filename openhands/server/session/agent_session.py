@@ -58,7 +58,7 @@ class AgentSession:
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
-    ):
+    ) -> None:
         """Initializes a new instance of the Session class
 
         Parameters:
