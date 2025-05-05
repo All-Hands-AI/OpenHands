@@ -207,6 +207,8 @@ async def modify_llm_settings_basic(
 
     # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
+    # This check is technically unreachable due to the try-except block above,
+    # but we keep it as a safeguard
     if provider is None or model is None or api_key is None:  # type: ignore[unreachable]
         print('Error: One or more required inputs were not provided.')
         return
@@ -311,6 +313,8 @@ async def modify_llm_settings_advanced(
 
     # TODO: check for empty string inputs?
     # Handle case where a prompt might return None unexpectedly
+    # This check is technically unreachable due to the try-except block above,
+    # but we keep it as a safeguard
     if custom_model is None or base_url is None or api_key is None or agent is None:  # type: ignore[unreachable]
         print('Error: One or more required inputs were not provided.')
         return
