@@ -104,7 +104,9 @@ def organize_models_and_providers(
         if key not in result:
             result[key] = {'separator': separator, 'models': []}
 
-        result[key]['models'].append(model_id)
+        model_list = result[key].get('models')
+        if isinstance(model_list, list):
+            model_list.append(model_id)
 
     return result
 
@@ -141,7 +143,12 @@ def is_number(char: str) -> bool:
 
 
 def split_is_actually_version(split: list[str]) -> bool:
-    return len(split) > 1 and split[1] and split[1][0] and is_number(split[1][0])
+    return (
+        len(split) > 1
+        and bool(split[1])
+        and bool(split[1][0])
+        and is_number(split[1][0])
+    )
 
 
 def read_file(file_path: str) -> str:
