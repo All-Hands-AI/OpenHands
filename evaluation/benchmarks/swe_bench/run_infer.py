@@ -679,7 +679,7 @@ def complete_runtime(
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]} -- ":(exclude)package-lock.json" ":(exclude)**/package-lock.json" ":(exclude)**.pdf" ":(exclude)**/*.pdf" > patch.diff'
+            command=f'git diff --no-color --cached {instance["base_commit"]} -- ":(exclude)package-lock.json" ":(exclude)**/package-lock.json" ":(exclude)*.pdf" ":(exclude)**/*.pdf" > patch.diff'
             # command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
         )
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
