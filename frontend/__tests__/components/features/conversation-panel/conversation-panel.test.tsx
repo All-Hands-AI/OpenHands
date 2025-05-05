@@ -12,6 +12,7 @@ import { ConversationPanel } from "#/components/features/conversation-panel/conv
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
+import { queryClientConfig } from "#/query-client-config";
 import { renderWithProviders } from "test-utils";
 
 describe("ConversationPanel", () => {
@@ -23,7 +24,7 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = (config?: object) =>
+  const renderConversationPanel = (config?: QueryClientConfig) =>
     renderWithProviders(<RouterStub />, {
       preloadedState: {
         metrics: {

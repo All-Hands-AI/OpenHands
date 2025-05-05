@@ -6,7 +6,6 @@ interface AuthContextType {
   setProviderTokensSet: (tokens: Provider[]) => void;
   providersAreSet: boolean;
   setProvidersAreSet: (status: boolean) => void;
-  clear: () => void;
 }
 
 interface AuthContextProps extends React.PropsWithChildren {
@@ -24,14 +23,10 @@ function AuthProvider({
   const [providerTokensSet, setProviderTokensSet] = React.useState<Provider[]>(
     initialProviderTokens,
   );
+
   const [providersAreSet, setProvidersAreSet] = React.useState<boolean>(
     initialProvidersAreSet,
   );
-
-  const clear = React.useCallback(() => {
-    setProviderTokensSet([]);
-    setProvidersAreSet(false);
-  }, []);
 
   const value = React.useMemo(
     () => ({
@@ -39,9 +34,8 @@ function AuthProvider({
       setProviderTokensSet,
       providersAreSet,
       setProvidersAreSet,
-      clear,
     }),
-    [providerTokensSet, providersAreSet, clear],
+    [providerTokensSet],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
