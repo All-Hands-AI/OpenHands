@@ -43,10 +43,16 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
-      deleteConversation({ conversationId: selectedConversationId });
-      if (selectedConversationId === currentConversationId) {
-        navigate("/");
-      }
+      deleteConversation(
+        { conversationId: selectedConversationId },
+        {
+          onSuccess: () => {
+            if (selectedConversationId === currentConversationId) {
+              navigate("/");
+            }
+          },
+        },
+      );
     }
   };
 
