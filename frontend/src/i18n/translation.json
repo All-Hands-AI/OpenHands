@@ -1052,6 +1052,21 @@
         "fr": "Notifications sonores",
         "tr": "Ses Bildirimleri"
     },
+    "SETTINGS$PROACTIVE_CONVERSATION_STARTERS": {
+        "en": "Suggest Tasks on GitHub",
+        "ja": "GitHubでタスクを提案",
+        "zh-CN": "在GitHub上推荐任务",
+        "zh-TW": "在GitHub上推薦任務",
+        "ko-KR": "GitHub에서 작업 제안",
+        "de": "Aufgaben auf GitHub vorschlagen",
+        "no": "Foreslå oppgaver på GitHub",
+        "it": "Suggerisci attività su GitHub",
+        "pt": "Sugerir tarefas no GitHub",
+        "es": "Sugerir tareas en GitHub",
+        "ar": "اقتراح المهام على GitHub",
+        "fr": "Suggérer des tâches sur GitHub",
+        "tr": "GitHub'da Görevler Öner"
+    },
     "SETTINGS$CUSTOM_MODEL": {
         "en": "Custom Model",
         "ja": "カスタムモデル",
