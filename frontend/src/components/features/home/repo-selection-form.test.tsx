@@ -11,7 +11,7 @@ const mockUseAuth = vi.fn();
 
 // Setup default mock returns
 mockUseUserRepositories.mockReturnValue({
-  data: { pages: [{ data: [] }] },
+  data: [],
   isLoading: false,
   isError: false,
 });
@@ -88,26 +88,20 @@ describe("RepositorySelectionForm", () => {
   test("shows dropdown when repositories are loaded", () => {
     // Setup loaded repositories
     mockUseUserRepositories.mockReturnValue({
-      data: {
-        pages: [
-          {
-            data: [
-              {
-                id: 1,
-                full_name: "user/repo1",
-                git_provider: "github",
-                is_public: true,
-              },
-              {
-                id: 2,
-                full_name: "user/repo2",
-                git_provider: "github",
-                is_public: true,
-              },
-            ],
-          },
-        ],
-      },
+      data: [
+        {
+          id: 1,
+          full_name: "user/repo1",
+          git_provider: "github",
+          is_public: true,
+        },
+        {
+          id: 2,
+          full_name: "user/repo2",
+          git_provider: "github",
+          is_public: true,
+        },
+      ],
       isLoading: false,
       isError: false,
     });

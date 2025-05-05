@@ -5,12 +5,12 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands.core.cli_settings import (
+from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
 )
-from openhands.core.cli_tui import (
+from openhands.cli.tui import (
     COLOR_GREY,
     UsageMetrics,
     cli_confirm,
@@ -18,7 +18,7 @@ from openhands.core.cli_tui import (
     display_shutdown_message,
     display_status,
 )
-from openhands.core.cli_utils import (
+from openhands.cli.utils import (
     add_local_config_trusted_dir,
     get_local_config_trusted_dirs,
     read_file,
