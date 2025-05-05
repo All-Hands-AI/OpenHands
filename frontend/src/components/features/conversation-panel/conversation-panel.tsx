@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useParams } from "react-router";
+import { NavLink, useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
@@ -8,7 +8,6 @@ import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation"
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
-import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
@@ -18,9 +17,9 @@ interface ConversationPanelProps {
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { t } = useTranslation();
-  const { conversationId: cid } = useParams();
-  const endSession = useEndSession();
+  const { conversationId: currentConversationId } = useParams();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
+  const navigate = useNavigate();
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -48,8 +47,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         { conversationId: selectedConversationId },
         {
           onSuccess: () => {
-            if (cid === selectedConversationId) {
-              endSession();
+            if (selectedConversationId === currentConversationId) {
+              navigate("/");
             }
           },
         },
@@ -129,7 +128,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {confirmExitConversationModalVisible && (
         <ExitConversationModal
           onConfirm={() => {
-            endSession();
             onClose();
           }}
           onClose={() => setConfirmExitConversationModalVisible(false)}
