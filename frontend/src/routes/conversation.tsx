@@ -41,6 +41,7 @@ import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
   useConversationConfig();
@@ -113,6 +114,8 @@ function AppContent() {
   } = useDisclosure();
 
   function renderMain() {
+    const basePath = `/conversations/${conversationId}`;
+
     if (width <= 640) {
       return (
         <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
@@ -197,7 +200,15 @@ function AppContent() {
               },
             ]}
           >
-            <Outlet />
+            {/* Use both Outlet and TabContent */}
+            <div className="h-full w-full">
+              {/* Keep the Outlet for React Router to work properly */}
+              <div className="hidden">
+                <Outlet />
+              </div>
+              {/* Use TabContent to keep all tabs loaded but only show the active one */}
+              <TabContent conversationPath={basePath} />
+            </div>
           </Container>
         }
       />
