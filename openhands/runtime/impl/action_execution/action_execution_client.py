@@ -218,7 +218,6 @@ class ActionExecutionClient(Runtime):
                         os.unlink(temp_zip_path)
                     raise e  # Re-raise the exception after cleanup attempt
             else:
-                self.log('debug', f'Opening source file for upload: {host_src}')
                 file_to_upload = open(host_src, 'rb')
                 upload_data = {'file': file_to_upload}
 
@@ -237,20 +236,12 @@ class ActionExecutionClient(Runtime):
             )
         finally:
             if file_to_upload:
-                self.log('debug', f'Closing file handle for: {file_to_upload.name}')
                 file_to_upload.close()
 
             # Cleanup the temporary zip file if it was created
             if temp_zip_path and os.path.exists(temp_zip_path):
-                self.log(
-                    'debug', f'Attempting to delete temporary zip file: {temp_zip_path}'
-                )
                 try:
                     os.unlink(temp_zip_path)
-                    self.log(
-                        'debug',
-                        f'Successfully deleted temporary zip file: {temp_zip_path}',
-                    )
                 except Exception as e:
                     self.log(
                         'error',

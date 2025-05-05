@@ -385,9 +385,7 @@ class ActionExecutor:
                 return obs
 
             assert self.bash_session is not None
-            logger.debug(f'Executing CmdRunAction: {action.command}')
             obs = await call_sync_from_async(self.bash_session.execute, action)
-            logger.debug(f'CmdRunAction finished execution. Observation: {obs}')
             return obs
         except Exception as e:
             logger.error(f'Error running command: {e}')
@@ -404,6 +402,7 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
+                # escape windows paths
                 cwd = self.bash_session.cwd.replace('\\', '/')
                 reset_jupyter_cwd_code = f'import os; os.chdir("{cwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
@@ -787,17 +786,12 @@ if __name__ == '__main__':
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
         assert client is not None
-        logger.debug(
-            f"Received request for /execute_action: {action_request.action.get('action')}"
-        )
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            logger.debug(f'Executing action: {action}')
             observation = await client.run_action(action)
-            logger.debug(f'Action executed. Observation: {observation}')
             return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error while running /execute_action: {str(e)}')
