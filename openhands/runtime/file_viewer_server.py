@@ -5,7 +5,7 @@ This server has no authentication and only listens to localhost traffic.
 
 import os
 import threading
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
