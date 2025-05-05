@@ -1,3 +1,5 @@
+from typing import Dict
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -111,7 +113,7 @@ async def store_provider_tokens(
         )
 
 
-@app.post('/unset-provider-tokens', response_model=dict[str, str])
+@app.post('/unset-provider-tokens', response_model=Dict)
 async def unset_provider_tokens(
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
@@ -161,7 +163,7 @@ async def load_custom_secrets_names(
         )
 
 
-@app.post('/secrets', response_model=dict[str, str])
+@app.post('/secrets', response_model=Dict)
 async def create_custom_secret(
     incoming_secret: POSTCustomSecrets,
     secrets_store: SecretsStore = Depends(get_secrets_store),
@@ -200,7 +202,7 @@ async def create_custom_secret(
         )
 
 
-@app.put('/secrets/{secret_id}', response_model=dict[str, str])
+@app.put('/secrets/{secret_id}', response_model=Dict)
 async def update_custom_secret(
     secret_id: str,
     incoming_secret: POSTCustomSecrets,
