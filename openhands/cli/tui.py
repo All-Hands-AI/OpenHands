@@ -167,6 +167,7 @@ def display_initial_user_prompt(prompt: str):
 
 # Prompt output display functions
 def display_event(event: Event, config: AppConfig) -> None:
+    global streaming_output_text_area
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
             display_message(event.thought)
@@ -175,6 +176,7 @@ def display_event(event: Event, config: AppConfig) -> None:
             display_message(event.content)
     if isinstance(event, CmdRunAction):
         display_command(event)
+        initialize_streaming_output()
     if isinstance(event, CmdOutputObservation):
         display_command_output(event.content)
     if isinstance(event, FileEditAction):
@@ -306,16 +308,14 @@ def initialize_streaming_output():
 
 
 def update_streaming_output(text: str):
-    print('UPDATE', text)
     """Update the streaming output TextArea with new text."""
     global streaming_output_text_area
-    if streaming_output_text_area is None:
-        initialize_streaming_output()
 
     # Append the new text to the existing content
     if streaming_output_text_area is not None:
         current_text = streaming_output_text_area.text
         streaming_output_text_area.text = current_text + text
+        print('APPENDED', streaming_output_text_area.text)
 
 
 # Interactive command output display functions
