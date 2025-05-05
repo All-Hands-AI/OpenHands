@@ -97,10 +97,14 @@ function LlmSettingsScreen() {
     const fullLlmModel =
       provider && model && `${provider}/${model}`.toLowerCase();
 
+    // Only include the API key if it's not empty, otherwise leave it undefined
+    // to preserve the existing key
+    const apiKeyToSave = apiKey && apiKey.trim() !== "" ? apiKey : undefined;
+
     saveSettings(
       {
         LLM_MODEL: fullLlmModel,
-        llm_api_key: apiKey || null,
+        llm_api_key: apiKeyToSave,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -122,11 +126,15 @@ function LlmSettingsScreen() {
       .get("security-analyzer-input")
       ?.toString();
 
+    // Only include the API key if it's not empty, otherwise leave it undefined
+    // to preserve the existing key
+    const apiKeyToSave = apiKey && apiKey.trim() !== "" ? apiKey : undefined;
+
     saveSettings(
       {
         LLM_MODEL: model,
         LLM_BASE_URL: baseUrl,
-        llm_api_key: apiKey,
+        llm_api_key: apiKeyToSave,
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,

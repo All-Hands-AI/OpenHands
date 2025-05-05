@@ -4,6 +4,19 @@ import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
 
+// Helper function to handle LLM API key logic
+const getLlmApiKey = (
+  apiKey: string | null | undefined,
+): string | undefined => {
+  if (apiKey === "") {
+    return "";
+  }
+  if (apiKey === undefined || apiKey === null) {
+    return undefined;
+  }
+  return apiKey.trim() || undefined;
+};
+
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
@@ -12,10 +25,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
-    llm_api_key:
-      settings.llm_api_key === ""
-        ? ""
-        : settings.llm_api_key?.trim() || undefined,
+    llm_api_key: getLlmApiKey(settings.llm_api_key),
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
