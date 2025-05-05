@@ -25,10 +25,10 @@ export const useIsAuthed = () => {
   });
 
   React.useEffect(() => {
-    if (!query.isFetching && query.isError && query.error.status === 401) {
+    if (query.isError && query.error.status === 401) {
       clear();
     }
-  }, [query.isFetching, query.isError, query.error, clear]);
+  }, [query.isError, query.error, clear]);
 
   return query;
 };
