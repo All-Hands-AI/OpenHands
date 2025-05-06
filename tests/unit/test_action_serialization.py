@@ -50,6 +50,7 @@ def test_event_props_serialization_deserialization():
             'content': 'This is a test.',
             'image_urls': None,
             'wait_for_response': False,
+            'mode': None,
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
@@ -62,6 +63,7 @@ def test_message_action_serialization_deserialization():
             'content': 'This is a test.',
             'image_urls': None,
             'wait_for_response': False,
+            'mode': None,
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
