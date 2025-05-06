@@ -114,7 +114,7 @@ class IssueResolver:
         llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
         llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT','5'))
         llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT','30'))
-        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MAX_WAIT',2))
+        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER',2))
         llm_timeout = int(os.environ.get('LLM_TIMEOUT',0))
 
         # Create LLMConfig instance
