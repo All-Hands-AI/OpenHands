@@ -26,7 +26,7 @@ repos:
       - id: ruff
         entry: ruff check --config dev_config/python/ruff.toml
         types_or: [python, pyi, jupyter]
-        args: [--fix]
+        args: [--fix, --unsafe-fixes]
       # Run the formatter.
       - id: ruff-format
         entry: ruff format --config dev_config/python/ruff.toml

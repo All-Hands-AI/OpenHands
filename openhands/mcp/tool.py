@@ -1,5 +1,3 @@
-from typing import Dict
-
 from mcp.types import Tool
 
 
@@ -14,7 +12,7 @@ class MCPClientTool(Tool):
     class Config:
         arbitrary_types_allowed = True
 
-    def to_param(self) -> Dict:
+    def to_param(self) -> dict:
         """Convert tool to function call format."""
         return {
             'type': 'function',
