@@ -5,6 +5,7 @@ import OpenHands from "#/api/open-hands";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { Settings } from "#/types/settings";
+import { useIsAuthed } from "./use-is-authed";
 
 const getSettingsQueryFn = async (): Promise<Settings> => {
   const apiSettings = await OpenHands.getSettings();
@@ -30,6 +31,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
 
 export const useSettings = () => {
   const isOnTosPage = useIsOnTosPage();
+  const { data: userIsAuthenticated } = useIsAuthed();
 
   const query = useQuery({
     queryKey: ["settings"],
@@ -40,7 +42,7 @@ export const useSettings = () => {
     retry: (_, error) => error.status !== 404,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
-    enabled: !isOnTosPage,
+    enabled: !isOnTosPage && !!userIsAuthenticated,
     meta: {
       disableToast: true,
     },
