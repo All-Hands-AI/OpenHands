@@ -24,7 +24,6 @@ from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
     CmdRunAction,
-    FileEditAction,
     MessageAction,
 )
 from openhands.events.observation import (
@@ -100,15 +99,6 @@ class TestDisplayFunctions:
         display_event(cmd_output, config)
 
         mock_display_output.assert_called_once_with('Test output')
-
-    @patch('openhands.cli.tui.display_file_edit')
-    def test_display_event_file_edit_action(self, mock_display_file_edit):
-        config = MagicMock(spec=AppConfig)
-        file_edit = FileEditAction(path='test.py', content="print('hello')")
-
-        display_event(file_edit, config)
-
-        mock_display_file_edit.assert_called_once_with(file_edit)
 
     @patch('openhands.cli.tui.display_file_edit')
     def test_display_event_file_edit_observation(self, mock_display_file_edit):

@@ -32,7 +32,6 @@ from openhands.events.action import (
     ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
-    FileEditAction,
     MessageAction,
 )
 from openhands.events.event import Event
@@ -171,6 +170,8 @@ def display_event(event: Event, config: AppConfig) -> None:
         if isinstance(event, Action):
             if hasattr(event, 'thought'):
                 display_message(event.thought)
+            if hasattr(event, 'final_thought'):
+                display_message(event.final_thought)
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
                 display_message(event.content)
@@ -178,8 +179,6 @@ def display_event(event: Event, config: AppConfig) -> None:
             display_command(event)
         if isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditAction):
-            display_file_edit(event)
         if isinstance(event, FileEditObservation):
             display_file_edit(event)
         if isinstance(event, FileReadObservation):
@@ -239,20 +238,19 @@ def display_command_output(output: str):
     print_container(container)
 
 
-def display_file_edit(event: FileEditAction | FileEditObservation):
-    if isinstance(event, FileEditObservation):
-        container = Frame(
-            TextArea(
-                text=event.visualize_diff(n_context_lines=4),
-                read_only=True,
-                wrap_lines=True,
-                lexer=CustomDiffLexer(),
-            ),
-            title='File Edit',
-            style=f'fg:{COLOR_GREY}',
-        )
-        print_formatted_text('')
-        print_container(container)
+def display_file_edit(event: FileEditObservation):
+    container = Frame(
+        TextArea(
+            text=event.visualize_diff(n_context_lines=4),
+            read_only=True,
+            wrap_lines=True,
+            lexer=CustomDiffLexer(),
+        ),
+        title='File Edit',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_file_read(event: FileReadObservation):
