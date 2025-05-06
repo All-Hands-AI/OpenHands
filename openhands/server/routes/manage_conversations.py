@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
@@ -67,13 +67,13 @@ class InitSessionRequest(BaseModel):
 
 
 async def _create_new_conversation(
-    user_id: Optional[str],
-    git_provider_tokens: Optional[PROVIDER_TOKEN_TYPE],
-    selected_repository: Optional[str],
-    selected_branch: Optional[str],
-    initial_user_msg: Optional[str],
-    image_urls: Optional[list[str]],
-    replay_json: Optional[str],
+    user_id: str | None,
+    git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+    selected_repository: str | None,
+    selected_branch: str | None,
+    initial_user_msg: str | None,
+    image_urls: list[str] | None,
+    replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ) -> str:
@@ -172,7 +172,7 @@ async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
-    auth_type: Optional[AuthType] = Depends(get_auth_type),
+    auth_type: AuthType | None = Depends(get_auth_type),
 ) -> JSONResponse:
     """Initialize a new session or join an existing one.
 
@@ -250,9 +250,9 @@ async def new_conversation(
 
 @app.get('/conversations')
 async def search_conversations(
-    page_id: Optional[str] = None,
+    page_id: str | None = None,
     limit: int = 20,
-    user_id: Optional[str] = Depends(get_user_id),
+    user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
@@ -291,7 +291,7 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str,
     conversation_store: ConversationStore = Depends(get_conversation_store),
-) -> Optional[ConversationInfo]:
+) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
@@ -314,7 +314,7 @@ def get_default_conversation_title(conversation_id: str) -> str:
     return f'Conversation {conversation_id[:5]}'
 
 
-async def auto_generate_title(conversation_id: str, user_id: Optional[str]) -> str:
+async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
     Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
@@ -384,7 +384,7 @@ async def auto_generate_title(conversation_id: str, user_id: Optional[str]) -> s
 async def update_conversation(
     conversation_id: str,
     title: str = Body(embed=True),
-    user_id: Optional[str] = Depends(get_user_id),
+    user_id: str | None = Depends(get_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     metadata = await conversation_store.get_metadata(conversation_id)
@@ -407,7 +407,7 @@ async def update_conversation(
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
     conversation_id: str,
-    user_id: Optional[str] = Depends(get_user_id),
+    user_id: str | None = Depends(get_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
@@ -426,7 +426,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> Optional[ConversationInfo]:
+) -> ConversationInfo | None:
     try:
         title = conversation.title
         if not title:
