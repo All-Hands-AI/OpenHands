@@ -1,0 +1,81 @@
+# LLM Agent Trajectory Overall Summary
+
+Your task is to generate a concise list of key user requests and instructions from an agent-user conversation.
+
+## Instructions:
+1. Parse the provided trajectory data containing only user messages
+2. Identify the main requests, instructions, and directives given by the user
+3. Create a brief summary of the user's overall goals.
+4. Focus on being factual and objective, based solely on the user's messages
+
+## Example:
+
+### Input Trajectory:
+[
+  {
+    "action": "message",
+    "content": "create a CSV file with the profile data for all the stargazers of the OpenDevin/OpenDevin repo",
+    "id": 5,
+    "source": "user",
+    "timestamp": "2024-06-18 18:06:31"
+  },
+  {
+    "action": "message",
+    "content": "Continue",
+    "id": 11,
+    "source": "user",
+    "timestamp": "2024-06-18 18:06:40"
+  },
+  {
+    "action": "message",
+    "content": "Continue",
+    "id": 17,
+    "source": "user",
+    "timestamp": "2024-06-18 18:06:51"
+  },
+  {
+    "action": "message",
+    "content": "please use the $GITHUB_TOKEN env var",
+    "id": 27,
+    "source": "user",
+    "timestamp": "2024-06-18 18:08:13"
+  },
+  {
+    "action": "message",
+    "content": "now execute the script",
+    "id": 31,
+    "source": "user",
+    "timestamp": "2024-06-18 18:08:50"
+  },
+  {
+    "action": "message",
+    "content": "fix all the import errors",
+    "id": 35,
+    "source": "user",
+    "timestamp": "2024-06-18 18:09:05"
+  },
+  {
+    "action": "message",
+    "content": "now load the CSV and show me the first 5 rows",
+    "id": 47,
+    "source": "user",
+    "timestamp": "2024-06-18 18:09:50"
+  },
+  {
+    "action": "message",
+    "content": "visualize the data by creating a chart showing the distribution of followers",
+    "id": 55,
+    "source": "user",
+    "timestamp": "2024-06-18 18:10:30"
+  }
+]
+
+### Expected Output:
+{
+  "overall_summary": "Create a CSV file with profile data for all stargazers of the OpenHands GitHub repository and visualize the distribution of followers."
+}
+
+## Your Task:
+Generate an overall summary for the following agent trajectory:
+
+[TRAJECTORY_DATA]

@@ -69,6 +69,7 @@ export function ChatInterface() {
   >([]);
   const [localStepCount, setLocalStepCount] = React.useState(0);
   const [lastSummarizedCount, setLastSummarizedCount] = React.useState(0);
+  const [lastSummarizedId, setLastSummarizedId] = React.useState<number | null>(null);
 
   // Count local steps (agent actions)
   React.useEffect(() => {
@@ -83,13 +84,14 @@ export function ChatInterface() {
   React.useEffect(() => {
     const shouldSummarize =
       localStepCount > 0 &&
-      localStepCount >= 10 &&
-      localStepCount - lastSummarizedCount >= 10 &&
+      ((lastSummarizedId === null && localStepCount >= 10) || // First summarization
+       (lastSummarizedId !== null && localStepCount - lastSummarizedCount >= 10)) && // Subsequent summarizations
       curAgentState !== AgentState.RUNNING;
 
     console.log("Debug - Summarization check:", {
       localStepCount,
       lastSummarizedCount,
+      lastSummarizedId,
       shouldSummarize,
       agentState: curAgentState
     });
@@ -100,39 +102,40 @@ export function ChatInterface() {
       console.log("Debug - Triggering summarization for conversation:", conversationId);
 
       // Attempt to summarize conversation
-      getTrajectorySummary(conversationId, {
-        onSuccess: (data) => {
-          // Summary received
-          console.log("Debug - Summary received:", data);
-          setOverallSummary(data.overall_summary);
-          setSummarySegments(data.segments || []);
-          setShowSummary(true);
-          setLastSummarizedCount(localStepCount);
+      getTrajectorySummary(
+        { conversationId, lastSummarizedId }, // Pass the lastSummarizedId to the API
+        {
+          onSuccess: (data) => {
+            // Summary received
+            console.log("Debug - Summary received:", data);
+            setOverallSummary(data.overall_summary);
+            setSummarySegments(data.segments || []);
+            setShowSummary(true);
+            setLastSummarizedCount(localStepCount);
 
-          // Log segments for debugging
-          if (data.segments && data.segments.length > 0) {
-            console.log(`Debug - Received ${data.segments.length} segments`);
-            data.segments.forEach((segment, i) => {
-              console.log(`Debug - Segment ${i}: ${segment.title} with ${segment.ids?.length || 0} IDs`);
-              console.log(`Debug - Segment ${i} IDs:`, segment.ids);
-            });
-          } else {
-            console.log("Debug - No segments received in summary");
+            // Update the last summarized ID
+            if (data.last_summarized_id !== undefined) {
+              setLastSummarizedId(data.last_summarized_id);
+            }
+
+            // Log segments for debugging
+            if (data.segments && data.segments.length > 0) {
+              console.log(`Debug - Received ${data.segments.length} segments`);
+              data.segments.forEach((segment, i) => {
+                console.log(`Debug - Segment ${i}: ${segment.title} with ${segment.ids?.length || 0} IDs`);
+                console.log(`Debug - Segment ${i} IDs:`, segment.ids);
+              });
+            } else {
+              console.log("Debug - No segments received in summary");
+            }
+          },
+          onError: (error) => {
+            console.error("Error getting trajectory summary:", error);
           }
-        },
-        onError: (error) => {
-          // Handle error fetching summary
-          console.error("Error fetching trajectory summary:", error);
-        },
-      });
+        }
+      );
     }
-  }, [
-    localStepCount,
-    lastSummarizedCount,
-    curAgentState,
-    params.conversationId,
-    getTrajectorySummary,
-  ]);
+  }, [localStepCount, lastSummarizedCount, lastSummarizedId, curAgentState, params, getTrajectorySummary]);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {

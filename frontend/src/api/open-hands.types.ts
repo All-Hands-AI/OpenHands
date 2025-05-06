@@ -77,6 +77,7 @@ export interface TrajectorySummarySegment {
 export interface GetTrajectorySummaryResponse {
   overall_summary: string;
   segments: TrajectorySummarySegment[];
+  last_summarized_id?: number;
   error?: string;
 }
 

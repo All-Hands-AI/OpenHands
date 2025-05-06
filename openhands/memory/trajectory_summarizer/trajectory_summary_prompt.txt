@@ -1,4 +1,4 @@
-# LLM Agent Trajectory Summarization
+# LLM Agent Trajectory Segmentation and Summarization
 
 Your task is to segment and summarize an agent-user interaction trajectory into meaningful parts for better user interpretability.
 
@@ -16,6 +16,8 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 11. IMPORTANT: When creating segments, ensure that ALL messages between the first and last message of a segment are included in that segment's IDs array
 12. CRITICAL: Check your work to ensure no message IDs are missing from any segment
 13. CRITICAL: Segments MUST NOT span across multiple user interactions. If a segment contains a user message, the next user message must be in a new segment. This ensures clear boundaries between user interactions while still allowing for fine-grained segmentation of agent activities
+14. CRITICAL: Ensure segments are arranged in chronological order based on the IDs and timestamps of their messages
+15. Each segment should have a sequential "segment" index number starting from 0
 
 ## Example:
 
@@ -125,7 +127,6 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 
 ### Expected Output:
 {
-  "overall_summary": "The user requested creation of a CSV file containing profile data for all stargazers of the OpenDevin/OpenDevin GitHub repository. The agent worked through several steps to implement this functionality, responding to the user's instructions along the way.",
   "segments": [
     {
       "segment": 0,
@@ -173,6 +174,6 @@ Your task is to segment and summarize an agent-user interaction trajectory into 
 }
 
 ## Your Task:
-Now summarize the following agent trajectory in the same format:
+Now segment and summarize the following agent trajectory in the same format:
 
 [TRAJECTORY_DATA]

@@ -352,9 +352,14 @@ class OpenHands {
 
   static async getTrajectorySummary(
     conversationId: string,
+    lastSummarizedId?: number | null,
   ): Promise<GetTrajectorySummaryResponse> {
+    const queryParams = lastSummarizedId !== null && lastSummarizedId !== undefined
+      ? `?last_summarized_id=${lastSummarizedId}`
+      : '';
+
     const { data } = await openHands.get<GetTrajectorySummaryResponse>(
-      `/api/conversations/${conversationId}/summary`,
+      `/api/conversations/${conversationId}/summary${queryParams}`,
     );
     return data;
   }

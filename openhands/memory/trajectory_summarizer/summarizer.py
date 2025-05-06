@@ -10,8 +10,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from datasets import load_dataset
-
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
@@ -19,22 +17,21 @@ from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
 
+# def load_from_huggingface(
+#     dataset_name: str = 'all-hands/openhands-feedback', split: str = 'train'
+# ):
+#     """
+#     Load trajectory data from the HuggingFace dataset.
 
-def load_from_huggingface(
-    dataset_name: str = 'all-hands/openhands-feedback', split: str = 'train'
-):
-    """
-    Load trajectory data from the HuggingFace dataset.
+#     Args:
+#         dataset_name: Name of the dataset on HuggingFace
+#         split: Dataset split to load (default: "train")
 
-    Args:
-        dataset_name: Name of the dataset on HuggingFace
-        split: Dataset split to load (default: "train")
-
-    Returns:
-        List of trajectories from the dataset
-    """
-    dataset = load_dataset(dataset_name, split=split)
-    return dataset
+#     Returns:
+#         List of trajectories from the dataset
+#     """
+#     dataset = load_dataset(dataset_name, split=split)
+#     return dataset
 
 
 def extract_timestamps(
@@ -155,6 +152,9 @@ class TrajectoryProcessor:
             if not processed_item['id'] and not processed_item.get('timestamp'):
                 continue
 
+            if processed_item['action'] == 'recall':
+                continue
+
             # Add content if available
             if (
                 item.get('content')
@@ -221,36 +221,36 @@ class TrajectoryProcessor:
         return json.dumps(trajectory_data, indent=2)
 
 
-def process_dataset_example(example: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Process a specific example from the HuggingFace dataset.
+# def process_dataset_example(example: Dict[str, Any]) -> Dict[str, Any]:
+#     """
+#     Process a specific example from the HuggingFace dataset.
 
-    Args:
-        example: A dictionary representing one example from the dataset
+#     Args:
+#         example: A dictionary representing one example from the dataset
 
-    Returns:
-        A processed trajectory ready for summarization
-    """
-    # Extract the trajectory from the example
-    trajectory = example.get('trajectory', [])
+#     Returns:
+#         A processed trajectory ready for summarization
+#     """
+#     # Extract the trajectory from the example
+#     trajectory = example.get('trajectory', [])
 
-    # Preprocess the trajectory
-    processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory)
+#     # Preprocess the trajectory
+#     processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory)
 
-    # Format the trajectory for the prompt
-    formatted_trajectory = TrajectoryProcessor.format_trajectory_for_prompt(
-        processed_trajectory
-    )
+#     # Format the trajectory for the prompt
+#     formatted_trajectory = TrajectoryProcessor.format_trajectory_for_prompt(
+#         processed_trajectory
+#     )
 
-    return {
-        'raw_trajectory': trajectory,
-        'processed_trajectory': processed_trajectory,
-        'formatted_trajectory': formatted_trajectory,
-        'feedback': example.get('feedback', ''),
-        'version': example.get('version', ''),
-        'permissions': example.get('permissions', ''),
-        'timestamp': example.get('timestamp', ''),
-    }
+#     return {
+#         'raw_trajectory': trajectory,
+#         'processed_trajectory': processed_trajectory,
+#         'formatted_trajectory': formatted_trajectory,
+#         'feedback': example.get('feedback', ''),
+#         'version': example.get('version', ''),
+#         'permissions': example.get('permissions', ''),
+#         'timestamp': example.get('timestamp', ''),
+#     }
 
 
 class TrajectorySummarizer:
@@ -278,9 +278,13 @@ class TrajectorySummarizer:
 
         # Load the prompt template
         module_dir = Path(__file__).parent
-        prompt_template_path = module_dir / 'LLM_one_shot_instruction.txt'
-        with open(prompt_template_path, 'r') as f:
-            self.prompt_template = f.read()
+        trajectory_prompt_template_path = module_dir / 'trajectory_summary_prompt.txt'
+        with open(trajectory_prompt_template_path, 'r') as f:
+            self.trajectory_prompt_template = f.read()
+
+        overall_prompt_template_path = module_dir / 'overall_summary_prompt.txt'
+        with open(overall_prompt_template_path, 'r') as f:
+            self.overall_prompt_template = f.read()
 
     def summarize_trajectory(
         self, trajectory: Union[str, List[Dict[str, Any]]], llm: Optional[LLM] = None
@@ -297,12 +301,12 @@ class TrajectorySummarizer:
         """
         # If trajectory is a list, convert it to a JSON string
         if isinstance(trajectory, list):
-            trajectory = TrajectoryProcessor.format_trajectory_for_prompt(
-                TrajectoryProcessor.preprocess_trajectory(trajectory)
-            )
+            trajectory = TrajectoryProcessor.format_trajectory_for_prompt(trajectory)
 
         # Insert the formatted trajectory into the prompt
-        prompt = self.prompt_template.replace('[TRAJECTORY_DATA]', trajectory)
+        prompt = self.trajectory_prompt_template.replace(
+            '[TRAJECTORY_DATA]', trajectory
+        )
 
         # Use the provided LLM, the instance LLM, or create a new one from config
         current_llm = llm or self.llm
@@ -368,32 +372,108 @@ class TrajectorySummarizer:
 
         return parsed_response
 
-    def batch_summarize_trajectories(
-        self,
-        trajectories: List[Union[str, List[Dict[str, Any]]]],
-        llm: Optional[LLM] = None,
-    ) -> List[Dict[str, Any]]:
+    def generate_overall_summary(
+        self, trajectory: Union[str, List[Dict[str, Any]]], llm: Optional[LLM] = None
+    ) -> Dict[str, Any]:
         """
-        Summarize multiple trajectories.
+        Generate an overall summary of a trajectory, focusing only on user actions and goals.
 
         Args:
-            trajectories: List of trajectories to summarize
-            llm: Optional LLM instance to use for all summarizations
+            trajectory: The trajectory data as a JSON string or list of dictionaries
+            llm: Optional LLM instance to use for this specific summarization
 
         Returns:
-            List of summarizations
+            A dictionary containing the overall summarization
         """
-        results = []
+        # If trajectory is a list, filter it to include only user messages
+        if isinstance(trajectory, list):
+            # Filter to only include user messages
+            user_messages = [
+                item for item in trajectory if item.get('source') == 'user'
+            ]
+            trajectory = TrajectoryProcessor.format_trajectory_for_prompt(user_messages)
 
-        for trajectory in trajectories:
-            try:
-                summary = self.summarize_trajectory(trajectory, llm=llm)
-                results.append(summary)
-            except Exception as e:
-                logger.error(f'Error summarizing trajectory: {e}')
-                results.append({'overall_summary': f'Error: {str(e)}', 'segments': []})
+        # Insert the formatted trajectory into the prompt
+        prompt = self.overall_prompt_template.replace('[TRAJECTORY_DATA]', trajectory)
 
-        return results
+        # Use the provided LLM, the instance LLM, or create a new one from config
+        current_llm = llm or self.llm
+        if current_llm is None:
+            if self.llm_config is None:
+                raise ValueError('Either llm or llm_config must be provided')
+            current_llm = LLM(self.llm_config)
+
+        # Create a message for the LLM
+        message = {'role': 'user', 'content': prompt}
+
+        # Call the LLM
+        response = current_llm.completion(
+            messages=[message],
+            temperature=self.temperature,
+        )
+
+        # Extract the response text
+        response_text = response.choices[0].message.content
+
+        # Parse the response
+        cleaned_response = re.sub(r'```json|```', '', response_text).strip()
+
+        try:
+            # Try direct JSON parsing
+            parsed_data = json.loads(cleaned_response)
+
+            # Validate and process the overall_summary field
+            if 'overall_summary' not in parsed_data:
+                logger.warning("LLM response missing 'overall_summary' field")
+                parsed_data['overall_summary'] = ''
+            elif not isinstance(parsed_data['overall_summary'], str):
+                # If it's a list or other type, try to convert it to a string
+                if (
+                    isinstance(parsed_data['overall_summary'], list)
+                    and parsed_data['overall_summary']
+                ):
+                    # Join list items into a single string
+                    parsed_data['overall_summary'] = ' '.join(
+                        parsed_data['overall_summary']
+                    )
+                else:
+                    logger.warning(
+                        f"Unexpected format for overall_summary: {type(parsed_data['overall_summary'])}"
+                    )
+                    parsed_data['overall_summary'] = str(parsed_data['overall_summary'])
+
+            return parsed_data
+        except json.JSONDecodeError as e:
+            logger.error(f'JSON parsing error: {e}')
+            # If parsing fails, return a minimal valid structure with empty string
+            return {'overall_summary': ''}
+
+    # def batch_summarize_trajectories(
+    #     self,
+    #     trajectories: List[Union[str, List[Dict[str, Any]]]],
+    #     llm: Optional[LLM] = None,
+    # ) -> List[Dict[str, Any]]:
+    #     """
+    #     Summarize multiple trajectories.
+
+    #     Args:
+    #         trajectories: List of trajectories to summarize
+    #         llm: Optional LLM instance to use for all summarizations
+
+    #     Returns:
+    #         List of summarizations
+    #     """
+    #     results = []
+
+    #     for trajectory in trajectories:
+    #         try:
+    #             summary = self.summarize_trajectory(trajectory, llm=llm)
+    #             results.append(summary)
+    #         except Exception as e:
+    #             logger.error(f'Error summarizing trajectory: {e}')
+    #             results.append({'overall_summary': f'Error: {str(e)}', 'segments': []})
+
+    #     return results
 
     @staticmethod
     async def get_trajectory_from_event_stream(
@@ -423,6 +503,9 @@ class TrajectorySummarizer:
         llm: Optional[LLM] = None,
         filter_hidden: bool = True,
         max_local_steps: int = 10,
+        last_summarized_id: Optional[
+            int
+        ] = None,  # New parameter to track last summarized ID
     ) -> Dict[str, Any]:
         """
         Summarize a conversation from its event stream.
@@ -432,6 +515,7 @@ class TrajectorySummarizer:
             llm: Optional LLM instance to use for summarization
             filter_hidden: Whether to filter out hidden events
             max_local_steps: Maximum number of local steps to include in summarization
+            last_summarized_id: The ID of the last event that was summarized previously
 
         Returns:
             A dictionary containing the summarization
@@ -441,8 +525,11 @@ class TrajectorySummarizer:
             event_stream, filter_hidden=filter_hidden
         )
 
+        # Debug: Print the trajectory
+        logger.info(f'DEBUG - Full trajectory: {json.dumps(full_trajectory, indent=2)}')
+
         # Extract user messages and agent actions
-        user_messages = [
+        overall_user_messages = [
             item for item in full_trajectory if item.get('source') == 'user'
         ]
         agent_actions = [
@@ -451,28 +538,63 @@ class TrajectorySummarizer:
             if item.get('source') == 'agent' and item.get('action') != 'message'
         ]
 
-        # Get the last N local steps (agent actions)
-        last_n_agent_actions = agent_actions[-max_local_steps:] if agent_actions else []
+        # Determine if this is the first summarization
+        is_first_summarization = last_summarized_id is None
 
-        # Find the minimum ID from the last N agent actions
-        min_id: float = float('inf')
-        for action in last_n_agent_actions:
-            action_id = action.get('id')
-            # Fixed: Add proper type checking before comparison
-            if action_id is not None and isinstance(action_id, (int, float)):
-                min_id = min(min_id, float(action_id))
+        max_id: float = float('-inf')
+        if is_first_summarization:
+            # First summarization: Use all agent actions and all user messages
+            filtered_agent_items = [
+                item for item in full_trajectory if item.get('source') == 'agent'
+            ]
+            filtered_user_messages = overall_user_messages  # All user messages
 
-        # Include all user messages and agent actions with ID >= min_id
-        filtered_agent_items = []
-        for item in full_trajectory:
-            if item.get('source') == 'agent':
+            for item in full_trajectory:
+                item_id = item.get('id')
+                if item_id is not None and isinstance(item_id, (int, float)):
+                    max_id = max(max_id, float(item_id))
+
+            last_id_to_return = max_id
+        else:
+            # Subsequent summarization: Use the last summarized ID as starting point
+            # Get the last N local steps (agent actions) for finding the max ID
+            last_n_agent_actions = (
+                agent_actions[-max_local_steps:] if agent_actions else []
+            )
+
+            for action in last_n_agent_actions:
+                action_id = action.get('id')
+                if action_id is not None and isinstance(action_id, (int, float)):
+                    max_id = max(max_id, float(action_id))
+
+            # Include agent actions with last_summarized_id < ID <= max_id
+            filtered_agent_items = []
+            for item in full_trajectory:
+                if item.get('source') == 'agent':
+                    item_id = item.get('id')
+                    if item_id is None or (
+                        isinstance(item_id, (int, float))
+                        and last_summarized_id is not None
+                        and last_summarized_id < item_id <= max_id
+                    ):
+                        filtered_agent_items.append(item)
+
+            # Include user messages with the same criteria as agent actions
+            # (with IDs greater than last_summarized_id and less than or equal to max_id)
+            filtered_user_messages = []
+            for item in overall_user_messages:
                 item_id = item.get('id')
                 if item_id is None or (
-                    isinstance(item_id, (int, float)) and item_id >= min_id
+                    isinstance(item_id, (int, float))
+                    and last_summarized_id is not None
+                    and last_summarized_id < item_id <= max_id
                 ):
-                    filtered_agent_items.append(item)
+                    filtered_user_messages.append(item)
 
-        trajectory_to_summarize = user_messages + filtered_agent_items
+            last_id_to_return = max_id
+
+        # Combine filtered user messages and agent items
+        trajectory_to_summarize = filtered_user_messages + filtered_agent_items
 
         # Sort by ID to maintain chronological order
         def get_sort_key(item: Dict[str, Any]) -> float:
@@ -482,26 +604,41 @@ class TrajectorySummarizer:
             return float('inf')
 
         trajectory_to_summarize.sort(key=get_sort_key)
+        overall_user_messages.sort(key=get_sort_key)
 
         # Debug: Print the trajectory
         logger.info(
             f'DEBUG - Raw Trajectory (last {max_local_steps} steps): {json.dumps(trajectory_to_summarize, indent=2)}'
         )
+        logger.info(
+            f'DEBUG - Overall User Messages: {json.dumps(overall_user_messages, indent=2)}'
+        )
 
         # Preprocess the trajectory
+        processed_user_messages = TrajectoryProcessor.preprocess_trajectory(
+            overall_user_messages
+        )
         processed_trajectory = TrajectoryProcessor.preprocess_trajectory(
             trajectory_to_summarize
+        )
+
+        logger.info(
+            f'DEBUG - Last summarized ID: {last_summarized_id}, First summarization: {is_first_summarization}'
         )
         logger.info(
             f'DEBUG - Processed Trajectory: {json.dumps(processed_trajectory, indent=2)}'
         )
 
         # Summarize the trajectory
-        summary = self.summarize_trajectory(trajectory_to_summarize, llm=llm)
+        overall_summary = self.generate_overall_summary(
+            processed_user_messages, llm=llm
+        )
+        summary = self.summarize_trajectory(processed_trajectory, llm=llm)
+        summary['overall_summary'] = overall_summary.get('overall_summary', '')
 
         # Print all ids to be summarized
         logger.info(
-            f'DEBUG - IDs to be summarized: {json.dumps([item.get("id") for item in trajectory_to_summarize], indent=2)}'
+            f'DEBUG - IDs to be summarized: {json.dumps([item.get("id") for item in processed_trajectory], indent=2)}'
         )
 
         # Debug: Print the summary
@@ -533,5 +670,15 @@ class TrajectorySummarizer:
                     logger.info(
                         f'Processed IDs for segment "{segment.get("title", "Untitled")}": {segment["ids"]}'
                     )
+
+        # Return the summary along with the max_id for the frontend to store
+        summary['last_summarized_id'] = int(max_id) if max_id != float('-inf') else None
+
+        # Add the last_summarized_id to the summary for the frontend to track
+        if 'last_id_to_return' in locals() and last_id_to_return != float('-inf'):
+            summary['last_summarized_id'] = int(last_id_to_return)
+            logger.info(
+                f'DEBUG - Setting last_summarized_id to {summary["last_summarized_id"]}'
+            )
 
         return summary
