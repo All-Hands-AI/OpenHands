@@ -121,12 +121,14 @@ opentelemetry-instrumentation-tornado = "0.46b0"
 opentelemetry-instrumentation-tortoiseorm = "0.46b0"
 opentelemetry-instrumentation-urllib3 = "0.46b0"
 pip = "^25.0.1"
+aiofiles = "^24.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.5"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
+types-aiofiles = "^24.1.0.20250326"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -143,9 +145,6 @@ gevent = "^24.2.1"
 concurrency = ["gevent"]
 
 
-
-
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -154,7 +153,9 @@ flake8 = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = [
+  "poetry-core",
+]
 
 [tool.autopep8]
 # autopep8 fights with mypy on line length issue
@@ -171,9 +172,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-
-
 
 
 [tool.poetry.group.evaluation.dependencies]
