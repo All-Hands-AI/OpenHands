@@ -5,8 +5,8 @@ export const convertRawProvidersToList = (
 ): Provider[] => {
   if (!raw) return [];
   const list: Provider[] = [];
-  for (const [key, value] of Object.entries(raw)) {
-    if (value) {
+  for (const key of Object.keys(raw)) {
+    if (key) {
       list.push(key as Provider);
     }
   }

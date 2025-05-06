@@ -1,15 +1,11 @@
-import {
-  QueryClientConfig,
-  QueryCache,
-  MutationCache,
-} from "@tanstack/react-query";
+import { QueryCache, MutationCache, QueryClient } from "@tanstack/react-query";
 import i18next from "i18next";
 import { I18nKey } from "./i18n/declaration";
 import { retrieveAxiosErrorMessage } from "./utils/retrieve-axios-error-message";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 
 const shownErrors = new Set<string>();
-export const queryClientConfig: QueryClientConfig = {
+export const queryClientConfig = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       if (!query.meta?.disableToast) {
@@ -34,4 +30,4 @@ export const queryClientConfig: QueryClientConfig = {
       }
     },
   }),
-};
+});

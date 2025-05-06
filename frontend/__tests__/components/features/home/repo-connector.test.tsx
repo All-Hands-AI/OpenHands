@@ -219,10 +219,7 @@ describe("RepoConnector", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {
-        github: null,
-        gitlab: null,
-      },
+      provider_tokens_set: {},
     });
     renderRepoConnector();
 
