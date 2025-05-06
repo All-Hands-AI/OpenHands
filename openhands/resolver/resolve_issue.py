@@ -125,6 +125,7 @@ class IssueResolver:
             num_retries=llm_num_retries,
             retry_min_wait=llm_retry_min_wait,
             retry_max_wait=llm_retry_max_wait,
+            retry_multiplier=llm_retry_multiplier,
             timeout=llm_timeout
         )
 
