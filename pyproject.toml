@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.36.0"
+version = "0.36.1"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -74,9 +74,8 @@ memory-profiler = "^0.61.0"
 daytona-sdk = "0.15.0"
 mcp = "1.7.1"
 python-json-logger = "^3.2.1"
-playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
-mcpm = "1.8.0"
+mcpm = "1.9.0"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 
