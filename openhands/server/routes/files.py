@@ -43,7 +43,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/list-files')
-async def list_files(request: Request, path: str | None = None) -> dict[str, Any]:
+async def list_files(request: Request, path: str | None = None) -> dict[str, str]:
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -86,7 +86,7 @@ async def list_files(request: Request, path: str | None = None) -> dict[str, Any
 
     async def filter_for_gitignore(
         file_list: list[dict[str, Any]], base_path: str
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, str]]:
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
