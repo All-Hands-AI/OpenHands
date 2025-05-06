@@ -4,6 +4,7 @@ import pathlib
 import platform
 import sys
 from ast import literal_eval
+from types import UnionType
 from typing import MutableMapping, get_args, get_origin
 from uuid import uuid4
 
@@ -46,16 +47,15 @@ def load_from_env(
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
-    def get_optional_type(union_type: type | None) -> type | None:
+    def get_optional_type(union_type: UnionType | type | None) -> type | None:
         """Returns the non-None type from a Union."""
         if union_type is None:
             return None
-        if get_origin(union_type) is not None:
+        if get_origin(union_type) is UnionType:
             types = get_args(union_type)
             return next((t for t in types if t is not type(None)), None)
         if isinstance(union_type, type):
             return union_type
-        # This is needed for mypy
         return None
 
     # helper function to set attributes based on env vars
@@ -82,7 +82,7 @@ def load_from_env(
 
                 try:
                     # if it's an optional type, get the non-None type
-                    if get_origin(field_type) is not None:
+                    if get_origin(field_type) is UnionType:
                         field_type = get_optional_type(field_type)
 
                     # Attempt to cast the env var to type hinted in the dataclass

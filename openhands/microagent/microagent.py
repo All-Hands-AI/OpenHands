@@ -1,6 +1,6 @@
 import io
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Union
 
 import frontmatter
 from pydantic import BaseModel
@@ -24,7 +24,7 @@ class BaseMicroagent(BaseModel):
     @classmethod
     def load(
         cls,
-        path: str | Path,
+        path: Union[str, Path],
         microagent_dir: Path | None = None,
         file_content: str | None = None,
     ) -> 'BaseMicroagent':
@@ -126,7 +126,7 @@ class KnowledgeMicroagent(BaseMicroagent):
         return None
 
     @property
-    def triggers(self) -> List[str]:
+    def triggers(self) -> list[str]:
         return self.metadata.triggers
 
 
@@ -151,8 +151,8 @@ class RepoMicroagent(BaseMicroagent):
 
 
 def load_microagents_from_dir(
-    microagent_dir: str | Path,
-) -> Tuple[Dict[str, RepoMicroagent], Dict[str, KnowledgeMicroagent]]:
+    microagent_dir: Union[str, Path],
+) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
     """Load all microagents from the given directory.
 
     Note, legacy repo instructions will not be loaded here.
