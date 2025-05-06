@@ -220,7 +220,7 @@ class CodeActAgent(Agent):
         return self.pending_actions.popleft()
 
     def _get_messages(
-        self, events: list[Event], is_chat_mode: bool | None
+        self, events: list[Event], is_chat_mode: bool | None = False
     ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
