@@ -16,6 +16,7 @@ from openhands.agenthub.codeact_agent.tools import (
     LLMBasedFileEditTool,
     ThinkTool,
     WebReadTool,
+    CreatePRTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
@@ -37,6 +38,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.create_pr import CreatePRAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -203,6 +205,20 @@ def response_to_actions(
                     name=tool_call.function.name,
                     arguments=arguments,
                 )
+            # ================================================
+            # CreatePR (opens pull request)
+            # ================================================
+            elif tool_call.function.name == CreatePRTool['function']['name']:
+                if 'source_branch' not in arguments or 'target_branch' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "source_branch" or "target_branch" in tool call {tool_call.function.name}'
+                    )
+                action = CreatePRAction(
+                    name=tool_call.function.name,
+                    source_branch=arguments.get('source_branch', ''),
+                    target_branch=arguments.get('target_branch', ''),
+                )
+
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'

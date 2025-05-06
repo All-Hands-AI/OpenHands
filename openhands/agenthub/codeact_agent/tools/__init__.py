@@ -6,6 +6,7 @@ from .llm_based_edit import LLMBasedFileEditTool
 from .str_replace_editor import create_str_replace_editor_tool
 from .think import ThinkTool
 from .web_read import WebReadTool
+from .create_pr import CreatePRTool
 
 __all__ = [
     'BrowserTool',
@@ -16,4 +17,5 @@ __all__ = [
     'create_str_replace_editor_tool',
     'WebReadTool',
     'ThinkTool',
+    'CreatePRTool',
 ]

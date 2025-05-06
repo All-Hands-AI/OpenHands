@@ -25,6 +25,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    CreatePRAction,
 )
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
@@ -283,6 +284,15 @@ class ActionExecutionClient(Runtime):
                 )
 
             assert action.timeout is not None
+
+            if isinstance(action, CreatePRAction): 
+                # TODO: track repo provider and call open PR
+                # We already have access to git provider tokens here
+                # Use GitService class and action args
+                # Instead of /execute_action we ping github api or gitlab api
+                # Return api response as observation
+                pass
+
 
             try:
                 execution_action_body: dict[str, Any] = {
