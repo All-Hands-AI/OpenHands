@@ -185,7 +185,7 @@ def display_event(event: Event, config: AppConfig) -> None:
         if isinstance(event, FileReadObservation):
             display_file_read(event)
         if isinstance(event, AgentStateChangedObservation):
-            display_agent_paused_message(event.agent_state)
+            display_agent_state_change_message(event.agent_state)
 
 
 def display_message(message: str):
@@ -406,13 +406,20 @@ def display_agent_running_message():
     )
 
 
-def display_agent_paused_message(agent_state: str):
-    if agent_state != AgentState.PAUSED:
-        return
-    print_formatted_text('')
-    print_formatted_text(
-        HTML('<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>')
-    )
+def display_agent_state_change_message(agent_state: str):
+    if agent_state == AgentState.PAUSED:
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>'
+            )
+        )
+    elif agent_state == AgentState.FINISHED:
+        print_formatted_text('')
+        print_formatted_text(HTML('<gold>Task completed...</gold>'))
+    elif agent_state == AgentState.AWAITING_USER_INPUT:
+        print_formatted_text('')
+        print_formatted_text(HTML('<gold>Agent is waiting for your input...</gold>'))
 
 
 # Common input functions
