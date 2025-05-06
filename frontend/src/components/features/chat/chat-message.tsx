@@ -56,12 +56,30 @@ export function ChatMessage({
         type === "assistant" && "mt-6 max-w-full bg-transparent",
       )}
     >
-      <CopyToClipboardButton
-        isHidden={!isHovering}
-        isDisabled={isCopy}
-        onClick={handleCopyToClipboard}
-        mode={isCopy ? "copied" : "copy"}
-      />
+      {/* Action buttons container */}
+      <div className={cn(
+        "absolute top-1 right-1 flex items-center gap-1",
+        !isHovering && "hidden"
+      )}>
+        {/* Show feedback buttons next to copy button for assistant messages */}
+        {type === "assistant" && messageId && isHovering && (
+          <div className="flex gap-1">
+            <MessageFeedback
+              messageId={messageId}
+              feedback={feedback}
+              isCompact={true}
+            />
+          </div>
+        )}
+
+        <CopyToClipboardButton
+          isHidden={false} // We're handling visibility at the container level
+          isDisabled={isCopy}
+          onClick={handleCopyToClipboard}
+          mode={isCopy ? "copied" : "copy"}
+        />
+      </div>
+
       <div className="text-sm break-words">
         <Markdown
           components={{
@@ -75,11 +93,6 @@ export function ChatMessage({
           {message}
         </Markdown>
       </div>
-
-      {/* Add feedback buttons only for assistant messages */}
-      {type === "assistant" && messageId && (
-        <MessageFeedback messageId={messageId} feedback={feedback} />
-      )}
 
       {children}
     </article>

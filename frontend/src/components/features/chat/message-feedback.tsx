@@ -8,13 +8,19 @@ import { TrajectoryActionButton } from "#/components/shared/buttons/trajectory-a
 import { createUserFeedback } from "#/services/chat-service";
 import { setMessageFeedback } from "#/state/chat-slice";
 import { I18nKey } from "#/i18n/declaration";
+import { cn } from "#/utils/utils";
 
 interface MessageFeedbackProps {
   messageId: number;
   feedback?: "positive" | "negative" | null;
+  isCompact?: boolean; // New prop for compact display mode
 }
 
-export function MessageFeedback({ messageId, feedback }: MessageFeedbackProps) {
+export function MessageFeedback({
+  messageId,
+  feedback,
+  isCompact = false
+}: MessageFeedbackProps) {
   const { t } = useTranslation();
   const { send } = useWsClient();
   const dispatch = useDispatch();
@@ -31,7 +37,10 @@ export function MessageFeedback({ messageId, feedback }: MessageFeedbackProps) {
   };
 
   return (
-    <div className="flex gap-1 mt-2">
+    <div className={cn(
+      "flex gap-1",
+      !isCompact && "mt-2" // Only add margin-top when not in compact mode
+    )}>
       <TrajectoryActionButton
         testId={`positive-${messageId}`}
         onClick={() => handleFeedback("positive")}
