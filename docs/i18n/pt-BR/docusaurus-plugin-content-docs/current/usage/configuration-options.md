@@ -27,10 +27,10 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Descrição: Segredo do token de API para Modal
 
 ### Workspace
-- `workspace_base`
+- `workspace_base` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `"./workspace"`
-  - Descrição: Caminho base para o workspace
+  - Descrição: Caminho base para o workspace. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
 - `cache_dir`
   - Tipo: `str`
@@ -102,20 +102,26 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Descrição: Número máximo de iterações
 
 ### Configuração do Sandbox
-- `workspace_mount_path_in_sandbox`
+
+- `volumes`
+  - Tipo: `str`
+  - Padrão: `None`
+  - Descrição: Montagens de volume no formato 'caminho_host:caminho_container[:modo]', por exemplo '/meu/diretorio/host:/workspace:rw'. Múltiplas montagens podem ser especificadas usando vírgulas, por exemplo '/caminho1:/workspace/caminho1,/caminho2:/workspace/caminho2:ro'
+
+- `workspace_mount_path_in_sandbox` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `"/workspace"`
-  - Descrição: Caminho para montar o workspace no sandbox
+  - Descrição: Caminho para montar o workspace no sandbox. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
-- `workspace_mount_path`
+- `workspace_mount_path` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Caminho para montar o workspace
+  - Descrição: Caminho para montar o workspace. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
-- `workspace_mount_rewrite`
+- `workspace_mount_rewrite` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Caminho para reescrever o caminho de montagem do workspace. Você geralmente pode ignorar isso, refere-se a casos especiais de execução dentro de outro contêiner.
+  - Descrição: Caminho para reescrever o caminho de montagem do workspace. Você geralmente pode ignorar isso, refere-se a casos especiais de execução dentro de outro contêiner. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
 ### Diversos
 - `run_as_openhands`

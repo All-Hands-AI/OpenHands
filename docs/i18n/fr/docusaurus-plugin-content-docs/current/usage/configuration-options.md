@@ -1,387 +1,413 @@
-# Options de configuration
-
-Ce guide détaille toutes les options de configuration disponibles pour OpenHands, vous aidant à personnaliser son comportement et à l'intégrer avec d'autres services.
+# Configuration Options
 
 :::note
-Si vous exécutez en [Mode GUI](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), les paramètres disponibles dans l'interface utilisateur des paramètres auront toujours
-la priorité.
+This page outlines all available configuration options for OpenHands, allowing you to customize its behavior and
+integrate it with other services. In GUI Mode, any settings applied through the Settings UI will take precedence.
 :::
 
----
+## Core Configuration
 
-# Table des matières
+The core configuration options are defined in the `[core]` section of the `config.toml` file.
 
-1. [Configuration de base](#core-configuration)
-   - [Clés API](#api-keys)
-   - [Espace de travail](#workspace)
-   - [Débogage et journalisation](#debugging-and-logging)
-   - [Trajectoires](#trajectories)
-   - [Stockage de fichiers](#file-store)
-   - [Gestion des tâches](#task-management)
-   - [Configuration du bac à sable](#sandbox-configuration)
-   - [Divers](#miscellaneous)
-2. [Configuration LLM](#llm-configuration)
-   - [Informations d'identification AWS](#aws-credentials)
-   - [Configuration de l'API](#api-configuration)
-   - [Fournisseur LLM personnalisé](#custom-llm-provider)
-   - [Embeddings](#embeddings)
-   - [Gestion des messages](#message-handling)
-   - [Sélection du modèle](#model-selection)
-   - [Nouvelles tentatives](#retrying)
-   - [Options avancées](#advanced-options)
-3. [Configuration de l'agent](#agent-configuration)
-   - [Configuration de la mémoire](#memory-configuration)
-   - [Configuration LLM](#llm-configuration-1)
-   - [Configuration de l'espace d'action](#actionspace-configuration)
-   - [Utilisation du micro-agent](#microagent-usage)
-4. [Configuration du bac à sable](#sandbox-configuration-1)
-   - [Exécution](#execution)
-   - [Image de conteneur](#container-image)
-   - [Mise en réseau](#networking)
-   - [Linting et plugins](#linting-and-plugins)
-   - [Dépendances et environnement](#dependencies-and-environment)
-   - [Évaluation](#evaluation)
-5. [Configuration de sécurité](#security-configuration)
-   - [Mode de confirmation](#confirmation-mode)
-   - [Analyseur de sécurité](#security-analyzer)
-
----
-
-## Configuration de base
-
-Les options de configuration de base sont définies dans la section `[core]` du fichier `config.toml`.
-
-**Clés API**
+### API Keys
 - `e2b_api_key`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Clé API pour E2B
+  - Type: `str`
+  - Default: `""`
+  - Description: API key for E2B
 
 - `modal_api_token_id`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : ID du jeton API pour Modal
+  - Type: `str`
+  - Default: `""`
+  - Description: API token ID for Modal
 
 - `modal_api_token_secret`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Secret du jeton API pour Modal
+  - Type: `str`
+  - Default: `""`
+  - Description: API token secret for Modal
 
-**Espace de travail**
-- `workspace_base`
-  - Type : `str`
-  - Valeur par défaut : `"./workspace"`
-  - Description : Chemin de base pour l'espace de travail
+### Workspace
+- `workspace_base` **(Deprecated)**
+  - Type: `str`
+  - Default: `"./workspace"`
+  - Description: Base path for the workspace. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
 - `cache_dir`
-  - Type : `str`
-  - Valeur par défaut : `"/tmp/cache"`
-  - Description : Chemin du répertoire de cache
+  - Type: `str`
+  - Default: `"/tmp/cache"`
+  - Description: Cache directory path
 
-**Débogage et journalisation**
+### Debugging and Logging
 - `debug`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Activer le débogage
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable debugging
 
 - `disable_color`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Désactiver la couleur dans la sortie du terminal
+  - Type: `bool`
+  - Default: `false`
+  - Description: Disable color in terminal output
 
-**Trajectoires**
+### Trajectories
 - `save_trajectory_path`
-  - Type : `str`
-  - Valeur par défaut : `"./trajectories"`
-  - Description : Chemin pour stocker les trajectoires (peut être un dossier ou un fichier). Si c'est un dossier, les trajectoires seront enregistrées dans un fichier nommé avec l'ID de session et l'extension .json, dans ce dossier.
+  - Type: `str`
+  - Default: `"./trajectories"`
+  - Description: Path to store trajectories (can be a folder or a file). If it's a folder, the trajectories will be saved in a file named with the session id name and .json extension, in that folder.
 
-**Stockage de fichiers**
+- `replay_trajectory_path`
+  - Type: `str`
+  - Default: `""`
+  - Description: Path to load a trajectory and replay. If given, must be a path to the trajectory file in JSON format. The actions in the trajectory file would be replayed first before any user instruction is executed.
+
+### File Store
 - `file_store_path`
-  - Type : `str`
-  - Valeur par défaut : `"/tmp/file_store"`
-  - Description : Chemin de stockage des fichiers
+  - Type: `str`
+  - Default: `"/tmp/file_store"`
+  - Description: File store path
 
 - `file_store`
-  - Type : `str`
-  - Valeur par défaut : `"memory"`
-  - Description : Type de stockage de fichiers
+  - Type: `str`
+  - Default: `"memory"`
+  - Description: File store type
 
 - `file_uploads_allowed_extensions`
-  - Type : `list of str`
-  - Valeur par défaut : `[".*"]`
-  - Description : Liste des extensions de fichiers autorisées pour les téléchargements
+  - Type: `list of str`
+  - Default: `[".*"]`
+  - Description: List of allowed file extensions for uploads
 
 - `file_uploads_max_file_size_mb`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Taille maximale des fichiers pour les téléchargements, en mégaoctets
+  - Type: `int`
+  - Default: `0`
+  - Description: Maximum file size for uploads, in megabytes
 
 - `file_uploads_restrict_file_types`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Restreindre les types de fichiers pour les téléchargements de fichiers
+  - Type: `bool`
+  - Default: `false`
+  - Description: Restrict file types for file uploads
 
 - `file_uploads_allowed_extensions`
-  - Type : `list of str`
-  - Valeur par défaut : `[".*"]`
-  - Description : Liste des extensions de fichiers autorisées pour les téléchargements
+  - Type: `list of str`
+  - Default: `[".*"]`
+  - Description: List of allowed file extensions for uploads
 
-**Gestion des tâches**
+### Task Management
 - `max_budget_per_task`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Budget maximal par tâche (0.0 signifie aucune limite)
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Maximum budget per task (0.0 means no limit)
 
 - `max_iterations`
-  - Type : `int`
-  - Valeur par défaut : `100`
-  - Description : Nombre maximal d'itérations
+  - Type: `int`
+  - Default: `100`
+  - Description: Maximum number of iterations
 
-**Configuration du bac à sable**
-- `workspace_mount_path_in_sandbox`
-  - Type : `str`
-  - Valeur par défaut : `"/workspace"`
-  - Description : Chemin de montage de l'espace de travail dans le bac à sable
+### Sandbox Configuration
+- `volumes`
+  - Type: `str`
+  - Default: `None`
+  - Description: Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
 
-- `workspace_mount_path`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Chemin de montage de l'espace de travail
+- `workspace_mount_path_in_sandbox` **(Deprecated)**
+  - Type: `str`
+  - Default: `"/workspace"`
+  - Description: Path to mount the workspace in the sandbox. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
-- `workspace_mount_rewrite`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Chemin pour réécrire le chemin de montage de l'espace de travail. Vous pouvez généralement ignorer cela, cela fait référence à des cas spéciaux d'exécution à l'intérieur d'un autre conteneur.
+- `workspace_mount_path` **(Deprecated)**
+  - Type: `str`
+  - Default: `""`
+  - Description: Path to mount the workspace. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
-**Divers**
+- `workspace_mount_rewrite` **(Deprecated)**
+  - Type: `str`
+  - Default: `""`
+  - Description: Path to rewrite the workspace mount path to. You can usually ignore this, it refers to special cases of running inside another container. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
+
+### Miscellaneous
 - `run_as_openhands`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Exécuter en tant qu'OpenHands
+  - Type: `bool`
+  - Default: `true`
+  - Description: Run as OpenHands
 
 - `runtime`
-  - Type : `str`
-  - Valeur par défaut : `"docker"`
-  - Description : Environnement d'exécution
+  - Type: `str`
+  - Default: `"docker"`
+  - Description: Runtime environment
 
 - `default_agent`
-  - Type : `str`
-  - Valeur par défaut : `"CodeActAgent"`
-  - Description : Nom de l'agent par défaut
+  - Type: `str`
+  - Default: `"CodeActAgent"`
+  - Description: Name of the default agent
 
 - `jwt_secret`
-  - Type : `str`
-  - Valeur par défaut : `uuid.uuid4().hex`
-  - Description : Secret JWT pour l'authentification. Veuillez le définir sur votre propre valeur.
+  - Type: `str`
+  - Default: `uuid.uuid4().hex`
+  - Description: JWT secret for authentication. Please set it to your own value.
 
-## Configuration LLM
+## LLM Configuration
 
-Les options de configuration LLM (Large Language Model) sont définies dans la section `[llm]` du fichier `config.toml`.
+The LLM (Large Language Model) configuration options are defined in the `[llm]` section of the `config.toml` file.
 
-Pour les utiliser avec la commande docker, passez `-e LLM_<option>`. Exemple : `-e LLM_NUM_RETRIES`.
+To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
 
 :::note
-Pour les configurations de développement, vous pouvez également définir des configurations LLM personnalisées. Voir [Configurations LLM personnalisées](./llms/custom-llm-configs) pour plus de détails.
+For development setups, you can also define custom named LLM configurations. See [Custom LLM Configurations](./llms/custom-llm-configs) for details.
 :::
 
-**Informations d'identification AWS**
+**AWS Credentials**
 - `aws_access_key_id`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : ID de clé d'accès AWS
+  - Type: `str`
+  - Default: `""`
+  - Description: AWS access key ID
 
 - `aws_region_name`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Nom de la région AWS
+  - Type: `str`
+  - Default: `""`
+  - Description: AWS region name
 
 - `aws_secret_access_key`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Clé d'accès secrète AWS
+  - Type: `str`
+  - Default: `""`
+  - Description: AWS secret access key
 
-**Configuration de l'API**
+### API Configuration
 - `api_key`
-  - Type : `str`
-  - Valeur par défaut : `None`
-  - Description : Clé API à utiliser
+  - Type: `str`
+  - Default: `None`
+  - Description: API key to use
 
 - `base_url`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : URL de base de l'API
+  - Type: `str`
+  - Default: `""`
+  - Description: API base URL
 
 - `api_version`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Version de l'API
+  - Type: `str`
+  - Default: `""`
+  - Description: API version
 
 - `input_cost_per_token`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Coût par jeton d'entrée
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Cost per input token
 
 - `output_cost_per_token`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Coût par jeton de sortie
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Cost per output token
 
-**Fournisseur LLM personnalisé**
+### Custom LLM Provider
 - `custom_llm_provider`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Fournisseur LLM personnalisé
+  - Type: `str`
+  - Default: `""`
+  - Description: Custom LLM provider
 
-**Embeddings**
-- `embedding_base_url`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : URL de base de l'API d'embedding
 
-- `embedding_deployment_name`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Nom du déploiement d'embedding
-
-- `embedding_model`
-  - Type : `str`
-  - Valeur par défaut : `"local"`
-  - Description : Modèle d'embedding à utiliser
-
-**Gestion des messages**
+### Message Handling
 - `max_message_chars`
-  - Type : `int`
-  - Valeur par défaut : `30000`
-  - Description : Le nombre maximum approximatif de caractères dans le contenu d'un événement inclus dans l'invite au LLM. Les observations plus grandes sont tronquées.
+  - Type: `int`
+  - Default: `30000`
+  - Description: The approximate maximum number of characters in the content of an event included in the prompt to the LLM. Larger observations are truncated.
 
 - `max_input_tokens`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Nombre maximal de jetons d'entrée
+  - Type: `int`
+  - Default: `0`
+  - Description: Maximum number of input tokens
 
 - `max_output_tokens`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Nombre maximal de jetons de sortie
+  - Type: `int`
+  - Default: `0`
+  - Description: Maximum number of output tokens
 
-**Sélection du modèle**
+### Model Selection
 - `model`
-  - Type : `str`
-  - Valeur par défaut : `"claude-3-5-sonnet-20241022"`
-  - Description : Modèle à utiliser
+  - Type: `str`
+  - Default: `"claude-3-5-sonnet-20241022"`
+  - Description: Model to use
 
-**Nouvelles tentatives**
+### Retrying
 - `num_retries`
-  - Type : `int`
-  - Valeur par défaut : `8`
-  - Description : Nombre de nouvelles tentatives à effectuer
+  - Type: `int`
+  - Default: `8`
+  - Description: Number of retries to attempt
 
 - `retry_max_wait`
-  - Type : `int`
-  - Valeur par défaut : `120`
-  - Description : Temps d'attente maximal (en secondes) entre les tentatives de nouvelle tentative
+  - Type: `int`
+  - Default: `120`
+  - Description: Maximum wait time (in seconds) between retry attempts
 
 - `retry_min_wait`
-  - Type : `int`
-  - Valeur par défaut : `15`
-  - Description : Temps d'attente minimal (en secondes) entre les tentatives de nouvelle tentative
+  - Type: `int`
+  - Default: `15`
+  - Description: Minimum wait time (in seconds) between retry attempts
 
 - `retry_multiplier`
-  - Type : `float`
-  - Valeur par défaut : `2.0`
-  - Description : Multiplicateur pour le calcul du backoff exponentiel
+  - Type: `float`
+  - Default: `2.0`
+  - Description: Multiplier for exponential backoff calculation
 
-**Options avancées**
+### Advanced Options
 - `drop_params`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Supprimer tous les paramètres non mappés (non pris en charge) sans provoquer d'exception
+  - Type: `bool`
+  - Default: `false`
+  - Description: Drop any unmapped (unsupported) params without causing an exception
 
 - `caching_prompt`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Utiliser la fonctionnalité de mise en cache des invites si elle est fournie par le LLM et prise en charge
+  - Type: `bool`
+  - Default: `true`
+  - Description: Using the prompt caching feature if provided by the LLM and supported
 
 - `ollama_base_url`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : URL de base pour l'API OLLAMA
+  - Type: `str`
+  - Default: `""`
+  - Description: Base URL for the OLLAMA API
 
 - `temperature`
-  - Type : `float`
-  - Valeur par défaut : `0.0`
-  - Description : Température pour l'API
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Temperature for the API
 
 - `timeout`
-  - Type : `int`
-  - Valeur par défaut : `0`
-  - Description : Délai d'expiration pour l'API
+  - Type: `int`
+  - Default: `0`
+  - Description: Timeout for the API
 
 - `top_p`
-  - Type : `float`
-  - Valeur par défaut : `1.0`
-  - Description : Top p pour l'API
+  - Type: `float`
+  - Default: `1.0`
+  - Description: Top p for the API
 
 - `disable_vision`
-  - Type : `bool`
-  - Valeur par défaut : `None`
-  - Description : Si le modèle est capable de vision, cette option permet de désactiver le traitement des images (utile pour réduire les coûts)
+  - Type: `bool`
+  - Default: `None`
+  - Description: If model is vision capable, this option allows to disable image processing (useful for cost reduction)
 
-## Configuration de l'agent
+## Agent Configuration
 
-Les options de configuration de l'agent sont définies dans les sections `[agent]` et `[agent.<agent_name>]` du fichier `config.toml`.
+The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
 
-**Configuration de la mémoire**
-- `memory_enabled`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Si la mémoire à long terme (embeddings) est activée
-
-- `memory_max_threads`
-  - Type : `int`
-  - Valeur par défaut : `3`
-  - Description : Le nombre maximum de threads indexant en même temps pour les embeddings
-
-**Configuration LLM**
+### LLM Configuration
 - `llm_config`
-  - Type : `str`
-  - Valeur par défaut : `'your-llm-config-group'`
-  - Description : Le nom de la configuration LLM à utiliser
+  - Type: `str`
+  - Default: `'your-llm-config-group'`
+  - Description: The name of the LLM config to use
 
-**Configuration de l'espace d'action**
+### ActionSpace Configuration
 - `function_calling`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Si l'appel de fonction est activé
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether function calling is enabled
 
 - `enable_browsing`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Si le délégué de navigation est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether browsing delegate is enabled in the action space (only works with function calling)
 
 - `enable_llm_editor`
-  - Type : `bool`
-  - Valeur par défaut : `false`
-  - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether LLM editor is enabled in the action space (only works with function calling)
 
-**Utilisation du micro-agent**
+- `enable_jupyter`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether Jupyter is enabled in the action space
+
+- `enable_history_truncation`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether history should be truncated to continue the session when hitting LLM context length limit
+
+### Microagent Usage
 - `enable_prompt_extensions`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Indique si l'utilisation des micro-agents est activée ou non
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether to use microagents at all
 
 - `disabled_microagents`
-  - Type : `list of str`
-  - Valeur par défaut : `None`
-  - Description : Liste des micro-agents à désactiver
+  - Type: `list of str`
+  - Default: `None`
+  - Description: A list of microagents to disable
 
-### Exécution
+## Sandbox Configuration
+
+The sandbox configuration options are defined in the `[sandbox]` section of the `config.toml` file.
+
+To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-e SANDBOX_TIMEOUT`.
+
+### Execution
 - `timeout`
-  - Type : `int`
-  - Valeur par défaut : `120`
-  - Description : Délai d'expiration du bac à sable, en secondes
+  - Type: `int`
+  - Default: `120`
+  - Description: Sandbox timeout in seconds
 
 - `user_id`
-  - Type : `int`
-  - Valeur par défaut : `1000`
-  - Description : ID de l'utilisateur du bac à sable
+  - Type: `int`
+  - Default: `1000`
+  - Description: Sandbox user ID
+
+### Container Image
+- `base_container_image`
+  - Type: `str`
+  - Default: `"nikolaik/python-nodejs:python3.12-nodejs22"`
+  - Description: Container image to use for the sandbox
+
+### Networking
+- `use_host_network`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Use host network
+
+- `runtime_binding_address`
+  - Type: `str`
+  - Default: `0.0.0.0`
+  - Description: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
+
+### Linting and Plugins
+- `enable_auto_lint`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable auto linting after editing
+
+- `initialize_plugins`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether to initialize plugins
+
+### Dependencies and Environment
+- `runtime_extra_deps`
+  - Type: `str`
+  - Default: `""`
+  - Description: Extra dependencies to install in the runtime image
+
+- `runtime_startup_env_vars`
+  - Type: `dict`
+  - Default: `{}`
+  - Description: Environment variables to set at the launch of the runtime
+
+### Evaluation
+- `browsergym_eval_env`
+  - Type: `str`
+  - Default: `""`
+  - Description: BrowserGym environment to use for evaluation
+
+## Security Configuration
+
+The security configuration options are defined in the `[security]` section of the `config.toml` file.
+
+To use these with the docker command, pass in `-e SECURITY_<option>`. Example: `-e SECURITY_CONFIRMATION_MODE`.
+
+### Confirmation Mode
+- `confirmation_mode`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable confirmation mode
+
+### Security Analyzer
+- `security_analyzer`
+  - Type: `str`
+  - Default: `""`
+  - Description: The security analyzer to use
+
+---
+
+> **Note**: Adjust configurations carefully, especially for memory, security, and network-related settings to ensure optimal performance and security.
+Please note that the configuration options may be subject to change in future versions of OpenHands. It's recommended to refer to the official documentation for the most up-to-date information.

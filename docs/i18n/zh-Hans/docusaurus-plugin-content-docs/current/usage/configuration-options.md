@@ -67,10 +67,10 @@
   - 描述: Modal 的 API token secret
 
 **工作区**
-- `workspace_base`
+- `workspace_base` **(已弃用)**
   - 类型: `str`
   - 默认值: `"./workspace"`
-  - 描述: 工作区的基础路径
+  - 描述: 工作区的基础路径。**已弃用：请改用 `SANDBOX_VOLUMES`。**
 
 - `cache_dir`
   - 类型: `str`
@@ -137,20 +137,26 @@
   - 描述: 最大迭代次数
 
 **沙箱配置**
-- `workspace_mount_path_in_sandbox`
+
+- `volumes`
+  - 类型: `str`
+  - 默认值: `None`
+  - 描述: 格式为'主机路径:容器路径[:模式]'的卷挂载，例如'/my/host/dir:/workspace:rw'。可以使用逗号指定多个挂载，例如'/path1:/workspace/path1,/path2:/workspace/path2:ro'
+
+- `workspace_mount_path_in_sandbox` **(已弃用)**
   - 类型: `str`
   - 默认值: `"/workspace"`
-  - 描述: 在沙箱中挂载工作区的路径
+  - 描述: 在沙箱中挂载工作区的路径。**已弃用：请改用 `SANDBOX_VOLUMES`。**
 
-- `workspace_mount_path`
+- `workspace_mount_path` **(已弃用)**
   - 类型: `str`
   - 默认值: `""`
-  - 描述: 挂载工作区的路径
+  - 描述: 挂载工作区的路径。**已弃用：请改用 `SANDBOX_VOLUMES`。**
 
-- `workspace_mount_rewrite`
+- `workspace_mount_rewrite` **(已弃用)**
   - 类型: `str`
   - 默认值: `""`
-  - 描述: 重写工作区挂载路径的路径。通常可以忽略这个,它指的是在另一个容器内运行的特殊情况。
+  - 描述: 重写工作区挂载路径的路径。通常可以忽略这个,它指的是在另一个容器内运行的特殊情况。**已弃用：请改用 `SANDBOX_VOLUMES`。**
 
 **其他**
 - `run_as_openhands`

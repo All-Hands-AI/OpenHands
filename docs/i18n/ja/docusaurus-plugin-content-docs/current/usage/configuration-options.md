@@ -67,10 +67,10 @@
   - 説明: ModalのAPIトークンシークレット
 
 **ワークスペース**
-- `workspace_base`
+- `workspace_base` **(非推奨)**
   - 型: `str`
   - デフォルト値: `"./workspace"`
-  - 説明: ワークスペースのベースパス
+  - 説明: ワークスペースのベースパス。**非推奨: 代わりに `SANDBOX_VOLUMES` を使用してください。**
 
 - `cache_dir`
   - 型: `str`
@@ -132,20 +132,26 @@
   - 説明: 最大イテレーション数
 
 **サンドボックス設定**
-- `workspace_mount_path_in_sandbox`
+
+- `volumes`
+  - 型: `str`
+  - デフォルト値: `None`
+  - 説明: 'ホストパス:コンテナパス[:モード]'形式のボリュームマウント（例: '/my/host/dir:/workspace:rw'）。複数のマウントはカンマで区切って指定できます（例: '/path1:/workspace/path1,/path2:/workspace/path2:ro'）
+
+- `workspace_mount_path_in_sandbox` **(非推奨)**
   - 型: `str`
   - デフォルト値: `"/workspace"`
-  - 説明: サンドボックス内のワークスペースマウントパス
+  - 説明: サンドボックス内のワークスペースマウントパス。**非推奨: 代わりに `SANDBOX_VOLUMES` を使用してください。**
 
-- `workspace_mount_path`
+- `workspace_mount_path` **(非推奨)**
   - 型: `str`
   - デフォルト値: `""`
-  - 説明: ワークスペースマウントパス
+  - 説明: ワークスペースマウントパス。**非推奨: 代わりに `SANDBOX_VOLUMES` を使用してください。**
 
-- `workspace_mount_rewrite`
+- `workspace_mount_rewrite` **(非推奨)**
   - 型: `str`
   - デフォルト値: `""`
-  - 説明: ワークスペースマウントパスを書き換えるパス。通常は無視できます。別のコンテナ内での実行の特殊なケースを参照します。
+  - 説明: ワークスペースマウントパスを書き換えるパス。通常は無視できます。別のコンテナ内での実行の特殊なケースを参照します。**非推奨: 代わりに `SANDBOX_VOLUMES` を使用してください。**
 
 **その他**
 - `run_as_openhands`
