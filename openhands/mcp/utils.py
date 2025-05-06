@@ -5,6 +5,7 @@ from typing import Any, Optional
 from mcp.types import CallToolResult, ImageContent, TextContent
 
 from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.search_engine import SearchEngineConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.observation import ObservationType
 from openhands.events.action.mcp import McpAction
@@ -115,6 +116,40 @@ async def fetch_mcp_tools_from_config(
 
     # logger.debug(f'MCP tools: {mcp_tools}')
     return mcp_tools
+
+
+async def fetch_search_tools_from_config(
+    dict_search_engine_config: dict[str, SearchEngineConfig],
+    sid: Optional[str] = None,
+    mnemonic: Optional[str] = None,
+) -> list[dict]:
+    """
+    Retrieves the list of search tools from the search engine config.
+    """
+    search_tools = []
+    try:
+        for name, search_engine_config in dict_search_engine_config.items():
+            if search_engine_config.type.startswith('mcp'):
+                mcp_mode = search_engine_config.type.split('_')[1]
+                dict_mcp_config = {}
+                dict_mcp_config[name] = MCPConfig(
+                    url=search_engine_config.url,
+                    mode=mcp_mode,
+                )
+            tools = await fetch_mcp_tools_from_config(
+                dict_mcp_config,
+                sid=sid,
+                mnemonic=mnemonic,
+            )
+            if search_engine_config.tools:
+                tools = [
+                    tool for tool in tools if tool['name'] in search_engine_config.tools
+                ]
+            search_tools += tools
+        return search_tools
+    except Exception as e:
+        logger.error(f'Error fetching search tools: {str(e)}')
+        return []
 
 
 async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Observation:

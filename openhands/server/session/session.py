@@ -23,6 +23,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp.utils import fetch_search_tools_from_config
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
@@ -147,6 +148,10 @@ class Session:
             self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic
         )
 
+        search_tools = await fetch_search_tools_from_config(
+            self.config.dict_search_engine_config, sid=self.sid, mnemonic=mnemonic
+        )
+
         workspace_mount_path_in_sandbox_store_in_session = (
             self.config.workspace_mount_path_in_sandbox_store_in_session
         )
@@ -166,6 +171,7 @@ class Session:
             a2a_manager,
         )
         agent.set_mcp_tools(mcp_tools)
+        agent.set_search_tools(search_tools)
 
         if system_prompt:
             agent.set_system_prompt(system_prompt)

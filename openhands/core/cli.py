@@ -57,6 +57,7 @@ from openhands.events.observation import (
 from openhands.io import read_task
 from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp.utils import fetch_search_tools_from_config
 from openhands.microagent.microagent import BaseMicroagent
 
 # Color and styling constants
@@ -677,7 +678,15 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     agent = create_agent(config)
     mcp_tools = await fetch_mcp_tools_from_config(config.dict_mcp_config, sid=sid)
+
+    search_tools = await fetch_search_tools_from_config(
+        config.dict_search_engine_config, sid=sid
+    )
+    print(f'Search tools: {search_tools}')
     agent.set_mcp_tools(mcp_tools)
+    if search_tools:
+        agent.set_search_tools(search_tools)
+
     if agent.a2a_manager:
         try:
             await agent.a2a_manager.initialize_agent_cards()

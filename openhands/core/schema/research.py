@@ -6,6 +6,6 @@ class ResearchMode(str, Enum):
     """Chat mode.
     """
 
-    RESEARCH = 'research'
-    """Research mode.
+    DEEP_RESEARCH = 'deep_research'
+    """Deep research mode.
     """
