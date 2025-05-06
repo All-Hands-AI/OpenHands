@@ -78,8 +78,8 @@ async def connect(connection_id: str, environ):
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
 
-    sercets_store = await SecretsStoreImpl.get_instance(config, user_id)
-    user_secrets: UserSecrets = await sercets_store.load()
+    secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
+    user_secrets: UserSecrets = await secrets_store.load()
 
     if not settings:
         raise ConnectionRefusedError(
