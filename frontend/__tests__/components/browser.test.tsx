@@ -57,7 +57,7 @@ describe("Browser", () => {
       screenshotSrc: "",
     };
   });
-  
+
   it("renders a message if no screenshotSrc is provided", () => {
     // Set the mock state for this test
     mockBrowserState = {
