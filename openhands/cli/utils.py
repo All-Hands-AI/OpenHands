@@ -150,11 +150,11 @@ def split_is_actually_version(split: list[str]) -> bool:
     )
 
 
-def read_file(file_path: str) -> str:
+def read_file(file_path: str | Path) -> str:
     with open(file_path, 'r') as f:
         return f.read()
 
 
-def write_to_file(file_path: str, content: str) -> None:
+def write_to_file(file_path: str | Path, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)
