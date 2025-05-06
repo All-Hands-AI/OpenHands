@@ -7,9 +7,8 @@ import { setupStore } from "test-utils";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
-import { AuthProvider } from "#/context/auth-context";
 
-const renderTaskSuggestions = (initialProvidersAreSet = true) => {
+const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
     {
       Component: TaskSuggestions,
@@ -28,11 +27,9 @@ const renderTaskSuggestions = (initialProvidersAreSet = true) => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       </Provider>
     ),
   });

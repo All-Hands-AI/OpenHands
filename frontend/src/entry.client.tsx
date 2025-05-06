@@ -13,7 +13,6 @@ import posthog from "posthog-js";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
-import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import OpenHands from "./api/open-hands";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
@@ -67,12 +66,10 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
-            </QueryClientProvider>
-          </AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <HydratedRouter />
+            <PosthogInit />
+          </QueryClientProvider>
         </Provider>
       </StrictMode>,
     );

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { Settings } from "#/types/settings";
@@ -30,13 +29,10 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
 };
 
 export const useSettings = () => {
-  const { setProviderTokensSet, providerTokensSet, setProvidersAreSet } =
-    useAuth();
-
   const isOnTosPage = useIsOnTosPage();
 
   const query = useQuery({
-    queryKey: ["settings", providerTokensSet],
+    queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
@@ -55,18 +51,6 @@ export const useSettings = () => {
       posthog.capture("user_activated");
     }
   }, [query.data?.LLM_API_KEY_SET, query.isFetched]);
-
-  React.useEffect(() => {
-    if (query.data?.PROVIDER_TOKENS_SET) {
-      const providers = query.data.PROVIDER_TOKENS_SET;
-      const setProviders = Object.keys(providers) as Array<
-        keyof typeof providers
-      >;
-      setProviderTokensSet(setProviders);
-      const atLeastOneSet = setProviders.length > 0;
-      setProvidersAreSet(atLeastOneSet);
-    }
-  }, [query.data?.PROVIDER_TOKENS_SET, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because

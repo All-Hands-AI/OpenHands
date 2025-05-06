@@ -6,10 +6,10 @@ import { createRoutesStub } from "react-router";
 import { Provider } from "react-redux";
 import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
-import { AuthProvider } from "#/context/auth-context";
 import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 const RouterStub = createRoutesStub([
   {
@@ -32,15 +32,13 @@ const RouterStub = createRoutesStub([
   },
 ]);
 
-const renderHomeScreen = (initialProvidersAreSet = true) =>
+const renderHomeScreen = () =>
   render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       </Provider>
     ),
   });
@@ -61,6 +59,17 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
 ];
 
 describe("HomeScreen", () => {
+  beforeEach(() => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "some-token",
+        gitlab: null,
+      },
+    });
+  });
+
   it("should render", () => {
     renderHomeScreen();
     screen.getByTestId("home-screen");
@@ -69,8 +78,10 @@ describe("HomeScreen", () => {
   it("should render the repository connector and suggested tasks sections", async () => {
     renderHomeScreen();
 
-    screen.getByTestId("repo-connector");
-    screen.getByTestId("task-suggestions");
+    await waitFor(() => {
+      screen.getByTestId("repo-connector");
+      screen.getByTestId("task-suggestions");
+    });
   });
 
   it("should have responsive layout for mobile and desktop screens", async () => {
@@ -91,7 +102,7 @@ describe("HomeScreen", () => {
 
     renderHomeScreen();
 
-    const taskSuggestions = screen.getByTestId("task-suggestions");
+    const taskSuggestions = await screen.findByTestId("task-suggestions");
 
     // Initially, all tasks should be visible
     await waitFor(() => {
@@ -126,7 +137,7 @@ describe("HomeScreen", () => {
 
     renderHomeScreen();
 
-    const taskSuggestions = screen.getByTestId("task-suggestions");
+    const taskSuggestions = await screen.findByTestId("task-suggestions");
 
     // Initially, all tasks should be visible
     await waitFor(() => {
@@ -164,7 +175,7 @@ describe("HomeScreen", () => {
   describe("launch buttons", () => {
     const setupLaunchButtons = async () => {
       let headerLaunchButton = screen.getByTestId("header-launch-button");
-      let repoLaunchButton = screen.getByTestId("repo-launch-button");
+      let repoLaunchButton = await screen.findByTestId("repo-launch-button");
       let tasksLaunchButtons =
         await screen.findAllByTestId("task-launch-button");
 
@@ -256,7 +267,7 @@ describe("HomeScreen", () => {
   });
 
   it("should hide the suggested tasks section if not authed with git(hub|lab)", async () => {
-    renderHomeScreen(false);
+    renderHomeScreen();
 
     const taskSuggestions = screen.queryByTestId("task-suggestions");
     const repoConnector = screen.getByTestId("repo-connector");
@@ -267,6 +278,10 @@ describe("HomeScreen", () => {
 });
 
 describe("Settings 404", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
