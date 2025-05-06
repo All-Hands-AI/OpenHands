@@ -82,7 +82,7 @@ describe("TaskSuggestions", () => {
     getSuggestedTasksSpy.mockResolvedValue(MOCK_TASKS);
     renderTaskSuggestions();
 
-    const skeletons = screen.getAllByTestId("task-group-skeleton");
+    const skeletons = await screen.findAllByTestId("task-group-skeleton");
     expect(skeletons.length).toBeGreaterThan(0);
 
     await waitFor(() => {
