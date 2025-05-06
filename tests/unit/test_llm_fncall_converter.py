@@ -270,7 +270,7 @@ NON_FNCALL_MESSAGES = [
         'content': [
             {
                 'type': 'text',
-                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(FNCALL_TOOLS)
                 + "<uploaded_files>\n/workspace/astropy__astropy__5.1\n</uploaded_files>\nI've uploaded a python code repository in the directory astropy__astropy__5.1. LONG DESCRIPTION:\n\n"
                 + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
             }

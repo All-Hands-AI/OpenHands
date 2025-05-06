@@ -13,11 +13,11 @@ from typing import Iterable
 
 from litellm import ChatCompletionToolParam
 
-from openhands.agenthub.codeact_agent.tools import (
-    BrowserTool,
-    WebReadTool,
-    create_cmd_run_tool,
-    create_str_replace_editor_tool,
+from openhands.llm.tool_names import (
+    BROWSER_TOOL_NAME,
+    EXECUTE_BASH_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
+    WEB_READ_TOOL_NAME,
 )
 from openhands.core.exceptions import (
     FunctionCallConversionError,
@@ -208,13 +208,13 @@ def get_example_for_tools(tools: list[dict]) -> str:
     for tool in tools:
         if tool['type'] == 'function':
             name = tool['function']['name']
-            if name == create_cmd_run_tool()['function']['name']:
+            if name == EXECUTE_BASH_TOOL_NAME:
                 available_tools.add('execute_bash')
-            elif name == create_str_replace_editor_tool()['function']['name']:
+            elif name == STR_REPLACE_EDITOR_TOOL_NAME:
                 available_tools.add('str_replace_editor')
-            elif name == WebReadTool['function']['name']:
+            elif name == WEB_READ_TOOL_NAME:
                 available_tools.add('web_read')
-            elif name == BrowserTool['function']['name']:
+            elif name == BROWSER_TOOL_NAME:
                 available_tools.add('browser')
 
     if not available_tools:
