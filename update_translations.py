@@ -1,80 +1,71 @@
 #!/usr/bin/env python3
+"""
+Script to update translations for configuration-options.md
+"""
+
 import os
 import re
 
-# List of translation files to update
-translation_files = [
-    "docs/i18n/fr/docusaurus-plugin-content-docs/current/usage/configuration-options.md",
-    "docs/i18n/ja/docusaurus-plugin-content-docs/current/usage/configuration-options.md",
-    "docs/i18n/zh-Hans/docusaurus-plugin-content-docs/current/usage/configuration-options.md",
-    "docs/i18n/pt-BR/docusaurus-plugin-content-docs/current/usage/configuration-options.md"
-]
+def update_workspace_base(content):
+    """Update workspace_base section to mark as deprecated"""
+    pattern = r'(### Workspace\n- `workspace_base`\n  - [^\n]+\n  - [^\n]+\n  - [^\n]+)'
+    replacement = r'\1 **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**'
+    
+    # Add (Deprecated) marker
+    content = re.sub(r'(### Workspace\n- `workspace_base`)', r'\1 **(Obsoleto)**', content)
+    
+    # Add deprecation message
+    content = re.sub(pattern, replacement, content)
+    
+    return content
 
-# Function to update a file
-def update_file(file_path):
+def update_sandbox_config(content):
+    """Update sandbox configuration section to mark workspace_* params as deprecated and add volumes param"""
+    # Pattern to match the entire sandbox configuration section
+    pattern = r'(### Configuração do Sandbox\n)(- `workspace_mount_path_in_sandbox`\n  - [^\n]+\n  - [^\n]+\n  - [^\n]+\n\n- `workspace_mount_path`\n  - [^\n]+\n  - [^\n]+\n  - [^\n]+\n\n- `workspace_mount_rewrite`\n  - [^\n]+\n  - [^\n]+\n  - [^\n]+)'
+    
+    # New content with volumes parameter and deprecated markers
+    replacement = r'\1\n- `volumes`\n  - Tipo: `str`\n  - Padrão: `None`\n  - Descrição: Montagens de volume no formato \'caminho_host:caminho_container[:modo]\', por exemplo \'/meu/diretorio/host:/workspace:rw\'. Múltiplas montagens podem ser especificadas usando vírgulas, por exemplo \'/caminho1:/workspace/caminho1,/caminho2:/workspace/caminho2:ro\'\n\n- `workspace_mount_path_in_sandbox` **(Obsoleto)**\n  - Tipo: `str`\n  - Padrão: `"/workspace"`\n  - Descrição: Caminho para montar o workspace no sandbox. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**\n\n- `workspace_mount_path` **(Obsoleto)**\n  - Tipo: `str`\n  - Padrão: `""`\n  - Descrição: Caminho para montar o workspace. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**\n\n- `workspace_mount_rewrite` **(Obsoleto)**\n  - Tipo: `str`\n  - Padrão: `""`\n  - Descrição: Caminho para reescrever o caminho de montagem do workspace. Você geralmente pode ignorar isso, refere-se a casos especiais de execução dentro de outro contêiner. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**'
+    
+    content = re.sub(pattern, replacement, content)
+    
+    return content
+
+def process_file(file_path):
+    """Process a single translation file"""
+    print(f"Processing {file_path}")
+    
     try:
-        # Read the file with UTF-8 encoding
-        with open(file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
         
-        # Mark workspace_base as deprecated
-        content = re.sub(
-            r'(`workspace_base`)\s*\n\s*- Type',
-            r'\1 **(Deprecated)**\n  - Type', 
-            content
-        )
+        # Update workspace_base section
+        content = update_workspace_base(content)
         
-        # Add sandbox volumes parameter
-        sandbox_config_pattern = r'(\*\*Configuration du bac à sable\*\*|\*\*サンドボックス設定\*\*|\*\*沙盒配置\*\*|\*\*Configuração do Sandbox\*\*)'
-        if re.search(sandbox_config_pattern, content):
-            # Add volumes parameter after the sandbox configuration heading
-            volumes_param = """- `volumes`
-  - Type : `str`
-  - Valeur par défaut : `None`
-  - Description : Montages de volumes au format 'chemin_hôte:chemin_conteneur[:mode]', par exemple '/mon/répertoire/hôte:/workspace:rw'. Plusieurs montages peuvent être spécifiés en utilisant des virgules, par exemple '/chemin1:/workspace/chemin1,/chemin2:/workspace/chemin2:ro'
-
-"""
-            content = re.sub(
-                sandbox_config_pattern + r'\s*\n',
-                r'\1\n\n' + volumes_param,
-                content
-            )
+        # Update sandbox configuration section
+        content = update_sandbox_config(content)
         
-        # Mark workspace_mount_path_in_sandbox as deprecated
-        content = re.sub(
-            r'(`workspace_mount_path_in_sandbox`)\s*\n\s*- Type',
-            r'\1 **(Deprecated)**\n  - Type', 
-            content
-        )
-        
-        # Mark workspace_mount_path as deprecated
-        content = re.sub(
-            r'(`workspace_mount_path`)\s*\n\s*- Type',
-            r'\1 **(Deprecated)**\n  - Type', 
-            content
-        )
-        
-        # Mark workspace_mount_rewrite as deprecated
-        content = re.sub(
-            r'(`workspace_mount_rewrite`)\s*\n\s*- Type',
-            r'\1 **(Deprecated)**\n  - Type', 
-            content
-        )
-        
-        # Write the updated content back to the file
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(content)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
         
         print(f"Updated {file_path}")
-        return True
     except Exception as e:
-        print(f"Error updating {file_path}: {e}")
-        return False
+        print(f"Error processing {file_path}: {e}")
 
-# Update all translation files
-success_count = 0
-for file_path in translation_files:
-    if update_file(file_path):
-        success_count += 1
+def main():
+    """Main function"""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    i18n_dir = os.path.join(base_dir, 'docs', 'i18n')
+    
+    # List of languages to process
+    languages = ['ja', 'zh-Hans', 'pt-BR', 'fr']
+    
+    for lang in languages:
+        file_path = os.path.join(i18n_dir, lang, 'docusaurus-plugin-content-docs', 'current', 'usage', 'configuration-options.md')
+        if os.path.exists(file_path):
+            process_file(file_path)
+        else:
+            print(f"File not found: {file_path}")
 
-print(f"Updated {success_count} out of {len(translation_files)} translation files")
+if __name__ == "__main__":
+    main()

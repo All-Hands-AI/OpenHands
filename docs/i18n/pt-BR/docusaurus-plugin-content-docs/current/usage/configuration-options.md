@@ -27,7 +27,7 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Descrição: Segredo do token de API para Modal
 
 ### Workspace
-- `workspace_base` **(Obsoleto)**
+- `workspace_base` **(Obsoleto)** **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `"./workspace"`
   - Descrição: Caminho base para o workspace. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
