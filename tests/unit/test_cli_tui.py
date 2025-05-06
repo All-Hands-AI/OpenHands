@@ -1,4 +1,6 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from openhands.cli.tui import (
     CustomDiffLexer,
@@ -14,6 +16,7 @@ from openhands.cli.tui import (
     display_usage_metrics,
     display_welcome_message,
     get_session_duration,
+    read_confirmation_input,
 )
 from openhands.core.config import AppConfig
 from openhands.events import EventSource
@@ -259,3 +262,117 @@ class TestUserCancelledError:
     def test_user_cancelled_error(self):
         error = UserCancelledError()
         assert isinstance(error, Exception)
+
+
+class TestReadConfirmationInput:
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_yes(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'y'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'yes'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_yes_full(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'yes'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'yes'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_no(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'n'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_no_full(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'no'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_always(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'a'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'always'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_always_full(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'always'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'always'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_invalid(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'invalid'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_empty(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = ''
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_none(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = None
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_keyboard_interrupt(
+        self, mock_create_session
+    ):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.side_effect = KeyboardInterrupt
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_eof_error(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.side_effect = EOFError
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'

@@ -486,20 +486,28 @@ async def read_prompt_input(agent_state: str, multiline=False):
         return '/exit'
 
 
-async def read_confirmation_input() -> bool:
+async def read_confirmation_input() -> str:
     try:
         prompt_session = create_prompt_session()
 
         with patch_stdout():
             print_formatted_text('')
             confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o > </gold>'),
+                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
             )
 
             confirmation = '' if confirmation is None else confirmation.strip().lower()
-            return confirmation in ['y', 'yes']
+
+            if confirmation in ['y', 'yes']:
+                return 'yes'
+            elif confirmation in ['n', 'no']:
+                return 'no'
+            elif confirmation in ['a', 'always']:
+                return 'always'
+            else:
+                return 'no'
     except (KeyboardInterrupt, EOFError):
-        return False
+        return 'no'
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
