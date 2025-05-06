@@ -4,9 +4,9 @@ import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
-import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
-import { MessageFeedback } from "./message-feedback";
+import { MessageActions } from "./message-actions";
+import { useHover } from "#/hooks/use-hover";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -22,7 +22,7 @@ export function ChatMessage({
   feedback,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
-  const [isHovering, setIsHovering] = React.useState(false);
+  const [isHovering, hoverProps] = useHover();
   const [isCopy, setIsCopy] = React.useState(false);
 
   const handleCopyToClipboard = async () => {
@@ -47,8 +47,8 @@ export function ChatMessage({
   return (
     <article
       data-testid={`${type}-message`}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseEnter={hoverProps.onMouseEnter}
+      onMouseLeave={hoverProps.onMouseLeave}
       className={cn(
         "rounded-xl relative",
         "flex flex-col gap-2",
@@ -56,29 +56,16 @@ export function ChatMessage({
         type === "assistant" && "mt-6 max-w-full bg-transparent",
       )}
     >
-      {/* Action buttons container */}
-      <div className={cn(
-        "absolute top-1 right-1 flex items-center gap-1",
-        !isHovering && "hidden"
-      )}>
-        {/* Show feedback buttons next to copy button for assistant messages */}
-        {type === "assistant" && messageId && isHovering && (
-          <div className="flex gap-1">
-            <MessageFeedback
-              messageId={messageId}
-              feedback={feedback}
-              isCompact={true}
-            />
-          </div>
-        )}
-
-        <CopyToClipboardButton
-          isHidden={false} // We're handling visibility at the container level
-          isDisabled={isCopy}
-          onClick={handleCopyToClipboard}
-          mode={isCopy ? "copied" : "copy"}
+      {/* Action buttons */}
+      {type === "assistant" && (
+        <MessageActions
+          messageId={messageId}
+          feedback={feedback}
+          isHovering={isHovering}
+          isCopy={isCopy}
+          onCopy={handleCopyToClipboard}
         />
-      </div>
+      )}
 
       <div className="text-sm break-words">
         <Markdown

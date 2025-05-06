@@ -2,17 +2,14 @@ import { useTranslation } from "react-i18next";
 import CheckmarkIcon from "#/icons/checkmark.svg?react";
 import CopyIcon from "#/icons/copy.svg?react";
 import { I18nKey } from "#/i18n/declaration";
-import { cn } from "#/utils/utils";
 
 interface CopyToClipboardButtonProps {
-  isHidden: boolean;
   isDisabled: boolean;
   onClick: () => void;
   mode: "copy" | "copied";
 }
 
 export function CopyToClipboardButton({
-  isHidden,
   isDisabled,
   onClick,
   mode,
@@ -20,7 +17,6 @@ export function CopyToClipboardButton({
   const { t } = useTranslation();
   return (
     <button
-      hidden={isHidden}
       disabled={isDisabled}
       data-testid="copy-to-clipboard"
       type="button"
