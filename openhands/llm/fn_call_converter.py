@@ -288,7 +288,7 @@ FN_REGEX_PATTERN = r'<function=([^>]+)>\n(.*?)</function>'
 FN_PARAM_REGEX_PATTERN = r'<parameter=([^>]+)>(.*?)</parameter>'
 
 # Add new regex pattern for tool execution results
-TOOL_RESULT_REGEX_PATTERN = r'EXECUTION RESULT of \\[(.*?)\\]:\n(.*)'
+TOOL_RESULT_REGEX_PATTERN = r'EXECUTION RESULT of \[(.*?)\]:\n(.*)'
 
 
 def convert_tool_call_to_string(tool_call: dict) -> str:
