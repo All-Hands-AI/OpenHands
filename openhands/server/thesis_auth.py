@@ -43,7 +43,7 @@ async def get_user_detail_from_thesis_auth_server(
             status=UserStatus.ACTIVE,
             whitelisted=1,
             publicAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
-            mnemonic='test test test test test test test test test test test junk',
+            mnemonic='test test test test test test test test test test test test junk',
             solanaThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
             ethThesisAddress='0x25bE302C3954b4DF9F67AFD6BfDD8c39f4Dc98Dc',
         )
@@ -176,3 +176,37 @@ def check_access_token_in_header(request):
         raise HTTPException(
             status_code=401, detail='Unauthorized: Invalid token format'
         )
+
+
+async def create_thread(
+    space_id: int | None = None,
+    conversation_id: str | None = None,
+    bearer_token: str | None = None,
+    x_device_id: str | None = None,
+) -> dict | None:
+    url = '/api/threads'
+    payload = {'conversationId': conversation_id}
+    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
+    if x_device_id:
+        headers['x-device-id'] = x_device_id
+    if space_id is not None:
+        payload['spaceId'] = str(space_id)
+    try:
+        response = await thesis_auth_client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to create thread: {response.status_code} - {response.text}'
+            )
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get('error', 'Unknown error'),
+            )
+        return response.json()
+    except httpx.RequestError as exc:
+        logger.error(f'Request error while creating thread: {str(exc)}')
+        raise HTTPException(
+            status_code=500, detail='Could not connect to thread server'
+        )
+    except Exception as e:
+        logger.exception('Unexpected error while creating thread')
+        raise HTTPException(status_code=500, detail=str(e))

@@ -42,6 +42,7 @@ from openhands.server.shared import (
     file_store,
     s3_handler,
 )
+from openhands.server.thesis_auth import create_thread
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -62,6 +63,7 @@ class InitSessionRequest(BaseModel):
     user_prompt: str | None = None
     mcp_disable: dict[str, bool] | None = None
     research_mode: str | None = None
+    space_id: int | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -207,6 +209,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     user_prompt = data.user_prompt
     user_id = get_user_id(request)
     mnemonic = request.state.user.mnemonic
+    space_id = data.space_id
+    bearer_token = request.headers.get('Authorization')
+    x_device_id = request.headers.get('x-device-id')
+
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
@@ -223,7 +229,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             mcp_disable=data.mcp_disable,
             research_mode=data.research_mode,
         )
+
         if conversation_id and user_id is not None:
+            await create_thread(space_id, conversation_id, bearer_token, x_device_id)
             await conversation_module._update_conversation_visibility(
                 conversation_id,
                 False,
