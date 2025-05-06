@@ -187,10 +187,10 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
-        print(f"BASIC NUM_RETRIES: {self.config.num_retries}")
+        logger.error(f"BASIC NUM_RETRIES: {self.config.num_retries}")
 
         @self.retry_decorator(
-            num_retries=self.config.num_retries,
+            num_retries=100,
             retry_exceptions=LLM_RETRY_EXCEPTIONS,
             retry_min_wait=self.config.retry_min_wait,
             retry_max_wait=self.config.retry_max_wait,
