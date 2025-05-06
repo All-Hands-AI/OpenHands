@@ -3,11 +3,11 @@ ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only t
 """
 
 import os
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
+
     from openhands.events.action import Action
     from openhands.llm.llm import ModelResponse
 

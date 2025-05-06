@@ -5,7 +5,6 @@ This server has no authentication and only listens to localhost traffic.
 
 import os
 import threading
-from typing import Tuple
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -75,7 +74,7 @@ def create_app() -> FastAPI:
     return app
 
 
-def start_file_viewer_server(port: int) -> Tuple[str, threading.Thread]:
+def start_file_viewer_server(port: int) -> tuple[str, threading.Thread]:
     """Start the file viewer server on the specified port or find an available one.
 
     Args:
