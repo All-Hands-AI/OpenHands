@@ -52,7 +52,7 @@ class StandaloneConversationManager(ConversationManager):
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
-    _conversation_store_class: Type | None = None
+    _conversation_store_class: type | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
