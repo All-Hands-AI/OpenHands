@@ -75,7 +75,7 @@ daytona-sdk = "0.15.0"
 mcp = "1.7.1"
 python-json-logger = "^3.2.1"
 prompt-toolkit = "^3.0.50"
-mcpm = "1.8.0"
+mcpm = "1.9.0"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 
