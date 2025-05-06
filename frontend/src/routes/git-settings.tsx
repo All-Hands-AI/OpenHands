@@ -96,14 +96,12 @@ function GitSettingsScreen() {
       action={formAction}
       className="flex flex-col h-full justify-between"
     >
-      {isLoading && <GitSettingInputsSkeleton />}
-
-      {shouldRenderExternalConfigureButtons && !isLoading && (
-        <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
-      )}
-
       {!isLoading && (
         <div className="p-9 flex flex-col gap-12">
+          {shouldRenderExternalConfigureButtons && !isLoading && (
+            <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
+          )}
+
           <GitHubTokenInput
             name="github-token-input"
             isGitHubTokenSet={isGitHubTokenSet}
@@ -132,8 +130,10 @@ function GitSettingsScreen() {
         </div>
       )}
 
-      {!shouldRenderExternalConfigureButtons && (
-        <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      {isLoading && <GitSettingInputsSkeleton />}
+
+      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+        {!shouldRenderExternalConfigureButtons && (
           <BrandButton
             testId="disconnect-tokens-button"
             name="disconnect-tokens-button"
@@ -143,18 +143,17 @@ function GitSettingsScreen() {
           >
             Disconnect Tokens
           </BrandButton>
-
-          <BrandButton
-            testId="submit-button"
-            type="submit"
-            variant="primary"
-            isDisabled={isPending || formIsClean}
-          >
-            {!isPending && t("SETTINGS$SAVE_CHANGES")}
-            {isPending && t("SETTINGS$SAVING")}
-          </BrandButton>
-        </div>
-      )}
+        )}
+        <BrandButton
+          testId="submit-button"
+          type="submit"
+          variant="primary"
+          isDisabled={isPending || formIsClean}
+        >
+          {!isPending && t("SETTINGS$SAVE_CHANGES")}
+          {isPending && t("SETTINGS$SAVING")}
+        </BrandButton>
+      </div>
     </form>
   );
 }
