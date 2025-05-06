@@ -15,7 +15,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import OpenHands from "./api/open-hands";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
-import { queryClientConfig } from "./query-client-config";
+import { queryClient } from "./query-client-config";
 
 function PosthogInit() {
   const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
@@ -64,7 +64,7 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <QueryClientProvider client={queryClientConfig}>
+          <QueryClientProvider client={queryClient}>
             <HydratedRouter />
             <PosthogInit />
           </QueryClientProvider>
