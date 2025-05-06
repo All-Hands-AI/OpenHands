@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import AsyncExitStack
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -15,7 +15,7 @@ class MCPClient(BaseModel):
     A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
     """
 
-    session: Optional[ClientSession] = None
+    session: ClientSession | None = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
     tools: List[MCPClientTool] = Field(default_factory=list)

@@ -1,4 +1,3 @@
-from types import UnionType
 from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel
@@ -22,8 +21,8 @@ def get_field_info(field: FieldInfo) -> dict[str, Any]:
     # for types like str | None, find the non-None type and set optional to True
     # this is useful for the frontend to know if a field is optional
     # and to show the correct type in the UI
-    # Note: this only works for UnionTypes with None as one of the types
-    if get_origin(field_type) is UnionType:
+    # Note: this only works for Union types with None as one of the types
+    if get_origin(field_type) is not None:
         types = get_args(field_type)
         non_none_arg = next(
             (t for t in types if t is not None and t is not type(None)), None
