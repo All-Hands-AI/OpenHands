@@ -1,9 +1,8 @@
 from types import ModuleType
-from typing import Dict, List
 
 
 def import_functions(
-    module: ModuleType, function_names: List[str], target_globals: Dict[str, object]
+    module: ModuleType, function_names: list[str], target_globals: dict[str, object]
 ) -> None:
     for name in function_names:
         if hasattr(module, name):
