@@ -36,9 +36,26 @@ class GETSettingsModel(Settings):
     llm_api_key_set: bool
 
 
+class CustomSecretWithoutValueModel(BaseModel):
+    """
+    Custom secret model without value
+    """
+
+    name: str
+    description: str | None = None
+
+
+class CustomSecretModel(CustomSecretWithoutValueModel):
+    """
+    Custom secret model with value
+    """
+
+    value: str
+
+
 class GETCustomSecrets(BaseModel):
     """
     Custom secrets names
     """
 
-    custom_secrets: dict[str, str] | None = None
+    custom_secrets: list[CustomSecretWithoutValueModel] | None = None

@@ -18,8 +18,8 @@ export class SecretsService {
       value,
     };
 
-    const { data } = await openHands.post<boolean>("/api/secrets", secret);
-    return data;
+    const { status } = await openHands.post("/api/secrets", secret);
+    return status === 201;
   }
 
   static async updateSecret(id: string, name: string, value: string) {
@@ -28,13 +28,13 @@ export class SecretsService {
       value,
     };
 
-    const { data } = await openHands.put<boolean>(`/api/secrets/${id}`, secret);
-    return data;
+    const { status } = await openHands.put(`/api/secrets/${id}`, secret);
+    return status === 200;
   }
 
   static async deleteSecret(id: string) {
-    const { data } = await openHands.delete<boolean>(`/api/secrets/${id}`);
-    return data;
+    const { status } = await openHands.delete<boolean>(`/api/secrets/${id}`);
+    return status === 200;
   }
 
   static async addGitProvider(providers: Record<Provider, ProviderToken>) {
