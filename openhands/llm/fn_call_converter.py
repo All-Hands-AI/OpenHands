@@ -13,15 +13,15 @@ from typing import Iterable
 
 from litellm import ChatCompletionToolParam
 
+from openhands.core.exceptions import (
+    FunctionCallConversionError,
+    FunctionCallValidationError,
+)
 from openhands.llm.tool_names import (
     BROWSER_TOOL_NAME,
     EXECUTE_BASH_TOOL_NAME,
     STR_REPLACE_EDITOR_TOOL_NAME,
     WEB_READ_TOOL_NAME,
-)
-from openhands.core.exceptions import (
-    FunctionCallConversionError,
-    FunctionCallValidationError,
 )
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
