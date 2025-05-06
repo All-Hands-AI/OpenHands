@@ -17,6 +17,7 @@ from openhands.core.exceptions import (
     FunctionCallConversionError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
 SYSTEM_PROMPT_SUFFIX_TEMPLATE = """
@@ -372,7 +373,7 @@ def convert_fncall_messages_to_non_fncall_messages(
                         for tool in tools
                     )
                 ):
-                    raise FunctionCallConversionError(
+                    logger.warning(
                         'The currently provided tool set are NOT compatible with the in-context learning example for FnCall to Non-FnCall conversion. '
                         'Please update your tool set OR the in-context learning example in openhands/llm/fn_call_converter.py'
                     )
