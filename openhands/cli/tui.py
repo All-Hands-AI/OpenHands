@@ -256,9 +256,10 @@ def display_file_edit(event: FileEditAction | FileEditObservation):
 
 
 def display_file_read(event: FileReadObservation):
+    content = event.content.replace('\t', ' ')
     container = Frame(
         TextArea(
-            text=f'{event}',
+            text=content,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
