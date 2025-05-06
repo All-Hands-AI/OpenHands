@@ -1,6 +1,7 @@
 
 
 from dataclasses import dataclass
+from openhands.core.schema.action import ActionType
 from openhands.events.action.action import Action
 
 
@@ -9,6 +10,7 @@ class CreatePRAction(Action):
     name: str
     source_branch: str
     target_branch: str
+    action: str = ActionType.SEND_PR
 
     @property
     def message(self) -> str:

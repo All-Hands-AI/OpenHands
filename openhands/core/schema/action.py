@@ -84,7 +84,7 @@ class ActionType(str, Enum):
     """Push a branch to github."""
 
     SEND_PR = 'send_pr'
-    """Send a PR to github."""
+    """Send a PR to github or gitlab."""
 
     RECALL = 'recall'
     """Retrieves content from a user workspace, microagent, or other source."""
