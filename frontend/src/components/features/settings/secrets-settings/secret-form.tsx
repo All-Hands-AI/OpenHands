@@ -78,7 +78,12 @@ export function SecretForm({
 
   const formAction = (formData: FormData) => {
     const name = formData.get("secret-name")?.toString();
-    const value = formData.get("secret-value")?.toString();
+    const value = formData.get("secret-value")?.toString().trim();
+
+    if (!value) {
+      setError("Secret value is required");
+      return;
+    }
 
     if (name && value) {
       setError(null);

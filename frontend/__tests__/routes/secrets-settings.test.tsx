@@ -398,4 +398,40 @@ describe("Secret actions", () => {
       screen.queryByText(/secret already exists/i),
     ).not.toBeInTheDocument();
   });
+
+  it("should not submit whitespace secret names or values", async () => {
+    const createSecretSpy = vi.spyOn(SecretsService, "createSecret");
+    renderSecretsSettings();
+
+    // render form & hide items
+    expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
+    const button = screen.getByTestId("add-secret-button");
+    await userEvent.click(button);
+
+    const secretForm = screen.getByTestId("add-secret-form");
+    expect(secretForm).toBeInTheDocument();
+
+    // enter details
+    const nameInput = within(secretForm).getByTestId("name-input");
+    const valueInput = within(secretForm).getByTestId("value-input");
+    const submitButton = within(secretForm).getByTestId("submit-button");
+
+    await userEvent.type(nameInput, "   ");
+    await userEvent.type(valueInput, "my-custom-secret-value");
+    await userEvent.click(submitButton);
+
+    // make POST request
+    expect(createSecretSpy).not.toHaveBeenCalled();
+
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "My_Custom_Secret");
+
+    await userEvent.clear(valueInput);
+    await userEvent.type(valueInput, "   ");
+
+    await userEvent.click(submitButton);
+
+    expect(createSecretSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText(/secret value is required/i)).toBeInTheDocument();
+  });
 });
