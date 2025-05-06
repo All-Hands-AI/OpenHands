@@ -49,7 +49,9 @@ describe("HomeHeader", () => {
       "gui",
       undefined,
       undefined,
+      undefined,
       [],
+      undefined,
       undefined,
       undefined,
     );

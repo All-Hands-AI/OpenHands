@@ -4,12 +4,12 @@ import pytest
 from prompt_toolkit.formatted_text import HTML
 from pydantic import SecretStr
 
-from openhands.core.cli_settings import (
+from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
 )
-from openhands.core.cli_tui import UserCancelledError
+from openhands.cli.tui import UserCancelledError
 from openhands.core.config import AppConfig
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
@@ -64,7 +64,7 @@ class TestDisplaySettings:
         config.enable_default_condenser = True
         return config
 
-    @patch('openhands.core.cli_settings.print_container')
+    @patch('openhands.cli.settings.print_container')
     def test_display_settings_standard_config(self, mock_print_container, app_config):
         display_settings(app_config)
         mock_print_container.assert_called_once()
@@ -88,7 +88,7 @@ class TestDisplaySettings:
         assert 'Memory Condensation:' in settings_text
         assert 'Enabled' in settings_text
 
-    @patch('openhands.core.cli_settings.print_container')
+    @patch('openhands.cli.settings.print_container')
     def test_display_settings_advanced_config(
         self, mock_print_container, advanced_app_config
     ):
@@ -141,12 +141,12 @@ class TestModifyLLMSettingsBasic:
         return store
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.get_supported_llm_models')
-    @patch('openhands.core.cli_settings.organize_models_and_providers')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
+    @patch('openhands.cli.settings.get_supported_llm_models')
+    @patch('openhands.cli.settings.organize_models_and_providers')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
     async def test_modify_llm_settings_basic_success(
@@ -200,12 +200,12 @@ class TestModifyLLMSettingsBasic:
         assert settings.llm_base_url is None
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.get_supported_llm_models')
-    @patch('openhands.core.cli_settings.organize_models_and_providers')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
+    @patch('openhands.cli.settings.get_supported_llm_models')
+    @patch('openhands.cli.settings.organize_models_and_providers')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
     async def test_modify_llm_settings_basic_user_cancels(
@@ -235,13 +235,13 @@ class TestModifyLLMSettingsBasic:
         settings_store.store.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.get_supported_llm_models')
-    @patch('openhands.core.cli_settings.organize_models_and_providers')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
-    @patch('openhands.core.cli_settings.print_formatted_text')
+    @patch('openhands.cli.settings.get_supported_llm_models')
+    @patch('openhands.cli.settings.organize_models_and_providers')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
     async def test_modify_llm_settings_basic_invalid_input(
@@ -340,14 +340,14 @@ class TestModifyLLMSettingsAdvanced:
         return store
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.Agent.list_agents')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
+    @patch('openhands.cli.settings.Agent.list_agents')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.core.cli_settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
     async def test_modify_llm_settings_advanced_success(
         self, mock_confirm, mock_session, mock_list_agents, app_config, settings_store
     ):
@@ -394,14 +394,14 @@ class TestModifyLLMSettingsAdvanced:
         assert settings.enable_default_condenser is True
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.Agent.list_agents')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
+    @patch('openhands.cli.settings.Agent.list_agents')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.core.cli_settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
     async def test_modify_llm_settings_advanced_user_cancels(
         self, mock_confirm, mock_session, mock_list_agents, app_config, settings_store
     ):
@@ -420,15 +420,15 @@ class TestModifyLLMSettingsAdvanced:
         settings_store.store.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.Agent.list_agents')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
-    @patch('openhands.core.cli_settings.print_formatted_text')
+    @patch('openhands.cli.settings.Agent.list_agents')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.core.cli_settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
     async def test_modify_llm_settings_advanced_invalid_agent(
         self,
         mock_print,
@@ -472,14 +472,14 @@ class TestModifyLLMSettingsAdvanced:
         settings_store.store.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_settings.Agent.list_agents')
-    @patch('openhands.core.cli_settings.PromptSession')
-    @patch('openhands.core.cli_settings.cli_confirm')
+    @patch('openhands.cli.settings.Agent.list_agents')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
     @patch(
-        'openhands.core.cli_settings.LLMSummarizingCondenserConfig',
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.core.cli_settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
     async def test_modify_llm_settings_advanced_user_rejects_save(
         self, mock_confirm, mock_session, mock_list_agents, app_config, settings_store
     ):

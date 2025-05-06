@@ -4,30 +4,12 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { Provider } from "react-redux";
-import { setupStore } from "test-utils";
-import { AxiosError } from "axios";
+import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { AuthProvider } from "#/context/auth-context";
-import * as GitService from "#/api/git";
 import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
-
-const createAxiosNotFoundErrorObject = () =>
-  new AxiosError(
-    "Request failed with status code 404",
-    "ERR_BAD_REQUEST",
-    undefined,
-    undefined,
-    {
-      status: 404,
-      statusText: "Not Found",
-      data: { message: "Settings not found" },
-      headers: {},
-      // @ts-expect-error - we only need the response object for this test
-      config: {},
-    },
-  );
 
 const RouterStub = createRoutesStub([
   {
@@ -93,20 +75,19 @@ describe("HomeScreen", () => {
 
   it("should have responsive layout for mobile and desktop screens", async () => {
     renderHomeScreen();
-    
-    const mainContainer = screen.getByTestId("home-screen").querySelector("main");
+
+    const mainContainer = screen
+      .getByTestId("home-screen")
+      .querySelector("main");
     expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
   });
 
   it("should filter the suggested tasks based on the selected repository", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderHomeScreen();
 
@@ -138,13 +119,10 @@ describe("HomeScreen", () => {
 
   it("should reset the filtered tasks when the selected repository is cleared", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      GitService,
+      OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue({
-      data: MOCK_RESPOSITORIES,
-      nextPage: null,
-    });
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
 
     renderHomeScreen();
 
@@ -216,13 +194,10 @@ describe("HomeScreen", () => {
 
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        GitService,
+        OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue({
-        data: MOCK_RESPOSITORIES,
-        nextPage: null,
-      });
+      retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
     });
 
     it("should disable the other launch buttons when the header launch button is clicked", async () => {

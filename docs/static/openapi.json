@@ -858,14 +858,15 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "selected_repository": {
-                    "type": "object",
+                  "repository": {
+                    "type": "string",
                     "nullable": true,
-                    "properties": {
-                      "full_name": {
-                        "type": "string"
-                      }
-                    }
+                    "description": "Full name of the repository (e.g., owner/repo)"
+                  },
+                  "git_provider": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "The Git provider (e.g., github or gitlab). If omitted, all configured providers are checked for the repository."
                   },
                   "selected_branch": {
                     "type": "string",

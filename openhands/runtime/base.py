@@ -30,7 +30,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -47,7 +47,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
-from openhands.integrations.service_types import Repository
+from openhands.integrations.service_types import AuthenticationError
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -72,6 +72,7 @@ STATUS_MESSAGES = {
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
     'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
+    'STATUS$SETTING_UP_GIT_HOOKS': 'Setting up git hooks...',
 }
 
 
@@ -282,9 +283,8 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
-            if isinstance(event, McpAction):
-                # we don't call call_tool_mcp impl directly because there can be other action ActionExecutionClient
-                observation: Observation = await getattr(self, McpAction.action)(event)
+            if isinstance(event, MCPAction):
+                observation: Observation = await self.call_tool_mcp(event)
             else:
                 observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
@@ -312,10 +312,23 @@ class Runtime(FileEditRuntimeMixin):
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-        selected_repository: str | Repository | None,
+        selected_repository: str | None,
         selected_branch: str | None,
-        repository_provider: ProviderType = ProviderType.GITHUB,
     ) -> str:
+        repository = None
+        if selected_repository:  # Determine provider from repo name
+            try:
+                provider_handler = ProviderHandler(
+                    git_provider_tokens or MappingProxyType({})
+                )
+                repository = await provider_handler.verify_repo_provider(
+                    selected_repository
+                )
+            except AuthenticationError:
+                raise RuntimeError(
+                    'Git provider authentication issue when cloning repo'
+                )
+
         if not selected_repository:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
@@ -333,36 +346,30 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
+        # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
+        if not repository:
+            return ''
+
+        provider = repository.git_provider
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
         }
 
-        chosen_provider = (
-            repository_provider
-            if isinstance(selected_repository, str)
-            else selected_repository.git_provider
-        )
-
-        domain = provider_domains[chosen_provider]
-        repository = (
-            selected_repository
-            if isinstance(selected_repository, str)
-            else selected_repository.full_name
-        )
+        domain = provider_domains[provider]
 
         # Try to use token if available, otherwise use public URL
-        if git_provider_tokens and chosen_provider in git_provider_tokens:
-            git_token = git_provider_tokens[chosen_provider].token
+        if git_provider_tokens and provider in git_provider_tokens:
+            git_token = git_provider_tokens[provider].token
             if git_token:
-                if chosen_provider == ProviderType.GITLAB:
-                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repository}.git'
+                if provider == ProviderType.GITLAB:
+                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
                 else:
-                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{repository}.git'
+                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
             else:
-                remote_repo_url = f'https://{domain}/{repository}.git'
+                remote_repo_url = f'https://{domain}/{selected_repository}.git'
         else:
-            remote_repo_url = f'https://{domain}/{repository}.git'
+            remote_repo_url = f'https://{domain}/{selected_repository}.git'
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
@@ -372,7 +379,7 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        dir_name = repository.split('/')[-1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -417,6 +424,97 @@ class Runtime(FileEditRuntimeMixin):
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
+
+    def maybe_setup_git_hooks(self):
+        """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
+        pre_commit_script = '.openhands/pre-commit.sh'
+        read_obs = self.read(FileReadAction(path=pre_commit_script))
+        if isinstance(read_obs, ErrorObservation):
+            return
+
+        if self.status_callback:
+            self.status_callback(
+                'info', 'STATUS$SETTING_UP_GIT_HOOKS', 'Setting up git hooks...'
+            )
+
+        # Ensure the git hooks directory exists
+        action = CmdRunAction('mkdir -p .git/hooks')
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log('error', f'Failed to create git hooks directory: {obs.content}')
+            return
+
+        # Make the pre-commit script executable
+        action = CmdRunAction(f'chmod +x {pre_commit_script}')
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log(
+                'error', f'Failed to make pre-commit script executable: {obs.content}'
+            )
+            return
+
+        # Check if there's an existing pre-commit hook
+        pre_commit_hook = '.git/hooks/pre-commit'
+        pre_commit_local = '.git/hooks/pre-commit.local'
+
+        # Read the existing pre-commit hook if it exists
+        read_obs = self.read(FileReadAction(path=pre_commit_hook))
+        if not isinstance(read_obs, ErrorObservation):
+            # If the existing hook wasn't created by OpenHands, preserve it
+            if 'This hook was installed by OpenHands' not in read_obs.content:
+                self.log('info', 'Preserving existing pre-commit hook')
+                # Move the existing hook to pre-commit.local
+                action = CmdRunAction(f'mv {pre_commit_hook} {pre_commit_local}')
+                obs = self.run_action(action)
+                if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+                    self.log(
+                        'error',
+                        f'Failed to preserve existing pre-commit hook: {obs.content}',
+                    )
+                    return
+
+                # Make it executable
+                action = CmdRunAction(f'chmod +x {pre_commit_local}')
+                obs = self.run_action(action)
+                if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+                    self.log(
+                        'error',
+                        f'Failed to make preserved hook executable: {obs.content}',
+                    )
+                    return
+
+        # Create the pre-commit hook that calls our script
+        pre_commit_hook_content = f"""#!/bin/bash
+# This hook was installed by OpenHands
+# It calls the pre-commit script in the .openhands directory
+
+if [ -x "{pre_commit_script}" ]; then
+    source "{pre_commit_script}"
+    exit $?
+else
+    echo "Warning: {pre_commit_script} not found or not executable"
+    exit 0
+fi
+"""
+
+        # Write the pre-commit hook
+        write_obs = self.write(
+            FileWriteAction(path=pre_commit_hook, content=pre_commit_hook_content)
+        )
+        if isinstance(write_obs, ErrorObservation):
+            self.log('error', f'Failed to write pre-commit hook: {write_obs.content}')
+            return
+
+        # Make the pre-commit hook executable
+        action = CmdRunAction(f'chmod +x {pre_commit_hook}')
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log(
+                'error', f'Failed to make pre-commit hook executable: {obs.content}'
+            )
+            return
+
+        self.log('info', 'Git pre-commit hook installed successfully')
 
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
@@ -571,7 +669,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @abstractmethod
-    async def call_tool_mcp(self, action: McpAction) -> Observation:
+    async def call_tool_mcp(self, action: MCPAction) -> Observation:
         pass
 
     # ====================================================================
