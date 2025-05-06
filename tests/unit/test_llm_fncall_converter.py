@@ -171,8 +171,13 @@ def test_get_example_for_tools_single_tool():
         }
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
-    assert "USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000." in example
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
     assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
@@ -212,7 +217,13 @@ def test_get_example_for_tools_multiple_tools():
                         'command': {
                             'type': 'string',
                             'description': 'The commands to run.',
-                            'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'],
+                            'enum': [
+                                'view',
+                                'create',
+                                'str_replace',
+                                'insert',
+                                'undo_edit',
+                            ],
                         },
                         'path': {
                             'type': 'string',
@@ -222,11 +233,16 @@ def test_get_example_for_tools_multiple_tools():
                     'required': ['command', 'path'],
                 },
             },
-        }
+        },
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
-    assert "USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000." in example
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
     assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
@@ -267,7 +283,13 @@ def test_get_example_for_tools_all_tools():
                         'command': {
                             'type': 'string',
                             'description': 'The commands to run.',
-                            'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'],
+                            'enum': [
+                                'view',
+                                'create',
+                                'str_replace',
+                                'insert',
+                                'undo_edit',
+                            ],
                         },
                         'path': {
                             'type': 'string',
@@ -311,11 +333,16 @@ def test_get_example_for_tools_all_tools():
                     'required': ['code'],
                 },
             },
-        }
+        },
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
-    assert "USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000." in example
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
     assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
