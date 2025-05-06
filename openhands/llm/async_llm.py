@@ -37,6 +37,8 @@ class AsyncLLM(LLM):
             seed=self.config.seed,
         )
 
+        print(f"ASYNC NUM_RETRIES: {self.config.num_retries}")
+
         async_completion_unwrapped = self._async_completion
 
         @self.retry_decorator(

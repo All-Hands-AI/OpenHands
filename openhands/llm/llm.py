@@ -187,7 +187,7 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
-        print(f"NUM_RETRIES: {self.config.num_retries}")
+        print(f"BASIC NUM_RETRIES: {self.config.num_retries}")
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
