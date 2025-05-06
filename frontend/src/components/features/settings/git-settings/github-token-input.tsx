@@ -49,11 +49,18 @@ export function GitHubTokenInput({
         onChange={onGitHubHostChange || (() => {})}
         name="github-host-input"
         testId="github-host-input"
-        label="GitHub Host"
+        label="GitHub Host (optional)"
         type="text"
         className="w-[680px]"
         placeholder="github.com"
         defaultValue={githubHostSet || undefined}
+        startContent={
+          githubHostSet && githubHostSet.trim() !== "" ? (
+            <KeyStatusIcon testId="gh-set-host-indicator" isSet />
+          ) : (
+            <KeyStatusIcon testId="gh-set-host-indicator" isSet={false} />
+          )
+        }
       />
 
       {!isSaas && <GitHubTokenHelpAnchor />}

@@ -49,11 +49,18 @@ export function GitLabTokenInput({
         onChange={onGitLabHostChange || (() => {})}
         name="gitlab-host-input"
         testId="gitlab-host-input"
-        label="GitLab Host"
+        label="GitLab Host (optional)"
         type="text"
         className="w-[680px]"
         placeholder="gitlab.com"
         defaultValue={gitlabHostSet || undefined}
+        startContent={
+          gitlabHostSet && gitlabHostSet.trim() !== "" ? (
+            <KeyStatusIcon testId="gl-set-host-indicator" isSet />
+          ) : (
+            <KeyStatusIcon testId="gl-set-host-indicator" isSet={false} />
+          )
+        }
       />
 
       {!isSaas && <GitLabTokenHelpAnchor />}

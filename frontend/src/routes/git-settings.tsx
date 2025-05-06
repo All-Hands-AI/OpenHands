@@ -102,7 +102,7 @@ function GitSettingsScreen() {
         <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
       )}
 
-      {!isSaas && !isLoading && (
+      {!isLoading && (
         <div className="p-9 flex flex-col gap-12">
           <GitHubTokenInput
             name="github-token-input"
