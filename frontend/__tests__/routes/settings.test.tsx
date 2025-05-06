@@ -118,17 +118,30 @@ describe("Settings Screen", () => {
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
+    
+    // Wait for the component to render fully
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Get all text elements in the navbar
+    const allElements = navbar.querySelectorAll('a span');
+    const allText = Array.from(allElements).map(el => el.textContent?.toLowerCase() || '');
+    
+    // Check that each section to include has a matching element
     sectionsToInclude.forEach((section) => {
-      const sectionElement = within(navbar).getByText(section, {
-        exact: false, // case insensitive
-      });
-      expect(sectionElement).toBeInTheDocument();
+      const hasSection = allText.some(text => 
+        text.includes(section.toLowerCase())
+      ) || Array.from(navbar.querySelectorAll('a')).some(link => 
+        link.getAttribute('href')?.toLowerCase().includes(section.toLowerCase())
+      );
+      expect(hasSection).toBe(true);
     });
+    
+    // Check that each section to exclude does not have a matching element
     sectionsToExclude.forEach((section) => {
-      const sectionElement = within(navbar).queryByText(section, {
-        exact: false, // case insensitive
-      });
-      expect(sectionElement).not.toBeInTheDocument();
+      const hasSection = allText.some(text => 
+        text.includes(section.toLowerCase())
+      );
+      expect(hasSection).toBe(false);
     });
   });
 

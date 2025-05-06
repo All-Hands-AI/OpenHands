@@ -17,19 +17,22 @@ import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import OpenHands from "./api/open-hands";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
+import { AxiosInterceptorSetup } from "./components/AxiosInterceptorSetup";
 
-function PosthogInit() {
+function AppInitializers() {
   const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
     null,
   );
+  const [appMode, setAppMode] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
     (async () => {
       try {
         const config = await OpenHands.getConfig();
         setPosthogClientKey(config.POSTHOG_CLIENT_KEY);
+        setAppMode(config.APP_MODE);
       } catch (error) {
-        displayErrorToast("Error fetching PostHog client key");
+        displayErrorToast("Error fetching app configuration");
       }
     })();
   }, []);
@@ -43,7 +46,7 @@ function PosthogInit() {
     }
   }, [posthogClientKey]);
 
-  return null;
+  return appMode ? <AxiosInterceptorSetup appMode={appMode} /> : null;
 }
 
 async function prepareApp() {
@@ -70,7 +73,7 @@ prepareApp().then(() =>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
               <HydratedRouter />
-              <PosthogInit />
+              <AppInitializers />
             </QueryClientProvider>
           </AuthProvider>
         </Provider>
