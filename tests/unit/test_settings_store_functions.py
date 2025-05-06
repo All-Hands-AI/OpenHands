@@ -59,7 +59,7 @@ async def test_check_provider_tokens_valid():
     """Test check_provider_tokens with valid tokens."""
     provider_token = ProviderToken(token=SecretStr('valid-token'))
     providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
-    
+
     # Empty existing provider tokens
     existing_provider_tokens = {}
 
@@ -81,7 +81,7 @@ async def test_check_provider_tokens_invalid():
     """Test check_provider_tokens with invalid tokens."""
     provider_token = ProviderToken(token=SecretStr('invalid-token'))
     providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
-    
+
     # Empty existing provider tokens
     existing_provider_tokens = {}
 
@@ -104,10 +104,10 @@ async def test_check_provider_tokens_wrong_type():
     # We can't test with an unsupported provider type directly since the model enforces valid types
     # Instead, we'll test with an empty provider_tokens dictionary
     providers = POSTProviderModel(provider_tokens={})
-    
+
     # Empty existing provider tokens
     existing_provider_tokens = {}
-    
+
     result = await check_provider_tokens(providers, existing_provider_tokens)
 
     # Should return empty string for no providers
@@ -118,7 +118,7 @@ async def test_check_provider_tokens_wrong_type():
 async def test_check_provider_tokens_no_tokens():
     """Test check_provider_tokens with no tokens."""
     providers = POSTProviderModel(provider_tokens={})
-    
+
     # Empty existing provider tokens
     existing_provider_tokens = {}
 
