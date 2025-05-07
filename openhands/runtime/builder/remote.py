@@ -100,7 +100,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
             if status == 'SUCCESS':
                 logger.debug(f"Successfully built {status_data['image']}")
-                return status_data['image']
+                return str(status_data['image'])
             elif status in [
                 'FAILURE',
                 'INTERNAL_ERROR',
@@ -146,4 +146,4 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         else:
             logger.debug(f'Image {image_name} does not exist.')
 
-        return result['exists']
+        return bool(result['exists'])

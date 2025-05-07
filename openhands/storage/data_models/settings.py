@@ -33,6 +33,7 @@ class Settings(BaseModel):
     secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
     enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
+    enable_proactive_conversation_starters: bool = True
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None

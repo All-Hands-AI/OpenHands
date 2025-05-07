@@ -14,8 +14,8 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
-import { useAuth } from "#/context/auth-context";
 import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
@@ -23,8 +23,9 @@ function GitSettingsScreen() {
   const { mutate: saveGitProviders, isPending } = useAddGitProviders();
   const { mutate: disconnectGitTokens } = useLogout();
 
-  const { providerTokensSet } = useAuth();
   const { data: settings, isLoading } = useSettings();
+  const { providers } = useUserProviders();
+
   const { data: config } = useConfig();
 
   const [githubTokenInputHasValue, setGithubTokenInputHasValue] =
@@ -41,8 +42,8 @@ function GitSettingsScreen() {
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
 
   const isSaas = config?.APP_MODE === "saas";
-  const isGitHubTokenSet = providerTokensSet.includes("github");
-  const isGitLabTokenSet = providerTokensSet.includes("gitlab");
+  const isGitHubTokenSet = providers.includes("github");
+  const isGitLabTokenSet = providers.includes("gitlab");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =

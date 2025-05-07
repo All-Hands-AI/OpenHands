@@ -3,21 +3,17 @@ import { I18nKey } from "#/i18n/declaration";
 import PlusIcon from "#/icons/plus.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
-interface ExitProjectButtonProps {
-  onClick: () => void;
-}
-
-export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
+export function NewProjectButton() {
   const { t } = useTranslation();
   const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
   return (
     <TooltipButton
       tooltip={startNewProject}
       ariaLabel={startNewProject}
-      onClick={onClick}
+      navLinkTo="/"
       testId="new-project-button"
     >
-      <PlusIcon width={28} height={28} className="text-[#9099AC]" />
+      <PlusIcon width={28} height={28} />
     </TooltipButton>
   );
 }

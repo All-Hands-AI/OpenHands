@@ -1,19 +1,13 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  QueryClientProvider,
-  QueryClient,
-  QueryClientConfig,
-} from "@tanstack/react-query";
+import { QueryClientConfig } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
+import { renderWithProviders } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
-import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
-import { queryClientConfig } from "#/query-client-config";
-import { renderWithProviders } from "test-utils";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -29,14 +23,10 @@ describe("ConversationPanel", () => {
       preloadedState: {
         metrics: {
           cost: null,
-          usage: null
-        }
-      }
+          usage: null,
+        },
+      },
     });
-
-  const { endSessionMock } = vi.hoisted(() => ({
-    endSessionMock: vi.fn(),
-  }));
 
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
@@ -45,11 +35,6 @@ describe("ConversationPanel", () => {
       useNavigate: vi.fn(() => vi.fn()),
       useLocation: vi.fn(() => ({ pathname: "/conversation" })),
       useParams: vi.fn(() => ({ conversationId: "2" })),
-    }));
-
-    vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("#/hooks/use-end-session")>()),
-      useEndSession: vi.fn(() => endSessionMock),
     }));
   });
 
@@ -84,7 +69,9 @@ describe("ConversationPanel", () => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
     // Setup default mock for getUserConversations
-    vi.spyOn(OpenHands, "getUserConversations").mockResolvedValue([...mockConversations]);
+    vi.spyOn(OpenHands, "getUserConversations").mockResolvedValue([
+      ...mockConversations,
+    ]);
   });
 
   it("should render the conversations", async () => {
@@ -138,52 +125,13 @@ describe("ConversationPanel", () => {
     const cancelButton = screen.getByRole("button", { name: /cancel/i });
     await user.click(cancelButton);
 
-    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /cancel/i }),
+    ).not.toBeInTheDocument();
 
     // Ensure the conversation is not deleted
     cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(3);
-  });
-
-  it("should call endSession after deleting a conversation that is the current session", async () => {
-    const user = userEvent.setup();
-    const mockData = [...mockConversations];
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockImplementation(async () => mockData);
-
-    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
-    deleteUserConversationSpy.mockImplementation(async (id: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === id);
-      if (index !== -1) {
-        mockData.splice(index, 1);
-      }
-      // Wait for React Query to update its cache
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    renderConversationPanel();
-
-    let cards = await screen.findAllByTestId("conversation-card");
-    const ellipsisButton = within(cards[1]).getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-    const deleteButton = screen.getByTestId("delete-button");
-
-    // Click the second delete button
-    await user.click(deleteButton);
-
-    // Confirm the deletion
-    const confirmButton = screen.getByRole("button", { name: /confirm/i });
-    await user.click(confirmButton);
-
-    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
-
-    // Wait for the cards to update with a longer timeout
-    await waitFor(() => {
-      const updatedCards = screen.getAllByTestId("conversation-card");
-      expect(updatedCards).toHaveLength(2);
-    }, { timeout: 2000 });
-
-    expect(endSessionMock).toHaveBeenCalledOnce();
   });
 
   it("should delete a conversation", async () => {
@@ -218,9 +166,12 @@ describe("ConversationPanel", () => {
     const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
     getUserConversationsSpy.mockImplementation(async () => mockData);
 
-    const deleteUserConversationSpy = vi.spyOn(OpenHands, "deleteUserConversation");
+    const deleteUserConversationSpy = vi.spyOn(
+      OpenHands,
+      "deleteUserConversation",
+    );
     deleteUserConversationSpy.mockImplementation(async (id: string) => {
-      const index = mockData.findIndex(conv => conv.conversation_id === id);
+      const index = mockData.findIndex((conv) => conv.conversation_id === id);
       if (index !== -1) {
         mockData.splice(index, 1);
       }
@@ -228,7 +179,7 @@ describe("ConversationPanel", () => {
 
     renderConversationPanel();
 
-    let cards = await screen.findAllByTestId("conversation-card");
+    const cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(3);
 
     const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
@@ -242,7 +193,9 @@ describe("ConversationPanel", () => {
     const confirmButton = screen.getByRole("button", { name: /confirm/i });
     await user.click(confirmButton);
 
-    expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /confirm/i }),
+    ).not.toBeInTheDocument();
 
     // Wait for the cards to update
     await waitFor(() => {
@@ -348,9 +301,9 @@ describe("ConversationPanel", () => {
       preloadedState: {
         metrics: {
           cost: null,
-          usage: null
-        }
-      }
+          usage: null,
+        },
+      },
     });
 
     const toggleButton = screen.getByText("Toggle");
