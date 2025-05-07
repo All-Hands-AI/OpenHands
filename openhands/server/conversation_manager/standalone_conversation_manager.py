@@ -552,10 +552,25 @@ class StandaloneConversationManager(ConversationManager):
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
         default_title = get_default_conversation_title(conversation_id)
-        if not conversation.title or conversation.title == default_title:
+        if conversation.title == default_title: # attempt to autogenerate with default title is in use
             title = await self._auto_generate_title(conversation_id, user_id)
             if title and not title.isspace():
                 conversation.title = title
+                try:
+                    # Emit a status update to the client with the new title
+                    status_update_dict = {
+                        'status_update': True,
+                        'type': 'info',
+                        'message': conversation_id,
+                        'conversation_title': conversation.title,
+                    }
+                    await self.sio.emit(
+                        'oh_event',
+                        status_update_dict,
+                        to=ROOM_KEY.format(sid=conversation_id),
+                    )
+                except Exception as e:
+                    logger.error(f'Error emitting title update event: {e}')
             else:
                 conversation.title = default_title
 
