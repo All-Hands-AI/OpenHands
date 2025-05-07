@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Dict, List
 
 import toml
+from pydantic import BaseModel, Field
 
 from openhands.cli.tui import (
     UsageMetrics,
@@ -85,8 +87,17 @@ def extract_model_and_provider(model: str) -> dict[str, str]:
 
 def organize_models_and_providers(
     models: list[str],
-) -> dict[str, dict[str, str | list[str]]]:
-    result: dict[str, dict[str, str | list[str]]] = {}
+) -> ModelProviderMapping:
+    """
+    Organize a list of model identifiers by provider.
+    
+    Args:
+        models: List of model identifiers
+        
+    Returns:
+        A mapping of providers to their information and models
+    """
+    result_dict: Dict[str, ProviderInfo] = {}
 
     for model in models:
         extracted = extract_model_and_provider(model)
@@ -100,14 +111,12 @@ def organize_models_and_providers(
             continue
 
         key = provider or 'other'
-        if key not in result:
-            result[key] = {'separator': separator, 'models': []}
+        if key not in result_dict:
+            result_dict[key] = ProviderInfo(separator=separator, models=[])
 
-        model_list = result[key].get('models')
-        if isinstance(model_list, list):
-            model_list.append(model_id)
+        result_dict[key].models.append(model_id)
 
-    return result
+    return ModelProviderMapping(__root__=result_dict)
 
 
 VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
@@ -135,6 +144,68 @@ VERIFIED_ANTHROPIC_MODELS = [
     'claude-3-sonnet-20240229',
     'claude-3-7-sonnet-20250219',
 ]
+
+
+class ProviderInfo(BaseModel):
+    """Information about a provider and its models."""
+    separator: str = Field(description="The separator used in model identifiers")
+    models: List[str] = Field(default_factory=list, description="List of model identifiers")
+    
+    def __getitem__(self, key: str) -> str | List[str]:
+        """Allow dictionary-like access to fields."""
+        if key == "separator":
+            return self.separator
+        elif key == "models":
+            return self.models
+        raise KeyError(f"ProviderInfo has no key {key}")
+    
+    def get(self, key: str, default=None) -> str | List[str] | None:
+        """Dictionary-like get method with default value."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+
+class ModelProviderMapping(BaseModel):
+    """Mapping of providers to their information and models."""
+    __root__: Dict[str, ProviderInfo]
+
+    def __getitem__(self, key: str) -> ProviderInfo:
+        """Allow dictionary-like access with provider name."""
+        return self.__root__[key]
+    
+    def __setitem__(self, key: str, value: ProviderInfo) -> None:
+        """Allow dictionary-like assignment with provider name."""
+        self.__root__[key] = value
+    
+    def __contains__(self, key: str) -> bool:
+        """Allow 'in' operator to check if a provider exists."""
+        return key in self.__root__
+    
+    def __iter__(self):
+        """Allow iteration over provider names."""
+        return iter(self.__root__)
+    
+    def __len__(self) -> int:
+        """Return the number of providers."""
+        return len(self.__root__)
+    
+    def items(self):
+        """Return provider name and info pairs."""
+        return self.__root__.items()
+    
+    def keys(self):
+        """Return provider names."""
+        return self.__root__.keys()
+    
+    def values(self):
+        """Return provider info objects."""
+        return self.__root__.values()
+    
+    def get(self, key, default=None):
+        """Get provider info with a default value if not found."""
+        return self.__root__.get(key, default)
 
 
 def is_number(char: str) -> bool:
