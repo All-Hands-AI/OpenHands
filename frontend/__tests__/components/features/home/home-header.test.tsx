@@ -5,7 +5,6 @@ import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { AuthProvider } from "#/context/auth-context";
 import { HomeHeader } from "#/components/features/home/home-header";
 import OpenHands from "#/api/open-hands";
 
@@ -24,11 +23,9 @@ const renderHomeHeader = () => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       </Provider>
     ),
   });

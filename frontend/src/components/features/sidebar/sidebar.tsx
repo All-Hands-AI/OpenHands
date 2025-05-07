@@ -1,5 +1,4 @@
 import React from "react";
-import posthog from "posthog-js";
 import { useLocation } from "react-router";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
@@ -26,7 +25,7 @@ export function Sidebar() {
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
-  const { mutateAsync: logout } = useLogout();
+  const { mutate: logout } = useLogout();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
@@ -62,11 +61,6 @@ export function Sidebar() {
     location.pathname,
   ]);
 
-  const handleLogout = async () => {
-    await logout();
-    posthog.reset();
-  };
-
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
@@ -89,7 +83,7 @@ export function Sidebar() {
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
-              onLogout={handleLogout}
+              onLogout={logout}
               isLoading={user.isFetching}
             />
           </div>
