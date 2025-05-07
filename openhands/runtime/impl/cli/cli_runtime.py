@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Any
 
 from binaryornot.check import is_binary
 from openhands_aci.editor.editor import OHEditor
@@ -44,6 +44,7 @@ from openhands.events.observation import (
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
+from pydantic import SecretStr
 
 
 class CLIRuntime(Runtime):
@@ -132,6 +133,33 @@ class CLIRuntime(Runtime):
         self._runtime_initialized = True
         self.send_status_message('STATUS$CONTAINER_STARTED')
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
+
+    def add_env_vars(self, env_vars: dict[str, Any]) -> None:
+        """
+        Adds environment variables to the current runtime environment.
+        For CLIRuntime, this means updating os.environ for the current process,
+        so that subsequent commands inherit these variables.
+        This overrides the BaseRuntime behavior which tries to run shell commands
+        before it's initialized and modify .bashrc, which is not ideal for local CLI.
+        """
+        if not env_vars:
+            return
+
+        # We log only keys to avoid leaking sensitive values like tokens into logs.
+        logger.info(
+            f'[CLIRuntime] Setting environment variables for this session: {list(env_vars.keys())}'
+        )
+
+        for key, value in env_vars.items():
+            if isinstance(value, SecretStr):
+                os.environ[key] = value.get_secret_value()
+                logger.debug(f'[CLIRuntime] Set os.environ["{key}"] (from SecretStr)')
+            else:
+                os.environ[key] = value
+                logger.debug(f'[CLIRuntime] Set os.environ["{key}"]')
+
+        # We don't use self.run() here because this method is called
+        # during initialization before self._runtime_initialized is True.
 
     def _execute_shell_command(self, command: str) -> CmdOutputObservation:
         """
