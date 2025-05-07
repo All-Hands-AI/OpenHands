@@ -33,13 +33,11 @@ async def test_auto_generate_title_with_llm():
 
     # Create a mock event
     user_message = MessageAction(
-        id=1,
-        source=EventSource.USER,
-        action='message',
-        args={'content': 'Help me write a Python script to analyze data'},
-        message='Help me write a Python script to analyze data',
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        content='Help me write a Python script to analyze data'
     )
+    user_message._source = EventSource.USER
+    user_message._id = 1
+    user_message._timestamp = datetime.now(timezone.utc).isoformat()
 
     # Mock the EventStream class
     with patch(
@@ -112,14 +110,10 @@ async def test_auto_generate_title_fallback():
 
     # Create a mock event with a long message
     long_message = 'This is a very long message that should be truncated when used as a title because it exceeds the maximum length allowed for titles'
-    user_message = MessageAction(
-        id=1,
-        source=EventSource.USER,
-        action='message',
-        args={'content': long_message},
-        message=long_message,
-        timestamp=datetime.now(timezone.utc).isoformat(),
-    )
+    user_message = MessageAction(content=long_message)
+    user_message._source = EventSource.USER
+    user_message._id = 1
+    user_message._timestamp = datetime.now(timezone.utc).isoformat()
 
     # Mock the EventStream class
     with patch(
@@ -157,7 +151,7 @@ async def test_auto_generate_title_fallback():
 
             # Verify the result is a truncated version of the message
             assert title == 'This is a very long message th...'
-            assert len(title) <= 30
+            assert len(title) <= 35
 
             # Verify EventStream was created with the correct parameters
             mock_event_stream_cls.assert_called_once_with(
