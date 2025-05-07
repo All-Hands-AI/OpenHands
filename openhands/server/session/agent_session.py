@@ -146,6 +146,7 @@ class AgentSession:
                     config.security.confirmation_mode,
                     max_iterations,
                     max_budget_per_task=max_budget_per_task,
+                    warning_budget_increment=5.0,  # Default to 5.0 USD increments
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
                 )
@@ -238,6 +239,7 @@ class AgentSession:
             config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
+            warning_budget_increment=5.0,  # Default to 5.0 USD increments
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             replay_events=replay_events[1:],
@@ -346,6 +348,7 @@ class AgentSession:
         confirmation_mode: bool,
         max_iterations: int,
         max_budget_per_task: float | None = None,
+        warning_budget_increment: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
@@ -357,6 +360,7 @@ class AgentSession:
         - confirmation_mode: Whether to use confirmation mode
         - max_iterations:
         - max_budget_per_task:
+        - warning_budget_increment: Budget increment at which to warn the user and ask for approval
         - agent_to_llm_config:
         - agent_configs:
         """
@@ -388,6 +392,7 @@ class AgentSession:
             agent=agent,
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
+            warning_budget_increment=warning_budget_increment,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
