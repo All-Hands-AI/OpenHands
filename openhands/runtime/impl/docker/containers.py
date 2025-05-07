@@ -1,5 +1,3 @@
-from typing import List
-
 import docker
 from docker.models.containers import Container
 
@@ -7,7 +5,7 @@ from docker.models.containers import Container
 def stop_all_containers(prefix: str) -> None:
     docker_client = docker.from_env()
     try:
-        containers: List[Container] = docker_client.containers.list(all=True)
+        containers: list[Container] = docker_client.containers.list(all=True)
         for container in containers:
             try:
                 if container.name.startswith(prefix):
