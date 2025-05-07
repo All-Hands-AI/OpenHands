@@ -444,7 +444,7 @@ describe("Secret actions", () => {
       "my-custom-secret-value",
     );
     expect(
-      screen.queryByText(/secret already exists/i),
+      screen.queryByText("SECRETS$SECRET_VALUE_REQUIRED"),
     ).not.toBeInTheDocument();
   });
 
@@ -481,7 +481,9 @@ describe("Secret actions", () => {
     await userEvent.click(submitButton);
 
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText(/secret value is required/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText("SECRETS$SECRET_VALUE_REQUIRED"),
+    ).toBeInTheDocument();
   });
 
   it("should not reset inout values on an invalid submit", async () => {
