@@ -76,7 +76,10 @@ export function SecretForm({
     );
   };
 
-  const formAction = (formData: FormData) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
     const name = formData.get("secret-name")?.toString();
     const value = formData.get("secret-value")?.toString().trim();
 
@@ -109,7 +112,7 @@ export function SecretForm({
   return (
     <form
       data-testid={formTestId}
-      action={formAction}
+      onSubmit={handleSubmit}
       className="flex flex-col items-start gap-6"
     >
       <SettingsInput

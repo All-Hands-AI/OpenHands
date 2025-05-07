@@ -494,6 +494,21 @@
         "tr": "Krediler",
         "de": "Guthaben"
     },
+    "SETTINGS$NAV_SECRETS": {
+        "en": "Secrets",
+        "ja": "シークレット",
+        "zh-CN": "机密",
+        "zh-TW": "機密",
+        "ko-KR": "비밀",
+        "no": "Hemmeligheter",
+        "it": "Segreti",
+        "pt": "Segredos",
+        "es": "Secretos",
+        "ar": "أسرار",
+        "fr": "Secrets",
+        "tr": "Sırları",
+        "de": "Geheimnisse"
+    },
     "SETTINGS$NAV_API_KEYS": {
         "en": "API Keys",
         "ja": "APIキー",
