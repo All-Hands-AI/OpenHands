@@ -15,6 +15,7 @@ export const useLogout = () => {
       queryClient.removeQueries({ queryKey: ["tasks"] });
       queryClient.removeQueries({ queryKey: ["settings"] });
       queryClient.removeQueries({ queryKey: ["user"] });
+      queryClient.removeQueries({ queryKey: ["secrets"] });
 
       posthog.reset();
       await navigate("/");

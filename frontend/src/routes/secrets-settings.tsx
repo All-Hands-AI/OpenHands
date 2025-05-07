@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React from "react";
+import { Link } from "react-router";
 import { useGetSecrets } from "#/hooks/query/use-get-secrets";
 import { useDeleteSecret } from "#/hooks/mutation/use-delete-secret";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
@@ -7,12 +8,16 @@ import { SecretListItem } from "#/components/features/settings/secrets-settings/
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 function SecretsSettingsScreen() {
   const queryClient = useQueryClient();
 
   const { data: secrets } = useGetSecrets();
   const { mutate: deleteSecret } = useDeleteSecret();
+  const { providers } = useUserProviders();
+
+  const hasProviderSet = providers.length > 0;
 
   const [view, setView] = React.useState<
     "list" | "add-secret-form" | "edit-secret-form"
@@ -60,6 +65,12 @@ function SecretsSettingsScreen() {
       data-testid="secrets-settings-screen"
       className="px-11 py-9 flex flex-col gap-5"
     >
+      {!hasProviderSet && (
+        <Link to="/settings/git" data-testid="connect-git-button" type="button">
+          Connect a Git provider to manage secrets
+        </Link>
+      )}
+
       {secrets?.length === 0 && view === "list" && (
         <p data-testid="no-secrets-message">No secrets found</p>
       )}
@@ -83,7 +94,7 @@ function SecretsSettingsScreen() {
         </ul>
       )}
 
-      {view === "list" && (
+      {hasProviderSet && view === "list" && (
         <BrandButton
           testId="add-secret-button"
           type="button"

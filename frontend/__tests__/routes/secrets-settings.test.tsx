@@ -1,10 +1,13 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
+import { createRoutesStub, Outlet } from "react-router";
 import SecretsSettingsScreen from "#/routes/secrets-settings";
 import { SecretsService } from "#/api/secrets-service";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
+import OpenHands from "#/api/open-hands";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
   {
@@ -17,19 +20,68 @@ const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
   },
 ];
 
+const RouterStub = createRoutesStub([
+  {
+    Component: Outlet,
+    path: "/settings",
+    children: [
+      {
+        Component: SecretsSettingsScreen,
+        path: "/settings/secrets",
+      },
+      {
+        Component: () => <div data-testid="git-settings-screen" />,
+        path: "/settings/git",
+      },
+    ],
+  },
+]);
+
 const renderSecretsSettings = () =>
-  render(<SecretsSettingsScreen />, {
+  render(<RouterStub initialEntries={["/settings/secrets"]} />, {
     wrapper: ({ children }) => (
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
         {children}
       </QueryClientProvider>
     ),
   });
 
+beforeEach(() => {
+  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  getSettingsSpy.mockResolvedValue({
+    ...MOCK_DEFAULT_USER_SETTINGS,
+    provider_tokens_set: {
+      github: "some-token",
+    },
+  });
+});
+
 describe("Content", () => {
   it("should render the secrets settings screen", () => {
     renderSecretsSettings();
     screen.getByTestId("secrets-settings-screen");
+  });
+
+  it("should render a button to connect with git if they havent already", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {},
+    });
+
+    renderSecretsSettings();
+
+    expect(getSecretsSpy).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
+    const button = screen.getByTestId("connect-git-button");
+    await userEvent.click(button);
+
+    screen.getByTestId("git-settings-screen");
   });
 
   it("should render a message if there are no existing secrets", async () => {
@@ -60,7 +112,7 @@ describe("Secret actions", () => {
 
     // render form & hide items
     expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
-    const button = screen.getByTestId("add-secret-button");
+    const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
     const secretForm = screen.getByTestId("add-secret-form");
@@ -148,7 +200,7 @@ describe("Secret actions", () => {
 
     // render form & hide items
     expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
-    const button = screen.getByTestId("add-secret-button");
+    const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
     const secretForm = screen.getByTestId("add-secret-form");
     expect(secretForm).toBeInTheDocument();
@@ -310,7 +362,7 @@ describe("Secret actions", () => {
 
     // render form & hide items
     expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
-    const button = screen.getByTestId("add-secret-button");
+    const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
     const secretForm = screen.getByTestId("add-secret-form");
@@ -324,7 +376,7 @@ describe("Secret actions", () => {
 
     // render form & hide items
     expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
-    const button = screen.getByTestId("add-secret-button");
+    const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
     const secretForm = screen.getByTestId("add-secret-form");
@@ -360,7 +412,7 @@ describe("Secret actions", () => {
 
     // render form & hide items
     expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
-    const button = screen.getByTestId("add-secret-button");
+    const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
     const secretForm = screen.getByTestId("add-secret-form");
@@ -405,7 +457,7 @@ describe("Secret actions", () => {
 
     // render form & hide items
     expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
-    const button = screen.getByTestId("add-secret-button");
+    const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
     const secretForm = screen.getByTestId("add-secret-form");
