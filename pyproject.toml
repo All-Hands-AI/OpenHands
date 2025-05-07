@@ -13,8 +13,8 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
-litellm = "^1.60.0, !=1.64.4" # avoid 1.64.4 (known bug)
+python = "^3.12,<3.14"
+litellm = "^1.60.0, !=1.64.4, !=1.67.*" # avoid 1.64.4 (known bug) & 1.67.* (known bug #10272)
 aiohttp = ">=3.9.0,!=3.11.13"  # Pin to avoid yanked version 3.11.13
 google-generativeai = "*" # To use litellm with Gemini Pro API
 google-api-python-client = "^2.164.0" # For Google Sheets API
@@ -78,6 +78,7 @@ prompt-toolkit = "^3.0.50"
 mcpm = "1.9.0"
 poetry = "^2.1.2"
 anyio = "4.9.0"
+pythonnet = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.8"

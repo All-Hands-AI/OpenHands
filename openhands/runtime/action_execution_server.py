@@ -13,6 +13,7 @@ import logging
 import mimetypes
 import os
 import shutil
+import sys
 import tempfile
 import time
 import traceback
@@ -74,6 +75,10 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 # Set MCP router logger to the same level as the main logger
 mcp_router_logger.setLevel(logger.getEffectiveLevel())
+
+
+if sys.platform == 'win32':
+    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 
 class ActionRequest(BaseModel):
@@ -167,13 +172,14 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session: BashSession | None = None
+        self.bash_session: BashSession | 'WindowsPowershellSession' | None = None  # type: ignore[name-defined]
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
+
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
@@ -199,6 +205,10 @@ class ActionExecutor:
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
+        if sys.platform == 'win32':
+            logger.warning('Browser environment not supported on windows')
+            return
+
         logger.debug('Initializing browser asynchronously')
         try:
             self.browser = BrowserEnv(self.browsergym_eval_env)
@@ -232,15 +242,25 @@ class ActionExecutor:
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
-        self.bash_session = BashSession(
-            work_dir=self._initial_cwd,
-            username=self.username,
-            no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
-            ),
-            max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
-        )
-        self.bash_session.initialize()
+        if sys.platform == 'win32':
+            self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
+                work_dir=self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+        else:
+            self.bash_session = BashSession(
+                work_dir=self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+            self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
         # Start browser initialization in the background
@@ -282,19 +302,55 @@ class ActionExecutor:
         logger.debug(f'Initializing plugin: {plugin.name}')
 
         if isinstance(plugin, JupyterPlugin):
+            # Escape backslashes in Windows path
+            cwd = self.bash_session.cwd.replace('\\', '/')
             await self.run_ipython(
-                IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
+                IPythonRunCellAction(code=f'import os; os.chdir(r"{cwd}")')
             )
 
     async def _init_bash_commands(self):
-        INIT_COMMANDS = [
-            'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG=$(pwd)/.git_config'
-            if os.environ.get('LOCAL_RUNTIME_MODE') == '1'
-            else 'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"'
-        ]
-        logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        INIT_COMMANDS = []
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+        is_windows = sys.platform == 'win32'
+
+        # Determine git config commands based on platform and runtime mode
+        if is_local_runtime:
+            if is_windows:
+                # Windows, local - split into separate commands
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.name "openhands"'
+                )
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
+                )
+                INIT_COMMANDS.append(
+                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
+                )
+            else:
+                # Linux/macOS, local
+                base_git_config = (
+                    'git config --file ./.git_config user.name "openhands" && '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
+                    'export GIT_CONFIG=$(pwd)/.git_config'
+                )
+                INIT_COMMANDS.append(base_git_config)
+        else:
+            # Non-local (implies Linux/macOS)
+            base_git_config = (
+                'git config --global user.name "openhands" && '
+                'git config --global user.email "openhands@all-hands.dev"'
+            )
+            INIT_COMMANDS.append(base_git_config)
+
+        # Determine no-pager command
+        if is_windows:
+            no_pager_cmd = 'function git { git.exe --no-pager $args }'
+        else:
+            no_pager_cmd = 'alias git="git --no-pager"'
+
+        INIT_COMMANDS.append(no_pager_cmd)
+
+        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.set_hard_timeout(300)
@@ -345,9 +401,9 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
-                reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
+                # escape windows paths
+                cwd = self.bash_session.cwd.replace('\\', '/')
+                reset_jupyter_cwd_code = f'import os; os.chdir("{cwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
                     _aux_action
@@ -527,10 +583,18 @@ class ActionExecutor:
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
+        if self.browser is None:
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        if self.browser is None:
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
         await self._ensure_browser_ready()
         return await browse(action, self.browser)
 
@@ -726,7 +790,6 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
@@ -897,7 +960,7 @@ if __name__ == '__main__':
 
         To list files:
         ```sh
-        curl http://localhost:3000/api/list-files
+        curl -X POST -d '{"path": "/"}' http://localhost:3000/list_files
         ```
 
         Args:
