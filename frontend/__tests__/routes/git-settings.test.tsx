@@ -6,7 +6,6 @@ import userEvent from "@testing-library/user-event";
 import GitSettingsScreen from "#/routes/git-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { AuthProvider } from "#/context/auth-context";
 import { GetConfigResponse } from "#/api/open-hands.types";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 import { SecretsService } from "#/api/secrets-service";
@@ -46,7 +45,7 @@ const renderGitSettingsScreen = () => {
     {
       wrapper: ({ children }) => (
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </QueryClientProvider>
       ),
     },
@@ -55,9 +54,7 @@ const renderGitSettingsScreen = () => {
   const rerenderGitSettingsScreen = () =>
     rerender(
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <GitSettingsRouterStub initialEntries={["/settings/github"]} />
-        </AuthProvider>
+        <GitSettingsRouterStub initialEntries={["/settings/github"]} />
       </QueryClientProvider>,
     );
 
@@ -141,8 +138,8 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: null,
-        gitlab: null,
+        github: "some-token",
+        gitlab: "some-token",
       },
     });
     queryClient.invalidateQueries();
@@ -166,7 +163,7 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        gitlab: null,
+        gitlab: "some-token",
       },
     });
     queryClient.invalidateQueries();
@@ -293,6 +290,7 @@ describe("Form submission", () => {
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: null,
+        gitlab: "some-token",
       },
     });
 
@@ -323,6 +321,7 @@ describe("Form submission", () => {
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: null,
+        gitlab: "some-token",
       },
     });
 

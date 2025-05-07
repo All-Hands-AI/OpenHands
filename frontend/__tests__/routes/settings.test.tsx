@@ -2,24 +2,24 @@ import { render, screen, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
 import OpenHands from "#/api/open-hands";
 
 // Mock the i18next hook
 vi.mock("react-i18next", async () => {
-  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
   return {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_GIT": "Git",
-          "SETTINGS$NAV_APPLICATION": "Application",
-          "SETTINGS$NAV_CREDITS": "Credits",
-          "SETTINGS$NAV_API_KEYS": "API Keys",
-          "SETTINGS$NAV_LLM": "LLM",
-          "SETTINGS$TITLE": "Settings"
+          SETTINGS$NAV_GIT: "Git",
+          SETTINGS$NAV_APPLICATION: "Application",
+          SETTINGS$NAV_CREDITS: "Credits",
+          SETTINGS$NAV_API_KEYS: "API Keys",
+          SETTINGS$NAV_LLM: "LLM",
+          SETTINGS$TITLE: "Settings",
         };
         return translations[key] || key;
       },
@@ -71,11 +71,9 @@ describe("Settings Screen", () => {
     const queryClient = new QueryClient();
     return render(<RouterStub initialEntries={[path]} />, {
       wrapper: ({ children }) => (
-        <AuthProvider>
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
   };

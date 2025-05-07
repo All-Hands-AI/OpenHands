@@ -1,0 +1,65 @@
+# OpenHands Cloud
+
+OpenHands Cloud 是由 All Hands AI 提供的 OpenHands 云托管版本。
+
+## 访问 OpenHands Cloud
+
+OpenHands Cloud 可以通过 https://app.all-hands.dev/ 访问。
+
+您还可以使用 [API](./cloud-api) 以编程方式与 OpenHands Cloud 交互。
+
+## 入门指南
+
+访问 OpenHands Cloud 后，系统会要求您连接您的 GitHub 或 GitLab 账户：
+
+1. 阅读并接受服务条款后，点击 `Log in with GitHub` 或 `Log in with GitLab`。
+2. 查看 OpenHands 请求的权限，然后点击 `Authorize OpenHands AI`。
+   - OpenHands 将需要您的 GitHub 或 GitLab 账户的一些权限。要了解更多关于这些权限的信息：
+     - GitHub：您可以点击 GitHub 授权页面上的 `Learn more` 链接。
+     - GitLab：您可以在 GitLab 授权页面上展开每个权限请求。
+
+## 仓库访问
+
+### GitHub
+
+#### 添加仓库访问权限
+
+您可以授予 OpenHands 特定仓库的访问权限：
+1. 在首页点击 `Add GitHub repos`。
+2. 选择组织，然后选择要授予 OpenHands 访问权限的特定仓库。
+   <details>
+     <summary>仓库访问权限详情</summary>
+
+     Openhands 请求短期令牌（8小时过期）并具有以下权限：
+     - Actions：读写权限
+     - Administration：只读权限
+     - Commit statuses：读写权限
+     - Contents：读写权限
+     - Issues：读写权限
+     - Metadata：只读权限
+     - Pull requests：读写权限
+     - Webhooks：读写权限
+     - Workflows：读写权限
+
+     用户的仓库访问权限基于：
+     - 为仓库授予的权限。
+     - 用户的 GitHub 权限（所有者/协作者）。
+   </details>
+
+3. 点击 `Install & Authorize`。
+
+#### 修改仓库访问权限
+
+您可以随时修改 GitHub 仓库访问权限，方法是：
+* 使用相同的 `Add GitHub repos` 流程，或
+* 访问设置页面，在 `Git Settings` 部分下选择 `Configure GitHub Repositories`。
+
+### GitLab
+
+使用 GitLab 账户时，OpenHands 将自动获得对您仓库的访问权限。
+
+## 对话持久性
+
+- 对话列表 – 仅显示过去 10 天内发起的 10 个最近对话。
+- 工作区 – 对话工作区保留 14 天。
+- 运行时 – 运行时保持活跃（"热"状态）30 分钟。在此期间后，恢复对话可能需要 1-2 分钟。
