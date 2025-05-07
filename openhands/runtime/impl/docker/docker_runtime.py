@@ -74,8 +74,8 @@ class DockerRuntime(ActionExecutionClient):
         config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
-        plugins: Optional[List[PluginRequirement]] = None,
-        env_vars: Optional[Dict[str, str]] = None,
+        plugins: Optional[list[PluginRequirement]] = None,
+        env_vars: Optional[dict[str, str]] = None,
         status_callback: Optional[Callable[..., Any]] = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
@@ -91,7 +91,7 @@ class DockerRuntime(ActionExecutionClient):
         self._host_port = -1
         self._container_port = -1
         self._vscode_port = -1
-        self._app_ports: List[int] = []
+        self._app_ports: list[int] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
             logger.info(
@@ -207,14 +207,14 @@ class DockerRuntime(ActionExecutionClient):
             )
             raise ex
 
-    def _process_volumes(self) -> Dict[str, Dict[str, str]]:
+    def _process_volumes(self) -> dict[str, dict[str, str]]:
         """Process volume mounts based on configuration.
 
         Returns:
             A dictionary mapping host paths to container bind mounts with their modes.
         """
         # Initialize volumes dictionary
-        volumes: Dict[str, Dict[str, str]] = {}
+        volumes: dict[str, dict[str, str]] = {}
 
         # Process volumes (comma-delimited)
         if self.config.sandbox.volumes is not None:
@@ -275,7 +275,7 @@ class DockerRuntime(ActionExecutionClient):
         network_mode: Optional[str] = 'host' if use_host_network else None
 
         # Initialize port mappings
-        port_mapping: Optional[Dict[str, List[Dict[str, str]]]] = None
+        port_mapping: Optional[dict[str, list[dict[str, str]]]] = None
         if not use_host_network:
             port_mapping = {
                 f'{self._container_port}/tcp': [
@@ -487,8 +487,8 @@ class DockerRuntime(ActionExecutionClient):
         return vscode_url
 
     @property
-    def web_hosts(self) -> Dict[str, int]:
-        hosts: Dict[str, int] = {}
+    def web_hosts(self) -> dict[str, int]:
+        hosts: dict[str, int] = {}
 
         for port in self._app_ports:
             hosts[f'http://localhost:{port}'] = port
