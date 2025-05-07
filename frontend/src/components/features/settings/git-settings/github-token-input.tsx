@@ -41,25 +41,23 @@ export function GitHubTokenInput({
         }
       />
 
-      {isGitHubTokenSet && (
-        <SettingsInput
-          onChange={onGitHubHostChange || (() => {})}
-          name="github-host-input"
-          testId="github-host-input"
-          label={t(I18nKey.GITHUB$HOST_LABEL)}
-          type="text"
-          className="w-[680px]"
-          placeholder="github.com"
-          defaultValue={githubHostSet || undefined}
-          startContent={
-            githubHostSet && githubHostSet.trim() !== "" ? (
-              <KeyStatusIcon testId="gh-set-host-indicator" isSet />
-            ) : (
-              <KeyStatusIcon testId="gh-set-host-indicator" isSet={false} />
-            )
-          }
-        />
-      )}
+      <SettingsInput
+        onChange={onGitHubHostChange || (() => {})}
+        name="github-host-input"
+        testId="github-host-input"
+        label={t(I18nKey.GITHUB$HOST_LABEL)}
+        type="text"
+        className="w-[680px]"
+        placeholder="github.com"
+        defaultValue={githubHostSet || undefined}
+        startContent={
+          githubHostSet && githubHostSet.trim() !== "" ? (
+            <KeyStatusIcon testId="gh-set-host-indicator" isSet />
+          ) : (
+            <KeyStatusIcon testId="gh-set-host-indicator" isSet={false} />
+          )
+        }
+      />
 
       <GitHubTokenHelpAnchor />
     </div>
