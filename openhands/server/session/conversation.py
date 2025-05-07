@@ -18,7 +18,7 @@ class Conversation:
 
     def __init__(
         self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
-    ) -> None:
+    ):
         self.sid = sid
         self.config = config
         self.file_store = file_store
@@ -38,10 +38,10 @@ class Conversation:
             headless_mode=False,
         )
 
-    async def connect(self) -> None:
+    async def connect(self):
         await self.runtime.connect()
 
-    async def disconnect(self) -> None:
+    async def disconnect(self):
         if self.event_stream:
             self.event_stream.close()
         asyncio.create_task(call_sync_from_async(self.runtime.close))
