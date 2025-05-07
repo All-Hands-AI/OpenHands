@@ -132,20 +132,23 @@ async def fetch_search_tools_from_config(
             if search_engine_config.type.startswith('mcp'):
                 mcp_mode = search_engine_config.type.split('_')[1]
                 dict_mcp_config = {}
-                dict_mcp_config[name] = MCPConfig(
+                dict_mcp_config[f'search_engine_{name}'] = MCPConfig(
                     url=search_engine_config.url,
                     mode=mcp_mode,
                 )
-            tools = await fetch_mcp_tools_from_config(
-                dict_mcp_config,
-                sid=sid,
-                mnemonic=mnemonic,
-            )
-            if search_engine_config.tools:
-                tools = [
-                    tool for tool in tools if tool['name'] in search_engine_config.tools
-                ]
-            search_tools += tools
+
+                tools = await fetch_mcp_tools_from_config(
+                    dict_mcp_config,
+                    sid=sid,
+                    mnemonic=mnemonic,
+                )
+                if search_engine_config.tools:
+                    tools = [
+                        tool
+                        for tool in tools
+                        if tool['name'] in search_engine_config.tools
+                    ]
+                search_tools += tools
         return search_tools
     except Exception as e:
         logger.error(f'Error fetching search tools: {str(e)}')
