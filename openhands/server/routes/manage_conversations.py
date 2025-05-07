@@ -61,6 +61,7 @@ class InitSessionRequest(BaseModel):
     system_prompt: str | None = None
     user_prompt: str | None = None
     mcp_disable: dict[str, bool] | None = None
+    research_mode: str | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -86,6 +87,7 @@ async def _create_new_conversation(
     attach_convo_id: bool = False,
     mnemonic: str | None = None,
     mcp_disable: dict[str, bool] | None = None,
+    research_mode: str | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -167,6 +169,7 @@ async def _create_new_conversation(
         initial_message_action = MessageAction(
             content=user_msg or '',
             image_urls=image_urls or [],
+            mode=research_mode,
         )
 
     await conversation_manager.maybe_start_agent_loop(
@@ -218,6 +221,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             user_prompt=user_prompt,
             mnemonic=mnemonic,
             mcp_disable=data.mcp_disable,
+            research_mode=data.research_mode,
         )
         if conversation_id and user_id is not None:
             await conversation_module._update_conversation_visibility(

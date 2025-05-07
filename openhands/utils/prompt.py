@@ -48,6 +48,7 @@ class PromptManager:
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
         self.a2a_info_template: Template = self._load_template('a2a_info')
+        self.chat_mode_template: Template = self._load_template('chat_mode_prompt')
         self.system_prompt: str | None = None
         self.user_prompt: str | None = None
 
@@ -79,6 +80,9 @@ class PromptManager:
                 agent_infos_prompt = agent_infos_prompt_match.group(1)
             final_system_prompt = self.system_prompt + '\n' + agent_infos_prompt
         return final_system_prompt
+
+    def get_chat_mode_message(self, **kwargs) -> str:
+        return self.chat_mode_template.render(**kwargs).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

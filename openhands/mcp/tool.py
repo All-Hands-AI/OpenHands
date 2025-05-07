@@ -29,7 +29,7 @@ class BaseTool(ABC, Tool):
     #             "required": self.input_schema.get("required", [])
     #         },
     #     }
-    def to_param(self) -> CallToolResult:
+    def to_param(self) -> dict:
         """
         Converts a function description from the input format to OpenAI's function calling format.
 

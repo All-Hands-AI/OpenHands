@@ -41,6 +41,7 @@ class Agent(ABC):
         self._complete = False
         self.prompt_manager: 'PromptManager' | None = None
         self.mcp_tools: list[dict] = []
+        self.search_tools: list[dict] = []
         self.workspace_mount_path_in_sandbox_store_in_session = (
             workspace_mount_path_in_sandbox_store_in_session
         )
@@ -129,6 +130,14 @@ class Agent(ABC):
         - mcp_tools (list[dict]): The list of MCP tools.
         """
         self.mcp_tools = mcp_tools
+
+    def set_search_tools(self, search_tools: list[dict]) -> None:
+        """Sets the list of search tools for the agent.
+
+        Args:
+        - search_tools (list[dict]): The list of search tools.
+        """
+        self.search_tools = search_tools
 
     def set_system_prompt(self, system_prompt: str) -> None:
         """Set the system prompt for the agent.

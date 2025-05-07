@@ -146,6 +146,21 @@ class ConversationMemory:
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
         return messages
 
+    def process_initial_chatmode_message(
+        self, with_caching: bool = False, **kwargs
+    ) -> list[Message]:
+        return [
+            Message(
+                role='system',
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.get_chat_mode_message(**kwargs),
+                        cache_prompt=with_caching,
+                    )
+                ],
+            )
+        ]
+
     def process_initial_messages(
         self, with_caching: bool = False, agent_infos: list | None = None
     ) -> list[Message]:

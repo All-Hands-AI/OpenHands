@@ -402,3 +402,9 @@ type = "noop"
 [mcp]
 [mcp.oraichain]
 url = "http://localhost:4000/sse"
+
+[search_engine]
+type = "mcp_sse"
+url = "http://0.0.0.0:8080/sse"
+tools = ["search"]
+name = "google"

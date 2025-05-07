@@ -14,6 +14,7 @@ from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.search_engine import SearchEngineConfig
 from openhands.core.config.security_config import SecurityConfig
 
 
@@ -96,6 +97,9 @@ class AppConfig(BaseModel):
     )  # Maximum number of concurrent agent loops allowed per user
     # mcp: MCPConfig = Field(default_factory=MCPConfig)
     dict_mcp_config: dict[str, MCPConfig] = Field(default_factory=dict)
+    dict_search_engine_config: dict[str, SearchEngineConfig] = Field(
+        default_factory=dict
+    )
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
     enable_microagents: bool = Field(default=True)
 

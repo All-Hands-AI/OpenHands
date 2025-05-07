@@ -125,6 +125,7 @@ class StandaloneConversationManager(ConversationManager):
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
         )
+
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
 

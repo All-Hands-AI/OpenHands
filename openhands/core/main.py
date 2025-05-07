@@ -31,6 +31,7 @@ from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
 from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp.utils import fetch_search_tools_from_config
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -99,6 +100,11 @@ async def run_controller(
         mcp_tools = await fetch_mcp_tools_from_config(config.dict_mcp_config, sid=sid)
         logger.info(f'MCP tools: {mcp_tools}')
         agent.set_mcp_tools(mcp_tools)
+
+        search_tools = await fetch_search_tools_from_config(
+            config.dict_search_engine_config, sid=sid
+        )
+        agent.set_search_tools(search_tools)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
