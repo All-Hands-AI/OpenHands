@@ -40,11 +40,11 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-        if server_config.app_mode != AppMode.SAAS:
-            # On initial load, user secrets may not be populated with values migrated from settings store
-            user_secrets = await invalidate_legacy_secrets_store(
-                settings, settings_store, secrets_store
-            )
+
+        # On initial load, user secrets may not be populated with values migrated from settings store
+        user_secrets = await invalidate_legacy_secrets_store(
+            settings, settings_store, secrets_store
+        )
         
         # If invalidation is successful, then the returned user secrets holds the most recent values
         git_providers = (
