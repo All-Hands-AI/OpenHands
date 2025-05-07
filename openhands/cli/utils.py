@@ -87,13 +87,13 @@ def extract_model_and_provider(model: str) -> dict[str, str]:
 
 def organize_models_and_providers(
     models: list[str],
-) -> ModelProviderMapping:
+) -> 'ModelProviderMapping':
     """
     Organize a list of model identifiers by provider.
-    
+
     Args:
         models: List of model identifiers
-        
+
     Returns:
         A mapping of providers to their information and models
     """
@@ -148,17 +148,20 @@ VERIFIED_ANTHROPIC_MODELS = [
 
 class ProviderInfo(BaseModel):
     """Information about a provider and its models."""
-    separator: str = Field(description="The separator used in model identifiers")
-    models: List[str] = Field(default_factory=list, description="List of model identifiers")
-    
+
+    separator: str = Field(description='The separator used in model identifiers')
+    models: List[str] = Field(
+        default_factory=list, description='List of model identifiers'
+    )
+
     def __getitem__(self, key: str) -> str | List[str]:
         """Allow dictionary-like access to fields."""
-        if key == "separator":
+        if key == 'separator':
             return self.separator
-        elif key == "models":
+        elif key == 'models':
             return self.models
-        raise KeyError(f"ProviderInfo has no key {key}")
-    
+        raise KeyError(f'ProviderInfo has no key {key}')
+
     def get(self, key: str, default=None) -> str | List[str] | None:
         """Dictionary-like get method with default value."""
         try:
@@ -169,40 +172,41 @@ class ProviderInfo(BaseModel):
 
 class ModelProviderMapping(BaseModel):
     """Mapping of providers to their information and models."""
+
     __root__: Dict[str, ProviderInfo]
 
     def __getitem__(self, key: str) -> ProviderInfo:
         """Allow dictionary-like access with provider name."""
         return self.__root__[key]
-    
+
     def __setitem__(self, key: str, value: ProviderInfo) -> None:
         """Allow dictionary-like assignment with provider name."""
         self.__root__[key] = value
-    
+
     def __contains__(self, key: str) -> bool:
         """Allow 'in' operator to check if a provider exists."""
         return key in self.__root__
-    
+
     def __iter__(self):
         """Allow iteration over provider names."""
         return iter(self.__root__)
-    
+
     def __len__(self) -> int:
         """Return the number of providers."""
         return len(self.__root__)
-    
+
     def items(self):
         """Return provider name and info pairs."""
         return self.__root__.items()
-    
+
     def keys(self):
         """Return provider names."""
         return self.__root__.keys()
-    
+
     def values(self):
         """Return provider info objects."""
         return self.__root__.values()
-    
+
     def get(self, key, default=None):
         """Get provider info with a default value if not found."""
         return self.__root__.get(key, default)
