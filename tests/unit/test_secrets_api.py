@@ -123,11 +123,7 @@ async def test_add_custom_secret(test_client, file_secrets_store):
     await file_secrets_store.store(user_secrets)
 
     # Make the POST request to add a custom secret
-    add_secret_data = {
-        'name': 'API_KEY',
-        'value': 'api-key-value',
-        'description': None
-    }
+    add_secret_data = {'name': 'API_KEY', 'value': 'api-key-value', 'description': None}
     response = test_client.post('/api/secrets', json=add_secret_data)
     assert response.status_code == 201
 
@@ -162,7 +158,7 @@ async def test_update_existing_custom_secret(test_client, file_secrets_store):
     update_secret_data = {
         'name': 'API_KEY',
         'value': 'new-api-key',
-        'description': None
+        'description': None,
     }
     response = test_client.put('/api/secrets/API_KEY', json=update_secret_data)
     assert response.status_code == 200
@@ -203,16 +199,16 @@ async def test_add_multiple_custom_secrets(test_client, file_secrets_store):
     add_secret_data1 = {
         'name': 'API_KEY',
         'value': 'api-key-value',
-        'description': None
+        'description': None,
     }
     response1 = test_client.post('/api/secrets', json=add_secret_data1)
     assert response1.status_code == 201
-    
+
     # Make the POST request to add second custom secret
     add_secret_data2 = {
         'name': 'DB_PASSWORD',
         'value': 'db-password-value',
-        'description': None
+        'description': None,
     }
     response = test_client.post('/api/secrets', json=add_secret_data2)
     assert response.status_code == 201
