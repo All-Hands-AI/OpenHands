@@ -376,8 +376,8 @@ class ActionExecutionClient(Runtime):
             )
         )
         self.log(
-            'debug',
-            f'Updated MCP config by adding runtime as another server: {updated_mcp_config}',
+            'info',
+            f'Updated MCP config: {updated_mcp_config.sse_servers}',
         )
         return updated_mcp_config
 

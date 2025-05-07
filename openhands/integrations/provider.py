@@ -44,7 +44,11 @@ class ProviderToken(BaseModel):
         if isinstance(token_value, cls):
             return token_value
         elif isinstance(token_value, dict):
-            token_str = token_value.get('token')
+            token_str = token_value.get('token', '')
+            # Override with emtpy string if it was set to None
+            # Cannot pass None to SecretStr
+            if token_str is None:
+                token_str = ''
             user_id = token_value.get('user_id')
             host = token_value.get('host')
             return cls(token=SecretStr(token_str), user_id=user_id, host=host)

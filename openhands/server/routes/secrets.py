@@ -175,10 +175,10 @@ async def load_custom_secrets_names(
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f'Failed to load secret names: {e}')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            content={'error': 'Failed to get secret names'},
         )
 
 
