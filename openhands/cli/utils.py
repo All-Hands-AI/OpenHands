@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Optional, Union
 
 import toml
 from pydantic import BaseModel, Field
@@ -167,11 +167,11 @@ class ProviderInfo(BaseModel):
     """Information about a provider and its models."""
 
     separator: str = Field(description='The separator used in model identifiers')
-    models: List[str] = Field(
+    models: list[str] = Field(
         default_factory=list, description='List of model identifiers'
     )
 
-    def __getitem__(self, key: str) -> str | List[str]:
+    def __getitem__(self, key: str) -> Union[str, list[str]]:
         """Allow dictionary-like access to fields."""
         if key == 'separator':
             return self.separator
@@ -179,7 +179,7 @@ class ProviderInfo(BaseModel):
             return self.models
         raise KeyError(f'ProviderInfo has no key {key}')
 
-    def get(self, key: str, default=None) -> str | List[str] | None:
+    def get(self, key: str, default=None) -> Optional[Union[str, list[str]]]:
         """Dictionary-like get method with default value."""
         try:
             return self[key]
