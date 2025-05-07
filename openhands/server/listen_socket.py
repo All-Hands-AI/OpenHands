@@ -89,9 +89,9 @@ async def connect(connection_id: str, environ):
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
 
-    git_provider_tokens = user_secrets.provider_tokens
-    if server_config.app_mode == AppMode.SAAS:
-        git_provider_tokens = create_provider_tokens_object(providers_set)
+    git_provider_tokens = create_provider_tokens_object(providers_set)
+    if server_config.app_mode != AppMode.SAAS:
+        git_provider_tokens = user_secrets.provider_tokens
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
 
