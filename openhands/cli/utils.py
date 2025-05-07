@@ -60,7 +60,24 @@ def update_usage_metrics(event: Event, usage_metrics: UsageMetrics) -> None:
     usage_metrics.metrics = llm_metrics
 
 
-def extract_model_and_provider(model: str) -> dict[str, str]:
+class ModelInfo(BaseModel):
+    """Information about a model and its provider."""
+
+    provider: str = Field(description='The provider of the model')
+    model: str = Field(description='The model identifier')
+    separator: str = Field(description='The separator used in the model identifier')
+
+
+def extract_model_and_provider(model: str) -> ModelInfo:
+    """
+    Extract provider and model information from a model identifier.
+
+    Args:
+        model: The model identifier string
+
+    Returns:
+        A ModelInfo object containing provider, model, and separator information
+    """
     separator = '/'
     split = model.split(separator)
 
@@ -74,15 +91,15 @@ def extract_model_and_provider(model: str) -> dict[str, str]:
     if len(split) == 1:
         # no "/" or "." separator found
         if split[0] in VERIFIED_OPENAI_MODELS:
-            return {'provider': 'openai', 'model': split[0], 'separator': '/'}
+            return ModelInfo(provider='openai', model=split[0], separator='/')
         if split[0] in VERIFIED_ANTHROPIC_MODELS:
-            return {'provider': 'anthropic', 'model': split[0], 'separator': '/'}
+            return ModelInfo(provider='anthropic', model=split[0], separator='/')
         # return as model only
-        return {'provider': '', 'model': model, 'separator': ''}
+        return ModelInfo(provider='', model=model, separator='')
 
     provider = split[0]
     model_id = separator.join(split[1:])
-    return {'provider': provider, 'model': model_id, 'separator': separator}
+    return ModelInfo(provider=provider, model=model_id, separator=separator)
 
 
 def organize_models_and_providers(
@@ -101,9 +118,9 @@ def organize_models_and_providers(
 
     for model in models:
         extracted = extract_model_and_provider(model)
-        separator = extracted['separator']
-        provider = extracted['provider']
-        model_id = extracted['model']
+        separator = extracted.separator
+        provider = extracted.provider
+        model_id = extracted.model
 
         # Ignore "anthropic" providers with a separator of "."
         # These are outdated and incompatible providers.
