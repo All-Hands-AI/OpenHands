@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useCreateSecret } from "#/hooks/mutation/use-create-secret";
 import { useUpdateSecret } from "#/hooks/mutation/use-update-secret";
 import { SettingsInput } from "../settings-input";
@@ -20,6 +21,7 @@ export function SecretForm({
   onCancel,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const { data: secrets } = useGetSecrets();
   const { mutate: createSecret } = useCreateSecret();
@@ -84,7 +86,7 @@ export function SecretForm({
     const value = formData.get("secret-value")?.toString().trim();
 
     if (!value) {
-      setError("Secret value is required");
+      setError(t("SECRETS$SECRET_VALUE_REQUIRED"));
       return;
     }
 
@@ -153,8 +155,8 @@ export function SecretForm({
           Cancel
         </BrandButton>
         <BrandButton testId="submit-button" type="submit" variant="primary">
-          {mode === "add" && "Add secret"}
-          {mode === "edit" && "Edit secret"}
+          {mode === "add" && t("SECRETS$ADD_SECRET")}
+          {mode === "edit" && t("SECRETS$EDIT_SECRET")}
         </BrandButton>
       </div>
     </form>

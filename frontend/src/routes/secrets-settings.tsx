@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useGetSecrets } from "#/hooks/query/use-get-secrets";
 import { useDeleteSecret } from "#/hooks/mutation/use-delete-secret";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
@@ -12,6 +13,7 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 
 function SecretsSettingsScreen() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const { data: secrets } = useGetSecrets();
   const { mutate: deleteSecret } = useDeleteSecret();
@@ -72,7 +74,7 @@ function SecretsSettingsScreen() {
       )}
 
       {secrets?.length === 0 && view === "list" && (
-        <p data-testid="no-secrets-message">No secrets found</p>
+        <p data-testid="no-secrets-message">{t("SECRETS$NO_SECRETS_FOUND")}</p>
       )}
 
       {view === "list" && (
@@ -101,7 +103,7 @@ function SecretsSettingsScreen() {
           variant="primary"
           onClick={() => setView("add-secret-form")}
         >
-          Add a new secret
+          {t("SECRETS$ADD_NEW_SECRET")}
         </BrandButton>
       )}
 
@@ -115,7 +117,7 @@ function SecretsSettingsScreen() {
 
       {confirmationModalIsVisible && (
         <ConfirmationModal
-          text="Are you sure you want to delete this key?"
+          text={t("SECRETS$CONFIRM_DELETE_KEY")}
           onConfirm={onConfirmDeleteSecret}
           onCancel={onCancelDeleteSecret}
         />
