@@ -105,7 +105,9 @@ export function RepositorySelectionForm({
   };
 
   const handleBranchInputChange = (value: string) => {
-    if (value === "") {
+    // Clear the selected branch if the input is empty or contains only whitespace
+    // This fixes the issue where users can't delete the entire default branch name
+    if (value === "" || value.trim() === "") {
       setSelectedBranch(null);
     }
   };
