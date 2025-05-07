@@ -42,7 +42,7 @@ from openhands.server.shared import (
     file_store,
     s3_handler,
 )
-from openhands.server.thesis_auth import create_thread
+from openhands.server.thesis_auth import create_thread, search_knowledge
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -64,6 +64,7 @@ class InitSessionRequest(BaseModel):
     mcp_disable: dict[str, bool] | None = None
     research_mode: str | None = None
     space_id: int | None = None
+    thread_follow_up: int | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -210,11 +211,20 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     user_id = get_user_id(request)
     mnemonic = request.state.user.mnemonic
     space_id = data.space_id
+    thread_follow_up = data.thread_follow_up
     bearer_token = request.headers.get('Authorization')
     x_device_id = request.headers.get('x-device-id')
 
     try:
-        # Create conversation with initial message
+        if space_id or thread_follow_up:
+            knowledge = await search_knowledge(
+                initial_user_msg, space_id, thread_follow_up, bearer_token, x_device_id
+            )
+            if knowledge and knowledge['data']['summary']:
+                initial_user_msg = (
+                    f"Reference information:\n{knowledge['data']['summary']}\n\n"
+                    f"Question:\n{initial_user_msg}"
+                )
         conversation_id = await _create_new_conversation(
             user_id,
             provider_tokens,
@@ -231,7 +241,13 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
 
         if conversation_id and user_id is not None:
-            await create_thread(space_id, conversation_id, bearer_token, x_device_id)
+            await create_thread(
+                space_id,
+                conversation_id,
+                data.initial_user_msg,
+                bearer_token,
+                x_device_id,
+            )
             await conversation_module._update_conversation_visibility(
                 conversation_id,
                 False,
