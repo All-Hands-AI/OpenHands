@@ -22,15 +22,10 @@ class ConversationStore(ABC):
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
         """Load conversation metadata."""
 
-    async def validate_metadata(
-        self, conversation_id: str, user_id: str, github_user_id: str
-    ) -> bool:
+    async def validate_metadata(self, conversation_id: str, user_id: str) -> bool:
         """Validate that conversation belongs to the current user."""
-        # TODO: remove github_user_id after transition to Keycloak is complete.
         metadata = await self.get_metadata(conversation_id)
-        if (not metadata.user_id and not metadata.github_user_id) or (
-            metadata.user_id != user_id and metadata.github_user_id != github_user_id
-        ):
+        if not metadata.user_id or metadata.user_id != user_id:
             return False
         else:
             return True
