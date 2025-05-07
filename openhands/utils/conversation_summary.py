@@ -55,3 +55,16 @@ async def generate_conversation_title(
     except Exception as e:
         logger.error(f'Error generating conversation title: {e}')
         return None
+
+
+def get_default_conversation_title(conversation_id: str) -> str:
+    """
+    Generate a default title for a conversation based on its ID.
+
+    Args:
+        conversation_id: The ID of the conversation
+
+    Returns:
+        A default title string
+    """
+    return f'Conversation {conversation_id[:5]}'

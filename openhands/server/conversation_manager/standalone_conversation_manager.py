@@ -7,12 +7,14 @@ from typing import Callable, Iterable, Type
 import socketio
 
 from openhands.core.config.app_config import AppConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
+from openhands.events.event import EventSource
 from openhands.events.event_store import EventStore
-from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
@@ -22,7 +24,9 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
+from openhands.utils.conversation_summary import generate_conversation_title, get_default_conversation_title
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
@@ -53,6 +57,7 @@ class StandaloneConversationManager(ConversationManager):
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: Type | None = None
+    _settings_store_class: Type | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
@@ -203,6 +208,18 @@ class StandaloneConversationManager(ConversationManager):
                 self.server_config.conversation_store_class,
             )
         store = await conversation_store_class.get_instance(self.config, user_id)
+        return store
+
+    async def _get_settings_store(
+            self, user_id: str | None
+    ) -> SettingsStore:
+        settings_store_class = self._settings_store_class
+        if not settings_store_class:
+            self._settings_store_class = settings_store_class = get_impl(
+                SettingsStore,
+                self.server_config.conversation_store_class
+            )
+        store = await settings_store_class.get_instance(self.config, user_id)
         return store
 
     async def get_running_agent_loops(
@@ -439,6 +456,78 @@ class StandaloneConversationManager(ConversationManager):
 
         return callback
 
+
+    async def _auto_generate_title(
+        self,
+        conversation_id: str, 
+        user_id: str | None,
+    ) -> str:
+        """
+        Auto-generate a title for a conversation based on the first user message.
+        Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
+
+        Args:
+            conversation_id: The ID of the conversation
+            user_id: The ID of the user
+
+        Returns:
+            A generated title string
+        """
+        logger.info(f'Auto-generating title for conversation {conversation_id}')
+            
+        
+        try:
+            # Create an event stream for the conversation
+            event_stream = EventStream(conversation_id, self.file_store, user_id)
+
+            # Find the first user message
+            first_user_message = None
+            for event in event_stream.get_events():
+                if (
+                    event.source == EventSource.USER
+                    and isinstance(event, MessageAction)
+                    and event.content
+                    and event.content.strip()
+                ):
+                    first_user_message = event.content
+                    break
+
+            if first_user_message:
+                # Get LLM config from user settings
+                try:
+                    settings_store = await self._get_settings_store(user_id)
+                    settings = await settings_store.load()
+
+                    if settings and settings.llm_model:
+                        # Create LLM config from settings
+                        llm_config = LLMConfig(
+                            model=settings.llm_model,
+                            api_key=settings.llm_api_key,
+                            base_url=settings.llm_base_url,
+                        )
+
+                        # Try to generate title using LLM
+                        llm_title = await generate_conversation_title(
+                            first_user_message, llm_config
+                        )
+                        if llm_title:
+                            logger.info(f'Generated title using LLM: {llm_title}')
+                            return llm_title
+                except Exception as e:
+                    logger.error(f'Error using LLM for title generation: {e}')
+
+                # Fall back to simple truncation if LLM generation fails or is unavailable
+                first_user_message = first_user_message.strip()
+                title = first_user_message[:30]
+                if len(first_user_message) > 30:
+                    title += '...'
+                logger.info(f'Generated title using truncation: {title}')
+                return title
+        except Exception as e:
+            logger.error(f'Error generating title: {str(e)}')
+        return ''
+
+
     async def _update_conversation_for_event(
         self, user_id: str, github_user_id: str, conversation_id: str, event=None
     ):
@@ -462,6 +551,13 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.total_tokens = (
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
+        default_title = get_default_conversation_title(conversation_id)
+        if not conversation.title or conversation.title == default_title:
+            title = await self._auto_generate_title(conversation_id, user_id)
+            if title and not title.isspace():
+                conversation.title = title
+            else:
+                conversation.title = default_title
 
         await conversation_store.save_metadata(conversation)
 
