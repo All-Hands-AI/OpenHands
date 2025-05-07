@@ -11,6 +11,7 @@ from openhands.server.settings import (
     GETSettingsModel,
 )
 from openhands.server.shared import config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -19,6 +20,7 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api')
 
@@ -38,10 +40,11 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-        # On initial load, user secrets may not be populated with values migrated from settings store
-        user_secrets = await invalidate_legacy_secrets_store(
-            settings, settings_store, secrets_store
-        )
+        if server_config.app_mode != AppMode.SAAS:
+            # On initial load, user secrets may not be populated with values migrated from settings store
+            user_secrets = await invalidate_legacy_secrets_store(
+                settings, settings_store, secrets_store
+            )
         
         # If invalidation is successful, then the returned user secrets holds the most recent values
         git_providers = (
