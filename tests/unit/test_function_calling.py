@@ -534,7 +534,7 @@ file.py
     assert isinstance(actions[0], FileEditAction)
     assert actions[0].path == 'file.py'
     assert actions[0].search == '\n\n\n'
-    assert actions[0].replace == '\n\n\n'_diff_enabled=True)  # Enable flag
+    assert actions[0].replace == '\n\n\n'
 
     # Should process the tool call, not the diff block
     assert len(actions) == 1

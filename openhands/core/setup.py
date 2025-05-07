@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Callable, Tuple, Type
+from typing import Callable
 
 from pydantic import SecretStr
 
@@ -126,6 +126,8 @@ def initialize_repository_for_runtime(
     )
     # Run setup script if it exists
     runtime.maybe_run_setup_script()
+    # Set up git hooks if pre-commit.sh exists
+    runtime.maybe_setup_git_hooks()
 
     return repo_directory
 
@@ -171,7 +173,7 @@ def create_memory(
 
 
 def create_agent(config: AppConfig) -> Agent:
-    agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+    agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
 
@@ -189,7 +191,7 @@ def create_controller(
     config: AppConfig,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
-) -> Tuple[AgentController, State | None]:
+) -> tuple[AgentController, State | None]:
     event_stream = runtime.event_stream
     initial_state = None
     try:

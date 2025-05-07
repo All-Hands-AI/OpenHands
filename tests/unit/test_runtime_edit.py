@@ -34,7 +34,7 @@ class MockRuntime(FileEditRuntimeMixin):
     def __init__(self, config, *args, **kwargs):
         # Initialize FileEditRuntimeMixin part
         # Assuming enable_llm_editor=False as we are testing llm_diff_edit
-        super().__init__(enable_llm_editor=False, *args, **kwargs)
+        super().__init__(enable_llm_editor=False, *args, **kwargs)  # noqa: B026
         self.config = config
         # Mock essential methods used by llm_diff_edit
         self.read = MagicMock()

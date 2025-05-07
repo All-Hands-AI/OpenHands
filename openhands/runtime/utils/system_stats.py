@@ -5,7 +5,7 @@ import time
 import psutil
 
 
-def get_system_stats() -> dict:
+def get_system_stats() -> dict[str, object]:
     """Get current system resource statistics.
 
     Returns:

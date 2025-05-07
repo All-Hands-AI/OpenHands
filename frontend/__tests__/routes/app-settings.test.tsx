@@ -5,7 +5,6 @@ import userEvent from "@testing-library/user-event";
 import AppSettingsScreen from "#/routes/app-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { AuthProvider } from "#/context/auth-context";
 import { AvailableLanguages } from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
@@ -14,7 +13,7 @@ const renderAppSettingsScreen = () =>
   render(<AppSettingsScreen />, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={new QueryClient()}>
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </QueryClientProvider>
     ),
   });

@@ -7,6 +7,9 @@ select = [
     "Q",
     "B",
     "ASYNC",
+    "UP006",  # Use `list` instead of `List` for annotations
+    "UP007",  # Use `X | Y` instead of `Union[X, Y]`
+    "UP008",  # Use `X | None` instead of `Optional[X]`
 ]
 
 ignore = [

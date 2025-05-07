@@ -42,7 +42,7 @@ websocat ws://127.0.0.1:3000/ws
 ```sh
 LLM_API_KEY=sk-... # Your Anthropic API Key
 LLM_MODEL=claude-3-5-sonnet-20241022 # Default model for the agent to use
-WORKSPACE_BASE=/path/to/your/workspace # Default absolute path to workspace
+SANDBOX_VOLUMES=/path/to/your/workspace:/workspace:rw # Mount paths in format host_path:container_path:mode
 ```
 
 ## API Schema
