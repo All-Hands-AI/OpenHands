@@ -9,6 +9,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
+from openhands.events.stream import EventStream
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )
@@ -30,23 +31,24 @@ async def test_auto_generate_title_with_llm():
     conversation_id = 'test-conversation'
     user_id = 'test-user'
 
-    # Create a mock event stream with a user message
-    with patch(
-        'openhands.events.stream.EventStream', autospec=True
-    ) as mock_event_stream_cls:
-        # Create a mock event
-        user_message = MessageAction(
-            id=1,
-            source=EventSource.USER,
-            action='message',
-            args={'content': 'Help me write a Python script to analyze data'},
-            message='Help me write a Python script to analyze data',
-            timestamp=datetime.now(timezone.utc).isoformat(),
-        )
+    # Create a mock event
+    user_message = MessageAction(
+        id=1,
+        source=EventSource.USER,
+        action='message',
+        args={'content': 'Help me write a Python script to analyze data'},
+        message='Help me write a Python script to analyze data',
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
 
+    # Mock the EventStream class
+    with patch(
+        'openhands.server.conversation_manager.standalone_conversation_manager.EventStream'
+    ) as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
-        mock_event_stream = mock_event_stream_cls.return_value
+        mock_event_stream = MagicMock(spec=EventStream)
         mock_event_stream.get_events.return_value = [user_message]
+        mock_event_stream_cls.return_value = mock_event_stream
 
         # Mock the LLM response
         with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
@@ -79,6 +81,11 @@ async def test_auto_generate_title_with_llm():
             # Verify the result
             assert title == 'Python Data Analysis Script'
 
+            # Verify EventStream was created with the correct parameters
+            mock_event_stream_cls.assert_called_once_with(
+                conversation_id, file_store, user_id
+            )
+
             # Verify LLM was called with appropriate parameters
             mock_llm_cls.assert_called_once_with(
                 LLMConfig(
@@ -103,24 +110,25 @@ async def test_auto_generate_title_fallback():
     conversation_id = 'test-conversation'
     user_id = 'test-user'
 
-    # Create a mock event stream with a user message
-    with patch(
-        'openhands.events.stream.EventStream', autospec=True
-    ) as mock_event_stream_cls:
-        # Create a mock event with a long message
-        long_message = 'This is a very long message that should be truncated when used as a title because it exceeds the maximum length allowed for titles'
-        user_message = MessageAction(
-            id=1,
-            source=EventSource.USER,
-            action='message',
-            args={'content': long_message},
-            message=long_message,
-            timestamp=datetime.now(timezone.utc).isoformat(),
-        )
+    # Create a mock event with a long message
+    long_message = 'This is a very long message that should be truncated when used as a title because it exceeds the maximum length allowed for titles'
+    user_message = MessageAction(
+        id=1,
+        source=EventSource.USER,
+        action='message',
+        args={'content': long_message},
+        message=long_message,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
 
+    # Mock the EventStream class
+    with patch(
+        'openhands.server.conversation_manager.standalone_conversation_manager.EventStream'
+    ) as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
-        mock_event_stream = mock_event_stream_cls.return_value
+        mock_event_stream = MagicMock(spec=EventStream)
         mock_event_stream.get_events.return_value = [user_message]
+        mock_event_stream_cls.return_value = mock_event_stream
 
         # Mock the LLM to raise an exception
         with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
@@ -151,6 +159,11 @@ async def test_auto_generate_title_fallback():
             assert title == 'This is a very long message th...'
             assert len(title) <= 30
 
+            # Verify EventStream was created with the correct parameters
+            mock_event_stream_cls.assert_called_once_with(
+                conversation_id, file_store, user_id
+            )
+
 
 @pytest.mark.asyncio
 async def test_auto_generate_title_no_messages():
@@ -165,13 +178,14 @@ async def test_auto_generate_title_no_messages():
     conversation_id = 'test-conversation'
     user_id = 'test-user'
 
-    # Create a mock event stream with no messages
+    # Mock the EventStream class
     with patch(
-        'openhands.events.stream.EventStream', autospec=True
+        'openhands.server.conversation_manager.standalone_conversation_manager.EventStream'
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return no events
-        mock_event_stream = mock_event_stream_cls.return_value
+        mock_event_stream = MagicMock(spec=EventStream)
         mock_event_stream.get_events.return_value = []
+        mock_event_stream_cls.return_value = mock_event_stream
 
         # Create test settings
         settings = Settings(
@@ -193,6 +207,11 @@ async def test_auto_generate_title_no_messages():
 
         # Verify the result is empty
         assert title == ''
+
+        # Verify EventStream was created with the correct parameters
+        mock_event_stream_cls.assert_called_once_with(
+            conversation_id, file_store, user_id
+        )
 
 
 @pytest.mark.asyncio
