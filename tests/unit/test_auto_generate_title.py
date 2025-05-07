@@ -16,16 +16,14 @@ from openhands.server.conversation_manager.standalone_conversation_manager impor
 from openhands.server.monitoring import MonitoringListener
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.memory import InMemoryFileStore
+from openhands.utils.conversation_summary import auto_generate_title
 
 
 @pytest.mark.asyncio
 async def test_auto_generate_title_with_llm():
     """Test auto-generating a title using LLM."""
     # Mock dependencies
-    sio = MagicMock()
-    sio.emit = AsyncMock()
     file_store = InMemoryFileStore()
-    server_config = MagicMock()
 
     # Create test conversation with a user message
     conversation_id = 'test-conversation'
@@ -41,7 +39,7 @@ async def test_auto_generate_title_with_llm():
 
     # Mock the EventStream class
     with patch(
-        'openhands.server.conversation_manager.standalone_conversation_manager.EventStream'
+        'openhands.utils.conversation_summary.EventStream'
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
         mock_event_stream = MagicMock(spec=EventStream)
@@ -63,17 +61,9 @@ async def test_auto_generate_title_with_llm():
                 llm_base_url='test-url',
             )
 
-            # Create the conversation manager and call the method
-            manager = StandaloneConversationManager(
-                sio=sio,
-                config=AppConfig(),
-                file_store=file_store,
-                server_config=server_config,
-                monitoring_listener=MonitoringListener(),
-            )
-
-            title = await manager._auto_generate_title(
-                conversation_id, user_id, settings
+            # Call the auto_generate_title function directly
+            title = await auto_generate_title(
+                conversation_id, user_id, file_store, settings
             )
 
             # Verify the result
@@ -99,10 +89,7 @@ async def test_auto_generate_title_with_llm():
 async def test_auto_generate_title_fallback():
     """Test auto-generating a title with fallback to truncation when LLM fails."""
     # Mock dependencies
-    sio = MagicMock()
-    sio.emit = AsyncMock()
     file_store = InMemoryFileStore()
-    server_config = MagicMock()
 
     # Create test conversation with a user message
     conversation_id = 'test-conversation'
@@ -117,7 +104,7 @@ async def test_auto_generate_title_fallback():
 
     # Mock the EventStream class
     with patch(
-        'openhands.server.conversation_manager.standalone_conversation_manager.EventStream'
+        'openhands.utils.conversation_summary.EventStream'
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
         mock_event_stream = MagicMock(spec=EventStream)
@@ -136,17 +123,9 @@ async def test_auto_generate_title_fallback():
                 llm_base_url='test-url',
             )
 
-            # Create the conversation manager and call the method
-            manager = StandaloneConversationManager(
-                sio=sio,
-                config=AppConfig(),
-                file_store=file_store,
-                server_config=server_config,
-                monitoring_listener=MonitoringListener(),
-            )
-
-            title = await manager._auto_generate_title(
-                conversation_id, user_id, settings
+            # Call the auto_generate_title function directly
+            title = await auto_generate_title(
+                conversation_id, user_id, file_store, settings
             )
 
             # Verify the result is a truncated version of the message
@@ -163,10 +142,7 @@ async def test_auto_generate_title_fallback():
 async def test_auto_generate_title_no_messages():
     """Test auto-generating a title when there are no user messages."""
     # Mock dependencies
-    sio = MagicMock()
-    sio.emit = AsyncMock()
     file_store = InMemoryFileStore()
-    server_config = MagicMock()
 
     # Create test conversation with no messages
     conversation_id = 'test-conversation'
@@ -174,7 +150,7 @@ async def test_auto_generate_title_no_messages():
 
     # Mock the EventStream class
     with patch(
-        'openhands.server.conversation_manager.standalone_conversation_manager.EventStream'
+        'openhands.utils.conversation_summary.EventStream'
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return no events
         mock_event_stream = MagicMock(spec=EventStream)
@@ -188,16 +164,10 @@ async def test_auto_generate_title_no_messages():
             llm_base_url='test-url',
         )
 
-        # Create the conversation manager and call the method
-        manager = StandaloneConversationManager(
-            sio=sio,
-            config=AppConfig(),
-            file_store=file_store,
-            server_config=server_config,
-            monitoring_listener=MonitoringListener(),
+        # Call the auto_generate_title function directly
+        title = await auto_generate_title(
+            conversation_id, user_id, file_store, settings
         )
-
-        title = await manager._auto_generate_title(conversation_id, user_id, settings)
 
         # Verify the result is empty
         assert title == ''
@@ -247,22 +217,24 @@ async def test_update_conversation_with_title():
     # Mock the _get_conversation_store method
     manager._get_conversation_store = AsyncMock(return_value=mock_conversation_store)
 
-    # Mock the _auto_generate_title method
-    manager._auto_generate_title = AsyncMock(return_value='Generated Title')
+    # Mock the auto_generate_title function
+    with patch(
+        'openhands.server.conversation_manager.standalone_conversation_manager.auto_generate_title',
+        AsyncMock(return_value='Generated Title'),
+    ):
+        # Call the method
+        await manager._update_conversation_for_event(
+            user_id, github_user_id, conversation_id, settings
+        )
 
-    # Call the method
-    await manager._update_conversation_for_event(
-        user_id, github_user_id, conversation_id, settings
-    )
+        # Verify the title was updated
+        assert mock_metadata.title == 'Generated Title'
 
-    # Verify the title was updated
-    assert mock_metadata.title == 'Generated Title'
-
-    # Verify the socket.io emit was called with the correct parameters
-    sio.emit.assert_called_once()
-    call_args = sio.emit.call_args[0]
-    assert call_args[0] == 'oh_event'
-    assert call_args[1]['status_update'] is True
-    assert call_args[1]['type'] == 'info'
-    assert call_args[1]['message'] == conversation_id
-    assert call_args[1]['conversation_title'] == 'Generated Title'
+        # Verify the socket.io emit was called with the correct parameters
+        sio.emit.assert_called_once()
+        call_args = sio.emit.call_args[0]
+        assert call_args[0] == 'oh_event'
+        assert call_args[1]['status_update'] is True
+        assert call_args[1]['type'] == 'info'
+        assert call_args[1]['message'] == conversation_id
+        assert call_args[1]['conversation_title'] == 'Generated Title'
