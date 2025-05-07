@@ -51,7 +51,7 @@ export function GitHubTokenInput({
             onChange={onGitHubHostChange || (() => {})}
             name="github-host-input"
             testId="github-host-input"
-            label="GitHub Host (optional)"
+            label={t(I18nKey.GITHUB$HOST_LABEL)}
             type="text"
             className="w-[680px]"
             placeholder="github.com"

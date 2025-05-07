@@ -51,7 +51,7 @@ export function GitLabTokenInput({
             onChange={onGitLabHostChange || (() => {})}
             name="gitlab-host-input"
             testId="gitlab-host-input"
-            label="GitLab Host (optional)"
+            label={t(I18nKey.GITLAB$HOST_LABEL)}
             type="text"
             className="w-[680px]"
             placeholder="gitlab.com"
