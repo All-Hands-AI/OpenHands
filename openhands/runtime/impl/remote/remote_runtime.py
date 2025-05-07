@@ -98,7 +98,9 @@ class RemoteRuntime(ActionExecutionClient):
         getattr(logger, level)(message, stacklevel=2)
 
     @property
-    def action_execution_server_url(self) -> str | None:
+    def action_execution_server_url(self) -> str:
+        if self.runtime_url is None:
+            raise NotImplementedError('Runtime URL is not initialized')
         return self.runtime_url
 
     async def connect(self) -> None:
@@ -267,7 +269,9 @@ class RemoteRuntime(ActionExecutionClient):
             raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self) -> None:
-        """
+        """Resume a stopped runtime.
+
+        Steps:
         1. Show status update that runtime is being started.
         2. Send the runtime API a /resume request
         3. Poll for the runtime to be ready
