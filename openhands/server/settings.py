@@ -5,6 +5,7 @@ from pydantic import (
     SecretStr,
 )
 
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.storage.data_models.settings import Settings
@@ -15,6 +16,7 @@ class POSTProviderModel(BaseModel):
     Settings for POST requests
     """
 
+    mcp_config: MCPConfig | None = None
     provider_tokens: dict[ProviderType, ProviderToken] = {}
 
 
