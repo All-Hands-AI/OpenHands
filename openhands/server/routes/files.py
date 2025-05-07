@@ -1,5 +1,7 @@
+import base64
 import os
 
+import aiofiles  # type: ignore
 from fastapi import (
     APIRouter,
     HTTPException,
@@ -140,15 +142,26 @@ async def select_file(file: str, request: Request):
         logger.error(f'Error opening file {file}: {observation}')
 
         if 'ERROR_BINARY_FILE' in observation.message:
+            try:
+                async with aiofiles.open(file, 'rb') as f:
+                    binary_data = await f.read()
+                    base64_encoded = base64.b64encode(binary_data).decode('utf-8')
+                    return {'code': base64_encoded}
+            except Exception as e:
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={'error': f'Error reading binary file: {e}'},
+                )
+        else:
             return JSONResponse(
-                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                content={'error': f'Unable to open binary file: {file}'},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={'error': f'Error opening file: {observation}'},
             )
 
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error opening file: {observation}'},
-        )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={'error': f'Error opening file: {observation}'},
+    )
 
 
 @app.get('/zip-directory')
