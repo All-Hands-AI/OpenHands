@@ -170,7 +170,7 @@ Phase 2. EXPLORATION: find the files that are related to the problem and possibl
    2.2 Identify all files related to the problem statement.
    2.3 Propose the methods and files to fix the issue and explain why.
 
-Phase 3. [IMPORTANT] REPRODUCTION: before you implement any fix, you MUST write comprehensive tests that will be used to visually analyse the issue and test your proposed changes. Do NOT assume that existing tests in the repository are sufficient for testing your implementation.
+Phase 3. [IMPORTANT] REPRODUCTION: before you implement any fix, you MUST write comprehensive tests that will be used to analyse the issue and test your proposed changes. You MUST visually analyse the issue and the proposed fix whenever applicable. Do NOT assume that existing tests in the repository are sufficient for testing your implementation.
    3.1 Create a comprehensive test file which checks all possible edge cases for your fix. Whenever applicable, you MUST visually verify the issue using the browser.
    3.2 Run the test file to confirm that the issue exists.
    3.3 If the issue description contains links to online IDEs containing code for reproducing the error, you should refer to these as well.
@@ -186,7 +186,7 @@ Phase 5. IMPLEMENTATION: Edit the source code to implement your chosen solution.
    5.1 Make minimal, focused changes to fix the issue.
    5.2 Check the versions of programming languages and packages to ensure that your code is syntactically correct.
 
-Phase 6. [IMPORTANT] VERIFICATION: Test your implementation thoroughly and whenever applicable visually verify that your implementation is correct by launching the website or app, inspecting the relevant UI component, and ensuring the expected behavior or layout is achieved.
+Phase 6. [IMPORTANT] VERIFICATION: Test your implementation thoroughly using tests from phase 3 and using the existing tests in the repository. Whenever applicable visually verify that your implementation is correct by launching the website or app, inspecting the relevant UI component, and ensuring the expected behavior or layout is achieved.
    6.1 Run your tests from Phase 3 to verify your implementation.
    6.2 Add more edge cases to your tests to ensure comprehensive coverage.
    6.3 You MUST run existing tests in the repository which are related to the modified code to ensure you have not broken existing functionality. Do NOT modify existing test files in the repository.
@@ -206,7 +206,7 @@ Be thorough in your exploration, testing, and reasoning. It is fine if your thin
         instruction += (
             '<IMPORTANT!>\n'
             'You SHOULD NEVER attempt to access GitHub.\n'
-            'Since you are dealing with front-end code, it is extremely important that you MUST visually verify the correctness of your implementation.\n'
+            'Since you are dealing with front-end code, it is extremely important that you MUST visually verify the correctness of your implementation whenever applicable.\n'
             'You MUST check the versions of programming languages and packages to ensure that all your code is syntactically correct.\n'
             'The bash terminal may not generate any output for commands that run servers or host websites. You MUST access them using the browser.\n'
             '</IMPORTANT!>\n'
@@ -989,6 +989,11 @@ if __name__ == '__main__':
             instances = prepare_dataset(
                 swe_bench_tests, cur_output_file, args.eval_n_limit, eval_ids=eval_ids
             )
+            try:
+                instances = instances[instances['repo'] == 'bpmn-io/bpmn-js']
+            except Exception as _:
+                pass
+            instances = instances.head(45)
             if len(instances) > 0 and not isinstance(
                 instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
             ):

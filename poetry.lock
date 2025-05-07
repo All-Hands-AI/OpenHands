@@ -5205,7 +5205,7 @@ youtube-transcript-api = ">=0.6.2"
 type = "git"
 url = "https://github.com/adityasoni9998/openhands-aci.git"
 reference = "file_viewer_gaia"
-resolved_reference = "43032bbb82f40e48f93baf2dc3f0c7faac4dc18f"
+resolved_reference = "471f479d5fee8e2fc2bdbb4e9a8d26a372e382d5"
 
 [[package]]
 name = "openpyxl"
@@ -8319,6 +8319,23 @@ files = [
 widechars = ["wcwidth"]
 
 [[package]]
+name = "tavily-python"
+version = "0.7.1"
+description = "Python wrapper for the Tavily API"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "tavily_python-0.7.1-py3-none-any.whl", hash = "sha256:a73c8e68925a62bfe08e3a8bb4434d64d4e62c82081cc8a68a071b78673e9590"},
+    {file = "tavily_python-0.7.1.tar.gz", hash = "sha256:ccbba587fa38d181d54670d6ce26e4f31ad9c7c7f0835d191b9bb542b085dc36"},
+]
+
+[package.dependencies]
+httpx = "*"
+requests = "*"
+tiktoken = ">=0.5.1"
+
+[[package]]
 name = "tenacity"
 version = "9.0.0"
 description = "Retry code until it succeeds"
@@ -9835,4 +9852,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "7d0baf338e20224bacc64b0c0283d4069e367df6a6c5dc1c4478687510384b29"
+content-hash = "ce20c44237aec061051c888c542acbbbd640cd27a5797000af0dbd1e62ea1fda"
