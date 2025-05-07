@@ -17,22 +17,6 @@ from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
 
-# def load_from_huggingface(
-#     dataset_name: str = 'all-hands/openhands-feedback', split: str = 'train'
-# ):
-#     """
-#     Load trajectory data from the HuggingFace dataset.
-
-#     Args:
-#         dataset_name: Name of the dataset on HuggingFace
-#         split: Dataset split to load (default: "train")
-
-#     Returns:
-#         List of trajectories from the dataset
-#     """
-#     dataset = load_dataset(dataset_name, split=split)
-#     return dataset
-
 
 def extract_timestamps(
     timestamp_range: Optional[str],
@@ -221,38 +205,6 @@ class TrajectoryProcessor:
         return json.dumps(trajectory_data, indent=2)
 
 
-# def process_dataset_example(example: Dict[str, Any]) -> Dict[str, Any]:
-#     """
-#     Process a specific example from the HuggingFace dataset.
-
-#     Args:
-#         example: A dictionary representing one example from the dataset
-
-#     Returns:
-#         A processed trajectory ready for summarization
-#     """
-#     # Extract the trajectory from the example
-#     trajectory = example.get('trajectory', [])
-
-#     # Preprocess the trajectory
-#     processed_trajectory = TrajectoryProcessor.preprocess_trajectory(trajectory)
-
-#     # Format the trajectory for the prompt
-#     formatted_trajectory = TrajectoryProcessor.format_trajectory_for_prompt(
-#         processed_trajectory
-#     )
-
-#     return {
-#         'raw_trajectory': trajectory,
-#         'processed_trajectory': processed_trajectory,
-#         'formatted_trajectory': formatted_trajectory,
-#         'feedback': example.get('feedback', ''),
-#         'version': example.get('version', ''),
-#         'permissions': example.get('permissions', ''),
-#         'timestamp': example.get('timestamp', ''),
-#     }
-
-
 class TrajectorySummarizer:
     """
     Summarize agent trajectories using LLM.
@@ -299,6 +251,9 @@ class TrajectorySummarizer:
         Returns:
             A dictionary containing the summarization
         """
+
+        logger.info('DEBUG - Summarizing trajectory')
+
         # If trajectory is a list, convert it to a JSON string
         if isinstance(trajectory, list):
             trajectory = TrajectoryProcessor.format_trajectory_for_prompt(trajectory)
@@ -326,6 +281,9 @@ class TrajectorySummarizer:
 
         # Extract the response text
         response_text = response.choices[0].message.content
+
+        # Debug: Print the raw response
+        logger.info(f'DEBUG - Raw LLM response: {response_text}')
 
         # Parse the response
         parsed_response = parse_llm_response_to_json(response_text)
@@ -447,33 +405,6 @@ class TrajectorySummarizer:
             logger.error(f'JSON parsing error: {e}')
             # If parsing fails, return a minimal valid structure with empty string
             return {'overall_summary': ''}
-
-    # def batch_summarize_trajectories(
-    #     self,
-    #     trajectories: List[Union[str, List[Dict[str, Any]]]],
-    #     llm: Optional[LLM] = None,
-    # ) -> List[Dict[str, Any]]:
-    #     """
-    #     Summarize multiple trajectories.
-
-    #     Args:
-    #         trajectories: List of trajectories to summarize
-    #         llm: Optional LLM instance to use for all summarizations
-
-    #     Returns:
-    #         List of summarizations
-    #     """
-    #     results = []
-
-    #     for trajectory in trajectories:
-    #         try:
-    #             summary = self.summarize_trajectory(trajectory, llm=llm)
-    #             results.append(summary)
-    #         except Exception as e:
-    #             logger.error(f'Error summarizing trajectory: {e}')
-    #             results.append({'overall_summary': f'Error: {str(e)}', 'segments': []})
-
-    #     return results
 
     @staticmethod
     async def get_trajectory_from_event_stream(
