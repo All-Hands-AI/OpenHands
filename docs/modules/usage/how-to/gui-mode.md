@@ -122,7 +122,7 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 
 ### Advanced Settings
 
-1. Inside the Settings page, toggle `Advanced` options to access additional settings.
+1. Inside the Settings page, under the `LLM` tab, toggle `Advanced` options to access additional settings.
 2. Use the `Custom Model` text box to manually enter a model if it's not in the list.
 3. Specify a `Base URL` if required by your LLM provider.
 
