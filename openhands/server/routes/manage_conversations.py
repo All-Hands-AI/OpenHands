@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
@@ -75,7 +76,7 @@ async def _create_new_conversation(
     replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
-):
+) -> str:
     logger.info(
         'Creating conversation',
         extra={
@@ -89,7 +90,7 @@ async def _create_new_conversation(
     settings = await settings_store.load()
     logger.info('Settings loaded')
 
-    session_init_args: dict = {}
+    session_init_args: dict[str, Any] = {}
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,
@@ -172,7 +173,7 @@ async def new_conversation(
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     auth_type: AuthType | None = Depends(get_auth_type),
-):
+) -> JSONResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket

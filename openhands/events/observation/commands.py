@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
-from datetime import datetime, timezone
 
 CMD_OUTPUT_PS1_BEGIN = '\n###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###'
@@ -162,9 +161,6 @@ class CmdOutputObservation(Observation):
             ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
         if self.metadata.exit_code != -1:
             ret += f'\n[Command finished with exit code {self.metadata.exit_code}]'
-
-        utc_now = datetime.now(timezone.utc)
-        ret += f'\n[Timestamp (UTC): {utc_now.strftime('%a %b %d %H:%M:%S %Z %Y')}]' # Formatted time, e.g Mon Mar 25 22:01:53 UTC 2025
         return ret
 
 

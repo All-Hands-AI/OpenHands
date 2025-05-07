@@ -6,10 +6,9 @@ import string
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import List
 
 import docker
-from dirhash import dirhash  # type: ignore
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -111,7 +110,7 @@ def build_runtime_image(
     build_folder: str | None = None,
     dry_run: bool = False,
     force_rebuild: bool = False,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     """Prepares the final docker build folder.
 
@@ -167,7 +166,7 @@ def build_runtime_image_in_folder(
     dry_run: bool,
     force_rebuild: bool,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
@@ -284,8 +283,9 @@ def prep_build_folder(
         build_from=build_from,
         extra_deps=extra_deps,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
-        file.write(dockerfile_content)  # type: ignore
+    dockerfile_path = Path(build_folder, 'Dockerfile')
+    with open(str(dockerfile_path), 'w') as f:
+        f.write(dockerfile_content)
 
 
 _ALPHABET = string.digits + string.ascii_lowercase
@@ -294,7 +294,7 @@ _ALPHABET = string.digits + string.ascii_lowercase
 def truncate_hash(hash: str) -> str:
     """Convert the base16 hash to base36 and truncate at 16 characters."""
     value = int(hash, 16)
-    result: List[str] = []
+    result: list[str] = []
     while value > 0 and len(result) < 16:
         value, remainder = divmod(value, len(_ALPHABET))
         result.append(_ALPHABET[remainder])
@@ -347,7 +347,7 @@ def _build_sandbox_image(
     lock_tag: str,
     versioned_tag: str | None,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
     names = [

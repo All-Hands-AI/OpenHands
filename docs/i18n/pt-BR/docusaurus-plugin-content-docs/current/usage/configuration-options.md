@@ -1,14 +1,13 @@
 # Opções de Configuração
 
-Este guia detalha todas as opções de configuração disponíveis para o OpenHands, ajudando você a personalizar seu comportamento e integrá-lo com outros serviços.
-
 :::note
-Se você estiver executando no [Modo GUI](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), as configurações disponíveis na UI de Configurações sempre terão precedência.
+Esta página descreve todas as opções de configuração disponíveis para o OpenHands, permitindo que você personalize seu comportamento e
+o integre com outros serviços. No Modo GUI, quaisquer configurações aplicadas através da interface de Configurações terão precedência.
 :::
 
 ## Configuração Principal
 
-As opções de configuração principais são definidas na seção `[core]` do arquivo `config.toml`.
+As opções de configuração principal são definidas na seção `[core]` do arquivo `config.toml`.
 
 ### Chaves de API
 - `e2b_api_key`
@@ -26,38 +25,38 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Padrão: `""`
   - Descrição: Segredo do token de API para Modal
 
-### Workspace
-- `workspace_base`
+### Espaço de Trabalho
+- `workspace_base` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `"./workspace"`
-  - Descrição: Caminho base para o workspace
+  - Descrição: Caminho base para o espaço de trabalho. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
 - `cache_dir`
   - Tipo: `str`
   - Padrão: `"/tmp/cache"`
   - Descrição: Caminho do diretório de cache
 
-### Depuração e Log
+### Depuração e Registro
 - `debug`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Habilitar depuração
+  - Descrição: Ativar depuração
 
 - `disable_color`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Desabilitar cor na saída do terminal
+  - Descrição: Desativar cores na saída do terminal
 
 ### Trajetórias
 - `save_trajectory_path`
   - Tipo: `str`
   - Padrão: `"./trajectories"`
-  - Descrição: Caminho para armazenar trajetórias (pode ser uma pasta ou um arquivo). Se for uma pasta, as trajetórias serão salvas em um arquivo nomeado com o nome do id da sessão e extensão .json, nessa pasta.
+  - Descrição: Caminho para armazenar trajetórias (pode ser uma pasta ou um arquivo). Se for uma pasta, as trajetórias serão salvas em um arquivo nomeado com o ID da sessão e extensão .json, nessa pasta.
 
 - `replay_trajectory_path`
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Caminho para carregar uma trajetória e reproduzir. Se fornecido, deve ser um caminho para o arquivo de trajetória no formato JSON. As ações no arquivo de trajetória seriam reproduzidas primeiro antes de qualquer instrução do usuário ser executada.
+  - Descrição: Caminho para carregar uma trajetória e reproduzir. Se fornecido, deve ser um caminho para o arquivo de trajetória em formato JSON. As ações no arquivo de trajetória serão reproduzidas primeiro antes que qualquer instrução do usuário seja executada.
 
 ### Armazenamento de Arquivos
 - `file_store_path`
@@ -71,7 +70,7 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Descrição: Tipo de armazenamento de arquivos
 
 - `file_uploads_allowed_extensions`
-  - Tipo: `list of str`
+  - Tipo: `lista de str`
   - Padrão: `[".*"]`
   - Descrição: Lista de extensões de arquivo permitidas para uploads
 
@@ -86,7 +85,7 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Descrição: Restringir tipos de arquivo para uploads de arquivos
 
 - `file_uploads_allowed_extensions`
-  - Tipo: `list of str`
+  - Tipo: `lista de str`
   - Padrão: `[".*"]`
   - Descrição: Lista de extensões de arquivo permitidas para uploads
 
@@ -101,21 +100,26 @@ As opções de configuração principais são definidas na seção `[core]` do a
   - Padrão: `100`
   - Descrição: Número máximo de iterações
 
-### Configuração do Sandbox
-- `workspace_mount_path_in_sandbox`
+### Configuração da Sandbox
+- `volumes`
+  - Tipo: `str`
+  - Padrão: `None`
+  - Descrição: Montagens de volume no formato 'caminho_host:caminho_container[:modo]', ex. '/meu/dir/host:/workspace:rw'. Múltiplas montagens podem ser especificadas usando vírgulas, ex. '/caminho1:/workspace/caminho1,/caminho2:/workspace/caminho2:ro'
+
+- `workspace_mount_path_in_sandbox` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `"/workspace"`
-  - Descrição: Caminho para montar o workspace no sandbox
+  - Descrição: Caminho para montar o espaço de trabalho na sandbox. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
-- `workspace_mount_path`
+- `workspace_mount_path` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Caminho para montar o workspace
+  - Descrição: Caminho para montar o espaço de trabalho. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
-- `workspace_mount_rewrite`
+- `workspace_mount_rewrite` **(Obsoleto)**
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Caminho para reescrever o caminho de montagem do workspace. Você geralmente pode ignorar isso, refere-se a casos especiais de execução dentro de outro contêiner.
+  - Descrição: Caminho para reescrever o caminho de montagem do espaço de trabalho. Você geralmente pode ignorar isso, refere-se a casos especiais de execução dentro de outro contêiner. **Obsoleto: Use `SANDBOX_VOLUMES` em vez disso.**
 
 ### Diversos
 - `run_as_openhands`
@@ -142,10 +146,10 @@ As opções de configuração principais são definidas na seção `[core]` do a
 
 As opções de configuração do LLM (Large Language Model) são definidas na seção `[llm]` do arquivo `config.toml`.
 
-Para usá-las com o comando docker, passe `-e LLM_<opção>`. Exemplo: `-e LLM_NUM_RETRIES`.
+Para usar estas com o comando docker, passe `-e LLM_<opção>`. Exemplo: `-e LLM_NUM_RETRIES`.
 
 :::note
-Para configurações de desenvolvimento, você também pode definir configurações de LLM personalizadas nomeadas. Veja [Configurações Personalizadas de LLM](./llms/custom-llm-configs) para detalhes.
+Para configurações de desenvolvimento, você também pode definir configurações de LLM personalizadas com nomes. Veja [Configurações Personalizadas de LLM](./llms/custom-llm-configs) para detalhes.
 :::
 
 **Credenciais AWS**
@@ -162,7 +166,7 @@ Para configurações de desenvolvimento, você também pode definir configuraç�
 - `aws_secret_access_key`
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Chave secreta de acesso AWS
+  - Descrição: Chave de acesso secreta AWS
 
 ### Configuração da API
 - `api_key`
@@ -190,14 +194,13 @@ Para configurações de desenvolvimento, você também pode definir configuraç�
   - Padrão: `0.0`
   - Descrição: Custo por token de saída
 
-### Provedor LLM Personalizado
+### Provedor de LLM Personalizado
 - `custom_llm_provider`
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Provedor LLM personalizado
+  - Descrição: Provedor de LLM personalizado
 
-
-### Tratamento de Mensagens
+### Manipulação de Mensagens
 - `max_message_chars`
   - Tipo: `int`
   - Padrão: `30000`
@@ -219,7 +222,7 @@ Para configurações de desenvolvimento, você também pode definir configuraç�
   - Padrão: `"claude-3-5-sonnet-20241022"`
   - Descrição: Modelo a ser usado
 
-### Tentativas
+### Repetição de Tentativas
 - `num_retries`
   - Tipo: `int`
   - Padrão: `8`
@@ -238,7 +241,7 @@ Para configurações de desenvolvimento, você também pode definir configuraç�
 - `retry_multiplier`
   - Tipo: `float`
   - Padrão: `2.0`
-  - Descrição: Multiplicador para cálculo de backoff exponencial
+  - Descrição: Multiplicador para cálculo de recuo exponencial
 
 ### Opções Avançadas
 - `drop_params`
@@ -264,7 +267,7 @@ Para configurações de desenvolvimento, você também pode definir configuraç�
 - `timeout`
   - Tipo: `int`
   - Padrão: `0`
-  - Descrição: Timeout para a API
+  - Descrição: Tempo limite para a API
 
 - `top_p`
   - Tipo: `float`
@@ -274,19 +277,19 @@ Para configurações de desenvolvimento, você também pode definir configuraç�
 - `disable_vision`
   - Tipo: `bool`
   - Padrão: `None`
-  - Descrição: Se o modelo é capaz de visão, esta opção permite desabilitar o processamento de imagem (útil para redução de custo)
+  - Descrição: Se o modelo for capaz de visão, esta opção permite desativar o processamento de imagens (útil para redução de custos)
 
 ## Configuração do Agente
 
-As opções de configuração do agente são definidas nas seções `[agent]` e `[agent.<agent_name>]` do arquivo `config.toml`.
+As opções de configuração do agente são definidas nas seções `[agent]` e `[agent.<nome_do_agente>]` do arquivo `config.toml`.
 
 ### Configuração do LLM
 - `llm_config`
   - Tipo: `str`
   - Padrão: `'your-llm-config-group'`
-  - Descrição: O nome da configuração LLM a ser usada
+  - Descrição: O nome da configuração de LLM a ser usada
 
-### Configuração do Espaço de Ação
+### Configuração do Espaço de Ações
 - `function_calling`
   - Tipo: `bool`
   - Padrão: `true`
@@ -295,22 +298,22 @@ As opções de configuração do agente são definidas nas seções `[agent]` e 
 - `enable_browsing`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Se o delegado de navegação está habilitado no espaço de ação (funciona apenas com chamada de função)
+  - Descrição: Se o delegado de navegação está habilitado no espaço de ações (funciona apenas com chamada de função)
 
 - `enable_llm_editor`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Se o editor LLM está habilitado no espaço de ação (funciona apenas com chamada de função)
+  - Descrição: Se o editor LLM está habilitado no espaço de ações (funciona apenas com chamada de função)
 
 - `enable_jupyter`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Se o Jupyter está habilitado no espaço de ação
+  - Descrição: Se o Jupyter está habilitado no espaço de ações
 
 - `enable_history_truncation`
   - Tipo: `bool`
   - Padrão: `true`
-  - Descrição: Se o histórico deve ser truncado para continuar a sessão ao atingir o limite de comprimento de contexto do LLM
+  - Descrição: Se o histórico deve ser truncado para continuar a sessão quando atingir o limite de comprimento de contexto do LLM
 
 ### Uso de Microagentes
 - `enable_prompt_extensions`
@@ -319,49 +322,49 @@ As opções de configuração do agente são definidas nas seções `[agent]` e 
   - Descrição: Se deve usar microagentes
 
 - `disabled_microagents`
-  - Tipo: `list of str`
+  - Tipo: `lista de str`
   - Padrão: `None`
-  - Descrição: Uma lista de microagentes a serem desabilitados
+  - Descrição: Uma lista de microagentes para desativar
 
-## Configuração do Sandbox
+## Configuração da Sandbox
 
-As opções de configuração do sandbox são definidas na seção `[sandbox]` do arquivo `config.toml`.
+As opções de configuração da sandbox são definidas na seção `[sandbox]` do arquivo `config.toml`.
 
-Para usá-las com o comando docker, passe `-e SANDBOX_<opção>`. Exemplo: `-e SANDBOX_TIMEOUT`.
+Para usar estas com o comando docker, passe `-e SANDBOX_<opção>`. Exemplo: `-e SANDBOX_TIMEOUT`.
 
 ### Execução
 - `timeout`
   - Tipo: `int`
   - Padrão: `120`
-  - Descrição: Timeout do sandbox em segundos
+  - Descrição: Tempo limite da sandbox em segundos
 
 - `user_id`
   - Tipo: `int`
   - Padrão: `1000`
-  - Descrição: ID do usuário do sandbox
+  - Descrição: ID de usuário da sandbox
 
 ### Imagem do Contêiner
 - `base_container_image`
   - Tipo: `str`
   - Padrão: `"nikolaik/python-nodejs:python3.12-nodejs22"`
-  - Descrição: Imagem do contêiner a ser usada para o sandbox
+  - Descrição: Imagem do contêiner a ser usada para a sandbox
 
 ### Rede
 - `use_host_network`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Usar a rede do host
+  - Descrição: Usar rede do host
 
 - `runtime_binding_address`
   - Tipo: `str`
   - Padrão: `0.0.0.0`
-  - Descrição: O endereço de ligação para as portas de tempo de execução. Especifica em qual interface de rede na máquina host o Docker deve ligar as portas de tempo de execução.
+  - Descrição: O endereço de vinculação para as portas de runtime. Especifica qual interface de rede na máquina host o Docker deve vincular as portas de runtime.
 
 ### Linting e Plugins
 - `enable_auto_lint`
   - Tipo: `bool`
   - Padrão: `false`
-  - Descrição: Habilitar linting automático após a edição
+  - Descrição: Habilitar linting automático após edição
 
 - `initialize_plugins`
   - Tipo: `bool`
@@ -372,25 +375,8 @@ Para usá-las com o comando docker, passe `-e SANDBOX_<opção>`. Exemplo: `-e S
 - `runtime_extra_deps`
   - Tipo: `str`
   - Padrão: `""`
-  - Descrição: Dependências extras a serem instaladas na imagem de tempo de execução
+  - Descrição: Dependências extras para instalar na imagem de runtime
 
 - `runtime_startup_env_vars`
   - Tipo: `dict`
-  - Padrão: `{}`
-  - Descrição: Variáveis de ambiente a serem definidas no lançamento do tempo de execução
-
-### Avaliação
-- `browsergym_eval_env`
-  - Tipo: `str`
-  - Padrão: `""`
-  - Descrição: Ambiente BrowserGym a ser usado para avaliação
-
-## Configuração de Segurança
-
-As opções de configuração de segurança são definidas na seção `[security]` do arquivo `config.toml`.
-
-Para usá-las com o comando docker, passe `-e SECURITY_<opção>`. Exemplo: `-e SECURITY_CONFIRMATION_MODE`.
-
-### Modo de Confirmação
-- `confirmation_mode`
-  - Tipo
+  - Padr

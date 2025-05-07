@@ -5,7 +5,6 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { addErrorMessage } from "#/state/chat-slice";
 import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
-import { useEndSession } from "./use-end-session";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 interface ServerError {
@@ -21,7 +20,6 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 
 export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
-  const endSession = useEndSession();
   const dispatch = useDispatch();
 
   React.useEffect(() => {
@@ -33,7 +31,6 @@ export const useHandleWSEvents = () => {
     if (isServerError(event)) {
       if (event.error_code === 401) {
         displayErrorToast("Session expired.");
-        endSession();
         return;
       }
 
