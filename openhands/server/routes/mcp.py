@@ -2,6 +2,23 @@
 MCP (Model Context Protocol) server for creating pull requests on GitHub or merge requests on GitLab.
 This module implements a basic MCP server that exposes tools for creating PRs/MRs using our existing
 GitHub and GitLab clients.
+
+To configure the MCP server in your OpenHands configuration, add the following to your config.toml file:
+
+```toml
+[mcp]
+# List of MCP SSE servers
+sse_servers = [
+    {
+        # The URL of the MCP server
+        url = "http://localhost:12000/mcp",
+        # Optional API key for authentication (not required for local development)
+        api_key = ""
+    }
+]
+```
+
+This will allow the agent to use the MCP server for creating pull requests and merge requests.
 """
 
 import json
