@@ -298,20 +298,7 @@ async def get_conversation(
         return conversation_info
     except FileNotFoundError:
         return None
-
-
-@app.patch('/conversations/{conversation_id}')
-async def update_conversation(
-    conversation_id: str,
-    title: str = Body(embed=True),
-    user_id: str | None = Depends(get_user_id),
-) -> bool:
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if not metadata:
-        return False
-    return True
-
+    
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
