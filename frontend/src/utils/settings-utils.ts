@@ -62,6 +62,8 @@ export const extractSettings = (
   } = extractAdvancedFormData(formData);
 
   // Get MCP configuration from hidden field if it exists
+  // This is used by both the settings modal and any other forms that might include MCP configuration
+  // The MCP config is stored as a JSON string in a hidden form field
   const mcpConfigStr = formData.get("mcp-config")?.toString();
   let mcpConfig;
   if (mcpConfigStr) {
@@ -69,6 +71,7 @@ export const extractSettings = (
       mcpConfig = JSON.parse(mcpConfigStr);
     } catch (e) {
       // Failed to parse MCP configuration, using default empty config
+      console.warn("Failed to parse MCP configuration:", e);
     }
   }
   return {
