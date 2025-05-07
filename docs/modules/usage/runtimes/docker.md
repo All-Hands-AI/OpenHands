@@ -39,16 +39,16 @@ Examples:
 
 ```bash
 # Linux and Mac Example - Writable workspace
-export SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
+-e SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
 
 # WSL on Windows Example - Writable workspace
-export SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
+-e SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
 
 # Read-only reference code example
-export SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
+-e SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
 
 # Multiple mounts example - Writable workspace with read-only reference data
-export SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
+-e SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
 ```
 
 ### Using WORKSPACE_* variables (Deprecated)
