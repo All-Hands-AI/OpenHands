@@ -103,31 +103,33 @@ function GitSettingsScreen() {
             <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
           )}
 
-          <GitHubTokenInput
-            name="github-token-input"
-            isGitHubTokenSet={isGitHubTokenSet}
-            onChange={(value) => {
-              setGithubTokenInputHasValue(!!value);
-            }}
-            onGitHubHostChange={(value) => {
-              setGitlabHostInputHasValue(!!value);
-            }}
-            githubHostSet={existingGithubHost}
-            isSaas={isSaas}
-          />
+          {!isSaas && (
+            <GitHubTokenInput
+              name="github-token-input"
+              isGitHubTokenSet={isGitHubTokenSet}
+              onChange={(value) => {
+                setGithubTokenInputHasValue(!!value);
+              }}
+              onGitHubHostChange={(value) => {
+                setGitlabHostInputHasValue(!!value);
+              }}
+              githubHostSet={existingGithubHost}
+            />
+          )}
 
-          <GitLabTokenInput
-            name="gitlab-token-input"
-            isGitLabTokenSet={isGitLabTokenSet}
-            onChange={(value) => {
-              setGitlabTokenInputHasValue(!!value);
-            }}
-            onGitLabHostChange={(value) => {
-              setGitlabHostInputHasValue(!!value);
-            }}
-            gitlabHostSet={existingGitlabHost}
-            isSaas={isSaas}
-          />
+          {!isSaas && (
+            <GitLabTokenInput
+              name="gitlab-token-input"
+              isGitLabTokenSet={isGitLabTokenSet}
+              onChange={(value) => {
+                setGitlabTokenInputHasValue(!!value);
+              }}
+              onGitLabHostChange={(value) => {
+                setGitlabHostInputHasValue(!!value);
+              }}
+              gitlabHostSet={existingGitlabHost}
+            />
+          )}
         </div>
       )}
 

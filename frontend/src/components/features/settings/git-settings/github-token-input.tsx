@@ -10,7 +10,6 @@ interface GitHubTokenInputProps {
   isGitHubTokenSet: boolean;
   name: string;
   githubHostSet: string | null | undefined;
-  isSaas: boolean;
 }
 
 export function GitHubTokenInput({
@@ -19,33 +18,30 @@ export function GitHubTokenInput({
   isGitHubTokenSet,
   name,
   githubHostSet,
-  isSaas,
 }: GitHubTokenInputProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-col gap-6">
-      {!isSaas && (
-        <SettingsInput
-          testId={name}
-          name={name}
-          onChange={onChange}
-          label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-          type="password"
-          className="w-[680px]"
-          placeholder={isGitHubTokenSet ? "<hidden>" : ""}
-          startContent={
-            isGitHubTokenSet && (
-              <KeyStatusIcon
-                testId="gh-set-token-indicator"
-                isSet={isGitHubTokenSet}
-              />
-            )
-          }
-        />
-      )}
+      <SettingsInput
+        testId={name}
+        name={name}
+        onChange={onChange}
+        label={t(I18nKey.GITHUB$TOKEN_LABEL)}
+        type="password"
+        className="w-[680px]"
+        placeholder={isGitHubTokenSet ? "<hidden>" : ""}
+        startContent={
+          isGitHubTokenSet && (
+            <KeyStatusIcon
+              testId="gh-set-token-indicator"
+              isSet={isGitHubTokenSet}
+            />
+          )
+        }
+      />
 
-      {(isGitHubTokenSet || !isSaas) && (
+      {isGitHubTokenSet && (
         <SettingsInput
           onChange={onGitHubHostChange || (() => {})}
           name="github-host-input"
@@ -65,7 +61,7 @@ export function GitHubTokenInput({
         />
       )}
 
-      {!isSaas && <GitHubTokenHelpAnchor />}
+      <GitHubTokenHelpAnchor />
     </div>
   );
 }
