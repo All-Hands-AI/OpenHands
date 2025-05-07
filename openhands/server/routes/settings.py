@@ -45,6 +45,7 @@ async def load_settings(
         user_secrets = await invalidate_legacy_secrets_store(
             settings, settings_store, secrets_store
         )
+
         
         # If invalidation is successful, then the returned user secrets holds the most recent values
         git_providers = (
@@ -55,7 +56,11 @@ async def load_settings(
         if git_providers:
             for provider_type, provider_token in git_providers.items():
                 if provider_token.token or provider_token.user_id:
-                    provider_tokens_set[provider_type] = provider_token.host
+                    if provider_token.host:
+                        provider_tokens_set[provider_type] = provider_token.host
+                    else:
+                        provider_tokens_set[provider_type] = None
+
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
