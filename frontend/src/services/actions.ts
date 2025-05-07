@@ -19,7 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
-import { queryClient } from "#/entry.client";
+import { queryClient } from "#/query-client-config";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
