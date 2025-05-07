@@ -138,8 +138,8 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: "some-token",
-        gitlab: "some-token",
+        github: null,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -163,7 +163,7 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        gitlab: "some-token",
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -290,7 +290,7 @@ describe("Form submission", () => {
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: null,
-        gitlab: "some-token",
+        gitlab: null,
       },
     });
 
@@ -321,7 +321,7 @@ describe("Form submission", () => {
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: null,
-        gitlab: "some-token",
+        gitlab: null,
       },
     });
 
