@@ -9,6 +9,7 @@ We follow format from: https://docs.litellm.ai/docs/completion/function_call
 import copy
 import json
 import re
+import sys
 from typing import Iterable
 
 from litellm import ChatCompletionToolParam
@@ -47,8 +48,15 @@ Reminder:
 
 STOP_WORDS = ['</function']
 
+
+def refine_prompt(prompt: str):
+    if sys.platform == 'win32':
+        return prompt.replace('bash', 'powershell')
+    return prompt
+
+
 # NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
-IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
+IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = refine_prompt("""
 Here's a running example of how to perform a task with the provided tools.
 
 --------------------- START OF EXAMPLE ---------------------
@@ -218,7 +226,7 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 Do NOT assume the environment is the same as in the example above.
 
 --------------------- NEW TASK DESCRIPTION ---------------------
-""".lstrip()
+""").lstrip()
 
 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
@@ -351,7 +359,8 @@ def convert_fncall_messages_to_non_fncall_messages(
                     and any(
                         (
                             tool['type'] == 'function'
-                            and tool['function']['name'] == 'execute_bash'
+                            and tool['function']['name']
+                            == refine_prompt('execute_bash')
                             and 'command'
                             in tool['function']['parameters']['properties']
                         )

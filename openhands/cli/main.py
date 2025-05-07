@@ -102,6 +102,7 @@ async def run_session(
     sid = str(uuid4())
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
+    always_confirm_mode = False  # Flag to enable always confirm mode
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -153,7 +154,7 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents, is_paused
+        nonlocal reload_microagents, is_paused, always_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -181,8 +182,15 @@ async def run_session(
                 if is_paused.is_set():
                     return
 
-                user_confirmed = await read_confirmation_input()
-                if user_confirmed:
+                if always_confirm_mode:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                    return
+
+                confirmation_status = await read_confirmation_input()
+                if confirmation_status == 'yes' or confirmation_status == 'always':
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
@@ -192,6 +200,10 @@ async def run_session(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
                     )
+
+                # Set the always_confirm_mode flag if the user wants to always confirm
+                if confirmation_status == 'always':
+                    always_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
                 is_paused.clear()  # Revert the event state before prompting for user input
