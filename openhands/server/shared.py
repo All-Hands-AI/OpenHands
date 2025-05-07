@@ -23,12 +23,12 @@ server_config = load_server_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 
 client_manager = None
-redis_host = os.environ.get('REDIS_HOST')
-if redis_host:
-    client_manager = socketio.AsyncRedisManager(
-        f'redis://{redis_host}',
-        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
-    )
+# redis_host = os.environ.get('REDIS_HOST')
+# if redis_host:
+#     client_manager = socketio.AsyncRedisManager(
+#         f'redis://{redis_host}',
+#         redis_options={'password': os.environ.get('REDIS_PASSWORD')},
+#     )
 
 
 sio = socketio.AsyncServer(
