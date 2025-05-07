@@ -63,9 +63,4 @@ git checkout -b create-widget && git add . && git commit -m "Create widget" && g
 # Then use the MCP tool to create the PR instead of directly using the GitHub API
 ```
 
-If for some reason the MCP tool is not available, you can fall back to using the GitHub API directly:
-```bash
-curl -X POST "https://api.github.com/repos/$ORG_NAME/$REPO_NAME/pulls" \
-    -H "Authorization: Bearer $GITHUB_TOKEN" \
-    -d '{"title":"Create widget","head":"create-widget","base":"openhands-workspace"}'
-```
+IMPORTANT: NEVER use the GitHub API directly to create pull requests. ALWAYS use the MCP tool.

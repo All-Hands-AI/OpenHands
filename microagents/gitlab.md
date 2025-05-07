@@ -62,9 +62,4 @@ git checkout -b create-widget && git add . && git commit -m "Create widget" && g
 # Then use the MCP tool to create the MR instead of directly using the GitLab API
 ```
 
-If for some reason the MCP tool is not available, you can fall back to using the GitLab API directly:
-```bash
-curl -X POST "https://gitlab.com/api/v4/projects/$PROJECT_ID/merge_requests" \
-    -H "Authorization: Bearer $GITLAB_TOKEN" \
-    -d '{"source_branch": "create-widget", "target_branch": "openhands-workspace", "title": "Create widget"}'
-```
+IMPORTANT: NEVER use the GitLab API directly to create merge requests. ALWAYS use the MCP tool.
