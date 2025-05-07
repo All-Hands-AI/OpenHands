@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, Optional, Union
 
 import toml
 from pydantic import BaseModel, Field
@@ -114,7 +113,7 @@ def organize_models_and_providers(
     Returns:
         A mapping of providers to their information and models
     """
-    result_dict: Dict[str, ProviderInfo] = {}
+    result_dict: dict[str, ProviderInfo] = {}
 
     for model in models:
         extracted = extract_model_and_provider(model)
@@ -171,7 +170,7 @@ class ProviderInfo(BaseModel):
         default_factory=list, description='List of model identifiers'
     )
 
-    def __getitem__(self, key: str) -> Union[str, list[str]]:
+    def __getitem__(self, key: str) -> str | list[str]:
         """Allow dictionary-like access to fields."""
         if key == 'separator':
             return self.separator
@@ -179,7 +178,7 @@ class ProviderInfo(BaseModel):
             return self.models
         raise KeyError(f'ProviderInfo has no key {key}')
 
-    def get(self, key: str, default=None) -> Optional[Union[str, list[str]]]:
+    def get(self, key: str, default=None) -> str | list[str] | None:
         """Dictionary-like get method with default value."""
         try:
             return self[key]
@@ -190,7 +189,7 @@ class ProviderInfo(BaseModel):
 class ModelProviderMapping(BaseModel):
     """Mapping of providers to their information and models."""
 
-    __root__: Dict[str, ProviderInfo]
+    __root__: dict[str, ProviderInfo]
 
     def __getitem__(self, key: str) -> ProviderInfo:
         """Allow dictionary-like access with provider name."""
