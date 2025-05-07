@@ -61,19 +61,6 @@ export const extractSettings = (
     ENABLE_DEFAULT_CONDENSER,
   } = extractAdvancedFormData(formData);
 
-  // Get MCP configuration from hidden field if it exists
-  // This is used by both the settings modal and any other forms that might include MCP configuration
-  // The MCP config is stored as a JSON string in a hidden form field
-  const mcpConfigStr = formData.get("mcp-config")?.toString();
-  let mcpConfig;
-  if (mcpConfigStr) {
-    try {
-      mcpConfig = JSON.parse(mcpConfigStr);
-    } catch (e) {
-      // Failed to parse MCP configuration, using default empty config
-      console.warn("Failed to parse MCP configuration:", e);
-    }
-  }
   return {
     LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
     LLM_API_KEY_SET: !!LLM_API_KEY,
@@ -84,6 +71,5 @@ export const extractSettings = (
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
     llm_api_key: LLM_API_KEY,
-    MCP_CONFIG: mcpConfig,
   };
 };
