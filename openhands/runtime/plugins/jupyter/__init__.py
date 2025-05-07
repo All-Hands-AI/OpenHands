@@ -31,9 +31,10 @@ class JupyterPlugin(Plugin):
     ) -> None:
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
 
-        if username in ['root', 'openhands']:
+        if not is_local_runtime:
             # Non-LocalRuntime
             prefix = f'su - {username} -s '
             # cd to code repo, setup all env vars and run micromamba
