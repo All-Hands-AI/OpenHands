@@ -10,7 +10,6 @@ import i18n from "i18next";
 import { vi } from "vitest";
 import { AxiosError } from "axios";
 import { AppStore, RootState, rootReducer } from "./src/store";
-import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
 // Mock useParams before importing components
@@ -66,19 +65,17 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <AuthProvider initialProviderTokens={[]}>
-          <QueryClientProvider
-            client={
-              new QueryClient({
-                defaultOptions: { queries: { retry: false } },
-              })
-            }
-          >
-            <ConversationProvider>
-              <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
-            </ConversationProvider>
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider
+          client={
+            new QueryClient({
+              defaultOptions: { queries: { retry: false } },
+            })
+          }
+        >
+          <ConversationProvider>
+            <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+          </ConversationProvider>
+        </QueryClientProvider>
       </Provider>
     );
   }

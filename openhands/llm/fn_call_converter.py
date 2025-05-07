@@ -9,6 +9,7 @@ We follow format from: https://docs.litellm.ai/docs/completion/function_call
 import copy
 import json
 import re
+import sys
 from typing import Iterable
 
 from litellm import ChatCompletionToolParam
@@ -52,6 +53,11 @@ Reminder:
 """
 
 STOP_WORDS = ['</function']
+
+def refine_prompt(prompt: str):
+    if sys.platform == 'win32':
+        return prompt.replace('bash', 'powershell')
+    return prompt
 
 # NOTE: we need to make sure these examples are always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
 
@@ -270,7 +276,8 @@ ASSISTANT: The server is running on port 5000 with PID 126. You can access the l
 
 Do NOT assume the environment is the same as in the example above.
 
---------------------- NEW TASK DESCRIPTION ---------------------"""
+--------------------- NEW TASK DESCRIPTION ---------------------
+""").lstrip()
 
     return example
 
