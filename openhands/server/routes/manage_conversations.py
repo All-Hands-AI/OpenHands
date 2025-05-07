@@ -100,7 +100,7 @@ async def _create_new_conversation(
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):
-            logger.warn(f'Missing api key for model {settings.llm_model}')
+            logger.warning(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
                 'Error authenticating with the LLM provider. Please check your API key'
             )
