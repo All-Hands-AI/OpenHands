@@ -23,7 +23,7 @@ from openhands.storage.settings.settings_store import SettingsStore
 app = APIRouter(prefix='/api')
 
 
-@app.get('/settings', response_model=GETSettingsModel)
+@app.get('/settings', response_model=None)
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
@@ -69,7 +69,7 @@ async def load_settings(
         )
 
 
-@app.post('/reset-settings', response_model=dict[str, str])
+@app.post('/reset-settings', response_model=None)
 async def reset_settings() -> JSONResponse:
     """
     Resets user settings. (Deprecated)
@@ -99,7 +99,7 @@ async def store_llm_settings(
     return settings
 
 
-@app.post('/settings', response_model=dict[str, str])
+@app.post('/settings', response_model=None)
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),
