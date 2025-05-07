@@ -32,7 +32,6 @@ from openhands.events.action import (
     ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
-    FileEditAction,
     MessageAction,
 )
 from openhands.events.event import Event
@@ -178,6 +177,8 @@ def display_event(event: Event, config: AppConfig) -> None:
         if isinstance(event, Action):
             if hasattr(event, 'thought'):
                 display_message(event.thought)
+            if hasattr(event, 'final_thought'):
+                display_message(event.final_thought)
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
                 display_message(event.content)
@@ -187,14 +188,12 @@ def display_event(event: Event, config: AppConfig) -> None:
                 initialize_streaming_output()
         if isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditAction):
-            display_file_edit(event)
         if isinstance(event, FileEditObservation):
             display_file_edit(event)
         if isinstance(event, FileReadObservation):
             display_file_read(event)
         if isinstance(event, AgentStateChangedObservation):
-            display_agent_paused_message(event.agent_state)
+            display_agent_state_change_message(event.agent_state)
         if isinstance(event, ErrorObservation):
             display_error(event.content)
 
@@ -267,26 +266,26 @@ def display_command_output(output: str):
     print_container(container)
 
 
-def display_file_edit(event: FileEditAction | FileEditObservation):
-    if isinstance(event, FileEditObservation):
-        container = Frame(
-            TextArea(
-                text=event.visualize_diff(n_context_lines=4),
-                read_only=True,
-                wrap_lines=True,
-                lexer=CustomDiffLexer(),
-            ),
-            title='File Edit',
-            style=f'fg:{COLOR_GREY}',
-        )
-        print_formatted_text('')
-        print_container(container)
+def display_file_edit(event: FileEditObservation):
+    container = Frame(
+        TextArea(
+            text=event.visualize_diff(n_context_lines=4),
+            read_only=True,
+            wrap_lines=True,
+            lexer=CustomDiffLexer(),
+        ),
+        title='File Edit',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_file_read(event: FileReadObservation):
+    content = event.content.replace('\t', ' ')
     container = Frame(
         TextArea(
-            text=f'{event.content}',
+            text=content,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
@@ -464,13 +463,20 @@ def display_agent_running_message():
     )
 
 
-def display_agent_paused_message(agent_state: str):
-    if agent_state != AgentState.PAUSED:
-        return
-    print_formatted_text('')
-    print_formatted_text(
-        HTML('<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>')
-    )
+def display_agent_state_change_message(agent_state: str):
+    if agent_state == AgentState.PAUSED:
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>'
+            )
+        )
+    elif agent_state == AgentState.FINISHED:
+        print_formatted_text('')
+        print_formatted_text(HTML('<gold>Task completed...</gold>'))
+    elif agent_state == AgentState.AWAITING_USER_INPUT:
+        print_formatted_text('')
+        print_formatted_text(HTML('<gold>Agent is waiting for your input...</gold>'))
 
 
 # Common input functions
@@ -536,20 +542,28 @@ async def read_prompt_input(agent_state: str, multiline=False):
         return '/exit'
 
 
-async def read_confirmation_input() -> bool:
+async def read_confirmation_input() -> str:
     try:
         prompt_session = create_prompt_session()
 
         with patch_stdout():
             print_formatted_text('')
             confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o > </gold>'),
+                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
             )
 
             confirmation = '' if confirmation is None else confirmation.strip().lower()
-            return confirmation in ['y', 'yes']
+
+            if confirmation in ['y', 'yes']:
+                return 'yes'
+            elif confirmation in ['n', 'no']:
+                return 'no'
+            elif confirmation in ['a', 'always']:
+                return 'always'
+            else:
+                return 'no'
     except (KeyboardInterrupt, EOFError):
-        return False
+        return 'no'
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
@@ -557,7 +571,11 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
 
     def keys_ready():
         for key_press in input.read_keys():
-            if key_press.key == Keys.ControlP:
+            if (
+                key_press.key == Keys.ControlP
+                or key_press.key == Keys.ControlC
+                or key_press.key == Keys.ControlD
+            ):
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
                 event_stream.add_event(

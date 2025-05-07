@@ -6,5 +6,13 @@ interface UseAuthUrlConfig {
   identityProvider: string;
 }
 
-export const useAuthUrl = (config: UseAuthUrlConfig) =>
-  generateAuthUrl(config.identityProvider, new URL(window.location.href));
+export const useAuthUrl = (config: UseAuthUrlConfig) => {
+  if (config.appMode === "saas") {
+    return generateAuthUrl(
+      config.identityProvider,
+      new URL(window.location.href),
+    );
+  }
+
+  return null;
+};

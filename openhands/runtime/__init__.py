@@ -1,5 +1,3 @@
-from typing import Type
-
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
@@ -14,7 +12,7 @@ from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
-_DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
+_DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'eventstream': DockerRuntime,
     'docker': DockerRuntime,
     'e2b': E2BRuntime,
@@ -27,7 +25,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
 }
 
 
-def get_runtime_cls(name: str) -> Type[Runtime]:
+def get_runtime_cls(name: str) -> type[Runtime]:
     """
     If name is one of the predefined runtime names (e.g. 'docker'), return its class.
     Otherwise attempt to resolve name as subclass of Runtime and return it.
