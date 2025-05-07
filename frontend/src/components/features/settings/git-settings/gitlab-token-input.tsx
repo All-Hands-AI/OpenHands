@@ -45,26 +45,25 @@ export function GitLabTokenInput({
         />
       )}
 
-      {isGitLabTokenSet ||
-        (!isSaas && (
-          <SettingsInput
-            onChange={onGitLabHostChange || (() => {})}
-            name="gitlab-host-input"
-            testId="gitlab-host-input"
-            label={t(I18nKey.GITLAB$HOST_LABEL)}
-            type="text"
-            className="w-[680px]"
-            placeholder="gitlab.com"
-            defaultValue={gitlabHostSet || undefined}
-            startContent={
-              gitlabHostSet && gitlabHostSet.trim() !== "" ? (
-                <KeyStatusIcon testId="gl-set-host-indicator" isSet />
-              ) : (
-                <KeyStatusIcon testId="gl-set-host-indicator" isSet={false} />
-              )
-            }
-          />
-        ))}
+      {(isGitLabTokenSet || !isSaas) && (
+        <SettingsInput
+          onChange={onGitLabHostChange || (() => {})}
+          name="gitlab-host-input"
+          testId="gitlab-host-input"
+          label={t(I18nKey.GITLAB$HOST_LABEL)}
+          type="text"
+          className="w-[680px]"
+          placeholder="gitlab.com"
+          defaultValue={gitlabHostSet || undefined}
+          startContent={
+            gitlabHostSet && gitlabHostSet.trim() !== "" ? (
+              <KeyStatusIcon testId="gl-set-host-indicator" isSet />
+            ) : (
+              <KeyStatusIcon testId="gl-set-host-indicator" isSet={false} />
+            )
+          }
+        />
+      )}
 
       {!isSaas && <GitLabTokenHelpAnchor />}
     </div>
