@@ -487,7 +487,7 @@ class DockerRuntime(ActionExecutionClient):
         return vscode_url
 
     @property
-    def web_hosts(self) -> List[str]:
+    def web_hosts(self) -> Dict[str, int]:
         hosts: Dict[str, int] = {}
 
         for port in self._app_ports:
