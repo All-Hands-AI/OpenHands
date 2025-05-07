@@ -26,7 +26,9 @@ To run OpenHands in CLI mode with Docker:
 
 1. Set the following environmental variables in your terminal:
 
-- `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
+- `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access (Ex: `export SANDBOX_VOLUMES=$(pwd)/workspace:/workspace:rw`).
+  - The agent works in `/workspace` by default, so mount your project directory there if you want the agent to modify files.
+  - For read-only data, use a different mount path (Ex: `export SANDBOX_VOLUMES=$(pwd)/workspace:/workspace:rw,/path/to/large/dataset:/data:ro`).
 - `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
 - `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
 
@@ -37,10 +39,9 @@ docker run -it \
     --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.36-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
     -e LLM_MODEL=$LLM_MODEL \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \

@@ -15,10 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_DEFAULT_CONDENSER: true,
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
-  PROVIDER_TOKENS: {
-    github: { token: "" },
-    gitlab: { token: "" },
-  },
+  ENABLE_PROACTIVE_CONVERSATION_STARTERS: false,
   IS_NEW_USER: true,
 };
 

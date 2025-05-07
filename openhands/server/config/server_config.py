@@ -15,6 +15,9 @@ class ServerConfig(ServerConfigInterface):
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
+    secret_store_class: str = (
+        'openhands.storage.secrets.file_secrets_store.FileSecretsStore'
+    )
     conversation_store_class: str = (
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )

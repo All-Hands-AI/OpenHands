@@ -24,17 +24,24 @@ export const useCreateConversation = () => {
       conversation_trigger: ConversationTrigger;
       q?: string;
       selectedRepository?: GitRepository | null;
+      selected_branch?: string;
       suggested_task?: SuggestedTask;
     }) => {
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(
         variables.conversation_trigger,
-        variables.selectedRepository || undefined,
+        variables.selectedRepository
+          ? variables.selectedRepository.full_name
+          : undefined,
+        variables.selectedRepository
+          ? variables.selectedRepository.git_provider
+          : undefined,
         variables.q,
         files,
         replayJson || undefined,
         variables.suggested_task || undefined,
+        variables.selected_branch,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {

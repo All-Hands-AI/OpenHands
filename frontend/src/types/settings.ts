@@ -21,8 +21,8 @@ export type Settings = {
   PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
+  ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
-  PROVIDER_TOKENS: Record<Provider, ProviderToken>;
   IS_NEW_USER?: boolean;
 };
 
@@ -38,18 +38,16 @@ export type ApiSettings = {
   remote_runtime_resource_factor: number | null;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
+  enable_proactive_conversation_starters: boolean;
   user_consents_to_analytics: boolean | null;
-  provider_tokens: Record<Provider, ProviderToken>;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
 };
 
 export type PostSettings = Settings & {
-  provider_tokens: Record<Provider, ProviderToken>;
   user_consents_to_analytics: boolean | null;
   llm_api_key?: string | null;
 };
 
 export type PostApiSettings = ApiSettings & {
-  provider_tokens: Record<Provider, ProviderToken>;
   user_consents_to_analytics: boolean | null;
 };

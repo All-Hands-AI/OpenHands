@@ -2,7 +2,7 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable
 
 import socketio
 
@@ -18,9 +18,9 @@ from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
-from openhands.storage.data_models.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
 from openhands.utils.import_utils import get_impl
@@ -52,7 +52,7 @@ class StandaloneConversationManager(ConversationManager):
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
-    _conversation_store_class: Type | None = None
+    _conversation_store_class: type[ConversationStore] | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())

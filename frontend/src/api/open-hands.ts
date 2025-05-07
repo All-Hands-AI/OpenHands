@@ -13,8 +13,8 @@ import {
   ConversationTrigger,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { GitUser, GitRepository } from "#/types/git";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
@@ -152,16 +152,19 @@ class OpenHands {
 
   static async createConversation(
     conversation_trigger: ConversationTrigger = "gui",
-    selectedRepository?: GitRepository,
+    selectedRepository?: string,
+    git_provider?: Provider,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
     suggested_task?: SuggestedTask,
+    selected_branch?: string,
   ): Promise<Conversation> {
     const body = {
       conversation_trigger,
-      selected_repository: selectedRepository,
-      selected_branch: undefined,
+      repository: selectedRepository,
+      git_provider,
+      selected_branch,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
       replay_json: replayJson,
@@ -274,7 +277,7 @@ class OpenHands {
 
   static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
     const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
+      appMode === "saas" ? "/api/logout" : "/api/unset-provider-tokens";
     await openHands.post(endpoint);
   }
 
@@ -310,6 +313,14 @@ class OpenHands {
           sort: "pushed",
         },
       },
+    );
+
+    return data;
+  }
+
+  static async getRepositoryBranches(repository: string): Promise<Branch[]> {
+    const { data } = await openHands.get<Branch[]>(
+      `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`,
     );
 
     return data;
