@@ -19,7 +19,7 @@ class RequestHTTPError(httpx.HTTPStatusError):
         s = super().__str__()
         if self.detail is not None:
             s += f'\nDetails: {self.detail}'
-        return s
+        return str(s)
 
 
 def is_retryable_error(exception: Any) -> bool:
@@ -57,4 +57,4 @@ def send_request(
             response=e.response,
             detail=_json.get('detail') if _json is not None else None,
         ) from e
-    return response  # type: ignore
+    return response

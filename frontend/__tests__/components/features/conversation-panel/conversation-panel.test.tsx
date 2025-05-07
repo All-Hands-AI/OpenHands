@@ -4,9 +4,9 @@ import { QueryClientConfig } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
+import { renderWithProviders } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
-import { renderWithProviders } from "test-utils";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -178,7 +178,7 @@ describe("ConversationPanel", () => {
 
     renderConversationPanel();
 
-    let cards = await screen.findAllByTestId("conversation-card");
+    const cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(3);
 
     const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");

@@ -2,7 +2,7 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable
 
 import socketio
 
@@ -56,8 +56,8 @@ class StandaloneConversationManager(ConversationManager):
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
-    _conversation_store_class: Type | None = None
-    _settings_store_class: Type | None = None
+    _conversation_store_class: type[ConversationStore] | None = None
+    _settings_store_class: type[SettingsStore] | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
