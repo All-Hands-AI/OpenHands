@@ -1,20 +1,19 @@
 # Groq
 
-OpenHandsは、GroqのチャットモデルへのAPIコールにLiteLLMを使用します。Groqをプロバイダーとして使用する方法については、[こちら](https://docs.litellm.ai/docs/providers/groq)のドキュメントを参照してください。
+OpenHandsはLiteLLMを使用してGroqのチャットモデルを呼び出します。Groqをプロバイダーとして使用する方法に関するドキュメントは[こちら](https://docs.litellm.ai/docs/providers/groq)で確認できます。
 
 ## 設定
 
-OpenHandsを実行する際、OpenHandsのUIで設定メニューから以下の項目を設定する必要があります：
+OpenHandsを実行する際、設定画面で以下の項目を設定する必要があります：
+- `LLM Provider`を`Groq`に設定
+- `LLM Model`を使用するモデルに設定。[Groqがホストしているモデルのリストはこちらで確認できます](https://console.groq.com/docs/models)。モデルがリストにない場合は、`Advanced`オプションを有効にして、`Custom Model`に入力してください（例：groq/&lt;model-name&gt;のように`groq/llama3-70b-8192`）。
+- `API key`にGroq APIキーを設定。Groq APIキーの確認または作成については、[こちらを参照してください](https://console.groq.com/keys)。
 
-* `LLMプロバイダー`を`Groq`に設定
-* `LLMモデル`を使用するモデルに設定。[Groqがホストするモデルのリストはこちら](https://console.groq.com/docs/models)を参照してください。モデルがリストにない場合は、`詳細設定`を有効にし、`カスタムモデル`に入力してください（例：groq/&lt;model-name&gt;として`groq/llama3-70b-8192`）。
-* `APIキー`をGroq APIキーに設定。Groq APIキーの確認または作成については、[こちら](https://console.groq.com/keys)を参照してください。
+## GroqをOpenAI互換エンドポイントとして使用する
 
-## OpenAI互換エンドポイントとしてのGroqの使用
-
-Groqのチャット補完エンドポイントは[主にOpenAI互換](https://console.groq.com/docs/openai)です。そのため、他のOpenAI互換エンドポイントと同様の方法でGroqのモデルにアクセスできます。OpenHandsのUIで設定メニューから以下の項目を設定します：
-
-* `詳細設定`を有効にする
-* `カスタムモデル`にプレフィックス`openai/`と使用するモデルを設定（例：`openai/llama3-70b-8192`）
-* `ベースURL`を`https://api.groq.com/openai/v1`に設定
-* `APIキー`をGroq APIキーに設定
+Groqのチャット完了エンドポイントは[ほぼOpenAI互換](https://console.groq.com/docs/openai)です。そのため、OpenAI互換エンドポイントと同様にGroqモデルにアクセスできます。OpenHandsのUI設定画面で：
+1. `Advanced`オプションを有効にする
+2. 以下を設定する：
+   - `Custom Model`に接頭辞`openai/`と使用するモデル名を組み合わせて設定（例：`openai/llama3-70b-8192`）
+   - `Base URL`を`https://api.groq.com/openai/v1`に設定
+   - `API Key`にGroq APIキーを設定
