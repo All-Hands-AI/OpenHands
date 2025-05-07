@@ -4,18 +4,22 @@ This module implements a basic MCP server that exposes tools for creating PRs/MR
 GitHub and GitLab clients.
 """
 
-import asyncio
 import json
-import logging
+import os
+from types import MappingProxyType
 from typing import Any, Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
-from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.provider import ProviderToken
+from openhands.integrations.service_types import ProviderType
+from openhands.server.user_auth import get_user_auth
+from openhands.server.user_auth.user_auth import UserAuth
 
 # Define MCP router
 router = APIRouter(prefix="/mcp", tags=["mcp"])
@@ -137,12 +141,13 @@ class MCPSession:
         self.client_capabilities = {}
         self.github_service = None
         self.gitlab_service = None
+        self.user_auth = None
 
 # Store active sessions
 sessions = {}
 
 @router.post("")
-async def handle_mcp_request(request: Request):
+async def handle_mcp_request(request: Request, user_auth: UserAuth = Depends(get_user_auth)):
     """Handle MCP JSON-RPC requests"""
     try:
         # Get session ID from headers or create a new one
@@ -151,6 +156,7 @@ async def handle_mcp_request(request: Request):
             sessions[session_id] = MCPSession()
         
         session = sessions[session_id]
+        session.user_auth = user_auth
         
         # Parse request body
         body = await request.json()
@@ -268,10 +274,6 @@ async def handle_initialize(params: Dict[str, Any], session: MCPSession) -> Dict
     session.client_capabilities = params.get("capabilities", {})
     session.initialized = True
     
-    # Initialize services
-    # Note: In a real implementation, you would get tokens from secure storage
-    # or environment variables, not hardcode them here
-    
     # Return server capabilities
     return {
         "capabilities": SERVER_CAPABILITIES
@@ -306,16 +308,60 @@ async def handle_call_tool(params: Dict[str, Any], session: MCPSession) -> Dict[
     else:
         raise Exception(f"Unknown tool: {tool_name}")
 
+async def get_github_service(session: MCPSession) -> GitHubService:
+    """Get GitHub service with token from user secrets or environment"""
+    if session.github_service:
+        return session.github_service
+    
+    # Try to get token from user secrets
+    github_token = None
+    if session.user_auth:
+        provider_tokens = await session.user_auth.get_provider_tokens()
+        if provider_tokens and ProviderType.GITHUB in provider_tokens:
+            github_token = provider_tokens[ProviderType.GITHUB].token
+    
+    # Fallback to environment variable if no token in user secrets
+    if not github_token:
+        env_token = os.environ.get("GITHUB_TOKEN")
+        if env_token:
+            github_token = SecretStr(env_token)
+    
+    if not github_token:
+        raise ValueError("GitHub token not found in user secrets or environment")
+    
+    session.github_service = GitHubService(token=github_token)
+    return session.github_service
+
+async def get_gitlab_service(session: MCPSession) -> GitLabService:
+    """Get GitLab service with token from user secrets or environment"""
+    if session.gitlab_service:
+        return session.gitlab_service
+    
+    # Try to get token from user secrets
+    gitlab_token = None
+    if session.user_auth:
+        provider_tokens = await session.user_auth.get_provider_tokens()
+        if provider_tokens and ProviderType.GITLAB in provider_tokens:
+            gitlab_token = provider_tokens[ProviderType.GITLAB].token
+    
+    # Fallback to environment variable if no token in user secrets
+    if not gitlab_token:
+        env_token = os.environ.get("GITLAB_TOKEN")
+        if env_token:
+            gitlab_token = SecretStr(env_token)
+    
+    if not gitlab_token:
+        raise ValueError("GitLab token not found in user secrets or environment")
+    
+    session.gitlab_service = GitLabService(token=gitlab_token)
+    return session.gitlab_service
+
 async def create_github_pr(arguments: Dict[str, Any], session: MCPSession) -> Dict[str, Any]:
     """Create a GitHub pull request"""
-    # Initialize GitHub service if not already done
-    if not session.github_service:
-        # In a real implementation, you would get the token from secure storage
-        # or environment variables, not hardcode it here
-        github_token = "GITHUB_TOKEN"  # This would be retrieved securely
-        session.github_service = GitHubService(token=github_token)
-    
     try:
+        # Get GitHub service with token
+        github_service = await get_github_service(session)
+        
         # Extract arguments
         repository = arguments.get("repository")
         title = arguments.get("title")
@@ -328,12 +374,26 @@ async def create_github_pr(arguments: Dict[str, Any], session: MCPSession) -> Di
         if not repository or not title or not head:
             raise ValueError("Missing required arguments")
         
-        # Make API request to create PR
-        # Note: This is a simplified example. In a real implementation,
-        # you would use the GitHub API client to create the PR.
+        # In a real implementation, we would call the GitHub API to create the PR
+        # For now, we'll simulate the PR creation
         
-        # Simulate PR creation (in a real implementation, this would call the GitHub API)
-        pr_number = 123  # This would be the actual PR number returned by the API
+        # Construct the API URL
+        url = f"{github_service.BASE_URL}/repos/{repository}/pulls"
+        
+        # Prepare the request payload
+        payload = {
+            "title": title,
+            "body": body,
+            "head": head,
+            "base": base,
+            "draft": draft
+        }
+        
+        # Log the request (in a real implementation, we would make the API call)
+        logger.info(f"Creating GitHub PR: {url} with payload: {payload}")
+        
+        # Simulate PR creation (in a real implementation, this would be the actual API response)
+        pr_number = 123
         pr_url = f"https://github.com/{repository}/pull/{pr_number}"
         
         return {
@@ -355,14 +415,10 @@ async def create_github_pr(arguments: Dict[str, Any], session: MCPSession) -> Di
 
 async def create_gitlab_mr(arguments: Dict[str, Any], session: MCPSession) -> Dict[str, Any]:
     """Create a GitLab merge request"""
-    # Initialize GitLab service if not already done
-    if not session.gitlab_service:
-        # In a real implementation, you would get the token from secure storage
-        # or environment variables, not hardcode it here
-        gitlab_token = "GITLAB_TOKEN"  # This would be retrieved securely
-        session.gitlab_service = GitLabService(token=gitlab_token)
-    
     try:
+        # Get GitLab service with token
+        gitlab_service = await get_gitlab_service(session)
+        
         # Extract arguments
         project_id = arguments.get("project_id")
         title = arguments.get("title")
@@ -375,12 +431,29 @@ async def create_gitlab_mr(arguments: Dict[str, Any], session: MCPSession) -> Di
         if not project_id or not title or not source_branch:
             raise ValueError("Missing required arguments")
         
-        # Make API request to create MR
-        # Note: This is a simplified example. In a real implementation,
-        # you would use the GitLab API client to create the MR.
+        # In a real implementation, we would call the GitLab API to create the MR
+        # For now, we'll simulate the MR creation
         
-        # Simulate MR creation (in a real implementation, this would call the GitLab API)
-        mr_iid = 456  # This would be the actual MR IID returned by the API
+        # Encode project ID for URL
+        encoded_project_id = project_id.replace('/', '%2F')
+        
+        # Construct the API URL
+        url = f"{gitlab_service.BASE_URL}/projects/{encoded_project_id}/merge_requests"
+        
+        # Prepare the request payload
+        payload = {
+            "title": title,
+            "description": description,
+            "source_branch": source_branch,
+            "target_branch": target_branch,
+            "draft": draft
+        }
+        
+        # Log the request (in a real implementation, we would make the API call)
+        logger.info(f"Creating GitLab MR: {url} with payload: {payload}")
+        
+        # Simulate MR creation (in a real implementation, this would be the actual API response)
+        mr_iid = 456
         mr_url = f"https://gitlab.com/{project_id}/-/merge_requests/{mr_iid}"
         
         return {
