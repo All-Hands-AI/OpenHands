@@ -4,20 +4,25 @@ import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
-import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
+import { MessageActions } from "./message-actions";
+import { useHover } from "#/hooks/use-hover";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
   message: string;
+  messageId?: number;
+  feedback?: "positive" | "negative" | null;
 }
 
 export function ChatMessage({
   type,
   message,
+  messageId,
+  feedback,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
-  const [isHovering, setIsHovering] = React.useState(false);
+  const [isHovering, hoverProps] = useHover();
   const [isCopy, setIsCopy] = React.useState(false);
 
   const handleCopyToClipboard = async () => {
@@ -42,8 +47,8 @@ export function ChatMessage({
   return (
     <article
       data-testid={`${type}-message`}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseEnter={hoverProps.onMouseEnter}
+      onMouseLeave={hoverProps.onMouseLeave}
       className={cn(
         "rounded-xl relative",
         "flex flex-col gap-2",
@@ -51,12 +56,17 @@ export function ChatMessage({
         type === "assistant" && "mt-6 max-w-full bg-transparent",
       )}
     >
-      <CopyToClipboardButton
-        isHidden={!isHovering}
-        isDisabled={isCopy}
-        onClick={handleCopyToClipboard}
-        mode={isCopy ? "copied" : "copy"}
-      />
+      {/* Action buttons */}
+      {type === "assistant" && (
+        <MessageActions
+          messageId={messageId}
+          feedback={feedback}
+          isHovering={isHovering}
+          isCopy={isCopy}
+          onCopy={handleCopyToClipboard}
+        />
+      )}
+
       <div className="text-sm break-words">
         <Markdown
           components={{
@@ -70,6 +80,7 @@ export function ChatMessage({
           {message}
         </Markdown>
       </div>
+
       {children}
     </article>
   );
