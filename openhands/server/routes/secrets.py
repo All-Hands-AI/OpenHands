@@ -64,8 +64,8 @@ def process_token_validation_result(
     return ''
 
 async def check_provider_tokens(
-        incoming_provider_tokens: POSTProviderModel,
-        existing_provider_tokens: PROVIDER_TOKEN_TYPE) -> str:
+    incoming_provider_tokens: POSTProviderModel,
+    existing_provider_tokens: PROVIDER_TOKEN_TYPE) -> str:
 
     msg = ''
     if incoming_provider_tokens.provider_tokens:
@@ -76,7 +76,7 @@ async def check_provider_tokens(
                 msg = process_token_validation_result(confirmed_token_type, token_type)
 
             existing_token = existing_provider_tokens.get(token_type, None)
-            if existing_token and (existing_token.host != token_value.host):
+            if existing_token and (existing_token.host != token_value.host) and existing_token.token:
                 confirmed_token_type = await validate_provider_token(existing_token.token, token_value.host) # Host has changed, check it against existing token
                 if not confirmed_token_type or confirmed_token_type != token_type:
                     msg = process_token_validation_result(confirmed_token_type, token_type)
