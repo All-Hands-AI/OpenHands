@@ -70,7 +70,9 @@ async def test_load_custom_secrets_names(test_client, file_secrets_store):
     # Check the response
     data = response.json()
     assert 'custom_secrets' in data
-    assert sorted(data['custom_secrets']) == ['API_KEY', 'DB_PASSWORD']
+    # Extract just the names from the list of custom secrets
+    secret_names = [secret['name'] for secret in data['custom_secrets']]
+    assert sorted(secret_names) == ['API_KEY', 'DB_PASSWORD']
 
     # Verify that the original settings were not modified
     stored_settings = await file_secrets_store.load()
@@ -104,7 +106,7 @@ async def test_load_custom_secrets_names_empty(test_client, file_secrets_store):
     # Check the response
     data = response.json()
     assert 'custom_secrets' in data
-    assert data['custom_secrets'] == {}
+    assert data['custom_secrets'] == []
 
 
 @pytest.mark.asyncio
@@ -121,9 +123,13 @@ async def test_add_custom_secret(test_client, file_secrets_store):
     await file_secrets_store.store(user_secrets)
 
     # Make the POST request to add a custom secret
-    add_secret_data = {'custom_secrets': {'API_KEY': {'secret': 'api-key-value'}}}
+    add_secret_data = {
+        'name': 'API_KEY',
+        'value': 'api-key-value',
+        'description': None
+    }
     response = test_client.post('/api/secrets', json=add_secret_data)
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     # Verify that the settings were stored with the new secret
     stored_settings = await file_secrets_store.load()
@@ -152,8 +158,12 @@ async def test_update_existing_custom_secret(test_client, file_secrets_store):
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
 
-    # Make the POST request to update the custom secret
-    update_secret_data = {'custom_secrets': {'API_KEY': {'secret': 'new-api-key'}}}
+    # Make the PUT request to update the custom secret
+    update_secret_data = {
+        'name': 'API_KEY',
+        'value': 'new-api-key',
+        'description': None
+    }
     response = test_client.put('/api/secrets/API_KEY', json=update_secret_data)
     assert response.status_code == 200
 
@@ -189,15 +199,23 @@ async def test_add_multiple_custom_secrets(test_client, file_secrets_store):
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
 
-    # Make the POST request to add multiple custom secrets
-    add_secrets_data = {
-        'custom_secrets': {
-            'API_KEY': {'secret': 'api-key-value'},
-            'DB_PASSWORD': {'secret': 'db-password-value'},
-        }
+    # Make the POST request to add first custom secret
+    add_secret_data1 = {
+        'name': 'API_KEY',
+        'value': 'api-key-value',
+        'description': None
     }
-    response = test_client.post('/api/secrets', json=add_secrets_data)
-    assert response.status_code == 200
+    response1 = test_client.post('/api/secrets', json=add_secret_data1)
+    assert response1.status_code == 201
+    
+    # Make the POST request to add second custom secret
+    add_secret_data2 = {
+        'name': 'DB_PASSWORD',
+        'value': 'db-password-value',
+        'description': None
+    }
+    response = test_client.post('/api/secrets', json=add_secret_data2)
+    assert response.status_code == 201
 
     # Verify that the settings were stored with the new secrets
     stored_settings = await file_secrets_store.load()
