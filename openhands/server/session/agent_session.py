@@ -292,9 +292,11 @@ class AgentSession:
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
+        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets or {})
+        env_vars = custom_secrets_handler.get_env_vars()
+
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-
         if runtime_cls == RemoteRuntime:
             self.runtime = runtime_cls(
                 config=config,
@@ -305,6 +307,7 @@ class AgentSession:
                 headless_mode=False,
                 attach_to_existing=False,
                 git_provider_tokens=git_provider_tokens,
+                env_vars=env_vars,
                 user_id=self.user_id,
             )
         else:
@@ -312,13 +315,9 @@ class AgentSession:
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
-            env_vars = await provider_handler.get_env_vars(expose_secrets=True)
-
-            if custom_secrets:
-                env_vars.update(
-                    UserSecrets(custom_secrets=custom_secrets).get_env_vars()
-                )
-
+            
+            # Merge git provider tokens with custom secrets before passing over to runtime
+            env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
