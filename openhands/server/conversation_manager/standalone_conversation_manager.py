@@ -25,7 +25,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
-from openhands.utils.conversation_summary import generate_conversation_title, get_default_conversation_title
+from openhands.utils.conversation_summary import get_default_conversation_title, auto_generate_title
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
@@ -445,75 +445,6 @@ class StandaloneConversationManager(ConversationManager):
         return callback
 
 
-    async def _auto_generate_title(
-        self,
-        conversation_id: str, 
-        user_id: str | None,
-        settings: Settings
-    ) -> str:
-        """
-        Auto-generate a title for a conversation based on the first user message.
-        Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
-
-        Args:
-            conversation_id: The ID of the conversation
-            user_id: The ID of the user
-
-        Returns:
-            A generated title string
-        """
-        logger.info(f'Auto-generating title for conversation {conversation_id}')
-            
-        
-        try:
-            # Create an event stream for the conversation
-            event_stream = EventStream(conversation_id, self.file_store, user_id)
-
-            # Find the first user message
-            first_user_message = None
-            for event in event_stream.get_events():
-                if (
-                    event.source == EventSource.USER
-                    and isinstance(event, MessageAction)
-                    and event.content
-                    and event.content.strip()
-                ):
-                    first_user_message = event.content
-                    break
-
-            if first_user_message:
-                # Get LLM config from user settings
-                try:
-                    if settings and settings.llm_model:
-                        # Create LLM config from settings
-                        llm_config = LLMConfig(
-                            model=settings.llm_model,
-                            api_key=settings.llm_api_key,
-                            base_url=settings.llm_base_url,
-                        )
-
-                        # Try to generate title using LLM
-                        llm_title = await generate_conversation_title(
-                            first_user_message, llm_config
-                        )
-                        if llm_title:
-                            logger.info(f'Generated title using LLM: {llm_title}')
-                            return llm_title
-                except Exception as e:
-                    logger.error(f'Error using LLM for title generation: {e}')
-
-                # Fall back to simple truncation if LLM generation fails or is unavailable
-                first_user_message = first_user_message.strip()
-                title = first_user_message[:30]
-                if len(first_user_message) > 30:
-                    title += '...'
-                logger.info(f'Generated title using truncation: {title}')
-                return title
-        except Exception as e:
-            logger.error(f'Error generating title: {str(e)}')
-        return ''
-
-
     async def _update_conversation_for_event(
         self, user_id: str, github_user_id: str, conversation_id: str, settings: Settings, event=None
     ):
@@ -538,8 +469,8 @@ class StandaloneConversationManager(ConversationManager):
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
         default_title = get_default_conversation_title(conversation_id)
-        if conversation.title == default_title: # attempt to autogenerate with default title is in use
-            title = await self._auto_generate_title(conversation_id, user_id, settings)
+        if conversation.title == default_title: # attempt to autogenerate if default title is in use
+            title = await auto_generate_title(conversation_id, user_id, self.file_store, settings)
             if title and not title.isspace():
                 conversation.title = title
                 try:

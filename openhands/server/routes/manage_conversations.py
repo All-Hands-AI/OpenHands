@@ -3,15 +3,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -32,7 +29,6 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
-    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -49,7 +45,7 @@ from openhands.storage.data_models.conversation_metadata import (
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
-from openhands.utils.conversation_summary import generate_conversation_title, get_default_conversation_title
+from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api')
 
