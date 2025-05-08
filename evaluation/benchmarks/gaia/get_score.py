@@ -21,7 +21,7 @@ def main():
         total += 1
         if out['test_result']['score']:
             success += 1
-    print(f'Success rate: {success}/{total} = {success/total}')
+    print(f'Success rate: {success}/{total} = {success / total}')
 
 
 if __name__ == '__main__':
