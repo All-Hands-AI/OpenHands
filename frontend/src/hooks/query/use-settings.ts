@@ -25,6 +25,8 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     ENABLE_PROACTIVE_CONVERSATION_STARTERS:
       apiSettings.enable_proactive_conversation_starters,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
+
+    MCP_CONFIG: apiSettings.mcp_config,
     IS_NEW_USER: false,
   };
 };
