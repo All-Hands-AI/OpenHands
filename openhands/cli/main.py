@@ -288,7 +288,12 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
-        config.default_agent = args.agent_cls if args.agent_cls else settings.agent
+        # Handle the agent class setting with proper type handling
+        # config.default_agent is already set in setup_config_from_args if args.agent_cls is provided
+        if not args.agent_cls and settings.agent is not None:
+            # Use settings.agent only if args.agent_cls is not provided
+            # Explicitly cast to string to satisfy mypy
+            config.default_agent = str(settings.agent)
         if not args.llm_config and settings.llm_model and settings.llm_api_key:
             llm_config = config.get_llm_config()
             llm_config.model = settings.llm_model
