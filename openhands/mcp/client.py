@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import AsyncExitStack
-from typing import Dict, List, Optional
+from typing import Optional
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -18,8 +18,8 @@ class MCPClient(BaseModel):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
-    tools: List[MCPClientTool] = Field(default_factory=list)
-    tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
+    tools: list[MCPClientTool] = Field(default_factory=list)
+    tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
@@ -91,7 +91,7 @@ class MCPClient(BaseModel):
             f'Connected to server with tools: {[tool.name for tool in response.tools]}'
         )
 
-    async def call_tool(self, tool_name: str, args: Dict):
+    async def call_tool(self, tool_name: str, args: dict):
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')

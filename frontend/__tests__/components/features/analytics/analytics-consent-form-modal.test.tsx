@@ -4,7 +4,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import OpenHands from "#/api/open-hands";
-import { AuthProvider } from "#/context/auth-context";
 
 describe("AnalyticsConsentFormModal", () => {
   it("should call saveUserSettings with consent", async () => {
@@ -14,11 +13,9 @@ describe("AnalyticsConsentFormModal", () => {
 
     render(<AnalyticsConsentFormModal onClose={onCloseMock} />, {
       wrapper: ({ children }) => (
-        <AuthProvider>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 

@@ -7,7 +7,6 @@ import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import OpenHands from "#/api/open-hands";
-import { AuthProvider } from "#/context/auth-context";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
 import { GitRepository } from "#/types/git";
 
@@ -41,11 +40,9 @@ const renderTaskCard = (task = MOCK_TASK_1) => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       </Provider>
     ),
   });

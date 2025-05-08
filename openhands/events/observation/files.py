@@ -115,13 +115,13 @@ class FileEditObservation(Observation):
                     for idx, line in enumerate(old_lines[i1:i2]):
                         line_num = i1 + idx + 1
                         cur_group['before_edits'].append(
-                            f'-{line_num:>{_indent_pad_size-1}}|{line}'
+                            f'-{line_num:>{_indent_pad_size - 1}}|{line}'
                         )
                 if tag in {'replace', 'insert'}:
                     for idx, line in enumerate(new_lines[j1:j2]):
                         line_num = j1 + idx + 1
                         cur_group['after_edits'].append(
-                            f'+{line_num:>{_indent_pad_size-1}}|{line}'
+                            f'+{line_num:>{_indent_pad_size - 1}}|{line}'
                         )
             edit_groups.append(cur_group)
         return edit_groups
@@ -169,12 +169,12 @@ class FileEditObservation(Observation):
         for i, cur_edit_group in enumerate(edit_groups):
             if i != 0:
                 result.append('-------------------------')
-            result.append(f'[begin of {op_type} {i+1} / {len(edit_groups)}]')
+            result.append(f'[begin of {op_type} {i + 1} / {len(edit_groups)}]')
             result.append(f'(content before {op_type})')
             result.extend(cur_edit_group['before_edits'])
             result.append(f'(content after {op_type})')
             result.extend(cur_edit_group['after_edits'])
-            result.append(f'[end of {op_type} {i+1} / {len(edit_groups)}]')
+            result.append(f'[end of {op_type} {i + 1} / {len(edit_groups)}]')
 
         # Cache the result
         self._diff_cache = '\n'.join(result)
@@ -186,9 +186,9 @@ class FileEditObservation(Observation):
             return self.content
 
         if not self.prev_exist:
-            assert (
-                self.old_content == ''
-            ), 'old_content should be empty if the file is new (prev_exist=False).'
+            assert self.old_content == '', (
+                'old_content should be empty if the file is new (prev_exist=False).'
+            )
             return f'[New file {self.path} is created with the provided content.]\n'
 
         # Use cached diff if available, otherwise compute it

@@ -111,12 +111,22 @@ class IssueResolver:
         model = args.llm_model or os.environ['LLM_MODEL']
         base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
         api_version = os.environ.get('LLM_API_VERSION', None)
+        llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
+        llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT', '5'))
+        llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT', '30'))
+        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER', 2))
+        llm_timeout = int(os.environ.get('LLM_TIMEOUT', 0))
 
         # Create LLMConfig instance
         llm_config = LLMConfig(
             model=model,
             api_key=SecretStr(api_key) if api_key else None,
             base_url=base_url,
+            num_retries=llm_num_retries,
+            retry_min_wait=llm_retry_min_wait,
+            retry_max_wait=llm_retry_max_wait,
+            retry_multiplier=llm_retry_multiplier,
+            timeout=llm_timeout,
         )
 
         # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it

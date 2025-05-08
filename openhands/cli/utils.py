@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, List
 
 import toml
 
@@ -10,7 +9,7 @@ from openhands.events.event import Event
 from openhands.llm.metrics import Metrics
 
 _LOCAL_CONFIG_FILE_PATH = Path.home() / '.openhands' / 'config.toml'
-_DEFAULT_CONFIG: Dict[str, Dict[str, List[str]]] = {'sandbox': {'trusted_dirs': []}}
+_DEFAULT_CONFIG: dict[str, dict[str, list[str]]] = {'sandbox': {'trusted_dirs': []}}
 
 
 def get_local_config_trusted_dirs() -> list[str]:
