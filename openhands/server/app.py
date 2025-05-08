@@ -18,15 +18,13 @@ from openhands.server.routes.git import app as git_api_router
 from openhands.server.routes.manage_conversations import (
     app as manage_conversation_api_router,
 )
-from openhands.server.routes.mcp import router as mcp_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
-from openhands.server.routes.mcp2 import mcp_server
-
+from openhands.server.routes.mcp import mcp_server
 
 from mcp.server.sse import SseServerTransport
 from starlette.routing import Mount
@@ -45,7 +43,7 @@ app = FastAPI(
 )
 
 # Create SSE transport instance for handling server-sent events
-sse = SseServerTransport("/mcp/")
+sse = SseServerTransport("/messages/")
 
 
 @app.get("/sse", tags=["MCP"])
@@ -84,12 +82,9 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
-# app.include_router(mcp_router)
-# app.add_api_route("/mcp", mcp_server)
 
 
 
 
 
-
-app.router.routes.append(Mount("/mcp", app=sse.handle_post_message))
+app.router.routes.append(Mount("/messages", app=sse.handle_post_message))
