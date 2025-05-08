@@ -93,6 +93,10 @@ def response_to_actions(
                 is_input = arguments.get('is_input', 'false') == 'true'
                 action = CmdRunAction(command=arguments['command'], is_input=is_input)
 
+                # Set hard timeout if provided
+                if 'timeout' in arguments:
+                    action.set_hard_timeout(float(arguments['timeout']))
+
             # ================================================
             # IPythonTool (Jupyter)
             # ================================================
