@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, List, Union
+from typing import Union
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import BrowseInteractiveAction
@@ -100,7 +100,7 @@ class ClickAction(BrowserAction):
         return f'click("{self.selector}")'
 
 
-def parse_content_to_elements(content: str) -> Dict[str, str]:
+def parse_content_to_elements(content: str) -> dict[str, str]:
     """Parse the observation content into a dictionary mapping anchors to their descriptions"""
     elements = {}
     current_anchor = None
@@ -170,7 +170,7 @@ def resolve_action(action: BrowserAction, content: str) -> BrowserAction:
 
 def pre_login(
     runtime: Runtime,
-    services: List[str],
+    services: list[str],
     save_screenshots=True,
     screenshots_dir='screenshots',
 ):

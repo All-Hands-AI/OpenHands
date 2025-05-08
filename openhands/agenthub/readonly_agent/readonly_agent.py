@@ -52,7 +52,7 @@ class ReadOnlyAgent(CodeActAgent):
         super().__init__(llm, config)
 
         logger.debug(
-            f"TOOLS loaded for ReadOnlyAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
+            f'TOOLS loaded for ReadOnlyAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
         )
 
     @property

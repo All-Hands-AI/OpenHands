@@ -324,7 +324,9 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         wait_time = mock_sleep.call_args[0][0]
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        ), (
+            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -524,9 +526,9 @@ def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
         config = LLMConfig(model=model_name, api_key='test_key')
         llm = LLM(config)
 
-        assert (
-            llm.is_function_calling_active() == expected_support
-        ), f'Expected function calling support to be {expected_support} for model {model_name}'
+        assert llm.is_function_calling_active() == expected_support, (
+            f'Expected function calling support to be {expected_support} for model {model_name}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')

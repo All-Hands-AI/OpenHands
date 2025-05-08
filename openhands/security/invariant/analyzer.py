@@ -176,9 +176,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     ],
                 )
             )
-            assert (
-                self.guardrail_llm is not None
-            ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
+            assert self.guardrail_llm is not None, (
+                'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
+            )
             response = self.guardrail_llm.completion(
                 messages=self.guardrail_llm.format_messages_for_llm(messages),
                 stop=['.'],
@@ -261,9 +261,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                             ],
                         )
                     )
-                    assert (
-                        self.guardrail_llm is not None
-                    ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
+                    assert self.guardrail_llm is not None, (
+                        'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
+                    )
                     response = self.guardrail_llm.completion(
                         messages=self.guardrail_llm.format_messages_for_llm(messages),
                         stop=['.'],

@@ -25,9 +25,9 @@ def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
         )
         print(obs)
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert (
-            obs.content.strip().split('\n\r')[0].strip() == 'BAZ'
-        ), f'Output: [{obs.content}] for {runtime_cls}'
+        assert obs.content.strip().split('\n\r')[0].strip() == 'BAZ', (
+            f'Output: [{obs.content}] for {runtime_cls}'
+        )
 
         _close_test_runtime(runtime)
 

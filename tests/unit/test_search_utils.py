@@ -91,7 +91,7 @@ async def test_iterate_multiple_pages():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': f'Conversation {i}',
-                        'created_at': f'2025-01-{15+i}T19:51:04Z',
+                        'created_at': f'2025-01-{15 + i}T19:51:04Z',
                     }
                 )
                 for i in range(1, 6)
