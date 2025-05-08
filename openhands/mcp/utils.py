@@ -165,8 +165,24 @@ async def add_mcp_tools_to_agent(
         runtime.runtime_initialized
     ), 'Runtime must be initialized before adding MCP tools'
 
+    # Get the memory object from the runtime to access microagent MCP tools
+    memory = getattr(runtime, 'memory', None)
+    
     # Add the runtime as another MCP server
     updated_mcp_config = runtime.get_updated_mcp_config()
+    
+    # Add microagent MCP tools if available
+    if memory and hasattr(memory, 'get_microagent_mcp_tools'):
+        microagent_mcp_configs = memory.get_microagent_mcp_tools()
+        for mcp_config in microagent_mcp_configs:
+            # Only add stdio servers from microagents
+            if mcp_config.stdio_servers:
+                for stdio_server in mcp_config.stdio_servers:
+                    # Check if this stdio server is already in the config
+                    if stdio_server not in updated_mcp_config.stdio_servers:
+                        updated_mcp_config.stdio_servers.append(stdio_server)
+                        logger.info(f"Added microagent stdio server: {stdio_server.name}")
+    
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
