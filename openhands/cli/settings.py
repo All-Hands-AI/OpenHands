@@ -214,7 +214,7 @@ async def modify_llm_settings_basic(
         return
 
     llm_config = config.get_llm_config()
-    llm_config.model = f"{provider}{organized_models[provider]['separator']}{model}"
+    llm_config.model = f'{provider}{organized_models[provider]["separator"]}{model}'
     llm_config.api_key = SecretStr(api_key)
     llm_config.base_url = None
     config.set_llm_config(llm_config)
@@ -234,7 +234,7 @@ async def modify_llm_settings_basic(
     if not settings:
         settings = Settings()
 
-    settings.llm_model = f"{provider}{organized_models[provider]['separator']}{model}"
+    settings.llm_model = f'{provider}{organized_models[provider]["separator"]}{model}'
     settings.llm_api_key = SecretStr(api_key)
     settings.llm_base_url = None
     settings.agent = OH_DEFAULT_AGENT
