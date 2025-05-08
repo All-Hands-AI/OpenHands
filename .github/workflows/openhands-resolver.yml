@@ -83,7 +83,7 @@ jobs:
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
-    runs-on: "${{ inputs.runner }}"
+    runs-on: "${{ inputs.runner || 'ubuntu-latest' }}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
