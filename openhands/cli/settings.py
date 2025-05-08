@@ -84,7 +84,7 @@ def display_settings(config: AppConfig):
 
     # Construct the summary text with aligned columns
     settings_lines = [
-        f'{label+":":<{max_label_width+1}} {value:<}'  # Changed value alignment to left (<)
+        f'{label + ":":<{max_label_width + 1}} {value:<}'  # Changed value alignment to left (<)
         for label, value in str_labels_and_values
     ]
     settings_text = '\n'.join(settings_lines)
