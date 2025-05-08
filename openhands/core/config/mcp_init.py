@@ -15,11 +15,11 @@ def create_default_mcp_config() -> MCPConfig:
     # Define the default MCP servers
     # The runtime will add itself as an additional server
     # Connection failures to these servers will be handled gracefully
-    logger.info("Initializing default MCP configuration")
+    logger.info("Initializing default MCP configuration with localhost:3000/mcp")
     
     return MCPConfig(
         sse_servers=[
-            MCPSSEServerConfig(url="http://localhost:12000/mcp", api_key=None)
+            MCPSSEServerConfig(url="http://localhost:3000/mcp", api_key=None)
         ],
         stdio_servers=[]
     )

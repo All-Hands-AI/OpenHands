@@ -21,14 +21,16 @@ sse_servers = [
 This will allow the agent to use the MCP server for creating pull requests and merge requests.
 """
 
+import asyncio
 import json
 import os
 from types import MappingProxyType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, SecretStr
+from sse_starlette.sse import EventSourceResponse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GitHubService
@@ -162,6 +164,40 @@ class MCPSession:
 
 # Store active sessions
 sessions = {}
+
+@router.get("")
+async def handle_mcp_sse(request: Request, user_auth: UserAuth = Depends(get_user_auth)):
+    """
+    Server-Sent Events (SSE) endpoint for MCP.
+    This endpoint is used for real-time communication with the MCP client.
+    """
+    session_id = request.headers.get("X-MCP-Session-ID", "default")
+    if session_id not in sessions:
+        sessions[session_id] = MCPSession()
+    
+    session = sessions[session_id]
+    session.user_auth = user_auth
+    
+    async def event_generator():
+        # Send an initial event to establish the connection
+        yield {
+            "event": "connected",
+            "data": json.dumps({
+                "message": "Connected to MCP SSE endpoint"
+            })
+        }
+        
+        # Keep the connection alive with heartbeat events
+        while True:
+            await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+            yield {
+                "event": "heartbeat",
+                "data": json.dumps({
+                    "timestamp": asyncio.get_event_loop().time()
+                })
+            }
+    
+    return EventSourceResponse(event_generator())
 
 @router.post("")
 async def handle_mcp_request(request: Request, user_auth: UserAuth = Depends(get_user_auth)):
