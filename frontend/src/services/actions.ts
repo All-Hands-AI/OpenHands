@@ -19,6 +19,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { queryClient } from "#/query-client-config";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -125,7 +126,15 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  if (message.type === "info") {
+  // Info message with conversation_title indicates new title for conversation
+  if (message.type === "info" && message.conversation_title) {
+    const conversationId = message.message;
+
+    // Invalidate the conversation query to trigger a refetch with the new title
+    queryClient.invalidateQueries({
+      queryKey: ["user", "conversation", conversationId],
+    });
+  } else if (message.type === "info") {
     store.dispatch(
       setCurStatusMessage({
         ...message,
