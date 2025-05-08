@@ -277,7 +277,7 @@ class GitHubService(BaseGitService, GitService):
                 result = response.json()
                 if 'errors' in result:
                     raise UnknownException(
-                        f"GraphQL query error: {json.dumps(result['errors'])}"
+                        f'GraphQL query error: {json.dumps(result["errors"])}'
                     )
 
                 return dict(result)
