@@ -47,27 +47,37 @@ async def create_mcp_clients(
 ) -> list[MCPClient]:
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
-    if sse_servers:
-        for server_url in sse_servers:
-            logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
-            )
+    if not sse_servers:
+        logger.warning("No MCP SSE servers configured")
+        return mcp_clients
+        
+    for server_url in sse_servers:
+        logger.info(
+            f'Initializing MCP agent for {server_url} with SSE connection...'
+        )
 
-            client = MCPClient()
+        client = MCPClient()
+        try:
+            # Set a shorter timeout for connection attempts to fail faster
+            await client.connect_sse(server_url.url, api_key=server_url.api_key, timeout=10)
+            # Only add the client to the list after a successful connection
+            mcp_clients.append(client)
+            logger.info(f'Successfully connected to MCP server {server_url} via SSE')
+        except Exception as e:
+            logger.warning(f'Failed to connect to MCP server {server_url}: {str(e)}')
+            logger.info(f'Continuing without MCP server {server_url}')
             try:
-                await client.connect_sse(server_url.url, api_key=server_url.api_key)
-                # Only add the client to the list after a successful connection
-                mcp_clients.append(client)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
-            except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
-                try:
-                    await client.disconnect()
-                except Exception as disconnect_error:
-                    logger.error(
-                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                    )
+                await client.disconnect()
+            except Exception as disconnect_error:
+                logger.debug(
+                    f'Error during disconnect after failed connection: {str(disconnect_error)}'
+                )
 
+    if not mcp_clients:
+        logger.warning("No MCP servers were successfully connected")
+    else:
+        logger.info(f"Successfully connected to {len(mcp_clients)} MCP servers")
+        
     return mcp_clients
 
 
@@ -153,6 +163,15 @@ async def add_mcp_tools_to_agent(
 ):
     """
     Add MCP tools to an agent.
+    
+    This function attempts to connect to configured MCP servers and add their tools
+    to the agent. If no servers are available or connections fail, it will continue
+    without MCP tools.
+    
+    Args:
+        agent: The agent to add MCP tools to
+        runtime: The runtime environment
+        mcp_config: The MCP configuration
     """
     from openhands.runtime.impl.action_execution.action_execution_client import (
         ActionExecutionClient,  # inline import to avoid circular import
@@ -165,14 +184,21 @@ async def add_mcp_tools_to_agent(
         runtime.runtime_initialized
     ), 'Runtime must be initialized before adding MCP tools'
 
-    # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config()
-    # Fetch the MCP tools
-    mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
+    try:
+        # Add the runtime as another MCP server
+        updated_mcp_config = runtime.get_updated_mcp_config()
+        
+        # Fetch the MCP tools
+        mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
-    logger.info(
-        f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}"
-    )
-
-    # Set the MCP tools on the agent
-    agent.set_mcp_tools(mcp_tools)
+        if mcp_tools:
+            logger.info(
+                f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}"
+            )
+            # Set the MCP tools on the agent
+            agent.set_mcp_tools(mcp_tools)
+        else:
+            logger.warning("No MCP tools were loaded. Agent will continue without MCP capabilities.")
+    except Exception as e:
+        logger.error(f"Error adding MCP tools to agent: {str(e)}")
+        logger.warning("Agent will continue without MCP capabilities due to error.")
