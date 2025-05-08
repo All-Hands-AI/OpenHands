@@ -72,6 +72,7 @@ from openhands.events.observation.a2a import (
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.server.thesis_auth import webhook_rag_conversation
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -399,6 +400,8 @@ class AgentController:
 
         if self.should_step(event):
             self.step()
+        else:
+            await webhook_rag_conversation(self.id)
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""

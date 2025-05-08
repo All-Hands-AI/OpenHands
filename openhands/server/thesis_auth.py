@@ -251,3 +251,25 @@ async def search_knowledge(
     except Exception:
         logger.exception('Unexpected error while searching knowledge')
         return None
+
+
+async def webhook_rag_conversation(
+    conversation_id: str,
+) -> bool:
+    url = '/api/threads/webhook/rag-job'
+    payload = {'conversationId': conversation_id}
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+    }
+    try:
+        response = await thesis_auth_client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to sync conversation to rag: {response.status_code} - {response.text}'
+            )
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return True
+    except httpx.RequestError as exc:
+        logger.error(f'Failed to sync conversation to rag: {str(exc)}')
+        return False
