@@ -210,7 +210,11 @@ class CodeActAgent(Agent):
         
         last_message = messages[-1]
         response = None
-        if last_message.role == 'user' and self.config.enable_llm_router and self.config.llm_router_infer_url is not None:
+        if (last_message.role == 'user' 
+            and self.config.enable_llm_router 
+            and self.config.llm_router_infer_url is not None
+            and self.routing_llms is not None
+            and self.routing_llms['simple'] is not None):
             content = "\n".join([msg.text for msg in last_message.content if isinstance(msg, TextContent)])
             text_input = "Prompt: " + content
             body = {

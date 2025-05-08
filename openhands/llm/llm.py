@@ -27,7 +27,7 @@ from traceloop.sdk.decorators import workflow
 
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
@@ -88,9 +88,7 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1-2024-12-17',
 ]
 
-FORMATTED_MODELS = [
-    "llama-4-maverick-17b-128e-instruct"
-]
+FORMATTED_MODELS = ['llama-4-maverick-17b-128e-instruct']
 
 
 class LLM(RetryMixin, DebugMixin):
@@ -251,12 +249,11 @@ class LLM(RetryMixin, DebugMixin):
                 )
                 logger.debug(f'Messages before transform: {messages}')
                 if self.config.model.split('/')[-1] in FORMATTED_MODELS:
-                    logger.debug(f'Transforming messages for llama')
+                    logger.debug('Transforming messages for llama')
                     messages = transform_messages_for_llama(messages)
-               
+
                 logger.debug(f'Messages: {messages}')
                 kwargs['messages'] = messages
-            
 
                 # add stop words if the model supports it
                 if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
@@ -316,7 +313,8 @@ class LLM(RetryMixin, DebugMixin):
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
-                        messages + [non_fncall_response_message], mock_fncall_tools
+                        messages + [non_fncall_response_message],  # type: ignore[operator]
+                        mock_fncall_tools,  # type: ignore[operator]
                     )
                 )
                 fn_call_response_message = fn_call_messages_with_response[-1]
@@ -805,35 +803,35 @@ def transform_messages_for_llama(messages):
     """
     Transform messages with structured content (e.g., [{'type': 'text', 'text': '...'}])
     to a format compatible with Llama models, where content is a plain string.
-    
+
     Args:
         messages (list): List of message dictionaries with 'role' and 'content' fields.
-    
+
     Returns:
         list: Transformed messages with 'content' as strings.
     """
     transformed_messages = []
-    
+
     for msg in messages:
         transformed_msg = msg.copy()  # Avoid modifying the original
-        content = msg.get("content")
-        
+        content = msg.get('content')
+
         # Check if content is a list (structured format)
         if isinstance(content, list):
             # Extract the 'text' field from the first item (assuming it's a text type)
-            if content and isinstance(content[0], dict) and "text" in content[0]:
-                transformed_msg["content"] = content[0]["text"]
+            if content and isinstance(content[0], dict) and 'text' in content[0]:
+                transformed_msg['content'] = content[0]['text']
             else:
-                raise ValueError(f"Invalid content format in message: {msg}")
+                raise ValueError(f'Invalid content format in message: {msg}')
         # If content is already a string, no transformation needed
         elif isinstance(content, str):
-            transformed_msg["content"] = content
+            transformed_msg['content'] = content
         else:
-            raise ValueError(f"Unsupported content type in message: {msg}")
-        
+            raise ValueError(f'Unsupported content type in message: {msg}')
+
         # Remove cache_control if present, as it's not needed for Llama
-        transformed_msg.pop("cache_control", None)
-        
+        transformed_msg.pop('cache_control', None)
+
         transformed_messages.append(transformed_msg)
-    
+
     return transformed_messages
