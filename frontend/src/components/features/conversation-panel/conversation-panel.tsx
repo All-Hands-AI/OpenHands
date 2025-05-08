@@ -7,7 +7,6 @@ import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
@@ -34,7 +33,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { data: conversations, isFetching, error } = useUserConversations();
 
   const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: updateConversation } = useUpdateConversation();
 
   const handleDeleteProject = (conversationId: string) => {
     setConfirmDeleteModalVisible(true);
@@ -54,18 +52,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         },
       );
     }
-  };
-
-  const handleChangeTitle = (
-    conversationId: string,
-    oldTitle: string,
-    newTitle: string,
-  ) => {
-    if (oldTitle !== newTitle)
-      updateConversation({
-        id: conversationId,
-        conversation: { title: newTitle },
-      });
   };
 
   return (
@@ -101,9 +87,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             <ConversationCard
               isActive={isActive}
               onDelete={() => handleDeleteProject(project.conversation_id)}
-              onChangeTitle={(title) =>
-                handleChangeTitle(project.conversation_id, project.title, title)
-              }
               title={project.title}
               selectedRepository={project.selected_repository}
               lastUpdatedAt={project.last_updated_at}

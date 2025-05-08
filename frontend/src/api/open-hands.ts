@@ -143,13 +143,6 @@ class OpenHands {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
 
-  static async updateUserConversation(
-    conversationId: string,
-    conversation: Partial<Omit<Conversation, "conversation_id">>,
-  ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
-  }
-
   static async createConversation(
     conversation_trigger: ConversationTrigger = "gui",
     selectedRepository?: string,

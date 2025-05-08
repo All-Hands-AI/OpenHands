@@ -149,7 +149,7 @@ class WindowsPowershellSession:
             self.close()  # Ensure cleanup if init fails partially
             raise RuntimeError(f'Failed to initialize PowerShell runspace: {e}')
 
-    def _set_initial_cwd(self):
+    def _set_initial_cwd(self) -> None:
         """Sets the initial working directory in the runspace."""
         ps = None
         try:
@@ -174,7 +174,7 @@ class WindowsPowershellSession:
             if ps:
                 ps.Dispose()
 
-    def _confirm_cwd(self):
+    def _confirm_cwd(self) -> None:
         """Confirms the actual CWD in the runspace and updates self._cwd."""
         ps_confirm = None
         try:
@@ -1350,7 +1350,7 @@ class WindowsPowershellSession:
             content=final_output, command=command, metadata=metadata
         )
 
-    def close(self):
+    def close(self) -> None:
         """Closes the PowerShell runspace and releases resources, stopping any active job."""
         if self._closed:
             return
@@ -1408,6 +1408,6 @@ class WindowsPowershellSession:
         self._initialized = False
         self._closed = True
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor ensures the runspace is closed."""
         self.close()

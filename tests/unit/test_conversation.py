@@ -25,7 +25,6 @@ from openhands.server.routes.manage_conversations import (
     get_conversation,
     new_conversation,
     search_conversations,
-    update_conversation,
 )
 from openhands.server.routes.manage_conversations import app as conversation_app
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
@@ -220,50 +219,6 @@ async def test_get_missing_conversation():
             )
             is None
         )
-
-
-@pytest.mark.asyncio
-async def test_update_conversation():
-    with _patch_store():
-        # Mock the ConversationStoreImpl.get_instance
-        with patch(
-            'openhands.server.routes.manage_conversations.ConversationStoreImpl.get_instance'
-        ) as mock_get_instance:
-            # Create a mock conversation store
-            mock_store = MagicMock()
-
-            # Mock metadata
-            metadata = ConversationMetadata(
-                conversation_id='some_conversation_id',
-                title='Some Conversation',
-                created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
-                last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
-                selected_repository='foobar',
-                github_user_id='12345',
-                user_id='12345',
-            )
-
-            # Set up the mock to return metadata and then save it
-            mock_store.get_metadata = AsyncMock(return_value=metadata)
-            mock_store.save_metadata = AsyncMock()
-
-            # Return the mock store from get_instance
-            mock_get_instance.return_value = mock_store
-
-            # Call update_conversation
-            result = await update_conversation(
-                'some_conversation_id',
-                'New Title',
-                user_id='12345',
-            )
-
-            # Verify the result
-            assert result is True
-
-            # Verify that save_metadata was called with updated metadata
-            mock_store.save_metadata.assert_called_once()
-            saved_metadata = mock_store.save_metadata.call_args[0][0]
-            assert saved_metadata.title == 'New Title'
 
 
 @pytest.mark.asyncio
