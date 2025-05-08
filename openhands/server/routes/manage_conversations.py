@@ -91,6 +91,7 @@ async def _create_new_conversation(
     mnemonic: str | None = None,
     mcp_disable: dict[str, bool] | None = None,
     research_mode: str | None = None,
+    knowledge_base: dict | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -186,6 +187,7 @@ async def _create_new_conversation(
         github_user_id=None,
         mnemonic=mnemonic,
         mcp_disable=mcp_disable,
+        knowledge_base=knowledge_base,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -216,15 +218,18 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     x_device_id = request.headers.get('x-device-id')
 
     try:
+        knowledge_base = None
         if space_id or thread_follow_up:
-            knowledge = await search_knowledge(
+            knowledge_base = await search_knowledge(
                 initial_user_msg, space_id, thread_follow_up, bearer_token, x_device_id
             )
-            if knowledge and knowledge['data']['summary']:
-                initial_user_msg = (
-                    f"Reference information:\n{knowledge['data']['summary']}\n\n"
-                    f"Question:\n{initial_user_msg}"
-                )
+            if knowledge_base and knowledge_base['data']['summary']:
+                knowledge_base = knowledge_base['data']
+            # if knowledge and knowledge['data']['summary']:
+            #     initial_user_msg = (
+            #         f"Reference information:\n{knowledge['data']['summary']}\n\n"
+            #         f"Question:\n{initial_user_msg}"
+            #     )
         conversation_id = await _create_new_conversation(
             user_id,
             provider_tokens,
@@ -238,6 +243,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             mnemonic=mnemonic,
             mcp_disable=data.mcp_disable,
             research_mode=data.research_mode,
+            knowledge_base=knowledge_base,
         )
 
         if conversation_id and user_id is not None:

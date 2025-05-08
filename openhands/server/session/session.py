@@ -91,6 +91,7 @@ class Session:
         system_prompt: str | None = None,
         user_prompt: str | None = None,
         mcp_disable: dict[str, bool] | None = None,
+        knowledge_base: dict | None = None,
     ):
         start_time = time.time()
         self.agent_session.event_stream.add_event(
@@ -172,6 +173,8 @@ class Session:
         )
         agent.set_mcp_tools(mcp_tools)
         agent.set_search_tools(search_tools)
+        if knowledge_base:
+            agent.set_agent_knowledge_base([knowledge_base])
 
         if system_prompt:
             agent.set_system_prompt(system_prompt)

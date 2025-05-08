@@ -244,9 +244,10 @@ async def search_knowledge(
         return response.json()
     except httpx.RequestError as exc:
         logger.error(f'Request error while searching knowledge: {str(exc)}')
-        raise HTTPException(
-            status_code=500, detail='Could not connect to knowledge server'
-        )
-    except Exception as e:
+        return None
+        # raise HTTPException(
+        #     status_code=500, detail='Could not connect to knowledge server'
+        # )
+    except Exception:
         logger.exception('Unexpected error while searching knowledge')
-        raise HTTPException(status_code=500, detail=str(e))
+        return None
