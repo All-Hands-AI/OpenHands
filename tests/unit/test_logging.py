@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from io import StringIO
 from unittest.mock import patch
 
@@ -24,11 +25,23 @@ def test_handler():
 
 @pytest.fixture
 def json_handler():
+    # Save original environment variable value if it exists
+    original_level_key = os.environ.get('LOG_JSON_LEVEL_KEY', None)
+
+    # Explicitly set to 'level' for test consistency
+    os.environ['LOG_JSON_LEVEL_KEY'] = 'level'
+
     stream = StringIO()
     json_handler = json_log_handler(logging.INFO, _out=stream)
     openhands_logger.addHandler(json_handler)
     yield openhands_logger, stream
     openhands_logger.removeHandler(json_handler)
+
+    # Restore original environment variable or remove it
+    if original_level_key is not None:
+        os.environ['LOG_JSON_LEVEL_KEY'] = original_level_key
+    else:
+        os.environ.pop('LOG_JSON_LEVEL_KEY', None)
 
 
 def test_openai_api_key_masking(test_handler):
@@ -140,14 +153,11 @@ class TestJsonOutput:
         assert 'timestamp' in output
         del output['timestamp']
 
-        # Get the level key (either 'level' or 'severity')
-        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
-        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
-
-        # Check the value is correct
-        assert output[level_key] == 'INFO'
+        # Check that 'level' key exists and has the correct value
+        assert 'level' in output, "'level' key not found in output"
+        assert output['level'] == 'INFO'
         assert output['message'] == 'Test message'
-        assert len(output) == 2  # Only message and level/severity
+        assert len(output) == 2  # Only message and level
 
     def test_error(self, json_handler):
         logger, string_io = json_handler
@@ -157,14 +167,11 @@ class TestJsonOutput:
         assert 'timestamp' in output
         del output['timestamp']
 
-        # Get the level key (either 'level' or 'severity')
-        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
-        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
-
-        # Check the value is correct
-        assert output[level_key] == 'ERROR'
+        # Check that 'level' key exists and has the correct value
+        assert 'level' in output, "'level' key not found in output"
+        assert output['level'] == 'ERROR'
         assert output['message'] == 'Test message'
-        assert len(output) == 2  # Only message and level/severity
+        assert len(output) == 2  # Only message and level
 
     def test_extra_fields(self, json_handler):
         logger, string_io = json_handler
@@ -174,15 +181,12 @@ class TestJsonOutput:
         assert 'timestamp' in output
         del output['timestamp']
 
-        # Get the level key (either 'level' or 'severity')
-        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
-        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
-
-        # Check the values are correct
-        assert output[level_key] == 'INFO'
+        # Check that 'level' key exists and has the correct value
+        assert 'level' in output, "'level' key not found in output"
+        assert output['level'] == 'INFO'
         assert output['message'] == 'Test message'
         assert output['key'] == '..val..'
-        assert len(output) == 3  # message, level/severity, and key
+        assert len(output) == 3  # message, level, and key
 
     def test_extra_fields_from_adapter(self, json_handler):
         logger, string_io = json_handler
@@ -192,16 +196,13 @@ class TestJsonOutput:
         assert 'timestamp' in output
         del output['timestamp']
 
-        # Get the level key (either 'level' or 'severity')
-        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
-        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
-
-        # Check the values are correct
-        assert output[level_key] == 'INFO'
+        # Check that 'level' key exists and has the correct value
+        assert 'level' in output, "'level' key not found in output"
+        assert output['level'] == 'INFO'
         assert output['message'] == 'Test message'
         assert output['context_field'] == '..val..'
         assert output['log_fied'] == '..val..'
-        assert len(output) == 4  # message, level/severity, context_field, and log_fied
+        assert len(output) == 4  # message, level, context_field, and log_fied
 
     def test_extra_fields_from_adapter_can_override(self, json_handler):
         logger, string_io = json_handler
@@ -211,12 +212,9 @@ class TestJsonOutput:
         assert 'timestamp' in output
         del output['timestamp']
 
-        # Get the level key (either 'level' or 'severity')
-        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
-        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
-
-        # Check the values are correct
-        assert output[level_key] == 'INFO'
+        # Check that 'level' key exists and has the correct value
+        assert 'level' in output, "'level' key not found in output"
+        assert output['level'] == 'INFO'
         assert output['message'] == 'Test message'
         assert output['override'] == 'b'  # Should be overridden to 'b'
-        assert len(output) == 3  # message, level/severity, and override
+        assert len(output) == 3  # message, level, and override
