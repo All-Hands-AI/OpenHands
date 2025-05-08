@@ -12,6 +12,7 @@ from openhands.core.config.condenser_config import (
     CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.mcp_init import create_default_mcp_config
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -114,7 +115,8 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
-        self.config.mcp = settings.mcp_config or MCPConfig()
+        self.config.mcp = create_default_mcp_config()
+        print("setting mcp", self.config.mcp)
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will
