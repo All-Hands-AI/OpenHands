@@ -1,4 +1,5 @@
 import re
+import uuid
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -7,8 +8,12 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event
 from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
-from openhands.server.shared import file_store
+from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.shared import file_store, conversation_manager
 from openhands.server.user_auth import get_user_id, get_user_settings_store
+from openhands.server.utils import get_conversation_store
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.settings.settings_store import SettingsStore
 
 prompt_template = """
@@ -93,6 +98,14 @@ def generate_prompt(llm_config: LLMConfig, events: str, prompt_template: str = p
         raise ValueError("No valid prompt found in the response.")
 
 
+async def generate_unique_conversation_id(
+        conversation_store: ConversationStore,
+) -> str:
+    conversation_id = uuid.uuid4().hex
+    while await conversation_store.exists(conversation_id):
+        conversation_id = uuid.uuid4().hex
+    return conversation_id
+
 app = APIRouter()
 
 class MicroagentUpdateRequest(BaseModel):
@@ -102,11 +115,12 @@ class MicroagentUpdateRequest(BaseModel):
     conversation_id: str
     event_id: int
 
-@app.patch('/microagents')
+@app.post('/microagents')
 async def update_microagent(
     update_request: MicroagentUpdateRequest,
     user_id: str = Depends(get_user_id),
     user_settings: SettingsStore = Depends(get_user_settings_store),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
 ):
     """
     Update the microagent with new learnings through a conversation.
@@ -133,13 +147,41 @@ async def update_microagent(
 
     prompt = generate_prompt(llm_config, stringified_events)
 
-    # get existing conversation repository
+    # get existing conversation meta data
+    metadata = await conversation_store.get_metadata(MicroagentUpdateRequest.conversation_id)
+    selected_repository = metadata.selected_repository
+
     # create a new conversation with the prompt
+    conversation_init_data = ConversationInitData(
+        # unload settings here too
+        selected_repository=selected_repository,
+        git_provider_tokens=None,
+    )
+    conversation_id = await generate_unique_conversation_id(conversation_store)
+
+    conversation_metadata = ConversationMetadata(
+            conversation_id=conversation_id,
+            user_id=user_id,
+            selected_repository=selected_repository,
+            trigger=None, # should we create a trigger for this?
+            title=None, # should we automatically generate a title?
+            github_user_id=None,
+            selected_branch=None,
+        )
+
+    await conversation_store.save_metadata(conversation_metadata)
+
+    await conversation_manager.maybe_start_agent_loop(
+        conversation_id,
+        conversation_init_data,
+        user_id,
+        initial_user_msg=prompt,
+    )
+
     # return the conversation id
     return JSONResponse(
         {
-            "status": "success",
-            "message": "Microagent updated successfully",
-            "prompt": prompt,
+            "status": "job_created",
+            "conversation_job_id": conversation_id,
         }
     )
