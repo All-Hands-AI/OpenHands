@@ -229,6 +229,10 @@ codeact_enable_llm_editor = false
 # Whether the IPython tool is enabled
 codeact_enable_jupyter = true
 
+# Whether to use the LLM router
+#enable_llm_router = true
+#llm_router_infer_url=""
+
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
 
