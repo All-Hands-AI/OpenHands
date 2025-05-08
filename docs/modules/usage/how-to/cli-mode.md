@@ -1,6 +1,6 @@
 # CLI Mode
 
-CLI mode provides a powerful interactive Command-Line Interface (CLI) that lets you engage with OpenHands directly 
+CLI mode provides a powerful interactive Command-Line Interface (CLI) that lets you engage with OpenHands directly
 from your terminal.
 
 This mode is different from the [headless mode](headless-mode), which is non-interactive and better for scripting.
@@ -52,12 +52,12 @@ The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your wor
 
 ### What is CLI Mode?
 
-CLI mode enables real-time interaction with OpenHands agents. You can type natural language tasks, use interactive 
+CLI mode enables real-time interaction with OpenHands agents. You can type natural language tasks, use interactive
 commands, and receive instant feedback—all inside your terminal.
 
 ### Starting a Conversation
 
-When you start the CLI, you'll see a welcome message and a prompt (`>`). Enter your first task or type a command to 
+When you start the CLI, you'll see a welcome message and a prompt (`>`). Enter your first task or type a command to
 begin your conversation.
 
 ### Available Commands
@@ -76,7 +76,7 @@ You can use the following commands whenever the prompt (`>`) is displayed:
 
 #### Settings and Configuration
 
-You can update your model, API key, agent, and other preferences interactively using the `/settings` command. Just 
+You can update your model, API key, agent, and other preferences interactively using the `/settings` command. Just
 follow the prompts:
 
 - **Basic settings**: Choose a model/provider and enter your API key.
@@ -86,12 +86,12 @@ Settings can also be managed via the `config.toml` file.
 
 #### Repository Initialization
 
-The `/init` command helps the agent understand your project by creating a `.openhands/microagents/repo.md` file with 
+The `/init` command helps the agent understand your project by creating a `.openhands/microagents/repo.md` file with
 project details and structure. Use this when onboarding the agent to a new codebase.
 
 #### Agent Pause/Resume Feature
 
-You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply 
+You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
 type `/resume` at the prompt.
 
 ## Tips and Troubleshooting
