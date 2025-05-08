@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import toml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 from openhands.cli.tui import (
     UsageMetrics,
@@ -65,6 +65,16 @@ class ModelInfo(BaseModel):
     provider: str = Field(description='The provider of the model')
     model: str = Field(description='The model identifier')
     separator: str = Field(description='The separator used in the model identifier')
+
+    def __getitem__(self, key: str) -> str:
+        """Allow dictionary-like access to fields."""
+        if key == 'provider':
+            return self.provider
+        elif key == 'model':
+            return self.model
+        elif key == 'separator':
+            return self.separator
+        raise KeyError(f'ModelInfo has no key {key}')
 
 
 def extract_model_and_provider(model: str) -> ModelInfo:
@@ -132,7 +142,7 @@ def organize_models_and_providers(
 
         result_dict[key].models.append(model_id)
 
-    return ModelProviderMapping(__root__=result_dict)
+    return ModelProviderMapping(root=result_dict)
 
 
 VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
@@ -186,46 +196,44 @@ class ProviderInfo(BaseModel):
             return default
 
 
-class ModelProviderMapping(BaseModel):
+class ModelProviderMapping(RootModel[dict[str, ProviderInfo]]):
     """Mapping of providers to their information and models."""
-
-    __root__: dict[str, ProviderInfo]
 
     def __getitem__(self, key: str) -> ProviderInfo:
         """Allow dictionary-like access with provider name."""
-        return self.__root__[key]
+        return self.root[key]
 
     def __setitem__(self, key: str, value: ProviderInfo) -> None:
         """Allow dictionary-like assignment with provider name."""
-        self.__root__[key] = value
+        self.root[key] = value
 
     def __contains__(self, key: str) -> bool:
         """Allow 'in' operator to check if a provider exists."""
-        return key in self.__root__
+        return key in self.root
 
     def __iter__(self):
         """Allow iteration over provider names."""
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __len__(self) -> int:
         """Return the number of providers."""
-        return len(self.__root__)
+        return len(self.root)
 
     def items(self):
         """Return provider name and info pairs."""
-        return self.__root__.items()
+        return self.root.items()
 
     def keys(self):
         """Return provider names."""
-        return self.__root__.keys()
+        return self.root.keys()
 
     def values(self):
         """Return provider info objects."""
-        return self.__root__.values()
+        return self.root.values()
 
     def get(self, key, default=None):
         """Get provider info with a default value if not found."""
-        return self.__root__.get(key, default)
+        return self.root.get(key, default)
 
 
 def is_number(char: str) -> bool:
