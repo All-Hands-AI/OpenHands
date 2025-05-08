@@ -437,9 +437,6 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     agent: CodeActAgent,
 ):
     """Test that _enhance_messages adds newlines between consecutive user messages."""
-    # Set up the prompt manager
-    agent.prompt_manager = Mock()
-
     # Create consecutive user messages with various content types
     messages = [
         # First user message with TextContent only

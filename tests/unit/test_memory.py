@@ -21,7 +21,9 @@ from openhands.events.stream import EventStream
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -77,7 +79,7 @@ def mock_agent():
 async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
     # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory method to raise an exception
@@ -106,7 +108,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
     # Create a mock runtime
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory._on_workspace_context_recall to raise an exception

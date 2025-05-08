@@ -1,0 +1,65 @@
+# Openhands Cloud
+
+OpenHands Cloud é a versão hospedada na nuvem do OpenHands pela All Hands AI.
+
+## Acessando o OpenHands Cloud
+
+O OpenHands Cloud pode ser acessado em https://app.all-hands.dev/.
+
+Você também pode interagir com o OpenHands Cloud programaticamente usando a [API](./cloud-api).
+
+## Primeiros Passos
+
+Ao visitar o OpenHands Cloud, você será solicitado a conectar-se com sua conta GitHub ou GitLab:
+
+1. Após ler e aceitar os termos de serviço, clique em `Log in with GitHub` ou `Log in with GitLab`.
+2. Revise as permissões solicitadas pelo OpenHands e então clique em `Authorize OpenHands AI`.
+   - O OpenHands precisará de algumas permissões da sua conta GitHub ou GitLab. Para ler mais sobre essas permissões:
+     - GitHub: Você pode clicar no link `Learn more` na página de autorização do GitHub.
+     - GitLab: Você pode expandir cada solicitação de permissão na página de autorização do GitLab.
+
+## Acesso ao Repositório
+
+### GitHub
+
+#### Adicionando Acesso ao Repositório
+
+Você pode conceder ao OpenHands acesso específico ao repositório:
+1. Clique em `Add GitHub repos` na página inicial.
+2. Selecione a organização e, em seguida, escolha os repositórios específicos para conceder acesso ao OpenHands.
+   <details>
+     <summary>Detalhes de Permissão para Acesso ao Repositório</summary>
+
+     O Openhands solicita tokens de curta duração (expiração de 8 horas) com estas permissões:
+     - Actions: Leitura e escrita
+     - Administration: Somente leitura
+     - Commit statuses: Leitura e escrita
+     - Contents: Leitura e escrita
+     - Issues: Leitura e escrita
+     - Metadata: Somente leitura
+     - Pull requests: Leitura e escrita
+     - Webhooks: Leitura e escrita
+     - Workflows: Leitura e escrita
+
+     O acesso ao repositório para um usuário é concedido com base em:
+     - Permissão concedida para o repositório.
+     - Permissões do GitHub do usuário (proprietário/colaborador).
+   </details>
+
+3. Clique em `Install & Authorize`.
+
+#### Modificando o Acesso ao Repositório
+
+Você pode modificar o acesso ao repositório do GitHub a qualquer momento:
+* Usando o mesmo fluxo de trabalho `Add GitHub repos`, ou
+* Visitando a página de Configurações e selecionando `Configure GitHub Repositories` na seção `Git Settings`.
+
+### GitLab
+
+Ao usar sua conta GitLab, o OpenHands terá automaticamente acesso aos seus repositórios.
+
+## Persistência de Conversas
+
+- Lista de Conversas – Exibe apenas as 10 conversas mais recentes iniciadas nos últimos 10 dias.
+- Workspaces – Os workspaces de conversas são mantidos por 14 dias.
+- Runtimes – Os runtimes permanecem ativos ("aquecidos") por 30 minutos. Após esse período, retomar uma conversa pode levar de 1 a 2 minutos.

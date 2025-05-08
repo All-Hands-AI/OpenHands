@@ -8,7 +8,6 @@ import {
   MOCK_DEFAULT_USER_SETTINGS,
   resetTestHandlersMockSettings,
 } from "#/mocks/handlers";
-import { AuthProvider } from "#/context/auth-context";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
@@ -16,7 +15,7 @@ const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={new QueryClient()}>
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </QueryClientProvider>
     ),
   });
@@ -515,6 +514,47 @@ describe("Form submission", () => {
       expect(submitButton).toHaveTextContent("Save");
       expect(submitButton).toBeDisabled();
     });
+  });
+
+  it("should clear advanced settings when saving basic settings", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      llm_model: "openai/gpt-4o",
+      llm_base_url: "https://api.openai.com/v1/chat/completions",
+      llm_api_key_set: true,
+      confirmation_mode: true,
+    });
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    renderLlmSettingsScreen();
+
+    await screen.findByTestId("llm-settings-screen");
+    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+    await userEvent.click(advancedSwitch);
+
+    const provider = screen.getByTestId("llm-provider-input");
+    const model = screen.getByTestId("llm-model-input");
+
+    // select provider
+    await userEvent.click(provider);
+    const providerOption = screen.getByText("Anthropic");
+    await userEvent.click(providerOption);
+
+    // select model
+    await userEvent.click(model);
+    const modelOption = screen.getByText("claude-3-5-sonnet-20241022");
+    await userEvent.click(modelOption);
+
+    const submitButton = screen.getByTestId("submit-button");
+    await userEvent.click(submitButton);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        llm_base_url: "",
+        confirmation_mode: false,
+      }),
+    );
   });
 });
 

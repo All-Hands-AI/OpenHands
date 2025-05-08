@@ -69,3 +69,99 @@ def test_container_not_stopped_when_keep_runtime_alive_true(
 
     # Assert
     mock_stop_containers.assert_not_called()
+
+
+def test_volumes_mode_extraction():
+    """Test that the mount mode is correctly extracted from sandbox.volumes."""
+    import os
+
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
+    runtime.config = MagicMock()
+    runtime.config.sandbox.volumes = '/host/path:/container/path:ro'
+    runtime.config.workspace_mount_path = '/host/path'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path'
+
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
+
+    # Assert that the mode was correctly set to 'ro'
+    assert volumes[os.path.abspath('/host/path')]['mode'] == 'ro'
+
+
+# This test has been replaced by test_volumes_multiple_mounts
+
+
+def test_volumes_multiple_mounts():
+    """Test that multiple mounts in sandbox.volumes are correctly processed."""
+    import os
+
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
+    runtime.config = MagicMock()
+    runtime.config.runtime_mount = None
+    runtime.config.sandbox.volumes = (
+        '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    )
+    runtime.config.workspace_mount_path = '/host/path1'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
+
+    # Assert that both mounts were processed correctly
+    assert len(volumes) == 2
+    assert volumes[os.path.abspath('/host/path1')]['bind'] == '/container/path1'
+    assert volumes[os.path.abspath('/host/path1')]['mode'] == 'rw'  # Default mode
+    assert volumes[os.path.abspath('/host/path2')]['bind'] == '/container/path2'
+    assert volumes[os.path.abspath('/host/path2')]['mode'] == 'ro'  # Specified mode
+
+
+def test_multiple_volumes():
+    """Test that multiple volumes are correctly processed."""
+    import os
+
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
+    runtime.config = MagicMock()
+    runtime.config.sandbox.volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
+    runtime.config.workspace_mount_path = '/host/path1'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
+
+    # Assert that all mounts were processed correctly
+    assert len(volumes) == 3
+    assert volumes[os.path.abspath('/host/path1')]['bind'] == '/container/path1'
+    assert volumes[os.path.abspath('/host/path1')]['mode'] == 'rw'
+    assert volumes[os.path.abspath('/host/path2')]['bind'] == '/container/path2'
+    assert volumes[os.path.abspath('/host/path2')]['mode'] == 'rw'
+    assert volumes[os.path.abspath('/host/path3')]['bind'] == '/container/path3'
+    assert volumes[os.path.abspath('/host/path3')]['mode'] == 'ro'
+
+
+def test_volumes_default_mode():
+    """Test that the default mount mode (rw) is used when not specified in sandbox.volumes."""
+    import os
+
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
+    runtime.config = MagicMock()
+    runtime.config.sandbox.volumes = '/host/path:/container/path'
+    runtime.config.workspace_mount_path = '/host/path'
+    runtime.config.workspace_mount_path_in_sandbox = '/container/path'
+
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
+
+    # Assert that the mode remains 'rw' (default)
+    assert volumes[os.path.abspath('/host/path')]['mode'] == 'rw'

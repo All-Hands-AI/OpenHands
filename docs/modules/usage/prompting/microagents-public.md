@@ -2,7 +2,8 @@
 
 ## Overview
 
-Global microagents are [keyword-triggered microagents](./microagents-keyword) that apply to all OpenHands users.
+Global microagents are [keyword-triggered microagents](./microagents-keyword) that apply to all OpenHands users. A list of the current
+global microagents can be found [in the OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents).
 
 ## Contributing a Global Microagent
 

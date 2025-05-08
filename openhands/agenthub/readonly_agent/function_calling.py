@@ -36,6 +36,7 @@ from openhands.events.action import (
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
+    MCPAction,
     MessageAction,
 )
 from openhands.events.event import FileReadSource
@@ -102,7 +103,9 @@ def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
     return echo_cmd + complete_cmd
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse, mcp_tool_names: list[str] | None = None
+) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -124,7 +127,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
-                raise RuntimeError(
+                raise FunctionCallValidationError(
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
 
@@ -197,6 +200,15 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
+            # MCPAction (MCP)
+            # ================================================
+            elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
+                action = MCPAction(
+                    name=tool_call.function.name,
+                    arguments=arguments,
+                )
 
             else:
                 raise FunctionCallNotExistsError(

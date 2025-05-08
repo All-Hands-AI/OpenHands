@@ -122,7 +122,7 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 
 ### Advanced Settings
 
-1. Inside the Settings page, toggle `Advanced` options to access additional settings.
+1. Inside the Settings page, under the `LLM` tab, toggle `Advanced` options to access additional settings.
 2. Use the `Custom Model` text box to manually enter a model if it's not in the list.
 3. Specify a `Base URL` if required by your LLM provider.
 
@@ -136,7 +136,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use the workspace panel to explore your project structure.
 - Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive

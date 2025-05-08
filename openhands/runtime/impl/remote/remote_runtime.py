@@ -130,12 +130,12 @@ class RemoteRuntime(ActionExecutionClient):
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
             self._start_runtime()
-        assert (
-            self.runtime_id is not None
-        ), 'Runtime ID is not set. This should never happen.'
-        assert (
-            self.runtime_url is not None
-        ), 'Runtime URL is not set. This should never happen.'
+        assert self.runtime_id is not None, (
+            'Runtime ID is not set. This should never happen.'
+        )
+        assert self.runtime_url is not None, (
+            'Runtime URL is not set. This should never happen.'
+        )
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')

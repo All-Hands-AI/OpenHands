@@ -27,8 +27,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const { t } = useTranslation();
 
   const getRepo = (repo: string, git_provider: Provider) => {
-    const repositoriesList = repositories?.pages.flatMap((page) => page.data);
-    const selectedRepo = repositoriesList?.find(
+    const selectedRepo = repositories?.find(
       (repository) =>
         repository.full_name === repo &&
         repository.git_provider === git_provider,

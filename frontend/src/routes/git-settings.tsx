@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -15,14 +14,17 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
+import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
 
-  const { mutate: saveSettings, isPending } = useSaveSettings();
+  const { mutate: saveGitProviders, isPending } = useAddGitProviders();
   const { mutate: disconnectGitTokens } = useLogout();
 
-  const { data: settings, isLoading } = useSettings();
+  const { providers } = useUserProviders();
+  const { isLoading } = useSettings();
   const { data: config } = useConfig();
 
   const [githubTokenInputHasValue, setGithubTokenInputHasValue] =
@@ -31,8 +33,8 @@ function GitSettingsScreen() {
     React.useState(false);
 
   const isSaas = config?.APP_MODE === "saas";
-  const isGitHubTokenSet = !!settings?.PROVIDER_TOKENS_SET.github;
-  const isGitLabTokenSet = !!settings?.PROVIDER_TOKENS_SET.gitlab;
+  const isGitHubTokenSet = providers.includes("github");
+  const isGitLabTokenSet = providers.includes("gitlab");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -46,11 +48,11 @@ function GitSettingsScreen() {
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
 
-    saveSettings(
+    saveGitProviders(
       {
-        provider_tokens: {
-          github: githubToken,
-          gitlab: gitlabToken,
+        providers: {
+          github: { token: githubToken },
+          gitlab: { token: gitlabToken },
         },
       },
       {

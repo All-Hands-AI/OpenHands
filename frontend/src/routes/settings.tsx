@@ -23,6 +23,7 @@ function SettingsScreen() {
 
   const ossNavItems = [
     { to: "/settings", text: t("SETTINGS$NAV_LLM") },
+    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
   ];
@@ -58,7 +59,7 @@ function SettingsScreen() {
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-12 px-9 border-b border-tertiary"
+        className="flex items-end gap-6 px-9 border-b border-tertiary"
       >
         {navItems.map(({ to, text }) => (
           <NavLink
@@ -67,12 +68,12 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
                 isActive && "border-primary",
               )
             }
           >
-            <ul className="text-[#F9FBFE] text-sm">{text}</ul>
+            <span className="text-[#F9FBFE] text-sm">{text}</span>
           </NavLink>
         ))}
       </nav>
