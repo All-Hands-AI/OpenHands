@@ -23,21 +23,21 @@ def serialization_deserialization(
     original_action_dict, cls, max_message_chars: int = 10000
 ):
     action_instance = event_from_dict(original_action_dict)
-    assert isinstance(
-        action_instance, Action
-    ), 'The action instance should be an instance of Action.'
-    assert isinstance(
-        action_instance, cls
-    ), f'The action instance should be an instance of {cls.__name__}.'
+    assert isinstance(action_instance, Action), (
+        'The action instance should be an instance of Action.'
+    )
+    assert isinstance(action_instance, cls), (
+        f'The action instance should be an instance of {cls.__name__}.'
+    )
 
     # event_to_dict is the regular serialization of an event
     serialized_action_dict = event_to_dict(action_instance)
 
     # it has an extra message property, for the UI
     serialized_action_dict.pop('message')
-    assert (
-        serialized_action_dict == original_action_dict
-    ), 'The serialized action should match the original action dict.'
+    assert serialized_action_dict == original_action_dict, (
+        'The serialized action should match the original action dict.'
+    )
 
 
 def test_event_props_serialization_deserialization():

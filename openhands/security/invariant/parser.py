@@ -20,7 +20,7 @@ TraceElement = Message | ToolCall | ToolOutput | Function
 
 
 def get_next_id(trace: list[TraceElement]) -> str:
-    used_ids = [el.id for el in trace if type(el) == ToolCall]
+    used_ids = [el.id for el in trace if isinstance(el, ToolCall)]
     for i in range(1, len(used_ids) + 2):
         if str(i) not in used_ids:
             return str(i)
@@ -31,7 +31,7 @@ def get_last_id(
     trace: list[TraceElement],
 ) -> str | None:
     for el in reversed(trace):
-        if type(el) == ToolCall:
+        if isinstance(el, ToolCall):
             return el.id
     return None
 
@@ -39,12 +39,12 @@ def get_last_id(
 def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement]:
     next_id = get_next_id(trace)
     inv_trace: list[TraceElement] = []
-    if type(action) == MessageAction:
+    if isinstance(action, MessageAction):
         if action.source == EventSource.USER:
             inv_trace.append(Message(role='user', content=action.content))
         else:
             inv_trace.append(Message(role='assistant', content=action.content))
-    elif type(action) in [NullAction, ChangeAgentStateAction]:
+    elif isinstance(action, (NullAction, ChangeAgentStateAction)):
         pass
     elif hasattr(action, 'action') and action.action is not None:
         event_dict = event_to_dict(action)
@@ -63,7 +63,7 @@ def parse_observation(
     trace: list[TraceElement], obs: Observation
 ) -> list[TraceElement]:
     last_id = get_last_id(trace)
-    if type(obs) in [NullObservation, AgentStateChangedObservation]:
+    if isinstance(obs, (NullObservation, AgentStateChangedObservation)):
         return []
     elif hasattr(obs, 'content') and obs.content is not None:
         return [ToolOutput(role='tool', content=obs.content, tool_call_id=last_id)]

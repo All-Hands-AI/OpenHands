@@ -33,9 +33,9 @@ async def test_create_mcp_clients_timeout_with_invalid_url():
 
         # Verify that the operation completed in a reasonable time (less than 5 seconds)
         # This ensures the timeout is working properly
-        assert (
-            end_time - start_time < 5.0
-        ), 'Operation took too long, timeout may not be working'
+        assert end_time - start_time < 5.0, (
+            'Operation took too long, timeout may not be working'
+        )
     finally:
         # Restore the original method
         MCPClient.connect_sse = original_connect_sse
@@ -68,9 +68,9 @@ async def test_create_mcp_clients_with_unreachable_host():
         assert len(clients) == 0
 
         # Verify that the operation completed in a reasonable time (less than 5 seconds)
-        assert (
-            end_time - start_time < 5.0
-        ), 'Operation took too long, timeout may not be working'
+        assert end_time - start_time < 5.0, (
+            'Operation took too long, timeout may not be working'
+        )
     finally:
         # Restore the original method
         MCPClient.connect_sse = original_connect_sse

@@ -95,7 +95,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     lca_path = bench_config['LCA_PATH']
@@ -177,7 +177,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -190,7 +190,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     model_name = bench_config['model_name']
@@ -227,7 +227,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     result = json.loads(obs.content)
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
 
     return result
 
@@ -313,7 +313,7 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
      7.2.3 The functions you changed
    7.4 If any tests fail, revise your implementation until all tests pass
 
-Phase 8. REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["sha_fail"]}.
+Phase 8. REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance['sha_fail']}.
    8.1 Ensure you've fully addressed all requirements.
 
 Once all phases are done, announce: 'Agent Task Complete'.

@@ -4,7 +4,7 @@ OpenHands utilise LiteLLM pour effectuer des appels aux modèles de chat d'Azure
 
 ## Configuration d'Azure OpenAI
 
-Lors de l'exécution d'OpenHands, vous devrez définir la variable d'environnement suivante en utilisant `-e` dans la 
+Lors de l'exécution d'OpenHands, vous devrez définir la variable d'environnement suivante en utilisant `-e` dans la
 [commande docker run](../installation#running-openhands) :
 
 ```
