@@ -2,6 +2,7 @@
 
 import json
 import os
+import socket
 import time
 
 import docker
@@ -20,6 +21,84 @@ from openhands.events.observation import CmdOutputObservation, MCPObservation
 # ============================================================================================================================
 # Bash-specific tests
 # ============================================================================================================================
+
+
+@pytest.fixture
+def sse_mcp_docker_server():
+    """Manages the lifecycle of the SSE MCP Docker container for tests, using a random available port."""
+    image_name = 'supercorp/supergateway'
+
+    # Find a free port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        host_port = s.getsockname()[1]
+
+    container_internal_port = (
+        8000  # The port the MCP server listens on *inside* the container
+    )
+
+    container_command_args = [
+        '--stdio',
+        'npx -y @modelcontextprotocol/server-filesystem /',
+        '--port',
+        str(container_internal_port),  # MCP server inside container listens on this
+        '--baseUrl',
+        f'http://localhost:{host_port}',  # The URL used to access the server from the host
+    ]
+    client = docker.from_env()
+    container = None
+    log_streamer = None
+
+    # Import LogStreamer here as it's specific to this fixture's needs
+    from openhands.runtime.utils.log_streamer import LogStreamer
+
+    try:
+        logger.info(
+            f'Starting Docker container {image_name} with command: {" ".join(container_command_args)} '
+            f'and mapping internal port {container_internal_port} to host port {host_port}',
+            extra={'msg_type': 'ACTION'},
+        )
+        container = client.containers.run(
+            image_name,
+            command=container_command_args,
+            ports={
+                f'{container_internal_port}/tcp': host_port
+            },  # Map container's internal port to the random host port
+            detach=True,
+            auto_remove=True,
+            stdin_open=True,
+        )
+        logger.info(
+            f'Container {container.short_id} started, listening on host port {host_port}.'
+        )
+
+        log_streamer = LogStreamer(
+            container,
+            lambda level, msg: getattr(logger, level.lower())(
+                f'[MCP server {container.short_id}] {msg}'
+            ),
+        )
+        # Wait for the server to initialize, as in the original tests
+        time.sleep(10)
+
+        yield {'url': f'http://localhost:{host_port}/sse'}
+
+    finally:
+        if container:
+            logger.info(f'Stopping container {container.short_id}...')
+            try:
+                container.stop(timeout=5)
+                logger.info(
+                    f'Container {container.short_id} stopped (and should be auto-removed).'
+                )
+            except docker.errors.NotFound:
+                logger.info(
+                    f'Container {container.short_id} not found, likely already stopped and removed.'
+                )
+            except Exception as e:
+                logger.error(f'Error stopping container {container.short_id}: {e}')
+        if log_streamer:
+            log_streamer.close()
 
 
 def test_default_activated_tools():
@@ -81,48 +160,14 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
 
 
 @pytest.mark.asyncio
-async def test_filesystem_mcp_via_sse(temp_dir, runtime_cls, run_as_openhands):
-    image_name = 'supercorp/supergateway'
-    container_command_args = [
-        '--stdio',
-        'npx -y @modelcontextprotocol/server-filesystem /',
-        '--port',
-        '8000',
-        '--baseUrl',
-        'http://localhost:8000',
-    ]
-
-    client = docker.from_env()
-
-    logger.info(
-        f'Starting Docker container {image_name} with command: {" ".join(container_command_args)}',
-        extra={'msg_type': 'ACTION'},
-    )
-
-    container = client.containers.run(
-        image_name,
-        command=container_command_args,
-        ports={'8000/tcp': 8000},
-        detach=True,
-        auto_remove=True,
-        stdin_open=True,
-    )
-    logger.info(f'Container {container.short_id} started.')
-
-    from openhands.runtime.utils.log_streamer import LogStreamer
-
-    log_streamer = LogStreamer(
-        container,
-        lambda level, msg: getattr(logger, level.lower())(
-            f'[MCP server {container.short_id}] {msg}'
-        ),
-    )
-    time.sleep(10)
-
+async def test_filesystem_mcp_via_sse(
+    temp_dir, runtime_cls, run_as_openhands, sse_mcp_docker_server
+):
+    sse_server_info = sse_mcp_docker_server
+    sse_url = sse_server_info['url']
+    runtime = None
     try:
-        mcp_sse_server_config = MCPSSEServerConfig(
-            url='http://localhost:8000/sse',
-        )
+        mcp_sse_server_config = MCPSSEServerConfig(url=sse_url)
         override_mcp_config = MCPConfig(sse_servers=[mcp_sse_server_config])
         runtime, config = _load_runtime(
             temp_dir,
@@ -140,57 +185,20 @@ async def test_filesystem_mcp_via_sse(temp_dir, runtime_cls, run_as_openhands):
         assert '[FILE] .dockerenv' in obs.content
 
     finally:
-        logger.info(f'Stopping container {container.short_id}...')
-        container.stop()
-        logger.info(f'Container {container.short_id} stopped.')
-        runtime.close()
-        log_streamer.close()
+        if runtime:
+            runtime.close()
+        # Container and log_streamer cleanup is handled by the sse_mcp_docker_server fixture
 
 
 @pytest.mark.asyncio
-async def test_both_stdio_and_sse_mcp(temp_dir, runtime_cls, run_as_openhands):
-    # Launch SSE server
-    image_name = 'supercorp/supergateway'
-    container_command_args = [
-        '--stdio',
-        'npx -y @modelcontextprotocol/server-filesystem /',
-        '--port',
-        '8000',
-        '--baseUrl',
-        'http://localhost:8000',
-    ]
-
-    client = docker.from_env()
-
-    logger.info(
-        f'Starting Docker container {image_name} with command: {" ".join(container_command_args)}',
-        extra={'msg_type': 'ACTION'},
-    )
-
-    container = client.containers.run(
-        image_name,
-        command=container_command_args,
-        ports={'8000/tcp': 8000},
-        detach=True,
-        auto_remove=True,
-        stdin_open=True,
-    )
-    logger.info(f'Container {container.short_id} started.')
-
-    from openhands.runtime.utils.log_streamer import LogStreamer
-
-    log_streamer = LogStreamer(
-        container,
-        lambda level, msg: getattr(logger, level.lower())(
-            f'[MCP server {container.short_id}] {msg}'
-        ),
-    )
-    time.sleep(10)
-
+async def test_both_stdio_and_sse_mcp(
+    temp_dir, runtime_cls, run_as_openhands, sse_mcp_docker_server
+):
+    sse_server_info = sse_mcp_docker_server
+    sse_url = sse_server_info['url']
+    runtime = None
     try:
-        mcp_sse_server_config = MCPSSEServerConfig(
-            url='http://localhost:8000/sse',
-        )
+        mcp_sse_server_config = MCPSSEServerConfig(url=sse_url)
 
         # Also add stdio server
         mcp_stdio_server_config = MCPStdioServerConfig(
@@ -208,41 +216,43 @@ async def test_both_stdio_and_sse_mcp(temp_dir, runtime_cls, run_as_openhands):
         )
 
         # ======= Test SSE server =======
-        mcp_action = MCPAction(name='list_directory', arguments={'path': '.'})
-        obs = await runtime.call_tool_mcp(mcp_action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, MCPObservation), (
+        mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '.'})
+        obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
+        logger.info(obs_sse, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs_sse, MCPObservation), (
             'The observation should be a MCPObservation.'
         )
-        assert '[FILE] .dockerenv' in obs.content
+        assert '[FILE] .dockerenv' in obs_sse.content
 
         # ======= Test stdio server =======
         # Test browser server
-        action_cmd = CmdRunAction(
+        action_cmd_http = CmdRunAction(
             command='python3 -m http.server 8000 > server.log 2>&1 &'
         )
-        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action_cmd)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(action_cmd_http, extra={'msg_type': 'ACTION'})
+        obs_http = runtime.run_action(action_cmd_http)
+        logger.info(obs_http, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        assert '[1]' in obs.content
+        assert isinstance(obs_http, CmdOutputObservation)
+        assert obs_http.exit_code == 0
+        assert '[1]' in obs_http.content
 
-        action_cmd = CmdRunAction(command='sleep 3 && cat server.log')
-        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action_cmd)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert obs.exit_code == 0
+        action_cmd_cat = CmdRunAction(command='sleep 3 && cat server.log')
+        logger.info(action_cmd_cat, extra={'msg_type': 'ACTION'})
+        obs_cat = runtime.run_action(action_cmd_cat)
+        logger.info(obs_cat, extra={'msg_type': 'OBSERVATION'})
+        assert obs_cat.exit_code == 0
 
-        mcp_action = MCPAction(name='fetch', arguments={'url': 'http://localhost:8000'})
-        obs = await runtime.call_tool_mcp(mcp_action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, MCPObservation), (
+        mcp_action_fetch = MCPAction(
+            name='fetch', arguments={'url': 'http://localhost:8000'}
+        )
+        obs_fetch = await runtime.call_tool_mcp(mcp_action_fetch)
+        logger.info(obs_fetch, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs_fetch, MCPObservation), (
             'The observation should be a MCPObservation.'
         )
 
-        result_json = json.loads(obs.content)
+        result_json = json.loads(obs_fetch.content)
         assert not result_json['isError']
         assert len(result_json['content']) == 1
         assert result_json['content'][0]['type'] == 'text'
@@ -251,8 +261,6 @@ async def test_both_stdio_and_sse_mcp(temp_dir, runtime_cls, run_as_openhands):
             == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
         )
     finally:
-        logger.info(f'Stopping container {container.short_id}...')
-        container.stop()
-        logger.info(f'Container {container.short_id} stopped.')
-        runtime.close()
-        log_streamer.close()
+        if runtime:
+            runtime.close()
+        # SSE Docker container cleanup is handled by the sse_mcp_docker_server fixture
