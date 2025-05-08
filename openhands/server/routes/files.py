@@ -123,7 +123,7 @@ async def list_files(
     '/select-file',
     response_model=None,
     responses={
-        200: {'description': 'File content returned as FileResponse'},
+        200: {'description': 'File content returned as JSON', 'model': dict[str, str]},
         500: {'description': 'Error opening file', 'model': dict},
         415: {'description': 'Unsupported media type', 'model': dict},
     },
