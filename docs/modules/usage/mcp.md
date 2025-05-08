@@ -20,7 +20,7 @@ MCP configuration is defined in the `[mcp]` section of your `config.toml` file.
 sse_servers = [
     # Basic SSE server with just a URL
     "http://example.com:8080/mcp",
-    
+
     # SSE server with API key authentication
     {url="https://secure-example.com/mcp", api_key="your-api-key"}
 ]
@@ -29,7 +29,7 @@ sse_servers = [
 stdio_servers = [
     # Basic stdio server
     {name="fetch", command="uvx", args=["mcp-server-fetch"]},
-    
+
     # Stdio server with environment variables
     {
         name="data-processor",
@@ -52,11 +52,6 @@ SSE servers are configured using either a string URL or an object with the follo
 - `url` (required)
   - Type: `str`
   - Description: The URL of the SSE server
-
-- `api_key` (optional)
-  - Type: `str`
-  - Default: `None`
-  - Description: API key for authentication with the SSE server
 
 ### Stdio Servers
 

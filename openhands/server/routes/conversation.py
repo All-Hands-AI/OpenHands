@@ -8,7 +8,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/config')
-async def get_remote_runtime_config(request: Request):
+async def get_remote_runtime_config(request: Request) -> JSONResponse:
     """Retrieve the runtime configuration.
 
     Currently, this is the session ID and runtime ID (if available).
@@ -25,7 +25,7 @@ async def get_remote_runtime_config(request: Request):
 
 
 @app.get('/vscode-url')
-async def get_vscode_url(request: Request):
+async def get_vscode_url(request: Request) -> JSONResponse:
     """Get the VSCode URL.
 
     This endpoint allows getting the VSCode URL.
@@ -55,7 +55,7 @@ async def get_vscode_url(request: Request):
 
 
 @app.get('/web-hosts')
-async def get_hosts(request: Request):
+async def get_hosts(request: Request) -> JSONResponse:
     """Get the hosts used by the runtime.
 
     This endpoint allows getting the hosts used by the runtime.

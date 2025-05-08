@@ -15,7 +15,7 @@ def main():
                     'org': groups.group(1),
                     'repo': groups.group(2),
                     'number': groups.group(3),
-                    'fix_patch': data['test_result']['git_patch']
+                    'fix_patch': data['test_result']['git_patch'],
                 }
                 fout.write(json.dumps(patch) + '\n')
 

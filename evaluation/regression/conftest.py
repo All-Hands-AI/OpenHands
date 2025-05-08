@@ -132,7 +132,7 @@ def run_test_case(test_cases_dir, workspace_dir, request):
                 'python3',
                 f'{SCRIPT_DIR}/../../openhands/main.py',
                 '-d',
-                f"{os.path.join(agent_dir, 'workspace')}",
+                f'{os.path.join(agent_dir, "workspace")}',
                 '-c',
                 f'{agents_ref[agent]}',
                 '-t',
@@ -165,7 +165,7 @@ def pytest_configure(config):
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(message)s',
         handlers=[
-            logging.FileHandler(f"test_results_{now.strftime('%Y%m%d_%H%M%S')}.log"),
+            logging.FileHandler(f'test_results_{now.strftime("%Y%m%d_%H%M%S")}.log'),
             logging.StreamHandler(),
         ],
     )

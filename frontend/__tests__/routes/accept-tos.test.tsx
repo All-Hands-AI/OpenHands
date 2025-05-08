@@ -43,7 +43,7 @@ const createWrapper = () => {
       },
     },
   });
-  
+
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -61,7 +61,7 @@ describe("AcceptTOS", () => {
 
   it("should render a TOS checkbox that is unchecked by default", () => {
     render(<AcceptTOS />, { wrapper: createWrapper() });
-    
+
     const checkbox = screen.getByRole("checkbox");
     const continueButton = screen.getByRole("button", { name: "TOS$CONTINUE" });
 
@@ -72,7 +72,7 @@ describe("AcceptTOS", () => {
   it("should enable the continue button when the TOS checkbox is checked", async () => {
     const user = userEvent.setup();
     render(<AcceptTOS />, { wrapper: createWrapper() });
-    
+
     const checkbox = screen.getByRole("checkbox");
     const continueButton = screen.getByRole("button", { name: "TOS$CONTINUE" });
 
@@ -96,7 +96,7 @@ describe("AcceptTOS", () => {
 
     const user = userEvent.setup();
     render(<AcceptTOS />, { wrapper: createWrapper() });
-    
+
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 
@@ -121,7 +121,7 @@ describe("AcceptTOS", () => {
 
     const user = userEvent.setup();
     render(<AcceptTOS />, { wrapper: createWrapper() });
-    
+
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 

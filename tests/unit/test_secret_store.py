@@ -5,12 +5,13 @@ from typing import Any
 
 from pydantic import SecretStr
 
-from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
+from openhands.integrations.provider import ProviderToken, ProviderType
+from openhands.storage.data_models.user_secrets import UserSecrets
 
 
-class TestSecretStore:
+class TestUserSecrets:
     def test_adding_only_provider_tokens(self):
-        """Test adding only provider tokens to the SecretStore."""
+        """Test adding only provider tokens to the UserSecrets."""
         # Create provider tokens
         github_token = ProviderToken(
             token=SecretStr('github-token-123'), user_id='user1'
@@ -26,7 +27,7 @@ class TestSecretStore:
         }
 
         # Initialize the store with a dict that will be converted to MappingProxyType
-        store = SecretStore(provider_tokens=provider_tokens)
+        store = UserSecrets(provider_tokens=provider_tokens)
 
         # Verify the tokens were added correctly
         assert isinstance(store.provider_tokens, MappingProxyType)
@@ -47,7 +48,7 @@ class TestSecretStore:
         assert len(store.custom_secrets) == 0
 
     def test_adding_only_custom_secrets(self):
-        """Test adding only custom secrets to the SecretStore."""
+        """Test adding only custom secrets to the UserSecrets."""
         # Create custom secrets
         custom_secrets = {
             'API_KEY': 'api-key-123',
@@ -55,7 +56,7 @@ class TestSecretStore:
         }
 
         # Initialize the store with custom secrets
-        store = SecretStore(custom_secrets=custom_secrets)
+        store = UserSecrets(custom_secrets=custom_secrets)
 
         # Verify the custom secrets were added correctly
         assert isinstance(store.custom_secrets, MappingProxyType)
@@ -84,7 +85,7 @@ class TestSecretStore:
         )
 
         # Test with dict for provider_tokens and MappingProxyType for custom_secrets
-        store1 = SecretStore(
+        store1 = UserSecrets(
             provider_tokens=provider_tokens_dict, custom_secrets=custom_secrets_proxy
         )
 
@@ -102,7 +103,7 @@ class TestSecretStore:
         )
         provider_tokens_proxy = MappingProxyType({ProviderType.GITLAB: provider_token})
 
-        store2 = SecretStore(
+        store2 = UserSecrets(
             provider_tokens=provider_tokens_proxy, custom_secrets=custom_secrets_dict
         )
 
@@ -122,7 +123,7 @@ class TestSecretStore:
         )
         custom_secret = {'API_KEY': SecretStr('api-key-123')}
 
-        initial_store = SecretStore(
+        initial_store = UserSecrets(
             provider_tokens=MappingProxyType({ProviderType.GITHUB: github_token}),
             custom_secrets=MappingProxyType(custom_secret),
         )
@@ -182,14 +183,14 @@ class TestSecretStore:
         )
 
     def test_serialization_with_expose_secrets(self):
-        """Test serializing the SecretStore with expose_secrets=True."""
+        """Test serializing the UserSecrets with expose_secrets=True."""
         # Create a store with both provider tokens and custom secrets
         github_token = ProviderToken(
             token=SecretStr('github-token-123'), user_id='user1'
         )
         custom_secrets = {'API_KEY': SecretStr('api-key-123')}
 
-        store = SecretStore(
+        store = UserSecrets(
             provider_tokens=MappingProxyType({ProviderType.GITHUB: github_token}),
             custom_secrets=MappingProxyType(custom_secrets),
         )
@@ -255,7 +256,7 @@ class TestSecretStore:
         }
 
         # Initialize the store
-        store = SecretStore(provider_tokens=mixed_provider_tokens)
+        store = UserSecrets(provider_tokens=mixed_provider_tokens)
 
         # Verify all tokens are converted to SecretStr
         assert isinstance(store.provider_tokens, MappingProxyType)
@@ -282,7 +283,7 @@ class TestSecretStore:
         }
 
         # Initialize the store
-        store = SecretStore(custom_secrets=custom_secrets_dict)
+        store = UserSecrets(custom_secrets=custom_secrets_dict)
 
         # Verify all secrets are converted to SecretStr
         assert isinstance(store.custom_secrets, MappingProxyType)

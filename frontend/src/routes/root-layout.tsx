@@ -5,7 +5,6 @@ import {
   Outlet,
   useNavigate,
   useLocation,
-  useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -60,9 +59,8 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const tosPageStatus = useIsOnTosPage();
-  const [searchParams] = useSearchParams();
   const { data: settings } = useSettings();
-  const { error, isFetching } = useBalance();
+  const { error } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
 
@@ -114,21 +112,18 @@ export default function MainApp() {
   }, [tosPageStatus]);
 
   React.useEffect(() => {
-    // Don't do any redirects when on TOS page
-    if (!tosPageStatus) {
-      // Don't allow users to use the app if it 402s
-      if (error?.status === 402 && pathname !== "/") {
-        navigate("/");
-      } else if (
-        !isFetching &&
-        searchParams.get("free_credits") === "success"
-      ) {
-        displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
-        searchParams.delete("free_credits");
-        navigate("/");
-      }
+    if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
+      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
     }
-  }, [error?.status, pathname, isFetching, tosPageStatus]);
+  }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
+
+  React.useEffect(() => {
+    // Don't do any redirects when on TOS page
+    // Don't allow users to use the app if it 402s
+    if (!tosPageStatus && error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    }
+  }, [error?.status, pathname, tosPageStatus]);
 
   // When on TOS page, we don't make any API calls, so we need to handle this case
   const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;

@@ -1,6 +1,8 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from openhands.core.cli_tui import (
+import pytest
+
+from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
@@ -14,6 +16,7 @@ from openhands.core.cli_tui import (
     display_usage_metrics,
     display_welcome_message,
     get_session_duration,
+    read_confirmation_input,
 )
 from openhands.core.config import AppConfig
 from openhands.events import EventSource
@@ -21,7 +24,6 @@ from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
     CmdRunAction,
-    FileEditAction,
     MessageAction,
 )
 from openhands.events.observation import (
@@ -33,7 +35,7 @@ from openhands.llm.metrics import Metrics
 
 
 class TestDisplayFunctions:
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_runtime_initialization_message_local(self, mock_print):
         display_runtime_initialization_message('local')
         assert mock_print.call_count == 3
@@ -41,7 +43,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[1]
         assert 'Starting local runtime' in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_runtime_initialization_message_docker(self, mock_print):
         display_runtime_initialization_message('docker')
         assert mock_print.call_count == 3
@@ -49,7 +51,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[1]
         assert 'Starting Docker runtime' in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_banner(self, mock_print):
         session_id = 'test-session-id'
 
@@ -60,9 +62,9 @@ class TestDisplayFunctions:
         # Check the last call has the session ID
         args, kwargs = mock_print.call_args_list[-2]
         assert session_id in str(args[0])
-        assert 'Initialized session' in str(args[0])
+        assert 'Initialized conversation' in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.print_formatted_text')
     def test_display_welcome_message(self, mock_print):
         display_welcome_message()
         assert mock_print.call_count == 2
@@ -70,7 +72,7 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[0]
         assert "Let's start building" in str(args[0])
 
-    @patch('openhands.core.cli_tui.display_message')
+    @patch('openhands.cli.tui.display_message')
     def test_display_event_message_action(self, mock_display_message):
         config = MagicMock(spec=AppConfig)
         message = MessageAction(content='Test message')
@@ -80,7 +82,7 @@ class TestDisplayFunctions:
 
         mock_display_message.assert_called_once_with('Test message')
 
-    @patch('openhands.core.cli_tui.display_command')
+    @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
         config = MagicMock(spec=AppConfig)
         cmd_action = CmdRunAction(command='echo test')
@@ -89,7 +91,7 @@ class TestDisplayFunctions:
 
         mock_display_command.assert_called_once_with(cmd_action)
 
-    @patch('openhands.core.cli_tui.display_command_output')
+    @patch('openhands.cli.tui.display_command_output')
     def test_display_event_cmd_output(self, mock_display_output):
         config = MagicMock(spec=AppConfig)
         cmd_output = CmdOutputObservation(content='Test output', command='echo test')
@@ -98,16 +100,7 @@ class TestDisplayFunctions:
 
         mock_display_output.assert_called_once_with('Test output')
 
-    @patch('openhands.core.cli_tui.display_file_edit')
-    def test_display_event_file_edit_action(self, mock_display_file_edit):
-        config = MagicMock(spec=AppConfig)
-        file_edit = FileEditAction(path='test.py', content="print('hello')")
-
-        display_event(file_edit, config)
-
-        mock_display_file_edit.assert_called_once_with(file_edit)
-
-    @patch('openhands.core.cli_tui.display_file_edit')
+    @patch('openhands.cli.tui.display_file_edit')
     def test_display_event_file_edit_observation(self, mock_display_file_edit):
         config = MagicMock(spec=AppConfig)
         file_edit_obs = FileEditObservation(path='test.py', content="print('hello')")
@@ -116,7 +109,7 @@ class TestDisplayFunctions:
 
         mock_display_file_edit.assert_called_once_with(file_edit_obs)
 
-    @patch('openhands.core.cli_tui.display_file_read')
+    @patch('openhands.cli.tui.display_file_read')
     def test_display_event_file_read(self, mock_display_file_read):
         config = MagicMock(spec=AppConfig)
         file_read = FileReadObservation(path='test.py', content="print('hello')")
@@ -125,7 +118,7 @@ class TestDisplayFunctions:
 
         mock_display_file_read.assert_called_once_with(file_read)
 
-    @patch('openhands.core.cli_tui.display_message')
+    @patch('openhands.cli.tui.display_message')
     def test_display_event_thought(self, mock_display_message):
         config = MagicMock(spec=AppConfig)
         action = Action()
@@ -135,18 +128,16 @@ class TestDisplayFunctions:
 
         mock_display_message.assert_called_once_with('Thinking about this...')
 
-    @patch('openhands.core.cli_tui.time.sleep')
-    @patch('openhands.core.cli_tui.print_formatted_text')
-    def test_display_message(self, mock_print, mock_sleep):
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_message(self, mock_print):
         message = 'Test message'
         display_message(message)
 
-        mock_sleep.assert_called_once_with(0.2)
         mock_print.assert_called_once()
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
 
-    @patch('openhands.core.cli_tui.print_container')
+    @patch('openhands.cli.tui.print_container')
     def test_display_command_awaiting_confirmation(self, mock_print_container):
         cmd_action = CmdRunAction(command='echo test')
         cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
@@ -159,7 +150,7 @@ class TestDisplayFunctions:
 
 
 class TestInteractiveCommandFunctions:
-    @patch('openhands.core.cli_tui.print_container')
+    @patch('openhands.cli.tui.print_container')
     def test_display_usage_metrics(self, mock_print_container):
         metrics = UsageMetrics()
         metrics.total_cost = 1.25
@@ -182,8 +173,8 @@ class TestInteractiveCommandFunctions:
         assert '0m' in duration
         assert '0s' in duration
 
-    @patch('openhands.core.cli_tui.print_formatted_text')
-    @patch('openhands.core.cli_tui.get_session_duration')
+    @patch('openhands.cli.tui.print_formatted_text')
+    @patch('openhands.cli.tui.get_session_duration')
     def test_display_shutdown_message(self, mock_get_duration, mock_print):
         mock_get_duration.return_value = '1 hour 5 minutes'
 
@@ -196,7 +187,7 @@ class TestInteractiveCommandFunctions:
         assert mock_print.call_count >= 3  # At least 3 print calls
         assert mock_get_duration.call_count == 1
 
-    @patch('openhands.core.cli_tui.display_usage_metrics')
+    @patch('openhands.cli.tui.display_usage_metrics')
     def test_display_status(self, mock_display_metrics):
         metrics = UsageMetrics()
         session_id = 'test-session-id'
@@ -261,3 +252,117 @@ class TestUserCancelledError:
     def test_user_cancelled_error(self):
         error = UserCancelledError()
         assert isinstance(error, Exception)
+
+
+class TestReadConfirmationInput:
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_yes(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'y'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'yes'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_yes_full(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'yes'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'yes'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_no(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'n'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_no_full(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'no'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_always(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'a'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'always'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_always_full(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'always'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'always'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_invalid(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'invalid'
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_empty(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = ''
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_none(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = None
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_keyboard_interrupt(
+        self, mock_create_session
+    ):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.side_effect = KeyboardInterrupt
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_eof_error(self, mock_create_session):
+        mock_session = AsyncMock()
+        mock_session.prompt_async.side_effect = EOFError
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input()
+        assert result == 'no'
