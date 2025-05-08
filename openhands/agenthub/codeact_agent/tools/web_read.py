@@ -4,7 +4,7 @@ _WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You sho
 
 You may use the `web_read` tool to read text content from a webpage, and even search the webpage content using a Google search query (e.g., url=`https://www.google.com/search?q=YOUR_QUERY`).
 
-Only the most recently read webpage will be stored in memory. If you read a different webpage and want to refer to the previous one, you can use the `web_read` tool again with the previous URL. This means if you follow a link you will lose the content of the source page, so make a note of anything important before you move on.
+Only the most recently read webpage will be available to read. This means you should not follow a link to a new page until you are done with the information on the current page.
 """
 
 WebReadTool = ChatCompletionToolParam(
