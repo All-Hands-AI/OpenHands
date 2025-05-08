@@ -12,6 +12,7 @@ from openhands.core.config.config_utils import (
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.mcp_init import create_default_mcp_config
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -90,7 +91,7 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-    mcp: MCPConfig = Field(default_factory=MCPConfig)
+    mcp: MCPConfig = Field(default_factory=create_default_mcp_config)
 
     defaults_dict: ClassVar[dict] = {}
 
