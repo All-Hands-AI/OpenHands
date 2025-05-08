@@ -20,7 +20,7 @@ def verify_instance_costs(row: pd.Series) -> float:
     try:
         metrics = row.get('metrics')
         if not metrics:
-            logger.warning(f"Instance {row['instance_id']}: No metrics found")
+            logger.warning(f'Instance {row["instance_id"]}: No metrics found')
             return 0.0
 
         accumulated = metrics.get('accumulated_cost')
@@ -28,7 +28,7 @@ def verify_instance_costs(row: pd.Series) -> float:
 
         if accumulated is None:
             logger.warning(
-                f"Instance {row['instance_id']}: No accumulated_cost in metrics"
+                f'Instance {row["instance_id"]}: No accumulated_cost in metrics'
             )
             return 0.0
 
@@ -41,8 +41,8 @@ def verify_instance_costs(row: pd.Series) -> float:
             if abs(costs[i]['cost'] - costs[i + 1]['cost']) < 1e-6:
                 has_duplicate = True
                 logger.debug(
-                    f"Instance {row['instance_id']}: Possible buggy double-counting detected! "
-                    f"Steps {i} and {i+1} have identical costs: {costs[i]['cost']:.2f}"
+                    f'Instance {row["instance_id"]}: Possible buggy double-counting detected! '
+                    f'Steps {i} and {i + 1} have identical costs: {costs[i]["cost"]:.2f}'
                 )
             else:
                 all_pairs_match = False
@@ -64,15 +64,15 @@ def verify_instance_costs(row: pd.Series) -> float:
 
         if not abs(total_cost - accumulated) < 1e-6:
             logger.warning(
-                f"Instance {row['instance_id']}: Cost mismatch: "
-                f"accumulated: {accumulated:.2f}, sum of costs: {total_cost:.2f}, "
+                f'Instance {row["instance_id"]}: Cost mismatch: '
+                f'accumulated: {accumulated:.2f}, sum of costs: {total_cost:.2f}, '
             )
 
         return total_cost
 
     except Exception as e:
         logger.error(
-            f"Error verifying costs for instance {row.get('instance_id', 'UNKNOWN')}: {e}"
+            f'Error verifying costs for instance {row.get("instance_id", "UNKNOWN")}: {e}'
         )
         return 0.0
 

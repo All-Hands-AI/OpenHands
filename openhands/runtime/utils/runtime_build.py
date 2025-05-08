@@ -385,9 +385,9 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(
-            build_folder
-        ), f'Build folder {build_folder} does not exist'
+        assert os.path.exists(build_folder), (
+            f'Build folder {build_folder} does not exist'
+        )
         logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )

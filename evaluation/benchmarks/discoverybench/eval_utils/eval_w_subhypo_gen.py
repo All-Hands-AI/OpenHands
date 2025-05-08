@@ -489,7 +489,7 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
                 gen_subh_to_gold_subh[p_id] = g_id
                 gold_subh_covered.append(g_id)
                 gen_gold_subh_to_context[f'P{p_id}||G{g_id}'] = {
-                    'question': f"""Comapring: GoldH: {gold_subh["text"]}, GoldC: {gold_subh['context']}\nGenH: {gen_subh['text']}, GenC: {gen_subh['context']}""",
+                    'question': f"""Comapring: GoldH: {gold_subh['text']}, GoldC: {gold_subh['context']}\nGenH: {gen_subh['text']}, GenC: {gen_subh['context']}""",
                     'answer': context_bool,
                     'score': context_score,
                 }

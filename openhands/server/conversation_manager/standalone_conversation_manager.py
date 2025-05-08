@@ -7,14 +7,12 @@ from typing import Callable, Iterable
 import socketio
 
 from openhands.core.config.app_config import AppConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.event import EventSource
 from openhands.events.event_store import EventStore
-from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
+from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
@@ -25,7 +23,10 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
-from openhands.utils.conversation_summary import get_default_conversation_title, auto_generate_title
+from openhands.utils.conversation_summary import (
+    auto_generate_title,
+    get_default_conversation_title,
+)
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
@@ -207,7 +208,6 @@ class StandaloneConversationManager(ConversationManager):
             )
         store = await conversation_store_class.get_instance(self.config, user_id)
         return store
-    
 
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -287,7 +287,7 @@ class StandaloneConversationManager(ConversationManager):
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
-                f'too_many_sessions_for:{user_id or ''}',
+                f'too_many_sessions_for:{user_id or ""}',
                 extra={'session_id': sid, 'user_id': user_id},
             )
             # Get the conversations sorted (oldest first)
@@ -300,7 +300,7 @@ class StandaloneConversationManager(ConversationManager):
             while len(conversations) >= self.config.max_concurrent_conversations:
                 oldest_conversation_id = conversations.pop().conversation_id
                 logger.debug(
-                    f'closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}',
+                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
                     extra={'session_id': oldest_conversation_id, 'user_id': user_id},
                 )
                 # Send status message to client and close session.
@@ -332,7 +332,9 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(user_id, github_user_id, sid, settings),
+                self._create_conversation_update_callback(
+                    user_id, github_user_id, sid, settings
+                ),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:
@@ -429,7 +431,11 @@ class StandaloneConversationManager(ConversationManager):
         )
 
     def _create_conversation_update_callback(
-        self, user_id: str | None, github_user_id: str | None, conversation_id: str, settings: Settings
+        self,
+        user_id: str | None,
+        github_user_id: str | None,
+        conversation_id: str,
+        settings: Settings,
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
@@ -444,9 +450,13 @@ class StandaloneConversationManager(ConversationManager):
 
         return callback
 
-
     async def _update_conversation_for_event(
-        self, user_id: str, github_user_id: str, conversation_id: str, settings: Settings, event=None
+        self,
+        user_id: str,
+        github_user_id: str,
+        conversation_id: str,
+        settings: Settings,
+        event=None,
     ):
         conversation_store = await self._get_conversation_store(user_id, github_user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
@@ -469,8 +479,12 @@ class StandaloneConversationManager(ConversationManager):
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
         default_title = get_default_conversation_title(conversation_id)
-        if conversation.title == default_title: # attempt to autogenerate if default title is in use
-            title = await auto_generate_title(conversation_id, user_id, self.file_store, settings)
+        if (
+            conversation.title == default_title
+        ):  # attempt to autogenerate if default title is in use
+            title = await auto_generate_title(
+                conversation_id, user_id, self.file_store, settings
+            )
             if title and not title.isspace():
                 conversation.title = title
                 try:

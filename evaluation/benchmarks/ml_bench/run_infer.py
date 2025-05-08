@@ -103,7 +103,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -137,7 +137,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -150,7 +150,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     repo_url = instance['github']
@@ -199,7 +199,7 @@ def complete_runtime(
         outputs['success'] = 1
     outputs['eval_exit_code'] = obs.exit_code
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return outputs
 
 

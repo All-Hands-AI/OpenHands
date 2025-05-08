@@ -52,5 +52,5 @@ docker run -it \
 
 Este comando iniciará uma sessão interativa no Docker onde você pode inserir tarefas e receber respostas do OpenHands.
 
-O `-e SANDBOX_USER_ID=$(id -u)` é passado para o comando Docker para garantir que o usuário da sandbox corresponda às 
+O `-e SANDBOX_USER_ID=$(id -u)` é passado para o comando Docker para garantir que o usuário da sandbox corresponda às
 permissões do usuário do host. Isso impede que o agente crie arquivos pertencentes ao root no workspace montado.

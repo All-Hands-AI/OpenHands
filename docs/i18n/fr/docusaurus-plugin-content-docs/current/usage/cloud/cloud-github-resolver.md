@@ -4,12 +4,12 @@ Le Résolveur GitHub automatise les corrections de code et fournit une assistanc
 
 ## Configuration
 
-Le Résolveur GitHub Cloud est disponible automatiquement lorsque vous 
+Le Résolveur GitHub Cloud est disponible automatiquement lorsque vous
 [accordez l'accès au dépôt OpenHands Cloud](./openhands-cloud#adding-repository-access).
 
 ## Utilisation
 
-Après avoir accordé l'accès au dépôt OpenHands Cloud, vous pouvez utiliser le Résolveur GitHub Cloud sur les problèmes et les pull requests 
+Après avoir accordé l'accès au dépôt OpenHands Cloud, vous pouvez utiliser le Résolveur GitHub Cloud sur les problèmes et les pull requests
 du dépôt.
 
 ### Problèmes (Issues)

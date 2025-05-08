@@ -34,9 +34,9 @@ SUPPORTED_AGENT_CLS = {'CodeActAgent'}
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
-    assert (
-        metadata.max_iterations == 1
-    ), 'max_iterations must be 1 for browsing delegation evaluation.'
+    assert metadata.max_iterations == 1, (
+        'max_iterations must be 1 for browsing delegation evaluation.'
+    )
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = AppConfig(
