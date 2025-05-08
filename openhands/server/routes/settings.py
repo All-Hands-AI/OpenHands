@@ -23,7 +23,14 @@ from openhands.storage.settings.settings_store import SettingsStore
 app = APIRouter(prefix='/api')
 
 
-@app.get('/settings')
+@app.get(
+    '/settings',
+    response_model=GETSettingsModel,
+    responses={
+        404: {'description': 'Settings not found', 'model': dict},
+        401: {'description': 'Invalid token', 'model': dict},
+    },
+)
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
@@ -69,7 +76,15 @@ async def load_settings(
         )
 
 
-@app.post('/reset-settings')
+@app.post(
+    '/reset-settings',
+    responses={
+        410: {
+            'description': 'Reset settings functionality has been removed',
+            'model': dict,
+        }
+    },
+)
 async def reset_settings() -> JSONResponse:
     """
     Resets user settings. (Deprecated)
@@ -99,7 +114,13 @@ async def store_llm_settings(
     return settings
 
 
-@app.post('/settings')
+@app.post(
+    '/settings',
+    responses={
+        200: {'description': 'Settings stored successfully', 'model': dict},
+        500: {'description': 'Error storing settings', 'model': dict},
+    },
+)
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),

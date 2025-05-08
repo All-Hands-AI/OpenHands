@@ -42,7 +42,14 @@ from openhands.utils.async_utils import call_sync_from_async
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
-@app.get('/list-files')
+@app.get(
+    '/list-files',
+    response_model=list[str],
+    responses={
+        404: {'description': 'Runtime not initialized', 'model': dict},
+        500: {'description': 'Error listing or filtering files', 'model': dict},
+    },
+)
 async def list_files(
     request: Request, path: str | None = None
 ) -> list[str] | JSONResponse:
@@ -112,7 +119,15 @@ async def list_files(
     return file_list
 
 
-@app.get('/select-file')
+@app.get(
+    '/select-file',
+    response_model=None,
+    responses={
+        200: {'description': 'File content returned as FileResponse'},
+        500: {'description': 'Error opening file', 'model': dict},
+        415: {'description': 'Unsupported media type', 'model': dict},
+    },
+)
 async def select_file(file: str, request: Request) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
@@ -169,7 +184,14 @@ async def select_file(file: str, request: Request) -> FileResponse | JSONRespons
         )
 
 
-@app.get('/zip-directory')
+@app.get(
+    '/zip-directory',
+    response_model=None,
+    responses={
+        200: {'description': 'Zipped workspace returned as FileResponse'},
+        500: {'description': 'Error zipping workspace', 'model': dict},
+    },
+)
 def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
@@ -197,7 +219,14 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
         )
 
 
-@app.get('/git/changes')
+@app.get(
+    '/git/changes',
+    response_model=dict[str, Any],
+    responses={
+        404: {'description': 'Not a git repository', 'model': dict},
+        500: {'description': 'Error getting changes', 'model': dict},
+    },
+)
 async def git_changes(
     request: Request,
     conversation_id: str,
@@ -238,7 +267,11 @@ async def git_changes(
         )
 
 
-@app.get('/git/diff')
+@app.get(
+    '/git/diff',
+    response_model=dict[str, Any],
+    responses={500: {'description': 'Error getting diff', 'model': dict}},
+)
 async def git_diff(
     request: Request,
     path: str,
