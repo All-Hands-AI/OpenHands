@@ -4927,8 +4927,8 @@
         "uk": "API ключі"
     },
     "SETTINGS$API_KEYS_DESCRIPTION": {
-        "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account.",
-        "uk": "Ключі API дозволяють вам програмно автентифікуватися за допомогою API OpenHands. Зберігайте свої ключі API в безпеці; будь-хто, хто має ваш ключ API, може отримати доступ до вашого облікового запису."
+        "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account. For more information on how to use the API, see our <a>API documentation</a>.",
+        "uk": "Ключі API дозволяють вам програмно автентифікуватися за допомогою API OpenHands. Зберігайте свої ключі API в безпеці; будь-хто, хто має ваш ключ API, може отримати доступ до вашого облікового запису. Для отримання додаткової інформації про використання API, перегляньте нашу <a>документацію API</a>."
     },
     "SETTINGS$CREATE_API_KEY": {
         "en": "Create API Key",
