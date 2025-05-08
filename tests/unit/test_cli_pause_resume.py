@@ -97,9 +97,10 @@ class TestCliPauseResumeInRunSession:
         config = MagicMock()
 
         # Patch the display_event function
-        with patch('openhands.cli.main.display_event') as mock_display_event, patch(
-            'openhands.cli.main.update_usage_metrics'
-        ) as mock_update_metrics:
+        with (
+            patch('openhands.cli.main.display_event') as mock_display_event,
+            patch('openhands.cli.main.update_usage_metrics') as mock_update_metrics,
+        ):
             # Create a closure to capture the current context
             async def test_func():
                 # Set the pause event

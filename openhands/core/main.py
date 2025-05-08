@@ -142,9 +142,9 @@ async def run_controller(
         agent, runtime, config, replay_events=replay_events
     )
 
-    assert isinstance(
-        initial_user_action, Action
-    ), f'initial user actions must be an Action, got {type(initial_user_action)}'
+    assert isinstance(initial_user_action, Action), (
+        f'initial user actions must be an Action, got {type(initial_user_action)}'
+    )
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
