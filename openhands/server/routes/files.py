@@ -42,7 +42,7 @@ from openhands.utils.async_utils import call_sync_from_async
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
-@app.get('/list-files', response_model=None)
+@app.get('/list-files')
 async def list_files(
     request: Request, path: str | None = None
 ) -> list[str] | JSONResponse:
@@ -112,7 +112,7 @@ async def list_files(
     return file_list
 
 
-@app.get('/select-file', response_model=None)
+@app.get('/select-file')
 async def select_file(file: str, request: Request) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
@@ -169,7 +169,7 @@ async def select_file(file: str, request: Request) -> FileResponse | JSONRespons
         )
 
 
-@app.get('/zip-directory', response_model=None)
+@app.get('/zip-directory')
 def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
@@ -197,7 +197,7 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
         )
 
 
-@app.get('/git/changes', response_model=None)
+@app.get('/git/changes')
 async def git_changes(
     request: Request,
     conversation_id: str,
@@ -238,7 +238,7 @@ async def git_changes(
         )
 
 
-@app.get('/git/diff', response_model=None)
+@app.get('/git/diff')
 async def git_diff(
     request: Request,
     path: str,
