@@ -354,6 +354,8 @@ class ActionExecutionClient(Runtime):
     def get_updated_mcp_config(self) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
+        print("original config", updated_mcp_config)
+
         # Send a request to the action execution server to updated MCP config
         stdio_tools = [
             server.model_dump(mode='json')

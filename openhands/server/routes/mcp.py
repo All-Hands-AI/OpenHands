@@ -24,7 +24,6 @@ This will allow the agent to use the MCP server for creating pull requests and m
 import asyncio
 import json
 import os
-from types import MappingProxyType
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status

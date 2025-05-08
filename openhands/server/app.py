@@ -6,6 +6,7 @@ with warnings.catch_warnings():
 
 from fastapi import (
     FastAPI,
+    Request,
 )
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -24,7 +25,11 @@ from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
+from openhands.server.routes.mcp2 import mcp_server
 
+
+from mcp.server.sse import SseServerTransport
+from starlette.routing import Mount
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
@@ -38,6 +43,30 @@ app = FastAPI(
     version=__version__,
     lifespan=_lifespan,
 )
+
+# Create SSE transport instance for handling server-sent events
+sse = SseServerTransport("/mcp/")
+
+
+@app.get("/sse", tags=["MCP"])
+async def handle_sse(request: Request):
+    """
+    SSE endpoint that connects to the MCP server
+
+    This endpoint establishes a Server-Sent Events connection with the client
+    and forwards communication to the Model Context Protocol server.
+    """
+    # Use sse.connect_sse to establish an SSE connection with the MCP server
+    async with sse.connect_sse(request.scope, request.receive, request._send) as (
+        read_stream,
+        write_stream,
+    ):
+        # Run the MCP server with the established streams
+        await mcp_server._mcp_server.run(
+            read_stream,
+            write_stream,
+            mcp_server._mcp_server.create_initialization_options(),
+        )
 
 
 @app.get('/health')
@@ -55,4 +84,12 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
-app.include_router(mcp_router)
+# app.include_router(mcp_router)
+# app.add_api_route("/mcp", mcp_server)
+
+
+
+
+
+
+app.router.routes.append(Mount("/mcp", app=sse.handle_post_message))

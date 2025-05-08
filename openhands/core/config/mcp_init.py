@@ -2,7 +2,7 @@
 Initialize MCP configuration with default servers.
 """
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
 
 def create_default_mcp_config() -> MCPConfig:
@@ -20,7 +20,9 @@ def create_default_mcp_config() -> MCPConfig:
     
     return MCPConfig(
         sse_servers=[
-            MCPSSEServerConfig(url="http://localhost:3000/mcp", api_key=None)
+            MCPSSEServerConfig(url="http://localhost:3000/sse", api_key=None)
         ],
-        stdio_servers=[]
+        stdio_servers=[
+            
+        ]
     )
