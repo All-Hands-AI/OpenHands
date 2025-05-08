@@ -63,10 +63,12 @@ class AppConfig(BaseModel):
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
-    workspace_base: str | None = Field(default=None)
-    workspace_mount_path: str | None = Field(default=None)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace')
-    workspace_mount_rewrite: str | None = Field(default=None)
+
+    # Deprecated parameters - will be removed in a future version
+    workspace_base: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
+    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)

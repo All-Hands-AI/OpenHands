@@ -29,7 +29,7 @@ suggested_task_pr_graphql_query = """
     }
 """
 
-        
+
 suggested_task_issue_graphql_query = """
     query GetUserIssues($login: String!) {
         user(login: $login) {

@@ -26,10 +26,10 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: API token secret for Modal
 
 ### Workspace
-- `workspace_base`
+- `workspace_base` **(Deprecated)**
   - Type: `str`
   - Default: `"./workspace"`
-  - Description: Base path for the workspace
+  - Description: Base path for the workspace. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
 - `cache_dir`
   - Type: `str`
@@ -101,20 +101,25 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: Maximum number of iterations
 
 ### Sandbox Configuration
-- `workspace_mount_path_in_sandbox`
+- `volumes`
+  - Type: `str`
+  - Default: `None`
+  - Description: Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
+
+- `workspace_mount_path_in_sandbox` **(Deprecated)**
   - Type: `str`
   - Default: `"/workspace"`
-  - Description: Path to mount the workspace in the sandbox
+  - Description: Path to mount the workspace in the sandbox. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
-- `workspace_mount_path`
+- `workspace_mount_path` **(Deprecated)**
   - Type: `str`
   - Default: `""`
-  - Description: Path to mount the workspace
+  - Description: Path to mount the workspace. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
-- `workspace_mount_rewrite`
+- `workspace_mount_rewrite` **(Deprecated)**
   - Type: `str`
   - Default: `""`
-  - Description: Path to rewrite the workspace mount path to. You can usually ignore this, it refers to special cases of running inside another container.
+  - Description: Path to rewrite the workspace mount path to. You can usually ignore this, it refers to special cases of running inside another container. **Deprecated: Use `SANDBOX_VOLUMES` instead.**
 
 ### Miscellaneous
 - `run_as_openhands`

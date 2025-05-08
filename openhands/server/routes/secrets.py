@@ -52,7 +52,6 @@ async def invalidate_legacy_secrets_store(
 
 
 async def check_provider_tokens(provider_info: POSTProviderModel) -> str:
-    print(provider_info)
     if provider_info.provider_tokens:
         # Determine whether tokens are valid
         for token_type, token_value in provider_info.provider_tokens.items():
@@ -154,10 +153,10 @@ async def load_custom_secrets_names(
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f'Failed to load secret names: {e}')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            content={'error': 'Failed to get secret names'},
         )
 
 
