@@ -67,4 +67,5 @@ export interface StatusMessage {
   type: string;
   id?: string;
   message: string;
+  conversation_title?: string;
 }

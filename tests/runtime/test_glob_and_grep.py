@@ -168,9 +168,9 @@ def test_grep_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_di
 
             obs = _run_cmd_action(runtime, cmd)
             assert obs.exit_code == 0, f'Grep command failed for path: {path}'
-            assert (
-                'function' in obs.content
-            ), f'Expected pattern not found in output for path: {path}'
+            assert 'function' in obs.content, (
+                f'Expected pattern not found in output for path: {path}'
+            )
 
             # Verify the actual file was found
             if path == 'src/my project':

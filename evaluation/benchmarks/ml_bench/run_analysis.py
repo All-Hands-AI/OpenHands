@@ -93,7 +93,7 @@ def classify_error(llm: LLM, failed_case: dict) -> str:
         error_category = response.choices[0].message['content']
     except Exception as e:
         logger.error(
-            f"Failed to classify the error for the failed case: {failed_case['instance_id']}"
+            f'Failed to classify the error for the failed case: {failed_case["instance_id"]}'
         )
         logger.error(e)
         error_category = input(
