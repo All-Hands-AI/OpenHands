@@ -137,25 +137,27 @@ function GitSettingsScreen() {
 
       <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
         {!shouldRenderExternalConfigureButtons && (
-          <BrandButton
-            testId="disconnect-tokens-button"
-            name="disconnect-tokens-button"
-            type="submit"
-            variant="secondary"
-            isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
-          >
-            Disconnect Tokens
-          </BrandButton>
+          <>
+            <BrandButton
+              testId="disconnect-tokens-button"
+              name="disconnect-tokens-button"
+              type="submit"
+              variant="secondary"
+              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+            >
+              Disconnect Tokens
+            </BrandButton>
+            <BrandButton
+              testId="submit-button"
+              type="submit"
+              variant="primary"
+              isDisabled={isPending || formIsClean}
+            >
+              {!isPending && t("SETTINGS$SAVE_CHANGES")}
+              {isPending && t("SETTINGS$SAVING")}
+            </BrandButton>
+          </>
         )}
-        <BrandButton
-          testId="submit-button"
-          type="submit"
-          variant="primary"
-          isDisabled={isPending || formIsClean}
-        >
-          {!isPending && t("SETTINGS$SAVE_CHANGES")}
-          {isPending && t("SETTINGS$SAVING")}
-        </BrandButton>
       </div>
     </form>
   );
