@@ -71,9 +71,9 @@ def test_pr_title_with_quotes(monkeypatch):
         data = kwargs.get('json', {})
         title = data.get('title', '')
         expected = "Fix issue #123: Issue with 'quotes' and \"double quotes\" and <class 'ValueError'>"
-        assert (
-            title == expected
-        ), f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
+        assert title == expected, (
+            f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
+        )
         return MockResponse()
 
     class MockGetResponse:
@@ -98,7 +98,7 @@ def test_pr_title_with_quotes(monkeypatch):
     original_run = subprocess.run
 
     def mock_run(*args, **kwargs):
-        print(f"Running command: {args[0] if args else kwargs.get('args', [])}")
+        print(f'Running command: {args[0] if args else kwargs.get("args", [])}')
         if isinstance(args[0], list) and args[0][0] == 'git':
             if 'push' in args[0]:
                 return subprocess.CompletedProcess(

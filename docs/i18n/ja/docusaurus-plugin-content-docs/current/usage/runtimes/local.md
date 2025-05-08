@@ -1,62 +1,72 @@
 # ローカルランタイム
 
-ローカルランタイムを使用すると、OpenHands エージェントは Docker を使用せずに直接ローカルマシン上でアクションを実行できます。このランタイムは主に、Docker が利用できない CI パイプラインやテストシナリオなどの制御された環境向けです。
+ローカルランタイムを使用すると、OpenHandsエージェントはDockerを使用せずに直接ローカルマシン上でアクションを実行できます。
+このランタイムは主に、Dockerが利用できないCI（継続的インテグレーション）パイプラインやテストシナリオなどの制御された環境向けに設計されています。
 
 :::caution
-**セキュリティ警告**: ローカルランタイムはサンドボックス分離なしで実行されます。エージェントはマシン上のファイルに直接アクセスして変更できます。制御された環境でのみ、またはセキュリティへの影響を十分に理解している場合にのみ、このランタイムを使用してください。
+**セキュリティ警告**: ローカルランタイムはサンドボックス分離なしで実行されます。エージェントはマシン上のファイルに直接アクセスして変更することができます。このランタイムは、制御された環境または安全性の影響を十分に理解している場合にのみ使用してください。
 :::
 
 ## 前提条件
 
 ローカルランタイムを使用する前に、以下を確認してください：
 
-1. [開発セットアップ手順](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)に従っていること。
-2. tmux がシステムで利用可能であること。
+1. [開発ワークフロー](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)を使用してOpenHandsを実行できること。
+2. システム上でtmuxが利用可能であること。
 
 ## 設定
 
-ローカルランタイムを使用するには、モデル、API キーなどの必要な設定に加えて、OpenHands を起動するときに環境変数または[config.toml ファイル](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml)を介して以下のオプションを設定する必要があります：
+ローカルランタイムを使用するには、LLMプロバイダー、モデル、APIキーなどの必要な設定に加えて、OpenHandsを起動する際に環境変数または[config.tomlファイル](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml)を通じて以下のオプションを設定する必要があります：
 
-- 環境変数を介して：
+環境変数を使用する場合：
 
 ```bash
 # 必須
 export RUNTIME=local
 
 # オプションですが推奨
-export WORKSPACE_BASE=/path/to/your/workspace
+# エージェントはデフォルトで/workspaceで作業するため、プロジェクトディレクトリをそこにマウントします
+export SANDBOX_VOLUMES=/path/to/your/workspace:/workspace:rw
+# 読み取り専用データの場合は、異なるマウントパスを使用します
+# export SANDBOX_VOLUMES=/path/to/your/workspace:/workspace:rw,/path/to/large/dataset:/data:ro
 ```
 
-- `config.toml` を介して：
+`config.toml`を使用する場合：
 
 ```toml
 [core]
 runtime = "local"
-workspace_base = "/path/to/your/workspace"
+
+[sandbox]
+# エージェントはデフォルトで/workspaceで作業するため、プロジェクトディレクトリをそこにマウントします
+volumes = "/path/to/your/workspace:/workspace:rw"
+# 読み取り専用データの場合は、異なるマウントパスを使用します
+# volumes = "/path/to/your/workspace:/workspace:rw,/path/to/large/dataset:/data:ro"
 ```
 
-`WORKSPACE_BASE` が設定されていない場合、ランタイムはエージェントが作業するための一時ディレクトリを作成します。
+`SANDBOX_VOLUMES`が設定されていない場合、ランタイムはエージェントが作業するための一時ディレクトリを作成します。
 
 ## 使用例
 
-以下は、ヘッドレスモードでローカルランタイムを使用して OpenHands を起動する例です：
+以下は、ヘッドレスモードでローカルランタイムを使用してOpenHandsを起動する例です：
 
 ```bash
-# ランタイムタイプをローカルに設定
+# ランタイムタイプをlocalに設定
 export RUNTIME=local
 
-# オプションでワークスペースディレクトリを設定
-export WORKSPACE_BASE=/path/to/your/project
+# ワークスペースディレクトリを設定（エージェントはデフォルトで/workspaceで作業します）
+export SANDBOX_VOLUMES=/path/to/your/project:/workspace:rw
+# エージェントに変更させたくない読み取り専用データの場合は、異なるパスを使用します
+# export SANDBOX_VOLUMES=/path/to/your/project:/workspace:rw,/path/to/reference/data:/data:ro
 
-# OpenHands を起動
-poetry run python -m openhands.core.main -t "hi と出力する bash スクリプトを書いてください"
+# OpenHandsを起動
+poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
 ## ユースケース
 
 ローカルランタイムは特に以下の場合に役立ちます：
 
-- Docker が利用できない CI/CD パイプライン。
-- OpenHands 自体のテストと開発。
+- Dockerが利用できないCI/CDパイプライン。
+- OpenHands自体のテストと開発。
 - コンテナの使用が制限されている環境。
-- ファイルシステムへの直接アクセスが必要なシナリオ。

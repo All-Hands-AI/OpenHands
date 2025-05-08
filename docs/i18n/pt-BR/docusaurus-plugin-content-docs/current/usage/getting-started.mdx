@@ -1,111 +1,99 @@
-# Começando com o OpenHands
+# Começando com OpenHands
 
-Então você [executou o OpenHands](./installation) e
+Então você já [executou o OpenHands](./installation) e
 [configurou seu LLM](./installation#setup). E agora?
 
-O OpenHands pode ajudá-lo a lidar com uma ampla variedade de tarefas de engenharia. Mas a tecnologia
-ainda é nova, e estamos longe de ter agentes que possam assumir tarefas de engenharia grandes e complicadas
-sem qualquer orientação. Portanto, é importante ter uma noção do que o agente
-faz bem e onde ele pode precisar de alguma ajuda.
+O OpenHands pode ajudar com uma variedade de tarefas de engenharia. No entanto, a tecnologia ainda é nova, e estamos longe de ter
+agentes que possam lidar com tarefas complexas de forma independente. É importante entender o que o agente faz bem e onde ele
+precisa de suporte.
 
-## Olá Mundo
+## Hello World
 
-A primeira coisa que você pode querer tentar é um exemplo simples de "olá mundo".
-Isso pode ser mais complicado do que parece!
+Comece com um exemplo simples de "hello world". Pode ser mais complicado do que parece!
 
-Tente solicitar ao agente:
-> Por favor, escreva um script bash hello.sh que imprima "hello world!"
+Solicite ao agente com:
+> Escreva um script bash hello.sh que imprima "hello world!"
 
-Você deve ver que o agente não apenas escreve o script, mas também define as permissões
-corretas e executa o script para verificar a saída.
+O agente escreverá o script, definirá as permissões corretas e o executará para verificar a saída.
 
 Você pode continuar solicitando ao agente para refinar seu código. Esta é uma ótima maneira de
-trabalhar com agentes. Comece de forma simples e itere.
+trabalhar com agentes. Comece de forma simples e vá iterando.
 
-> Por favor, modifique hello.sh para que ele aceite um nome como o primeiro argumento, mas use "world" como padrão
+> Modifique hello.sh para que aceite um nome como primeiro argumento, mas use "world" como padrão
 
-Você também pode trabalhar em qualquer linguagem que precisar, embora o agente possa precisar de algum
-tempo para configurar seu ambiente!
+Você também pode usar qualquer linguagem que precisar. O agente pode precisar de tempo para configurar o ambiente.
 
 > Por favor, converta hello.sh para um script Ruby e execute-o
 
 ## Construindo do Zero
 
-Os agentes se saem excepcionalmente bem em tarefas "greenfield" (tarefas em que eles não precisam
-de nenhum contexto sobre uma base de código existente) e podem simplesmente começar do zero.
+Os agentes se destacam em tarefas "greenfield", onde não precisam de contexto sobre código existente e
+podem começar do zero.
+Comece com uma tarefa simples e itere a partir daí. Seja específico sobre o que você quer e a stack tecnológica.
 
-É melhor começar com uma tarefa simples e, em seguida, iterar sobre ela. Também é melhor ser
-o mais específico possível sobre o que você deseja, qual deve ser a pilha de tecnologia, etc.
+Por exemplo, podemos construir um aplicativo de tarefas:
 
-Por exemplo, podemos construir um aplicativo de lista de tarefas:
+> Construa um aplicativo de tarefas apenas com frontend em React. Todo o estado deve ser armazenado no localStorage.
 
-> Por favor, construa um aplicativo básico de lista de tarefas em React. Ele deve ser apenas frontend e todo o estado
-> deve ser mantido no localStorage.
+Uma vez que a estrutura básica esteja pronta, continue refinando:
 
-Podemos continuar iterando no aplicativo assim que o esqueleto estiver lá:
+> Permita adicionar uma data de vencimento opcional a cada tarefa.
 
-> Por favor, permita adicionar uma data de vencimento opcional para cada tarefa.
-
-Assim como no desenvolvimento normal, é bom fazer commit e push do seu código com frequência.
-Dessa forma, você sempre pode reverter para um estado antigo se o agente sair do caminho.
+Assim como no desenvolvimento normal, faça commit e push do seu código com frequência.
+Dessa forma, você sempre pode reverter para um estado anterior se o agente se desviar.
 Você pode pedir ao agente para fazer commit e push para você:
 
-> Por favor, faça commit das alterações e envie-as para uma nova branch chamada "feature/due-dates"
-
+> Faça commit das alterações e envie-as para uma nova branch chamada "feature/due-dates"
 
 ## Adicionando Novo Código
 
-O OpenHands também pode fazer um ótimo trabalho adicionando novo código a uma base de código existente.
+O OpenHands é ótimo para adicionar novo código a uma base de código existente.
 
-Por exemplo, você pode pedir ao OpenHands para adicionar uma nova ação do GitHub ao seu projeto
-que faça lint do seu código. O OpenHands pode dar uma olhada na sua base de código para ver qual linguagem
-ele deve usar e, em seguida, soltar um novo arquivo em `./github/workflows/lint.yml`.
+Por exemplo, você pode pedir ao OpenHands para adicionar uma ação do GitHub que faça lint do seu código. Ele pode verificar sua base de código para
+determinar a linguagem e, em seguida, criar um novo arquivo em `./github/workflows/lint.yml`.
 
-> Por favor, adicione uma ação do GitHub que faça lint do código neste repositório.
+> Adicione uma ação do GitHub que faça lint do código neste repositório.
 
-Algumas tarefas podem exigir um pouco mais de contexto. Embora o OpenHands possa usar `ls` e `grep`
-para pesquisar em sua base de código, fornecer contexto antecipadamente permite que ele se mova mais rápido
-e com mais precisão. E isso custará menos tokens para você!
+Algumas tarefas precisam de mais contexto. Embora o OpenHands possa usar comandos como ls e grep para pesquisar, fornecer contexto antecipadamente
+acelera as coisas e reduz o uso de tokens.
 
-> Por favor, modifique ./backend/api/routes.js para adicionar uma nova rota que retorne uma lista de todas as tarefas.
+> Modifique ./backend/api/routes.js para adicionar uma nova rota que retorne uma lista de todas as tarefas.
 
-> Por favor, adicione um novo componente React que exiba uma lista de Widgets no diretório ./frontend/components.
+> Adicione um novo componente React ao diretório ./frontend/components para exibir uma lista de Widgets.
 > Ele deve usar o componente Widget existente.
 
 ## Refatoração
 
-O OpenHands é ótimo em refatorar código existente, especialmente em pequenos pedaços.
-Você provavelmente não vai querer tentar rearquitetar toda a sua base de código, mas dividir
-arquivos e funções longas, renomear variáveis, etc. tendem a funcionar muito bem.
+O OpenHands é ótimo para refatorar código em pequenos pedaços. Em vez de reconfigurar toda a base de código,
+é mais eficaz dividir arquivos e funções longas ou renomear variáveis.
 
-> Por favor, renomeie todas as variáveis de uma letra em ./app.go.
+> Renomeie todas as variáveis de letra única em ./app.go.
 
-> Por favor, divida a função `build_and_deploy_widgets` em duas funções, `build_widgets` e `deploy_widgets` em widget.php.
+> Divida a função `build_and_deploy_widgets` em duas funções, `build_widgets` e `deploy_widgets` em widget.php.
 
-> Por favor, divida ./api/routes.js em arquivos separados para cada rota.
+> Divida ./api/routes.js em arquivos separados para cada rota.
 
-## Correções de Bugs
+## Correção de Bugs
 
-O OpenHands também pode ajudá-lo a rastrear e corrigir bugs em seu código. Mas como qualquer
-desenvolvedor sabe, a correção de bugs pode ser extremamente complicada e, muitas vezes, o OpenHands precisará de mais contexto.
-Ajuda se você diagnosticou o bug, mas quer que o OpenHands descubra a lógica.
+O OpenHands pode ajudar a rastrear e corrigir bugs, mas a correção de bugs pode ser complicada e geralmente requer mais contexto.
+É útil se você já diagnosticou o problema e só precisa que o OpenHands lide com a lógica.
 
-> Atualmente, o campo de e-mail no endpoint `/subscribe` está rejeitando domínios .io. Por favor, corrija isso.
+> O campo de email no endpoint `/subscribe` está rejeitando domínios .io. Corrija isso.
 
-> A função `search_widgets` em ./app.py está fazendo uma pesquisa sensível a maiúsculas e minúsculas. Por favor, torne-a insensível a maiúsculas e minúsculas.
+> A função `search_widgets` em ./app.py está fazendo uma busca sensível a maiúsculas e minúsculas. Torne-a insensível a maiúsculas e minúsculas.
 
-Muitas vezes, ajuda fazer o desenvolvimento orientado a testes ao corrigir bugs com um agente.
-Você pode pedir ao agente para escrever um novo teste e, em seguida, iterar até que ele corrija o bug:
+Para correção de bugs, o desenvolvimento orientado a testes pode ser muito útil. Você pode pedir ao agente para escrever um novo teste e iterar
+até que o bug seja corrigido:
 
-> A função `hello` trava na string vazia. Por favor, escreva um teste que reproduza esse bug e, em seguida, corrija o código para que ele passe.
+> A função `hello` falha com uma string vazia. Escreva um teste que reproduza esse bug e, em seguida, corrija o código para que ele passe.
 
 ## Mais
 
-O OpenHands é capaz de ajudar em praticamente qualquer tarefa de codificação, mas é necessária alguma prática
-para tirar o máximo proveito dele. Lembre-se de:
-* Manter suas tarefas pequenas.
-* Ser o mais específico possível.
-* Fornecer o máximo de contexto possível.
-* Fazer commit e push com frequência.
+O OpenHands pode ajudar com quase qualquer tarefa de codificação, mas é preciso alguma prática para obter os melhores resultados.
+Tenha em mente estas dicas:
+* Mantenha suas tarefas pequenas.
+* Seja específico.
+* Forneça bastante contexto.
+* Faça commit e push com frequência.
 
 Veja [Melhores Práticas de Prompt](./prompting/prompting-best-practices) para mais dicas sobre como obter o máximo do OpenHands.

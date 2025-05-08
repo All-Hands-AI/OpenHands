@@ -31,8 +31,9 @@ def test_litellm_settings_debug_llm_disabled(reset_litellm):
 
 def test_litellm_settings_debug_llm_enabled(reset_litellm):
     """Test that litellm settings are properly configured when DEBUG_LLM is enabled and confirmed."""
-    with mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}), mock.patch(
-        'builtins.input', return_value='y'
+    with (
+        mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}),
+        mock.patch('builtins.input', return_value='y'),
     ):
         import openhands.core.logger  # noqa: F401
 
@@ -44,8 +45,9 @@ def test_litellm_settings_debug_llm_enabled(reset_litellm):
 
 def test_litellm_settings_debug_llm_enabled_but_declined(reset_litellm):
     """Test that litellm settings remain disabled when DEBUG_LLM is enabled but user declines."""
-    with mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}), mock.patch(
-        'builtins.input', return_value='n'
+    with (
+        mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}),
+        mock.patch('builtins.input', return_value='n'),
     ):
         import openhands.core.logger  # noqa: F401
 

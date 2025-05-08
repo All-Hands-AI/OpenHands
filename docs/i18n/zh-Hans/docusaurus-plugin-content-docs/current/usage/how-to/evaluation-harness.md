@@ -1,17 +1,17 @@
 # 评估
 
-本指南概述了如何将您自己的评估基准集成到 OpenHands 框架中。
+本指南概述了如何将您自己的评估基准集成到OpenHands框架中。
 
-## 设置环境和 LLM 配置
+## 设置环境和LLM配置
 
 请按照[此处](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)的说明设置您的本地开发环境。
-开发模式下的 OpenHands 使用 `config.toml` 来跟踪大多数配置。
+OpenHands在开发模式下使用`config.toml`来跟踪大多数配置。
 
-以下是一个示例配置文件，您可以使用它来定义和使用多个 LLM：
+以下是一个示例配置文件，您可以用它来定义和使用多个LLM：
 
 ```toml
 [llm]
-# 重要：在此处添加您的 API 密钥，并将模型设置为您要评估的模型
+# 重要：在此处添加您的API密钥，并将模型设置为您要评估的模型
 model = "claude-3-5-sonnet-20241022"
 api_key = "sk-XXX"
 
@@ -28,9 +28,9 @@ temperature = 0.0
 ```
 
 
-## 如何在命令行中使用 OpenHands
+## 如何在命令行中使用OpenHands
 
-可以使用以下格式从命令行运行 OpenHands：
+OpenHands可以使用以下格式从命令行运行：
 
 ```bash
 poetry run python ./openhands/core/main.py \
@@ -50,39 +50,39 @@ poetry run python ./openhands/core/main.py \
         -l llm
 ```
 
-此命令使用以下参数运行 OpenHands：
-- 最大迭代次数为 10
+此命令运行OpenHands，具有：
+- 最多10次迭代
 - 指定的任务描述
-- 使用 CodeActAgent
-- 使用 `config.toml` 文件的 `llm` 部分中定义的 LLM 配置
+- 使用CodeActAgent
+- 使用`config.toml`文件中`llm`部分定义的LLM配置
 
-## OpenHands 如何工作
+## OpenHands如何工作
 
-OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的简化工作流程：
+OpenHands的主要入口点在`openhands/core/main.py`中。以下是其工作流程的简化说明：
 
 1. 解析命令行参数并加载配置
-2. 使用 `create_runtime()` 创建运行时环境
+2. 使用`create_runtime()`创建运行时环境
 3. 初始化指定的代理
-4. 使用 `run_controller()` 运行控制器，它：
+4. 使用`run_controller()`运行控制器，它会：
    - 将运行时附加到代理
    - 执行代理的任务
-   - 完成后返回最终状态
+   - 完成时返回最终状态
 
-`run_controller()` 函数是 OpenHands 执行的核心。它管理代理、运行时和任务之间的交互，处理用户输入模拟和事件处理等事项。
-
-
-## 入门最简单的方法：探索现有基准
-
-我们鼓励您查看我们仓库的 [`evaluation/benchmarks/` 目录](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks)中提供的各种评估基准。
-
-要集成您自己的基准，我们建议从最接近您需求的基准开始。这种方法可以显著简化您的集成过程，允许您在现有结构的基础上进行构建并使其适应您的特定要求。
-
-## 如何创建评估工作流
+`run_controller()`函数是OpenHands执行的核心。它管理代理、运行时和任务之间的交互，处理用户输入模拟和事件处理等内容。
 
 
-要为您的基准创建评估工作流，请按照以下步骤操作：
+## 最简单的入门方式：探索现有基准
 
-1. 导入相关的 OpenHands 实用程序：
+我们鼓励您查看我们仓库中[`evaluation/benchmarks/`目录](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks)中可用的各种评估基准。
+
+要集成您自己的基准，我们建议从最接近您需求的基准开始。这种方法可以显著简化您的集成过程，让您能够在现有结构的基础上构建并根据您的特定需求进行调整。
+
+## 如何创建评估工作流程
+
+
+要为您的基准创建评估工作流程，请按照以下步骤操作：
+
+1. 导入相关的OpenHands工具：
    ```python
     import openhands.agenthub
     from evaluation.utils.shared import (
@@ -132,7 +132,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
        pass
    ```
 
-4. 创建一个函数来处理每个实例：
+4. 创建一个处理每个实例的函数：
    ```python
    from openhands.utils.async_utils import call_async_from_sync
    def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
@@ -150,7 +150,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
            fake_user_response_fn=your_user_response_function,
        )
 
-       # 评估代理的操作
+       # 评估代理的行动
        evaluation_result = await evaluate_agent_actions(runtime, instance)
 
        return EvalOutput(
@@ -179,32 +179,32 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
    )
    ```
 
-此工作流设置配置，初始化运行时环境，通过运行代理并评估其操作来处理每个实例，然后将结果收集到 `EvalOutput` 对象中。`run_evaluation` 函数处理并行化和进度跟踪。
+这个工作流程设置配置，初始化运行时环境，通过运行代理并评估其行动来处理每个实例，然后将结果收集到`EvalOutput`对象中。`run_evaluation`函数处理并行化和进度跟踪。
 
-请记住根据您特定的基准要求自定义 `get_instruction`、`your_user_response_function` 和 `evaluate_agent_actions` 函数。
+记得根据您的特定基准要求自定义`get_instruction`、`your_user_response_function`和`evaluate_agent_actions`函数。
 
-通过遵循此结构，您可以在 OpenHands 框架内为您的基准创建强大的评估工作流。
-
-
-## 理解 `user_response_fn`
-
-`user_response_fn` 是 OpenHands 评估工作流中的关键组件。它模拟用户与代理的交互，允许在评估过程中自动响应。当您想要为代理的查询或操作提供一致的、预定义的响应时，此函数特别有用。
+通过遵循这种结构，您可以在OpenHands框架内为您的基准创建一个健壮的评估工作流程。
 
 
-### 工作流和交互
+## 理解`user_response_fn`
 
-处理操作和 `user_response_fn` 的正确工作流如下：
+`user_response_fn`是OpenHands评估工作流程中的一个关键组件。它模拟用户与代理的交互，允许在评估过程中进行自动响应。当您想要向代理的查询或行动提供一致的、预定义的响应时，这个函数特别有用。
+
+
+### 工作流程和交互
+
+处理行动和`user_response_fn`的正确工作流程如下：
 
 1. 代理接收任务并开始处理
-2. 代理发出操作
-3. 如果操作可执行（例如 CmdRunAction、IPythonRunCellAction）：
-   - 运行时处理操作
-   - 运行时返回观察结果
-4. 如果操作不可执行（通常是 MessageAction）：
-   - 调用 `user_response_fn`
-   - 它返回模拟的用户响应
-5. 代理接收观察结果或模拟响应
-6. 重复步骤 2-5，直到任务完成或达到最大迭代次数
+2. 代理发出一个Action
+3. 如果Action是可执行的（例如，CmdRunAction，IPythonRunCellAction）：
+   - 运行时处理该Action
+   - 运行时返回一个Observation
+4. 如果Action不可执行（通常是MessageAction）：
+   - 调用`user_response_fn`
+   - 它返回一个模拟的用户响应
+5. 代理接收Observation或模拟响应
+6. 步骤2-5重复，直到任务完成或达到最大迭代次数
 
 以下是更准确的可视化表示：
 
@@ -212,10 +212,10 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
                  [代理]
                     |
                     v
-               [发出操作]
+               [发出Action]
                     |
                     v
-            [操作是否可执行？]
+            [Action是否可执行？]
            /                       \
          是                         否
           |                          |
@@ -223,7 +223,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
      [运行时]                 [user_response_fn]
           |                          |
           v                          v
-  [返回观察结果]           [模拟响应]
+  [返回Observation]        [模拟响应]
            \                        /
             \                      /
              v                    v
@@ -233,17 +233,17 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
          [继续或完成任务]
 ```
 
-在此工作流中：
+在这个工作流程中：
 
-- 可执行的操作（如运行命令或执行代码）由运行时直接处理
-- 不可执行的操作（通常是当代理想要通信或寻求澄清时）由 `user_response_fn` 处理
-- 然后，代理处理反馈，无论是来自运行时的观察结果还是来自 `user_response_fn` 的模拟响应
+- 可执行的行动（如运行命令或执行代码）由运行时直接处理
+- 不可执行的行动（通常是当代理想要沟通或请求澄清时）由`user_response_fn`处理
+- 然后代理处理反馈，无论是来自运行时的Observation还是来自`user_response_fn`的模拟响应
 
-这种方法允许自动处理具体操作和模拟用户交互，使其适用于您想要测试代理在最少人工干预的情况下完成任务的能力的评估场景。
+这种方法允许自动处理具体行动和模拟用户交互，使其适用于评估场景，在这些场景中，您希望测试代理在最少人工干预的情况下完成任务的能力。
 
 ### 示例实现
 
-以下是 SWE-Bench 评估中使用的 `user_response_fn` 示例：
+以下是SWE-Bench评估中使用的`user_response_fn`示例：
 
 ```python
 def codeact_user_response(state: State | None) -> str:
@@ -254,14 +254,14 @@ def codeact_user_response(state: State | None) -> str:
     )
 
     if state and state.history:
-        # 检查代理是否已尝试与用户对话 3 次，如果是，让代理知道它可以放弃
+        # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
             for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
-            # 当代理已尝试 3 次时，让它知道可以放弃
+            # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
                 + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
@@ -269,10 +269,10 @@ def codeact_user_response(state: State | None) -> str:
     return msg
 ```
 
-此函数执行以下操作：
+这个函数执行以下操作：
 
-1. 提供一条标准消息，鼓励代理继续工作
+1. 提供一个标准消息，鼓励代理继续工作
 2. 检查代理尝试与用户通信的次数
-3. 如果代理已多次尝试，它会提供放弃的选项
+3. 如果代理已经多次尝试，它提供一个放弃的选项
 
-通过使用此函数，您可以确保在多次评估运行中保持一致的行为，并防止代理在等待人工输入时陷入困境。
+通过使用这个函数，您可以确保在多次评估运行中的一致行为，并防止代理因等待人工输入而卡住。

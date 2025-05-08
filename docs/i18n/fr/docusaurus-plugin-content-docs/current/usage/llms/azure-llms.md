@@ -1,16 +1,14 @@
-
-
 # Azure
 
-OpenHands utilise LiteLLM pour faire des appels aux modèles de chat d'Azure. Vous pouvez trouver leur documentation sur l'utilisation d'Azure comme fournisseur [ici](https://docs.litellm.ai/docs/providers/azure).
+OpenHands utilise LiteLLM pour effectuer des appels aux modèles de chat d'Azure. Vous pouvez trouver leur documentation sur l'utilisation d'Azure comme fournisseur [ici](https://docs.litellm.ai/docs/providers/azure).
 
 ## Configuration d'Azure OpenAI
 
-Lorsque vous exécutez OpenHands, vous devrez définir la variable d'environnement suivante en utilisant `-e` dans la
-[commande docker run](/modules/usage/installation#start-the-app) :
+Lors de l'exécution d'OpenHands, vous devrez définir la variable d'environnement suivante en utilisant `-e` dans la
+[commande docker run](../installation#running-openhands) :
 
 ```
-LLM_API_VERSION="<api-version>"              # par exemple "2023-05-15"
+LLM_API_VERSION="<api-version>"              # ex. "2023-05-15"
 ```
 
 Exemple :
@@ -20,29 +18,24 @@ docker run -it --pull=always \
     ...
 ```
 
-Ensuite, définissez les éléments suivants dans l'interface utilisateur d'OpenHands via les paramètres :
+Ensuite, dans les paramètres de l'interface OpenHands :
 
 :::note
-Vous aurez besoin du nom de votre déploiement ChatGPT qui peut être trouvé sur la page des déploiements dans Azure. Il est référencé comme
+Vous aurez besoin du nom de déploiement ChatGPT qui peut être trouvé sur la page des déploiements dans Azure. Il est référencé comme
 &lt;deployment-name&gt; ci-dessous.
 :::
 
-* Activez `Advanced Options`
-* `Custom Model` à azure/&lt;deployment-name&gt;
-* `Base URL` à votre URL de base de l'API Azure (par exemple `https://example-endpoint.openai.azure.com`)
-* `API Key` à votre clé API Azure
-
-## Embeddings
-
-OpenHands utilise llama-index pour les embeddings. Vous pouvez trouver leur documentation sur Azure [ici](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/).
+1. Activez les options `Advanced`.
+2. Définissez les éléments suivants :
+   - `Custom Model` à azure/&lt;deployment-name&gt;
+   - `Base URL` à votre URL de base de l'API Azure (ex. `https://example-endpoint.openai.azure.com`)
+   - `API Key` à votre clé API Azure
 
 ### Configuration d'Azure OpenAI
 
-Lorsque vous exécutez OpenHands, définissez les variables d'environnement suivantes en utilisant `-e` dans la
-[commande docker run](/modules/usage/installation#start-the-app) :
+Lors de l'exécution d'OpenHands, définissez la variable d'environnement suivante en utilisant `-e` dans la
+[commande docker run](../installation#running-openhands) :
 
 ```
-LLM_EMBEDDING_MODEL="azureopenai"
-LLM_EMBEDDING_DEPLOYMENT_NAME="<your-embedding-deployment-name>"   # par exemple "TextEmbedding...<etc>"
-LLM_API_VERSION="<api-version>"                                    # par exemple "2024-02-15-preview"
+LLM_API_VERSION="<api-version>"                                    # ex. "2024-02-15-preview"
 ```

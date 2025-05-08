@@ -80,7 +80,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -110,7 +110,7 @@ def initialize_runtime(
                 file_path,
                 '/workspace',
             )
-    logger.info(f"\n{'-' * 50} END Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Initialization Fn {"-" * 50}\n')
 
 
 def complete_runtime(
@@ -123,7 +123,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Rewriting the test file to ignore any changes Agent may have made.
@@ -147,7 +147,7 @@ def complete_runtime(
     if isinstance(obs, CmdOutputObservation):
         exit_code = obs.exit_code
 
-    logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Completion Fn {"-" * 50}\n')
 
     runtime.close()
 

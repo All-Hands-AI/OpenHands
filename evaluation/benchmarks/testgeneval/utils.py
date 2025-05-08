@@ -24,7 +24,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
         return ['test.py']
 
     # Get test directives from test patch and remove non-test files
-    directives = [f"/testbed/{instance['test_file']}"]
+    directives = [f'/testbed/{instance["test_file"]}']
 
     # For Django tests, remove extension + "tests/" prefix and convert slashes to dots (module referencing)
     if instance['repo'] == 'django/django':
@@ -65,8 +65,8 @@ def load_testgeneval_dataset(
         if ids - dataset_ids:
             raise ValueError(
                 (
-                    "Some instance IDs not found in dataset!"
-                    f"\nMissing IDs:\n{' '.join(ids - dataset_ids)}"
+                    'Some instance IDs not found in dataset!'
+                    f'\nMissing IDs:\n{" ".join(ids - dataset_ids)}'
                 )
             )
         dataset = [instance for instance in dataset if instance['id'] in ids]

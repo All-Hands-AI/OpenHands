@@ -1,12 +1,10 @@
-以下是翻译后的内容:
-
 # 调试
 
-以下内容旨在作为开发目的下调试 OpenHands 的入门指南。
+以下内容旨在作为开发目的调试 OpenHands 的入门指南。
 
 ## 服务器 / VSCode
 
-以下 `launch.json` 将允许调试 agent、controller 和 server 元素,但不包括 sandbox(它运行在 docker 内)。它将忽略 `workspace/` 目录内的任何更改:
+以下 `launch.json` 将允许调试代理、控制器和服务器元素，但不包括沙盒（在 Docker 内运行）。它将忽略 `workspace/` 目录内的任何更改：
 
 ```
 {
@@ -38,7 +36,7 @@
 }
 ```
 
-可以指定更具体的调试配置,其中包括更多参数:
+可以指定包含更多参数的更具体的调试配置：
 
 ```
     ...
@@ -64,10 +62,10 @@
     ...
 ```
 
-上面代码片段中的值可以更新,例如:
+上面代码片段中的值可以更新，使得：
 
-    * *t*: 任务
-    * *d*: openhands 工作区目录
-    * *c*: agent
-    * *l*: LLM 配置 (在 config.toml 中预定义)
-    * *n*: 会话名称 (例如 eventstream 名称)
+    * *t*：任务
+    * *d*：openhands 工作空间目录
+    * *c*：代理
+    * *l*：LLM 配置（在 config.toml 中预定义）
+    * *n*：会话名称（例如 eventstream 名称）

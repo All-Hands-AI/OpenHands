@@ -1,35 +1,35 @@
-
-
 # 🏛️ Architecture du Système
 
 <div style={{ textAlign: 'center' }}>
-  <img src="https://github.com/All-Hands-AI/OpenHands/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="OpenHands System Architecture Diagram Jul 4 2024" />
-  <p><em>Diagramme de l'Architecture du Système OpenHands (4 juillet 2024)</em></p>
+  <img src="https://github.com/All-Hands-AI/OpenHands/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="Diagramme d'Architecture OpenHands 4 juillet 2024" />
+  <p><em>Diagramme d'Architecture OpenHands (4 juillet 2024)</em></p>
 </div>
 
-Ceci est une vue d'ensemble de haut niveau de l'architecture du système. Le système est divisé en deux composants principaux : le frontend et le backend. Le frontend est responsable de la gestion des interactions utilisateur et de l'affichage des résultats. Le backend est responsable de la gestion de la logique métier et de l'exécution des agents.
+Voici une vue d'ensemble de l'architecture du système. Le système est divisé en deux composants principaux : le frontend et le backend. Le frontend est responsable de la gestion des interactions utilisateur et de l'affichage des résultats. Le backend est responsable de la gestion de la logique métier et de l'exécution des agents.
 
-# Architecture du Frontend {#frontend-architecture-fr}
+# Architecture Frontend {#frontend-architecture-en}
 
 ![system_architecture.svg](/img/system_architecture.svg)
 
-Cette vue d'ensemble est simplifiée pour montrer les principaux composants et leurs interactions. Pour une vue plus détaillée de l'architecture du backend, voir la section Architecture du Backend ci-dessous.
+Cette vue d'ensemble est simplifiée pour montrer les composants principaux et leurs interactions. Pour une vue plus détaillée de l'architecture backend, consultez la section Architecture Backend ci-dessous.
 
-# Architecture du Backend {#backend-architecture-fr}
+# Architecture Backend {#backend-architecture-en}
 
-_**Avertissement** : L'architecture du backend est en cours de développement et est sujette à changement. Le diagramme suivant montre l'architecture actuelle du backend basée sur le commit indiqué dans le pied de page du diagramme._
+_**Avertissement** : L'architecture backend est en cours de développement et peut être modifiée. Le diagramme suivant montre l'architecture actuelle du backend basée sur le commit indiqué dans le pied de page du diagramme._
 
 ![backend_architecture.svg](/img/backend_architecture.svg)
 
 <details>
-  <summary>Mise à jour de ce Diagramme</summary>
+  <summary>Mise à jour de ce diagramme</summary>
   <div>
-    La génération du diagramme d'architecture du backend est partiellement automatisée.
-    Le diagramme est généré à partir des indications de type dans le code en utilisant l'outil py2puml. Le diagramme est ensuite manuellement revu, ajusté et exporté en PNG et SVG.
+    La génération du diagramme d'architecture backend est partiellement automatisée.
+    Le diagramme est généré à partir des annotations de type dans le code en utilisant l'outil
+    py2puml. Le diagramme est ensuite manuellement révisé, ajusté et exporté en PNG
+    et SVG.
 
     ## Prérequis
 
-    - Environnement python fonctionnel dans lequel openhands est exécutable
+    - Environnement Python opérationnel dans lequel openhands est exécutable
     (selon les instructions du fichier README.md à la racine du dépôt)
     - [py2puml](https://github.com/lucsorel/py2puml) installé
 
@@ -38,17 +38,17 @@ _**Avertissement** : L'architecture du backend est en cours de développement et
 1.  Générer automatiquement le diagramme en exécutant la commande suivante depuis la racine du dépôt :
     `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
 
-2.  Ouvrir le fichier généré dans un éditeur PlantUML, par ex. Visual Studio Code avec l'extension PlantUML ou [PlantText](https://www.planttext.com/)
+2.  Ouvrir le fichier généré dans un éditeur PlantUML, par exemple Visual Studio Code avec l'extension PlantUML ou [PlantText](https://www.planttext.com/)
 
-3.  Revoir le PUML généré et effectuer tous les ajustements nécessaires au diagramme (ajouter les parties manquantes, corriger les erreurs, améliorer le positionnement).
-    _py2puml crée le diagramme en se basant sur les indications de type dans le code, donc des indications manquantes ou incorrectes peuvent entraîner un diagramme incomplet ou incorrect._
+3.  Examiner le PUML généré et faire tous les ajustements nécessaires au diagramme (ajouter les parties manquantes, corriger les erreurs, améliorer le positionnement).
+    _py2puml crée le diagramme basé sur les annotations de type dans le code, donc des annotations manquantes ou incorrectes peuvent entraîner un diagramme incomplet ou incorrect._
 
-4.  Revoir la différence entre le nouveau diagramme et le précédent et vérifier manuellement si les changements sont corrects.
-    _S'assurer de ne pas supprimer des parties qui ont été ajoutées manuellement au diagramme par le passé et qui sont toujours pertinentes._
+4.  Examiner la différence entre le nouveau diagramme et le précédent et vérifier manuellement si les changements sont corrects.
+    _Assurez-vous de ne pas supprimer des parties qui ont été ajoutées manuellement au diagramme dans le passé et qui sont toujours pertinentes._
 
 5.  Ajouter le hash du commit qui a été utilisé pour générer le diagramme dans le pied de page du diagramme.
 
-6.  Exporter le diagramme sous forme de fichiers PNG et SVG et remplacer les diagrammes existants dans le répertoire `docs/architecture`. Cela peut être fait avec (par ex. [PlantText](https://www.planttext.com/))
+6.  Exporter le diagramme en fichiers PNG et SVG et remplacer les diagrammes existants dans le répertoire `docs/architecture`. Cela peut être fait avec (par exemple [PlantText](https://www.planttext.com/))
 
   </div>
 </details>

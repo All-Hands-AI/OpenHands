@@ -9,6 +9,23 @@ export type ProviderToken = {
   token: string;
 };
 
+export type MCPSSEServer = {
+  url: string;
+  api_key?: string;
+};
+
+export type MCPStdioServer = {
+  name: string;
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+};
+
+export type MCPConfig = {
+  sse_servers: (string | MCPSSEServer)[];
+  stdio_servers: MCPStdioServer[];
+};
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -24,6 +41,7 @@ export type Settings = {
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   IS_NEW_USER?: boolean;
+  MCP_CONFIG?: MCPConfig;
 };
 
 export type ApiSettings = {
@@ -41,13 +59,19 @@ export type ApiSettings = {
   enable_proactive_conversation_starters: boolean;
   user_consents_to_analytics: boolean | null;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
+  mcp_config?: {
+    sse_servers: (string | MCPSSEServer)[];
+    stdio_servers: MCPStdioServer[];
+  };
 };
 
 export type PostSettings = Settings & {
   user_consents_to_analytics: boolean | null;
   llm_api_key?: string | null;
+  mcp_config?: MCPConfig;
 };
 
 export type PostApiSettings = ApiSettings & {
   user_consents_to_analytics: boolean | null;
+  mcp_config?: MCPConfig;
 };
