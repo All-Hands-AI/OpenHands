@@ -88,6 +88,7 @@
         "fr": "Êtes-vous sûr de vouloir supprimer cette clé ?",
         "tr": "Bu anahtarı silmek istediğinizden emin misiniz?",
         "de": "Sind Sie sicher, dass Sie diesen Schlüssel löschen möchten?"
+    },
     "SETTINGS$MCP_TITLE": {
         "en": "Model Context Protocol (MCP)",
         "ja": "モデルコンテキストプロトコル (MCP)",
