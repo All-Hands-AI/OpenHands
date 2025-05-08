@@ -2,7 +2,9 @@
 
 import json
 import os
+import time
 
+import docker
 import pytest
 from conftest import (
     _load_runtime,
@@ -10,7 +12,7 @@ from conftest import (
 
 import openhands
 from openhands.core.config import MCPConfig
-from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands.core.config.mcp_config import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction, MCPAction
 from openhands.events.observation import CmdOutputObservation, MCPObservation
@@ -76,3 +78,70 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
     )
 
     runtime.close()
+
+
+@pytest.mark.asyncio
+async def test_filesystem_mcp_via_sse(temp_dir, runtime_cls, run_as_openhands):
+    image_name = 'supercorp/supergateway'
+    container_command_args = [
+        '--stdio',
+        'npx -y @modelcontextprotocol/server-filesystem /',
+        '--port',
+        '8000',
+        '--baseUrl',
+        'http://localhost:8000',
+    ]
+
+    client = docker.from_env()
+
+    logger.info(
+        f'Starting Docker container {image_name} with command: {" ".join(container_command_args)}',
+        extra={'msg_type': 'ACTION'},
+    )
+
+    container = client.containers.run(
+        image_name,
+        command=container_command_args,
+        ports={'8000/tcp': 8000},
+        detach=True,
+        auto_remove=True,
+        stdin_open=True,
+    )
+    logger.info(f'Container {container.short_id} started.')
+
+    from openhands.runtime.utils.log_streamer import LogStreamer
+
+    log_streamer = LogStreamer(
+        container,
+        lambda level, msg: getattr(logger, level.lower())(
+            f'[MCP server {container.short_id}] {msg}'
+        ),
+    )
+    time.sleep(10)
+
+    try:
+        mcp_sse_server_config = MCPSSEServerConfig(
+            url='http://localhost:8000/sse',
+        )
+        override_mcp_config = MCPConfig(sse_servers=[mcp_sse_server_config])
+        runtime, config = _load_runtime(
+            temp_dir,
+            runtime_cls,
+            run_as_openhands,
+            override_mcp_config=override_mcp_config,
+        )
+
+        mcp_action = MCPAction(name='list_directory', arguments={'path': '.'})
+        obs = await runtime.call_tool_mcp(mcp_action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, MCPObservation), (
+            'The observation should be a MCPObservation.'
+        )
+        assert '[FILE] .dockerenv' in obs.content
+
+    finally:
+        logger.info(f'Stopping container {container.short_id}...')
+        container.stop()
+        logger.info(f'Container {container.short_id} stopped.')
+        runtime.close()
+        log_streamer.close()
