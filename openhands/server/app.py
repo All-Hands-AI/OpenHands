@@ -27,8 +27,8 @@ from openhands.server.shared import conversation_manager
 from openhands.server.routes.mcp import mcp_server
 
 from mcp.server.sse import SseServerTransport
-from starlette.routing import Mount, Route
-from starlette.applications import Starlette
+from starlette.routing import Mount
+
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
@@ -43,9 +43,8 @@ app = FastAPI(
     lifespan=_lifespan,
 )
 
-# Create SSE transport instance for handling server-sent events
 sse = SseServerTransport("/messages/")
-
+app.router.routes.append(Mount("/messages", app=sse.handle_post_message))
 
 @app.get("/sse", tags=["MCP"])
 async def handle_sse(request: Request):
@@ -83,33 +82,5 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
-
-
-
-def create_sse_server():
-    """Create a Starlette app that handles SSE connections and message handling"""
-    transport = SseServerTransport("/messages/")
-
-    # Define handler functions
-    async def handle_sse(request):
-        async with transport.connect_sse(
-            request.scope, request.receive, request._send
-        ) as streams:
-            await mcp_server._mcp_server.run(
-                streams[0], streams[1], mcp_server._mcp_server.create_initialization_options()
-            )
-
-    # Create Starlette routes for SSE and message handling
-    routes = [
-        Route("/sse/", endpoint=handle_sse),
-        Mount("/messages/", app=transport.handle_post_message),
-    ]
-
-    # Create a Starlette app
-    return Starlette(routes=routes)
-
-
-
-app.router.routes.append(Mount("/messages", app=sse.handle_post_message))
 
 

@@ -9,6 +9,7 @@ from openhands.server.middleware import (
     CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
+    MCPMiddleware,
     RateLimitMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
