@@ -85,6 +85,7 @@ mcpm = "1.9.0"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 pythonnet = "*"
+fastmcp = "^2.2.10"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.8"
