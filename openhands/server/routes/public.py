@@ -5,11 +5,19 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 
+from openhands.events.action.agent import RecallAction
+from openhands.events.action.empty import NullAction
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_store import EventStore
+from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.empty import NullObservation
+from openhands.events.serialization.event import event_to_dict
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.modules.conversation import conversation_module
 from openhands.server.routes.manage_conversations import _get_conversation_info
 from openhands.server.shared import (
     conversation_manager,
@@ -204,3 +212,44 @@ async def get_conversation(
         return conversation_info
     except FileNotFoundError:
         return None
+
+
+@app.get('/conversations/events/{conversation_id}')
+async def get_conversation_events(
+    conversation_id: str,
+) -> Any:
+    conversation = await conversation_module._get_conversation_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail='Conversation not found')
+
+    # eventstore
+    event_store = EventStore(
+        conversation_id,
+        conversation_manager.file_store,
+        conversation.user_id,
+    )
+    if not event_store:
+        raise HTTPException(status_code=404, detail='Event store not found')
+    async_store = AsyncEventStoreWrapper(event_store, 0)
+    result = []
+    async for event in async_store:
+        try:
+            if isinstance(
+                event,
+                (
+                    NullAction,
+                    NullObservation,
+                    RecallAction,
+                    AgentStateChangedObservation,
+                ),
+            ):
+                continue
+            event_dict = event_to_dict(event)
+            if (
+                event_dict.get('source') == 'user'
+                or event_dict.get('source') == 'agent'
+            ):
+                result.append(event_dict)
+        except Exception as e:
+            logger.error(f'Error converting event to dict: {str(e)}')
+    return result

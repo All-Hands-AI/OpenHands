@@ -28,6 +28,17 @@ class ConversationModule:
             return 0 if value is None else value
         return 0
 
+    async def _get_conversation_by_id(self, conversation_id: str):
+        try:
+            query = Conversation.select().where(
+                Conversation.c.conversation_id == conversation_id
+            )
+            existing_record = await database.fetch_one(query)
+            return existing_record
+        except Exception as e:
+            logger.error(f'Error getting conversation by id: {str(e)}')
+            return None
+
     async def _update_research_view(self, conversation_id: str, ip_address: str = ''):
         try:
             await database.execute(
