@@ -263,6 +263,7 @@ class CodeActAgent(Agent):
             self.conversation_memory.process_initial_messages(
                 with_caching=self.llm.is_caching_prompt_active(),
                 agent_infos=agent_infos,
+                knowledge_base=self.knowledge_base,
             )
             if not is_chat_mode
             else self.conversation_memory.process_initial_chatmode_message(
@@ -274,6 +275,7 @@ class CodeActAgent(Agent):
                     }
                     for tool in self.search_tools
                 ],
+                knowledge_base=self.knowledge_base,
             )
         )
         # Use ConversationMemory to process events

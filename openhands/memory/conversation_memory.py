@@ -162,7 +162,10 @@ class ConversationMemory:
         ]
 
     def process_initial_messages(
-        self, with_caching: bool = False, agent_infos: list | None = None
+        self,
+        with_caching: bool = False,
+        agent_infos: list | None = None,
+        knowledge_base: list[dict] | None = None,
     ) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
@@ -173,6 +176,7 @@ class ConversationMemory:
                         text=self.prompt_manager.get_system_message(
                             agent_infos=agent_infos,
                             CURRENT_DATE=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            knowledge_base=knowledge_base,
                         ),
                         cache_prompt=with_caching,
                     )

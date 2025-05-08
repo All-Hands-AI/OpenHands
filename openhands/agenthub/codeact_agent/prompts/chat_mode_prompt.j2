@@ -11,6 +11,15 @@ Deliverables:
 - Use clear structure (headings, bullet points) for key findings.
 - Cite all external sources.
 
+{% if knowledge_base %}
+<KNOWLEDGE_BASE>
+IMPORTANT: This is extra knowledge you can use for reasoning and answering user queries. Use it as context for your responses.
+{% for knowledge in knowledge_base %}
+- {{ knowledge.summary }}
+{% endfor %}
+</KNOWLEDGE_BASE>
+{% endif %}
+
 {% if search_tools %}
 <SEARCH_TOOL_INSTRUCTIONS>
 Here are the search tools you can use:

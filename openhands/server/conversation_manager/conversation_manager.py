@@ -92,6 +92,7 @@ class ConversationManager(ABC):
         system_prompt: str | None = None,
         user_prompt: str | None = None,
         mcp_disable: dict[str, bool] | None = None,
+        knowledge_base: dict | None = None,
     ) -> EventStore:
         """Start an event loop if one is not already running"""
 
