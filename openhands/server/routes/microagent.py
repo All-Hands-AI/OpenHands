@@ -158,7 +158,7 @@ class KnowledgeUpdateRequest(KnowledgePromptRequest):
 
 @app.post('/update')
 async def update_knowledge(
-    update_request: KnowledgePromptRequest,
+    update_request: KnowledgeUpdateRequest,
     user_id: str = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ):
@@ -173,10 +173,10 @@ async def update_knowledge(
     context_events = get_context_events(list(events), update_request.event_id)
     stringified_events = "\n".join([str(event) for event in context_events])
     
-    prompt = prompt_template.replace("{{EVENTS}}", stringified_events)
+    prompt = update_request.prompt or prompt_template.replace("{{EVENTS}}", stringified_events)
 
     # get existing conversation meta data
-    metadata = await conversation_store.get_metadata(KnowledgePromptRequest.conversation_id)
+    metadata = await conversation_store.get_metadata(update_request.conversation_id)
     selected_repository = metadata.selected_repository
 
     # create a new conversation with the prompt
