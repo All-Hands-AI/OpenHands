@@ -170,6 +170,8 @@ async def handle_mcp_sse(request: Request, user_auth: UserAuth = Depends(get_use
     """
     Server-Sent Events (SSE) endpoint for MCP.
     This endpoint is used for real-time communication with the MCP client.
+    The client will connect to this endpoint and then send JSON-RPC requests
+    to the POST endpoint.
     """
     session_id = request.headers.get("X-MCP-Session-ID", "default")
     if session_id not in sessions:
@@ -180,10 +182,15 @@ async def handle_mcp_sse(request: Request, user_auth: UserAuth = Depends(get_use
     
     async def event_generator():
         # Send an initial event to establish the connection
+        # This is important for the client to know the connection is established
         yield {
             "event": "connected",
             "data": json.dumps({
-                "message": "Connected to MCP SSE endpoint"
+                "jsonrpc": "2.0",
+                "method": "connection/established",
+                "params": {
+                    "message": "Connected to MCP SSE endpoint"
+                }
             })
         }
         
@@ -193,7 +200,11 @@ async def handle_mcp_sse(request: Request, user_auth: UserAuth = Depends(get_use
             yield {
                 "event": "heartbeat",
                 "data": json.dumps({
-                    "timestamp": asyncio.get_event_loop().time()
+                    "jsonrpc": "2.0",
+                    "method": "connection/heartbeat",
+                    "params": {
+                        "timestamp": asyncio.get_event_loop().time()
+                    }
                 })
             }
     
@@ -342,6 +353,9 @@ async def handle_list_tools(session: MCPSession) -> Dict[str, Any]:
     if not session.initialized:
         raise Exception("Session not initialized")
     
+    # Return tools in the expected format for the MCP client
+    # The client expects a "tools" field with the list of tools
+    # This must match the ListToolsResult model in the MCP client
     return {
         "tools": TOOLS
     }
