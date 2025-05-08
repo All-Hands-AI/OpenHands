@@ -218,7 +218,7 @@ describe("Content", () => {
     await waitFor(() => {
       button = screen.getByTestId("configure-github-repositories-button");
       expect(button).toBeInTheDocument();
-      expect(screen.queryByTestId("submit-button")).toBeInTheDocument();
+      expect(screen.queryByTestId("submit-button")).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("disconnect-tokens-button"),
       ).not.toBeInTheDocument();
