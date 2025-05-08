@@ -35,7 +35,6 @@ def test_default_activated_tools():
 
 @pytest.mark.asyncio
 async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
-    pytest.skip('This test is currently failing on main')
     mcp_stdio_server_config = MCPStdioServerConfig(
         name='fetch', command='uvx', args=['mcp-server-fetch']
     )
