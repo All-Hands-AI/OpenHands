@@ -24,6 +24,7 @@ function SettingsScreen() {
 
   const ossNavItems = [
     { to: "/settings", text: t("SETTINGS$NAV_LLM") },
+    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
     { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },

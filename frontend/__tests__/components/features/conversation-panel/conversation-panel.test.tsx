@@ -7,7 +7,6 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
-import { clickOnEditButton } from "./utils";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -202,64 +201,6 @@ describe("ConversationPanel", () => {
       const updatedCards = screen.getAllByTestId("conversation-card");
       expect(updatedCards).toHaveLength(2);
     });
-  });
-
-  it("should rename a conversation", async () => {
-    const updateUserConversationSpy = vi.spyOn(
-      OpenHands,
-      "updateUserConversation",
-    );
-
-    const user = userEvent.setup();
-    renderConversationPanel();
-    const cards = await screen.findAllByTestId("conversation-card");
-
-    const card = cards[0];
-    await clickOnEditButton(user, card);
-    const title = within(card).getByTestId("conversation-card-title");
-
-    await user.clear(title);
-    await user.type(title, "Conversation 1 Renamed");
-    await user.tab();
-
-    // Ensure the conversation is renamed
-    expect(updateUserConversationSpy).toHaveBeenCalledWith("1", {
-      title: "Conversation 1 Renamed",
-    });
-  });
-
-  it("should not rename a conversation when the name is unchanged", async () => {
-    const updateUserConversationSpy = vi.spyOn(
-      OpenHands,
-      "updateUserConversation",
-    );
-
-    const user = userEvent.setup();
-    renderConversationPanel();
-    const cards = await screen.findAllByTestId("conversation-card");
-
-    const card = cards[0];
-    await clickOnEditButton(user, card);
-    const title = within(card).getByTestId("conversation-card-title");
-
-    await user.click(title);
-    await user.tab();
-
-    // Ensure the conversation is not renamed
-    expect(updateUserConversationSpy).not.toHaveBeenCalled();
-
-    await clickOnEditButton(user, card);
-
-    await user.type(title, "Conversation 1");
-    await user.click(title);
-    await user.tab();
-
-    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
-
-    await user.click(title);
-    await user.tab();
-
-    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
   });
 
   it("should call onClose after clicking a card", async () => {

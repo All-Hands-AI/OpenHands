@@ -506,15 +506,18 @@ async def test_process_issue(
         mock_run_controller.return_value = test_case['run_controller_return']
 
     # Patch the necessary functions and methods
-    with patch(
-        'openhands.resolver.resolve_issue.create_runtime', mock_create_runtime
-    ), patch(
-        'openhands.resolver.resolve_issue.run_controller', mock_run_controller
-    ), patch.object(
-        resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}
-    ), patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime, patch(
-        'openhands.resolver.resolve_issue.SandboxConfig', return_value=MagicMock()
-    ), patch('openhands.resolver.resolve_issue.AppConfig', return_value=MagicMock()):
+    with (
+        patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime),
+        patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller),
+        patch.object(
+            resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}
+        ),
+        patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime,
+        patch(
+            'openhands.resolver.resolve_issue.SandboxConfig', return_value=MagicMock()
+        ),
+        patch('openhands.resolver.resolve_issue.AppConfig', return_value=MagicMock()),
+    ):
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
 

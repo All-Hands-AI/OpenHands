@@ -12,6 +12,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
     PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA,
     CustomSecret,
@@ -25,7 +26,7 @@ class UserSecrets(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
