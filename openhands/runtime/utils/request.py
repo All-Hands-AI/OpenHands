@@ -29,8 +29,7 @@ def is_retryable_error(exception: Any) -> bool:
     )
 
 
-# Type ignore is needed because tenacity's retry decorator doesn't preserve function signature
-@retry(  # type: ignore
+@retry(
     retry=retry_if_exception(is_retryable_error),
     stop=stop_after_attempt(3) | stop_if_should_exit(),
     wait=wait_exponential(multiplier=1, min=4, max=60),
