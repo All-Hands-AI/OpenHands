@@ -13,7 +13,6 @@ from openhands.agenthub.codeact_agent.tools import (
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
-    WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
@@ -177,13 +176,6 @@ def test_str_replace_editor_tool():
         'command',
         'path',
     ]
-
-
-def test_web_read_tool():
-    assert WebReadTool['type'] == 'function'
-    assert WebReadTool['function']['name'] == 'web_read'
-    assert 'url' in WebReadTool['function']['parameters']['properties']
-    assert WebReadTool['function']['parameters']['required'] == ['url']
 
 
 def test_browser_tool():
