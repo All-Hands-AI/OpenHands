@@ -6,7 +6,7 @@ import uuid
 from enum import Enum
 from typing import Any
 
-import bashlex  # type: ignore
+import bashlex
 import libtmux
 
 from openhands.core.logger import openhands_logger as logger

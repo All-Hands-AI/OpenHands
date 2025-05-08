@@ -194,6 +194,52 @@ def test_ipython_simple(temp_dir, runtime_cls):
     _close_test_runtime(runtime)
 
 
+def test_ipython_chdir(temp_dir, runtime_cls):
+    """Test that os.chdir correctly handles paths with slashes."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
+
+    # Create a test directory and get its absolute path
+    test_code = """
+import os
+os.makedirs('test_dir', exist_ok=True)
+abs_path = os.path.abspath('test_dir')
+print(abs_path)
+"""
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+    test_dir_path = obs.content.split('\n')[0].strip()
+    logger.info(f'test_dir_path: {test_dir_path}')
+    assert test_dir_path  # Verify we got a valid path
+
+    # Change to the test directory using its absolute path
+    test_code = f"""
+import os
+os.chdir(r'{test_dir_path}')
+print(os.getcwd())
+"""
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+    current_dir = obs.content.split('\n')[0].strip()
+    assert current_dir == test_dir_path  # Verify we changed to the correct directory
+
+    # Clean up
+    test_code = """
+import os
+import shutil
+shutil.rmtree('test_dir', ignore_errors=True)
+"""
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+
+    _close_test_runtime(runtime)
+
+
 def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
