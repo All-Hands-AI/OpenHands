@@ -142,9 +142,7 @@ class Metrics:
         """Add a single usage record."""
 
         # Token each turn for calculating context usage.
-        per_turn_token = (
-            prompt_tokens + completion_tokens + cache_read_tokens + cache_write_tokens
-        )
+        per_turn_token = prompt_tokens + completion_tokens
 
         usage = TokenUsage(
             model=self.model_name,
