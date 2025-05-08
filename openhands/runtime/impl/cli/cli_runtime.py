@@ -153,7 +153,7 @@ class CLIRuntime(Runtime):
         for key, value in env_vars.items():
             if isinstance(value, SecretStr):
                 os.environ[key] = value.get_secret_value()
-                logger.debug(f'[CLIRuntime] Set os.environ["{key}"] (from SecretStr)')
+                logger.warning(f'[CLIRuntime] Set os.environ["{key}"] (from SecretStr)')
             else:
                 os.environ[key] = value
                 logger.debug(f'[CLIRuntime] Set os.environ["{key}"]')
