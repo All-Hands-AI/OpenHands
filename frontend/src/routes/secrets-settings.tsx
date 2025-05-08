@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useGetSecrets } from "#/hooks/query/use-get-secrets";
 import { useDeleteSecret } from "#/hooks/mutation/use-delete-secret";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
-import { SecretListItem } from "#/components/features/settings/secrets-settings/secret-list-item";
+import {
+  SecretListItem,
+  SecretListItemSkeleton,
+} from "#/components/features/settings/secrets-settings/secret-list-item";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
@@ -17,7 +20,7 @@ function SecretsSettingsScreen() {
   const { t } = useTranslation();
 
   const { data: config } = useConfig();
-  const { data: secrets } = useGetSecrets();
+  const { data: secrets, isLoading: isLoadingSecrets } = useGetSecrets();
   const { mutate: deleteSecret } = useDeleteSecret();
   const { providers } = useUserProviders();
 
@@ -72,6 +75,14 @@ function SecretsSettingsScreen() {
       data-testid="secrets-settings-screen"
       className="px-11 py-9 flex flex-col gap-5"
     >
+      {isLoadingSecrets && (
+        <ul>
+          <SecretListItemSkeleton />
+          <SecretListItemSkeleton />
+          <SecretListItemSkeleton />
+        </ul>
+      )}
+
       {shouldRenderConnectToGitButton && (
         <Link to="/settings/git" data-testid="connect-git-button" type="button">
           <BrandButton type="button" variant="secondary">
@@ -109,6 +120,7 @@ function SecretsSettingsScreen() {
           type="button"
           variant="primary"
           onClick={() => setView("add-secret-form")}
+          isDisabled={isLoadingSecrets}
         >
           {t("SECRETS$ADD_NEW_SECRET")}
         </BrandButton>

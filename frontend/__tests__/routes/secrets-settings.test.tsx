@@ -42,7 +42,9 @@ const renderSecretsSettings = () =>
     wrapper: ({ children }) => (
       <QueryClientProvider
         client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+          })
         }
       >
         {children}
