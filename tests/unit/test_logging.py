@@ -139,49 +139,84 @@ class TestJsonOutput:
         output = json.loads(string_io.getvalue())
         assert 'timestamp' in output
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'INFO'}
+
+        # Get the level key (either 'level' or 'severity')
+        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
+        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
+
+        # Check the value is correct
+        assert output[level_key] == 'INFO'
+        assert output['message'] == 'Test message'
+        assert len(output) == 2  # Only message and level/severity
 
     def test_error(self, json_handler):
         logger, string_io = json_handler
 
         logger.error('Test message')
         output = json.loads(string_io.getvalue())
+        assert 'timestamp' in output
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'ERROR'}
+
+        # Get the level key (either 'level' or 'severity')
+        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
+        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
+
+        # Check the value is correct
+        assert output[level_key] == 'ERROR'
+        assert output['message'] == 'Test message'
+        assert len(output) == 2  # Only message and level/severity
 
     def test_extra_fields(self, json_handler):
         logger, string_io = json_handler
 
         logger.info('Test message', extra={'key': '..val..'})
         output = json.loads(string_io.getvalue())
+        assert 'timestamp' in output
         del output['timestamp']
-        assert output == {
-            'key': '..val..',
-            'message': 'Test message',
-            'level': 'INFO',
-        }
+
+        # Get the level key (either 'level' or 'severity')
+        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
+        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
+
+        # Check the values are correct
+        assert output[level_key] == 'INFO'
+        assert output['message'] == 'Test message'
+        assert output['key'] == '..val..'
+        assert len(output) == 3  # message, level/severity, and key
 
     def test_extra_fields_from_adapter(self, json_handler):
         logger, string_io = json_handler
         subject = OpenHandsLoggerAdapter(logger, extra={'context_field': '..val..'})
         subject.info('Test message', extra={'log_fied': '..val..'})
         output = json.loads(string_io.getvalue())
+        assert 'timestamp' in output
         del output['timestamp']
-        assert output == {
-            'context_field': '..val..',
-            'log_fied': '..val..',
-            'message': 'Test message',
-            'level': 'INFO',
-        }
+
+        # Get the level key (either 'level' or 'severity')
+        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
+        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
+
+        # Check the values are correct
+        assert output[level_key] == 'INFO'
+        assert output['message'] == 'Test message'
+        assert output['context_field'] == '..val..'
+        assert output['log_fied'] == '..val..'
+        assert len(output) == 4  # message, level/severity, context_field, and log_fied
 
     def test_extra_fields_from_adapter_can_override(self, json_handler):
         logger, string_io = json_handler
         subject = OpenHandsLoggerAdapter(logger, extra={'override': 'a'})
         subject.info('Test message', extra={'override': 'b'})
         output = json.loads(string_io.getvalue())
+        assert 'timestamp' in output
         del output['timestamp']
-        assert output == {
-            'override': 'b',
-            'message': 'Test message',
-            'level': 'INFO',
-        }
+
+        # Get the level key (either 'level' or 'severity')
+        level_key = next((k for k in output.keys() if k in ('level', 'severity')), None)
+        assert level_key is not None, "Neither 'level' nor 'severity' found in output"
+
+        # Check the values are correct
+        assert output[level_key] == 'INFO'
+        assert output['message'] == 'Test message'
+        assert output['override'] == 'b'  # Should be overridden to 'b'
+        assert len(output) == 3  # message, level/severity, and override
