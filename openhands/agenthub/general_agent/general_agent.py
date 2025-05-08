@@ -1,3 +1,4 @@
+import copy
 import os
 from collections import deque
 
@@ -19,10 +20,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.action import (
-    Action,
-    AgentFinishAction,
-)
+from openhands.events.action import Action, AgentFinishAction, MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -37,12 +35,24 @@ from openhands.utils.prompt import PromptManager
 
 
 class GeneralAgent(Agent):
-    VERSION = '1.0'
+    VERSION = '2.2'
     """
     The General Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
-    
-    The replication of manus
+
+    ### Overview
+
+    This agent implements the General Agent idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents' **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
+
+    The conceptual idea is illustrated below. At each turn, the agent can:
+
+    1. **Converse**: Communicate with humans in natural language to ask for clarification, confirmation, etc.
+    2. **CodeAct**: Choose to perform the task by executing code
+    - Execute any valid Linux `bash` command
+    - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
+
+    ![image](https://github.com/All-Hands-AI/OpenHands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
+
     """
 
     sandbox_plugins: list[PluginRequirement] = [
@@ -82,20 +92,20 @@ class GeneralAgent(Agent):
         self.response_to_actions_fn = general_function_calling.response_to_actions
 
     def _get_tools(self) -> list[ChatCompletionToolParam]:
-        SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
+        # For these models, we use short tool descriptions ( < 1024 tokens)
+        # to avoid hitting the OpenAI token limit for tool descriptions.
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
 
-        use_simplified_tool_desc = False
+        use_short_tool_desc = False
         if self.llm is not None:
-            use_simplified_tool_desc = any(
+            use_short_tool_desc = any(
                 model_substr in self.llm.config.model
-                for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
+                for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
             )
 
         tools = []
         if self.config.enable_cmd:
-            tools.append(
-                create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc)
-            )
+            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
         if self.config.enable_think:
             tools.append(ThinkTool)
         if self.config.enable_finish:
@@ -110,7 +120,7 @@ class GeneralAgent(Agent):
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
-                    use_simplified_description=use_simplified_tool_desc
+                    use_short_description=use_short_tool_desc
                 )
             )
         return tools
@@ -160,7 +170,8 @@ class GeneralAgent(Agent):
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
         )
 
-        messages = self._get_messages(condensed_history)
+        initial_user_message = self._get_initial_user_message(state.history)
+        messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
@@ -174,8 +185,25 @@ class GeneralAgent(Agent):
                 for tool in self.mcp_tools
                 if tool['function']['name'] not in existing_names
             ]
-            params['tools'] += unique_mcp_tools
 
+            if 'gemini-2.5-pro-preview-03-25' in self.llm.config.model:
+                logger.info(
+                    f'Removing the default fields from the MCP tools for {self.llm.config.model} '
+                    "since it doesn't support them and the request would crash."
+                )
+                # prevent mutation of input tools
+                unique_mcp_tools = copy.deepcopy(unique_mcp_tools)
+                # Strip off default fields that cause errors with gemini-preview
+                for tool in unique_mcp_tools:
+                    if 'function' in tool and 'parameters' in tool['function']:
+                        if 'properties' in tool['function']['parameters']:
+                            for prop_name, prop in tool['function']['parameters'][
+                                'properties'
+                            ].items():
+                                if 'default' in prop:
+                                    del prop['default']
+
+            params['tools'] += unique_mcp_tools
         # log to litellm proxy if possible
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
@@ -186,7 +214,29 @@ class GeneralAgent(Agent):
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
 
-    def _get_messages(self, events: list[Event]) -> list[Message]:
+    def _get_initial_user_message(self, history: list[Event]) -> MessageAction:
+        """Finds the initial user message action from the full history."""
+        initial_user_message: MessageAction | None = None
+        for event in history:
+            if isinstance(event, MessageAction) and event.source == 'user':
+                initial_user_message = event
+                break
+
+        if initial_user_message is None:
+            # This should not happen in a valid conversation
+            logger.error(
+                f'CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history.'
+            )
+            # Depending on desired robustness, could raise error or create a dummy action
+            # and log the error
+            raise ValueError(
+                'Initial user message not found in history. Please report this issue.'
+            )
+        return initial_user_message
+
+    def _get_messages(
+        self, events: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state
@@ -223,6 +273,7 @@ class GeneralAgent(Agent):
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
+            initial_user_action=initial_user_message,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )

@@ -92,9 +92,10 @@ class PromptManager:
             triggered_agents: A list of MicroagentKnowledge objects containing information
                               about triggered microagents.
         """
-        return self.microagent_info_template.render(
-            triggered_agents=triggered_agents
-        ).strip()
+        return ''
+        # return self.microagent_info_template.render(
+        #     triggered_agents=triggered_agents
+        # ).strip()
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(

@@ -22,19 +22,17 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 * Output truncation: If the output exceeds a maximum length, it will be truncated before being returned.
 """
 
-_SIMPLIFIED_BASH_DESCRIPTION = """Execute a bash command in the terminal.
+_SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, the assistant can interact with the running process and send empty `command` to retrieve any additional logs, or send additional text (set `command` to the text) to STDIN of the running process, or send command like `C-c` (Ctrl+C), `C-d` (Ctrl+D), `C-z` (Ctrl+Z) to interrupt the process.
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."""
 
 
 def create_cmd_run_tool(
-    use_simplified_description: bool = False,
+    use_short_description: bool = False,
 ) -> ChatCompletionToolParam:
     description = (
-        _SIMPLIFIED_BASH_DESCRIPTION
-        if use_simplified_description
-        else _DETAILED_BASH_DESCRIPTION
+        _SHORT_BASH_DESCRIPTION if use_short_description else _DETAILED_BASH_DESCRIPTION
     )
     return ChatCompletionToolParam(
         type='function',
