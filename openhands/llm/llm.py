@@ -49,7 +49,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-7-sonnet-20250219',
-    'claude-sonnet-latest',
+    'claude-sonnet-3-7-latest',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -60,7 +60,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-7-sonnet-20250219',
-    'claude-sonnet-latest',
+    'claude-sonnet-3-7-latest',
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
