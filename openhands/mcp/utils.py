@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import TYPE_CHECKING
 
@@ -59,10 +60,18 @@ async def create_mcp_clients(
         client = MCPClient()
         try:
             # Set a shorter timeout for connection attempts to fail faster
-            await client.connect_sse(server_url.url, api_key=server_url.api_key, timeout=10)
+            # Reduce timeout to 5 seconds to avoid long waits for unavailable servers
+            await client.connect_sse(server_url.url, api_key=server_url.api_key, timeout=5)
             # Only add the client to the list after a successful connection
             mcp_clients.append(client)
             logger.info(f'Successfully connected to MCP server {server_url} via SSE')
+        except asyncio.TimeoutError:
+            logger.warning(f'Connection to MCP server {server_url} timed out. Is the server running?')
+            logger.info(f'Continuing without MCP server {server_url}. To use MCP features, start an MCP server at this URL.')
+            try:
+                await client.disconnect()
+            except Exception as disconnect_error:
+                logger.debug(f'Error during disconnect after timeout: {str(disconnect_error)}')
         except Exception as e:
             logger.warning(f'Failed to connect to MCP server {server_url}: {str(e)}')
             logger.info(f'Continuing without MCP server {server_url}')
