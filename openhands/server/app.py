@@ -67,7 +67,6 @@ app = FastAPI(
 async def health():
     return 'OK'
 
-
 app.include_router(public_api_router)
 app.include_router(files_api_router)
 app.include_router(security_api_router)
