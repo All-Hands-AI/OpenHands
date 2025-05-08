@@ -220,7 +220,7 @@ class State:
             'trace_version': openhands.__version__,
             'tags': [
                 f'agent:{agent_name}',
-                f"web_host:{os.environ.get('WEB_HOST', 'unspecified')}",
+                f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
                 f'openhands_version:{openhands.__version__}',
             ],
         }
