@@ -283,7 +283,7 @@ class StandaloneConversationManager(ConversationManager):
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
-                f'too_many_sessions_for:{user_id or ''}',
+                f'too_many_sessions_for:{user_id or ""}',
                 extra={'session_id': sid, 'user_id': user_id},
             )
             # Get the conversations sorted (oldest first)
@@ -296,7 +296,7 @@ class StandaloneConversationManager(ConversationManager):
             while len(conversations) >= self.config.max_concurrent_conversations:
                 oldest_conversation_id = conversations.pop().conversation_id
                 logger.debug(
-                    f'closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}',
+                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
                     extra={'session_id': oldest_conversation_id, 'user_id': user_id},
                 )
                 # Send status message to client and close session.

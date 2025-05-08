@@ -142,9 +142,9 @@ index 9daeafb..b02def2 100644
     with open(dos_file, 'rb') as f:
         dos_content = f.read()
 
-    assert (
-        b'\r\n' not in unix_content
-    ), 'Unix-style line endings were changed to DOS-style'
+    assert b'\r\n' not in unix_content, (
+        'Unix-style line endings were changed to DOS-style'
+    )
     assert b'\r\n' in dos_content, 'DOS-style line endings were changed to Unix-style'
 
     # Check if content was updated correctly
