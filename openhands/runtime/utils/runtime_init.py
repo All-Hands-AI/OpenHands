@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -32,6 +33,17 @@ def init_user_and_working_directory(
     Returns:
         int | None: The user ID if it was updated, None otherwise.
     """
+    # If running on Windows, just create the directory and return
+    if sys.platform == 'win32':
+        logger.debug('Running on Windows, skipping Unix-specific user setup')
+        logger.debug(f'Client working directory: {initial_cwd}')
+
+        # Create the working directory if it doesn't exist
+        os.makedirs(initial_cwd, exist_ok=True)
+        logger.debug(f'Created working directory: {initial_cwd}')
+
+        return None
+
     # if username is CURRENT_USER, then we don't need to do anything
     # This is specific to the local runtime
     if username == os.getenv('USER') and username not in ['root', 'openhands']:

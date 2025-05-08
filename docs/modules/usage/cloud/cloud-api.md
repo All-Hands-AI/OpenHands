@@ -172,6 +172,5 @@ The response is formatted as follows:
 
 ## Rate Limits
 
-The API has a limit of 10 simultaneous conversations per account. If you need a higher limit for your use case, please contact us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
-
-If you exceed this limit, the API will return a 429 Too Many Requests response.
+If you have too many conversations running at once, older conversations will be paused to limit the number of concurrent conversations.
+If you're running into issues and need a higher limit for your use case, please contact us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
