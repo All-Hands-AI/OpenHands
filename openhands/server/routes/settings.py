@@ -116,6 +116,7 @@ async def store_llm_settings(
 
 @app.post(
     '/settings',
+    response_model=None,
     responses={
         200: {'description': 'Settings stored successfully', 'model': dict},
         500: {'description': 'Error storing settings', 'model': dict},
