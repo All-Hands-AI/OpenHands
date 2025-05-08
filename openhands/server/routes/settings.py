@@ -114,6 +114,10 @@ async def store_llm_settings(
     return settings
 
 
+# NOTE: We use response_model=None for endpoints that return JSONResponse directly.
+# This is because FastAPI's response_model expects a Pydantic model, but we're returning
+# a response object directly. We document the possible responses using the 'responses'
+# parameter and maintain proper type annotations for mypy.
 @app.post(
     '/settings',
     response_model=None,

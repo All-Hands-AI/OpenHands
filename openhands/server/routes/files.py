@@ -119,6 +119,11 @@ async def list_files(
     return file_list
 
 
+# NOTE: We use response_model=None for endpoints that can return multiple response types
+# (like FileResponse | JSONResponse). This is because FastAPI's response_model expects a
+# Pydantic model, but Starlette response classes like FileResponse are not Pydantic models.
+# Instead, we document the possible responses using the 'responses' parameter and maintain
+# proper type annotations for mypy.
 @app.get(
     '/select-file',
     response_model=None,
