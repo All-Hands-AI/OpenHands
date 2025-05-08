@@ -13,15 +13,15 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
+from litellm import ChatCompletionMessageToolCall
 from litellm import Message as LiteLLMMessage
+from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
-from litellm.exceptions import (
-    RateLimitError,
-)
+from litellm import stream_chunk_builder
+from litellm.exceptions import RateLimitError
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
-from litellm.utils import create_pretrained_tokenizer
+from litellm.utils import CustomStreamWrapper, create_pretrained_tokenizer
 
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
@@ -272,7 +272,17 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(
                 f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
             )
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            # enable stream completion or not
+            enable_stream_completion = os.environ.get('ENABLE_STREAM_COMPLETION', 'false').lower() == 'true'
+            if enable_stream_completion:
+                # call with stream=True
+                stream_resp: CustomStreamWrapper = self._completion_unwrapped(*args, **kwargs, stream=True)
+                # build the response from the stream
+                chunks = [chunk for chunk in stream_resp]
+                resp: ModelResponse = stream_chunk_builder(chunks, kwargs['messages'])
+            else:
+                # call with stream=False
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
