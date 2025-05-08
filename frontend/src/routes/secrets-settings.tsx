@@ -10,15 +10,18 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { useConfig } from "#/hooks/query/use-config";
 
 function SecretsSettingsScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
+  const { data: config } = useConfig();
   const { data: secrets } = useGetSecrets();
   const { mutate: deleteSecret } = useDeleteSecret();
   const { providers } = useUserProviders();
 
+  const isSaas = config?.APP_MODE === "saas";
   const hasProviderSet = providers.length > 0;
 
   const [view, setView] = React.useState<
@@ -62,14 +65,18 @@ function SecretsSettingsScreen() {
     setConfirmationModalIsVisible(false);
   };
 
+  const shouldRenderConnectToGitButton = isSaas && !hasProviderSet;
+
   return (
     <div
       data-testid="secrets-settings-screen"
       className="px-11 py-9 flex flex-col gap-5"
     >
-      {!hasProviderSet && (
+      {shouldRenderConnectToGitButton && (
         <Link to="/settings/git" data-testid="connect-git-button" type="button">
-          Connect a Git provider to manage secrets
+          <BrandButton type="button" variant="secondary">
+            Connect a Git provider to manage secrets
+          </BrandButton>
         </Link>
       )}
 
@@ -96,7 +103,7 @@ function SecretsSettingsScreen() {
         </ul>
       )}
 
-      {hasProviderSet && view === "list" && (
+      {!shouldRenderConnectToGitButton && view === "list" && (
         <BrandButton
           testId="add-secret-button"
           type="button"

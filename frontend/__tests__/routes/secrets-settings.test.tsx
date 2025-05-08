@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
@@ -51,12 +51,10 @@ const renderSecretsSettings = () =>
   });
 
 beforeEach(() => {
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-  getSettingsSpy.mockResolvedValue({
-    ...MOCK_DEFAULT_USER_SETTINGS,
-    provider_tokens_set: {
-      github: "some-token",
-    },
+  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  // @ts-expect-error - only return the config we need
+  getConfigSpy.mockResolvedValue({
+    APP_MODE: "oss",
   });
 });
 
@@ -66,9 +64,34 @@ describe("Content", () => {
     screen.getByTestId("secrets-settings-screen");
   });
 
-  it("should render a button to connect with git if they havent already", async () => {
+  it("should NOT render a button to connect with git if they havent already in oss", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
+    // @ts-expect-error - only return the config we need
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+    });
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {},
+    });
+
+    renderSecretsSettings();
+
+    expect(getConfigSpy).toHaveBeenCalled();
+    await waitFor(() => expect(getSecretsSpy).toHaveBeenCalled());
+    expect(screen.queryByTestId("connect-git-button")).not.toBeInTheDocument();
+  });
+
+  it("should render a button to connect with git if they havent already in saas", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
+    // @ts-expect-error - only return the config we need
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {},
@@ -77,8 +100,10 @@ describe("Content", () => {
     renderSecretsSettings();
 
     expect(getSecretsSpy).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
-    const button = screen.getByTestId("connect-git-button");
+    await waitFor(() =>
+      expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
+    );
+    const button = await screen.findByTestId("connect-git-button");
     await userEvent.click(button);
 
     screen.getByTestId("git-settings-screen");
@@ -486,7 +511,7 @@ describe("Secret actions", () => {
     ).toBeInTheDocument();
   });
 
-  it("should not reset inout values on an invalid submit", async () => {
+  it("should not reset ipout values on an invalid submit", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     const createSecretSpy = vi.spyOn(SecretsService, "createSecret");
     getSecretsSpy.mockResolvedValue(MOCK_GET_SECRETS_RESPONSE);
