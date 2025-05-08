@@ -54,9 +54,9 @@ logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 def get_config(instance: pd.Series) -> AppConfig:
     base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
-    assert (
-        base_container_image
-    ), f"Invalid container image for instance {instance['instance_id_swebench']}."
+    assert base_container_image, (
+        f'Invalid container image for instance {instance["instance_id_swebench"]}.'
+    )
     logger.info(f'Using instance container image: {base_container_image}.')
     return AppConfig(
         run_as_openhands=False,
@@ -183,9 +183,9 @@ def run_mutation_testing(
     mutation_action = CmdRunAction(command=f'cat {log_file}')
     mutation_action.set_hard_timeout(300)
     mutation_obs = runtime.run_action(mutation_action)
-    assert isinstance(
-        mutation_obs, CmdOutputObservation
-    ), 'Failed to retrieve mutation output.'
+    assert isinstance(mutation_obs, CmdOutputObservation), (
+        'Failed to retrieve mutation output.'
+    )
     return mutation_obs.exit_code, mutation_obs.content
 
 
@@ -294,9 +294,9 @@ def process_instance(
         AssertionError: if the `reset_logger` flag is set without a provided log directory.
     """
     if reset_logger:
-        assert (
-            log_dir is not None
-        ), "Can't reset logger without a provided log directory."
+        assert log_dir is not None, (
+            "Can't reset logger without a provided log directory."
+        )
         os.makedirs(log_dir, exist_ok=True)
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
@@ -528,9 +528,9 @@ if __name__ == '__main__':
     # Load predictions
     assert args.input_file.endswith('.jsonl'), 'Input file must be a jsonl file.'
     predictions = pd.read_json(args.input_file, lines=True)
-    assert (
-        'instance_id' in predictions.columns
-    ), 'Input file must contain instance_id column.'
+    assert 'instance_id' in predictions.columns, (
+        'Input file must contain instance_id column.'
+    )
 
     if 'test_suite' not in predictions.columns and (
         'test_result' in predictions.columns
@@ -562,9 +562,9 @@ if __name__ == '__main__':
             lambda x: x['test_suite']
         )
 
-    assert len(predictions['instance_id'].unique()) == len(
-        predictions
-    ), 'instance_id column must be unique.'
+    assert len(predictions['instance_id'].unique()) == len(predictions), (
+        'instance_id column must be unique.'
+    )
 
     assert {'instance_id_swebench', 'test_suite', 'instance_id'}.issubset(
         set(predictions.columns)

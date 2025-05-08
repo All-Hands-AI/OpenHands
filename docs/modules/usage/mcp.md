@@ -53,11 +53,6 @@ SSE servers are configured using either a string URL or an object with the follo
   - Type: `str`
   - Description: The URL of the SSE server
 
-- `api_key` (optional)
-  - Type: `str`
-  - Default: `None`
-  - Description: API key for authentication with the SSE server
-
 ### Stdio Servers
 
 Stdio servers are configured using an object with the following properties:

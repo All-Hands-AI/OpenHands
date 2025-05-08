@@ -23,9 +23,9 @@ from openhands.events.observation import CmdOutputObservation, MCPObservation
 def test_default_activated_tools():
     project_root = os.path.dirname(openhands.__file__)
     mcp_config_path = os.path.join(project_root, 'runtime', 'mcp', 'config.json')
-    assert os.path.exists(
-        mcp_config_path
-    ), f'MCP config file not found at {mcp_config_path}'
+    assert os.path.exists(mcp_config_path), (
+        f'MCP config file not found at {mcp_config_path}'
+    )
     with open(mcp_config_path, 'r') as f:
         mcp_config = json.load(f)
     assert 'default' in mcp_config
@@ -35,7 +35,6 @@ def test_default_activated_tools():
 
 @pytest.mark.asyncio
 async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
-    pytest.skip('This test is currently failing on main')
     mcp_stdio_server_config = MCPStdioServerConfig(
         name='fetch', command='uvx', args=['mcp-server-fetch']
     )
@@ -63,9 +62,9 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
     mcp_action = MCPAction(name='fetch', arguments={'url': 'http://localhost:8000'})
     obs = await runtime.call_tool_mcp(mcp_action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(
-        obs, MCPObservation
-    ), 'The observation should be a MCPObservation.'
+    assert isinstance(obs, MCPObservation), (
+        'The observation should be a MCPObservation.'
+    )
 
     result_json = json.loads(obs.content)
     assert not result_json['isError']
