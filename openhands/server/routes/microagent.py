@@ -106,25 +106,19 @@ async def generate_unique_conversation_id(
         conversation_id = uuid.uuid4().hex
     return conversation_id
 
-app = APIRouter()
+app = APIRouter(prefix='/knowledge')
 
-class MicroagentUpdateRequest(BaseModel):
-    """
-    Request to update the microagent with new learnings.
-    """
+class KnowledgePromptRequest(BaseModel):
     conversation_id: str
     event_id: int
 
-@app.post('/microagents')
-async def update_microagent(
-    update_request: MicroagentUpdateRequest,
+
+@app.get('/prompt/{conversation_id}')
+async def get_prompt(
+    update_request: KnowledgePromptRequest,
     user_id: str = Depends(get_user_id),
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation_store: ConversationStore = Depends(get_conversation_store),
 ):
-    """
-    Update the microagent with new learnings through a conversation.
-    """
     # get event stream for the conversation
     event_stream = EventStream(update_request.conversation_id, file_store, user_id)
     events = event_stream.get_events()
@@ -147,8 +141,42 @@ async def update_microagent(
 
     prompt = generate_prompt(llm_config, stringified_events)
 
+    return JSONResponse(
+        {
+            "status": "success",
+            "prompt": prompt,
+        }
+    )
+
+
+class KnowledgeUpdateRequest(KnowledgePromptRequest):
+    """
+    Request to update the microagent with new learnings.
+    """
+    prompt: str | None = None
+
+
+@app.post('/update')
+async def update_knowledge(
+    update_request: KnowledgePromptRequest,
+    user_id: str = Depends(get_user_id),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+):
+    """
+    Update the microagent with new learnings through a conversation.
+    """
+    # get event stream for the conversation
+    event_stream = EventStream(update_request.conversation_id, file_store, user_id)
+    events = event_stream.get_events()
+
+    # find the specified events to learn from
+    context_events = get_context_events(list(events), update_request.event_id)
+    stringified_events = "\n".join([str(event) for event in context_events])
+    
+    prompt = prompt_template.replace("{{EVENTS}}", stringified_events)
+
     # get existing conversation meta data
-    metadata = await conversation_store.get_metadata(MicroagentUpdateRequest.conversation_id)
+    metadata = await conversation_store.get_metadata(KnowledgePromptRequest.conversation_id)
     selected_repository = metadata.selected_repository
 
     # create a new conversation with the prompt
