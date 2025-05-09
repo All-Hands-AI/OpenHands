@@ -343,7 +343,7 @@ async def _get_conversation_info(
         return ConversationInfo(
             trigger=None,
             conversation_id=conversation.conversation_id,
-            title="Error loading conversation",
+            title='Error loading conversation',
             last_updated_at=datetime.now(timezone.utc),
             created_at=datetime.now(timezone.utc),
             selected_repository=None,
