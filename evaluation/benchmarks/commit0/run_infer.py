@@ -82,9 +82,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
     return instruction
 
@@ -265,7 +263,7 @@ def complete_runtime(
 
     test_dir = instance['test']['test_dir']
     action = CmdRunAction(
-        command=f"{instance['test']['test_cmd']} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1"
+        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})

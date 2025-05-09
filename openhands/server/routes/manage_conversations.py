@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -295,7 +294,7 @@ async def get_conversation(
         return conversation_info
     except FileNotFoundError:
         return None
-    
+
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(

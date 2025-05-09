@@ -28,6 +28,7 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
+from openhands.utils.import_utils import get_impl
 
 JWT_SECRET = '.jwt_secret'
 load_dotenv()
@@ -88,8 +89,10 @@ def load_from_env(
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
-                    # parse dicts like SANDBOX_RUNTIME_STARTUP_ENV_VARS
-                    elif get_origin(field_type) is dict:
+                    # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS                                                                                                                                     │
+                    elif (
+                        get_origin(field_type) is dict or get_origin(field_type) is list
+                    ):
                         cast_value = literal_eval(value)
                     else:
                         if field_type is not None:
@@ -610,6 +613,30 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
+def register_custom_agents(config: AppConfig) -> None:
+    """Register custom agents from configuration.
+
+    This function is called after configuration is loaded to ensure all custom agents
+    specified in the config are properly imported and registered.
+    """
+
+    # Import here to avoid circular dependency
+    from openhands.controller.agent import Agent
+
+    for agent_name, agent_config in config.agents.items():
+        if agent_config.classpath:
+            try:
+                agent_cls = get_impl(Agent, agent_config.classpath)
+                Agent.register(agent_name, agent_cls)
+                logger.openhands_logger.info(
+                    f"Registered custom agent '{agent_name}' from {agent_config.classpath}"
+                )
+            except Exception as e:
+                logger.openhands_logger.error(
+                    f"Failed to register agent '{agent_name}': {e}"
+                )
+
+
 def load_app_config(
     set_logging_levels: bool = True, config_file: str = 'config.toml'
 ) -> AppConfig:
@@ -623,6 +650,7 @@ def load_app_config(
     load_from_toml(config, config_file)
     load_from_env(config, os.environ)
     finalize_config(config)
+    register_custom_agents(config)
     if set_logging_levels:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
