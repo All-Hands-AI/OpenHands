@@ -4,7 +4,7 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
-from typing import Optional, cast
+from typing import cast
 
 import pylcs
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ from openhands.core.logger import openhands_logger as logger
 class Chunk(BaseModel):
     text: str
     line_range: tuple[int, int]  # (start_line, end_line), 1-index, inclusive
-    normalized_lcs: Optional[float] = None
+    normalized_lcs: float | None = None
 
     def visualize(self) -> str:
         lines = self.text.split('\n')
@@ -42,7 +42,7 @@ def _create_chunks_from_raw_string(content: str, size: int) -> list[Chunk]:
 
 
 def create_chunks(
-    text: str, size: int = 100, language: Optional[str] = None
+    text: str, size: int = 100, language: str | None = None
 ) -> list[Chunk]:
     try:
         parser = get_parser(language) if language is not None else None

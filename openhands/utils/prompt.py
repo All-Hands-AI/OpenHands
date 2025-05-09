@@ -1,7 +1,6 @@
 import os
 from dataclasses import dataclass, field
 from itertools import islice
-from typing import Optional
 
 from jinja2 import Template
 
@@ -21,8 +20,8 @@ class RuntimeInfo:
 class RepositoryInfo:
     """Information about a GitHub repository that has been cloned."""
 
-    repo_name: Optional[str] = None
-    repo_directory: Optional[str] = None
+    repo_name: str | None = None
+    repo_directory: str | None = None
 
 
 class PromptManager:
@@ -72,8 +71,8 @@ class PromptManager:
 
     def build_workspace_context(
         self,
-        repository_info: Optional[RepositoryInfo],
-        runtime_info: Optional[RuntimeInfo],
+        repository_info: RepositoryInfo | None,
+        runtime_info: RuntimeInfo | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""

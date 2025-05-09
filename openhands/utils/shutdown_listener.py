@@ -8,7 +8,7 @@ import signal
 import threading
 import time
 from types import FrameType
-from typing import Callable, Optional
+from typing import Callable
 from uuid import UUID, uuid4
 
 from uvicorn.server import HANDLED_SIGNALS
@@ -22,7 +22,7 @@ _shutdown_listeners: dict[UUID, Callable] = {}
 def _register_signal_handler(sig: signal.Signals) -> None:
     original_handler = None
 
-    def handler(sig_: int, frame: Optional[FrameType]) -> None:
+    def handler(sig_: int, frame: FrameType | None) -> None:
         logger.debug(f'shutdown_signal:{sig_}')
         global _should_exit
         if not _should_exit:

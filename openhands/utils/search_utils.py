@@ -1,17 +1,17 @@
 import base64
-from typing import Any, AsyncIterator, Callable, Optional, TypeVar
+from typing import Any, AsyncIterator, Callable, TypeVar
 
 T = TypeVar('T')
 
 
-def offset_to_page_id(offset: int, has_next: bool) -> Optional[str]:
+def offset_to_page_id(offset: int, has_next: bool) -> str | None:
     if not has_next:
         return None
     next_page_id = base64.b64encode(str(offset).encode()).decode()
     return next_page_id
 
 
-def page_id_to_offset(page_id: Optional[str]) -> int:
+def page_id_to_offset(page_id: str | None) -> int:
     if not page_id:
         return 0
     offset = int(base64.b64decode(page_id).decode())
