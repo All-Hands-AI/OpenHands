@@ -138,8 +138,8 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: "some-token",
-        gitlab: "some-token",
+        github: null,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -163,7 +163,7 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        gitlab: "some-token",
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -241,8 +241,8 @@ describe("Form submission", () => {
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
-      github: { token: "test-token" },
-      gitlab: { token: "" },
+      github: { token: "test-token", host: "" },
+      gitlab: { token: "", host: "" },
     });
 
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
@@ -250,8 +250,8 @@ describe("Form submission", () => {
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
-      github: { token: "test-token" },
-      gitlab: { token: "" },
+      github: { token: "test-token", host: "" },
+      gitlab: { token: "", host: "" },
     });
   });
 
@@ -290,7 +290,7 @@ describe("Form submission", () => {
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: null,
-        gitlab: "some-token",
+        gitlab: null,
       },
     });
 
@@ -321,7 +321,7 @@ describe("Form submission", () => {
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         github: null,
-        gitlab: "some-token",
+        gitlab: null,
       },
     });
 

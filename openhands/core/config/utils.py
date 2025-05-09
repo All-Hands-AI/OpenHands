@@ -89,8 +89,10 @@ def load_from_env(
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
-                    # parse dicts like SANDBOX_RUNTIME_STARTUP_ENV_VARS
-                    elif get_origin(field_type) is dict:
+                    # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS                                                                                                                                     │
+                    elif (
+                        get_origin(field_type) is dict or get_origin(field_type) is list
+                    ):
                         cast_value = literal_eval(value)
                     else:
                         if field_type is not None:

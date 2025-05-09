@@ -37,6 +37,8 @@ class GETSettingsModel(Settings):
     )
     llm_api_key_set: bool
 
+    model_config = {'use_enum_values': True}
+
 
 class CustomSecretWithoutValueModel(BaseModel):
     """

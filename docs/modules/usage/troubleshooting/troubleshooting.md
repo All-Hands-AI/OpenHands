@@ -40,7 +40,7 @@ On initial prompt, an error is seen with `Permission Denied` or `PermissionError
 
 **Description**
 
-When accessing OpenHands through a non-localhost URL (such as a LAN IP address), the VS Code tab shows a "Forbidden" 
+When accessing OpenHands through a non-localhost URL (such as a LAN IP address), the VS Code tab shows a "Forbidden"
 error, while other parts of the UI work fine.
 
 **Resolution**
