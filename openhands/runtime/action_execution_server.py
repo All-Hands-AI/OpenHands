@@ -389,12 +389,14 @@ class ActionExecutor:
             bash_session = self.bash_session
             assert bash_session is not None
 
-            # The execute method returns CmdOutputObservation
-            obs = await call_sync_from_async(
-                lambda a: bash_session.execute(a),  # type: ignore
+            # The execute method returns CmdOutputObservation | ErrorObservation
+            cmd_result: (
+                CmdOutputObservation | ErrorObservation
+            ) = await call_sync_from_async(
+                lambda a: bash_session.execute(a),
                 action,
             )
-            return obs
+            return cmd_result
         except Exception as e:
             logger.error(f'Error running command: {e}')
             return ErrorObservation(str(e))
