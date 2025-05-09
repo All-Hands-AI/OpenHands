@@ -278,11 +278,18 @@ async def search_conversations(
         for conversation in filtered_results
     )
 
-    # Filter out None values
-    valid_results = [info for info in conversation_infos if info is not None]
+    # Assert that none of the values are None
+    assert all(info is not None for info in conversation_infos), (
+        'Expected all conversation infos to be non-None'
+    )
+
+    # Cast to list[ConversationInfo] after assertion
+    non_none_results: list[ConversationInfo] = [
+        info for info in conversation_infos if info is not None
+    ]
 
     result = ConversationInfoResultSet(
-        results=valid_results,
+        results=non_none_results,
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
