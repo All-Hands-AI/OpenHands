@@ -110,7 +110,7 @@ class LLM(RetryMixin, DebugMixin):
         config: LLMConfig,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
-    ):
+    ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
         Passing simple parameters always overrides config.
@@ -189,15 +189,8 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
-        @self.retry_decorator(
-            num_retries=self.config.num_retries,
-            retry_exceptions=LLM_RETRY_EXCEPTIONS,
-            retry_min_wait=self.config.retry_min_wait,
-            retry_max_wait=self.config.retry_max_wait,
-            retry_multiplier=self.config.retry_multiplier,
-            retry_listener=self.retry_listener,
-        )
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        # Define the wrapper function
+        def wrapper_impl(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
@@ -292,9 +285,11 @@ class LLM(RetryMixin, DebugMixin):
                     )
 
                 non_fncall_response_message = resp.choices[0].message
+                # At this point, messages is already a list due to the conversion earlier in the function
+                messages_list = messages
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
-                        messages + [non_fncall_response_message], mock_fncall_tools
+                        messages_list + [non_fncall_response_message], mock_fncall_tools
                     )
                 )
                 fn_call_response_message = fn_call_messages_with_response[-1]
@@ -362,6 +357,16 @@ class LLM(RetryMixin, DebugMixin):
                     f.write(json.dumps(_d))
 
             return resp
+
+        # Apply retry decorator to the wrapper function
+        wrapper = self.retry_decorator(
+            num_retries=self.config.num_retries,
+            retry_exceptions=LLM_RETRY_EXCEPTIONS,
+            retry_min_wait=self.config.retry_min_wait,
+            retry_max_wait=self.config.retry_max_wait,
+            retry_multiplier=self.config.retry_multiplier,
+            retry_listener=self.retry_listener,
+        )(wrapper_impl)
 
         self._completion = wrapper
 
@@ -633,7 +638,7 @@ class LLM(RetryMixin, DebugMixin):
             logger.info(
                 'Message objects now include serialized tool calls in token counting'
             )
-            messages = self.format_messages_for_llm(messages)  # type: ignore
+            messages = self.format_messages_for_llm(messages)
 
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
