@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass, field
 from itertools import islice
-from typing import Optional, List
+from typing import Optional
 
 from jinja2 import Template
 
@@ -85,7 +85,7 @@ class PromptManager:
 
     def build_microagent_info(
         self,
-        triggered_agents: List[MicroagentKnowledge],
+        triggered_agents: list[MicroagentKnowledge],
     ) -> str:
         """Renders the microagent info template with the triggered agents.
 
