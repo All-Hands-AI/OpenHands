@@ -207,7 +207,7 @@ class CodeActAgent(Agent):
                     if tool['function']['name'] not in existing_names
                 ]
                 params['tools'] += unique_mcp_tools
-        
+        logger.debug(f'Messages: {messages}')
         last_message = messages[-1]
         response = None
         if (last_message.role == 'user' 
@@ -231,15 +231,18 @@ class CodeActAgent(Agent):
             headers = {"Content-Type": "application/json"}
             result = request('POST', self.config.llm_router_infer_url, data=json.dumps(body), headers=headers)
             res = result.json()
-            logger.debug(f'Result from LLM: {res}')
+            logger.debug(f'Result from classifier: {res}')
             complexity_score = res['outputs'][0]['data'][0]
             logger.debug(f'Complexity score: {complexity_score}')
             if complexity_score > 0.3:
                 response = self.llm.completion(**params)
             else:
                 response = self.routing_llms['simple'].completion(**params)
+        else:
+            response = self.llm.completion(**params)
    
         logger.debug(f'Response from LLM: {response}')
+        
         actions = codeact_function_calling.response_to_actions(
             response,
             state.session_id,

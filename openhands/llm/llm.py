@@ -158,7 +158,7 @@ class LLM(RetryMixin, DebugMixin):
         # set up the completion function
         kwargs: dict[str, Any] = {
             'temperature': self.config.temperature,
-            'max_completion_tokens': self.config.max_output_tokens,
+            'max_tokens': self.config.max_output_tokens,
         }
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
@@ -294,7 +294,7 @@ class LLM(RetryMixin, DebugMixin):
             #     f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
             # )
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
-
+            logger.debug(f'Response: {resp}')
             # Calculate and record latency
             latency = time.time() - start_time
             response_id = resp.get('id', 'unknown')
