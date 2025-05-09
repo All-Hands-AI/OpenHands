@@ -33,8 +33,14 @@ class StreamingLLM(AsyncLLM):
 
         async_streaming_completion_unwrapped = self._async_streaming_completion
 
-        # Define the wrapper function
-        async def async_streaming_completion_impl(*args: Any, **kwargs: Any) -> Any:
+        @self.retry_decorator(
+            num_retries=self.config.num_retries,
+            retry_exceptions=LLM_RETRY_EXCEPTIONS,
+            retry_min_wait=self.config.retry_min_wait,
+            retry_max_wait=self.config.retry_max_wait,
+            retry_multiplier=self.config.retry_multiplier,
+        )
+        async def async_streaming_completion_wrapper(*args: Any, **kwargs: Any) -> Any:
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
             # some callers might send the model and messages directly
@@ -98,15 +104,6 @@ class StreamingLLM(AsyncLLM):
                 # sleep for 0.1 seconds to allow the stream to be flushed
                 if kwargs.get('stream', False):
                     await asyncio.sleep(0.1)
-
-        # Apply retry decorator to the wrapper function
-        async_streaming_completion_wrapper = self.retry_decorator(
-            num_retries=self.config.num_retries,
-            retry_exceptions=LLM_RETRY_EXCEPTIONS,
-            retry_min_wait=self.config.retry_min_wait,
-            retry_max_wait=self.config.retry_max_wait,
-            retry_multiplier=self.config.retry_multiplier,
-        )(async_streaming_completion_impl)
 
         self._async_streaming_completion = async_streaming_completion_wrapper
 

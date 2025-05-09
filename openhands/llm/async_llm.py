@@ -39,8 +39,14 @@ class AsyncLLM(LLM):
 
         async_completion_unwrapped = self._async_completion
 
-        # Define the wrapper function
-        async def async_completion_impl(*args: Any, **kwargs: Any) -> Any:
+        @self.retry_decorator(
+            num_retries=self.config.num_retries,
+            retry_exceptions=LLM_RETRY_EXCEPTIONS,
+            retry_min_wait=self.config.retry_min_wait,
+            retry_max_wait=self.config.retry_max_wait,
+            retry_multiplier=self.config.retry_multiplier,
+        )
+        async def async_completion_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm acompletion function that adds logging and cost tracking."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
@@ -110,15 +116,6 @@ class AsyncLLM(LLM):
                     await stop_check_task
                 except asyncio.CancelledError:
                     pass
-
-        # Apply retry decorator to the wrapper function
-        async_completion_wrapper = self.retry_decorator(
-            num_retries=self.config.num_retries,
-            retry_exceptions=LLM_RETRY_EXCEPTIONS,
-            retry_min_wait=self.config.retry_min_wait,
-            retry_max_wait=self.config.retry_max_wait,
-            retry_multiplier=self.config.retry_multiplier,
-        )(async_completion_impl)
 
         self._async_completion = async_completion_wrapper
 

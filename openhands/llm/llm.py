@@ -189,8 +189,15 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
-        # Define the wrapper function
-        def wrapper_impl(*args: Any, **kwargs: Any) -> Any:
+        @self.retry_decorator(
+            num_retries=self.config.num_retries,
+            retry_exceptions=LLM_RETRY_EXCEPTIONS,
+            retry_min_wait=self.config.retry_min_wait,
+            retry_max_wait=self.config.retry_max_wait,
+            retry_multiplier=self.config.retry_multiplier,
+            retry_listener=self.retry_listener,
+        )
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
@@ -286,7 +293,7 @@ class LLM(RetryMixin, DebugMixin):
 
                 non_fncall_response_message = resp.choices[0].message
                 # At this point, messages is already a list due to the conversion earlier in the function
-                messages_list = messages
+                messages_list: list[dict[str, Any]] = messages
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
                         messages_list + [non_fncall_response_message], mock_fncall_tools
@@ -357,16 +364,6 @@ class LLM(RetryMixin, DebugMixin):
                     f.write(json.dumps(_d))
 
             return resp
-
-        # Apply retry decorator to the wrapper function
-        wrapper = self.retry_decorator(
-            num_retries=self.config.num_retries,
-            retry_exceptions=LLM_RETRY_EXCEPTIONS,
-            retry_min_wait=self.config.retry_min_wait,
-            retry_max_wait=self.config.retry_max_wait,
-            retry_multiplier=self.config.retry_multiplier,
-            retry_listener=self.retry_listener,
-        )(wrapper_impl)
 
         self._completion = wrapper
 
@@ -646,11 +643,15 @@ class LLM(RetryMixin, DebugMixin):
             logger.info(
                 'Message objects now include serialized tool calls in token counting'
             )
-            # Cast to the expected type for format_messages_for_llm
-            from typing import cast
+            # Assert the expected type for format_messages_for_llm
+            assert isinstance(messages, list) and all(
+                isinstance(m, Message) for m in messages
+            ), 'Expected list of Message objects'
 
-            messages_list = cast(list[Message], messages)
-            messages = self.format_messages_for_llm(messages_list)
+            # We've already asserted that messages is a list of Message objects
+            # Use explicit typing to satisfy mypy
+            messages_typed: list[Message] = messages  # type: ignore
+            messages = self.format_messages_for_llm(messages_typed)
 
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
