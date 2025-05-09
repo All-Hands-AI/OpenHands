@@ -119,16 +119,14 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '\n<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
 
     if 'image_assets' in instance:
         assets = json.loads(instance['image_assets'])
-        assert (
-            'problem_statement' in assets
-        ), 'problem_statement is required in image_assets'
+        assert 'problem_statement' in assets, (
+            'problem_statement is required in image_assets'
+        )
         image_urls = assets['problem_statement']
         return MessageAction(content=instruction, image_urls=image_urls)
     return MessageAction(content=instruction)

@@ -149,9 +149,9 @@ class Message(BaseModel):
 
         # an observation message with tool response
         if self.tool_call_id is not None:
-            assert (
-                self.name is not None
-            ), 'name is required when tool_call_id is not None'
+            assert self.name is not None, (
+                'name is required when tool_call_id is not None'
+            )
             message_dict['tool_call_id'] = self.tool_call_id
             message_dict['name'] = self.name
 

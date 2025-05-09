@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import toml
+from pydantic import BaseModel, Field
 
 from openhands.cli.tui import (
     UsageMetrics,
@@ -24,7 +25,7 @@ def get_local_config_trusted_dirs() -> list[str]:
     return []
 
 
-def add_local_config_trusted_dir(folder_path: str):
+def add_local_config_trusted_dir(folder_path: str) -> None:
     config = _DEFAULT_CONFIG
     if _LOCAL_CONFIG_FILE_PATH.exists():
         try:
@@ -47,7 +48,7 @@ def add_local_config_trusted_dir(folder_path: str):
         toml.dump(config, f)
 
 
-def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
+def update_usage_metrics(event: Event, usage_metrics: UsageMetrics) -> None:
     if not hasattr(event, 'llm_metrics'):
         return
 
@@ -58,7 +59,34 @@ def update_usage_metrics(event: Event, usage_metrics: UsageMetrics):
     usage_metrics.metrics = llm_metrics
 
 
-def extract_model_and_provider(model):
+class ModelInfo(BaseModel):
+    """Information about a model and its provider."""
+
+    provider: str = Field(description='The provider of the model')
+    model: str = Field(description='The model identifier')
+    separator: str = Field(description='The separator used in the model identifier')
+
+    def __getitem__(self, key: str) -> str:
+        """Allow dictionary-like access to fields."""
+        if key == 'provider':
+            return self.provider
+        elif key == 'model':
+            return self.model
+        elif key == 'separator':
+            return self.separator
+        raise KeyError(f'ModelInfo has no key {key}')
+
+
+def extract_model_and_provider(model: str) -> ModelInfo:
+    """
+    Extract provider and model information from a model identifier.
+
+    Args:
+        model: The model identifier string
+
+    Returns:
+        A ModelInfo object containing provider, model, and separator information
+    """
     separator = '/'
     split = model.split(separator)
 
@@ -72,25 +100,36 @@ def extract_model_and_provider(model):
     if len(split) == 1:
         # no "/" or "." separator found
         if split[0] in VERIFIED_OPENAI_MODELS:
-            return {'provider': 'openai', 'model': split[0], 'separator': '/'}
+            return ModelInfo(provider='openai', model=split[0], separator='/')
         if split[0] in VERIFIED_ANTHROPIC_MODELS:
-            return {'provider': 'anthropic', 'model': split[0], 'separator': '/'}
+            return ModelInfo(provider='anthropic', model=split[0], separator='/')
         # return as model only
-        return {'provider': '', 'model': model, 'separator': ''}
+        return ModelInfo(provider='', model=model, separator='')
 
     provider = split[0]
     model_id = separator.join(split[1:])
-    return {'provider': provider, 'model': model_id, 'separator': separator}
+    return ModelInfo(provider=provider, model=model_id, separator=separator)
 
 
-def organize_models_and_providers(models):
-    result = {}
+def organize_models_and_providers(
+    models: list[str],
+) -> dict[str, 'ProviderInfo']:
+    """
+    Organize a list of model identifiers by provider.
+
+    Args:
+        models: List of model identifiers
+
+    Returns:
+        A mapping of providers to their information and models
+    """
+    result_dict: dict[str, ProviderInfo] = {}
 
     for model in models:
         extracted = extract_model_and_provider(model)
-        separator = extracted['separator']
-        provider = extracted['provider']
-        model_id = extracted['model']
+        separator = extracted.separator
+        provider = extracted.provider
+        model_id = extracted.model
 
         # Ignore "anthropic" providers with a separator of "."
         # These are outdated and incompatible providers.
@@ -98,12 +137,12 @@ def organize_models_and_providers(models):
             continue
 
         key = provider or 'other'
-        if key not in result:
-            result[key] = {'separator': separator, 'models': []}
+        if key not in result_dict:
+            result_dict[key] = ProviderInfo(separator=separator, models=[])
 
-        result[key]['models'].append(model_id)
+        result_dict[key].models.append(model_id)
 
-    return result
+    return result_dict
 
 
 VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
@@ -133,19 +172,48 @@ VERIFIED_ANTHROPIC_MODELS = [
 ]
 
 
-def is_number(char):
+class ProviderInfo(BaseModel):
+    """Information about a provider and its models."""
+
+    separator: str = Field(description='The separator used in model identifiers')
+    models: list[str] = Field(
+        default_factory=list, description='List of model identifiers'
+    )
+
+    def __getitem__(self, key: str) -> str | list[str]:
+        """Allow dictionary-like access to fields."""
+        if key == 'separator':
+            return self.separator
+        elif key == 'models':
+            return self.models
+        raise KeyError(f'ProviderInfo has no key {key}')
+
+    def get(self, key: str, default=None) -> str | list[str] | None:
+        """Dictionary-like get method with default value."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+
+def is_number(char: str) -> bool:
     return char.isdigit()
 
 
-def split_is_actually_version(split):
-    return len(split) > 1 and split[1] and split[1][0] and is_number(split[1][0])
+def split_is_actually_version(split: list[str]) -> bool:
+    return (
+        len(split) > 1
+        and bool(split[1])
+        and bool(split[1][0])
+        and is_number(split[1][0])
+    )
 
 
-def read_file(file_path):
+def read_file(file_path: str | Path) -> str:
     with open(file_path, 'r') as f:
         return f.read()
 
 
-def write_to_file(file_path, content):
+def write_to_file(file_path: str | Path, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)
