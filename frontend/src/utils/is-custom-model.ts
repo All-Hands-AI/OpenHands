@@ -12,11 +12,13 @@ export const isCustomModel = (models: string[], model: string): boolean => {
 
   const organizedModels = organizeModelsAndProviders(models);
   const { provider: extractedProvider, model: extractedModel } =
-    extractModelAndProvider(model);
+    extractModelAndProvider(model.toLowerCase()); // Convert to lowercase
 
   const isKnownModel =
-    extractedProvider in organizedModels &&
-    organizedModels[extractedProvider].models.includes(extractedModel);
+    extractedProvider.toLowerCase() in organizedModels &&
+    organizedModels[extractedProvider.toLowerCase()].models
+      .map(m => m.toLowerCase())
+      .includes(extractedModel.toLowerCase());
 
   return !isKnownModel;
 };
