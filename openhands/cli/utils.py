@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import toml
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field
 
 from openhands.cli.tui import (
     UsageMetrics,
@@ -194,46 +194,6 @@ class ProviderInfo(BaseModel):
             return self[key]
         except KeyError:
             return default
-
-
-class ModelProviderMapping(RootModel[dict[str, ProviderInfo]]):
-    """Mapping of providers to their information and models."""
-
-    def __getitem__(self, key: str) -> ProviderInfo:
-        """Allow dictionary-like access with provider name."""
-        return self.root[key]
-
-    def __setitem__(self, key: str, value: ProviderInfo) -> None:
-        """Allow dictionary-like assignment with provider name."""
-        self.root[key] = value
-
-    def __contains__(self, key: str) -> bool:
-        """Allow 'in' operator to check if a provider exists."""
-        return key in self.root
-
-    def __iter__(self):
-        """Allow iteration over provider names."""
-        return iter(self.root)
-
-    def __len__(self) -> int:
-        """Return the number of providers."""
-        return len(self.root)
-
-    def items(self):
-        """Return provider name and info pairs."""
-        return self.root.items()
-
-    def keys(self):
-        """Return provider names."""
-        return self.root.keys()
-
-    def values(self):
-        """Return provider info objects."""
-        return self.root.values()
-
-    def get(self, key, default=None):
-        """Get provider info with a default value if not found."""
-        return self.root.get(key, default)
 
 
 def is_number(char: str) -> bool:
