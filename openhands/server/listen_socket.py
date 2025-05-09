@@ -26,8 +26,10 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
+    server_config,
     sio,
 )
+from openhands.server.types import AppMode
 from openhands.storage.conversation.conversation_validator import (
     create_conversation_validator,
 )
@@ -91,8 +93,8 @@ async def connect(connection_id: str, environ: dict) -> None:
             session_init_args = {**settings.__dict__, **session_init_args}
 
         git_provider_tokens = create_provider_tokens_object(providers_set)
-        # Use user_secrets provider tokens if available
-        if user_secrets:
+        # Use user_secrets provider tokens if available and not in SAAS mode
+        if server_config.APP_MODE != AppMode.SAAS and user_secrets:
             git_provider_tokens = user_secrets.provider_tokens
 
         session_init_args['git_provider_tokens'] = git_provider_tokens
