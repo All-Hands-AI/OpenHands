@@ -117,6 +117,10 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         observation_text = str(obs)
         assert '[Action executed successfully.]' in observation_text
         assert 'Canvas' in observation_text
+        assert (
+            'Screenshot saved to: /workspace/.browser_screenshots/screenshot_'
+            in observation_text
+        )
 
         # Check the /workspace/.browser_screenshots folder
         action_cmd = CmdRunAction(command='ls /workspace/.browser_screenshots')
@@ -178,6 +182,10 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         observation_text = str(obs)
         assert '[Action executed successfully.]' in observation_text
         assert 'File Viewer - test_image.png' in observation_text
+        assert (
+            'Screenshot saved to: /workspace/.browser_screenshots/screenshot_'
+            in observation_text
+        )
 
         # Check the /workspace/.browser_screenshots folder
         action_cmd = CmdRunAction(command='ls /workspace/.browser_screenshots')
