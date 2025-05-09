@@ -283,7 +283,7 @@ export function ConversationCard({
                 {metrics?.usage !== null && (
                   <>
                     <div className="flex justify-between items-center pb-2">
-                      <span>{t(I18nKey.CONVERSATION$INPUT)}:</span>
+                      <span>{t(I18nKey.CONVERSATION$INPUT)}</span>
                       <span className="font-semibold">
                         {metrics.usage.prompt_tokens.toLocaleString()}
                       </span>
@@ -301,7 +301,7 @@ export function ConversationCard({
                     </div>
 
                     <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
-                      <span>{t(I18nKey.CONVERSATION$OUTPUT)}:</span>
+                      <span>{t(I18nKey.CONVERSATION$OUTPUT)}</span>
                       <span className="font-semibold">
                         {metrics.usage.completion_tokens.toLocaleString()}
                       </span>
@@ -309,7 +309,7 @@ export function ConversationCard({
 
                     <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
                       <span className="font-semibold">
-                        {t(I18nKey.CONVERSATION$TOTAL)}:
+                        {t(I18nKey.CONVERSATION$TOTAL)}
                       </span>
                       <span className="font-bold">
                         {(
