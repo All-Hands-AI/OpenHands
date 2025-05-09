@@ -22,10 +22,9 @@ export class SecretsService {
     return status === 201;
   }
 
-  static async updateSecret(id: string, name: string, value: string) {
-    const secret: CustomSecret = {
+  static async updateSecret(id: string, name: string) {
+    const secret: Omit<CustomSecret, "value"> = {
       name,
-      value,
     };
 
     const { status } = await openHands.put(`/api/secrets/${id}`, secret);

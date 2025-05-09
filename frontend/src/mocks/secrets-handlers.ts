@@ -44,13 +44,14 @@ export const SECRETS_HANDLERS = [
 
   http.put("/api/secrets/:id", async ({ params, request }) => {
     const { id } = params;
-    const body = (await request.json()) as CustomSecret;
+    const body = (await request.json()) as Omit<CustomSecret, "value">;
 
     if (typeof id === "string" && typeof body === "object") {
       const secret = secrets.get(id);
       if (secret && body && body.name) {
+        const newSecret: CustomSecret = { ...secret, ...body };
         secrets.delete(id);
-        secrets.set(body.name, body);
+        secrets.set(body.name, newSecret);
         return HttpResponse.json(true);
       }
     }

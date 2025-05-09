@@ -63,14 +63,10 @@ export function SecretForm({
     queryClient.invalidateQueries({ queryKey: ["secrets"] });
   };
 
-  const handleEditSecret = (
-    secretToEdit: string,
-    name: string,
-    value: string,
-  ) => {
+  const handleEditSecret = (secretToEdit: string, name: string) => {
     updateSecretOptimistically(secretToEdit, name);
     updateSecret(
-      { secretToEdit, name, value },
+      { secretToEdit, name },
       {
         onSettled: onCancel,
         onError: revertOptimisticUpdate,
@@ -85,12 +81,7 @@ export function SecretForm({
     const name = formData.get("secret-name")?.toString();
     const value = formData.get("secret-value")?.toString().trim();
 
-    if (!value) {
-      setError(t("SECRETS$SECRET_VALUE_REQUIRED"));
-      return;
-    }
-
-    if (name && value) {
+    if (name) {
       setError(null);
 
       const isNameAlreadyUsed = secrets?.some(
@@ -102,9 +93,14 @@ export function SecretForm({
       }
 
       if (mode === "add") {
+        if (!value) {
+          setError(t("SECRETS$SECRET_VALUE_REQUIRED"));
+          return;
+        }
+
         handleCreateSecret(name, value);
       } else if (mode === "edit" && selectedSecret) {
-        handleEditSecret(selectedSecret, name, value);
+        handleEditSecret(selectedSecret, name);
       }
     }
   };
@@ -130,20 +126,22 @@ export function SecretForm({
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <label className="flex flex-col gap-2.5 w-fit">
-        <span className="text-sm">Value</span>
-        <textarea
-          data-testid="value-input"
-          name="secret-value"
-          required
-          className={cn(
-            "resize-none w-[680px]",
-            "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
-            "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
-          )}
-          rows={8}
-        />
-      </label>
+      {mode === "add" && (
+        <label className="flex flex-col gap-2.5 w-fit">
+          <span className="text-sm">Value</span>
+          <textarea
+            data-testid="value-input"
+            name="secret-value"
+            required
+            className={cn(
+              "resize-none w-[680px]",
+              "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+              "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+            )}
+            rows={8}
+          />
+        </label>
+      )}
 
       <div className="flex items-center gap-4">
         <BrandButton

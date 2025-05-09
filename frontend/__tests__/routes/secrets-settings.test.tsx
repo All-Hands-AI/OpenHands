@@ -194,21 +194,22 @@ describe("Secret actions", () => {
 
     // enter details
     const nameInput = within(editForm).getByTestId("name-input");
-    const valueInput = within(editForm).getByTestId("value-input");
     const submitButton = within(editForm).getByTestId("submit-button");
+
+    // should not show value input
+    const valueInput = within(editForm).queryByTestId("value-input");
+    expect(valueInput).not.toBeInTheDocument();
 
     expect(nameInput).toHaveValue("My_Secret_1");
 
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "My_Edited_Secret");
-    await userEvent.type(valueInput, "my-edited-secret-value");
     await userEvent.click(submitButton);
 
     // make POST request
     expect(updateSecretSpy).toHaveBeenCalledWith(
       "My_Secret_1",
       "My_Edited_Secret",
-      "my-edited-secret-value",
     );
 
     // hide form
@@ -278,19 +279,20 @@ describe("Secret actions", () => {
 
     // enter details
     const nameInput = within(editForm).getByTestId("name-input");
-    const valueInput = within(editForm).getByTestId("value-input");
     const submitButton = within(editForm).getByTestId("submit-button");
+
+    // should not show value input
+    const valueInput = within(editForm).queryByTestId("value-input");
+    expect(valueInput).not.toBeInTheDocument();
 
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "My_Edited_Secret");
-    await userEvent.type(valueInput, "my-edited-secret-value");
     await userEvent.click(submitButton);
 
     // make POST request
     expect(updateSecretSpy).toHaveBeenCalledWith(
       "My_Secret_1",
       "My_Edited_Secret",
-      "my-edited-secret-value",
     );
 
     // hide form
