@@ -1,10 +1,7 @@
-# from fastmcp import FastMCP, Context
 from typing import Annotated
-
-from fastmcp import Context, FastMCP
 from pydantic import Field
-
-from mcp.server.fastmcp.server import FastMCP, Context
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_http_request
 
 
 mcp_server = FastMCP('mcp')
@@ -17,9 +14,9 @@ def create_pr(
     ],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
-    ctx: Context,
 ) -> str:
     """Open a PR in GitHub"""
-    print("starlette context", ctx)
+    
+    request = get_http_request()
 
     return "pr was created successfully"

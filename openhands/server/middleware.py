@@ -186,7 +186,6 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
-
 class MCPMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         self.app = app
@@ -199,12 +198,10 @@ class MCPMiddleware(BaseHTTPMiddleware):
         if self._should_attach(request):
             # Modify the request path by prepending '/mcp'
             new_url = request.url._replace(path='/mcp' + request.url.path)
-            
+
             # Create a new request with the updated path
             modified_request = Request(
-                scope=request.scope,
-                receive=request.receive,
-                send=request.send
+                scope=request.scope, receive=request.receive, send=request.send
             )
             # Update the request with the new URL
             modified_request._url = new_url
@@ -214,7 +211,5 @@ class MCPMiddleware(BaseHTTPMiddleware):
         else:
             # If the path does not start with '/messages/', proceed as normal
             response = await call_next(request)
-        
+
         return response
-        
-        
