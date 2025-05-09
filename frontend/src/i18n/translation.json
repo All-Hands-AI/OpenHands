@@ -2145,6 +2145,21 @@
         "de": "GitHub-Token",
         "uk": "GitHub Токен"
     },
+    "GITHUB$HOST_LABEL": {
+        "en": "GitHub Host (optional)",
+        "ja": "GitHubホスト (オプション)",
+        "zh-CN": "GitHub主机 (可选)",
+        "zh-TW": "GitHub主機 (選填)",
+        "ko-KR": "GitHub 호스트 (선택사항)",
+        "no": "GitHub-vert (valgfritt)",
+        "it": "Host GitHub (opzionale)",
+        "pt": "Host do GitHub (opcional)",
+        "es": "Host de GitHub (opcional)",
+        "ar": "مضيف GitHub (اختياري)",
+        "fr": "Hôte GitHub (optionnel)",
+        "tr": "GitHub Sunucusu (isteğe bağlı)",
+        "de": "GitHub-Host (optional)"
+    },
     "GITHUB$TOKEN_OPTIONAL": {
         "en": "GitHub Token (Optional)",
         "ja": "GitHubトークン（任意）",
@@ -7431,6 +7446,21 @@
         "tr": "GitLab Jetonu",
         "de": "GitLab-Token",
         "uk": "GitLab токен"
+    },
+    "GITLAB$HOST_LABEL": {
+        "en": "GitLab Host (optional)",
+        "ja": "GitLabホスト (オプション)",
+        "zh-CN": "GitLab主机 (可选)",
+        "zh-TW": "GitLab主機 (選填)",
+        "ko-KR": "GitLab 호스트 (선택사항)",
+        "no": "GitLab-vert (valgfritt)",
+        "it": "Host GitLab (opzionale)",
+        "pt": "Host do GitLab (opcional)",
+        "es": "Host de GitLab (opcional)",
+        "ar": "مضيف GitLab (اختياري)",
+        "fr": "Hôte GitLab (optionnel)",
+        "tr": "GitLab Sunucusu (isteğe bağlı)",
+        "de": "GitLab-Host (optional)"
     },
     "GITLAB$GET_TOKEN": {
         "en": "Generate a token on",

@@ -11,6 +11,7 @@ from openhands.server.settings import (
     GETSettingsModel,
 )
 from openhands.server.shared import config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -19,11 +20,19 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api')
 
 
-@app.get('/settings', response_model=GETSettingsModel)
+@app.get(
+    '/settings',
+    response_model=GETSettingsModel,
+    responses={
+        404: {'description': 'Settings not found', 'model': dict},
+        401: {'description': 'Invalid token', 'model': dict},
+    },
+)
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
@@ -38,10 +47,13 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
+
         # On initial load, user secrets may not be populated with values migrated from settings store
         user_secrets = await invalidate_legacy_secrets_store(
             settings, settings_store, secrets_store
         )
+
+        
         # If invalidation is successful, then the returned user secrets holds the most recent values
         git_providers = (
             user_secrets.provider_tokens if user_secrets else provider_tokens
@@ -51,7 +63,8 @@ async def load_settings(
         if git_providers:
             for provider_type, provider_token in git_providers.items():
                 if provider_token.token or provider_token.user_id:
-                    provider_tokens_set[provider_type] = None
+                    provider_tokens_set[provider_type] = provider_token.host
+
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
@@ -69,7 +82,15 @@ async def load_settings(
         )
 
 
-@app.post('/reset-settings', response_model=dict[str, str])
+@app.post(
+    '/reset-settings',
+    responses={
+        410: {
+            'description': 'Reset settings functionality has been removed',
+            'model': dict,
+        }
+    },
+)
 async def reset_settings() -> JSONResponse:
     """
     Resets user settings. (Deprecated)
@@ -99,7 +120,18 @@ async def store_llm_settings(
     return settings
 
 
-@app.post('/settings', response_model=dict[str, str])
+# NOTE: We use response_model=None for endpoints that return JSONResponse directly.
+# This is because FastAPI's response_model expects a Pydantic model, but we're returning
+# a response object directly. We document the possible responses using the 'responses'
+# parameter and maintain proper type annotations for mypy.
+@app.post(
+    '/settings',
+    response_model=None,
+    responses={
+        200: {'description': 'Settings stored successfully', 'model': dict},
+        500: {'description': 'Error storing settings', 'model': dict},
+    },
+)
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),

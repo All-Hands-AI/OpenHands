@@ -100,7 +100,7 @@ def handle_exit_command(
     return close_repl
 
 
-def handle_help_command():
+def handle_help_command() -> None:
     display_help()
 
 
@@ -135,7 +135,7 @@ async def handle_init_command(
     return close_repl, reload_microagents
 
 
-def handle_status_command(usage_metrics: UsageMetrics, sid: str):
+def handle_status_command(usage_metrics: UsageMetrics, sid: str) -> None:
     display_status(usage_metrics, sid)
 
 
@@ -168,7 +168,7 @@ def handle_new_command(
 async def handle_settings_command(
     config: AppConfig,
     settings_store: FileSettingsStore,
-):
+) -> None:
     display_settings(config)
     modify_settings = cli_confirm(
         '\nWhich settings would you like to modify?',
@@ -213,6 +213,7 @@ async def init_repository(current_dir: str) -> bool:
 
     if repo_file_path.exists():
         try:
+            # Path.exists() ensures repo_file_path is not None, so we can safely pass it to read_file
             content = await asyncio.get_event_loop().run_in_executor(
                 None, read_file, repo_file_path
             )
@@ -263,7 +264,7 @@ async def init_repository(current_dir: str) -> bool:
     return init_repo
 
 
-def check_folder_security_agreement(config: AppConfig, current_dir):
+def check_folder_security_agreement(config: AppConfig, current_dir: str) -> bool:
     # Directories trusted by user for the CLI to use as workspace
     # Config from ~/.openhands/config.toml overrides the app config
 
