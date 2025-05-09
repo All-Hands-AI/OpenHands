@@ -106,10 +106,10 @@ async def test_browse_does_not_save_screenshot_when_workspace_not_provided(
 
 @pytest.mark.asyncio
 async def test_screenshot_path_included_in_agent_obs_text(sample_screenshot):
-    # Create a BrowserOutputObservation with a screenshot path
+    # Create a BrowserOutputObservation with a screenshot path for BROWSE_INTERACTIVE
     obs = BrowserOutputObservation(
         url='https://example.com',
-        trigger_by_action=ActionType.BROWSE,
+        trigger_by_action=ActionType.BROWSE_INTERACTIVE,
         content='Sample content',
         screenshot=sample_screenshot,
         screenshot_path='/path/to/screenshot.png',
@@ -118,10 +118,10 @@ async def test_screenshot_path_included_in_agent_obs_text(sample_screenshot):
     # Get the agent observation text
     agent_text = obs.get_agent_obs_text()
 
-    # Verify the screenshot path is included
+    # Verify the screenshot path is included for BROWSE_INTERACTIVE
     assert '[Screenshot saved to: /path/to/screenshot.png]' in agent_text
 
-    # Test with BROWSE_INTERACTIVE action type
-    obs.trigger_by_action = ActionType.BROWSE_INTERACTIVE
+    # Test with BROWSE action type - should NOT include screenshot path
+    obs.trigger_by_action = ActionType.BROWSE
     agent_text = obs.get_agent_obs_text()
-    assert '[Screenshot saved to: /path/to/screenshot.png]' in agent_text
+    assert '[Screenshot saved to: /path/to/screenshot.png]' not in agent_text

@@ -96,10 +96,6 @@ class BrowserOutputObservation(Observation):
         elif self.trigger_by_action == ActionType.BROWSE:
             text = f'[Current URL: {self.url}]\n'
 
-            # Add screenshot path information if available
-            if self.screenshot_path:
-                text += f'[Screenshot saved to: {self.screenshot_path}]\n'
-
             if self.error:
                 text += (
                     '================ BEGIN error message ===============\n'
