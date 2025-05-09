@@ -5,18 +5,17 @@ import pytest
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.keys import Keys
 
-from openhands.core.cli_tui import process_agent_pause
+from openhands.cli.tui import process_agent_pause
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.observation import AgentStateChangedObservation
-from openhands.events.stream import EventStream
 
 
 class TestProcessAgentPause:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_tui.create_input')
-    @patch('openhands.core.cli_tui.print_formatted_text')
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.print_formatted_text')
     async def test_process_agent_pause_ctrl_p(self, mock_print, mock_create_input):
         """Test that process_agent_pause sets the done event when Ctrl+P is pressed."""
         # Create the done event
@@ -48,7 +47,7 @@ class TestProcessAgentPause:
         mock_input.attach.side_effect = fake_attach
 
         # Create a task to run process_agent_pause
-        task = asyncio.create_task(process_agent_pause(done))
+        task = asyncio.create_task(process_agent_pause(done, event_stream=MagicMock()))
 
         # Give it a moment to start and capture the callback
         await asyncio.sleep(0.1)
@@ -98,9 +97,10 @@ class TestCliPauseResumeInRunSession:
         config = MagicMock()
 
         # Patch the display_event function
-        with patch('openhands.core.cli.display_event') as mock_display_event, patch(
-            'openhands.core.cli.update_usage_metrics'
-        ) as mock_update_metrics:
+        with (
+            patch('openhands.cli.main.display_event') as mock_display_event,
+            patch('openhands.cli.main.update_usage_metrics') as mock_update_metrics,
+        ):
             # Create a closure to capture the current context
             async def test_func():
                 # Set the pause event
@@ -119,12 +119,13 @@ class TestCliPauseResumeInRunSession:
                             ChangeAgentStateAction(AgentState.PAUSED),
                             EventSource.USER,
                         )
-                        is_paused.clear()
+                        # The pause event is not cleared here because we want to simulate
+                        # the PAUSED event processing in a future event
 
-                # Call our test function
+                # Call on_event_async_test
                 await on_event_async_test(event)
 
-                # Check that the event_stream.add_event was called with the correct action
+                # Check that event_stream.add_event was called with the correct action
                 event_stream.add_event.assert_called_once()
                 args, kwargs = event_stream.add_event.call_args
                 action, source = args
@@ -133,35 +134,127 @@ class TestCliPauseResumeInRunSession:
                 assert action.agent_state == AgentState.PAUSED
                 assert source == EventSource.USER
 
-                # Check that is_paused was cleared
-                assert not is_paused.is_set()
+                # Check that is_paused is still set (will be cleared when PAUSED state is processed)
+                assert is_paused.is_set()
 
             # Run the test function
             await test_func()
 
+    @pytest.mark.asyncio
+    async def test_awaiting_user_input_paused_skip(self):
+        """Test that when is_paused is set, awaiting user input events do not trigger prompting."""
+        # Create a mock event with AgentStateChangedObservation
+        event = MagicMock()
+        event.observation = AgentStateChangedObservation(
+            agent_state=AgentState.AWAITING_USER_INPUT, content='Agent awaiting input'
+        )
+
+        # Create mock dependencies
+        is_paused = asyncio.Event()
+        reload_microagents = False
+
+        # Mock function that would be called if code reaches that point
+        mock_prompt_task = MagicMock()
+
+        # Create a closure to capture the current context
+        async def test_func():
+            # Set the pause event
+            is_paused.set()
+
+            # Create a context similar to run_session to call on_event_async
+            async def on_event_async_test(event):
+                nonlocal reload_microagents, is_paused
+
+                if isinstance(event.observation, AgentStateChangedObservation):
+                    if event.observation.agent_state in [
+                        AgentState.AWAITING_USER_INPUT,
+                        AgentState.FINISHED,
+                    ]:
+                        # If the agent is paused, do not prompt for input
+                        if is_paused.is_set():
+                            return
+
+                        # This code should not be reached if is_paused is set
+                        mock_prompt_task()
+
+            # Call on_event_async_test
+            await on_event_async_test(event)
+
+            # Verify that mock_prompt_task was not called
+            mock_prompt_task.assert_not_called()
+
+        # Run the test
+        await test_func()
+
+    @pytest.mark.asyncio
+    async def test_awaiting_confirmation_paused_skip(self):
+        """Test that when is_paused is set, awaiting confirmation events do not trigger prompting."""
+        # Create a mock event with AgentStateChangedObservation
+        event = MagicMock()
+        event.observation = AgentStateChangedObservation(
+            agent_state=AgentState.AWAITING_USER_CONFIRMATION,
+            content='Agent awaiting confirmation',
+        )
+
+        # Create mock dependencies
+        is_paused = asyncio.Event()
+
+        # Mock function that would be called if code reaches that point
+        mock_confirmation = MagicMock()
+
+        # Create a closure to capture the current context
+        async def test_func():
+            # Set the pause event
+            is_paused.set()
+
+            # Create a context similar to run_session to call on_event_async
+            async def on_event_async_test(event):
+                nonlocal is_paused
+
+                if isinstance(event.observation, AgentStateChangedObservation):
+                    if (
+                        event.observation.agent_state
+                        == AgentState.AWAITING_USER_CONFIRMATION
+                    ):
+                        if is_paused.is_set():
+                            return
+
+                        # This code should not be reached if is_paused is set
+                        mock_confirmation()
+
+            # Call on_event_async_test
+            await on_event_async_test(event)
+
+            # Verify that confirmation function was not called
+            mock_confirmation.assert_not_called()
+
+        # Run the test
+        await test_func()
+
 
 class TestCliCommandsPauseResume:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_resume_command')
+    @patch('openhands.cli.commands.handle_resume_command')
     async def test_handle_commands_resume(self, mock_handle_resume):
         """Test that the handle_commands function properly calls handle_resume_command."""
-        # Import the handle_commands function
-        from openhands.core.cli_commands import handle_commands
+        # Import here to avoid circular imports in test
+        from openhands.cli.commands import handle_commands
 
-        # Set up mocks
-        event_stream = MagicMock(spec=EventStream)
+        # Create mocks
+        message = '/resume'
+        event_stream = MagicMock()
         usage_metrics = MagicMock()
         sid = 'test-session-id'
         config = MagicMock()
         current_dir = '/test/dir'
         settings_store = MagicMock()
 
-        # Set the return value for handle_resume_command
+        # Mock return value
         mock_handle_resume.return_value = (False, False)
 
-        # Call handle_commands with the resume command
+        # Call handle_commands
         close_repl, reload_microagents, new_session_requested = await handle_commands(
-            '/resume',
+            message,
             event_stream,
             usage_metrics,
             sid,
@@ -170,7 +263,7 @@ class TestCliCommandsPauseResume:
             settings_store,
         )
 
-        # Check that handle_resume_command was called with the correct arguments
+        # Check that handle_resume_command was called with correct args
         mock_handle_resume.assert_called_once_with(event_stream)
 
         # Check the return values
@@ -181,44 +274,42 @@ class TestCliCommandsPauseResume:
 
 class TestAgentStatePauseResume:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli.display_agent_running_message')
-    @patch('openhands.core.cli.process_agent_pause')
+    @patch('openhands.cli.main.display_agent_running_message')
+    @patch('openhands.cli.main.process_agent_pause')
     async def test_agent_running_enables_pause(
         self, mock_process_agent_pause, mock_display_message
     ):
         """Test that when the agent is running, pause functionality is enabled."""
-        # Create mock dependencies
+        # Create a mock event and event stream
         event = MagicMock()
-        # AgentStateChangedObservation requires a content parameter
         event.observation = AgentStateChangedObservation(
-            agent_state=AgentState.RUNNING, content='Agent state changed to RUNNING'
+            agent_state=AgentState.RUNNING, content='Agent is running'
         )
+        event_stream = MagicMock()
 
-        # Create a context similar to run_session to call on_event_async
-        loop = MagicMock()
+        # Create mock dependencies
         is_paused = asyncio.Event()
-        config = MagicMock()
-        config.security.confirmation_mode = False
+        loop = MagicMock()
+        reload_microagents = False
 
         # Create a closure to capture the current context
         async def test_func():
-            # Call our simplified on_event_async
+            # Create a context similar to run_session to call on_event_async
             async def on_event_async_test(event):
+                nonlocal reload_microagents
+
                 if isinstance(event.observation, AgentStateChangedObservation):
                     if event.observation.agent_state == AgentState.RUNNING:
-                        # Enable pause/resume functionality only if the confirmation mode is disabled
-                        if not config.security.confirmation_mode:
-                            mock_display_message()
-                            loop.create_task(mock_process_agent_pause(is_paused))
+                        mock_display_message()
+                        loop.create_task(
+                            mock_process_agent_pause(is_paused, event_stream)
+                        )
 
-            # Call the function
+            # Call on_event_async_test
             await on_event_async_test(event)
 
-            # Check that the message was displayed
+            # Check that display_agent_running_message was called
             mock_display_message.assert_called_once()
-
-            # Check that process_agent_pause was called with the right arguments
-            mock_process_agent_pause.assert_called_once_with(is_paused)
 
             # Check that loop.create_task was called
             loop.create_task.assert_called_once()
@@ -227,8 +318,8 @@ class TestAgentStatePauseResume:
         await test_func()
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli.display_event')
-    @patch('openhands.core.cli.update_usage_metrics')
+    @patch('openhands.cli.main.display_event')
+    @patch('openhands.cli.main.update_usage_metrics')
     async def test_pause_event_changes_agent_state(
         self, mock_update_metrics, mock_display_event
     ):
@@ -286,40 +377,33 @@ class TestAgentStatePauseResume:
         event.observation = AgentStateChangedObservation(
             agent_state=AgentState.PAUSED, content='Agent state changed to PAUSED'
         )
-        reload_microagents = False
-        memory = MagicMock()
-        runtime = MagicMock()
-        prompt_task = MagicMock()
+        is_paused = asyncio.Event()
+
+        # Mock function that would be called for prompting
+        mock_prompt_task = MagicMock()
 
         # Create a closure to capture the current context
         async def test_func():
             # Create a simplified version of on_event_async
             async def on_event_async_test(event):
-                nonlocal reload_microagents, prompt_task
+                nonlocal is_paused
 
                 if isinstance(event.observation, AgentStateChangedObservation):
-                    if event.observation.agent_state in [
-                        AgentState.AWAITING_USER_INPUT,
-                        AgentState.FINISHED,
-                        AgentState.PAUSED,
-                    ]:
-                        # Reload microagents after initialization of repo.md
-                        if reload_microagents:
-                            microagents = runtime.get_microagents_from_selected_repo(
-                                None
-                            )
-                            memory.load_user_workspace_microagents(microagents)
-                            reload_microagents = False
+                    if event.observation.agent_state == AgentState.PAUSED:
+                        is_paused.clear()  # Revert the event state before prompting for user input
+                        mock_prompt_task(event.observation.agent_state)
 
-                        # Since prompt_for_next_task is a nested function in cli.py,
-                        # we'll just check that we've reached this code path
-                        prompt_task = 'Prompt for next task would be called here'
+            # Set is_paused to test that it gets cleared
+            is_paused.set()
 
             # Call the function
             await on_event_async_test(event)
 
-            # Check that we reached the code path where prompt_for_next_task would be called
-            assert prompt_task == 'Prompt for next task would be called here'
+            # Check that is_paused was cleared
+            assert not is_paused.is_set()
+
+            # Check that prompt task was called with the correct state
+            mock_prompt_task.assert_called_once_with(AgentState.PAUSED)
 
         # Run the test
         await test_func()

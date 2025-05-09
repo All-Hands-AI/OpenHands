@@ -11,6 +11,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.monitoring import MonitoringListener
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
@@ -50,6 +51,8 @@ conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
 )
 
 SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
+
+SecretsStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
 
 ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore

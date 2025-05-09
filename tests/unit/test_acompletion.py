@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import contextmanager
-from typing import Type
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,7 +18,7 @@ def test_llm():
     return _get_llm(LLM)
 
 
-def _get_llm(type_: Type[LLM]):
+def _get_llm(type_: type[LLM]):
     with _patch_http():
         return type_(config=config.get_llm_config())
 
@@ -82,7 +81,7 @@ async def test_acompletion_streaming(mock_response):
         async for chunk in test_llm.async_streaming_completion(
             messages=[{'role': 'user', 'content': 'Hello!'}], stream=True
         ):
-            print(f"Chunk: {chunk['choices'][0]['delta']['content']}")
+            print(f'Chunk: {chunk["choices"][0]["delta"]["content"]}')
             # Assertions for streaming completion
             assert chunk['choices'][0]['delta']['content'] in [
                 r['choices'][0]['delta']['content'] for r in mock_response
@@ -187,7 +186,7 @@ async def test_async_streaming_completion_with_user_cancellation(cancel_after_ch
                 messages=[{'role': 'user', 'content': 'Hello!'}], stream=True
             ):
                 received_chunks.append(chunk['choices'][0]['delta']['content'])
-                print(f"Chunk: {chunk['choices'][0]['delta']['content']}")
+                print(f'Chunk: {chunk["choices"][0]["delta"]["content"]}')
 
         # Assert that we received the expected number of chunks before cancellation
         assert len(received_chunks) == cancel_after_chunks

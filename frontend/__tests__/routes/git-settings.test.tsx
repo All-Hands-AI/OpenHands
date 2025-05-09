@@ -6,9 +6,9 @@ import userEvent from "@testing-library/user-event";
 import GitSettingsScreen from "#/routes/git-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { AuthProvider } from "#/context/auth-context";
 import { GetConfigResponse } from "#/api/open-hands.types";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
+import { SecretsService } from "#/api/secrets-service";
 
 const VALID_OSS_CONFIG: GetConfigResponse = {
   APP_MODE: "oss",
@@ -45,7 +45,7 @@ const renderGitSettingsScreen = () => {
     {
       wrapper: ({ children }) => (
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </QueryClientProvider>
       ),
     },
@@ -54,9 +54,7 @@ const renderGitSettingsScreen = () => {
   const rerenderGitSettingsScreen = () =>
     rerender(
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <GitSettingsRouterStub initialEntries={["/settings/github"]} />
-        </AuthProvider>
+        <GitSettingsRouterStub initialEntries={["/settings/github"]} />
       </QueryClientProvider>,
     );
 
@@ -119,10 +117,6 @@ describe("Content", () => {
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {
-        github: false,
-        gitlab: false,
-      },
     });
 
     const { rerender } = renderGitSettingsScreen();
@@ -144,8 +138,8 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: true,
-        gitlab: true,
+        github: null,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -169,8 +163,7 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: false,
-        gitlab: true,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -235,7 +228,7 @@ describe("Content", () => {
 
 describe("Form submission", () => {
   it("should save the GitHub token", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
@@ -247,27 +240,19 @@ describe("Form submission", () => {
     await userEvent.type(githubInput, "test-token");
     await userEvent.click(submit);
 
-    expect(saveSettingsSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        provider_tokens: {
-          github: "test-token",
-          gitlab: "",
-        },
-      }),
-    );
+    expect(saveProvidersSpy).toHaveBeenCalledWith({
+      github: { token: "test-token", host: "" },
+      gitlab: { token: "", host: "" },
+    });
 
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
     await userEvent.type(gitlabInput, "test-token");
     await userEvent.click(submit);
 
-    expect(saveSettingsSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        provider_tokens: {
-          github: "",
-          gitlab: "test-token",
-        },
-      }),
-    );
+    expect(saveProvidersSpy).toHaveBeenCalledWith({
+      github: { token: "test-token", host: "" },
+      gitlab: { token: "", host: "" },
+    });
   });
 
   it("should disable the button if there is no input", async () => {
@@ -304,8 +289,8 @@ describe("Form submission", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: true,
-        gitlab: false,
+        github: null,
+        gitlab: null,
       },
     });
 
@@ -319,10 +304,6 @@ describe("Form submission", () => {
 
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {
-        github: false,
-        gitlab: false,
-      },
     });
     queryClient.invalidateQueries();
 
@@ -339,8 +320,8 @@ describe("Form submission", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: true,
-        gitlab: false,
+        github: null,
+        gitlab: null,
       },
     });
 
@@ -357,7 +338,7 @@ describe("Form submission", () => {
 
   // flaky test
   it.skip("should disable the button when submitting changes", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SecretsService, "addGitProvider");
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
@@ -381,7 +362,7 @@ describe("Form submission", () => {
   });
 
   it("should disable the button after submitting changes", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
@@ -397,7 +378,7 @@ describe("Form submission", () => {
 
     // submit the form
     await userEvent.click(submit);
-    expect(saveSettingsSpy).toHaveBeenCalled();
+    expect(saveProvidersSpy).toHaveBeenCalled();
     expect(submit).toBeDisabled();
 
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
@@ -407,7 +388,7 @@ describe("Form submission", () => {
 
     // submit the form
     await userEvent.click(submit);
-    expect(saveSettingsSpy).toHaveBeenCalled();
+    expect(saveProvidersSpy).toHaveBeenCalled();
 
     await waitFor(() => expect(submit).toBeDisabled());
   });
@@ -415,7 +396,7 @@ describe("Form submission", () => {
 
 describe("Status toasts", () => {
   it("should call displaySuccessToast when the settings are saved", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
 
@@ -433,18 +414,18 @@ describe("Status toasts", () => {
     const submit = await screen.findByTestId("submit-button");
     await userEvent.click(submit);
 
-    expect(saveSettingsSpy).toHaveBeenCalled();
+    expect(saveProvidersSpy).toHaveBeenCalled();
     await waitFor(() => expect(displaySuccessToastSpy).toHaveBeenCalled());
   });
 
   it("should call displayErrorToast when the settings fail to save", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
 
     const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
 
-    saveSettingsSpy.mockRejectedValue(new Error("Failed to save settings"));
+    saveProvidersSpy.mockRejectedValue(new Error("Failed to save settings"));
 
     renderGitSettingsScreen();
 
@@ -455,7 +436,7 @@ describe("Status toasts", () => {
     const submit = await screen.findByTestId("submit-button");
     await userEvent.click(submit);
 
-    expect(saveSettingsSpy).toHaveBeenCalled();
+    expect(saveProvidersSpy).toHaveBeenCalled();
     expect(displayErrorToastSpy).toHaveBeenCalled();
   });
 });

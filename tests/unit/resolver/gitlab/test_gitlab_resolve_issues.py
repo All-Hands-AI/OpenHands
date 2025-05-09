@@ -19,14 +19,16 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.resolve_issue import IssueResolver, SandboxConfig, AppConfig, AgentConfig
+from openhands.resolver.resolve_issue import (
+    IssueResolver,
+)
 from openhands.resolver.resolver_output import ResolverOutput
 
 
 @pytest.fixture
 def default_mock_args():
     """Fixture that provides a default mock args object with common values.
-    
+
     Tests can override specific attributes as needed.
     """
     mock_args = MagicMock()
@@ -52,10 +54,13 @@ def default_mock_args():
 @pytest.fixture
 def mock_gitlab_token():
     """Fixture that patches the identify_token function to return GitLab provider type.
-    
+
     This eliminates the need for repeated patching in each test function.
     """
-    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITLAB) as patched:
+    with patch(
+        'openhands.resolver.resolve_issue.identify_token',
+        return_value=ProviderType.GITLAB,
+    ) as patched:
         yield patched
 
 
@@ -124,10 +129,10 @@ def test_initialize_runtime(default_mock_args, mock_gitlab_token):
                 exit_code=0, content='', command='git config --global core.pager ""'
             ),
         ]
-    
+
     # Create resolver with mocked token identification
     resolver = IssueResolver(default_mock_args)
-    
+
     resolver.initialize_runtime(mock_runtime)
 
     if os.getenv('GITLAB_CI') == 'true':
@@ -154,24 +159,26 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_gitlab_toke
 
     # Customize the mock args for this test
     default_mock_args.issue_number = 5432
-    
+
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
-    
+
     # Mock the issue_handler_factory method
     resolver.issue_handler_factory = MagicMock(return_value=mock_handler)
-    
+
     # Test that the correct exception is raised
     with pytest.raises(ValueError) as exc_info:
         await resolver.resolve_issue()
-    
+
     # Verify the error message
     assert 'No issues found for issue number 5432' in str(exc_info.value)
     assert 'test-owner/test-repo' in str(exc_info.value)
-    
+
     # Verify that the handler was correctly configured and called
     resolver.issue_handler_factory.assert_called_once()
-    mock_handler.get_converted_issues.assert_called_once_with(issue_numbers=[5432], comment_id=None)
+    mock_handler.get_converted_issues.assert_called_once_with(
+        issue_numbers=[5432], comment_id=None
+    )
 
 
 def test_download_issues_from_gitlab():
@@ -377,12 +384,14 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
             content='',
             command='git config --global --add safe.directory /workspace',
         ),
+        create_cmd_output(exit_code=0, content='', command='git add -A'),
         create_cmd_output(
-            exit_code=0, content='', command='git add -A'
+            exit_code=0,
+            content='git diff content',
+            command='git diff --no-color --cached base_commit_hash',
         ),
-        create_cmd_output(exit_code=0, content='git diff content', command='git diff --no-color --cached base_commit_hash'),
     ]
-    
+
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
 
@@ -394,7 +403,7 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_case",
+    'test_case',
     [
         {
             'name': 'successful_run',
@@ -448,7 +457,13 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
         },
     ],
 )
-async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_dir, mock_prompt_template, test_case):
+async def test_process_issue(
+    default_mock_args,
+    mock_gitlab_token,
+    mock_output_dir,
+    mock_prompt_template,
+    test_case,
+):
     """Test the process_issue method with different scenarios."""
     # Set up test data
     issue = Issue(
@@ -482,7 +497,7 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
     mock_runtime = MagicMock()
     mock_runtime.connect = AsyncMock()
     mock_create_runtime = MagicMock(return_value=mock_runtime)
-    
+
     # Configure run_controller mock based on test case
     mock_run_controller = AsyncMock()
     if test_case.get('run_controller_raises'):
@@ -491,16 +506,21 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
         mock_run_controller.return_value = test_case['run_controller_return']
 
     # Patch the necessary functions and methods
-    with patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime), \
-         patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller), \
-         patch.object(resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}), \
-         patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime, \
-         patch('openhands.resolver.resolve_issue.SandboxConfig', return_value=MagicMock()), \
-         patch('openhands.resolver.resolve_issue.AppConfig', return_value=MagicMock()):
-        
+    with (
+        patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime),
+        patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller),
+        patch.object(
+            resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}
+        ),
+        patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime,
+        patch(
+            'openhands.resolver.resolve_issue.SandboxConfig', return_value=MagicMock()
+        ),
+        patch('openhands.resolver.resolve_issue.AppConfig', return_value=MagicMock()),
+    ):
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
-        
+
         mock_create_runtime.assert_called_once()
         mock_runtime.connect.assert_called_once()
         mock_initialize_runtime.assert_called_once()
@@ -520,6 +540,7 @@ async def test_process_issue(default_mock_args, mock_gitlab_token, mock_output_d
             handler_instance.guess_success.assert_called_once()
         else:
             handler_instance.guess_success.assert_not_called()
+
 
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     issue = Issue(

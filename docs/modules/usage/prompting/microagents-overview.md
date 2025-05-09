@@ -34,7 +34,7 @@ some-repository/
 Each microagent file may include frontmatter that provides additional information. In some cases, this frontmatter
 is required:
 
-| Microagent Type                  | Frontmatter Requirement                               |
-|----------------------------------|-------------------------------------------------------|
-| `General Repository Microagents` | Required only if more than one of this type exists.   |
-| `Keyword-Triggered Microagents`  | Required.                                             |
+| Microagent Type                  | Required |
+|----------------------------------|----------|
+| `General Repository Microagents` | No       |
+| `Keyword-Triggered Microagents`  | Yes      |

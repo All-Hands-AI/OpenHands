@@ -8,7 +8,9 @@ from pydantic import SecretStr
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.app import app
 from openhands.server.user_auth.user_auth import UserAuth
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.memory import InMemoryFileStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
@@ -34,6 +36,12 @@ class MockUserAuth(UserAuth):
     async def get_user_settings_store(self) -> SettingsStore | None:
         return self._settings_store
 
+    async def get_secrets_store(self) -> SecretsStore | None:
+        return None
+
+    async def get_user_secrets(self) -> UserSecrets | None:
+        return None
+
     @classmethod
     async def get_instance(cls, request: Request) -> UserAuth:
         return MockUserAuth()
@@ -46,10 +54,6 @@ def test_client():
         patch(
             'openhands.server.user_auth.user_auth.UserAuth.get_instance',
             return_value=MockUserAuth(),
-        ),
-        patch(
-            'openhands.server.routes.settings.validate_provider_token',
-            return_value=ProviderType.GITHUB,
         ),
         patch(
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
@@ -75,7 +79,6 @@ async def test_settings_api_endpoints(test_client):
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
         'remote_runtime_resource_factor': 2,
-        'provider_tokens': {'github': 'test-token'},
     }
 
     # Make the POST request to store settings
@@ -98,9 +101,6 @@ async def test_settings_api_endpoints(test_client):
     response = test_client.post('/api/settings', json=partial_settings)
     assert response.status_code == 200
 
-    # Test the unset-settings-tokens endpoint
-    response = test_client.post('/api/unset-settings-tokens')
+    # Test the unset-provider-tokens endpoint
+    response = test_client.post('/api/unset-provider-tokens')
     assert response.status_code == 200
-
-    # We'll skip the secrets endpoints for now as they require more complex mocking  # noqa: E501
-    # and they're not directly related to the authentication refactoring

@@ -32,6 +32,9 @@ from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -83,8 +86,12 @@ def test_event_stream():
 
 @pytest.fixture
 def mock_runtime() -> Runtime:
+    from openhands.runtime.impl.action_execution.action_execution_client import (
+        ActionExecutionClient,
+    )
+
     runtime = MagicMock(
-        spec=Runtime,
+        spec=ActionExecutionClient,
         event_stream=test_event_stream,
     )
     return runtime
@@ -233,7 +240,7 @@ async def test_run_controller_with_fatal_error(
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
@@ -298,7 +305,7 @@ async def test_run_controller_stop_with_stuck(
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
@@ -660,7 +667,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     mock_agent.step = agent_step_fn
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
@@ -710,9 +717,9 @@ async def test_run_controller_max_iterations_has_metrics(
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    assert (
-        state.metrics.accumulated_cost == 10.0 * 3
-    ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    assert state.metrics.accumulated_cost == 10.0 * 3, (
+        f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    )
 
 
 @pytest.mark.asyncio
@@ -1064,7 +1071,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
 
     mock_agent.step = agent_step_fn
 
-    runtime = MagicMock(spec=Runtime)
+    runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Create a real Memory instance
@@ -1427,14 +1434,14 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
         # Verify the NullObservation has a cause that points to the RecallAction
         assert null_observation.cause is not None, 'NullObservation cause is None'
-        assert (
-            null_observation.cause == recall_action.id
-        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        assert null_observation.cause == recall_action.id, (
+            f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        )
 
         # Verify the controller's should_step method returns True for this observation
-        assert controller.should_step(
-            null_observation
-        ), 'should_step should return True for this NullObservation'
+        assert controller.should_step(null_observation), (
+            'should_step should return True for this NullObservation'
+        )
 
         # Verify the controller's step method was called
         # This means the controller processed the NullObservation
@@ -1446,9 +1453,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
         null_observation_zero._cause = 0  # type: ignore[attr-defined]
 
         # Verify the controller's should_step method would return False for this observation
-        assert not controller.should_step(
-            null_observation_zero
-        ), 'should_step should return False for NullObservation with cause=0'
+        assert not controller.should_step(null_observation_zero), (
+            'should_step should return False for NullObservation with cause=0'
+        )
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agent):
@@ -1474,9 +1481,9 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     result = controller.should_step(null_observation)
 
     # It should return False since we only want to step on NullObservation with cause > 0
-    assert (
-        result is False
-    ), 'should_step should return False for NullObservation with cause = 0'
+    assert result is False, (
+        'should_step should return False for NullObservation with cause = 0'
+    )
 
 
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
@@ -1556,8 +1563,8 @@ async def test_openrouter_context_window_exceeded_error(
     condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
 
     # There should be at least one CondensationAction if the error was handled correctly
-    assert (
-        len(condensation_actions) > 0
-    ), 'OpenRouter context window exceeded error was not handled correctly'
+    assert len(condensation_actions) > 0, (
+        'OpenRouter context window exceeded error was not handled correctly'
+    )
 
     await controller.close()

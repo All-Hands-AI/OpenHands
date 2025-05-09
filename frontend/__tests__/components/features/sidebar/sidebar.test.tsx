@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
+import { waitFor } from "@testing-library/react";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import OpenHands from "#/api/open-hands";
 
@@ -24,8 +25,8 @@ describe("Sidebar", () => {
     vi.clearAllMocks();
   });
 
-  it("should fetch settings data on mount", () => {
+  it("should fetch settings data on mount", async () => {
     renderSidebar();
-    expect(getSettingsSpy).toHaveBeenCalled();
+    await waitFor(() => expect(getSettingsSpy).toHaveBeenCalled());
   });
 });
