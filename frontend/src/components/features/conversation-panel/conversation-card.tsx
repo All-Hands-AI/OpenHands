@@ -307,7 +307,7 @@ export function ConversationCard({
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center pt-1">
+                    <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
                       <span className="font-semibold">
                         {t(I18nKey.CONVERSATION$TOTAL)}:
                       </span>
@@ -317,6 +317,34 @@ export function ConversationCard({
                           metrics.usage.completion_tokens
                         ).toLocaleString()}
                       </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">
+                          {t(I18nKey.CONVERSATION$CONTEXT_WINDOW)}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, (metrics.usage.per_turn_token / metrics.usage.context_window) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-end">
+                        <span className="text-xs text-neutral-400">
+                          {metrics.usage.per_turn_token.toLocaleString()} /{" "}
+                          {metrics.usage.context_window.toLocaleString()} (
+                          {(
+                            (metrics.usage.per_turn_token /
+                              metrics.usage.context_window) *
+                            100
+                          ).toFixed(2)}
+                          % {t(I18nKey.CONVERSATION$USED)})
+                        </span>
+                      </div>
                     </div>
                   </>
                 )}
