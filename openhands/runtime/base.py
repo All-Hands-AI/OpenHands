@@ -534,7 +534,10 @@ fi
         if not files:
             return loaded_microagents
 
-        self.log('info', f'Found {len(files)} files in {source_description} microagents directory')
+        self.log(
+            'info',
+            f'Found {len(files)} files in {source_description} microagents directory',
+        )
         zip_path = self.copy_from(str(microagents_dir))
         microagent_folder = tempfile.mkdtemp()
 
