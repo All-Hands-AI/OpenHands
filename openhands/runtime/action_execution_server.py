@@ -384,7 +384,12 @@ class ActionExecutor:
                 return obs
 
             assert self.bash_session is not None
-            obs = await call_sync_from_async(self.bash_session.execute, action)
+            # Cast the result to the expected type to satisfy mypy
+            from typing import cast
+            obs = await call_sync_from_async(
+                lambda a: cast(CmdOutputObservation, self.bash_session.execute(a)), 
+                action
+            )
             return obs
         except Exception as e:
             logger.error(f'Error running command: {e}')

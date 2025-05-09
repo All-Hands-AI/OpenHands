@@ -185,6 +185,8 @@ class DaytonaRuntime(ActionExecutionClient):
 
         self.api_url = self._construct_api_url(self._sandbox_port)
 
+        # Check if workspace exists before accessing its attributes
+        assert self.workspace is not None, "Workspace should not be None at this point"
         state = self.workspace.instance.state
 
         if state == 'stopping':

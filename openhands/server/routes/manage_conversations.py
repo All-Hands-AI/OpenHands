@@ -318,7 +318,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> ConversationInfo | None:
+) -> ConversationInfo:
     try:
         title = conversation.title
         if not title:
@@ -339,4 +339,13 @@ async def _get_conversation_info(
             f'Error loading conversation {conversation.conversation_id}: {str(e)}',
             extra={'session_id': conversation.conversation_id},
         )
-        return None
+        # Return a default ConversationInfo instead of None to satisfy mypy
+        return ConversationInfo(
+            trigger=None,
+            conversation_id=conversation.conversation_id,
+            title="Error loading conversation",
+            last_updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(timezone.utc),
+            selected_repository=None,
+            status=ConversationStatus.ERROR,
+        )
