@@ -28,11 +28,17 @@ from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture
-def mock_event_stream():
+def mock_event_stream(request):
     """Creates an event stream in memory."""
     sid = f'test-{uuid4()}'
     file_store = InMemoryFileStore({})
-    return EventStream(sid=sid, file_store=file_store)
+    stream = EventStream(sid=sid, file_store=file_store)
+
+    def cleanup():
+        stream.close()
+
+    request.addfinalizer(cleanup)
+    return stream
 
 
 @pytest.fixture
@@ -48,10 +54,13 @@ def mock_parent_agent():
     # Add a proper system message mock
     from openhands.events.action.message import SystemMessageAction
 
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    def get_system_message():
+        system_message = SystemMessageAction(content='Test system message')
+        system_message._source = EventSource.AGENT
+        system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
+        return system_message
+
+    agent.get_system_message.side_effect = get_system_message
 
     return agent
 
@@ -69,10 +78,13 @@ def mock_child_agent():
     # Add a proper system message mock
     from openhands.events.action.message import SystemMessageAction
 
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    def get_system_message():
+        system_message = SystemMessageAction(content='Test system message')
+        system_message._source = EventSource.AGENT
+        system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
+        return system_message
+
+    agent.get_system_message.side_effect = get_system_message
 
     return agent
 

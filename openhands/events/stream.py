@@ -77,10 +77,12 @@ class EventStream(EventStore):
         self._thread_loops[subscriber_id][callback_id] = loop
 
     def close(self) -> None:
+        # Set stop flag and wait for queue thread to finish
         self._stop_flag.set()
         if self._queue_thread.is_alive():
             self._queue_thread.join()
 
+        # Clean up all subscribers and their resources
         subscriber_ids = list(self._subscribers.keys())
         for subscriber_id in subscriber_ids:
             callback_ids = list(self._subscribers[subscriber_id].keys())
@@ -90,6 +92,22 @@ class EventStream(EventStore):
         # Clear queue
         while not self._queue.empty():
             self._queue.get()
+
+        # Clean up queue loop
+        if self._queue_loop is not None:
+            try:
+                self._queue_loop.stop()
+                self._queue_loop.close()
+            except Exception as e:
+                logger.warning(f'Error closing queue loop: {e}')
+            self._queue_loop = None
+
+        # Reset state
+        self.cur_id = 0
+        self._write_page_cache = []
+        self._thread_pools.clear()
+        self._thread_loops.clear()
+        self._subscribers.clear()
 
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str) -> None:
         if subscriber_id not in self._subscribers:
