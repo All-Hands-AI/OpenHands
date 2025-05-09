@@ -12,7 +12,7 @@ from litellm.exceptions import (
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
-from openhands.llm.llm import LLM
+from openhands.llm.llm import LLM, transform_messages_for_llama
 from openhands.llm.metrics import Metrics, TokenUsage
 
 
@@ -923,3 +923,66 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
     called_url = mock_get.call_args[0][0]
     assert called_url.startswith('http://') or called_url.startswith('https://')
+
+
+class TestTransformMessagesForLlama:
+    def test_content_list_valid_text(self):
+        messages = [
+            {'role': 'user', 'content': [{'type': 'text', 'text': 'hello'}]}
+        ]
+        result = transform_messages_for_llama(messages)
+        assert result == [{'role': 'user', 'content': 'hello'}]
+
+    def test_content_list_first_item_not_dict(self):
+        messages = [
+            {'role': 'user', 'content': ['notadict']}
+        ]
+        with pytest.raises(ValueError, match='Invalid content format'):
+            transform_messages_for_llama(messages)
+
+    def test_content_list_first_item_dict_missing_text(self):
+        messages = [
+            {'role': 'user', 'content': [{'type': 'text'}]}
+        ]
+        with pytest.raises(ValueError, match='Invalid content format'):
+            transform_messages_for_llama(messages)
+
+    def test_content_is_string(self):
+        messages = [
+            {'role': 'user', 'content': 'hello'}
+        ]
+        result = transform_messages_for_llama(messages)
+        assert result == [{'role': 'user', 'content': 'hello'}]
+
+    def test_content_is_neither_string_nor_list(self):
+        messages = [
+            {'role': 'user', 'content': 123}
+        ]
+        with pytest.raises(ValueError, match='Unsupported content type'):
+            transform_messages_for_llama(messages)
+
+    def test_removes_cache_control(self):
+        messages = [
+            {'role': 'user', 'content': 'hello', 'cache_control': 'something'}
+        ]
+        result = transform_messages_for_llama(messages)
+        assert 'cache_control' not in result[0]
+        assert result[0]['content'] == 'hello'
+
+    def test_content_empty_list(self):
+        messages = [
+            {'role': 'user', 'content': []}
+        ]
+        with pytest.raises(ValueError, match='Invalid content format'):
+            transform_messages_for_llama(messages)
+
+    def test_multiple_messages(self):
+        messages = [
+            {'role': 'user', 'content': [{'type': 'text', 'text': 'hi'}]},
+            {'role': 'assistant', 'content': 'hello'},
+        ]
+        result = transform_messages_for_llama(messages)
+        assert result == [
+            {'role': 'user', 'content': 'hi'},
+            {'role': 'assistant', 'content': 'hello'}
+        ]
