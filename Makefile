@@ -154,21 +154,21 @@ install-python-dependencies:
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
-			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			poetry run pip install playwright; \
-			poetry run playwright install chromium; \
+			echo "$(BLUE)Detected Manjaro Linux. Installing Patchright dependencies...$(RESET)"; \
+			poetry run pip install patchright; \
+			poetry run patchright install chromium; \
 		else \
 			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
-				echo "Running playwright install --with-deps chromium..."; \
-				poetry run playwright install --with-deps chromium; \
+				echo "Installing patchright and chromium..."; \
+				poetry run pip install patchright && poetry run patchright install chromium; \
 				mkdir -p cache; \
 				touch cache/playwright_chromium_is_installed.txt; \
 			else \
-				echo "Setup already done. Skipping playwright installation."; \
+				echo "Setup already done. Skipping patchright installation."; \
 			fi \
 		fi \
 	else \
-		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
+		echo "Skipping Patchright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
