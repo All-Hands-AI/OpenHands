@@ -1,9 +1,11 @@
+# from fastmcp import FastMCP, Context
 from typing import Annotated
 
 from fastmcp import Context, FastMCP
 from pydantic import Field
 
-from openhands.core.logger import openhands_logger as logger
+from mcp.server.fastmcp.server import FastMCP, Context
+
 
 mcp_server = FastMCP('mcp')
 
@@ -18,20 +20,6 @@ def create_pr(
     ctx: Context,
 ) -> str:
     """Open a PR in GitHub"""
-    try:
-        request = ctx.get_http_request()
-        logger.info(f'Request context available: {request}')
-    except Exception as e:
-        logger.warning(f'Request context not available: {e}')
-        logger.info(
-            f'Creating PR without request context: {repo_name}, {source_branch} -> {target_branch}'
-        )
-        # Continue with PR creation even without request context
+    print("starlette context", ctx)
 
-    # Implement PR creation logic here
-    # This is a placeholder implementation
-    logger.info(f'Creating PR for {repo_name}: {source_branch} -> {target_branch}')
-
-    return (
-        f'PR created successfully for {repo_name}: {source_branch} -> {target_branch}'
-    )
+    return "pr was created successfully"

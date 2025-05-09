@@ -7,6 +7,7 @@ with warnings.catch_warnings():
 from fastapi import (
     FastAPI,
     Request,
+    Response,
 )
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -41,30 +42,35 @@ app = FastAPI(
     description='OpenHands: Code Less, Make More',
     version=__version__,
     lifespan=_lifespan,
+    routes=[
+        Mount('/mcp', app=mcp_server.sse_app(mount_path='/mcp'))
+    ]
 )
 
-sse = SseServerTransport("/messages/")
-app.router.routes.append(Mount("/messages", app=sse.handle_post_message))
 
-@app.get("/sse", tags=["MCP"])
-async def handle_sse(request: Request):
-    """
-    SSE endpoint that connects to the MCP server
+# sse = SseServerTransport("/messages/")
+# app.router.routes.append(Mount("/messages", app=sse.handle_post_message))
 
-    This endpoint establishes a Server-Sent Events connection with the client
-    and forwards communication to the Model Context Protocol server.
-    """
-    # Use sse.connect_sse to establish an SSE connection with the MCP server
-    async with sse.connect_sse(request.scope, request.receive, request._send) as (
-        read_stream,
-        write_stream,
-    ):
-        # Run the MCP server with the established streams
-        await mcp_server._mcp_server.run(
-            read_stream,
-            write_stream,
-            mcp_server._mcp_server.create_initialization_options(),
-        )
+# @app.get("/sse", tags=["MCP"])
+# async def handle_sse(request: Request):
+#     """
+#     SSE endpoint that connects to the MCP server
+
+#     This endpoint establishes a Server-Sent Events connection with the client
+#     and forwards communication to the Model Context Protocol server.
+#     """
+#     # Use sse.connect_sse to establish an SSE connection with the MCP server
+#     async with sse.connect_sse(request.scope, request.receive, request._send) as (
+#         read_stream,
+#         write_stream,
+#     ):
+#         # Run the MCP server with the established streams
+#         await mcp_server._mcp_server.run(
+#             read_stream,
+#             write_stream,
+#             mcp_server._mcp_server.create_initialization_options(),
+#         )
+#     return Response()
 
 
 @app.get('/health')

@@ -16,7 +16,7 @@ def create_default_mcp_config() -> MCPConfig:
     
     return MCPConfig(
         sse_servers=[
-            MCPSSEServerConfig(url="http://localhost:3000/sse", api_key=None)
+            MCPSSEServerConfig(url="http://localhost:3000/mcp/sse", api_key=None)
         ],
         stdio_servers=[
             
