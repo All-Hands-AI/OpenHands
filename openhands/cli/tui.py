@@ -539,11 +539,10 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
 def cli_confirm(
     question: str = 'Are you sure?', choices: list[str] | None = None
 ) -> int:
-    """
-    Display a confirmation prompt with the given question and choices.
+    """Display a confirmation prompt with the given question and choices.
+    
     Returns the index of the selected choice.
     """
-
     if choices is None:
         choices = ['Yes', 'No']
     selected = [0]  # Using list to allow modification in closure

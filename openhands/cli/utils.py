@@ -78,8 +78,7 @@ class ModelInfo(BaseModel):
 
 
 def extract_model_and_provider(model: str) -> ModelInfo:
-    """
-    Extract provider and model information from a model identifier.
+    """Extract provider and model information from a model identifier.
 
     Args:
         model: The model identifier string
@@ -114,8 +113,7 @@ def extract_model_and_provider(model: str) -> ModelInfo:
 def organize_models_and_providers(
     models: list[str],
 ) -> dict[str, 'ProviderInfo']:
-    """
-    Organize a list of model identifiers by provider.
+    """Organize a list of model identifiers by provider.
 
     Args:
         models: List of model identifiers
