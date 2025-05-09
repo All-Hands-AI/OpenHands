@@ -36,14 +36,14 @@ sio = socketio.AsyncServer(
 
 MonitoringListenerImpl = get_impl(
     MonitoringListener,
-    'DefaultMonitoringListener',  # Use default instead of server_config.monitoring_listener_class
+    None,  # Use default MonitoringListener class
 )
 
 monitoring_listener = MonitoringListenerImpl.get_instance(config)
 
 ConversationManagerImpl = get_impl(
     ConversationManager,
-    'StandaloneConversationManager',  # Use default instead of server_config.conversation_manager_class
+    'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager',  # Use default instead of server_config.conversation_manager_class
 )
 
 conversation_manager = ConversationManagerImpl.get_instance(
@@ -51,14 +51,14 @@ conversation_manager = ConversationManagerImpl.get_instance(
 )
 
 SettingsStoreImpl = get_impl(
-    SettingsStore, 'FileSettingsStore'
+    SettingsStore, 'openhands.storage.settings.file_settings_store.FileSettingsStore'
 )  # Use default instead of server_config.settings_store_class
 
 SecretsStoreImpl = get_impl(
-    SecretsStore, 'FileSecretsStore'
+    SecretsStore, 'openhands.storage.secrets.file_secrets_store.FileSecretsStore'
 )  # Use default instead of server_config.secret_store_class
 
 ConversationStoreImpl = get_impl(
     ConversationStore,
-    'FileConversationStore',  # Use default instead of server_config.conversation_store_class
+    'openhands.storage.conversation.file_conversation_store.FileConversationStore',  # Use default instead of server_config.conversation_store_class
 )
