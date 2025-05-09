@@ -72,9 +72,10 @@ async def connect(connection_id: str, environ):
             raise ConnectionRefusedError('No conversation_id in query params')
 
         cookies_str = environ.get('HTTP_COOKIE', '')
+        authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
         user_id, github_user_id = await conversation_validator.validate(
-            conversation_id, cookies_str
+            conversation_id, cookies_str, authorization_header
         )
 
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)

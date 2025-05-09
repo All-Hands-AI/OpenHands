@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from openhands.utils.import_utils import get_impl
 
@@ -7,7 +8,10 @@ class ConversationValidator:
     """Storage for conversation metadata. May or may not support multiple users depending on the environment."""
 
     async def validate(
-        self, conversation_id: str, cookies_str: str
+        self,
+        conversation_id: str,
+        cookies_str: str,
+        authorization_header: Optional[str] = None,
     ) -> tuple[None, None]:
         return None, None
 
