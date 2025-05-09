@@ -216,7 +216,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     user_prompt = data.user_prompt
     user_id = get_user_id(request)
     mnemonic = request.state.user.mnemonic
-    space_id = data.space_id or 24
+    space_id = data.space_id
     thread_follow_up = data.thread_follow_up
     bearer_token = request.headers.get('Authorization')
     x_device_id = request.headers.get('x-device-id')
