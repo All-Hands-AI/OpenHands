@@ -638,7 +638,11 @@ class LLM(RetryMixin, DebugMixin):
             logger.info(
                 'Message objects now include serialized tool calls in token counting'
             )
-            messages = self.format_messages_for_llm(messages)
+            # Cast to the expected type for format_messages_for_llm
+            from typing import cast
+
+            messages_list = cast(list[Message], messages)
+            messages = self.format_messages_for_llm(messages_list)
 
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
