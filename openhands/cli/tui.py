@@ -6,10 +6,12 @@ import asyncio
 import sys
 import threading
 import time
+from typing import Generator
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
-from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
 from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
@@ -96,7 +98,7 @@ class CustomDiffLexer(Lexer):
 
 
 # CLI initialization and startup display functions
-def display_runtime_initialization_message(runtime: str):
+def display_runtime_initialization_message(runtime: str) -> None:
     print_formatted_text('')
     if runtime == 'local':
         print_formatted_text(HTML('<grey>⚙️ Starting local runtime...</grey>'))
@@ -105,7 +107,7 @@ def display_runtime_initialization_message(runtime: str):
     print_formatted_text('')
 
 
-def display_initialization_animation(text, is_loaded: asyncio.Event):
+def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> None:
     ANIMATION_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
     i = 0
@@ -122,7 +124,7 @@ def display_initialization_animation(text, is_loaded: asyncio.Event):
     sys.stdout.flush()
 
 
-def display_banner(session_id: str):
+def display_banner(session_id: str) -> None:
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -142,7 +144,7 @@ def display_banner(session_id: str):
     print_formatted_text('')
 
 
-def display_welcome_message():
+def display_welcome_message() -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
@@ -152,7 +154,7 @@ def display_welcome_message():
     )
 
 
-def display_initial_user_prompt(prompt: str):
+def display_initial_user_prompt(prompt: str) -> None:
     print_formatted_text(
         FormattedText(
             [
@@ -187,14 +189,14 @@ def display_event(event: Event, config: AppConfig) -> None:
             display_agent_state_change_message(event.agent_state)
 
 
-def display_message(message: str):
+def display_message(message: str) -> None:
     message = message.strip()
 
     if message:
         print_formatted_text(f'\n{message}')
 
 
-def display_command(event: CmdRunAction):
+def display_command(event: CmdRunAction) -> None:
     if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
         container = Frame(
             TextArea(
@@ -210,7 +212,7 @@ def display_command(event: CmdRunAction):
         print_container(container)
 
 
-def display_command_output(output: str):
+def display_command_output(output: str) -> None:
     lines = output.split('\n')
     formatted_lines = []
     for line in lines:
@@ -238,7 +240,7 @@ def display_command_output(output: str):
     print_container(container)
 
 
-def display_file_edit(event: FileEditObservation):
+def display_file_edit(event: FileEditObservation) -> None:
     container = Frame(
         TextArea(
             text=event.visualize_diff(n_context_lines=4),
@@ -253,7 +255,7 @@ def display_file_edit(event: FileEditObservation):
     print_container(container)
 
 
-def display_file_read(event: FileReadObservation):
+def display_file_read(event: FileReadObservation) -> None:
     content = event.content.replace('\t', ' ')
     container = Frame(
         TextArea(
@@ -270,7 +272,7 @@ def display_file_read(event: FileReadObservation):
 
 
 # Interactive command output display functions
-def display_help():
+def display_help() -> None:
     # Version header and introduction
     print_formatted_text(
         HTML(
@@ -314,7 +316,7 @@ def display_help():
     )
 
 
-def display_usage_metrics(usage_metrics: UsageMetrics):
+def display_usage_metrics(usage_metrics: UsageMetrics) -> None:
     cost_str = f'${usage_metrics.metrics.accumulated_cost:.6f}'
     input_tokens_str = (
         f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens:,}'
@@ -375,7 +377,7 @@ def get_session_duration(session_init_time: float) -> str:
     return f'{int(hours)}h {int(minutes)}m {int(seconds)}s'
 
 
-def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
+def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str) -> None:
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
     print_formatted_text(HTML('<grey>Closing current conversation...</grey>'))
@@ -388,7 +390,7 @@ def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
     print_formatted_text('')
 
 
-def display_status(usage_metrics: UsageMetrics, session_id: str):
+def display_status(usage_metrics: UsageMetrics, session_id: str) -> None:
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
     print_formatted_text('')
@@ -398,14 +400,14 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     display_usage_metrics(usage_metrics)
 
 
-def display_agent_running_message():
+def display_agent_running_message() -> None:
     print_formatted_text('')
     print_formatted_text(
         HTML('<gold>Agent running...</gold> <grey>(Press Ctrl-P to pause)</grey>')
     )
 
 
-def display_agent_state_change_message(agent_state: str):
+def display_agent_state_change_message(agent_state: str) -> None:
     if agent_state == AgentState.PAUSED:
         print_formatted_text('')
         print_formatted_text(
@@ -429,7 +431,9 @@ class CommandCompleter(Completer):
         super().__init__()
         self.agent_state = agent_state
 
-    def get_completions(self, document, complete_event):
+    def get_completions(
+        self, document: Document, complete_event: CompleteEvent
+    ) -> Generator[Completion, None, None]:
         text = document.text_before_cursor.lstrip()
         if text.startswith('/'):
             available_commands = dict(COMMANDS)
@@ -446,11 +450,11 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session():
+def create_prompt_session() -> PromptSession:
     return PromptSession(style=DEFAULT_STYLE)
 
 
-async def read_prompt_input(agent_state: str, multiline=False):
+async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
     try:
         prompt_session = create_prompt_session()
         prompt_session.completer = (
@@ -461,7 +465,7 @@ async def read_prompt_input(agent_state: str, multiline=False):
             kb = KeyBindings()
 
             @kb.add('c-d')
-            def _(event):
+            def _(event) -> None:
                 event.current_buffer.validate_and_handle()
 
             with patch_stdout():
@@ -511,7 +515,7 @@ async def read_confirmation_input() -> str:
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
     input = create_input()
 
-    def keys_ready():
+    def keys_ready() -> None:
         for key_press in input.read_keys():
             if (
                 key_press.key == Keys.ControlP
@@ -543,7 +547,7 @@ def cli_confirm(
         choices = ['Yes', 'No']
     selected = [0]  # Using list to allow modification in closure
 
-    def get_choice_text():
+    def get_choice_text() -> list:
         return [
             ('class:question', f'{question}\n\n'),
         ] + [
@@ -557,15 +561,15 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event):
+    def _(event) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
     @kb.add('down')
-    def _(event):
+    def _(event) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
     @kb.add('enter')
-    def _(event):
+    def _(event) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
@@ -592,12 +596,12 @@ def cli_confirm(
     return app.run(in_thread=True)
 
 
-def kb_cancel():
+def kb_cancel() -> KeyBindings:
     """Custom key bindings to handle ESC as a user cancellation."""
     bindings = KeyBindings()
 
     @bindings.add('escape')
-    def _(event):
+    def _(event) -> None:
         event.app.exit(exception=UserCancelledError, style='class:aborting')
 
     return bindings
