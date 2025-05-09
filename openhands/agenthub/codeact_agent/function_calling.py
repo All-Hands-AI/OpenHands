@@ -178,7 +178,7 @@ def response_to_actions(
                             valid_kwargs[key] = value
                         else:
                             raise FunctionCallValidationError(
-                                f"FileEditAction.__init__() got an unexpected keyword argument '{key}'"
+                                f'Unexpected argument {key} in tool call {tool_call.function.name}'
                             )
 
                     action = FileEditAction(
