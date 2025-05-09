@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { handleObservationMessage } from "#/services/observations";
 import { setScreenshotSrc, setUrl } from "#/state/browser-slice";
 import ObservationType from "#/types/observation-type";
+import store from "#/store";
 
-// Mock the store
-const mockDispatch = vi.fn();
+// Mock the store module
 vi.mock("#/store", () => ({
   default: {
-    dispatch: mockDispatch,
+    dispatch: vi.fn(),
   },
 }));
 
@@ -32,12 +32,12 @@ describe("handleObservationMessage", () => {
         screenshot: "base64-screenshot-data",
       },
     };
-
+    
     handleObservationMessage(message);
 
     // Check that setScreenshotSrc and setUrl were called with the correct values
-    expect(mockDispatch).toHaveBeenCalledWith(setScreenshotSrc("base64-screenshot-data"));
-    expect(mockDispatch).toHaveBeenCalledWith(setUrl("https://example.com"));
+    expect(store.dispatch).toHaveBeenCalledWith(setScreenshotSrc("base64-screenshot-data"));
+    expect(store.dispatch).toHaveBeenCalledWith(setUrl("https://example.com"));
   });
 
   it("updates browser state when receiving a browse_interactive observation", () => {
@@ -52,11 +52,11 @@ describe("handleObservationMessage", () => {
         screenshot: "base64-screenshot-data",
       },
     };
-
+    
     handleObservationMessage(message);
 
     // Check that setScreenshotSrc and setUrl were called with the correct values
-    expect(mockDispatch).toHaveBeenCalledWith(setScreenshotSrc("base64-screenshot-data"));
-    expect(mockDispatch).toHaveBeenCalledWith(setUrl("https://example.com"));
+    expect(store.dispatch).toHaveBeenCalledWith(setScreenshotSrc("base64-screenshot-data"));
+    expect(store.dispatch).toHaveBeenCalledWith(setUrl("https://example.com"));
   });
 });
