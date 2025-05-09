@@ -121,7 +121,7 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'llm_metrics' and 'llm_metrics' in d:
             d['llm_metrics'] = d['llm_metrics'].get()
         if key == 'critic_score' and 'critic_score' in d:
-            d['critic_score'] = d['critic_score'].get()
+            d['critic_score'] = d['critic_score']
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')

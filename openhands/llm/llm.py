@@ -959,9 +959,13 @@ class LLM(RetryMixin, DebugMixin):
             )
 
         best_response_index, best_response_score = sorted_critic_results[0]
-        resp = candidate_responses[best_response_index]  # use the best response object
-        resp = ModelResponseWithCriticScore(**resp)
-        resp.critic_score = best_response_score.last_reward
+        original_model_response = candidate_responses[
+            best_response_index
+        ]  # This is a ModelResponse
+        resp = ModelResponseWithCriticScore(
+            **original_model_response.model_dump(),
+            critic_score=best_response_score.last_reward,
+        )
 
         critic_metadata = {
             'critic_results': sorted_critic_results,
