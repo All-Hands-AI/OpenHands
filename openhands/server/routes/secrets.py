@@ -242,7 +242,7 @@ async def create_custom_secret(
 @app.put('/secrets/{secret_id}', response_model=dict[str, str])
 async def update_custom_secret(
     secret_id: str,
-    incoming_secret: CustomSecretModel,
+    incoming_secret: CustomSecretWithoutValueModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
@@ -256,11 +256,10 @@ async def update_custom_secret(
                 )
 
             secret_name = incoming_secret.name
-            secret_value = incoming_secret.value
             secret_description = incoming_secret.description
 
             custom_secrets = dict(existing_secrets.custom_secrets)
-            custom_secrets.pop(secret_id)
+            existing_secret = custom_secrets.pop(secret_id)
 
             if secret_name != secret_id and secret_name in custom_secrets:
                 return JSONResponse(
@@ -269,7 +268,7 @@ async def update_custom_secret(
                 )
 
             custom_secrets[secret_name] = CustomSecret(
-                secret=secret_value,
+                secret=existing_secret.secret_value,
                 description=secret_description or '',
             )
 
