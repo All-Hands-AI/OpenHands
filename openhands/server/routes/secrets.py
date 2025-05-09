@@ -65,7 +65,7 @@ def process_token_validation_result(
 
 async def check_provider_tokens(
     incoming_provider_tokens: POSTProviderModel,
-    existing_provider_tokens: PROVIDER_TOKEN_TYPE) -> str:
+    existing_provider_tokens: PROVIDER_TOKEN_TYPE | None) -> str:
 
     msg = ''
     if incoming_provider_tokens.provider_tokens:
@@ -75,7 +75,7 @@ async def check_provider_tokens(
                 confirmed_token_type = await validate_provider_token(token_value.token, token_value.host) # FE always sends latest host
                 msg = process_token_validation_result(confirmed_token_type, token_type)
 
-            existing_token = existing_provider_tokens.get(token_type, None)
+            existing_token = existing_provider_tokens.get(token_type, None) if existing_provider_tokens else None
             if existing_token and (existing_token.host != token_value.host) and existing_token.token:
                 confirmed_token_type = await validate_provider_token(existing_token.token, token_value.host) # Host has changed, check it against existing token
                 if not confirmed_token_type or confirmed_token_type != token_type:
@@ -88,7 +88,7 @@ async def check_provider_tokens(
 async def store_provider_tokens(
     provider_info: POSTProviderModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
-    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens)
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens)
 ) -> JSONResponse:
 
     provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
