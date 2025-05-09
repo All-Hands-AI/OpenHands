@@ -1,6 +1,7 @@
 # OpenHands Cloud API
 
-OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This is useful if you easily want to kick off your own jobs from your programs in a flexible way.
+OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This is useful if
+you want to kick off your own jobs from your programs in a flexible way.
 
 This guide explains how to obtain an API key and use the API to start conversations.
 For more detailed information about the API, refer to the [OpenHands API Reference](https://docs.all-hands.dev/swagger-ui/).
@@ -9,12 +10,12 @@ For more detailed information about the API, refer to the [OpenHands API Referen
 
 To use the OpenHands Cloud API, you'll need to generate an API key:
 
-1. Log in to your [OpenHands Cloud](https://app.all-hands.dev) account
-2. Navigate to the [Settings page](https://app.all-hands.dev/settings)
-3. Locate the "API Keys" section
-4. Click "Generate New Key"
-5. Give your key a descriptive name (e.g., "Development", "Production")
-6. Copy the generated API key and store it securely - it will only be shown once
+1. Log in to your [OpenHands Cloud](https://app.all-hands.dev) account.
+2. Navigate to the [Settings page](https://app.all-hands.dev/settings).
+3. Select the `API Keys` tab.
+4. Click `Create API Key`.
+5. Give your key a descriptive name (Example: "Development" or "Production") and select `Create`.
+6. Copy the generated API key and store it securely. It will only be shown once.
 
 ![API Key Generation](/img/docs/api-key-generation.png)
 
@@ -22,14 +23,14 @@ To use the OpenHands Cloud API, you'll need to generate an API key:
 
 ### Starting a New Conversation
 
-To start a new conversation with OpenHands performing a task, you'll need to make a POST request to the conversation endpoint.
+To start a new conversation with OpenHands to perform a task, you'll need to make a POST request to the conversation endpoint.
 
 #### Request Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `initial_user_msg` | string | Yes | The initial message to start the conversation |
-| `repository` | string | No | Git repository name to provide context in the format `owner/repo`. You must have access to the repo. |
+| Parameter          | Type     | Required | Description                                                                                          |
+|--------------------|----------|----------|------------------------------------------------------------------------------------------------------|
+| `initial_user_msg` | string   | Yes      | The initial message to start the conversation.                                                       |
+| `repository`       | string   | No       | Git repository name to provide context in the format `owner/repo`. You must have access to the repo. |
 
 #### Examples
 
@@ -69,7 +70,7 @@ data = {
 response = requests.post(url, headers=headers, json=data)
 conversation = response.json()
 
-print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['id']}")
+print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['conversation_id']}")
 print(f"Status: {conversation['status']}")
 ```
 </details>
@@ -126,11 +127,11 @@ The API will return a JSON object with details about the created conversation:
 }
 ```
 
-You may also receive an `AuthenticationError` if:
+You may receive an `AuthenticationError` if:
 
-1. You provided an invalid API key
-2. You provided the wrong repo name
-3. You don't have access to the repo
+- You provided an invalid API key.
+- You provided the wrong repository name.
+- You don't have access to the repository.
 
 
 ### Retrieving Conversation Status

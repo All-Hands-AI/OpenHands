@@ -47,7 +47,7 @@ class GitHubService(BaseGitService, GitService):
         if token:
             self.token = token
 
-        if base_domain:
+        if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
 
         self.external_auth_id = external_auth_id
@@ -278,7 +278,7 @@ class GitHubService(BaseGitService, GitService):
                 result = response.json()
                 if 'errors' in result:
                     raise UnknownException(
-                        f"GraphQL query error: {json.dumps(result['errors'])}"
+                        f'GraphQL query error: {json.dumps(result["errors"])}'
                     )
 
                 return dict(result)

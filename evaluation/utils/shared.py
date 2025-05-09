@@ -221,9 +221,9 @@ def prepare_dataset(
     eval_ids: list[str] | None = None,
     skip_num: int | None = None,
 ):
-    assert (
-        'instance_id' in dataset.columns
-    ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    assert 'instance_id' in dataset.columns, (
+        "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    )
     id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
     finished_ids: set[str] = set()
