@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import MutableMapping
+from typing import Any, Dict, MutableMapping, Optional, Union, cast
 
 import httpx
 
@@ -19,7 +19,7 @@ class HttpSession:
     _is_closed: bool = False
     headers: MutableMapping[str, str] = field(default_factory=dict)
 
-    def request(self, *args, **kwargs):
+    def request(self, *args: Any, **kwargs: Any) -> httpx.Response:
         if self._is_closed:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
@@ -30,7 +30,7 @@ class HttpSession:
         kwargs['headers'] = headers
         return CLIENT.request(*args, **kwargs)
 
-    def stream(self, *args, **kwargs):
+    def stream(self, *args: Any, **kwargs: Any) -> httpx.Response:
         if self._is_closed:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
@@ -41,22 +41,22 @@ class HttpSession:
         kwargs['headers'] = headers
         return CLIENT.stream(*args, **kwargs)
 
-    def get(self, *args, **kwargs):
+    def get(self, *args: Any, **kwargs: Any) -> httpx.Response:
         return self.request('GET', *args, **kwargs)
 
-    def post(self, *args, **kwargs):
+    def post(self, *args: Any, **kwargs: Any) -> httpx.Response:
         return self.request('POST', *args, **kwargs)
 
-    def patch(self, *args, **kwargs):
+    def patch(self, *args: Any, **kwargs: Any) -> httpx.Response:
         return self.request('PATCH', *args, **kwargs)
 
-    def put(self, *args, **kwargs):
+    def put(self, *args: Any, **kwargs: Any) -> httpx.Response:
         return self.request('PUT', *args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args: Any, **kwargs: Any) -> httpx.Response:
         return self.request('DELETE', *args, **kwargs)
 
-    def options(self, *args, **kwargs):
+    def options(self, *args: Any, **kwargs: Any) -> httpx.Response:
         return self.request('OPTIONS', *args, **kwargs)
 
     def close(self) -> None:

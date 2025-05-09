@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import cast
 
 from termcolor import colored
 
@@ -22,4 +23,4 @@ def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:
     Returns:
         str: Colored text
     """
-    return colored(text, color.value)
+    return cast(str, colored(text, color.value))

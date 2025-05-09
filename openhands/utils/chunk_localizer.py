@@ -4,6 +4,8 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
+from typing import List, Optional, Tuple, cast
+
 import pylcs
 from pydantic import BaseModel
 from tree_sitter_languages import get_parser
@@ -14,7 +16,7 @@ from openhands.core.logger import openhands_logger as logger
 class Chunk(BaseModel):
     text: str
     line_range: tuple[int, int]  # (start_line, end_line), 1-index, inclusive
-    normalized_lcs: float | None = None
+    normalized_lcs: Optional[float] = None
 
     def visualize(self) -> str:
         lines = self.text.split('\n')
@@ -25,9 +27,9 @@ class Chunk(BaseModel):
         return ret
 
 
-def _create_chunks_from_raw_string(content: str, size: int):
+def _create_chunks_from_raw_string(content: str, size: int) -> List[Chunk]:
     lines = content.split('\n')
-    ret = []
+    ret: List[Chunk] = []
     for i in range(0, len(lines), size):
         _cur_lines = lines[i : i + size]
         ret.append(
@@ -40,8 +42,8 @@ def _create_chunks_from_raw_string(content: str, size: int):
 
 
 def create_chunks(
-    text: str, size: int = 100, language: str | None = None
-) -> list[Chunk]:
+    text: str, size: int = 100, language: Optional[str] = None
+) -> List[Chunk]:
     try:
         parser = get_parser(language) if language is not None else None
     except AttributeError:
@@ -66,12 +68,12 @@ def normalized_lcs(chunk: str, query: str) -> float:
     if len(chunk) == 0:
         return 0.0
     _score = pylcs.lcs_sequence_length(chunk, query)
-    return _score / len(chunk)
+    return cast(float, _score / len(chunk))
 
 
 def get_top_k_chunk_matches(
     text: str, query: str, k: int = 3, max_chunk_size: int = 100
-) -> list[Chunk]:
+) -> List[Chunk]:
     """Get the top k chunks in the text that match the query.
 
     The query could be a string of draft code edits.
@@ -83,7 +85,7 @@ def get_top_k_chunk_matches(
         max_chunk_size: The maximum number of lines in a chunk.
     """
     raw_chunks = create_chunks(text, max_chunk_size)
-    chunks_with_lcs: list[Chunk] = [
+    chunks_with_lcs: List[Chunk] = [
         Chunk(
             text=chunk.text,
             line_range=chunk.line_range,
@@ -93,7 +95,7 @@ def get_top_k_chunk_matches(
     ]
     sorted_chunks = sorted(
         chunks_with_lcs,
-        key=lambda x: x.normalized_lcs,  # type: ignore
+        key=lambda x: 0.0 if x.normalized_lcs is None else x.normalized_lcs,
         reverse=True,
     )
     return sorted_chunks[:k]
