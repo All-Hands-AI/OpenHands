@@ -39,8 +39,9 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
      - Minimal Permissions ( Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
+   - Navigate to the `Git` tab.
    - Paste your token in the `GitHub Token` field.
-   - Click `Save` to apply the changes.
+   - Click `Save Changes` to apply the changes.
 </details>
 
 <details>
@@ -98,9 +99,9 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
    - Set an expiration date or leave it blank for a non-expiring token.
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
+   - Navigate to the `Git` tab.
    - Paste your token in the `GitLab Token` field.
-   - Enter your GitLab instance URL if using self-hosted GitLab.
-   - Click `Save` to apply the changes.
+   - Click `Save Changes` to apply the changes.
 </details>
 
 <details>
@@ -112,7 +113,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - Ensure the token is properly saved in settings.
      - Check that the token hasn't expired.
      - Verify the token has the required scopes.
-     - For self-hosted instances, verify the correct instance URL.
 
   - **Access Denied**:
      - Verify project access permissions.
