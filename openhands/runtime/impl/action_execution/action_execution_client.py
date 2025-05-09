@@ -354,7 +354,6 @@ class ActionExecutionClient(Runtime):
     def get_updated_mcp_config(self) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
-        print("original config", updated_mcp_config)
 
         # Send a request to the action execution server to updated MCP config
         stdio_tools = [
@@ -371,12 +370,13 @@ class ActionExecutionClient(Runtime):
                 timeout=10,
             )
             if response.status_code != 200:
-                raise RuntimeError(f'Failed to update MCP server: {response.text}')
+                self.log('warning', f'Failed to update MCP server: {response.text}')
 
             # No API key by default. Child runtime can override this when appropriate
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
-                    url=self.action_execution_server_url.rstrip('/') + '/sse', api_key=None
+                    url=self.action_execution_server_url.rstrip('/') + '/sse',
+                    api_key=None,
                 )
             )
             self.log(
@@ -384,7 +384,10 @@ class ActionExecutionClient(Runtime):
                 f'Updated MCP config: {updated_mcp_config.sse_servers}',
             )
         else:
-            self.log('debug', 'MCP servers inside runtime is not updated since no stdio servers are provided')
+            self.log(
+                'debug',
+                'MCP servers inside runtime is not updated since no stdio servers are provided',
+            )
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:

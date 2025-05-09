@@ -47,6 +47,7 @@ def _is_retryable_wait_until_alive_error(exception):
         exception,
         (
             ConnectionError,
+            httpx.ConnectTimeout,
             httpx.NetworkError,
             httpx.RemoteProtocolError,
             httpx.HTTPStatusError,

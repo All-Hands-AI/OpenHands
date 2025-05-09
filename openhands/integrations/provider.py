@@ -31,6 +31,7 @@ from openhands.server.types import AppMode
 class ProviderToken(BaseModel):
     token: SecretStr | None = Field(default=None)
     user_id: str | None = Field(default=None)
+    host: str | None = Field(default=None)
 
     model_config = {
         'frozen': True,  # Makes the entire model immutable
@@ -40,7 +41,7 @@ class ProviderToken(BaseModel):
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
         """Factory method to create a ProviderToken from various input types"""
-        if isinstance(token_value, ProviderToken):
+        if isinstance(token_value, cls):
             return token_value
         elif isinstance(token_value, dict):
             token_str = token_value.get('token', '')
@@ -49,10 +50,11 @@ class ProviderToken(BaseModel):
             if token_str is None:
                 token_str = ''
             user_id = token_value.get('user_id')
-            return cls(token=SecretStr(token_str), user_id=user_id)
+            host = token_value.get('host')
+            return cls(token=SecretStr(token_str), user_id=user_id, host=host)
 
         else:
-            raise ValueError('Unsupport Provider token type')
+            raise ValueError('Unsupported Provider token type')
 
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]

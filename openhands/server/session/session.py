@@ -140,7 +140,7 @@ class Session:
             # output, which should keep the summarization cost down.
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
-                    BrowserOutputCondenserConfig(),
+                    BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
                         llm_config=llm.config, keep_first=4, max_size=80
                     ),
