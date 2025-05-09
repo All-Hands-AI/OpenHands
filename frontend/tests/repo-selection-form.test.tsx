@@ -86,4 +86,45 @@ describe("RepositorySelectionForm", () => {
     // Verify the branch input is cleared (no selected branch)
     expect(branchDropdown).toHaveValue("");
   });
+
+  it("should keep branch empty after being cleared even with auto-selection", async () => {
+    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    
+    // First select a repository to enable the branch dropdown
+    const repoDropdown = screen.getByTestId("repository-dropdown");
+    fireEvent.change(repoDropdown, { target: { value: "test/repo1" } });
+    
+    // Get the branch dropdown and verify it's enabled
+    const branchDropdown = screen.getByTestId("branch-dropdown");
+    expect(branchDropdown).not.toBeDisabled();
+    
+    // The branch should be auto-selected to "main" initially
+    expect(branchDropdown).toHaveValue("main");
+    
+    // Simulate deleting all text in the branch input
+    fireEvent.change(branchDropdown, { target: { value: "" } });
+    
+    // Verify the branch input is cleared (no selected branch)
+    expect(branchDropdown).toHaveValue("");
+    
+    // Trigger a re-render by changing something else
+    fireEvent.change(repoDropdown, { target: { value: "test/repo2" } });
+    fireEvent.change(repoDropdown, { target: { value: "test/repo1" } });
+    
+    // The branch should be auto-selected to "main" again after repo change
+    expect(branchDropdown).toHaveValue("main");
+    
+    // Clear it again
+    fireEvent.change(branchDropdown, { target: { value: "" } });
+    
+    // Verify it stays empty
+    expect(branchDropdown).toHaveValue("");
+    
+    // Simulate a component update without changing repos
+    // This would normally trigger the useEffect if our fix wasn't working
+    fireEvent.blur(branchDropdown);
+    
+    // Verify it still stays empty
+    expect(branchDropdown).toHaveValue("");
+  });
 });
