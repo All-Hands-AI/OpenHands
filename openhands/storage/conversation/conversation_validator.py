@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from openhands.utils.import_utils import get_impl
 
@@ -11,7 +10,7 @@ class ConversationValidator:
         self,
         conversation_id: str,
         cookies_str: str,
-        authorization_header: Optional[str] = None,
+        authorization_header: str | None = None,
     ) -> tuple[None, None]:
         return None, None
 
