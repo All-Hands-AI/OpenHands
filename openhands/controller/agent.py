@@ -35,6 +35,7 @@ class Agent(ABC):
         config: 'AgentConfig',
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
         a2a_manager: A2AManager | None = None,
+        **kwargs,
     ):
         self.llm = llm
         self.config = config

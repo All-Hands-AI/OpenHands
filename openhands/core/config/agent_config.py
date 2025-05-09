@@ -35,7 +35,8 @@ class AgentConfig(BaseModel):
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
     a2a_server_urls: list[str] = Field(default_factory=list)
-
+    enable_llm_router: bool = Field(default=False)
+    llm_router_infer_url: str | None = Field(default=None)
     model_config = {'extra': 'forbid'}
 
     @classmethod

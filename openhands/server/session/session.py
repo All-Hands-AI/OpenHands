@@ -130,6 +130,13 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = self._create_llm(agent_cls)
+
+        routing_llms = {}
+        for config_name, routing_llm_config in self.config.llms.items():
+            routing_llms[config_name] = LLM(
+                config=routing_llm_config,
+            )
+
         agent_config = self.config.get_agent_config(agent_cls)
         self.logger.info(f'Enabling default condenser: {agent_config.condenser}')
         if settings.enable_default_condenser and agent_config.condenser.type == 'noop':
@@ -170,6 +177,7 @@ class Session:
             agent_config,
             workspace_mount_path_in_sandbox_store_in_session,
             a2a_manager,
+            routing_llms=routing_llms,
         )
         agent.set_mcp_tools(mcp_tools)
         agent.set_search_tools(search_tools)

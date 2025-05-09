@@ -1,3 +1,4 @@
+# ruff: ignore
 import copy
 import tempfile
 from pathlib import Path
@@ -12,7 +13,7 @@ from litellm.exceptions import (
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
-from openhands.llm.llm import LLM
+from openhands.llm.llm import LLM, transform_messages_for_llama
 from openhands.llm.metrics import Metrics, TokenUsage
 
 
@@ -397,10 +398,9 @@ def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_
 def test_completion_retry_with_llm_no_response_error_zero_temp(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator properly handles LLMNoResponseError by:
+    """Test that the retry decorator properly handles LLMNoResponseError by:
     1. First call to llm_completion uses temperature=0 and throws LLMNoResponseError
-    2. Second call should have temperature=0.2 and return a successful response
+
     """
 
     # Define a side effect function that checks the temperature parameter
@@ -450,14 +450,14 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
+    """Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
     and keeps the original temperature on retry.
 
     This test verifies that when LLMNoResponseError is raised with a non-zero temperature:
     1. The retry mechanism is triggered
     2. The temperature remains unchanged (not set to 0.2)
     3. After all retries are exhausted, the exception is propagated
+
     """
     # Define a side effect function that always raises LLMNoResponseError
     mock_litellm_completion.side_effect = LLMNoResponseError(
@@ -492,13 +492,13 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
 def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_retry(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator works for LLMNoResponseError with non-zero temperature
+    """Test that the retry decorator works for LLMNoResponseError with non-zero temperature
     and successfully retries while preserving the original temperature.
 
     This test verifies that:
     1. First call to llm_completion with temperature=0.7 throws LLMNoResponseError
     2. Second call with the same temperature=0.7 returns a successful response
+
     """
 
     # Define a side effect function that raises LLMNoResponseError on first call
@@ -553,13 +553,13 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
 def test_completion_retry_with_llm_no_response_error_successful_retry(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator works for LLMNoResponseError with zero temperature
+    """Test that the retry decorator works for LLMNoResponseError with zero temperature
     and successfully retries with temperature=0.2.
 
     This test verifies that:
     1. First call to llm_completion with temperature=0 throws LLMNoResponseError
     2. Second call with temperature=0.2 returns a successful response
+
     """
 
     # Define a side effect function that raises LLMNoResponseError on first call
@@ -923,3 +923,52 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
     called_url = mock_get.call_args[0][0]
     assert called_url.startswith('http://') or called_url.startswith('https://')
+
+
+class TestTransformMessagesForLlama:
+    def test_content_list_valid_text(self):
+        messages = [{'role': 'user', 'content': [{'type': 'text', 'text': 'hello'}]}]
+        result = transform_messages_for_llama(messages)
+        assert result == [{'role': 'user', 'content': 'hello'}]
+
+    def test_content_list_first_item_not_dict(self):
+        messages = [{'role': 'user', 'content': ['notadict']}]
+        with pytest.raises(ValueError, match='Invalid content format'):
+            transform_messages_for_llama(messages)
+
+    def test_content_list_first_item_dict_missing_text(self):
+        messages = [{'role': 'user', 'content': [{'type': 'text'}]}]
+        with pytest.raises(ValueError, match='Invalid content format'):
+            transform_messages_for_llama(messages)
+
+    def test_content_is_string(self):
+        messages = [{'role': 'user', 'content': 'hello'}]
+        result = transform_messages_for_llama(messages)
+        assert result == [{'role': 'user', 'content': 'hello'}]
+
+    def test_content_is_neither_string_nor_list(self):
+        messages = [{'role': 'user', 'content': 123}]
+        with pytest.raises(ValueError, match='Unsupported content type'):
+            transform_messages_for_llama(messages)
+
+    def test_removes_cache_control(self):
+        messages = [{'role': 'user', 'content': 'hello', 'cache_control': 'something'}]
+        result = transform_messages_for_llama(messages)
+        assert 'cache_control' not in result[0]
+        assert result[0]['content'] == 'hello'
+
+    def test_content_empty_list(self):
+        messages = [{'role': 'user', 'content': []}]
+        with pytest.raises(ValueError, match='Invalid content format'):
+            transform_messages_for_llama(messages)
+
+    def test_multiple_messages(self):
+        messages = [
+            {'role': 'user', 'content': [{'type': 'text', 'text': 'hi'}]},
+            {'role': 'assistant', 'content': 'hello'},
+        ]
+        result = transform_messages_for_llama(messages)
+        assert result == [
+            {'role': 'user', 'content': 'hi'},
+            {'role': 'assistant', 'content': 'hello'},
+        ]

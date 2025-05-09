@@ -122,6 +122,7 @@ opentelemetry-instrumentation-tortoiseorm = "0.46b0"
 opentelemetry-instrumentation-urllib3 = "0.46b0"
 pip = "^25.0.1"
 aiofiles = "^24.1.0"
+tritonclient = {extras = ["http"], version = "^2.56.0"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.5"
@@ -143,6 +144,8 @@ gevent = "^24.2.1"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -172,6 +175,8 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
 
 
 [tool.poetry.group.evaluation.dependencies]

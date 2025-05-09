@@ -1,6 +1,9 @@
+import json
 import os
 from collections import deque
 from typing import override
+
+from httpx import request
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.a2a.A2AManager import A2AManager
@@ -63,6 +66,7 @@ class CodeActAgent(Agent):
         config: AgentConfig,
         workspace_mount_path_in_sandbox_store_in_session: bool = True,
         a2a_manager: A2AManager | None = None,
+        routing_llms: dict[str, LLM] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -104,6 +108,7 @@ class CodeActAgent(Agent):
             logger.info(f'Condenser config: {self.config.condenser.llm_config}')
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.info(f'Using condenser: {type(self.condenser)}')
+        self.routing_llms = routing_llms
 
     @override
     def set_system_prompt(self, system_prompt: str) -> None:
@@ -203,17 +208,60 @@ class CodeActAgent(Agent):
                     if tool['function']['name'] not in existing_names
                 ]
                 params['tools'] += unique_mcp_tools
+        logger.debug(f'Messages: {messages}')
+        last_message = messages[-1]
+        response = None
+        if (
+            last_message.role == 'user'
+            and self.config.enable_llm_router
+            and self.config.llm_router_infer_url is not None
+            and self.routing_llms is not None
+            and self.routing_llms['simple'] is not None
+        ):
+            content = '\n'.join(
+                [
+                    msg.text
+                    for msg in last_message.content
+                    if isinstance(msg, TextContent)
+                ]
+            )
+            text_input = 'Prompt: ' + content
+            body = {
+                'inputs': [
+                    {
+                        'name': 'INPUT',
+                        'shape': [1, 1],
+                        'datatype': 'BYTES',
+                        'data': [text_input],
+                    }
+                ]
+            }
+            logger.debug(f'Body: {body}')
+            headers = {'Content-Type': 'application/json'}
+            result = request(
+                'POST',
+                self.config.llm_router_infer_url,
+                data=json.dumps(body),
+                headers=headers,
+            )
+            res = result.json()
+            logger.debug(f'Result from classifier: {res}')
+            complexity_score = res['outputs'][0]['data'][0]
+            logger.debug(f'Complexity score: {complexity_score}')
+            if complexity_score > 0.3:
+                response = self.llm.completion(**params)
+            else:
+                response = self.routing_llms['simple'].completion(**params)
+        else:
+            response = self.llm.completion(**params)
 
-        # log to litellm proxy if possible
-        # llm = router(latest_user_message.content)
-        response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
+
         actions = codeact_function_calling.response_to_actions(
             response,
             state.session_id,
             self.workspace_mount_path_in_sandbox_store_in_session,
         )
-        print(f'Actions: {actions}')
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
