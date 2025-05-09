@@ -39,9 +39,10 @@ The script:
 If you need to clean up unused translation keys again in the future, you can run:
 
 ```bash
+cd frontend/scripts/translation-cleanup
 python3 find_unused_translations.py
 python3 update_translation_files.py
-cd frontend && npm run make-i18n && npm run build
+cd ../.. && npm run make-i18n && npm run build
 ```
 
 This will:
