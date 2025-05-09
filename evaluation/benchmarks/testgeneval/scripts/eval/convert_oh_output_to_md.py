@@ -34,17 +34,17 @@ def convert_history_to_str(history):
         if isinstance(event, list):
             # "event" is a legacy pair of (action, observation)
             event_obj = event_from_dict(event[0])
-            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += f'## {i + 1}| {event_obj.__class__.__name__}\n\n'
             ret += str(event_obj)
             ret += separator
 
             event_obj = event_from_dict(event[1])
-            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += f'## {i + 1}| {event_obj.__class__.__name__}\n\n'
             ret += str(event_obj)
         else:
             # "event" is a single event
             event_obj = event_from_dict(event)
-            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += f'## {i + 1}| {event_obj.__class__.__name__}\n\n'
             ret += str(event_obj)
     return ret
 

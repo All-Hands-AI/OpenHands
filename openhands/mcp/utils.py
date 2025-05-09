@@ -154,9 +154,9 @@ async def add_mcp_tools_to_agent(
     """
     Add MCP tools to an agent.
     """
-    assert (
-        runtime.runtime_initialized
-    ), 'Runtime must be initialized before adding MCP tools'
+    assert runtime.runtime_initialized, (
+        'Runtime must be initialized before adding MCP tools'
+    )
 
     # Add the runtime as another MCP server
     updated_mcp_config = runtime.get_mcp_config()
@@ -164,7 +164,7 @@ async def add_mcp_tools_to_agent(
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
     logger.info(
-        f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}"
+        f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'
     )
 
     # Set the MCP tools on the agent

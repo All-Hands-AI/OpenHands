@@ -15,19 +15,21 @@ A useful feature is the ability to connect to your local filesystem. To mount yo
 The simplest way to mount your local filesystem is to use the `SANDBOX_VOLUMES` environment variable:
 
 ```bash
+export SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw
+
 docker run # ...
     -e SANDBOX_USER_ID=$(id -u) \
-    -e SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw \
+    -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     # ...
 ```
 
-The `SANDBOX_VOLUMES` format is: `host_path:container_path[:mode]`
+The `SANDBOX_VOLUMES` format is `host_path:container_path[:mode]` where:
 
-- `host_path`: The path on your host machine that you want to mount
-- `container_path`: The path inside the container where the host path will be mounted
+- `host_path`: The path on your host machine that you want to mount.
+- `container_path`: The path inside the container where the host path will be mounted.
   - Use `/workspace` for files you want the agent to modify. The agent works in `/workspace` by default.
-  - Use a different path (e.g., `/data`) for read-only reference materials or large datasets
-- `mode`: Optional mount mode, either `rw` (read-write, default) or `ro` (read-only)
+  - Use a different path (e.g., `/data`) for read-only reference materials or large datasets.
+- `mode`: Optional mount mode, either `rw` (read-write, default) or `ro` (read-only).
 
 You can also specify multiple mounts by separating them with commas (`,`):
 
@@ -50,10 +52,6 @@ export SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
 # Multiple mounts example - Writable workspace with read-only reference data
 export SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
 ```
-
-> **Note:** When using multiple mounts, the first mount is considered the primary workspace and will be used for backward compatibility with tools that expect a single workspace.
-
-> **Important:** The agent will work in `/workspace` by default. If you want the agent to modify files in your local directory, you should mount that directory to `/workspace`. If you have read-only data that you want the agent to access but not modify, mount it to a different path (like `/data`) and explicitly instruct the agent to look there.
 
 ### Using WORKSPACE_* variables (Deprecated)
 

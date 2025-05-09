@@ -21,13 +21,10 @@ You'll need to be sure to set your model, API key, and other settings via enviro
 
 To run OpenHands in Headless mode with Docker:
 
-1. Set the following environmental variables in your terminal:
-
-- `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access (Ex: `export SANDBOX_VOLUMES=$(pwd)/workspace:/workspace:rw`).
-  - The agent works in `/workspace` by default, so mount your project directory there if you want the agent to modify files.
-  - For read-only data, use a different mount path (Ex: `export SANDBOX_VOLUMES=$(pwd)/workspace:/workspace:rw,/path/to/large/dataset:/data:ro`).
-- `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
-- `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
+1. Set the following environment variables in your terminal:
+   - `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access ([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes))
+   - `LLM_MODEL` - the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-3-7-sonnet-20250219"`)
+   - `LLM_API_KEY` - your API key (e.g. `export LLM_API_KEY="sk_test_12345"`)
 
 2. Run the following Docker command:
 
