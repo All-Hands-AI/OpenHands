@@ -141,7 +141,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -174,7 +174,7 @@ def initialize_runtime(
     ipynb_obs = runtime.run_action(action)
     logger.info(ipynb_obs, extra={'msg_type': 'OBSERVATION'})
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 # Prepare instruction

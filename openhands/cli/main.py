@@ -68,7 +68,7 @@ async def cleanup_session(
     agent: Agent,
     runtime: Runtime,
     controller: AgentController,
-):
+) -> None:
     """Clean up all resources from the current session."""
     try:
         # Cancel all running tasks except the current one
@@ -102,6 +102,7 @@ async def run_session(
     sid = str(uuid4())
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
+    always_confirm_mode = False  # Flag to enable always confirm mode
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -125,7 +126,7 @@ async def run_session(
 
     usage_metrics = UsageMetrics()
 
-    async def prompt_for_next_task(agent_state: str):
+    async def prompt_for_next_task(agent_state: str) -> None:
         nonlocal reload_microagents, new_session_requested
         while True:
             next_message = await read_prompt_input(
@@ -153,7 +154,7 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents, is_paused
+        nonlocal reload_microagents, is_paused, always_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -181,8 +182,15 @@ async def run_session(
                 if is_paused.is_set():
                     return
 
-                user_confirmed = await read_confirmation_input()
-                if user_confirmed:
+                if always_confirm_mode:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                    return
+
+                confirmation_status = await read_confirmation_input()
+                if confirmation_status == 'yes' or confirmation_status == 'always':
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
@@ -192,6 +200,10 @@ async def run_session(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
                     )
+
+                # Set the always_confirm_mode flag if the user wants to always confirm
+                if confirmation_status == 'always':
+                    always_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
                 is_paused.clear()  # Revert the event state before prompting for user input
@@ -259,7 +271,7 @@ async def run_session(
     return new_session_requested
 
 
-async def main(loop: asyncio.AbstractEventLoop):
+async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
 
     args = parse_arguments()
@@ -276,7 +288,12 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
-        config.default_agent = args.agent_cls if args.agent_cls else settings.agent
+        if args.agent_cls:
+            config.default_agent = str(args.agent_cls)
+        else:
+            # settings.agent is not None because we check for it in setup_config_from_args
+            assert settings.agent is not None
+            config.default_agent = settings.agent
         if not args.llm_config and settings.llm_model and settings.llm_api_key:
             llm_config = config.get_llm_config()
             llm_config.model = settings.llm_model

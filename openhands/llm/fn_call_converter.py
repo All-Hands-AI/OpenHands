@@ -54,7 +54,7 @@ Reminder:
 
 STOP_WORDS = ['</function']
 
-def refine_prompt(prompt: str):
+def refine_prompt(prompt: str) -> str:
     if sys.platform == 'win32':
         return prompt.replace('bash', 'powershell')
     return prompt
@@ -78,6 +78,7 @@ openhands@runtime:~/workspace$
 """,
         'run_server': """
 ASSISTANT: Let me run the Python file for you:
+
 <function=execute_bash>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
@@ -309,12 +310,12 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
     if tool_call['type'] != 'function':
         raise FunctionCallConversionError("Tool call type must be 'function'.")
 
-    ret = f"<function={tool_call['function']['name']}>\n"
+    ret = f'<function={tool_call["function"]["name"]}>\n'
     try:
         args = json.loads(tool_call['function']['arguments'])
     except json.JSONDecodeError as e:
         raise FunctionCallConversionError(
-            f"Failed to parse arguments as JSON. Arguments: {tool_call['function']['arguments']}"
+            f'Failed to parse arguments as JSON. Arguments: {tool_call["function"]["arguments"]}'
         ) from e
     for param_name, param_value in args.items():
         is_multiline = isinstance(param_value, str) and '\n' in param_value
@@ -336,8 +337,8 @@ def convert_tools_to_description(tools: list[dict]) -> str:
         fn = tool['function']
         if i > 0:
             ret += '\n'
-        ret += f"---- BEGIN FUNCTION #{i+1}: {fn['name']} ----\n"
-        ret += f"Description: {fn['description']}\n"
+        ret += f'---- BEGIN FUNCTION #{i + 1}: {fn["name"]} ----\n'
+        ret += f'Description: {fn["description"]}\n'
 
         if 'parameters' in fn:
             ret += 'Parameters:\n'
@@ -359,12 +360,12 @@ def convert_tools_to_description(tools: list[dict]) -> str:
                     desc += f'\nAllowed values: [{enum_values}]'
 
                 ret += (
-                    f'  ({j+1}) {param_name} ({param_type}, {param_status}): {desc}\n'
+                    f'  ({j + 1}) {param_name} ({param_type}, {param_status}): {desc}\n'
                 )
         else:
             ret += 'No parameters are required for this function.\n'
 
-        ret += f'---- END FUNCTION #{i+1} ----\n'
+        ret += f'---- END FUNCTION #{i + 1} ----\n'
     return ret
 
 
@@ -700,7 +701,7 @@ def convert_non_fncall_messages_to_fncall_messages(
                         'content': [{'type': 'text', 'text': tool_result}]
                         if isinstance(content, list)
                         else tool_result,
-                        'tool_call_id': f'toolu_{tool_call_counter-1:02d}',  # Use last generated ID
+                        'tool_call_id': f'toolu_{tool_call_counter - 1:02d}',  # Use last generated ID
                     }
                 )
             else:
@@ -823,14 +824,14 @@ def convert_from_multiple_tool_calls_to_single_tool_call_messages(
                 # add the tool result
                 converted_messages.append(message)
             else:
-                assert (
-                    len(pending_tool_calls) == 0
-                ), f'Found pending tool calls but not found in pending list: {pending_tool_calls=}'
+                assert len(pending_tool_calls) == 0, (
+                    f'Found pending tool calls but not found in pending list: {pending_tool_calls=}'
+                )
                 converted_messages.append(message)
         else:
-            assert (
-                len(pending_tool_calls) == 0
-            ), f'Found pending tool calls but not expect to handle it with role {role}: {pending_tool_calls=}, {message=}'
+            assert len(pending_tool_calls) == 0, (
+                f'Found pending tool calls but not expect to handle it with role {role}: {pending_tool_calls=}, {message=}'
+            )
             converted_messages.append(message)
 
     if not ignore_final_tool_result and len(pending_tool_calls) > 0:
