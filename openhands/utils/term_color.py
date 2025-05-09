@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import cast
+from typing import Any, cast
 
 from termcolor import colored
 
@@ -23,4 +23,6 @@ def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:
     Returns:
         str: Colored text
     """
-    return cast(str, colored(text, color.value))
+    # The colored function returns Any in mypy's view, so we need to cast it
+    result: Any = colored(text, color.value)
+    return cast(str, result)

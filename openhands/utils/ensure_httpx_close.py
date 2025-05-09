@@ -15,14 +15,14 @@ Hopefully, this will be fixed soon and we can remove this abomination.
 """
 
 import contextlib
-from typing import Any, Callable, Iterator, Optional, cast
+from typing import Any, Callable, Iterator, Optional
 
 import httpx
 
 
 @contextlib.contextmanager
 def ensure_httpx_close() -> Iterator[None]:
-    wrapped_class = httpx.Client
+    wrapped_class = httpx.Client  # Store the original class
     proxys: list['ClientProxy'] = []
 
     class ClientProxy:
@@ -55,11 +55,10 @@ def ensure_httpx_close() -> Iterator[None]:
                 self.client.close()
                 self.client = None
 
-        def __iter__(self, *args: Any, **kwargs: Any) -> Any:
+        def __iter__(self) -> Iterator[Any]:
             # We have to override this as debuggers invoke it causing the client to reopen
-            if self.client:
-                return self.client.iter(*args, **kwargs)
-            return object.__getattribute__(self, 'iter')(*args, **kwargs)
+            # Just return an empty iterator as this is only called by debuggers
+            return iter([])
 
         @property
         def is_closed(self) -> bool:
@@ -69,12 +68,13 @@ def ensure_httpx_close() -> Iterator[None]:
             return bool(self.client.is_closed)
 
     # Monkey patching
-    httpx.Client = cast(type[httpx.Client], ClientProxy)
+    original_client = httpx.Client
+    setattr(httpx, 'Client', ClientProxy)
     try:
         yield
     finally:
         # Restoring the original class
-        httpx.Client = wrapped_class
+        setattr(httpx, 'Client', original_client)
         while proxys:
             proxy = proxys.pop()
             proxy.close()
