@@ -109,7 +109,7 @@ export function RepositorySelectionForm({
       setSelectedRepository(null);
       setSelectedBranch(null);
       onRepoSelection(null);
-    } else if (value.startsWith("https://github.com/")) {
+    } else if (value.startsWith("https://")) {
       const repoName = sanitizeQuery(value);
       setSearchQuery(repoName);
     }
