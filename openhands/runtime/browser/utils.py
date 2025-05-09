@@ -1,14 +1,18 @@
+import base64
 import datetime
 import os
 from pathlib import Path
+
+from PIL import Image
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.observation import BrowserOutputObservation
+from openhands.runtime.browser.base64 import png_base64_url_to_image
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.runtime.browser.base64 import png_base64_url_to_image
+
 
 async def browse(
     action: BrowseURLAction | BrowseInteractiveAction,
@@ -48,9 +52,31 @@ async def browse(
             screenshot_filename = f'screenshot_{timestamp}.png'
             screenshot_path = str(screenshots_dir / screenshot_filename)
 
-            # Decode and save the screenshot
-            image = png_base64_url_to_image(obs.get('screenshot'))
-            image.save(screenshot_path)
+            # Direct image saving from base64 data without using PIL's Image.open
+            # This approach bypasses potential encoding issues that might occur when
+            # converting between different image representations, ensuring the raw PNG
+            # data from the browser is saved directly to disk.
+
+            # Extract the base64 data
+            base64_data = obs.get('screenshot', '')
+            if ',' in base64_data:
+                base64_data = base64_data.split(',')[1]
+
+            try:
+                # Decode base64 directly to binary
+                image_data = base64.b64decode(base64_data)
+
+                # Write binary data directly to file
+                with open(screenshot_path, 'wb') as f:
+                    f.write(image_data)
+
+                # Verify the image was saved correctly by opening it
+                # This is just a verification step and can be removed in production
+                Image.open(screenshot_path).verify()
+            except Exception:
+                # If direct saving fails, fall back to the original method
+                image = png_base64_url_to_image(obs.get('screenshot'))
+                image.save(screenshot_path, format='PNG', optimize=True)
 
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
