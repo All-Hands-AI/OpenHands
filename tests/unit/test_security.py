@@ -385,6 +385,7 @@ async def test_unsafe_bash_command(temp_dir: str):
             AgentDelegateAction(
                 agent='VerifierAgent',
                 inputs={'task': 'verify this task'},
+                prompt='Please verify this task',
                 thought='delegating to verifier',
             ),
             [

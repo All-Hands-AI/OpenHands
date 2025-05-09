@@ -216,7 +216,7 @@ Note:
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
+                return AgentFinishAction(final_thought=event.content)
             elif isinstance(event, Observation):
                 # Only process BrowserOutputObservation and skip other observation types
                 if not isinstance(event, BrowserOutputObservation):
@@ -271,10 +271,10 @@ Note:
                 )
                 return MessageAction('Error encountered when browsing.')
             set_of_marks = last_obs.set_of_marks
-        goal, image_urls = state.get_current_user_intent()
+        user_message_action = state.get_current_user_intent()
+        goal = user_message_action.content
+        image_urls = user_message_action.image_urls
 
-        if goal is None:
-            goal = state.inputs['task']
         goal_txt, goal_images = create_goal_prompt(goal, image_urls)
         observation_txt, som_screenshot = create_observation_prompt(
             cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
