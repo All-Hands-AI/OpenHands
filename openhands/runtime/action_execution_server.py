@@ -383,12 +383,17 @@ class ActionExecutor:
                 )
                 return obs
 
-            assert self.bash_session is not None
+            assert self.bash_session is not None, "bash_session must not be None"
             # Cast the result to the expected type to satisfy mypy
             from typing import cast
+
+            # Use a local variable with the assertion to help mypy understand the type
+            bash_session = self.bash_session
+            assert bash_session is not None
+            
             obs = await call_sync_from_async(
-                lambda a: cast(CmdOutputObservation, self.bash_session.execute(a)), 
-                action
+                lambda a: cast(CmdOutputObservation, bash_session.execute(a)),
+                action,
             )
             return obs
         except Exception as e:
