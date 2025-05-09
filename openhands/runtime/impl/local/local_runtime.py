@@ -110,7 +110,7 @@ class LocalRuntime(ActionExecutionClient):
         config (AppConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
-        plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
+        plugins (list[PluginRequirement] | None, optional): list of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
@@ -121,7 +121,7 @@ class LocalRuntime(ActionExecutionClient):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable[..., None] | None = None,
+        status_callback: Callable[[str, str, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ) -> None:
