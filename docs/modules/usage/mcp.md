@@ -1,12 +1,15 @@
 # Model Context Protocol (MCP)
 
 :::note
-This page outlines how to configure and use the Model Context Protocol (MCP) in OpenHands, allowing you to extend the agent's capabilities with custom tools.
+This page outlines how to configure and use the Model Context Protocol (MCP) in OpenHands, allowing you to extend the
+agent's capabilities with custom tools.
 :::
 
 ## Overview
 
-Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate with external tool servers. These servers can provide additional functionality to the agent, such as specialized data processing, external API access, or custom tools. MCP is based on the open standard defined at [modelcontextprotocol.io](https://modelcontextprotocol.io).
+Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate with external tool servers. These
+servers can provide additional functionality to the agent, such as specialized data processing, external API access,
+or custom tools. MCP is based on the open standard defined at [modelcontextprotocol.io](https://modelcontextprotocol.io).
 
 ## Configuration
 
@@ -53,11 +56,6 @@ SSE servers are configured using either a string URL or an object with the follo
   - Type: `str`
   - Description: The URL of the SSE server
 
-- `api_key` (optional)
-  - Type: `str`
-  - Default: `None`
-  - Description: API key for authentication with the SSE server
-
 ### Stdio Servers
 
 Stdio servers are configured using an object with the following properties:
@@ -84,13 +82,13 @@ Stdio servers are configured using an object with the following properties:
 
 When OpenHands starts, it:
 
-1. Reads the MCP configuration from `config.toml`
-2. Connects to any configured SSE servers
-3. Starts any configured stdio servers
-4. Registers the tools provided by these servers with the agent
+1. Reads the MCP configuration from `config.toml`.
+2. Connects to any configured SSE servers.
+3. Starts any configured stdio servers.
+4. Registers the tools provided by these servers with the agent.
 
 The agent can then use these tools just like any built-in tool. When the agent calls an MCP tool:
 
-1. OpenHands routes the call to the appropriate MCP server
-2. The server processes the request and returns a response
-3. OpenHands converts the response to an observation and presents it to the agent
+1. OpenHands routes the call to the appropriate MCP server.
+2. The server processes the request and returns a response.
+3. OpenHands converts the response to an observation and presents it to the agent.

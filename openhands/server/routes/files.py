@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from fastapi import (
     APIRouter,
@@ -41,8 +42,17 @@ from openhands.utils.async_utils import call_sync_from_async
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
-@app.get('/list-files')
-async def list_files(request: Request, path: str | None = None):
+@app.get(
+    '/list-files',
+    response_model=list[str],
+    responses={
+        404: {'description': 'Runtime not initialized', 'model': dict},
+        500: {'description': 'Error listing or filtering files', 'model': dict},
+    },
+)
+async def list_files(
+    request: Request, path: str | None = None
+) -> list[str] | JSONResponse:
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -83,7 +93,7 @@ async def list_files(request: Request, path: str | None = None):
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    async def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list: list[str], base_path: str) -> list[str]:
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
@@ -109,8 +119,21 @@ async def list_files(request: Request, path: str | None = None):
     return file_list
 
 
-@app.get('/select-file')
-async def select_file(file: str, request: Request):
+# NOTE: We use response_model=None for endpoints that can return multiple response types
+# (like FileResponse | JSONResponse). This is because FastAPI's response_model expects a
+# Pydantic model, but Starlette response classes like FileResponse are not Pydantic models.
+# Instead, we document the possible responses using the 'responses' parameter and maintain
+# proper type annotations for mypy.
+@app.get(
+    '/select-file',
+    response_model=None,
+    responses={
+        200: {'description': 'File content returned as JSON', 'model': dict[str, str]},
+        500: {'description': 'Error opening file', 'model': dict},
+        415: {'description': 'Unsupported media type', 'model': dict},
+    },
+)
+async def select_file(file: str, request: Request) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -144,7 +167,7 @@ async def select_file(file: str, request: Request):
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
-        return {'code': content}
+        return JSONResponse(content={'code': content})
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
 
@@ -158,10 +181,23 @@ async def select_file(file: str, request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
         )
+    else:
+        # Handle unexpected observation types
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Unexpected observation type: {type(observation)}'},
+        )
 
 
-@app.get('/zip-directory')
-def zip_current_workspace(request: Request):
+@app.get(
+    '/zip-directory',
+    response_model=None,
+    responses={
+        200: {'description': 'Zipped workspace returned as FileResponse'},
+        500: {'description': 'Error zipping workspace', 'model': dict},
+    },
+)
+def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
@@ -188,12 +224,19 @@ def zip_current_workspace(request: Request):
         )
 
 
-@app.get('/git/changes')
+@app.get(
+    '/git/changes',
+    response_model=dict[str, Any],
+    responses={
+        404: {'description': 'Not a git repository', 'model': dict},
+        500: {'description': 'Error getting changes', 'model': dict},
+    },
+)
 async def git_changes(
     request: Request,
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-):
+) -> dict[str, Any] | JSONResponse:
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
         config,
@@ -229,13 +272,17 @@ async def git_changes(
         )
 
 
-@app.get('/git/diff')
+@app.get(
+    '/git/diff',
+    response_model=dict[str, Any],
+    responses={500: {'description': 'Error getting diff', 'model': dict}},
+)
 async def git_diff(
     request: Request,
     path: str,
     conversation_id: str,
-    conversation_store=Depends(get_conversation_store),
-):
+    conversation_store: Any = Depends(get_conversation_store),
+) -> dict[str, Any] | JSONResponse:
     runtime: Runtime = request.state.conversation.runtime
 
     cwd = await get_cwd(
@@ -259,7 +306,7 @@ async def get_cwd(
     conversation_store: ConversationStore,
     conversation_id: str,
     workspace_mount_path_in_sandbox: str,
-):
+) -> str:
     metadata = await conversation_store.get_metadata(conversation_id)
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     conversation_info = await _get_conversation_info(metadata, is_running)

@@ -1,5 +1,3 @@
-以下是翻译后的内容:
-
 # 🏛️ 系统架构
 
 <div style={{ textAlign: 'center' }}>
@@ -7,48 +5,49 @@
   <p><em>OpenHands 系统架构图 (2024年7月4日)</em></p>
 </div>
 
-这是系统架构的高层次概述。系统分为两个主要组件:前端和后端。前端负责处理用户交互并显示结果。后端负责处理业务逻辑并执行代理。
+这是系统架构的高级概述。系统分为两个主要组件：前端和后端。前端负责处理用户交互并显示结果。后端负责处理业务逻辑和执行代理。
 
-# 前端架构 {#frontend-architecture-zh}
+# 前端架构 {#frontend-architecture-en}
 
 ![system_architecture.svg](/img/system_architecture.svg)
 
-这个概述经过简化,只显示了主要组件及其交互。有关后端架构的更详细视图,请参阅下面的后端架构部分。
+此概述经过简化，仅显示主要组件及其交互。有关后端架构的更详细视图，请参阅下面的后端架构部分。
 
-# 后端架构 {#backend-architecture-zh}
+# 后端架构 {#backend-architecture-en}
 
-_**免责声明**:后端架构正在进行中,可能会发生变化。下图显示了基于图表页脚中显示的提交的后端当前架构。_
+_**免责声明**：后端架构仍在开发中，可能会发生变化。以下图表显示了基于图表页脚中显示的提交的当前后端架构。_
 
 ![backend_architecture.svg](/img/backend_architecture.svg)
 
 <details>
   <summary>更新此图表</summary>
   <div>
-    后端架构图的生成是部分自动化的。
-    该图是使用py2puml工具从代码中的类型提示生成的。然后手动审查、调整图表并导出为PNG和SVG格式。
+    后端架构图的生成部分是自动化的。
+    该图表是使用py2puml工具从代码中的类型提示生成的。然后手动审查、调整并导出为PNG
+    和SVG格式。
 
     ## 先决条件
 
-    - 运行可执行openhands的python环境
+    - 运行可执行openhands的Python环境
     (根据存储库根目录中README.md文件中的说明)
-    - 已安装[py2puml](https://github.com/lucsorel/py2puml)
+    - 安装[py2puml](https://github.com/lucsorel/py2puml)
 
 ## 步骤
 
-1.  通过从存储库的根目录运行以下命令来自动生成图表:
+1.  通过从存储库根目录运行以下命令自动生成图表：
     `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
 
-2.  在PlantUML编辑器中打开生成的文件,例如带有PlantUML扩展的Visual Studio Code或[PlantText](https://www.planttext.com/)
+2.  在PlantUML编辑器中打开生成的文件，例如安装了PlantUML扩展的Visual Studio Code或[PlantText](https://www.planttext.com/)
 
-3.  审查生成的PUML,并对图表进行所有必要的调整(添加缺失的部分,修复错误,改进定位)。
-    _py2puml根据代码中的类型提示创建图表,因此缺失或不正确的类型提示可能导致图表不完整或不正确。_
+3.  审查生成的PUML并对图表进行所有必要的调整（添加缺失部分，修复错误，改进定位）。
+    _py2puml根据代码中的类型提示创建图表，因此缺失或不正确的类型提示可能导致图表不完整或不正确。_
 
-4.  审查新图表和以前图表之间的差异,并手动检查更改是否正确。
+4.  查看新旧图表之间的差异，并手动检查更改是否正确。
     _确保不要删除过去手动添加到图表中且仍然相关的部分。_
 
-5.  将用于生成图表的提交的提交哈希添加到图表页脚。
+5.  将用于生成图表的提交哈希添加到图表页脚。
 
-6.  将图表导出为PNG和SVG文件,并替换`docs/architecture`目录中的现有图表。这可以使用(例如[PlantText](https://www.planttext.com/))完成
+6.  将图表导出为PNG和SVG文件，并替换`docs/architecture`目录中的现有图表。这可以通过（例如[PlantText](https://www.planttext.com/)）完成
 
   </div>
 </details>

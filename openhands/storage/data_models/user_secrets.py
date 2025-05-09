@@ -14,6 +14,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
     PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA,
     ProviderToken,
@@ -26,7 +27,7 @@ class UserSecrets(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
@@ -44,7 +45,7 @@ class UserSecrets(BaseModel):
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
         for token_type, provider_token in provider_tokens.items():
-            if not provider_token or not provider_token.token:
+            if not provider_token:
                 continue
 
             token_type_str = (
@@ -52,11 +53,16 @@ class UserSecrets(BaseModel):
                 if isinstance(token_type, ProviderType)
                 else str(token_type)
             )
+
+            token = None
+            if provider_token.token:
+                token = provider_token.token.get_secret_value() if expose_secrets else pydantic_encoder(provider_token.token)
+
             tokens[token_type_str] = {
-                'token': provider_token.token.get_secret_value()
-                if expose_secrets
-                else pydantic_encoder(provider_token.token),
+                'token': token,
+                'host': provider_token.host,
                 'user_id': provider_token.user_id,
+                
             }
 
         return tokens

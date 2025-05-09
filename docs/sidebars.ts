@@ -215,6 +215,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'MCP',
+          id: 'usage/mcp',
+        }
       ],
     },
     {

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
         exclude: docs/modules/python
@@ -10,30 +10,30 @@ repos:
       - id: debug-statements
 
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: 1.7.0
+    rev: v2.5.1
     hooks:
       - id: pyproject-fmt
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.16
+    rev: v0.24.1
     hooks:
       - id: validate-pyproject
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.4.1
+    rev: v0.11.8
     hooks:
       # Run the linter.
       - id: ruff
         entry: ruff check --config dev_config/python/ruff.toml
         types_or: [python, pyi, jupyter]
-        args: [--fix]
+        args: [--fix, --unsafe-fixes]
       # Run the formatter.
       - id: ruff-format
         entry: ruff format --config dev_config/python/ruff.toml
         types_or: [python, pyi, jupyter]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v1.15.0
     hooks:
       - id: mypy
         additional_dependencies:

@@ -1,10 +1,12 @@
 import copy
 import os
+import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
+
     from openhands.events.action import Action
     from openhands.llm.llm import ModelResponse
 
@@ -118,8 +120,11 @@ class CodeActAgent(Agent):
         if self.config.enable_finish:
             tools.append(FinishTool)
         if self.config.enable_browsing:
-            tools.append(WebReadTool)
-            tools.append(BrowserTool)
+            if sys.platform == 'win32':
+                logger.warning('Windows runtime does not support browsing yet')
+            else:
+                tools.append(WebReadTool)
+                tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:

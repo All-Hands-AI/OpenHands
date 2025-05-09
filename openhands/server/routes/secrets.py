@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.settings import (
     GETCustomSecrets,
@@ -9,6 +11,7 @@ from openhands.server.settings import (
     POSTProviderModel,
 )
 from openhands.server.user_auth import (
+    get_provider_tokens,
     get_secrets_store,
     get_user_secrets,
 )
@@ -51,25 +54,44 @@ async def invalidate_legacy_secrets_store(
     return None
 
 
-async def check_provider_tokens(provider_info: POSTProviderModel) -> str:
-    print(provider_info)
-    if provider_info.provider_tokens:
-        # Determine whether tokens are valid
-        for token_type, token_value in provider_info.provider_tokens.items():
-            if token_value.token:
-                confirmed_token_type = await validate_provider_token(token_value.token)
-                if not confirmed_token_type or confirmed_token_type != token_type:
-                    return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
-
+def process_token_validation_result(
+        confirmed_token_type: ProviderType | None, 
+        token_type: ProviderType):
+    
+    if not confirmed_token_type or confirmed_token_type != token_type:
+        return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
+    
     return ''
+
+async def check_provider_tokens(
+    incoming_provider_tokens: POSTProviderModel,
+    existing_provider_tokens: PROVIDER_TOKEN_TYPE) -> str:
+
+    msg = ''
+    if incoming_provider_tokens.provider_tokens:
+        # Determine whether tokens are valid
+        for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
+            if token_value.token:
+                confirmed_token_type = await validate_provider_token(token_value.token, token_value.host) # FE always sends latest host
+                msg = process_token_validation_result(confirmed_token_type, token_type)
+
+            existing_token = existing_provider_tokens.get(token_type, None)
+            if existing_token and (existing_token.host != token_value.host) and existing_token.token:
+                confirmed_token_type = await validate_provider_token(existing_token.token, token_value.host) # Host has changed, check it against existing token
+                if not confirmed_token_type or confirmed_token_type != token_type:
+                    msg = process_token_validation_result(confirmed_token_type, token_type)
+
+    return msg
 
 
 @app.post('/add-git-providers')
 async def store_provider_tokens(
     provider_info: POSTProviderModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens)
 ) -> JSONResponse:
-    provider_err_msg = await check_provider_tokens(provider_info)
+
+    provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,8 +113,7 @@ async def store_provider_tokens(
                     if existing_token and existing_token.token:
                         provider_info.provider_tokens[provider] = existing_token
 
-        else:  # nothing passed in means keep current settings
-            provider_info.provider_tokens = dict(user_secrets.provider_tokens)
+                provider_info.provider_tokens[provider] = provider_info.provider_tokens[provider].model_copy(update={'host': token_value.host})
 
         updated_secrets = user_secrets.model_copy(
             update={'provider_tokens': provider_info.provider_tokens}
@@ -154,10 +175,10 @@ async def load_custom_secrets_names(
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f'Failed to load secret names: {e}')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            content={'error': 'Failed to get secret names'},
         )
 
 

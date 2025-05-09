@@ -91,6 +91,13 @@ class User(BaseModel):
     email: str | None = None
 
 
+class Branch(BaseModel):
+    name: str
+    commit_sha: str
+    protected: bool
+    last_push_date: str | None = None  # ISO 8601 format date string
+
+
 class Repository(BaseModel):
     id: int
     full_name: str
@@ -211,3 +218,6 @@ class GitService(Protocol):
         self, repository: str
     ) -> Repository:
         """Gets all repository details from repository name"""
+
+    async def get_branches(self, repository: str) -> list[Branch]:
+        """Get branches for a repository"""

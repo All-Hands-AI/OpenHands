@@ -9,19 +9,60 @@ You can also [build your own runtime image](../how-to/custom-sandbox-guide).
 
 ## Connecting to Your filesystem
 A useful feature is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
+
+### Using SANDBOX_VOLUMES
+
+The simplest way to mount your local filesystem is to use the `SANDBOX_VOLUMES` environment variable:
+
+```bash
+export SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw
+
+docker run # ...
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
+    # ...
+```
+
+The `SANDBOX_VOLUMES` format is `host_path:container_path[:mode]` where:
+
+- `host_path`: The path on your host machine that you want to mount.
+- `container_path`: The path inside the container where the host path will be mounted.
+  - Use `/workspace` for files you want the agent to modify. The agent works in `/workspace` by default.
+  - Use a different path (e.g., `/data`) for read-only reference materials or large datasets.
+- `mode`: Optional mount mode, either `rw` (read-write, default) or `ro` (read-only).
+
+You can also specify multiple mounts by separating them with commas (`,`):
+
+```bash
+export SANDBOX_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
+```
+
+Examples:
+
+```bash
+# Linux and Mac Example - Writable workspace
+export SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
+
+# WSL on Windows Example - Writable workspace
+export SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
+
+# Read-only reference code example
+export SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
+
+# Multiple mounts example - Writable workspace with read-only reference data
+export SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
+```
+
+### Using WORKSPACE_* variables (Deprecated)
+
+> **Note:** This method is deprecated and will be removed in a future version. Please use `SANDBOX_VOLUMES` instead.
+
 1. Set `WORKSPACE_BASE`:
 
     ```bash
     export WORKSPACE_BASE=/path/to/your/code
-
-    # Linux and Mac Example
-    # export WORKSPACE_BASE=$HOME/OpenHands
-    # Will set $WORKSPACE_BASE to /home/<username>/OpenHands
-    #
-    # WSL on Windows Example
-    # export WORKSPACE_BASE=/mnt/c/dev/OpenHands
-    # Will set $WORKSPACE_BASE to C:\dev\OpenHands
     ```
+
 2. Add the following options to the `docker run` command:
 
     ```bash

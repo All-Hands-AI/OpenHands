@@ -40,7 +40,7 @@ class BrowserEnv:
         self.init_browser()
         atexit.register(self.close)
 
-    def get_html_text_converter(self):
+    def get_html_text_converter(self) -> html2text.HTML2Text:
         html_text_converter = html2text.HTML2Text()
         # ignore links and images
         html_text_converter.ignore_links = False
@@ -56,7 +56,7 @@ class BrowserEnv:
         stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
         retry=tenacity.retry_if_exception_type(BrowserInitException),
     )
-    def init_browser(self):
+    def init_browser(self) -> None:
         logger.debug('Starting browser env...')
         try:
             self.process = multiprocessing.Process(target=self.browser_process)
@@ -69,7 +69,7 @@ class BrowserEnv:
             self.close()
             raise BrowserInitException('Failed to start browser environment.')
 
-    def browser_process(self):
+    def browser_process(self) -> None:
         if self.eval_mode:
             assert self.browsergym_eval_env is not None
             logger.info('Initializing browser env for web browsing evaluation.')
@@ -196,17 +196,18 @@ class BrowserEnv:
             if self.agent_side.poll(timeout=0.01):
                 response_id, obs = self.agent_side.recv()
                 if response_id == unique_request_id:
-                    return obs
+                    return dict(obs)
 
-    def check_alive(self, timeout: float = 60):
+    def check_alive(self, timeout: float = 60) -> bool:
         self.agent_side.send(('IS_ALIVE', None))
         if self.agent_side.poll(timeout=timeout):
             response_id, _ = self.agent_side.recv()
             if response_id == 'ALIVE':
                 return True
             logger.debug(f'Browser env is not alive. Response ID: {response_id}')
+        return False
 
-    def close(self):
+    def close(self) -> None:
         if not self.process.is_alive():
             return
         try:
@@ -229,7 +230,7 @@ class BrowserEnv:
     @staticmethod
     def image_to_png_base64_url(
         image: np.ndarray | Image.Image, add_data_prefix: bool = False
-    ):
+    ) -> str:
         """Convert a numpy array to a base64 encoded png image url."""
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)
@@ -248,7 +249,7 @@ class BrowserEnv:
     @staticmethod
     def image_to_jpg_base64_url(
         image: np.ndarray | Image.Image, add_data_prefix: bool = False
-    ):
+    ) -> str:
         """Convert a numpy array to a base64 encoded jpeg image url."""
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)

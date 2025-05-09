@@ -47,6 +47,7 @@ def _is_retryable_wait_until_alive_error(exception):
         exception,
         (
             ConnectionError,
+            httpx.ConnectTimeout,
             httpx.NetworkError,
             httpx.RemoteProtocolError,
             httpx.HTTPStatusError,
@@ -207,6 +208,54 @@ class DockerRuntime(ActionExecutionClient):
             )
             raise ex
 
+    def _process_volumes(self) -> dict[str, dict[str, str]]:
+        """Process volume mounts based on configuration.
+
+        Returns:
+            A dictionary mapping host paths to container bind mounts with their modes.
+        """
+        # Initialize volumes dictionary
+        volumes: dict[str, dict[str, str]] = {}
+
+        # Process volumes (comma-delimited)
+        if self.config.sandbox.volumes is not None:
+            # Handle multiple mounts with comma delimiter
+            mounts = self.config.sandbox.volumes.split(',')
+
+            for mount in mounts:
+                parts = mount.split(':')
+                if len(parts) >= 2:
+                    host_path = os.path.abspath(parts[0])
+                    container_path = parts[1]
+                    # Default mode is 'rw' if not specified
+                    mount_mode = parts[2] if len(parts) > 2 else 'rw'
+
+                    volumes[host_path] = {
+                        'bind': container_path,
+                        'mode': mount_mode,
+                    }
+                    logger.debug(
+                        f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
+                    )
+
+        # Legacy mounting with workspace_* parameters
+        elif (
+            self.config.workspace_mount_path is not None
+            and self.config.workspace_mount_path_in_sandbox is not None
+        ):
+            mount_mode = 'rw'  # Default mode
+
+            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
+            volumes[self.config.workspace_mount_path] = {
+                'bind': self.config.workspace_mount_path_in_sandbox,
+                'mode': mount_mode,
+            }
+            logger.debug(
+                f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
+            )
+
+        return volumes
+
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
@@ -272,23 +321,16 @@ class DockerRuntime(ActionExecutionClient):
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
-        if (
-            self.config.workspace_mount_path is not None
-            and self.config.workspace_mount_path_in_sandbox is not None
-        ):
-            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes = {
-                self.config.workspace_mount_path: {
-                    'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': 'rw',
-                }
-            }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
-        else:
+
+        # Process volumes for mounting
+        volumes = self._process_volumes()
+
+        # If no volumes were configured, set to None
+        if not volumes:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
-            volumes = None
+            volumes = {}  # Empty dict instead of None to satisfy mypy
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
