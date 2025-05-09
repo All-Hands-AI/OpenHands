@@ -152,18 +152,24 @@ describe("Secret actions", () => {
     // enter details
     const nameInput = within(secretForm).getByTestId("name-input");
     const valueInput = within(secretForm).getByTestId("value-input");
+    const descriptionInput =
+      within(secretForm).getByTestId("description-input");
+
     const submitButton = within(secretForm).getByTestId("submit-button");
 
     vi.clearAllMocks(); // reset mocks to check for upcoming calls
 
     await userEvent.type(nameInput, "My_Custom_Secret");
     await userEvent.type(valueInput, "my-custom-secret-value");
+    await userEvent.type(descriptionInput, "My custom secret description");
+
     await userEvent.click(submitButton);
 
     // make POST request
     expect(createSecretSpy).toHaveBeenCalledWith(
       "My_Custom_Secret",
       "my-custom-secret-value",
+      "My custom secret description",
     );
 
     // hide form & render items
@@ -194,6 +200,7 @@ describe("Secret actions", () => {
 
     // enter details
     const nameInput = within(editForm).getByTestId("name-input");
+    const descriptionInput = within(editForm).getByTestId("description-input");
     const submitButton = within(editForm).getByTestId("submit-button");
 
     // should not show value input
@@ -201,15 +208,21 @@ describe("Secret actions", () => {
     expect(valueInput).not.toBeInTheDocument();
 
     expect(nameInput).toHaveValue("My_Secret_1");
+    expect(descriptionInput).toHaveValue("My first secret");
 
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "My_Edited_Secret");
+
+    await userEvent.clear(descriptionInput);
+    await userEvent.type(descriptionInput, "My edited secret description");
+
     await userEvent.click(submitButton);
 
     // make POST request
     expect(updateSecretSpy).toHaveBeenCalledWith(
       "My_Secret_1",
       "My_Edited_Secret",
+      "My edited secret description",
     );
 
     // hide form
@@ -293,6 +306,7 @@ describe("Secret actions", () => {
     expect(updateSecretSpy).toHaveBeenCalledWith(
       "My_Secret_1",
       "My_Edited_Secret",
+      "My first secret",
     );
 
     // hide form
@@ -430,6 +444,7 @@ describe("Secret actions", () => {
     expect(createSecretSpy).toHaveBeenCalledWith(
       "MyCustomSecret",
       "my-custom-secret-value",
+      undefined,
     );
   });
 
@@ -471,6 +486,7 @@ describe("Secret actions", () => {
     expect(createSecretSpy).toHaveBeenCalledWith(
       "My_Custom_Secret",
       "my-custom-secret-value",
+      undefined,
     );
     expect(
       screen.queryByText("SECRETS$SECRET_VALUE_REQUIRED"),

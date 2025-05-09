@@ -6,8 +6,10 @@ export const useUpdateSecret = () =>
     mutationFn: ({
       secretToEdit,
       name,
+      description,
     }: {
       secretToEdit: string;
       name: string;
-    }) => SecretsService.updateSecret(secretToEdit, name),
+      description?: string;
+    }) => SecretsService.updateSecret(secretToEdit, name, description),
   });

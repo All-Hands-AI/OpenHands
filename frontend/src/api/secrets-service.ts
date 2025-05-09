@@ -12,19 +12,21 @@ export class SecretsService {
     return data.custom_secrets;
   }
 
-  static async createSecret(name: string, value: string) {
+  static async createSecret(name: string, value: string, description?: string) {
     const secret: CustomSecret = {
       name,
       value,
+      description,
     };
 
     const { status } = await openHands.post("/api/secrets", secret);
     return status === 201;
   }
 
-  static async updateSecret(id: string, name: string) {
+  static async updateSecret(id: string, name: string, description?: string) {
     const secret: Omit<CustomSecret, "value"> = {
       name,
+      description,
     };
 
     const { status } = await openHands.put(`/api/secrets/${id}`, secret);

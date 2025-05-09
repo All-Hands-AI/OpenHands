@@ -8,6 +8,7 @@ import { cn } from "#/utils/utils";
 import { BrandButton } from "../brand-button";
 import { useGetSecrets } from "#/hooks/query/use-get-secrets";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
+import { OptionalTag } from "../optional-tag";
 
 interface SecretFormProps {
   mode: "add" | "edit";
@@ -29,9 +30,18 @@ export function SecretForm({
 
   const [error, setError] = React.useState<string | null>(null);
 
-  const handleCreateSecret = (name: string, value: string) => {
+  const secretDescription =
+    secrets
+      ?.find((secret) => secret.name === selectedSecret)
+      ?.description?.trim() || "";
+
+  const handleCreateSecret = (
+    name: string,
+    value: string,
+    description?: string,
+  ) => {
     createSecret(
-      { name, value },
+      { name, value, description },
       {
         onSettled: onCancel,
         onSuccess: async () => {
@@ -41,7 +51,11 @@ export function SecretForm({
     );
   };
 
-  const updateSecretOptimistically = (oldName: string, name: string) => {
+  const updateSecretOptimistically = (
+    oldName: string,
+    name: string,
+    description?: string,
+  ) => {
     queryClient.setQueryData<GetSecretsResponse["custom_secrets"]>(
       ["secrets"],
       (oldSecrets) => {
@@ -51,6 +65,7 @@ export function SecretForm({
             return {
               ...secret,
               name,
+              description,
             };
           }
           return secret;
@@ -63,10 +78,14 @@ export function SecretForm({
     queryClient.invalidateQueries({ queryKey: ["secrets"] });
   };
 
-  const handleEditSecret = (secretToEdit: string, name: string) => {
-    updateSecretOptimistically(secretToEdit, name);
+  const handleEditSecret = (
+    secretToEdit: string,
+    name: string,
+    description?: string,
+  ) => {
+    updateSecretOptimistically(secretToEdit, name, description);
     updateSecret(
-      { secretToEdit, name },
+      { secretToEdit, name, description },
       {
         onSettled: onCancel,
         onError: revertOptimisticUpdate,
@@ -80,6 +99,7 @@ export function SecretForm({
     const formData = new FormData(event.currentTarget);
     const name = formData.get("secret-name")?.toString();
     const value = formData.get("secret-value")?.toString().trim();
+    const description = formData.get("secret-description")?.toString();
 
     if (name) {
       setError(null);
@@ -98,9 +118,9 @@ export function SecretForm({
           return;
         }
 
-        handleCreateSecret(name, value);
+        handleCreateSecret(name, value, description || undefined);
       } else if (mode === "edit" && selectedSecret) {
-        handleEditSecret(selectedSecret, name);
+        handleEditSecret(selectedSecret, name, description || undefined);
       }
     }
   };
@@ -142,6 +162,23 @@ export function SecretForm({
           />
         </label>
       )}
+
+      <label className="flex flex-col gap-2.5 w-fit">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Description</span>
+          <OptionalTag />
+        </div>
+        <input
+          data-testid="description-input"
+          name="secret-description"
+          defaultValue={secretDescription}
+          className={cn(
+            "resize-none w-[680px]",
+            "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+            "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+          )}
+        />
+      </label>
 
       <div className="flex items-center gap-4">
         <BrandButton

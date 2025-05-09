@@ -3,6 +3,13 @@ import { SecretsService } from "#/api/secrets-service";
 
 export const useCreateSecret = () =>
   useMutation({
-    mutationFn: ({ name, value }: { name: string; value: string }) =>
-      SecretsService.createSecret(name, value),
+    mutationFn: ({
+      name,
+      value,
+      description,
+    }: {
+      name: string;
+      value: string;
+      description?: string;
+    }) => SecretsService.createSecret(name, value, description),
   });
