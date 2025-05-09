@@ -1,7 +1,8 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type Command = {
   content: string;
+  isPartial: boolean;
   type: "input" | "output";
 };
 
@@ -13,11 +14,19 @@ export const commandSlice = createSlice({
     commands: initialCommands,
   },
   reducers: {
-    appendInput: (state, action) => {
-      state.commands.push({ content: action.payload, type: "input" });
+    appendInput: (state, action: PayloadAction<string>) => {
+      state.commands.push({
+        content: action.payload,
+        isPartial: false,
+        type: "input",
+      });
     },
-    appendOutput: (state, action) => {
-      state.commands.push({ content: action.payload, type: "output" });
+    appendOutput: (
+      state,
+      action: PayloadAction<{ content: string; isPartial: boolean }>,
+    ) => {
+      const { content, isPartial } = action.payload;
+      state.commands.push({ content, isPartial, type: "output" });
     },
     clearTerminal: (state) => {
       state.commands = [];

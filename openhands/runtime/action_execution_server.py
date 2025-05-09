@@ -934,10 +934,6 @@ if __name__ == '__main__':
                     latest_chunk = client.terminal_output_queue[-1]
                     yield format_sse_event(latest_chunk)
 
-                    # If this is the final chunk (command completed), we can stop streaming
-                    if latest_chunk.get('metadata', {}).get('is_complete', False):
-                        break
-
                 # Check if client disconnected
                 if await request.is_disconnected():
                     logger.debug('Client disconnected from terminal stream')

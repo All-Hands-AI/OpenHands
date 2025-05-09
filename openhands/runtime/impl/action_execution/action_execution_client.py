@@ -94,10 +94,6 @@ class ActionExecutionClient(Runtime):
         )
 
     @property
-    def action_execution_server_url(self) -> str:
-        raise NotImplementedError('Action execution server URL is not implemented')
-
-    @property
     def runtime_initialized(self) -> bool:
         return self._runtime_initialized
 

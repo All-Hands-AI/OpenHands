@@ -528,6 +528,10 @@ class Runtime(FileEditRuntimeMixin):
         observation = getattr(self, action_type)(action)
         return observation
 
+    @property
+    def action_execution_server_url(self) -> str:
+        raise NotImplementedError('Action execution server URL is not implemented')
+
     # ====================================================================
     # Context manager
     # ====================================================================
