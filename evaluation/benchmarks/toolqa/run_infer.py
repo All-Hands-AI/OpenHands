@@ -64,7 +64,7 @@ def initialize_runtime(runtime: Runtime):
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -80,7 +80,7 @@ def initialize_runtime(runtime: Runtime):
 
     runtime.add_env_vars({'WOLFRAM_ALPHA_APPID': args.wolfram_alpha_appid})
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):

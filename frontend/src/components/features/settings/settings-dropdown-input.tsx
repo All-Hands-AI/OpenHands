@@ -13,6 +13,7 @@ interface SettingsDropdownInputProps {
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   defaultSelectedKey?: string;
+  selectedKey?: string;
   isClearable?: boolean;
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
@@ -28,6 +29,7 @@ export function SettingsDropdownInput({
   showOptionalTag,
   isDisabled,
   defaultSelectedKey,
+  selectedKey,
   isClearable,
   onSelectionChange,
   onInputChange,
@@ -46,6 +48,7 @@ export function SettingsDropdownInput({
         name={name}
         defaultItems={items}
         defaultSelectedKey={defaultSelectedKey}
+        selectedKey={selectedKey}
         onSelectionChange={onSelectionChange}
         onInputChange={onInputChange}
         isClearable={isClearable}

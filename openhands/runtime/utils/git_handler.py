@@ -28,7 +28,7 @@ class GitHandler:
         self.execute = execute_shell_fn
         self.cwd: str | None = None
 
-    def set_cwd(self, cwd: str):
+    def set_cwd(self, cwd: str) -> None:
         """
         Sets the current working directory for Git operations.
 

@@ -58,7 +58,7 @@ class AgentSession:
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
-    ):
+    ) -> None:
         """Initializes a new instance of the Session class
 
         Parameters:
@@ -89,7 +89,7 @@ class AgentSession:
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
-    ):
+    ) -> None:
         """Starts the Agent session
         Parameters:
         - runtime_name: The name of the runtime associated with the session
@@ -188,7 +188,7 @@ class AgentSession:
                 },
             )
 
-    async def close(self):
+    async def close(self) -> None:
         """Closes the Agent session"""
         if self._closed:
             return
@@ -245,7 +245,7 @@ class AgentSession:
         assert isinstance(replay_events[0], MessageAction)
         return replay_events[0]
 
-    def _create_security_analyzer(self, security_analyzer: str | None):
+    def _create_security_analyzer(self, security_analyzer: str | None) -> None:
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
         Parameters:
@@ -333,6 +333,7 @@ class AgentSession:
             git_provider_tokens, selected_repository, selected_branch
         )
         await call_sync_from_async(self.runtime.maybe_run_setup_script)
+        await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'

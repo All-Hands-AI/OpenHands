@@ -11,6 +11,7 @@ from pydantic import (
 from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.utils import load_app_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 
@@ -33,9 +34,11 @@ class Settings(BaseModel):
     secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
     enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
+    enable_proactive_conversation_starters: bool = True
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
+    mcp_config: MCPConfig | None = None
 
     model_config = {
         'validate_assignment': True,
@@ -94,9 +97,7 @@ class Settings(BaseModel):
         """Custom serializer for secrets store."""
 
         """Force invalidate secret store"""
-        return {
-            'provider_tokens': {}
-        }
+        return {'provider_tokens': {}}
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -106,6 +107,12 @@ class Settings(BaseModel):
             # If no api key has been set, we take this to mean that there is no reasonable default
             return None
         security = app_config.security
+
+        # Get MCP config if available
+        mcp_config = None
+        if hasattr(app_config, 'mcp'):
+            mcp_config = app_config.mcp
+
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -116,5 +123,6 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
+            mcp_config=mcp_config,
         )
         return settings
