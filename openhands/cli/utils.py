@@ -188,7 +188,7 @@ class ProviderInfo(BaseModel):
             return self.models
         raise KeyError(f'ProviderInfo has no key {key}')
 
-    def get(self, key: str, default=None) -> str | list[str] | None:
+    def get(self, key: str, default: None = None) -> str | list[str] | None:
         """Dictionary-like get method with default value."""
         try:
             return self[key]
