@@ -166,11 +166,15 @@ def response_to_actions(
 
                     # Filter out unexpected arguments
                     valid_kwargs = {}
-                    file_edit_action_fields = set(
-                        FileEditAction.__dataclass_fields__.keys()
+                    # Get valid parameters from the str_replace_editor tool definition
+                    str_replace_editor_tool = create_str_replace_editor_tool()
+                    valid_params = set(
+                        str_replace_editor_tool['function']['parameters'][
+                            'properties'
+                        ].keys()
                     )
                     for key, value in other_kwargs.items():
-                        if key in file_edit_action_fields:
+                        if key in valid_params:
                             valid_kwargs[key] = value
                         else:
                             raise FunctionCallValidationError(
