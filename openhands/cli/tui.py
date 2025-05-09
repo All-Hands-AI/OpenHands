@@ -540,7 +540,7 @@ def cli_confirm(
     question: str = 'Are you sure?', choices: list[str] | None = None
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
-    
+
     Returns the index of the selected choice.
     """
     if choices is None:
