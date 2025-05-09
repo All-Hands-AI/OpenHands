@@ -469,7 +469,7 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         except httpx.HTTPError as e:
-            if e.response.status_code in (404, 502, 504):
+            if hasattr(e, 'response') and e.response.status_code in (404, 502, 504):
                 if e.response.status_code == 404:
                     raise AgentRuntimeDisconnectedError(
                         f'Runtime is not responding. This may be temporary, please try again. Original error: {e}'
@@ -478,7 +478,7 @@ class RemoteRuntime(ActionExecutionClient):
                     raise AgentRuntimeDisconnectedError(
                         f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
-            elif e.response.status_code == 503:
+            elif hasattr(e, 'response') and e.response.status_code == 503:
                 if self.config.sandbox.keep_runtime_alive:
                     self.log('warning', 'Runtime appears to be paused. Resuming...')
                     self._resume_runtime()
