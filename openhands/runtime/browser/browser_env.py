@@ -63,6 +63,7 @@ class BrowserEnv:
             self.process.start()
 
             # Give the process a moment to initialize before checking alive status
+            # This might be too long?
             time.sleep(1)
 
             # Check if process is still running
