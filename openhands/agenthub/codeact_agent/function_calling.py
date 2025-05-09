@@ -178,7 +178,7 @@ def response_to_actions(
                             valid_kwargs[key] = value
                         else:
                             raise FunctionCallValidationError(
-                                f'Unexpected argument {key} in tool call {tool_call.function.name}'
+                                f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
                             )
 
                     action = FileEditAction(
