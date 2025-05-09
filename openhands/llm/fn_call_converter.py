@@ -278,7 +278,8 @@ ASSISTANT: The server is running on port 5000 with PID 126. You can access the l
 Do NOT assume the environment is the same as in the example above.
 
 --------------------- NEW TASK DESCRIPTION ---------------------
-""").lstrip()
+"""
+    example = example.lstrip()
 
     return example
 
