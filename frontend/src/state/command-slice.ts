@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type Command = {
   content: string;
-  isPartial: boolean;
+  isPartial: boolean; // true if the content is partial output
   type: "input" | "output";
 };
 

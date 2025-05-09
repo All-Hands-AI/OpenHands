@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TerminalStreamService } from "#/services/terminal-stream-service";
-import { appendOutput } from "#/state/command-slice";
+import store from "#/store";
 
 // Mock Redux store
 vi.mock("#/store", () => ({
@@ -62,9 +62,7 @@ describe("TerminalStreamService", () => {
     expect(mockEventSource.url).toBe("http://localhost:8000/terminal-stream");
   });
   
-  it("should handle stream chunks", () => {
-    const store = require("#/store").default;
-    
+  it("should handle partial stream chunks", () => {
     service.connect();
     
     // Simulate connection open
@@ -88,10 +86,47 @@ describe("TerminalStreamService", () => {
     }
     
     // Check if store.dispatch was called with appendOutput
-    expect(store.dispatch).toHaveBeenCalledWith(
-      expect.any(Function)
-    );
+    expect(store.dispatch).toHaveBeenCalledWith({
+          type: "command/appendOutput",
+            payload: expect.objectContaining({
+                isPartial: true,
+                content: "Hello, world!",
+            }),
+      })
   });
+
+    it("should handle full command output", () => {
+        service.connect();
+
+        // Simulate connection open
+        if (mockEventSource.onopen) {
+            mockEventSource.onopen();
+        }
+
+        // Simulate message event
+        if (mockEventSource.onmessage) {
+            mockEventSource.onmessage({
+                data: JSON.stringify({
+                    content: "Hello, world!",
+                    metadata: {
+                        command: "echo Hello, world!",
+                        is_complete: true,
+                        timestamp: Date.now(),
+                        command_id: "123",
+                    },
+                }),
+            });
+        }
+
+        // Check if store.dispatch was called with appendOutput
+        expect(store.dispatch).toHaveBeenCalledWith({
+            type: "command/appendOutput",
+            payload: expect.objectContaining({
+                isPartial: false,
+                content: "<end_of_output>", // A dummy value for end of output
+            }),
+        })
+    });
   
   it("should handle connection errors", () => {
     // Spy on console.error
