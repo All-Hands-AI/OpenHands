@@ -10,7 +10,7 @@ from typing import Generator
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
-from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
 from prompt_toolkit.input import create_input
@@ -432,7 +432,7 @@ class CommandCompleter(Completer):
         self.agent_state = agent_state
 
     def get_completions(
-        self, document: Document, complete_event
+        self, document: Document, complete_event: CompleteEvent
     ) -> Generator[Completion, None, None]:
         text = document.text_before_cursor.lstrip()
         if text.startswith('/'):

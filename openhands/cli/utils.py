@@ -113,7 +113,7 @@ def extract_model_and_provider(model: str) -> ModelInfo:
 
 def organize_models_and_providers(
     models: list[str],
-) -> 'ModelProviderMapping':
+) -> dict[str, 'ProviderInfo']:
     """
     Organize a list of model identifiers by provider.
 
@@ -142,7 +142,7 @@ def organize_models_and_providers(
 
         result_dict[key].models.append(model_id)
 
-    return ModelProviderMapping(root=result_dict)
+    return result_dict
 
 
 VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
