@@ -158,7 +158,6 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       case "browse":
-        // Make sure to update the browser state with the latest screenshot and URL
         if (message.extras?.screenshot) {
           store.dispatch(setScreenshotSrc(message.extras.screenshot));
         }
