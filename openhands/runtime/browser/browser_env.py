@@ -61,63 +61,92 @@ class BrowserEnv:
         try:
             self.process = multiprocessing.Process(target=self.browser_process)
             self.process.start()
+
+            # Give the process a moment to initialize before checking alive status
+            time.sleep(1)
+
+            # Check if process is still running
+            if not self.process.is_alive():
+                exitcode = self.process.exitcode
+                logger.error(f'Browser process failed to start (exit code: {exitcode})')
+                raise BrowserInitException(f'Browser process failed to start with exit code {exitcode}')
+
+            # Now check if we can communicate with it
+            if not self.check_alive(timeout=200):
+                logger.error('Browser process started but not responding')
+                self.close()
+                raise BrowserInitException('Failed to start browser environment: process not responding')
+
         except Exception as e:
             logger.error(f'Failed to start browser process: {e}')
+            self.close()
             raise
 
-        if not self.check_alive(timeout=200):
-            self.close()
-            raise BrowserInitException('Failed to start browser environment.')
-
     def browser_process(self) -> None:
-        if self.eval_mode:
-            assert self.browsergym_eval_env is not None
-            logger.info('Initializing browser env for web browsing evaluation.')
-            if not self.browsergym_eval_env.startswith('browsergym/'):
-                self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
-            if 'visualwebarena' in self.browsergym_eval_env:
-                import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
-                import nltk
+        try:
+            if self.eval_mode:
+                assert self.browsergym_eval_env is not None
+                logger.info('Initializing browser env for web browsing evaluation.')
+                if not self.browsergym_eval_env.startswith('browsergym/'):
+                    self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
+                if 'visualwebarena' in self.browsergym_eval_env:
+                    import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
+                    import nltk
 
-                nltk.download('punkt_tab')
-            elif 'webarena' in self.browsergym_eval_env:
-                import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
-            elif 'miniwob' in self.browsergym_eval_env:
-                import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
+                    nltk.download('punkt_tab')
+                elif 'webarena' in self.browsergym_eval_env:
+                    import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
+                elif 'miniwob' in self.browsergym_eval_env:
+                    import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
+                else:
+                    raise ValueError(
+                        f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
+                    )
+                env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
             else:
-                raise ValueError(
-                    f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
+                logger.info('Initializing browser env for open-ended browsing')
+                env = gym.make(
+                    'browsergym/openended',
+                    task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
+                    wait_for_user_message=False,
+                    headless=True,
+                    disable_env_checker=True,
+                    tags_to_mark='all',
                 )
-            env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
-        else:
-            env = gym.make(
-                'browsergym/openended',
-                task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
-                wait_for_user_message=False,
-                headless=True,
-                disable_env_checker=True,
-                tags_to_mark='all',
-            )
-        obs, info = env.reset()
 
-        logger.info('Successfully called env.reset')
-        # EVAL ONLY: save the goal into file for evaluation
-        self.eval_goal = None
-        self.goal_image_urls = []
-        self.eval_rewards: list[float] = []
-        if self.eval_mode:
-            self.eval_goal = obs['goal']
-            if 'goal_object' in obs:
-                if len(obs['goal_object']) > 0:
-                    self.eval_goal = obs['goal_object'][0]['text']
-                for message in obs['goal_object']:
-                    if message['type'] == 'image_url':
-                        image_src = message['image_url']
-                        if isinstance(image_src, dict):
-                            image_src = image_src['url']
-                        self.goal_image_urls.append(image_src)
-            logger.debug(f'Browsing goal: {self.eval_goal}')
-        logger.info('Browser env started.')
+            # Log successful environment creation
+            logger.info('Successfully created browser environment')
+
+            # Reset environment and get initial observation
+            obs, info = env.reset()
+            logger.info('Successfully called env.reset')
+
+            # EVAL ONLY: save the goal into file for evaluation
+            self.eval_goal = None
+            self.goal_image_urls = []
+            self.eval_rewards: list[float] = []
+
+            if self.eval_mode:
+                self.eval_goal = obs['goal']
+                if 'goal_object' in obs:
+                    if len(obs['goal_object']) > 0:
+                        self.eval_goal = obs['goal_object'][0]['text']
+                    for message in obs['goal_object']:
+                        if message['type'] == 'image_url':
+                            image_src = message['image_url']
+                            if isinstance(image_src, dict):
+                                image_src = image_src['url']
+                            self.goal_image_urls.append(image_src)
+                logger.debug(f'Browsing goal: {self.eval_goal}')
+            logger.info('Browser env started.')
+        except Exception as e:
+            logger.error(f'Failed to initialize browser environment: {e}')
+            # Ensure we close the pipe on our side before exiting
+            try:
+                self.browser_side.send(('ERROR', str(e)))
+            except Exception:
+                pass
+            raise
 
         while should_continue():
             try:
