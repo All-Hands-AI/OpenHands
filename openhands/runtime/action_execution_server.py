@@ -393,7 +393,7 @@ class ActionExecutor:
             cmd_result: (
                 CmdOutputObservation | ErrorObservation
             ) = await call_sync_from_async(
-                lambda a: bash_session.execute(a),
+                bash_session.execute,
                 action,
             )
             return cmd_result
