@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.core.cli_commands import (
+from openhands.cli.commands import (
     handle_commands,
     handle_exit_command,
     handle_help_command,
@@ -12,7 +12,7 @@ from openhands.core.cli_commands import (
     handle_settings_command,
     handle_status_command,
 )
-from openhands.core.cli_tui import UsageMetrics
+from openhands.cli.tui import UsageMetrics
 from openhands.core.config import AppConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
@@ -41,7 +41,7 @@ class TestHandleCommands:
         }
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_exit_command')
+    @patch('openhands.cli.commands.handle_exit_command')
     async def test_handle_exit_command(self, mock_handle_exit, mock_dependencies):
         mock_handle_exit.return_value = True
 
@@ -59,7 +59,7 @@ class TestHandleCommands:
         assert new_session is False
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_help_command')
+    @patch('openhands.cli.commands.handle_help_command')
     async def test_handle_help_command(self, mock_handle_help, mock_dependencies):
         mock_handle_help.return_value = (False, False, False)
 
@@ -73,7 +73,7 @@ class TestHandleCommands:
         assert new_session is False
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_init_command')
+    @patch('openhands.cli.commands.handle_init_command')
     async def test_handle_init_command(self, mock_handle_init, mock_dependencies):
         mock_handle_init.return_value = (True, True)
 
@@ -91,7 +91,7 @@ class TestHandleCommands:
         assert new_session is False
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_status_command')
+    @patch('openhands.cli.commands.handle_status_command')
     async def test_handle_status_command(self, mock_handle_status, mock_dependencies):
         mock_handle_status.return_value = (False, False, False)
 
@@ -107,7 +107,7 @@ class TestHandleCommands:
         assert new_session is False
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_new_command')
+    @patch('openhands.cli.commands.handle_new_command')
     async def test_handle_new_command(self, mock_handle_new, mock_dependencies):
         mock_handle_new.return_value = (True, True)
 
@@ -125,7 +125,7 @@ class TestHandleCommands:
         assert new_session is True
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.handle_settings_command')
+    @patch('openhands.cli.commands.handle_settings_command')
     async def test_handle_settings_command(
         self, mock_handle_settings, mock_dependencies
     ):
@@ -163,8 +163,8 @@ class TestHandleCommands:
 
 
 class TestHandleExitCommand:
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.display_shutdown_message')
     def test_exit_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
@@ -188,8 +188,8 @@ class TestHandleExitCommand:
         mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
         assert result is True
 
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.display_shutdown_message')
     def test_exit_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
@@ -209,14 +209,14 @@ class TestHandleExitCommand:
 
 
 class TestHandleHelpCommand:
-    @patch('openhands.core.cli_commands.display_help')
+    @patch('openhands.cli.commands.display_help')
     def test_help_command(self, mock_display_help):
         handle_help_command()
         mock_display_help.assert_called_once()
 
 
 class TestHandleStatusCommand:
-    @patch('openhands.core.cli_commands.display_status')
+    @patch('openhands.cli.commands.display_status')
     def test_status_command(self, mock_display_status):
         usage_metrics = MagicMock(spec=UsageMetrics)
         sid = 'test-session-id'
@@ -227,8 +227,8 @@ class TestHandleStatusCommand:
 
 
 class TestHandleNewCommand:
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.display_shutdown_message')
     def test_new_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
@@ -253,8 +253,8 @@ class TestHandleNewCommand:
         assert close_repl is True
         assert new_session is True
 
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.display_shutdown_message')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.display_shutdown_message')
     def test_new_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
@@ -276,7 +276,7 @@ class TestHandleNewCommand:
 
 class TestHandleInitCommand:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.init_repository')
+    @patch('openhands.cli.commands.init_repository')
     async def test_init_local_runtime_successful(self, mock_init_repository):
         config = MagicMock(spec=AppConfig)
         config.runtime = 'local'
@@ -304,7 +304,7 @@ class TestHandleInitCommand:
         assert reload_microagents is True
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.init_repository')
+    @patch('openhands.cli.commands.init_repository')
     async def test_init_local_runtime_unsuccessful(self, mock_init_repository):
         config = MagicMock(spec=AppConfig)
         config.runtime = 'local'
@@ -327,8 +327,8 @@ class TestHandleInitCommand:
         assert reload_microagents is False
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.print_formatted_text')
-    @patch('openhands.core.cli_commands.init_repository')
+    @patch('openhands.cli.commands.print_formatted_text')
+    @patch('openhands.cli.commands.init_repository')
     async def test_init_non_local_runtime(self, mock_init_repository, mock_print):
         config = MagicMock(spec=AppConfig)
         config.runtime = 'remote'  # Not local
@@ -351,9 +351,9 @@ class TestHandleInitCommand:
 
 class TestHandleSettingsCommand:
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.display_settings')
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.modify_llm_settings_basic')
+    @patch('openhands.cli.commands.display_settings')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.modify_llm_settings_basic')
     async def test_settings_basic_with_changes(
         self,
         mock_modify_basic,
@@ -375,9 +375,9 @@ class TestHandleSettingsCommand:
         mock_modify_basic.assert_called_once_with(config, settings_store)
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.display_settings')
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.modify_llm_settings_basic')
+    @patch('openhands.cli.commands.display_settings')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.modify_llm_settings_basic')
     async def test_settings_basic_without_changes(
         self,
         mock_modify_basic,
@@ -399,9 +399,9 @@ class TestHandleSettingsCommand:
         mock_modify_basic.assert_called_once_with(config, settings_store)
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.display_settings')
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.modify_llm_settings_advanced')
+    @patch('openhands.cli.commands.display_settings')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.modify_llm_settings_advanced')
     async def test_settings_advanced_with_changes(
         self,
         mock_modify_advanced,
@@ -423,9 +423,9 @@ class TestHandleSettingsCommand:
         mock_modify_advanced.assert_called_once_with(config, settings_store)
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.display_settings')
-    @patch('openhands.core.cli_commands.cli_confirm')
-    @patch('openhands.core.cli_commands.modify_llm_settings_advanced')
+    @patch('openhands.cli.commands.display_settings')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.modify_llm_settings_advanced')
     async def test_settings_advanced_without_changes(
         self,
         mock_modify_advanced,
@@ -447,8 +447,8 @@ class TestHandleSettingsCommand:
         mock_modify_advanced.assert_called_once_with(config, settings_store)
 
     @pytest.mark.asyncio
-    @patch('openhands.core.cli_commands.display_settings')
-    @patch('openhands.core.cli_commands.cli_confirm')
+    @patch('openhands.cli.commands.display_settings')
+    @patch('openhands.cli.commands.cli_confirm')
     async def test_settings_go_back(self, mock_cli_confirm, mock_display_settings):
         config = MagicMock(spec=AppConfig)
         settings_store = MagicMock(spec=FileSettingsStore)

@@ -25,6 +25,8 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   provider_tokens_set: DEFAULT_SETTINGS.PROVIDER_TOKENS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
+  enable_proactive_conversation_starters:
+    DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
 };
 

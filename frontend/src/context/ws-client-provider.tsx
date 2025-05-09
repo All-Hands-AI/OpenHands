@@ -14,7 +14,7 @@ import {
   UserMessageAction,
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
-import { useAuth } from "./auth-context";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -128,7 +128,7 @@ export function WsClientProvider({
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
-  const { providerTokensSet } = useAuth();
+  const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
 
@@ -224,7 +224,7 @@ export function WsClientProvider({
     const query = {
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
-      providers_set: providerTokensSet,
+      providers_set: providers,
     };
 
     const baseUrl =

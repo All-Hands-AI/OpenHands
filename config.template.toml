@@ -255,6 +255,11 @@ enable_history_truncation = true
 # useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3'
 
+[agent.CustomAgent]
+# Example: use a custom agent from a different package
+# This will be automatically be registered as a new agent named "CustomAgent"
+classpath = "my_package.my_module.MyCustomAgent"
+
 #################################### Sandbox ###################################
 # Configuration for the sandbox
 ##############################################################################
@@ -315,6 +320,10 @@ llm_config = 'gpt3'
 
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
+
+# Specific port to use for VSCode. If not set, a random port will be chosen.
+# Useful when deploying OpenHands in a remote machine where you need to expose a specific port.
+#vscode_port = 41234
 
 #################################### Security ###################################
 # Configuration for security features

@@ -34,6 +34,10 @@ on:
         type: string
         default: ""
         description: "Custom sandbox env"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-latest"
     secrets:
       LLM_MODEL:
         required: false
@@ -79,7 +83,7 @@ jobs:
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
-    runs-on: ubuntu-latest
+    runs-on: "${{ inputs.runner || 'ubuntu-latest' }}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -88,6 +92,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
 
       - name: Get latest versions and create requirements.txt
         run: |
@@ -225,11 +232,11 @@ jobs:
             // Perform package installation
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
               console.log("Installing experimental OpenHands...");
-              await exec.exec("python -m pip install --upgrade pip");
+
               await exec.exec("pip install git+https://github.com/all-hands-ai/openhands.git");
             } else {
               console.log("Installing from requirements.txt...");
-              await exec.exec("python -m pip install --upgrade pip");
+
               await exec.exec("pip install -r /tmp/requirements.txt");
             }
 

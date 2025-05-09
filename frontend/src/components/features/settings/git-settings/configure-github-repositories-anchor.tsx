@@ -17,7 +17,7 @@ export function ConfigureGitHubRepositoriesAnchor({
       href={`https://github.com/apps/${slug}/installations/new`}
       target="_blank"
       rel="noreferrer noopener"
-      className="px-11 py-9"
+      className="py-9"
     >
       <BrandButton type="button" variant="secondary">
         {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
