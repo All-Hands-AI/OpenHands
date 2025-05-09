@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from typing import Optional
 from uuid import uuid4
 
 from prompt_toolkit.shortcuts import clear
@@ -95,7 +94,7 @@ async def run_session(
     config: AppConfig,
     settings_store: FileSettingsStore,
     current_dir: str,
-    initial_user_action: Optional[str] = None,
+    initial_user_action: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False

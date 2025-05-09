@@ -1,7 +1,5 @@
-from typing import Callable, Optional
-
 from prompt_toolkit import PromptSession, print_formatted_text
-from prompt_toolkit.completion import Completer, FuzzyWordCompleter
+from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -106,10 +104,10 @@ def display_settings(config: AppConfig) -> None:
 
 
 async def get_validated_input(
-    session: PromptSession[str],
+    session: PromptSession,
     prompt_text: str,
-    completer: Optional[Completer] = None,
-    validator: Optional[Callable[[str], bool]] = None,
+    completer=None,
+    validator=None,
     error_message: str = 'Input cannot be empty',
 ) -> str:
     session.completer = completer
