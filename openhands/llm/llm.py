@@ -419,6 +419,7 @@ class LLM(RetryMixin, DebugMixin):
             )
             if current_model_info:
                 self.model_info = current_model_info['model_info']
+                logger.debug(f'Got model info from litellm proxy: {self.model_info}')
 
         # Last two attempts to get model info from NAME
         if not self.model_info:
@@ -605,6 +606,12 @@ class LLM(RetryMixin, DebugMixin):
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
 
+            # Get context window from model info
+            context_window = 0
+            if self.model_info and 'max_input_tokens' in self.model_info:
+                context_window = self.model_info['max_input_tokens']
+                logger.debug(f'Using context window: {context_window}')
+
             # Record in metrics
             # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
             self.metrics.add_token_usage(
@@ -612,6 +619,7 @@ class LLM(RetryMixin, DebugMixin):
                 completion_tokens=completion_tokens,
                 cache_read_tokens=cache_hit_tokens,
                 cache_write_tokens=cache_write_tokens,
+                context_window=context_window,
                 response_id=response_id,
             )
 
