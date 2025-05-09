@@ -18,7 +18,7 @@ def get_supported_llm_models(config: AppConfig) -> list[str]:
     error-prone Bedrock models.
 
     Returns:
-        list[str]: A sorted list of unique model names.
+        List[str]: A sorted list of unique model names.
     """
     litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
