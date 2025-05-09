@@ -218,21 +218,29 @@ async def search_knowledge(
     question: str | None = None,
     space_id: int | None = None,
     thread_follow_up: int | None = None,
-    bearer_token: str | None = None,
-    x_device_id: str | None = None,
-) -> dict | None:
+    user_id: str | None = None,
+) -> list[dict] | None:
     url = '/api/knowledge/search'
     payload = {'question': question}
     if space_id is not None:
         payload['spaceId'] = str(space_id)
     if thread_follow_up:
         payload['threadId'] = str(thread_follow_up)
+    if user_id:
+        payload['publicAddress'] = user_id
 
-    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
-    if x_device_id:
-        headers['x-device-id'] = x_device_id
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+    }
+    print(f'Payload search knowledge: {payload}')
     try:
-        response = await thesis_auth_client.post(url, headers=headers, json=payload)
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
+            headers={'Content-Type': 'application/json'},
+        ) as client:
+            response = await client.post(url, headers=headers, json=payload)
         if response.status_code != 200:
             logger.error(
                 f'Failed to search knowledge: {response.status_code} - {response.text}'
@@ -241,7 +249,12 @@ async def search_knowledge(
                 status_code=response.status_code,
                 detail=response.json().get('error', 'Unknown error'),
             )
-        return response.json()
+        data = response.json()['data']
+        print(f'Data search knowledge: {data}')
+        if data:
+            return data['knowledge']
+        else:
+            return None
     except httpx.RequestError as exc:
         logger.error(f'Request error while searching knowledge: {str(exc)}')
         return None

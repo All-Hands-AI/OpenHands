@@ -306,12 +306,15 @@ class CodeActAgent(Agent):
         agent_infos = (
             self.a2a_manager.list_remote_agents() if self.a2a_manager else None
         )
+        convert_knowledge_to_list = [
+            self.knowledge_base[k] for k in self.knowledge_base
+        ]
         # Use ConversationMemory to process initial messages
         messages = (
             self.conversation_memory.process_initial_messages(
                 with_caching=self.llm.is_caching_prompt_active(),
                 agent_infos=agent_infos,
-                knowledge_base=self.knowledge_base,
+                knowledge_base=convert_knowledge_to_list,
             )
             if not is_chat_mode
             else self.conversation_memory.process_initial_chatmode_message(
@@ -323,7 +326,7 @@ class CodeActAgent(Agent):
                     }
                     for tool in self.search_tools
                 ],
-                knowledge_base=self.knowledge_base,
+                knowledge_base=convert_knowledge_to_list,
             )
         )
         # Use ConversationMemory to process events

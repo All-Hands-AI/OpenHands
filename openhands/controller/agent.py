@@ -49,7 +49,7 @@ class Agent(ABC):
         self.a2a_manager = a2a_manager
         self.system_prompt: str = ''
         self.user_prompt: str = ''
-        self.knowledge_base: list[dict] = []
+        self.knowledge_base: dict[str, dict] = {}
 
     @property
     def complete(self) -> bool:
@@ -157,18 +157,17 @@ class Agent(ABC):
         """
         self.user_prompt = user_prompt
 
-    def set_agent_knowledge_base(self, knowledge_base: list[dict]) -> None:
-        """Set the knowledge base for the agent.
-
-        Args:
-        - knowledge_base (list[dict]): The knowledge base.
-        """
-        self.knowledge_base = knowledge_base
-
-    def update_agent_knowledge_base(self, knowledge_base: dict) -> None:
+    def update_agent_knowledge_base(
+        self, knowledge_base: list[dict] | None = None
+    ) -> None:
         """Update the knowledge base for the agent.
 
         Args:
         - knowledge_base (list[dict]): The knowledge base.
         """
-        self.knowledge_base.append(knowledge_base)
+        print(f'Update agent knowledge base: {knowledge_base}')
+        # update
+        if knowledge_base:
+            for k in knowledge_base:
+                if k.get('chunkId', None):
+                    self.knowledge_base[k['chunkId']] = k

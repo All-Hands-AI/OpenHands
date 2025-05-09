@@ -52,6 +52,8 @@ class AgentSession:
     loop: asyncio.AbstractEventLoop | None = None
     logger: LoggerAdapter
     config: AppConfig
+    space_id: int | None = None
+    thread_follow_up: int | None = None
 
     def __init__(
         self,
@@ -59,6 +61,8 @@ class AgentSession:
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
+        space_id: int | None = None,
+        thread_follow_up: int | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -75,6 +79,8 @@ class AgentSession:
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
+        self.space_id = space_id
+        self.thread_follow_up = thread_follow_up
 
     async def start(
         self,
@@ -424,6 +430,9 @@ class AgentSession:
             initial_state=self._maybe_restore_state(),
             replay_events=replay_events,
             a2a_manager=agent.a2a_manager,
+            user_id=self.user_id,
+            space_id=self.space_id,
+            thread_follow_up=self.thread_follow_up,
         )
 
         return controller

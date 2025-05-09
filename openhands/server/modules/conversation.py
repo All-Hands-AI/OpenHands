@@ -136,11 +136,22 @@ class ConversationModule:
             # if existing_record.status and existing_record.status == 'deleted':
             #     return 'Conversation deleted', None
             if not existing_record.published:
-                return 'Conversation not published', None
+                return 'Conversation not published', {
+                    'user_id': existing_record.user_id,
+                    'hidden_prompt': existing_record.configs.get('hidden_prompt', True),
+                    'space_id': existing_record.configs.get('space_id', None),
+                    'thread_follow_up': existing_record.configs.get(
+                        'thread_follow_up', None
+                    ),
+                }
             user_id = existing_record.user_id
             return None, {
                 'user_id': user_id,
                 'hidden_prompt': existing_record.configs.get('hidden_prompt', True),
+                'space_id': existing_record.configs.get('space_id', None),
+                'thread_follow_up': existing_record.configs.get(
+                    'thread_follow_up', None
+                ),
             }
         except Exception as e:
             logger.error(f'Error getting conversation visibility by id: {str(e)}')
