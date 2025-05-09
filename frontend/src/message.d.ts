@@ -14,4 +14,5 @@ export type Message = {
   eventID?: number;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
+  criticScore?: number;
 };
