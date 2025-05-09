@@ -27,11 +27,11 @@ const trimText = (text: string, maxLength: number): string => {
 const getCriticScoreColorClass = (score?: number): string => {
   if (score === undefined) return "";
   
-  if (score >= 0.8) return "bg-success";
-  if (score >= 0.6) return "bg-lime-500";
-  if (score >= 0.4) return "bg-yellow-500";
-  if (score >= 0.2) return "bg-orange-500";
-  return "bg-danger";
+  if (score >= 0.8) return "border-success";
+  if (score >= 0.6) return "border-lime-500";
+  if (score >= 0.4) return "border-yellow-500";
+  if (score >= 0.2) return "border-orange-500";
+  return "border-danger";
 };
 
 interface ExpandableMessageProps {
@@ -150,7 +150,7 @@ export function ExpandableMessage({
       {criticScore !== undefined && (
         <div 
           className={cn(
-            "border-l-2 my-2 relative group",
+            "border-l-4 my-2 relative group w-1",
             getCriticScoreColorClass(criticScore)
           )}
           title={`Critic Score: ${criticScore?.toFixed(2)}`}
