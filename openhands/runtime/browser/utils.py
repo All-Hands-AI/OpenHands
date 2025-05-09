@@ -1,4 +1,7 @@
+import base64
+import datetime
 import os
+from pathlib import Path
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
@@ -9,7 +12,9 @@ from openhands.utils.async_utils import call_sync_from_async
 
 
 async def browse(
-    action: BrowseURLAction | BrowseInteractiveAction, browser: BrowserEnv | None
+    action: BrowseURLAction | BrowseInteractiveAction,
+    browser: BrowserEnv | None,
+    workspace_dir: str | None = None,
 ) -> BrowserOutputObservation:
     if browser is None:
         raise BrowserUnavailableException()
@@ -31,10 +36,29 @@ async def browse(
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
         obs = await call_sync_from_async(browser.step, action_str)
+
+        # Save screenshot if workspace_dir is provided
+        screenshot_path = None
+        if workspace_dir is not None and obs.get('screenshot'):
+            # Create screenshots directory if it doesn't exist
+            screenshots_dir = Path(workspace_dir) / '.browser_screenshots'
+            screenshots_dir.mkdir(exist_ok=True)
+
+            # Generate a filename based on timestamp
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+            screenshot_filename = f'screenshot_{timestamp}.png'
+            screenshot_path = str(screenshots_dir / screenshot_filename)
+
+            # Decode and save the screenshot
+            screenshot_data = base64.b64decode(obs.get('screenshot'))
+            with open(screenshot_path, 'wb') as f:
+                f.write(screenshot_data)
+
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             url=obs.get('url', ''),  # URL of the page
             screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
+            screenshot_path=screenshot_path,  # path to saved screenshot file
             set_of_marks=obs.get(
                 'set_of_marks', None
             ),  # base64-encoded Set-of-Marks annotated screenshot, png,
@@ -60,6 +84,7 @@ async def browse(
         return BrowserOutputObservation(
             content=str(e),
             screenshot='',
+            screenshot_path=None,
             error=True,
             last_browser_action_error=str(e),
             url=asked_url if action.action == ActionType.BROWSE else '',
