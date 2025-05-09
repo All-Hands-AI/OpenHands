@@ -76,7 +76,10 @@ def get_default_conversation_title(conversation_id: str) -> str:
 
 
 async def auto_generate_title(
-    conversation_id: str, user_id: str | None, file_store: FileStore, settings: Settings
+    conversation_id: str,
+    user_id: Optional[str],
+    file_store: FileStore,
+    settings: Settings,
 ) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.

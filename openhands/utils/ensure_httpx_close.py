@@ -15,7 +15,7 @@ Hopefully, this will be fixed soon and we can remove this abomination.
 """
 
 import contextlib
-from typing import Any, Callable, Iterator, List, Optional, Tuple, Type, cast
+from typing import Any, Callable, Iterator, Optional, cast
 
 import httpx
 
@@ -23,7 +23,7 @@ import httpx
 @contextlib.contextmanager
 def ensure_httpx_close() -> Iterator[None]:
     wrapped_class = httpx.Client
-    proxys: List["ClientProxy"] = []
+    proxys: list['ClientProxy'] = []
 
     class ClientProxy:
         """
@@ -33,7 +33,7 @@ def ensure_httpx_close() -> Iterator[None]:
         """
 
         client_constructor: Callable[..., Any]
-        args: Tuple[Any, ...]
+        args: tuple[Any, ...]
         kwargs: dict[str, Any]
         client: Optional[httpx.Client]
 
@@ -69,7 +69,7 @@ def ensure_httpx_close() -> Iterator[None]:
             return bool(self.client.is_closed)
 
     # Monkey patching
-    httpx.Client = cast(Type[httpx.Client], ClientProxy)
+    httpx.Client = cast(type[httpx.Client], ClientProxy)
     try:
         yield
     finally:

@@ -1,5 +1,5 @@
 import base64
-from typing import Any, AsyncIterator, Callable, Dict, Optional, TypeVar
+from typing import Any, AsyncIterator, Callable, Optional, TypeVar
 
 T = TypeVar('T')
 
@@ -20,7 +20,7 @@ def page_id_to_offset(page_id: Optional[str]) -> int:
 
 async def iterate(fn: Callable[..., Any], **kwargs: Any) -> AsyncIterator[T]:
     """Iterate over paged result sets. Assumes that the results sets contain an array of result objects, and a next_page_id"""
-    kwargs_copy: Dict[str, Any] = {**kwargs}
+    kwargs_copy: dict[str, Any] = {**kwargs}
     kwargs_copy['page_id'] = None
     while True:
         result_set = await fn(**kwargs_copy)

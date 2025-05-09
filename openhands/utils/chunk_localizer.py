@@ -4,7 +4,7 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
-from typing import List, Optional, Tuple, cast
+from typing import Optional, cast
 
 import pylcs
 from pydantic import BaseModel
@@ -27,9 +27,9 @@ class Chunk(BaseModel):
         return ret
 
 
-def _create_chunks_from_raw_string(content: str, size: int) -> List[Chunk]:
+def _create_chunks_from_raw_string(content: str, size: int) -> list[Chunk]:
     lines = content.split('\n')
-    ret: List[Chunk] = []
+    ret: list[Chunk] = []
     for i in range(0, len(lines), size):
         _cur_lines = lines[i : i + size]
         ret.append(
@@ -43,7 +43,7 @@ def _create_chunks_from_raw_string(content: str, size: int) -> List[Chunk]:
 
 def create_chunks(
     text: str, size: int = 100, language: Optional[str] = None
-) -> List[Chunk]:
+) -> list[Chunk]:
     try:
         parser = get_parser(language) if language is not None else None
     except AttributeError:
@@ -73,7 +73,7 @@ def normalized_lcs(chunk: str, query: str) -> float:
 
 def get_top_k_chunk_matches(
     text: str, query: str, k: int = 3, max_chunk_size: int = 100
-) -> List[Chunk]:
+) -> list[Chunk]:
     """Get the top k chunks in the text that match the query.
 
     The query could be a string of draft code edits.
@@ -85,7 +85,7 @@ def get_top_k_chunk_matches(
         max_chunk_size: The maximum number of lines in a chunk.
     """
     raw_chunks = create_chunks(text, max_chunk_size)
-    chunks_with_lcs: List[Chunk] = [
+    chunks_with_lcs: list[Chunk] = [
         Chunk(
             text=chunk.text,
             line_range=chunk.line_range,

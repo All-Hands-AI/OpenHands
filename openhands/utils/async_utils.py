@@ -1,7 +1,7 @@
 import asyncio
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Coroutine, Iterable, List, TypeVar, cast
+from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
 T = TypeVar('T')
 R = TypeVar('R')
@@ -23,10 +23,10 @@ async def call_sync_from_async(fn: Callable[..., T], *args: Any, **kwargs: Any) 
 
 
 def call_async_from_sync(
-    corofn: Callable[..., Coroutine[Any, Any, R]], 
-    timeout: float = GENERAL_TIMEOUT, 
-    *args: Any, 
-    **kwargs: Any
+    corofn: Callable[..., Coroutine[Any, Any, R]],
+    timeout: float = GENERAL_TIMEOUT,
+    *args: Any,
+    **kwargs: Any,
 ) -> R:
     """
     Shorthand for running a coroutine in the default background thread pool executor
@@ -62,18 +62,20 @@ def call_async_from_sync(
 
 
 async def call_coro_in_bg_thread(
-    corofn: Callable[..., Coroutine[Any, Any, R]], 
-    timeout: float = GENERAL_TIMEOUT, 
-    *args: Any, 
-    **kwargs: Any
+    corofn: Callable[..., Coroutine[Any, Any, R]],
+    timeout: float = GENERAL_TIMEOUT,
+    *args: Any,
+    **kwargs: Any,
 ) -> R:
     """Function for running a coroutine in a background thread."""
-    return await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
+    return await call_sync_from_async(
+        call_async_from_sync, corofn, timeout, *args, **kwargs
+    )
 
 
 async def wait_all(
     iterable: Iterable[Coroutine[Any, Any, T]], timeout: int = GENERAL_TIMEOUT
-) -> List[T]:
+) -> list[T]:
     """
     Shorthand for waiting for all the coroutines in the iterable given in parallel. Creates
     a task for each coroutine.
@@ -88,8 +90,8 @@ async def wait_all(
         for task in pending:
             task.cancel()
         raise asyncio.TimeoutError()
-    results: List[T] = []
-    errors: List[Exception] = []
+    results: list[T] = []
+    errors: list[Exception] = []
     for task in tasks:
         try:
             results.append(task.result())
@@ -103,7 +105,7 @@ async def wait_all(
 
 
 class AsyncException(Exception):
-    def __init__(self, exceptions: List[Exception]) -> None:
+    def __init__(self, exceptions: list[Exception]) -> None:
         self.exceptions = exceptions
 
     def __str__(self) -> str:

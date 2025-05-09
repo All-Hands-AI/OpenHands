@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass, field
 from itertools import islice
+from typing import Optional, List
 
 from jinja2 import Template
 
@@ -20,8 +21,8 @@ class RuntimeInfo:
 class RepositoryInfo:
     """Information about a GitHub repository that has been cloned."""
 
-    repo_name: str | None = None
-    repo_directory: str | None = None
+    repo_name: Optional[str] = None
+    repo_directory: Optional[str] = None
 
 
 class PromptManager:
@@ -71,8 +72,8 @@ class PromptManager:
 
     def build_workspace_context(
         self,
-        repository_info: RepositoryInfo | None,
-        runtime_info: RuntimeInfo | None,
+        repository_info: Optional[RepositoryInfo],
+        runtime_info: Optional[RuntimeInfo],
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -84,7 +85,7 @@ class PromptManager:
 
     def build_microagent_info(
         self,
-        triggered_agents: list[MicroagentKnowledge],
+        triggered_agents: List[MicroagentKnowledge],
     ) -> str:
         """Renders the microagent info template with the triggered agents.
 
