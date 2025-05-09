@@ -93,7 +93,7 @@ class LLMConfig(BaseModel):
     critic_model: str | None = Field(default=None)
     critic_api_key: SecretStr | None = Field(default=None)
     critic_base_url: str | None = Field(default=None)
-    critic_num_candidates: int = Field(default=8)
+    critic_num_candidates: int = Field(default=1)
 
     model_config = {'extra': 'forbid'}
 

@@ -144,16 +144,19 @@ class LLM(RetryMixin, DebugMixin):
         self.critic = None
         if self.config.use_critic:
             logger.debug('LLM: critic enabled')
-            assert (
-                self.config.temperature != 0.0
-            ), 'Critic is not supported with temperature == 0.0'
-            if self.config.temperature < 0.5:
-                logger.warning(
-                    'LLM: critic is enabled, but the temperature is less than 0.5. This is not recommended as it may lead to degraded results.'
+            if self.config.critic_num_candidates > 1:
+                assert self.config.temperature != 0.0, (
+                    'Critic is not supported with temperature == 0.0'
                 )
-            assert (
-                self.config.critic_num_candidates > 1
-            ), 'Expected at least 2 responses for critic'
+                if self.config.temperature < 0.5:
+                    logger.warning(
+                        'LLM: critic is enabled, but the temperature is less than 0.5. This is not recommended as it may lead to degraded results.'
+                    )
+            else:
+                assert self.config.critic_num_candidates == 1
+                logger.info(
+                    'LLM: critic is enabled, but critic_num_candidates is 1. It will add a critic score to each response.'
+                )
             self.critic = LLMCritic(self.config)
 
         # call init_model_info to initialize config.max_output_tokens
@@ -683,7 +686,7 @@ class LLM(RetryMixin, DebugMixin):
             cost = self._update_metrics_for_single_completion(resp)
             total_cost += cost
             logger.debug(
-                f'Processed response {i+1}/{len(llm_responses_for_metrics)}. Cost: {cost:.4f} USD. Accumulated total: {total_cost:.4f} USD'
+                f'Processed response {i + 1}/{len(llm_responses_for_metrics)}. Cost: {cost:.4f} USD. Accumulated total: {total_cost:.4f} USD'
             )
         logger.debug(
             f'Finished processing list of {len(llm_responses_for_metrics)} responses. Total cost: {total_cost:.4f} USD.'
@@ -850,7 +853,7 @@ class LLM(RetryMixin, DebugMixin):
         )
 
         # Make the remaining requests in parallel
-        logger.debug(f'Making {n-1} parallel requests for LLM completions')
+        logger.debug(f'Making {n - 1} parallel requests for LLM completions')
         _start_time = time.time()
         with ThreadPoolExecutor(max_workers=n - 1) as executor:
             futures = []
@@ -864,7 +867,7 @@ class LLM(RetryMixin, DebugMixin):
                 # Get the result from the completed future
                 ret_responses.append(future.result())
         logger.debug(
-            f'Made {n-1} parallel requests for LLM completions in {time.time() - _start_time} seconds'
+            f'Made {n - 1} parallel requests for LLM completions in {time.time() - _start_time} seconds'
         )
         return ret_responses
 
@@ -905,16 +908,16 @@ class LLM(RetryMixin, DebugMixin):
                 assert len(response.choices) == 1, 'Expected 1 choice'
                 candidate_response_messages.append(response.choices[0].message)
 
-        assert (
-            'messages' in llm_kwargs and llm_kwargs['messages'] is not None
-        ), 'expected messages to be provided for critic scoring'
+        assert 'messages' in llm_kwargs and llm_kwargs['messages'] is not None, (
+            'expected messages to be provided for critic scoring'
+        )
         messages = llm_kwargs['messages']
 
         # NOTE: We need to convert all these to non-fncall messages for critic scoring IF we are using function calling
         if not mock_function_calling:
-            assert (
-                'tools' in llm_kwargs and llm_kwargs['tools'] is not None
-            ), 'expected tools to be provided for critic scoring with function calling'
+            assert 'tools' in llm_kwargs and llm_kwargs['tools'] is not None, (
+                'expected tools to be provided for critic scoring with function calling'
+            )
             list_of_messages_for_scoring = (
                 convert_fncall_messages_and_candidate_responses_for_critic(
                     messages,
@@ -927,9 +930,9 @@ class LLM(RetryMixin, DebugMixin):
                 copy.deepcopy(messages) + [candidate_response_messages[i]]
                 for i in range(len(candidate_response_messages))
             ]
-        assert len(list_of_messages_for_scoring) == len(
-            candidate_response_messages
-        ), 'Expected the same number of messages for scoring as candidate responses'
+        assert len(list_of_messages_for_scoring) == len(candidate_response_messages), (
+            'Expected the same number of messages for scoring as candidate responses'
+        )
         # Score the candidate responses
         logger.debug(
             f'LLM critic: scoring {len(list_of_messages_for_scoring)} candidate responses'
@@ -948,7 +951,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         for i, (response_index, critic_result) in enumerate(sorted_critic_results):
             logger.debug(
-                f'LLM critic response {i+1}; reward: {critic_result.last_reward}'
+                f'LLM critic response {i + 1}; reward: {critic_result.last_reward}'
             )
             logger.debug(
                 f'Response content: {candidate_responses[response_index].choices[0].message.content}\n'

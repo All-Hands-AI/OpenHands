@@ -66,7 +66,7 @@ class LLMCritic(RetryMixin):
         """
         data = {'model': self.model, 'messages': messages}
         headers = {
-            'Authorization': f"Bearer {self.api_key.get_secret_value() if self.api_key else ''}"
+            'Authorization': f'Bearer {self.api_key.get_secret_value() if self.api_key else ""}'
         }
 
         @self.retry_decorator(
@@ -91,9 +91,9 @@ class LLMCritic(RetryMixin):
         response_data = _post_with_retry()
         token_level_rewards = response_data['data'][0]['data']
         token_ids = response_data['data'][0]['prompt_token_ids']
-        assert (
-            len(token_level_rewards) == len(token_ids)
-        ), f'token_level_rewards: {len(token_level_rewards)}, token_ids: {len(token_ids)}'
+        assert len(token_level_rewards) == len(token_ids), (
+            f'token_level_rewards: {len(token_level_rewards)}, token_ids: {len(token_ids)}'
+        )
         return {'rewards': token_level_rewards, 'token_ids': token_ids}
 
     def _get_assistant_chunks_with_rewards(
@@ -109,9 +109,9 @@ class LLMCritic(RetryMixin):
         Returns:
             Dictionary with chunks, end token rewards, and end token positions
         """
-        assert len(token_ids) == len(
-            token_rewards
-        ), f'token_ids: {len(token_ids)}, token_rewards: {len(token_rewards)}'
+        assert len(token_ids) == len(token_rewards), (
+            f'token_ids: {len(token_ids)}, token_rewards: {len(token_rewards)}'
+        )
         assistant_chunks: list[list[int]] = []
         end_token_rewards: list[float] = []
         end_token_positions: list[int] = []
@@ -193,14 +193,14 @@ class LLMCritic(RetryMixin):
         # Verify this matches the expected count
         expected_count = len([m for m in messages if m['role'] == 'assistant'])
         logger.debug(
-            f"Expected/Actual count: {expected_count}/{len(analysis['chunks'])}; Rewards: {analysis['end_token_rewards']}"
+            f'Expected/Actual count: {expected_count}/{len(analysis["chunks"])}; Rewards: {analysis["end_token_rewards"]}'
         )
         # Check if the number of detected assistant messages matches expectations
         if len(analysis['chunks']) != expected_count:
             logger.warning(
-                f"Mismatch in expected ({expected_count}) "
-                f"and actual ({len(analysis['chunks'])}) assistant messages during critic scoring. "
-                "Please check the critic model and configuration."
+                f'Mismatch in expected ({expected_count}) '
+                f'and actual ({len(analysis["chunks"])}) assistant messages during critic scoring. '
+                'Please check the critic model and configuration.'
             )
 
         return LLMCriticOutput(
