@@ -31,9 +31,12 @@ export function SecretForm({
   const [error, setError] = React.useState<string | null>(null);
 
   const secretDescription =
-    secrets
-      ?.find((secret) => secret.name === selectedSecret)
-      ?.description?.trim() || "";
+    (mode === "edit" &&
+      selectedSecret &&
+      secrets
+        ?.find((secret) => secret.name === selectedSecret)
+        ?.description?.trim()) ||
+    "";
 
   const handleCreateSecret = (
     name: string,
