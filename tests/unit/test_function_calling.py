@@ -215,6 +215,32 @@ def test_invalid_json_arguments():
             }
         ],
     )
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Failed to parse tool call arguments' in str(exc_info.value)
+
+
+def test_unexpected_argument_handling():
+    """Test that unexpected arguments in function calls are properly handled.
+
+    This test reproduces issue #8369 Example 4 where an unexpected argument
+    (old_str_prefix) causes a TypeError.
+    """
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'str_replace',
+            'path': '/test/file.py',
+            'old_str': 'def test():\n    pass',
+            'new_str': 'def test():\n    return True',
+            'old_str_prefix': 'some prefix',  # Unexpected argument
+        },
+    )
+
+    # Test that the function raises a FunctionCallValidationError
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    # Verify the error message mentions the unexpected argument
+    assert 'old_str_prefix' in str(exc_info.value)
+    assert 'Unexpected argument' in str(exc_info.value)

@@ -143,9 +143,9 @@ index 9daeafb..b02def2 100644
     with open(dos_file, 'rb') as f:
         dos_content = f.read()
 
-    assert (
-        b'\r\n' not in unix_content
-    ), 'Unix-style line endings were changed to DOS-style'
+    assert b'\r\n' not in unix_content, (
+        'Unix-style line endings were changed to DOS-style'
+    )
     assert b'\r\n' in dos_content, 'DOS-style line endings were changed to Unix-style'
 
     # Check if content was updated correctly
@@ -308,7 +308,7 @@ def test_update_existing_pull_request(
     )
 
     # Assert: Check if the auto-generated comment was posted to the PR
-    comment_url = f'https://gitlab.com/api/v4/projects/{quote(f'{issue.owner}/{issue.repo}', safe="")}/issues/{issue.number}/notes'
+    comment_url = f'https://gitlab.com/api/v4/projects/{quote(f"{issue.owner}/{issue.repo}", safe="")}/issues/{issue.number}/notes'
     expected_comment = 'This is an issue resolution.'
     mock_requests_post.assert_called_once_with(
         comment_url,
@@ -697,7 +697,7 @@ def test_reply_to_comment(mock_get, mock_post, mock_issue):
 
     # Check that the correct request was made to the API
     mock_post.assert_called_once_with(
-        f'https://gitlab.com/api/v4/projects/{quote(f'{mock_issue.owner}/{mock_issue.repo}', safe="")}/merge_requests/{mock_issue.number}/discussions/{comment_id.split('/')[-1]}/notes',
+        f'https://gitlab.com/api/v4/projects/{quote(f"{mock_issue.owner}/{mock_issue.repo}", safe="")}/merge_requests/{mock_issue.number}/discussions/{comment_id.split("/")[-1]}/notes',
         headers={
             'Authorization': f'Bearer {token}',
             'Accept': 'application/json',

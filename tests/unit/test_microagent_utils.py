@@ -14,9 +14,7 @@ from openhands.microagent import (
     load_microagents_from_dir,
 )
 
-CONTENT = (
-    '# dummy header\n' 'dummy content\n' '## dummy subheader\n' 'dummy subcontent\n'
-)
+CONTENT = '# dummy header\ndummy content\n## dummy subheader\ndummy subcontent\n'
 
 
 def test_legacy_micro_agent_load(tmp_path):

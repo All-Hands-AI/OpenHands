@@ -1,193 +1,83 @@
-
-
-# LLM local avec Ollama
+# LLM local avec SGLang ou vLLM
 
 :::warning
-Lors de l'utilisation d'un LLM local, OpenHands peut avoir des fonctionnalités limitées.
+Lorsque vous utilisez un LLM local, OpenHands peut avoir des fonctionnalités limitées.
+Il est fortement recommandé d'utiliser des GPU pour servir les modèles locaux afin d'obtenir une expérience optimale.
 :::
 
-Assurez-vous que le serveur Ollama est opérationnel.
-Pour des instructions détaillées sur le démarrage, référez-vous à [ici](https://github.com/ollama/ollama).
+## Actualités
 
-Ce guide suppose que vous avez démarré ollama avec `ollama serve`. Si vous exécutez ollama différemment (par exemple dans docker), les instructions peuvent nécessiter des modifications. Veuillez noter que si vous utilisez WSL, la configuration par défaut d'ollama bloque les requêtes provenant des conteneurs docker. Voir [ici](#configuring-ollama-service-wsl-fr).
+- 2025/03/31 : Nous avons publié un modèle ouvert OpenHands LM v0.1 32B qui atteint 37,1% sur SWE-Bench Verified
+([blog](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model), [modèle](https://huggingface.co/all-hands/openhands-lm-32b-v0.1)).
 
-## Récupérer les modèles
+## Télécharger le modèle depuis Huggingface
 
-Les noms des modèles Ollama peuvent être trouvés [ici](https://ollama.com/library). Pour un petit exemple, vous pouvez utiliser le modèle `codellama:7b`. Les modèles plus gros auront généralement de meilleures performances.
-
-```bash
-ollama pull codellama:7b
-```
-
-Vous pouvez vérifier quels modèles vous avez téléchargés comme ceci :
+Par exemple, pour télécharger [OpenHands LM 32B v0.1](https://huggingface.co/all-hands/openhands-lm-32b-v0.1) :
 
 ```bash
-~$ ollama list
-NAME                            ID              SIZE    MODIFIED
-codellama:7b                    8fdf8f752f6e    3.8 GB  6 weeks ago
-mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
-starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
+huggingface-cli download all-hands/openhands-lm-32b-v0.1 --local-dir all-hands/openhands-lm-32b-v0.1
 ```
 
-## Exécuter OpenHands avec Docker
+## Créer un point de terminaison compatible OpenAI avec un framework de service de modèle
 
-### Démarrer OpenHands
-Utilisez les instructions [ici](../getting-started) pour démarrer OpenHands en utilisant Docker.
-Mais lorsque vous exécutez `docker run`, vous devrez ajouter quelques arguments supplémentaires :
+### Service avec SGLang
+
+- Installez SGLang en suivant [la documentation officielle](https://docs.sglang.ai/start/install.html).
+- Exemple de commande de lancement pour OpenHands LM 32B (avec au moins 2 GPU) :
 
 ```bash
-docker run # ...
-    --add-host host.docker.internal:host-gateway \
-    -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
-    # ...
+SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1 python3 -m sglang.launch_server \
+    --model all-hands/openhands-lm-32b-v0.1 \
+    --served-model-name openhands-lm-32b-v0.1 \
+    --port 8000 \
+    --tp 2 --dp 1 \
+    --host 0.0.0.0 \
+    --api-key mykey --context-length 131072
 ```
 
-LLM_OLLAMA_BASE_URL est optionnel. Si vous le définissez, il sera utilisé pour afficher
-les modèles installés disponibles dans l'interface utilisateur.
+### Service avec vLLM
 
+- Installez vLLM en suivant [la documentation officielle](https://docs.vllm.ai/en/latest/getting_started/installation.html).
+- Exemple de commande de lancement pour OpenHands LM 32B (avec au moins 2 GPU) :
 
-### Configurer l'application Web
+```bash
+vllm serve all-hands/openhands-lm-32b-v0.1 \
+    --host 0.0.0.0 --port 8000 \
+    --api-key mykey \
+    --tensor-parallel-size 2 \
+    --served-model-name openhands-lm-32b-v0.1
+    --enable-prefix-caching
+```
 
-Lors de l'exécution d'`openhands`, vous devrez définir les éléments suivants dans l'interface utilisateur d'OpenHands via les paramètres :
-- le modèle à "ollama/&lt;nom-du-modèle&gt;"
-- l'URL de base à `http://host.docker.internal:11434`
-- la clé API est optionnelle, vous pouvez utiliser n'importe quelle chaîne, comme `ollama`.
+## Exécuter et configurer OpenHands
 
+### Exécuter OpenHands
 
-## Exécuter OpenHands en mode développement
+#### Utilisation de Docker
 
-### Compiler à partir du code source
+Exécutez OpenHands en utilisant [la commande docker run officielle](../installation#start-the-app).
 
-Utilisez les instructions dans [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) pour compiler OpenHands.
-Assurez-vous que `config.toml` est présent en exécutant `make setup-config` qui en créera un pour vous. Dans `config.toml`, entrez ce qui suit :
+#### Utilisation du mode développement
+
+Utilisez les instructions dans [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) pour construire OpenHands.
+Assurez-vous que `config.toml` existe en exécutant `make setup-config` qui en créera un pour vous. Dans le fichier `config.toml`, saisissez ce qui suit :
 
 ```
 [core]
-workspace_base="./workspace"
+workspace_base="/path/to/your/workspace"
 
 [llm]
-embedding_model="local"
-ollama_base_url="http://localhost:11434"
-
+model="openhands-lm-32b-v0.1"
+ollama_base_url="http://localhost:8000"
 ```
 
-Terminé ! Vous pouvez maintenant démarrer OpenHands avec : `make run`. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
+Démarrez OpenHands en utilisant `make run`.
 
-### Configurer l'application Web
+### Configurer OpenHands
 
-Dans l'interface utilisateur d'OpenHands, cliquez sur la roue des paramètres dans le coin inférieur gauche.
-Ensuite, dans le champ `Model`, entrez `ollama/codellama:7b`, ou le nom du modèle que vous avez récupéré précédemment.
-S'il n'apparaît pas dans la liste déroulante, activez `Advanced Settings` et tapez-le. Veuillez noter : vous avez besoin du nom du modèle tel qu'il est listé par `ollama list`, avec le préfixe `ollama/`.
-
-Dans le champ API Key, entrez `ollama` ou n'importe quelle valeur, puisque vous n'avez pas besoin d'une clé particulière.
-
-Dans le champ Base URL, entrez `http://localhost:11434`.
-
-Et maintenant vous êtes prêt à démarrer !
-
-## Configurer le service ollama (WSL) {#configuring-ollama-service-wsl-fr}
-
-La configuration par défaut d'ollama dans WSL ne sert que localhost. Cela signifie que vous ne pouvez pas y accéder depuis un conteneur docker. Par ex. cela ne fonctionnera pas avec OpenHands. Testons d'abord qu'ollama fonctionne correctement.
-
-```bash
-ollama list # obtenir la liste des modèles installés
-curl http://localhost:11434/api/generate -d '{"model":"[NOM]","prompt":"hi"}'
-#ex. curl http://localhost:11434/api/generate -d '{"model":"codellama:7b","prompt":"hi"}'
-#ex. curl http://localhost:11434/api/generate -d '{"model":"codellama","prompt":"hi"}' #le tag est optionnel s'il n'y en a qu'un
-```
-
-Une fois cela fait, testez qu'il autorise les requêtes "extérieures", comme celles provenant d'un conteneur docker.
-
-```bash
-docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test plus précis choisissez le conteneur sandbox OpenHands.
-docker exec [ID CONTENEUR] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NOM]","prompt":"hi"}'
-#ex. docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
-```
-
-## Résoudre le problème
-
-Maintenant, faisons en sorte que cela fonctionne. Modifiez /etc/systemd/system/ollama.service avec des privilèges sudo. (Le chemin peut varier selon la distribution Linux)
-
-```bash
-sudo vi /etc/systemd/system/ollama.service
-```
-
-ou
-
-```bash
-sudo nano /etc/systemd/system/ollama.service
-```
-
-Dans le bloc [Service], ajoutez ces lignes
-
-```
-Environment="OLLAMA_HOST=0.0.0.0:11434"
-Environment="OLLAMA_ORIGINS=*"
-```
-
-Ensuite, sauvegardez, rechargez la configuration et redémarrez le service.
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart ollama
-```
-
-Enfin, testez qu'ollama est accessible depuis le conteneur
-
-```bash
-ollama list # obtenir la liste des modèles installés
-docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test plus précis choisissez le conteneur sandbox OpenHands.
-docker exec [ID CONTENEUR] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NOM]","prompt":"hi"}'
-```
-
-
-# LLM local avec LM Studio
-
-Étapes pour configurer LM Studio :
-1. Ouvrez LM Studio
-2. Allez dans l'onglet Serveur local.
-3. Cliquez sur le bouton "Démarrer le serveur".
-4. Sélectionnez le modèle que vous souhaitez utiliser dans la liste déroulante.
-
-
-Définissez les configurations suivantes :
-```bash
-LLM_MODEL="openai/lmstudio"
-LLM_BASE_URL="http://localhost:1234/v1"
-CUSTOM_LLM_PROVIDER="openai"
-```
-
-### Docker
-
-```bash
-docker run # ...
-    -e LLM_MODEL="openai/lmstudio" \
-    -e LLM_BASE_URL="http://host.docker.internal:1234/v1" \
-    -e CUSTOM_LLM_PROVIDER="openai" \
-    # ...
-```
-
-Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
-
-Dans l'environnement de développement, vous pouvez définir les configurations suivantes dans le fichier `config.toml` :
-
-```
-[core]
-workspace_base="./workspace"
-
-[llm]
-model="openai/lmstudio"
-base_url="http://localhost:1234/v1"
-custom_llm_provider="openai"
-```
-
-Terminé ! Vous pouvez maintenant démarrer OpenHands avec : `make run` sans Docker. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
-
-# Note
-
-Pour WSL, exécutez les commandes suivantes dans cmd pour configurer le mode réseau en miroir :
-
-```
-python -c  "print('[wsl2]\nnetworkingMode=mirrored',file=open(r'%UserProfile%\.wslconfig','w'))"
-wsl --shutdown
-```
+Une fois qu'OpenHands est en cours d'exécution, vous devrez définir les éléments suivants dans l'interface utilisateur d'OpenHands via les Paramètres :
+1. Activez les options `Avancées`.
+2. Définissez les éléments suivants :
+- `Modèle personnalisé` sur `openai/<served-model-name>` (par exemple `openai/openhands-lm-32b-v0.1`)
+- `URL de base` sur `http://host.docker.internal:8000`
+- `Clé API` sur la même chaîne que celle que vous avez définie lors du service du modèle (par exemple `mykey`)

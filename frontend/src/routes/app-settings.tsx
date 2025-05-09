@@ -15,12 +15,14 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
+import { useConfig } from "#/hooks/query/use-config";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
   const { data: settings, isLoading } = useSettings();
+  const { data: config } = useConfig();
 
   const [languageInputHasChanged, setLanguageInputHasChanged] =
     React.useState(false);
@@ -29,6 +31,10 @@ function AppSettingsScreen() {
   const [
     soundNotificationsSwitchHasChanged,
     setSoundNotificationsSwitchHasChanged,
+  ] = React.useState(false);
+  const [
+    proactiveConversationsSwitchHasChanged,
+    setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
 
   const formAction = (formData: FormData) => {
@@ -43,11 +49,16 @@ function AppSettingsScreen() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
+    const enableProactiveConversations =
+      formData.get("enable-proactive-conversations-switch")?.toString() ===
+      "on";
+
     saveSettings(
       {
         LANGUAGE: language,
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
+        ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
       },
       {
         onSuccess: () => {
@@ -90,10 +101,19 @@ function AppSettingsScreen() {
     );
   };
 
+  const checkIfProactiveConversationsSwitchHasChanged = (checked: boolean) => {
+    const currentProactiveConversations =
+      !!settings?.ENABLE_PROACTIVE_CONVERSATION_STARTERS;
+    setProactiveConversationsSwitchHasChanged(
+      checked !== currentProactiveConversations,
+    );
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
-    !soundNotificationsSwitchHasChanged;
+    !soundNotificationsSwitchHasChanged &&
+    !proactiveConversationsSwitchHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -129,6 +149,19 @@ function AppSettingsScreen() {
           >
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
+
+          {config?.APP_MODE === "saas" && (
+            <SettingsSwitch
+              testId="enable-proactive-conversations-switch"
+              name="enable-proactive-conversations-switch"
+              defaultIsToggled={
+                !!settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS
+              }
+              onToggle={checkIfProactiveConversationsSwitchHasChanged}
+            >
+              {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
+            </SettingsSwitch>
+          )}
         </div>
       )}
 
