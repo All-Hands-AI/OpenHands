@@ -26,36 +26,36 @@ from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
-USER_MSG = """
-        Code changes will be provided in the form of a draft. You will need to apply the draft to the original code.
-        The original code will be enclosed within `<original_code>` tags.
-        The draft will be enclosed within `<update_snippet>` tags.
-        You need to output the update code within `<updated_code>` tags.
+# USER_MSG = """
+#         Code changes will be provided in the form of a draft. You will need to apply the draft to the original code.
+#         The original code will be enclosed within `<original_code>` tags.
+#         The draft will be enclosed within `<update_snippet>` tags.
+#         You need to output the update code within `<updated_code>` tags.
 
-        Within the `<updated_code>` tag, include only the final code after updation. Do not include any explanations or other content within these tags.
+#         Within the `<updated_code>` tag, include only the final code after updation. Do not include any explanations or other content within these tags.
 
-        <original_code>
-        {old_contents}
-        </original_code>
+#         <original_code>
+#         {old_contents}
+#         </original_code>
 
-        <update_snippet>
-        {draft_changes}
-        </update_snippet>
- """
+#         <update_snippet>
+#         {draft_changes}
+#         </update_snippet>
+#  """
 
 #Message for Lite
-# USER_MSG = """
-# Code changes will be provided in the form of a draft. You will need to apply the draft to the original code. 
-# The original code will be enclosed within `<original_code>` tags.
-# The draft will be enclosed within `<update_snippet>` tags.
-# You need to output the update code within `<updated_code>` tags.
+USER_MSG = """
+Code changes will be provided in the form of a draft. You will need to apply the draft to the original code. 
+The original code will be enclosed within `<original_code>` tags.
+The draft will be enclosed within `<update_snippet>` tags.
+You need to output the update code within `<updated_code>` tags.
 
-# Within the `<updated_code>` tag, include only the final code after updation. Do not include any explanations or other content within these tags.
+Within the `<updated_code>` tag, include only the final code after updation. Do not include any explanations or other content within these tags.
 
-# <original_code>{old_contents}</original_code>
+<original_code>{old_contents}</original_code>
 
-# <update_snippet>{draft_changes}</update_snippet>
-#     """
+<update_snippet>{draft_changes}</update_snippet>
+    """
 
 
 def _extract_code(string: str) -> str | None:
@@ -65,13 +65,13 @@ def _extract_code(string: str) -> str | None:
         return None
 
     content = str(matches[0])  # Remove "\n        " from start and end
-    if content.startswith('\n        '):
-        content = content[9:]  # len('\n        ') = 9
-    if content.endswith('\n        '):
-        content = content[:-9]  # len('\n        ') = 9
-    # if content.startswith('#EDIT:'):
-    #     #Remove first line
-    #     content = content[content.find('\n') + 1:]
+    # if content.startswith('\n        '):
+    #     content = content[9:]  # len('\n        ') = 9
+    # if content.endswith('\n        '):
+    #     content = content[:-9]  # len('\n        ') = 9
+    if content.startswith('#EDIT:'):
+        #Remove first line
+        content = content[content.find('\n') + 1:]
     return content
 
 
