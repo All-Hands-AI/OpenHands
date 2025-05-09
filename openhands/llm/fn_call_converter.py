@@ -110,7 +110,21 @@ pip3 install flask
 </function>
 
 USER: EXECUTION RESULT of [execute_bash]:
-Successfully installed flask-3.0.3
+Defaulting to user installation because normal site-packages is not writeable
+Collecting flask
+  Using cached flask-3.0.3-py3-none-any.whl (101 kB)
+Collecting blinker>=1.6.2
+  Using cached blinker-1.7.0-py3-none-any.whl (13 kB)
+Collecting Werkzeug>=3.0.0
+  Using cached werkzeug-3.0.2-py3-none-any.whl (226 kB)
+Collecting click>=8.1.3
+  Using cached click-8.1.7-py3-none-any.whl (97 kB)
+Collecting itsdangerous>=2.1.2
+  Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Requirement already satisfied: Jinja2>=3.1.2 in /home/openhands/.local/lib/python3.10/site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
+Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
 
 ASSISTANT: The `flask` module is installed successfully. Let me run the Python file again:
 <function=execute_bash>
