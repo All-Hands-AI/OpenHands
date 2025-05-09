@@ -253,7 +253,17 @@ class CLIRuntime(Runtime):
                 )
         else:
             filename = os.path.join(self._workspace_path, filename.lstrip('/'))
-        return filename
+
+        # Resolve the path to handle any '..' or '.' components
+        resolved_path = os.path.realpath(filename)
+
+        # Check if the resolved path is still within the workspace
+        if not resolved_path.startswith(self._workspace_path):
+            raise ValueError(
+                f'Invalid path traversal: {filename}. Path resolves outside the workspace.'
+            )
+
+        return resolved_path
 
     def read(self, action: FileReadAction) -> Observation:
         """Read a file using Python's standard library or OHEditor."""

@@ -46,7 +46,7 @@ from openhands.events.observation import (
 )
 from openhands.llm.metrics import Metrics
 
-ENABLE_STREAMING = False  # FIXME: this doesn't really work
+ENABLE_STREAMING = True  # Enable streaming output in TextArea
 
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
