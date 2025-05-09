@@ -35,6 +35,7 @@ types-toml = "*"
 numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"                           # integrate browsergym-core as the browsing interface
+patchright = "*"                                      # undetected version of playwright for browser automation
 html2text = "*"
 e2b = ">=1.0.5,<1.4.0"
 pexpect = "*"
