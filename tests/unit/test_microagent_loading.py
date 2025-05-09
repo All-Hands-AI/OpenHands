@@ -8,7 +8,11 @@ from unittest import mock
 import pytest
 
 from openhands.core.config import AppConfig
-from openhands.events.observation import CmdOutputObservation, FileReadObservation, FileWriteObservation
+from openhands.events.observation import (
+    CmdOutputObservation,
+    FileReadObservation,
+    FileWriteObservation,
+)
 from openhands.microagent import (
     KnowledgeMicroagent,
     RepoMicroagent,
@@ -38,22 +42,48 @@ class TestMicroagentLoading:
         runtime_instance.config = mock_config
 
         # Mock the abstract methods
-        runtime_instance.run = mock.MagicMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
-        runtime_instance.run_action = mock.MagicMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
-        runtime_instance.call_tool_mcp = mock.AsyncMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
+        runtime_instance.run = mock.MagicMock(
+            return_value=CmdOutputObservation(
+                command_id=-1, command='', exit_code=0, content=''
+            )
+        )
+        runtime_instance.run_action = mock.MagicMock(
+            return_value=CmdOutputObservation(
+                command_id=-1, command='', exit_code=0, content=''
+            )
+        )
+        runtime_instance.call_tool_mcp = mock.AsyncMock(
+            return_value=CmdOutputObservation(
+                command_id=-1, command='', exit_code=0, content=''
+            )
+        )
         runtime_instance.list_files = mock.MagicMock(return_value=[])
         runtime_instance.copy_from = mock.MagicMock(return_value=Path('/tmp/test.zip'))
         runtime_instance.copy_to = mock.MagicMock()
-        runtime_instance._execute_shell_fn_git_handler = mock.MagicMock(return_value=CommandResult(content='', exit_code=0))
-        runtime_instance.read = mock.MagicMock(return_value=FileReadObservation(content='', path=''))
-        runtime_instance.write = mock.MagicMock(return_value=FileWriteObservation(path='', content=''))
-        runtime_instance.run_ipython = mock.MagicMock(return_value=CmdOutputObservation(command_id=-1, command='', exit_code=0, content=''))
+        runtime_instance._execute_shell_fn_git_handler = mock.MagicMock(
+            return_value=CommandResult(content='', exit_code=0)
+        )
+        runtime_instance.read = mock.MagicMock(
+            return_value=FileReadObservation(content='', path='')
+        )
+        runtime_instance.write = mock.MagicMock(
+            return_value=FileWriteObservation(path='', content='')
+        )
+        runtime_instance.run_ipython = mock.MagicMock(
+            return_value=CmdOutputObservation(
+                command_id=-1, command='', exit_code=0, content=''
+            )
+        )
 
         # Mock the _load_microagents_from_dir method to call the actual implementation
-        runtime_instance._load_microagents_from_dir = Runtime._load_microagents_from_dir.__get__(runtime_instance)
+        runtime_instance._load_microagents_from_dir = (
+            Runtime._load_microagents_from_dir.__get__(runtime_instance)
+        )
 
         # Mock the get_microagents_from_selected_repo method to call the actual implementation
-        runtime_instance.get_microagents_from_selected_repo = Runtime.get_microagents_from_selected_repo.__get__(runtime_instance)
+        runtime_instance.get_microagents_from_selected_repo = (
+            Runtime.get_microagents_from_selected_repo.__get__(runtime_instance)
+        )
 
         return runtime_instance
 
