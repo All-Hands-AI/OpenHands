@@ -1,6 +1,5 @@
 """Tests for browser environment initialization."""
-import multiprocessing
-import time
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -43,7 +42,9 @@ def test_browser_init_process_failure():
                 BrowserEnv()
             # Get the actual exception from the retry error
             retry_error = exc_info.value
-            assert isinstance(retry_error.last_attempt.exception(), BrowserInitException)
+            assert isinstance(
+                retry_error.last_attempt.exception(), BrowserInitException
+            )
             assert 'exit code -11' in str(retry_error.last_attempt.exception())
 
 
@@ -64,7 +65,9 @@ def test_browser_init_communication_failure():
                 BrowserEnv()
             # Get the actual exception from the retry error
             retry_error = exc_info.value
-            assert isinstance(retry_error.last_attempt.exception(), BrowserInitException)
+            assert isinstance(
+                retry_error.last_attempt.exception(), BrowserInitException
+            )
             assert 'not responding' in str(retry_error.last_attempt.exception())
 
 
@@ -104,7 +107,9 @@ def test_browser_init_retry():
                 BrowserEnv()
             # Get the actual exception from the retry error
             retry_error = exc_info.value
-            assert isinstance(retry_error.last_attempt.exception(), BrowserInitException)
+            assert isinstance(
+                retry_error.last_attempt.exception(), BrowserInitException
+            )
             assert 'exit code 1' in str(retry_error.last_attempt.exception())
 
 
@@ -113,7 +118,11 @@ def test_browser_close_cleanup():
     with patch('multiprocessing.Process') as mock_process:
         # Mock process
         mock_process_instance = MagicMock()
-        mock_process_instance.is_alive.side_effect = [True, True, False]  # Alive then dead after join
+        mock_process_instance.is_alive.side_effect = [
+            True,
+            True,
+            False,
+        ]  # Alive then dead after join
         mock_process.return_value = mock_process_instance
 
         # Mock pipe
