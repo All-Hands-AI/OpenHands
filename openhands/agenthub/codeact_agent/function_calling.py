@@ -40,7 +40,7 @@ from openhands.events.action import (
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-
+from openhands.llm.critic import ModelResponseWithCriticScore
 
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
@@ -53,7 +53,7 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 
 def response_to_actions(
-    response: ModelResponse, mcp_tool_names: list[str] | None = None
+    response: ModelResponse | ModelResponseWithCriticScore, mcp_tool_names: list[str] | None = None
 ) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
@@ -251,6 +251,10 @@ def response_to_actions(
     # with the token usage data
     for action in actions:
         action.response_id = response.id
+
+    # Add critic score to the LAST action
+    if isinstance(response, ModelResponseWithCriticScore):
+        actions[-1].critic_score = response.critic_score
 
     assert len(actions) >= 1
     return actions

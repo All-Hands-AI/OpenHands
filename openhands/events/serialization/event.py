@@ -23,6 +23,7 @@ TOP_KEYS = [
     'observation',
     'tool_call_metadata',
     'llm_metrics',
+    'critic_score',
 ]
 UNDERSCORE_KEYS = [
     'id',
@@ -31,6 +32,7 @@ UNDERSCORE_KEYS = [
     'cause',
     'tool_call_metadata',
     'llm_metrics',
+    'critic_score',
 ]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
@@ -85,6 +87,8 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                             **value.get('accumulated_token_usage', {})
                         )
                 value = metrics
+            if key == 'critic_score':
+                value = float(value)
             setattr(evt, '_' + key, value)
     return evt
 
@@ -116,6 +120,8 @@ def event_to_dict(event: 'Event') -> dict:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         if key == 'llm_metrics' and 'llm_metrics' in d:
             d['llm_metrics'] = d['llm_metrics'].get()
+        if key == 'critic_score' and 'critic_score' in d:
+            d['critic_score'] = d['critic_score'].get()
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')

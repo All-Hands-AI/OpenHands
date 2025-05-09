@@ -29,6 +29,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.critic import (
     LLMCritic,
+    ModelResponseWithCriticScore,
     convert_fncall_messages_and_candidate_responses_for_critic,
 )
 from openhands.llm.debug_mixin import DebugMixin
@@ -876,7 +877,7 @@ class LLM(RetryMixin, DebugMixin):
         llm_args: Any,
         llm_kwargs: Any,
         mock_function_calling: bool,
-    ) -> tuple[ModelResponse, dict[str, Any]]:
+    ) -> tuple[ModelResponseWithCriticScore, dict[str, Any]]:
         """Handle critic scoring."""
         assert self.critic is not None, 'critic is not enabled'
         # Generate multiple candidate responses
@@ -959,6 +960,9 @@ class LLM(RetryMixin, DebugMixin):
 
         best_response_index, best_response_score = sorted_critic_results[0]
         resp = candidate_responses[best_response_index]  # use the best response object
+        resp = ModelResponseWithCriticScore(**resp)
+        resp.critic_score = best_response_score.last_reward
+
         critic_metadata = {
             'critic_results': sorted_critic_results,
             'responses': candidate_responses,

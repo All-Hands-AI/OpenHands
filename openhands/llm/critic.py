@@ -5,6 +5,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
 import requests
+from litellm.types.utils import ModelResponse
 from pydantic import BaseModel
 
 from openhands.core.config import LLMConfig
@@ -18,6 +19,12 @@ from openhands.llm.retry_mixin import RetryMixin
 # Special token IDs used by the critic model
 ASSISTANT_PREFIX_TOKEN_IDS = [151644, 77091]
 SPECIAL_IM_END_TOKEN_ID_FOR_RM = 151645
+
+
+class ModelResponseWithCriticScore(ModelResponse):
+    """Model response with critic score."""
+
+    critic_score: float
 
 
 class LLMCriticOutput(BaseModel):
