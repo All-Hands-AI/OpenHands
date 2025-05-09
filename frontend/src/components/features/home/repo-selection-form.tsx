@@ -180,7 +180,6 @@ export function RepositorySelectionForm({
         onClick={() =>
           createConversation({
             selectedRepository,
-            conversation_trigger: "gui",
             selected_branch: selectedBranch?.name,
           })
         }
