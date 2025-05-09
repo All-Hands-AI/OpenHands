@@ -263,13 +263,19 @@ async def webhook_rag_conversation(
         'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
     }
     try:
-        response = await thesis_auth_client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            logger.error(
-                f'Failed to sync conversation to rag: {response.status_code} - {response.text}'
-            )
-            raise HTTPException(status_code=response.status_code, detail=response.text)
-        return True
+        async with httpx.AsyncClient(
+            base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
+            timeout=30.0,
+        ) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            if response.status_code != 200:
+                logger.error(
+                    f'Failed to sync conversation to rag: {response.status_code} - {response.text}'
+                )
+                raise HTTPException(
+                    status_code=response.status_code, detail=response.text
+                )
+            return True
     except httpx.RequestError as exc:
         logger.error(f'Failed to sync conversation to rag: {str(exc)}')
         return False

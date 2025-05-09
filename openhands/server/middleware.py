@@ -249,7 +249,6 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
                 remaining = request.url.path[len(pattern) :]
-                logger.info(f'Remaining path: {remaining}')
                 if remaining and '/' not in remaining:
                     return await call_next(request)
 
@@ -313,12 +312,8 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         for pattern in self.public_path_patterns:
-            print(pattern)
-            print(request.url.path)
-            print('--------------------------------')
             if request.url.path.startswith(pattern):
                 remaining = request.url.path[len(pattern) :]
-                print('remaining', remaining)
                 if remaining and '/' not in remaining:
                     return await call_next(request)
         if '/api/conversations/' in request.url.path:

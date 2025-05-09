@@ -3,7 +3,7 @@ import warnings
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.empty import NullAction
@@ -36,6 +36,12 @@ from openhands.server.shared import ConversationStoreImpl, config, server_config
 from openhands.utils.async_utils import wait_all
 
 app = APIRouter(prefix='/api/options')
+
+
+def verify_thesis_backend_server(api_key: str = Header(..., alias='x-key-oh')):
+    expected_key = os.getenv('KEY_THESIS_BACKEND_SERVER')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail='Invalid API key')
 
 
 @app.get('/models', response_model=list[str])
@@ -217,6 +223,7 @@ async def get_conversation(
 @app.get('/conversations/events/{conversation_id}')
 async def get_conversation_events(
     conversation_id: str,
+    x_key_oh: str = Depends(verify_thesis_backend_server),
 ) -> Any:
     conversation = await conversation_module._get_conversation_by_id(conversation_id)
     if not conversation:

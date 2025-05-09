@@ -286,6 +286,7 @@ class ConversationMemory:
                 action.tool_call_metadata = None
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
+
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
