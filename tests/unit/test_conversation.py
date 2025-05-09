@@ -563,7 +563,6 @@ async def test_new_conversation_with_provider_authentication_error(
 @pytest.mark.asyncio
 async def test_new_conversation_with_unsupported_params(test_client):
     test_request_data = {
-        'conversation_trigger': 'GUI',  # This is a valid parameter
         'repository': 'test/repo',  # This is valid
         'selected_branch': 'main',  # This is valid
         'initial_user_msg': 'Hello, agent!',  # Valid parameter
