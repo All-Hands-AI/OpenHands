@@ -69,22 +69,30 @@ async def test_delegation_flow(
     is set, and once the child finishes, the parent is cleaned up properly.
     """
 
-    # Mock webhook_rag_conversation to avoid HTTP requests during testing
-    async def mock_webhook_rag(*args, **kwargs):
-        # Do nothing
-        return None
+    # Mock the httpx client to prevent any actual HTTP requests
+    class MockResponse:
+        def __init__(self):
+            self.status_code = 200
+            self.text = 'OK'
 
-    # Apply the mock
+        def json(self):
+            return {'status': 'success'}
+
+        def raise_for_status(self):
+            pass
+
+    async def mock_post(*args, **kwargs):
+        return MockResponse()
+
+    # Apply mock to httpx AsyncClient post method
+    monkeypatch.setattr('httpx.AsyncClient.post', mock_post)
+
+    # We also need to disable any internal client creation logic
     monkeypatch.setattr(
-        'openhands.server.thesis_auth.webhook_rag_conversation', mock_webhook_rag
-    )
-
-    # Mock search_knowledge function to avoid HTTP requests
-    async def mock_search_knowledge(*args, **kwargs):
-        return None
-
-    monkeypatch.setattr(
-        'openhands.server.thesis_auth.search_knowledge', mock_search_knowledge
+        'openhands.server.thesis_auth.os.getenv',
+        lambda x, default=None: 'http://fake-url'
+        if x == 'THESIS_AUTH_SERVER_URL'
+        else default,
     )
 
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
@@ -173,6 +181,9 @@ async def test_delegation_flow(
     monkeypatch.setattr(
         parent_controller, '_react_to_exception', mock_react_to_exception
     )
+
+    # Mock the update_agent_knowledge_base function in Agent to prevent problems
+    mock_child_agent.update_agent_knowledge_base = Mock()
 
     # The child is done, so we simulate it finishing:
     child_finish_action = AgentFinishAction()
