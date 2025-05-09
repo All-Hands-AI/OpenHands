@@ -14,6 +14,9 @@ import {
   BranchLoadingState,
   BranchErrorState,
 } from "./repository-selection";
+import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
+import { sanitizeQuery } from "#/utils/sanitize-query";
+import { useDebounce } from "#/hooks/use-debounce";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repoTitle: string | null) => void;
@@ -44,6 +47,14 @@ export function RepositorySelectionForm({
   } = useCreateConversation();
   const isCreatingConversationElsewhere = useIsCreatingConversation();
   const { t } = useTranslation();
+
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  const { data: searchedRepos } = useSearchRepositories(
+    sanitizeQuery(debouncedSearchQuery),
+  );
 
   // Auto-select main or master branch if it exists
   React.useEffect(() => {
@@ -82,9 +93,12 @@ export function RepositorySelectionForm({
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = repositories?.find(
-      (repo) => repo.id.toString() === key,
-    );
+    let selectedRepo;
+    if (searchQuery !== "") {
+      selectedRepo = searchedRepos?.find((repo) => repo.id.toString() === key);
+    } else {
+      selectedRepo = repositories?.find((repo) => repo.id.toString() === key);
+    }
 
     if (selectedRepo) onRepoSelection(selectedRepo.full_name);
     setSelectedRepository(selectedRepo || null);
@@ -102,6 +116,11 @@ export function RepositorySelectionForm({
       setSelectedBranch(null);
       onRepoSelection(null);
     }
+
+    if (selectedRepository?.full_name === value) {
+      return;
+    }
+    setSearchQuery(value);
   };
 
   const handleBranchInputChange = (value: string) => {
@@ -118,6 +137,19 @@ export function RepositorySelectionForm({
 
     if (isRepositoriesError) {
       return <RepositoryErrorState />;
+    }
+
+    if (searchQuery !== "" && searchedRepos && searchedRepos.length > 0) {
+      return (
+        <RepositoryDropdown
+          items={searchedRepos.map((repo) => ({
+            key: repo.id,
+            label: repo.full_name,
+          }))}
+          onSelectionChange={handleRepoSelection}
+          onInputChange={handleRepoInputChange}
+        />
+      );
     }
 
     return (
