@@ -269,14 +269,20 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         user_id, set(conversation_ids)
     )
+    # Get conversation info for each conversation and filter out None values
+    conversation_infos = await wait_all(
+        _get_conversation_info(
+            conversation=conversation,
+            is_running=conversation.conversation_id in running_conversations,
+        )
+        for conversation in filtered_results
+    )
+
+    # Filter out None values
+    valid_results = [info for info in conversation_infos if info is not None]
+
     result = ConversationInfoResultSet(
-        results=await wait_all(
-            _get_conversation_info(
-                conversation=conversation,
-                is_running=conversation.conversation_id in running_conversations,
-            )
-            for conversation in filtered_results
-        ),
+        results=valid_results,
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
@@ -318,7 +324,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-) -> ConversationInfo:
+) -> ConversationInfo | None:
     try:
         title = conversation.title
         if not title:
@@ -339,13 +345,4 @@ async def _get_conversation_info(
             f'Error loading conversation {conversation.conversation_id}: {str(e)}',
             extra={'session_id': conversation.conversation_id},
         )
-        # Return a default ConversationInfo instead of None to satisfy mypy
-        return ConversationInfo(
-            trigger=None,
-            conversation_id=conversation.conversation_id,
-            title='Error loading conversation',
-            last_updated_at=datetime.now(timezone.utc),
-            created_at=datetime.now(timezone.utc),
-            selected_repository=None,
-            status=ConversationStatus.ERROR,
-        )
+        return None

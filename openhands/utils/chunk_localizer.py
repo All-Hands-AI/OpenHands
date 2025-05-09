@@ -4,8 +4,6 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
-from typing import cast
-
 import pylcs
 from pydantic import BaseModel
 from tree_sitter_languages import get_parser
@@ -68,7 +66,7 @@ def normalized_lcs(chunk: str, query: str) -> float:
     if len(chunk) == 0:
         return 0.0
     _score = pylcs.lcs_sequence_length(chunk, query)
-    return cast(float, _score / len(chunk))
+    return float(_score / len(chunk))
 
 
 def get_top_k_chunk_matches(
