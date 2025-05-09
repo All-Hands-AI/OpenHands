@@ -18,9 +18,11 @@ export type OpenHandsEventType =
   | "mcp"
   | "call_tool_mcp";
 
+export type OpenHandsSourceType = "agent" | "user" | "environment";
+
 interface OpenHandsBaseEvent {
   id: number;
-  source: "agent" | "user";
+  source: OpenHandsSourceType;
   message: string;
   timestamp: string; // ISO 8601
 }
