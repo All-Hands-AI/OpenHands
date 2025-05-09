@@ -23,6 +23,17 @@ const trimText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
+// Function to determine the color class based on the critic score
+const getCriticScoreColorClass = (score?: number): string => {
+  if (score === undefined) return "";
+  
+  if (score >= 0.8) return "bg-success";
+  if (score >= 0.6) return "bg-lime-500";
+  if (score >= 0.4) return "bg-yellow-500";
+  if (score >= 0.2) return "bg-orange-500";
+  return "bg-danger";
+};
+
 interface ExpandableMessageProps {
   id?: string;
   message: string;
@@ -30,6 +41,7 @@ interface ExpandableMessageProps {
   success?: boolean;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
+  criticScore?: number;
 }
 
 export function ExpandableMessage({
@@ -39,6 +51,7 @@ export function ExpandableMessage({
   success,
   observation,
   action,
+  criticScore,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -124,13 +137,33 @@ export function ExpandableMessage({
   }
 
   return (
-    <div
-      className={cn(
-        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
-        type === "error" ? "border-danger" : "border-neutral-300",
+    <div className="flex flex-row">
+      {/* Main border */}
+      <div
+        className={cn(
+          "border-l-2 my-2",
+          type === "error" ? "border-danger" : "border-neutral-300",
+        )}
+      />
+      
+      {/* Critic score indicator */}
+      {criticScore !== undefined && (
+        <div 
+          className={cn(
+            "border-l-2 my-2 relative group",
+            getCriticScoreColorClass(criticScore)
+          )}
+          title={`Critic Score: ${criticScore?.toFixed(2)}`}
+        >
+          {/* Tooltip */}
+          <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+            Critic Score: {criticScore?.toFixed(2)}
+          </div>
+        </div>
       )}
-    >
-      <div className="text-sm w-full">
+      
+      <div className="flex-1 pl-2 py-2">
+        <div className="text-sm w-full">
         <div className="flex flex-row justify-between items-center w-full">
           <span
             className={cn(
@@ -203,6 +236,7 @@ export function ExpandableMessage({
             </Markdown>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
