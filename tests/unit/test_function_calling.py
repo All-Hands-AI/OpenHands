@@ -243,4 +243,4 @@ def test_unexpected_argument_handling():
 
     # Verify the error message mentions the unexpected argument
     assert 'old_str_prefix' in str(exc_info.value)
-    assert 'unexpected keyword argument' in str(exc_info.value)
+    assert 'Unexpected argument' in str(exc_info.value)
