@@ -163,11 +163,25 @@ def response_to_actions(
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
                         other_kwargs.pop('view_range')
+
+                    # Filter out unexpected arguments
+                    valid_kwargs = {}
+                    file_edit_action_fields = set(
+                        FileEditAction.__dataclass_fields__.keys()
+                    )
+                    for key, value in other_kwargs.items():
+                        if key in file_edit_action_fields:
+                            valid_kwargs[key] = value
+                        else:
+                            raise FunctionCallValidationError(
+                                f"FileEditAction.__init__() got an unexpected keyword argument '{key}'"
+                            )
+
                     action = FileEditAction(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
+                        **valid_kwargs,
                     )
             # ================================================
             # AgentThinkAction
