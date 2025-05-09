@@ -118,6 +118,15 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         assert '[Action executed successfully.]' in observation_text
         assert 'Canvas' in observation_text
 
+        # Check the /workspace/.browser_screenshots folder
+        action_cmd = CmdRunAction(command='ls /workspace/.browser_screenshots')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert 'screenshot_' in obs.content
+        assert '.png' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -170,5 +179,14 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         assert '[Action executed successfully.]' in observation_text
         assert 'File Viewer - test_image.png' in observation_text
 
+        # Check the /workspace/.browser_screenshots folder
+        action_cmd = CmdRunAction(command='ls /workspace/.browser_screenshots')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert 'screenshot_' in obs.content
+        assert '.png' in obs.content
     finally:
         _close_test_runtime(runtime)
