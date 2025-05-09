@@ -68,7 +68,7 @@ async def cleanup_session(
     agent: Agent,
     runtime: Runtime,
     controller: AgentController,
-):
+) -> None:
     """Clean up all resources from the current session."""
     try:
         # Cancel all running tasks except the current one
@@ -126,7 +126,7 @@ async def run_session(
 
     usage_metrics = UsageMetrics()
 
-    async def prompt_for_next_task(agent_state: str):
+    async def prompt_for_next_task(agent_state: str) -> None:
         nonlocal reload_microagents, new_session_requested
         while True:
             next_message = await read_prompt_input(
@@ -271,7 +271,7 @@ async def run_session(
     return new_session_requested
 
 
-async def main(loop: asyncio.AbstractEventLoop):
+async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
 
     args = parse_arguments()

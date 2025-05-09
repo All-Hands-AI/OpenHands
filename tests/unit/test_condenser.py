@@ -261,9 +261,9 @@ def test_browser_output_condenser_respects_attention_window():
     assert len(result) == len(events)
     cnt = 4
     for event, condensed_event in zip(events, result):
-        if isinstance(event, BrowserOutputObservation):
+        if isinstance(event, (BrowserOutputObservation, AgentCondensationObservation)):
             if cnt > attention_window:
-                assert 'Content Omitted' in str(condensed_event)
+                assert 'Content omitted' in str(condensed_event)
             else:
                 assert event == condensed_event
             cnt -= 1
@@ -768,11 +768,15 @@ def test_condenser_pipeline_chains_sub_condensers():
         # to the number of browser outputs in the view, not the whole view or
         # the event stream).
         browser_outputs = [
-            event for event in view if isinstance(event, BrowserOutputObservation)
+            event
+            for event in view
+            if isinstance(
+                event, (BrowserOutputObservation, AgentCondensationObservation)
+            )
         ]
 
         for event in browser_outputs[:-ATTENTION_WINDOW]:
-            assert 'Content Omitted' in str(event)
+            assert 'Content omitted' in str(event)
 
         for event in browser_outputs[-ATTENTION_WINDOW:]:
-            assert 'Content Omitted' not in str(event)
+            assert 'Content omitted' not in str(event)
