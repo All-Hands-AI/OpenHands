@@ -516,6 +516,126 @@ fi
 
         self.log('info', 'Git pre-commit hook installed successfully')
 
+    def get_microagents_from_org_or_user(
+        self, selected_repository: str
+    ) -> list[BaseMicroagent]:
+        """Load microagents from the organization or user level .openhands repository.
+
+        For example, if the repository is github.com/acme-co/api, this will check if
+        github.com/acme-co/.openhands exists. If it does, it will clone it and load
+        the microagents from the ./microagents/ folder.
+
+        Args:
+            selected_repository: The repository path (e.g., "github.com/acme-co/api")
+
+        Returns:
+            A list of loaded microagents from the org/user level repository
+        """
+        loaded_microagents: list[BaseMicroagent] = []
+        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
+
+        repo_parts = selected_repository.split('/')
+        if len(repo_parts) < 2:
+            return loaded_microagents
+
+        # Extract the domain and org/user name
+        domain = repo_parts[0] if len(repo_parts) > 2 else 'github.com'
+        org_name = repo_parts[-2]
+
+        # Construct the org-level .openhands repo path
+        org_openhands_repo = f'{domain}/{org_name}/.openhands'
+        if domain not in org_openhands_repo:
+            org_openhands_repo = f'github.com/{org_openhands_repo}'
+
+        self.log(
+            'info',
+            f'Checking for org-level microagents at {org_openhands_repo}',
+        )
+
+        # Try to clone the org-level .openhands repo
+        try:
+            # Create a temporary directory for the org-level repo
+            org_repo_dir = workspace_root / f'org_openhands_{org_name}'
+
+            # Use authenticated URL if tokens are available
+            remote_url = f'https://{org_openhands_repo}.git'
+
+            # Try to use token if available (similar to clone_or_init_repo method)
+            provider = None
+            if 'github.com' in org_openhands_repo:
+                provider = ProviderType.GITHUB
+            elif 'gitlab.com' in org_openhands_repo:
+                provider = ProviderType.GITLAB
+
+            if (
+                provider
+                and self.git_provider_tokens
+                and provider in self.git_provider_tokens
+            ):
+                git_token = self.git_provider_tokens[provider].token
+                if git_token:
+                    if provider == ProviderType.GITLAB:
+                        remote_url = f'https://oauth2:{git_token.get_secret_value()}@{org_openhands_repo.replace("gitlab.com/", "")}.git'
+                    else:
+                        remote_url = f'https://{git_token.get_secret_value()}@{org_openhands_repo.replace("github.com/", "")}.git'
+
+            clone_cmd = f"git clone {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
+
+            action = CmdRunAction(command=clone_cmd)
+            obs = self.run_action(action)
+
+            if (
+                isinstance(obs, CmdOutputObservation)
+                and obs.exit_code == 0
+                and 'Org repo not found' not in obs.content
+            ):
+                self.log(
+                    'info',
+                    f'Successfully cloned org-level microagents from {org_openhands_repo}',
+                )
+
+                # Load microagents from the org-level repo
+                org_microagents_dir = org_repo_dir / 'microagents'
+                org_files = self.list_files(str(org_microagents_dir))
+
+                if org_files:
+                    self.log(
+                        'info',
+                        f'Found {len(org_files)} files in org-level microagents directory',
+                    )
+                    org_zip_path = self.copy_from(str(org_microagents_dir))
+                    org_microagent_folder = tempfile.mkdtemp()
+
+                    with ZipFile(org_zip_path, 'r') as zip_file:
+                        zip_file.extractall(org_microagent_folder)
+
+                    org_zip_path.unlink()
+                    org_repo_agents, org_knowledge_agents = load_microagents_from_dir(
+                        org_microagent_folder
+                    )
+
+                    self.log(
+                        'info',
+                        f'Loaded {len(org_repo_agents)} repo agents and {len(org_knowledge_agents)} knowledge agents from org-level repo',
+                    )
+
+                    loaded_microagents.extend(org_repo_agents.values())
+                    loaded_microagents.extend(org_knowledge_agents.values())
+                    shutil.rmtree(org_microagent_folder)
+
+                # Clean up the org repo directory
+                shutil.rmtree(org_repo_dir)
+            else:
+                self.log(
+                    'info',
+                    f'No org-level microagents found at {org_openhands_repo}',
+                )
+
+        except Exception as e:
+            self.log('error', f'Error loading org-level microagents: {str(e)}')
+
+        return loaded_microagents
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroagent]:
@@ -535,103 +655,9 @@ fi
 
         # Check for user/org level microagents if a repository is selected
         if selected_repository:
-            repo_parts = selected_repository.split('/')
-            if len(repo_parts) >= 2:
-                # Extract the domain and org/user name
-                domain = repo_parts[0] if len(repo_parts) > 2 else 'github.com'
-                org_name = repo_parts[-2]
-
-                # Construct the org-level .openhands repo path
-                org_openhands_repo = f'{domain}/{org_name}/.openhands'
-                if domain not in org_openhands_repo:
-                    org_openhands_repo = f'github.com/{org_openhands_repo}'
-
-                self.log(
-                    'info',
-                    f'Checking for org-level microagents at {org_openhands_repo}',
-                )
-
-                # Try to clone the org-level .openhands repo
-                try:
-                    # Create a temporary directory for the org-level repo
-                    org_repo_dir = workspace_root / f'org_openhands_{org_name}'
-
-                    # Use authenticated URL if tokens are available
-                    remote_url = f'https://{org_openhands_repo}.git'
-
-                    # Try to use token if available (similar to clone_or_init_repo method)
-                    provider = None
-                    if 'github.com' in org_openhands_repo:
-                        provider = ProviderType.GITHUB
-                    elif 'gitlab.com' in org_openhands_repo:
-                        provider = ProviderType.GITLAB
-
-                    if (
-                        provider
-                        and self.git_provider_tokens
-                        and provider in self.git_provider_tokens
-                    ):
-                        git_token = self.git_provider_tokens[provider].token
-                        if git_token:
-                            if provider == ProviderType.GITLAB:
-                                remote_url = f'https://oauth2:{git_token.get_secret_value()}@{org_openhands_repo.replace("gitlab.com/", "")}.git'
-                            else:
-                                remote_url = f'https://{git_token.get_secret_value()}@{org_openhands_repo.replace("github.com/", "")}.git'
-
-                    clone_cmd = f"git clone {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
-
-                    action = CmdRunAction(command=clone_cmd)
-                    obs = self.run_action(action)
-
-                    if (
-                        isinstance(obs, CmdOutputObservation)
-                        and obs.exit_code == 0
-                        and 'Org repo not found' not in obs.content
-                    ):
-                        self.log(
-                            'info',
-                            f'Successfully cloned org-level microagents from {org_openhands_repo}',
-                        )
-
-                        # Load microagents from the org-level repo
-                        org_microagents_dir = org_repo_dir / 'microagents'
-                        org_files = self.list_files(str(org_microagents_dir))
-
-                        if org_files:
-                            self.log(
-                                'info',
-                                f'Found {len(org_files)} files in org-level microagents directory',
-                            )
-                            org_zip_path = self.copy_from(str(org_microagents_dir))
-                            org_microagent_folder = tempfile.mkdtemp()
-
-                            with ZipFile(org_zip_path, 'r') as zip_file:
-                                zip_file.extractall(org_microagent_folder)
-
-                            org_zip_path.unlink()
-                            org_repo_agents, org_knowledge_agents = (
-                                load_microagents_from_dir(org_microagent_folder)
-                            )
-
-                            self.log(
-                                'info',
-                                f'Loaded {len(org_repo_agents)} repo agents and {len(org_knowledge_agents)} knowledge agents from org-level repo',
-                            )
-
-                            loaded_microagents.extend(org_repo_agents.values())
-                            loaded_microagents.extend(org_knowledge_agents.values())
-                            shutil.rmtree(org_microagent_folder)
-
-                        # Clean up the org repo directory
-                        shutil.rmtree(org_repo_dir)
-                    else:
-                        self.log(
-                            'info',
-                            f'No org-level microagents found at {org_openhands_repo}',
-                        )
-
-                except Exception as e:
-                    self.log('error', f'Error loading org-level microagents: {str(e)}')
+            # Load microagents from the org/user level repository
+            org_microagents = self.get_microagents_from_org_or_user(selected_repository)
+            loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
             repo_root = workspace_root / selected_repository.split('/')[-1]
