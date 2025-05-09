@@ -349,10 +349,10 @@ def test_load_from_env_with_list(monkeypatch, default_config):
     # Set the environment variable with a list-formatted string
     monkeypatch.setenv(
         'SANDBOX_RUNTIME_EXTRA_BUILD_ARGS',
-        '[' +
-        '  "--add-host=host.docker.internal:host-gateway",' +
-        '  "--build-arg=https_proxy=https://my-proxy:912",' +
-        ']'
+        '['
+        + '  "--add-host=host.docker.internal:host-gateway",'
+        + '  "--build-arg=https_proxy=https://my-proxy:912",'
+        + ']',
     )
 
     # Load configuration from environment
@@ -361,8 +361,14 @@ def test_load_from_env_with_list(monkeypatch, default_config):
     # Verify that the list was correctly parsed
     assert isinstance(default_config.sandbox.runtime_extra_build_args, list)
     assert len(default_config.sandbox.runtime_extra_build_args) == 2
-    assert "--add-host=host.docker.internal:host-gateway" in default_config.sandbox.runtime_extra_build_args
-    assert "--build-arg=https_proxy=https://my-proxy:912" in default_config.sandbox.runtime_extra_build_args
+    assert (
+        '--add-host=host.docker.internal:host-gateway'
+        in default_config.sandbox.runtime_extra_build_args
+    )
+    assert (
+        '--build-arg=https_proxy=https://my-proxy:912'
+        in default_config.sandbox.runtime_extra_build_args
+    )
 
 
 def test_security_config_from_toml(default_config, temp_toml_file):
