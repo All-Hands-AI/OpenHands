@@ -232,11 +232,11 @@ jobs:
             // Perform package installation
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
               console.log("Installing experimental OpenHands...");
-              
+
               await exec.exec("pip install git+https://github.com/all-hands-ai/openhands.git");
             } else {
               console.log("Installing from requirements.txt...");
-              
+
               await exec.exec("pip install -r /tmp/requirements.txt");
             }
 

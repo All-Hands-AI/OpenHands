@@ -1,14 +1,14 @@
 # Model Context Protocol (MCP)
 
 :::note
-This page outlines how to configure and use the Model Context Protocol (MCP) in OpenHands, allowing you to extend the 
+This page outlines how to configure and use the Model Context Protocol (MCP) in OpenHands, allowing you to extend the
 agent's capabilities with custom tools.
 :::
 
 ## Overview
 
-Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate with external tool servers. These 
-servers can provide additional functionality to the agent, such as specialized data processing, external API access, 
+Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate with external tool servers. These
+servers can provide additional functionality to the agent, such as specialized data processing, external API access,
 or custom tools. MCP is based on the open standard defined at [modelcontextprotocol.io](https://modelcontextprotocol.io).
 
 ## Configuration
