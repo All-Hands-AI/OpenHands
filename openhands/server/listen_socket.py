@@ -72,6 +72,8 @@ async def connect(connection_id: str, environ):
             raise ConnectionRefusedError('No conversation_id in query params')
 
         cookies_str = environ.get('HTTP_COOKIE', '')
+        # Get Authorization header from the environment
+        # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
         authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
         user_id, github_user_id = await conversation_validator.validate(
