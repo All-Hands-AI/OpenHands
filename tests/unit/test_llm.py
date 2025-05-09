@@ -297,7 +297,7 @@ def test_completion_retries(
 ):
     mock_litellm_completion.side_effect = [
         exception_class('Test error message', **extra_args),
-        {'choices': [{'message': {'content': 'Retry successful'}}]}
+        {'choices': [{'message': {'content': 'Retry successful'}}]},
     ]
 
     llm = LLM(config=default_config)
@@ -317,7 +317,7 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
             RateLimitError(
                 'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),
-            {'choices': [{'message': {'content': 'Retry successful'}}]}
+            {'choices': [{'message': {'content': 'Retry successful'}}]},
         ]
 
         llm = LLM(config=default_config)
@@ -333,9 +333,7 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         wait_time = mock_sleep.call_args[0][0]
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), (
-            f"Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}"
-        )
+        ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -416,11 +414,9 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 
         else:
             return {
-                'choices': [{
-                    'message': {
-                        'content': f"Response with temperature={temperature}"
-                    }
-                }]
+                'choices': [
+                    {'message': {'content': f'Response with temperature={temperature}'}}
+                ]
             }
 
     mock_litellm_completion.side_effect = side_effect
@@ -516,11 +512,13 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
         else:
             # Second call should return a successful response
             return {
-                'choices': [{
-                    'message': {
-                        'content': f"Successful response with temperature={temperature}"
+                'choices': [
+                    {
+                        'message': {
+                            'content': f'Successful response with temperature={temperature}'
+                        }
                     }
-                }]
+                ]
             }
 
     mock_litellm_completion.side_effect = side_effect
@@ -561,7 +559,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
     This test verifies that:
     1. First call to llm_completion with temperature=0 throws LLMNoResponseError
     2. Second call with temperature=0.2 returns a successful response
-     
+
     """
 
     # Define a side effect function that raises LLMNoResponseError on first call
@@ -575,11 +573,13 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
         else:
             # Second call should return a successful response
             return {
-                'choices': [{
-                    'message': {
-                        'content': f"Successful response with temperature={temperature}"
+                'choices': [
+                    {
+                        'message': {
+                            'content': f'Successful response with temperature={temperature}'
+                        }
                     }
-                }]
+                ]
             }
 
     mock_litellm_completion.side_effect = side_effect
@@ -660,7 +660,9 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     assert (
         call_kwargs['model'] == default_config.model
     )  # Should use the model from config, not the first arg
-    assert call_kwargs['messages'] == [{'role': 'user', 'content': 'Hello from positional args!'}]
+    assert call_kwargs['messages'] == [
+        {'role': 'user', 'content': 'Hello from positional args!'}
+    ]
     assert not call_kwargs['stream']
 
     # Ensure the first positional argument (model) was ignored
@@ -741,7 +743,7 @@ def test_get_token_count_error_handling(
     assert token_count == 0
     mock_token_counter.assert_called_once()
     mock_logger.error.assert_called_once_with(
-        "Error getting token count for\n model gpt-4o\nToken counting failed"
+        'Error getting token count for\n model gpt-4o\nToken counting failed'
     )
 
 

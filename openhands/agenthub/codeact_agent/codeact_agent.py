@@ -3,6 +3,8 @@ import os
 from collections import deque
 from typing import override
 
+from httpx import request
+
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.a2a.A2AManager import A2AManager
 from openhands.a2a.tool import ListRemoteAgents, SendTask
@@ -27,7 +29,6 @@ from openhands.runtime.plugins import (
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
-from httpx import request
 
 
 class CodeActAgent(Agent):
@@ -210,26 +211,39 @@ class CodeActAgent(Agent):
         logger.debug(f'Messages: {messages}')
         last_message = messages[-1]
         response = None
-        if (last_message.role == 'user' 
-            and self.config.enable_llm_router 
+        if (
+            last_message.role == 'user'
+            and self.config.enable_llm_router
             and self.config.llm_router_infer_url is not None
             and self.routing_llms is not None
-            and self.routing_llms['simple'] is not None):
-            content = "\n".join([msg.text for msg in last_message.content if isinstance(msg, TextContent)])
-            text_input = "Prompt: " + content
+            and self.routing_llms['simple'] is not None
+        ):
+            content = '\n'.join(
+                [
+                    msg.text
+                    for msg in last_message.content
+                    if isinstance(msg, TextContent)
+                ]
+            )
+            text_input = 'Prompt: ' + content
             body = {
-                "inputs": [
+                'inputs': [
                     {
-                    "name": "INPUT",
-                    "shape": [1, 1],
-                    "datatype": "BYTES",
-                    "data": [text_input]
+                        'name': 'INPUT',
+                        'shape': [1, 1],
+                        'datatype': 'BYTES',
+                        'data': [text_input],
                     }
                 ]
             }
-            logger.debug(f'Body: {body}')   
-            headers = {"Content-Type": "application/json"}
-            result = request('POST', self.config.llm_router_infer_url, data=json.dumps(body), headers=headers)
+            logger.debug(f'Body: {body}')
+            headers = {'Content-Type': 'application/json'}
+            result = request(
+                'POST',
+                self.config.llm_router_infer_url,
+                data=json.dumps(body),
+                headers=headers,
+            )
             res = result.json()
             logger.debug(f'Result from classifier: {res}')
             complexity_score = res['outputs'][0]['data'][0]
@@ -240,9 +254,9 @@ class CodeActAgent(Agent):
                 response = self.routing_llms['simple'].completion(**params)
         else:
             response = self.llm.completion(**params)
-   
+
         logger.debug(f'Response from LLM: {response}')
-        
+
         actions = codeact_function_calling.response_to_actions(
             response,
             state.session_id,

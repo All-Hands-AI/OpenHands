@@ -7,12 +7,12 @@ import httpx
 import modal
 import tenacity
 
+from openhands.a2a.A2AManager import A2AManager
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.a2a.A2AManager import A2AManager
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.runtime_build import (
