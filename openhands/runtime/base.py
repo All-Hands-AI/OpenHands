@@ -516,6 +516,80 @@ fi
 
         self.log('info', 'Git pre-commit hook installed successfully')
 
+    def _load_microagents_from_directory(
+        self, microagents_dir: Path, source_description: str
+    ) -> list[BaseMicroagent]:
+        """Load microagents from a directory.
+
+        Args:
+            microagents_dir: Path to the directory containing microagents
+            source_description: Description of the source for logging purposes
+
+        Returns:
+            A list of loaded microagents
+        """
+        loaded_microagents: list[BaseMicroagent] = []
+        files = self.list_files(str(microagents_dir))
+
+        if not files:
+            return loaded_microagents
+
+        self.log('info', f'Found {len(files)} files in {source_description} microagents directory')
+        zip_path = self.copy_from(str(microagents_dir))
+        microagent_folder = tempfile.mkdtemp()
+
+        try:
+            with ZipFile(zip_path, 'r') as zip_file:
+                zip_file.extractall(microagent_folder)
+
+            zip_path.unlink()
+            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
+
+            self.log(
+                'info',
+                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {source_description}',
+            )
+
+            loaded_microagents.extend(repo_agents.values())
+            loaded_microagents.extend(knowledge_agents.values())
+        finally:
+            shutil.rmtree(microagent_folder)
+
+        return loaded_microagents
+
+    def _get_authenticated_git_url(self, repo_path: str) -> str:
+        """Get an authenticated git URL for a repository.
+
+        Args:
+            repo_path: Repository path (e.g., "github.com/acme-co/api")
+
+        Returns:
+            Authenticated git URL if credentials are available, otherwise regular HTTPS URL
+        """
+        remote_url = f'https://{repo_path}.git'
+
+        # Determine provider from repo path
+        provider = None
+        if 'github.com' in repo_path:
+            provider = ProviderType.GITHUB
+        elif 'gitlab.com' in repo_path:
+            provider = ProviderType.GITLAB
+
+        # Add authentication if available
+        if (
+            provider
+            and self.git_provider_tokens
+            and provider in self.git_provider_tokens
+        ):
+            git_token = self.git_provider_tokens[provider].token
+            if git_token:
+                if provider == ProviderType.GITLAB:
+                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                else:
+                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
+
+        return remote_url
+
     def get_microagents_from_org_or_user(
         self, selected_repository: str
     ) -> list[BaseMicroagent]:
@@ -557,29 +631,9 @@ fi
             # Create a temporary directory for the org-level repo
             org_repo_dir = workspace_root / f'org_openhands_{org_name}'
 
-            # Use authenticated URL if tokens are available
-            remote_url = f'https://{org_openhands_repo}.git'
-
-            # Try to use token if available (similar to clone_or_init_repo method)
-            provider = None
-            if 'github.com' in org_openhands_repo:
-                provider = ProviderType.GITHUB
-            elif 'gitlab.com' in org_openhands_repo:
-                provider = ProviderType.GITLAB
-
-            if (
-                provider
-                and self.git_provider_tokens
-                and provider in self.git_provider_tokens
-            ):
-                git_token = self.git_provider_tokens[provider].token
-                if git_token:
-                    if provider == ProviderType.GITLAB:
-                        remote_url = f'https://oauth2:{git_token.get_secret_value()}@{org_openhands_repo.replace("gitlab.com/", "")}.git'
-                    else:
-                        remote_url = f'https://{git_token.get_secret_value()}@{org_openhands_repo.replace("github.com/", "")}.git'
-
-            clone_cmd = f"git clone {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
+            # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
+            remote_url = self._get_authenticated_git_url(org_openhands_repo)
+            clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
@@ -596,32 +650,9 @@ fi
 
                 # Load microagents from the org-level repo
                 org_microagents_dir = org_repo_dir / 'microagents'
-                org_files = self.list_files(str(org_microagents_dir))
-
-                if org_files:
-                    self.log(
-                        'info',
-                        f'Found {len(org_files)} files in org-level microagents directory',
-                    )
-                    org_zip_path = self.copy_from(str(org_microagents_dir))
-                    org_microagent_folder = tempfile.mkdtemp()
-
-                    with ZipFile(org_zip_path, 'r') as zip_file:
-                        zip_file.extractall(org_microagent_folder)
-
-                    org_zip_path.unlink()
-                    org_repo_agents, org_knowledge_agents = load_microagents_from_dir(
-                        org_microagent_folder
-                    )
-
-                    self.log(
-                        'info',
-                        f'Loaded {len(org_repo_agents)} repo agents and {len(org_knowledge_agents)} knowledge agents from org-level repo',
-                    )
-
-                    loaded_microagents.extend(org_repo_agents.values())
-                    loaded_microagents.extend(org_knowledge_agents.values())
-                    shutil.rmtree(org_microagent_folder)
+                loaded_microagents = self._load_microagents_from_directory(
+                    org_microagents_dir, 'org-level'
+                )
 
                 # Clean up the org repo directory
                 shutil.rmtree(org_repo_dir)
@@ -694,35 +725,10 @@ fi
             )
 
         # Load microagents from directory
-        files = self.list_files(str(microagents_dir))
-        if files:
-            self.log('info', f'Found {len(files)} files in microagents directory.')
-            zip_path = self.copy_from(str(microagents_dir))
-            microagent_folder = tempfile.mkdtemp()
-
-            # Properly handle the zip file
-            with ZipFile(zip_path, 'r') as zip_file:
-                zip_file.extractall(microagent_folder)
-
-            # Add debug print of directory structure
-            self.log('debug', 'Microagent folder structure:')
-            for root, _, files in os.walk(microagent_folder):
-                relative_path = os.path.relpath(root, microagent_folder)
-                self.log('debug', f'Directory: {relative_path}/')
-                for file in files:
-                    self.log('debug', f'  File: {os.path.join(relative_path, file)}')
-
-            # Clean up the temporary zip file
-            zip_path.unlink()
-            # Load all microagents using the existing function
-            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
-            self.log(
-                'info',
-                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents',
-            )
-            loaded_microagents.extend(repo_agents.values())
-            loaded_microagents.extend(knowledge_agents.values())
-            shutil.rmtree(microagent_folder)
+        repo_microagents = self._load_microagents_from_directory(
+            microagents_dir, 'repository'
+        )
+        loaded_microagents.extend(repo_microagents)
 
         return loaded_microagents
 
