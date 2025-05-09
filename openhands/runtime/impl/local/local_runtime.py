@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from typing import Callable, dict, list, tuple
+from typing import Callable
 
 import httpx
 import tenacity
