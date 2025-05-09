@@ -269,14 +269,27 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         user_id, set(conversation_ids)
     )
+    # Get conversation info for each conversation and filter out None values
+    conversation_infos = await wait_all(
+        _get_conversation_info(
+            conversation=conversation,
+            is_running=conversation.conversation_id in running_conversations,
+        )
+        for conversation in filtered_results
+    )
+
+    # Assert that none of the values are None
+    assert all(info is not None for info in conversation_infos), (
+        'Expected all conversation infos to be non-None'
+    )
+
+    # Cast to list[ConversationInfo] after assertion
+    non_none_results: list[ConversationInfo] = [
+        info for info in conversation_infos if info is not None
+    ]
+
     result = ConversationInfoResultSet(
-        results=await wait_all(
-            _get_conversation_info(
-                conversation=conversation,
-                is_running=conversation.conversation_id in running_conversations,
-            )
-            for conversation in filtered_results
-        ),
+        results=non_none_results,
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
