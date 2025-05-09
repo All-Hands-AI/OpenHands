@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    SecretStr,
 )
 
 from openhands.core.config.mcp_config import MCPConfig
@@ -54,7 +55,7 @@ class CustomSecretModel(CustomSecretWithoutValueModel):
     Custom secret model with value
     """
 
-    value: str
+    value: SecretStr
 
 
 class GETCustomSecrets(BaseModel):

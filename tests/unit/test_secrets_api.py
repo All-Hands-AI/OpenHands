@@ -140,7 +140,7 @@ async def test_add_custom_secret(test_client, file_secrets_store):
 
 @pytest.mark.asyncio
 async def test_update_existing_custom_secret(test_client, file_secrets_store):
-    """Test updating an existing custom secret."""
+    """Test updating an existing custom secret's name and description (cannot change value once set)."""
 
     # Create initial settings with a custom secret
     custom_secrets = {'API_KEY': CustomSecret(secret=SecretStr('old-api-key'))}
@@ -157,7 +157,6 @@ async def test_update_existing_custom_secret(test_client, file_secrets_store):
     # Make the PUT request to update the custom secret
     update_secret_data = {
         'name': 'API_KEY',
-        'value': 'new-api-key',
         'description': None,
     }
     response = test_client.put('/api/secrets/API_KEY', json=update_secret_data)
@@ -170,7 +169,7 @@ async def test_update_existing_custom_secret(test_client, file_secrets_store):
     assert 'API_KEY' in stored_settings.custom_secrets
     assert (
         stored_settings.custom_secrets['API_KEY'].secret.get_secret_value()
-        == 'new-api-key'
+        == 'old-api-key'
     )
 
     # Check that other settings were preserved

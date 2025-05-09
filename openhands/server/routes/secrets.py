@@ -182,8 +182,6 @@ async def load_custom_secrets_names(
                 )
                 custom_secrets.append(custom_secret)
 
-        print(f'custom_secrets: {custom_secrets}')
-
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
