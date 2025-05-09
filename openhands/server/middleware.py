@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp
 
 from openhands.server import shared
 from openhands.server.types import SessionMiddlewareInterface
@@ -45,7 +45,9 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
     Middleware to disable caching for all routes by adding appropriate headers
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Response]
+    ) -> Response:
         response = await call_next(request)
         if request.url.path.startswith('/assets'):
             # The content of the assets directory has fingerprinted file names so we cache aggressively
@@ -102,7 +104,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate_limiter = rate_limiter
 
-    async def dispatch(self, request: StarletteRequest, call_next: Callable[[StarletteRequest], Response]) -> Response:
+    async def dispatch(
+        self,
+        request: StarletteRequest,
+        call_next: Callable[[StarletteRequest], Response],
+    ) -> Response:
         if not self.is_rate_limited_request(request):
             return await call_next(request)
         ok = await self.rate_limiter(request)
@@ -170,7 +176,9 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             request.state.conversation
         )
 
-    async def __call__(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
+    async def __call__(
+        self, request: Request, call_next: Callable[[Request], Response]
+    ) -> Response:
         if not self._should_attach(request):
             return await call_next(request)
 

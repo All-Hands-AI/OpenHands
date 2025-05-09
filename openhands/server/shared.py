@@ -36,25 +36,29 @@ sio = socketio.AsyncServer(
 
 MonitoringListenerImpl = get_impl(
     MonitoringListener,
-    "DefaultMonitoringListener",  # Use default instead of server_config.monitoring_listener_class
+    'DefaultMonitoringListener',  # Use default instead of server_config.monitoring_listener_class
 )
 
 monitoring_listener = MonitoringListenerImpl.get_instance(config)
 
 ConversationManagerImpl = get_impl(
     ConversationManager,
-    "StandaloneConversationManager",  # Use default instead of server_config.conversation_manager_class
+    'StandaloneConversationManager',  # Use default instead of server_config.conversation_manager_class
 )
 
 conversation_manager = ConversationManagerImpl.get_instance(
     sio, config, file_store, server_config, monitoring_listener
 )
 
-SettingsStoreImpl = get_impl(SettingsStore, "FileSettingsStore")  # Use default instead of server_config.settings_store_class
+SettingsStoreImpl = get_impl(
+    SettingsStore, 'FileSettingsStore'
+)  # Use default instead of server_config.settings_store_class
 
-SecretsStoreImpl = get_impl(SecretsStore, "FileSecretsStore")  # Use default instead of server_config.secret_store_class
+SecretsStoreImpl = get_impl(
+    SecretsStore, 'FileSecretsStore'
+)  # Use default instead of server_config.secret_store_class
 
 ConversationStoreImpl = get_impl(
     ConversationStore,
-    "FileConversationStore",  # Use default instead of server_config.conversation_store_class
+    'FileConversationStore',  # Use default instead of server_config.conversation_store_class
 )

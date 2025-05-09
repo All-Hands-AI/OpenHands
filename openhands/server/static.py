@@ -1,6 +1,6 @@
 from fastapi.staticfiles import StaticFiles
-from starlette.types import Scope
 from starlette.responses import Response
+from starlette.types import Scope
 
 
 class SPAStaticFiles(StaticFiles):

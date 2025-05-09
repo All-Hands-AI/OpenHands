@@ -26,10 +26,8 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
-    server_config,
     sio,
 )
-from openhands.server.types import AppMode
 from openhands.storage.conversation.conversation_validator import (
     create_conversation_validator,
 )
