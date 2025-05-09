@@ -255,11 +255,6 @@ const sidebars: SidebarsConfig = {
               label: 'Runtime',
               id: 'usage/architecture/runtime',
             },
-            {
-              type: 'doc',
-              label: 'WebSocket API',
-              id: 'usage/architecture/websocket-api',
-            },
           ],
         },
         {
@@ -276,11 +271,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'WebSocket Connection',
           id: 'usage/how-to/websocket-connection',
-        },
-        {
-          type: 'doc',
-          label: 'WebSocket Testing with Websocat',
-          id: 'usage/how-to/websocat-examples',
         },
       ],
     },
