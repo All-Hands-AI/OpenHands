@@ -71,9 +71,7 @@ async def get_user_auth(request: Request) -> UserAuth:
     user_auth: UserAuth | None = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
-    impl_name = (
-        'DefaultUserAuth'  # Use default instead of server_config.user_auth_class
-    )
+    impl_name = 'openhands.server.user_auth.default_user_auth.DefaultUserAuth'  # Use default instead of server_config.user_auth_class
     impl = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
     if user_auth is None:
