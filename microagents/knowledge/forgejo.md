@@ -16,6 +16,19 @@ For Codeberg, the base URL is:
 https://codeberg.org/api/v1
 ```
 
+### ActivityPub API
+
+Forgejo also includes ActivityPub API endpoints, which allow it to federate with other ActivityPub-compatible services in the Fediverse. This is a unique feature that distinguishes Forgejo from many other Git hosting platforms.
+
+The ActivityPub API endpoints include:
+
+- `/api/v1/activitypub/user/{username}` - User's ActivityPub profile
+- `/api/v1/activitypub/user/{username}/inbox` - User's ActivityPub inbox
+- `/api/v1/activitypub/repository/{owner}/{repo}` - Repository's ActivityPub profile
+- `/api/v1/activitypub/repository/{owner}/{repo}/inbox` - Repository's ActivityPub inbox
+
+This allows Forgejo instances to federate with other Forgejo instances and interact with other ActivityPub-compatible services like Mastodon.
+
 ### Authentication
 
 Forgejo supports several authentication methods:

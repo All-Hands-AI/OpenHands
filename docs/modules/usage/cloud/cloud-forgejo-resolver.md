@@ -110,6 +110,24 @@ Our Forgejo integration includes several key features:
 - **Review Threads**: Support for code review threads, organized by file path and line number
 - **Reviewer Requests**: Support for requesting reviewers on pull requests
 
+## ActivityPub Support
+
+Forgejo includes ActivityPub support, which allows it to federate with other ActivityPub-compatible services in the Fediverse. This is a unique feature that distinguishes Forgejo from many other Git hosting platforms.
+
+The ActivityPub API endpoints include:
+
+- `/api/v1/activitypub/user/{username}` - User's ActivityPub profile
+- `/api/v1/activitypub/user/{username}/inbox` - User's ActivityPub inbox
+- `/api/v1/activitypub/repository/{owner}/{repo}` - Repository's ActivityPub profile
+- `/api/v1/activitypub/repository/{owner}/{repo}/inbox` - Repository's ActivityPub inbox
+
+This allows Forgejo instances to:
+- Federate with other Forgejo instances
+- Interact with other ActivityPub-compatible services like Mastodon
+- Create a decentralized network of Git repositories and users
+
+While our current implementation doesn't directly use the ActivityPub API, it's available for future extensions to enable federation features.
+
 ## Testing
 
 The Forgejo integration has been tested against Codeberg.org, which is one of the most popular public Forgejo instances. If you encounter any issues with other Forgejo instances, please report them so we can improve the integration.
