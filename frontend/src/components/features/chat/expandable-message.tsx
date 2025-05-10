@@ -26,7 +26,7 @@ const trimText = (text: string, maxLength: number): string => {
 // Function to determine the color class based on the critic score
 const getCriticScoreColorClass = (score?: number): string => {
   if (score === undefined) return "";
-  
+
   if (score >= 0.8) return "border-success";
   if (score >= 0.6) return "border-lime-500";
   if (score >= 0.4) return "border-yellow-500";
@@ -145,9 +145,9 @@ export function ExpandableMessage({
           type === "error" ? "border-danger" : "border-neutral-300",
         )}
       />
-      
+
       {/* Critic score indicator - always present but color depends on whether there's a score */}
-      <div 
+      <div
         className={cn(
           "border-l-4 my-2 relative group w-1",
           criticScore !== undefined ? getCriticScoreColorClass(criticScore) : "border-white"
@@ -161,82 +161,85 @@ export function ExpandableMessage({
           </div>
         )}
       </div>
-      
-      <div className="flex-1 pl-2 py-2">
+
+      <div className={cn(
+        "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
+        type === "error" ? "border-danger" : "border-neutral-300"
+      )}>
         <div className="text-sm w-full">
-        <div className="flex flex-row justify-between items-center w-full">
-          <span
-            className={cn(
-              "font-bold",
-              type === "error" ? "text-danger" : "text-neutral-300",
-            )}
-          >
-            {translationId && i18n.exists(translationId) ? (
-              <Trans
-                i18nKey={translationId}
-                values={translationParams}
-                components={{
-                  bold: <strong />,
-                  path: <PathComponent />,
-                  cmd: <MonoComponent />,
-                }}
-              />
-            ) : (
-              message
-            )}
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="cursor-pointer text-left"
+          <div className="flex flex-row justify-between items-center w-full">
+            <span
+              className={cn(
+                "font-bold",
+                type === "error" ? "text-danger" : "text-neutral-300",
+              )}
             >
-              {showDetails ? (
-                <ArrowUp
-                  className={cn(
-                    "h-4 w-4 ml-2 inline",
-                    type === "error" ? "fill-danger" : "fill-neutral-300",
-                  )}
+              {translationId && i18n.exists(translationId) ? (
+                <Trans
+                  i18nKey={translationId}
+                  values={translationParams}
+                  components={{
+                    bold: <strong />,
+                    path: <PathComponent />,
+                    cmd: <MonoComponent />,
+                  }}
                 />
               ) : (
-                <ArrowDown
-                  className={cn(
-                    "h-4 w-4 ml-2 inline",
-                    type === "error" ? "fill-danger" : "fill-neutral-300",
-                  )}
-                />
+                message
               )}
-            </button>
-          </span>
-          {type === "action" && success !== undefined && (
-            <span className="flex-shrink-0">
-              {success ? (
-                <CheckCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-success")}
-                />
-              ) : (
-                <XCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-danger")}
-                />
-              )}
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="cursor-pointer text-left"
+              >
+                {showDetails ? (
+                  <ArrowUp
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
+                ) : (
+                  <ArrowDown
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
+                )}
+              </button>
             </span>
+            {type === "action" && success !== undefined && (
+              <span className="flex-shrink-0">
+                {success ? (
+                  <CheckCircle
+                    data-testid="status-icon"
+                    className={cn(statusIconClasses, "fill-success")}
+                  />
+                ) : (
+                  <XCircle
+                    data-testid="status-icon"
+                    className={cn(statusIconClasses, "fill-danger")}
+                  />
+                )}
+              </span>
+            )}
+          </div>
+          {showDetails && (
+            <div className="text-sm">
+              <Markdown
+                components={{
+                  code,
+                  ul,
+                  ol,
+                }}
+                remarkPlugins={[remarkGfm]}
+              >
+                {details}
+              </Markdown>
+            </div>
           )}
         </div>
-        {showDetails && (
-          <div className="text-sm">
-            <Markdown
-              components={{
-                code,
-                ul,
-                ol,
-              }}
-              remarkPlugins={[remarkGfm]}
-            >
-              {details}
-            </Markdown>
-          </div>
-        )}
-      </div>
       </div>
     </div>
   );
