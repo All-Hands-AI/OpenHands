@@ -4,7 +4,7 @@ This directory contains various utility functions and classes used throughout Op
 
 ## Runtime Implementation Substitution
 
-OpenHands provides a powerful extensibility mechanism through the `get_impl` and `import_from` functions in `import_utils.py`. This mechanism allows applications built on OpenHands to customize behavior by providing their own implementations of OpenHands base classes.
+OpenHands provides an extensibility mechanism through the `get_impl` and `import_from` functions in `import_utils.py`. This mechanism allows applications built on OpenHands to customize behavior by providing their own implementations of OpenHands base classes.
 
 ### How It Works
 
