@@ -116,7 +116,7 @@ class LLM(RetryMixin, DebugMixin):
         config: LLMConfig,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
-    ):
+    ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
         Passing simple parameters always overrides config.
@@ -226,7 +226,7 @@ class LLM(RetryMixin, DebugMixin):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
-            messages: list[dict[str, Any]] | dict[str, Any] = []
+            messages_kwarg: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
@@ -236,16 +236,18 @@ class LLM(RetryMixin, DebugMixin):
                 # design wise: we don't allow overriding the configured values
                 # implementation wise: the partial function set the model as a kwarg already
                 # as well as other kwargs
-                messages = args[1] if len(args) > 1 else args[0]
-                kwargs['messages'] = messages
+                messages_kwarg = args[1] if len(args) > 1 else args[0]
+                kwargs['messages'] = messages_kwarg
 
                 # remove the first args, they're sent in kwargs
                 args = args[2:]
             elif 'messages' in kwargs:
-                messages = kwargs['messages']
+                messages_kwarg = kwargs['messages']
 
             # ensure we work with a list of messages
-            messages = messages if isinstance(messages, list) else [messages]
+            messages: list[dict[str, Any]] = (
+                messages_kwarg if isinstance(messages_kwarg, list) else [messages_kwarg]
+            )
 
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
@@ -327,6 +329,7 @@ class LLM(RetryMixin, DebugMixin):
                     )
 
                 non_fncall_response_message = resp.choices[0].message
+                # messages is already a list with proper typing from line 223
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
                         messages + [non_fncall_response_message], mock_fncall_tools
@@ -711,7 +714,15 @@ class LLM(RetryMixin, DebugMixin):
             logger.info(
                 'Message objects now include serialized tool calls in token counting'
             )
-            messages = self.format_messages_for_llm(messages)  # type: ignore
+            # Assert the expected type for format_messages_for_llm
+            assert isinstance(messages, list) and all(
+                isinstance(m, Message) for m in messages
+            ), 'Expected list of Message objects'
+
+            # We've already asserted that messages is a list of Message objects
+            # Use explicit typing to satisfy mypy
+            messages_typed: list[Message] = messages  # type: ignore
+            messages = self.format_messages_for_llm(messages_typed)
 
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
