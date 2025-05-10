@@ -23,7 +23,8 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.command import get_action_execution_server_startup_command
+
+# Removed import of get_action_execution_server_startup_command as it's now a method
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -208,6 +209,77 @@ class DockerRuntime(ActionExecutionClient):
             )
             raise ex
 
+    def get_action_execution_server_startup_command(
+        self,
+        server_port: int,
+        plugins: list[PluginRequirement],
+        app_config: AppConfig,
+        python_prefix: list[str] | None = None,
+        override_user_id: int | None = None,
+        override_username: str | None = None,
+    ) -> list[str]:
+        """Generate the startup command for the action execution server.
+
+        Args:
+            server_port: The port on which the server should listen.
+            plugins: List of plugin requirements to enable.
+            app_config: The application configuration.
+            python_prefix: The command prefix to use for running Python.
+            override_user_id: Optional user ID to override the default.
+            override_username: Optional username to override the default.
+
+        Returns:
+            A list of command arguments to start the action execution server.
+        """
+        if python_prefix is None:
+            python_prefix = [
+                '/openhands/micromamba/bin/micromamba',
+                'run',
+                '-n',
+                'openhands',
+                'poetry',
+                'run',
+            ]
+        sandbox_config = app_config.sandbox
+
+        # Plugin args
+        plugin_args = []
+        if plugins is not None and len(plugins) > 0:
+            plugin_args = ['--plugins'] + [plugin.name for plugin in plugins]
+
+        # Browsergym stuffs
+        browsergym_args = []
+        if sandbox_config.browsergym_eval_env is not None:
+            browsergym_args = [
+                '--browsergym-eval-env'
+            ] + sandbox_config.browsergym_eval_env.split(' ')
+
+        username = override_username or (
+            'openhands' if app_config.run_as_openhands else 'root'
+        )
+        user_id = override_user_id or (
+            sandbox_config.user_id if app_config.run_as_openhands else 0
+        )
+
+        base_cmd = [
+            *python_prefix,
+            'python',
+            '-u',
+            '-m',
+            'openhands.runtime.action_execution_server',
+            str(server_port),
+            '--working-dir',
+            app_config.workspace_mount_path_in_sandbox,
+            *plugin_args,
+            '--username',
+            username,
+            '--user-id',
+            str(user_id),
+            *browsergym_args,
+        ]
+
+        return base_cmd
+
     def _process_volumes(self) -> dict[str, dict[str, str]]:
         """Process volume mounts based on configuration.
 
@@ -336,7 +408,7 @@ class DockerRuntime(ActionExecutionClient):
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
 
-        command = get_action_execution_server_startup_command(
+        command = self.get_action_execution_server_startup_command(
             server_port=self._container_port,
             plugins=self.plugins,
             app_config=self.config,
