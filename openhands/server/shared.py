@@ -49,19 +49,19 @@ MonitoringListenerImpl = get_impl(
 monitoring_listener = MonitoringListenerImpl.get_instance(config)
 
 ConversationManagerImpl = get_impl(
-    ConversationManager,  # type: ignore
+    ConversationManager,
     server_config.conversation_manager_class,
 )
 
-conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
+conversation_manager = ConversationManagerImpl.get_instance(
     sio, config, file_store, server_config, monitoring_listener
 )
 
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
+SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)
 
 SecretsStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
 
 ConversationStoreImpl = get_impl(
-    ConversationStore,  # type: ignore
+    ConversationStore,
     server_config.conversation_store_class,
 )
