@@ -42,6 +42,7 @@ from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.critic import ModelResponseWithCriticScore
 
+
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
         return action
@@ -53,7 +54,8 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 
 def response_to_actions(
-    response: ModelResponse | ModelResponseWithCriticScore, mcp_tool_names: list[str] | None = None
+    response: ModelResponse | ModelResponseWithCriticScore,
+    mcp_tool_names: list[str] | None = None,
 ) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'

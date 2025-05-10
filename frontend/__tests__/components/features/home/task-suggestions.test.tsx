@@ -11,6 +11,7 @@ import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
 const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
     {
+      // @ts-expect-error - TaskSuggestions component type is incompatible with the expected Component type
       Component: TaskSuggestions,
       path: "/",
     },

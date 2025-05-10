@@ -150,22 +150,30 @@ export function ExpandableMessage({
       <div
         className={cn(
           "border-l-4 my-2 relative group w-1",
-          criticScore !== undefined ? getCriticScoreColorClass(criticScore) : "border-white"
+          criticScore !== undefined
+            ? getCriticScoreColorClass(criticScore)
+            : "border-white",
         )}
-        title={criticScore !== undefined ? `Critic Score: ${criticScore.toFixed(2)}` : ""}
+        title={
+          criticScore !== undefined
+            ? t("CRITIC_SCORE", { score: criticScore.toFixed(2) })
+            : ""
+        }
       >
         {/* Tooltip - only shown when there's a critic score */}
         {criticScore !== undefined && (
           <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-            Critic Score: {criticScore.toFixed(2)}
+            {t("CRITIC_SCORE", { score: criticScore.toFixed(2) })}
           </div>
         )}
       </div>
 
-      <div className={cn(
-        "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
-        type === "error" ? "border-danger" : "border-neutral-300"
-      )}>
+      <div
+        className={cn(
+          "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
+          type === "error" ? "border-danger" : "border-neutral-300",
+        )}
+      >
         <div className="text-sm w-full">
           <div className="flex flex-row justify-between items-center w-full">
             <span

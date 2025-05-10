@@ -22,6 +22,7 @@ const renderRepoConnector = () => {
       path: "/conversations/:conversationId",
     },
     {
+      // @ts-expect-error - Outlet type is incompatible with the expected Component type
       Component: Outlet,
       path: "/settings",
       children: [
