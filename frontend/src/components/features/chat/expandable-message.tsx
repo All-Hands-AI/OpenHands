@@ -36,6 +36,19 @@ const getCriticScoreColorClass = (score?: number): string => {
   return "border-danger";
 };
 
+// Function to get the border color class based on critic score and message type
+const getBorderColorClass = (criticScore?: number, type?: string): string => {
+  if (criticScore !== undefined) {
+    return `${getCriticScoreColorClass(criticScore)} cursor-pointer hover:border-l-6 transition-all duration-200`;
+  }
+
+  if (type === "error") {
+    return "border-danger";
+  }
+
+  return "border-neutral-300";
+};
+
 interface ExpandableMessageProps {
   id?: string;
   message: string;
@@ -66,7 +79,7 @@ export function ExpandableMessage({
     observation,
     action,
   });
-  
+
   // State for progress modal
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
@@ -144,126 +157,124 @@ export function ExpandableMessage({
   return (
     <>
       {/* Progress Modal */}
-      <ProgressModal 
-        isOpen={isProgressModalOpen} 
+      <ProgressModal
+        isOpen={isProgressModalOpen}
         onClose={() => setIsProgressModalOpen(false)}
         currentActionId={action?.payload.id}
       />
-      
-      <div className="flex flex-row">
-      {/* Critic score indicator or default border */}
-      <div
-        className={cn(
-          "border-l-4 my-2 relative group",
-          criticScore !== undefined
-            ? `${getCriticScoreColorClass(criticScore)} cursor-pointer hover:border-l-6 transition-all duration-200`
-            : type === "error" ? "border-danger" : "border-neutral-300",
-        )}
-        title={
-          criticScore !== undefined
-            ? `${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)} - ${t("Click to view progress")}`
-            : ""
-        }
-        onClick={() => {
-          if (criticScore !== undefined) {
-            setIsProgressModalOpen(true);
-          }
-        }}
-      >
-        {/* Tooltip - only shown when there's a critic score */}
-        {criticScore !== undefined && (
-          <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-            {`${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`}
-            <div className="flex items-center mt-1 text-xs">
-              <ChartLine className="w-3 h-3 mr-1" />
-              {t("Click to view progress")}
-            </div>
-          </div>
-        )}
-      </div>
 
-      <div
-        className={cn(
-          "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
-          type === "error" ? "border-danger" : "border-neutral-300",
-        )}
-      >
-        <div className="text-sm w-full">
-          <div className="flex flex-row justify-between items-center w-full">
-            <span
-              className={cn(
-                "font-bold",
-                type === "error" ? "text-danger" : "text-neutral-300",
-              )}
-            >
-              {translationId && i18n.exists(translationId) ? (
-                <Trans
-                  i18nKey={translationId}
-                  values={translationParams}
-                  components={{
-                    bold: <strong />,
-                    path: <PathComponent />,
-                    cmd: <MonoComponent />,
-                  }}
-                />
-              ) : (
-                message
-              )}
-              <button
-                type="button"
-                onClick={() => setShowDetails(!showDetails)}
-                className="cursor-pointer text-left"
-              >
-                {showDetails ? (
-                  <ArrowUp
-                    className={cn(
-                      "h-4 w-4 ml-2 inline",
-                      type === "error" ? "fill-danger" : "fill-neutral-300",
-                    )}
-                  />
-                ) : (
-                  <ArrowDown
-                    className={cn(
-                      "h-4 w-4 ml-2 inline",
-                      type === "error" ? "fill-danger" : "fill-neutral-300",
-                    )}
-                  />
-                )}
-              </button>
-            </span>
-            {type === "action" && success !== undefined && (
-              <span className="flex-shrink-0">
-                {success ? (
-                  <CheckCircle
-                    data-testid="status-icon"
-                    className={cn(statusIconClasses, "fill-success")}
-                  />
-                ) : (
-                  <XCircle
-                    data-testid="status-icon"
-                    className={cn(statusIconClasses, "fill-danger")}
-                  />
-                )}
-              </span>
-            )}
-          </div>
-          {showDetails && (
-            <div className="text-sm">
-              <Markdown
-                components={{
-                  code,
-                  ul,
-                  ol,
-                }}
-                remarkPlugins={[remarkGfm]}
-              >
-                {details}
-              </Markdown>
+      <div className="flex flex-row">
+        {/* Critic score indicator or default border */}
+        <div
+          className={cn(
+            "border-l-4 my-2 relative group",
+            getBorderColorClass(criticScore, type),
+          )}
+          title={
+            criticScore !== undefined
+              ? `${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)} - ${t("CLICK_TO_VIEW_PROGRESS")}`
+              : ""
+          }
+          onClick={() => {
+            if (criticScore !== undefined) {
+              setIsProgressModalOpen(true);
+            }
+          }}
+        >
+          {/* Tooltip - only shown when there's a critic score */}
+          {criticScore !== undefined && (
+            <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+              {`${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`}
+              <div className="flex items-center mt-1 text-xs">
+                <ChartLine className="w-3 h-3 mr-1" />
+                {t("CLICK_TO_VIEW_PROGRESS")}
+              </div>
             </div>
           )}
         </div>
+
+        <div
+          className={cn(
+            "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
+            type === "error" ? "border-danger" : "border-neutral-300",
+          )}
+        >
+          <div className="text-sm w-full">
+            <div className="flex flex-row justify-between items-center w-full">
+              <span
+                className={cn(
+                  "font-bold",
+                  type === "error" ? "text-danger" : "text-neutral-300",
+                )}
+              >
+                {translationId && i18n.exists(translationId) ? (
+                  <Trans
+                    i18nKey={translationId}
+                    values={translationParams}
+                    components={{
+                      bold: <strong />,
+                      path: <PathComponent />,
+                      cmd: <MonoComponent />,
+                    }}
+                  />
+                ) : (
+                  message
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="cursor-pointer text-left"
+                >
+                  {showDetails ? (
+                    <ArrowUp
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  ) : (
+                    <ArrowDown
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  )}
+                </button>
+              </span>
+              {type === "action" && success !== undefined && (
+                <span className="flex-shrink-0">
+                  {success ? (
+                    <CheckCircle
+                      data-testid="status-icon"
+                      className={cn(statusIconClasses, "fill-success")}
+                    />
+                  ) : (
+                    <XCircle
+                      data-testid="status-icon"
+                      className={cn(statusIconClasses, "fill-danger")}
+                    />
+                  )}
+                </span>
+              )}
+            </div>
+            {showDetails && (
+              <div className="text-sm">
+                <Markdown
+                  components={{
+                    code,
+                    ul,
+                    ol,
+                  }}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {details}
+                </Markdown>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 }

@@ -164,14 +164,24 @@ export const chatSlice = createSlice({
       } else if (actionID === "think") {
         text = action.payload.args.thought;
       } else if (actionID === "message") {
-        text = action.payload.args.content as string || "";
+        // Check if content exists in the payload args
+        if ("content" in action.payload.args) {
+          text = (action.payload.args.content as string) || "";
+        } else if ("thought" in action.payload.args) {
+          text = (action.payload.args.thought as string) || "";
+        }
       } else if (actionID === "finish") {
-        text = action.payload.args.message as string || "";
+        // Check if message exists in the payload args
+        if ("message" in action.payload.args) {
+          text = (action.payload.args.message as string) || "";
+        } else if ("final_thought" in action.payload.args) {
+          text = (action.payload.args.final_thought as string) || "";
+        }
       }
-      
+
       // Determine if this is a special action type (message or finish)
       const isSpecialAction = actionID === "message" || actionID === "finish";
-      
+
       const message: Message = {
         // For message and finish actions, use "thought" type to display them differently
         type: isSpecialAction ? "thought" : "action",
@@ -185,7 +195,7 @@ export const chatSlice = createSlice({
         // Add critic score if present in the action payload
         criticScore: action.payload.critic_score,
         // Add a special flag for message and finish actions
-        isSpecialAction: isSpecialAction,
+        isSpecialAction,
         specialActionType: isSpecialAction ? actionID : undefined,
       };
 

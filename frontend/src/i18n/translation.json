@@ -1,4 +1,20 @@
 {
+    "ACTION_ID": {
+        "en": "ID",
+        "ja": "ID",
+        "zh-CN": "ID",
+        "zh-TW": "ID",
+        "ko-KR": "ID",
+        "no": "ID",
+        "it": "ID",
+        "pt": "ID",
+        "es": "ID",
+        "ar": "المعرف",
+        "fr": "ID",
+        "tr": "ID",
+        "de": "ID",
+        "uk": "ID"
+    },
     "CRITIC_SCORE": {
         "en": "Critic Score",
         "ja": "批評スコア",
@@ -15,7 +31,55 @@
         "de": "Kritikerbewertung",
         "uk": "Оцінка критика"
     },
-    "Click to view progress": {
+    "CRITIC_SCORE_GOOD": {
+        "en": "Good (≥70%)",
+        "ja": "良い (≥70%)",
+        "zh-CN": "良好 (≥70%)",
+        "zh-TW": "良好 (≥70%)",
+        "ko-KR": "좋음 (≥70%)",
+        "no": "Bra (≥70%)",
+        "it": "Buono (≥70%)",
+        "pt": "Bom (≥70%)",
+        "es": "Bueno (≥70%)",
+        "ar": "جيد (≥70%)",
+        "fr": "Bon (≥70%)",
+        "tr": "İyi (≥70%)",
+        "de": "Gut (≥70%)",
+        "uk": "Добре (≥70%)"
+    },
+    "CRITIC_SCORE_AVERAGE": {
+        "en": "Average (40-69%)",
+        "ja": "普通 (40-69%)",
+        "zh-CN": "一般 (40-69%)",
+        "zh-TW": "一般 (40-69%)",
+        "ko-KR": "보통 (40-69%)",
+        "no": "Gjennomsnittlig (40-69%)",
+        "it": "Medio (40-69%)",
+        "pt": "Médio (40-69%)",
+        "es": "Promedio (40-69%)",
+        "ar": "متوسط (40-69%)",
+        "fr": "Moyen (40-69%)",
+        "tr": "Orta (40-69%)",
+        "de": "Durchschnittlich (40-69%)",
+        "uk": "Середній (40-69%)"
+    },
+    "CRITIC_SCORE_POOR": {
+        "en": "Poor (<40%)",
+        "ja": "悪い (<40%)",
+        "zh-CN": "差 (<40%)",
+        "zh-TW": "差 (<40%)",
+        "ko-KR": "나쁨 (<40%)",
+        "no": "Dårlig (<40%)",
+        "it": "Scarso (<40%)",
+        "pt": "Fraco (<40%)",
+        "es": "Pobre (<40%)",
+        "ar": "ضعيف (<40%)",
+        "fr": "Faible (<40%)",
+        "tr": "Kötü (<40%)",
+        "de": "Schlecht (<40%)",
+        "uk": "Погано (<40%)"
+    },
+    "CLICK_TO_VIEW_PROGRESS": {
         "en": "Click to view progress",
         "ja": "進捗を表示するにはクリック",
         "zh-CN": "点击查看进度",
@@ -31,7 +95,7 @@
         "de": "Klicken Sie, um den Fortschritt anzuzeigen",
         "uk": "Натисніть, щоб переглянути прогрес"
     },
-    "Agent Progress Visualization": {
+    "AGENT_PROGRESS_VISUALIZATION": {
         "en": "Agent Progress Visualization",
         "ja": "エージェント進捗の可視化",
         "zh-CN": "代理进度可视化",
@@ -47,7 +111,7 @@
         "de": "Visualisierung des Agenten-Fortschritts",
         "uk": "Візуалізація прогресу агента"
     },
-    "Critic Score Timeline": {
+    "CRITIC_SCORE_TIMELINE": {
         "en": "Critic Score Timeline",
         "ja": "批評スコアのタイムライン",
         "zh-CN": "评价分数时间线",
@@ -63,7 +127,7 @@
         "de": "Zeitlinie der Kritikerbewertung",
         "uk": "Часова шкала оцінки критика"
     },
-    "This visualization shows the critic score for each action in the conversation.": {
+    "CRITIC_SCORE_VISUALIZATION_DESCRIPTION": {
         "en": "This visualization shows the critic score for each action in the conversation.",
         "ja": "この可視化は、会話の各アクションに対する批評スコアを示しています。",
         "zh-CN": "此可视化显示了对话中每个操作的评价分数。",
@@ -79,7 +143,7 @@
         "de": "Diese Visualisierung zeigt die Kritikerbewertung für jede Aktion im Gespräch.",
         "uk": "Ця візуалізація показує оцінку критика для кожної дії в розмові."
     },
-    "No actions with critic scores available": {
+    "NO_CRITIC_SCORES_AVAILABLE": {
         "en": "No actions with critic scores available",
         "ja": "批評スコア付きのアクションはありません",
         "zh-CN": "没有可用的评价分数操作",
