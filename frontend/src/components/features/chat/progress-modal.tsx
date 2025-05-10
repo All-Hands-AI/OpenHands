@@ -43,16 +43,11 @@ export function ProgressModal({
     if (isOpen) {
       const actionsWithScores = messages
         .filter(
-          (msg: {
-            action?: PayloadAction<OpenHandsAction>;
-            criticScore?: number;
-          }) => msg.action && msg.criticScore !== undefined,
+          (msg: Message) => 
+            msg.action !== undefined && msg.criticScore !== undefined,
         )
         .map(
-          (msg: {
-            action: PayloadAction<OpenHandsAction>;
-            criticScore: number;
-          }) => ({
+          (msg: Message) => ({
             action: msg.action as PayloadAction<OpenHandsAction>,
             score: msg.criticScore as number,
           }),
