@@ -267,6 +267,11 @@ const sidebars: SidebarsConfig = {
           label: 'Evaluation',
           id: 'usage/how-to/evaluation-harness',
         },
+        {
+          type: 'doc',
+          label: 'WebSocket Connection',
+          id: 'usage/how-to/websocket-connection',
+        },
       ],
     },
     {
