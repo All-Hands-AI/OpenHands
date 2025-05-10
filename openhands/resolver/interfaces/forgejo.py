@@ -182,12 +182,16 @@ class ForgejoIssueHandler(IssueHandlerInterface):
 
     def branch_exists(self, branch_name: str) -> bool:
         logger.info(f'Checking if branch {branch_name} exists...')
-        response = httpx.get(
-            f'{self.base_url}/branches/{branch_name}', headers=self.headers
-        )
-        exists = response.status_code == 200
-        logger.info(f'Branch {branch_name} exists: {exists}')
-        return exists
+        try:
+            response = httpx.get(
+                f'{self.base_url}/branches/{branch_name}', headers=self.headers, timeout=10.0
+            )
+            exists = response.status_code == 200
+            logger.info(f'Branch {branch_name} exists: {exists}')
+            return exists
+        except httpx.ReadTimeout:
+            logger.warning(f"Timeout checking if branch {branch_name} exists")
+            return False  # Assume branch doesn't exist if we time out
 
     def get_branch_name(self, base_branch_name: str) -> str:
         branch_name = base_branch_name
@@ -214,23 +218,35 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return f'https://codeberg.org/{self.owner}/{self.repo}/pulls/{pr_number}'
 
     def get_default_branch_name(self) -> str:
-        response = httpx.get(f'{self.base_url}', headers=self.headers)
-        response.raise_for_status()
-        data = response.json()
-        return str(data['default_branch'])
+        try:
+            response = httpx.get(f'{self.base_url}', headers=self.headers, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            return str(data['default_branch'])
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
+            logger.warning(f"Error fetching default branch: {e}")
+            return "main"  # Default to 'main' if we can't get the default branch
 
     def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
         if data is None:
             data = {}
-        response = httpx.post(f'{self.base_url}/pulls', headers=self.headers, json=data)
-        if response.status_code == 403:
-            raise RuntimeError(
-                'Failed to create pull request due to missing permissions. '
-                'Make sure that the provided token has push permissions for the repository.'
+        try:
+            response = httpx.post(
+                f'{self.base_url}/pulls', 
+                headers=self.headers, 
+                json=data,
+                timeout=10.0
             )
-        response.raise_for_status()
-        pr_data = response.json()
-        return dict(pr_data)
+            if response.status_code == 403:
+                raise RuntimeError(
+                    'Failed to create pull request due to missing permissions. '
+                    'Make sure that the provided token has push permissions for the repository.'
+                )
+            response.raise_for_status()
+            pr_data = response.json()
+            return dict(pr_data)
+        except httpx.ReadTimeout as e:
+            raise RuntimeError(f"Timeout creating pull request: {e}")
 
     def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         """Request a reviewer for a pull request.
@@ -242,10 +258,16 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         # The API expects a PullReviewRequestOptions object with reviewers as a list of strings
         data = {'reviewers': [reviewer], 'team_reviewers': []}
 
-        response = httpx.post(url, headers=self.headers, json=data)
+        try:
+            response = httpx.post(url, headers=self.headers, json=data, timeout=10.0)
 
-        if response.status_code not in (200, 201):
-            logger.warning(f'Failed to request review from {reviewer}: {response.text}')
+            if response.status_code not in (200, 201):
+                logger.warning(f'Failed to request review from {reviewer}: {response.text}')
+                # Fallback to mentioning the reviewer in a comment
+                msg = f'@{reviewer} Could you please review this pull request?'
+                self.send_comment_msg(pr_number, msg)
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
+            logger.warning(f"Error requesting reviewer {reviewer}: {e}")
             # Fallback to mentioning the reviewer in a comment
             msg = f'@{reviewer} Could you please review this pull request?'
             self.send_comment_msg(pr_number, msg)
@@ -381,15 +403,18 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         # Post a comment on the PR
         comment_url = f'{self.base_url}/issues/{issue_number}/comments'
         comment_data = {'body': msg}
-        comment_response = httpx.post(
-            comment_url, headers=self.headers, json=comment_data
-        )
-        if comment_response.status_code != 201:
-            logger.error(
-                f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+        try:
+            comment_response = httpx.post(
+                comment_url, headers=self.headers, json=comment_data, timeout=10.0
             )
-        else:
-            logger.info(f'Comment added to the PR: {msg}')
+            if comment_response.status_code != 201:
+                logger.error(
+                    f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+                )
+            else:
+                logger.info(f'Comment added to the PR: {msg}')
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
+            logger.error(f'Failed to post comment due to error: {e}')
 
     def get_context_from_external_issues_references(
         self,
@@ -437,10 +462,10 @@ class ForgejoPRHandler(ForgejoIssueHandler):
         try:
             # Get the PR details
             pr_url = f'{self.base_url}/pulls/{pull_number}'
-            pr_response = httpx.get(pr_url, headers=self.headers)
+            pr_response = httpx.get(pr_url, headers=self.headers, timeout=10.0)
             pr_response.raise_for_status()
             pr_data = pr_response.json()
-        except httpx.HTTPStatusError as e:
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
             logger.warning(f"Error fetching pull request {pull_number}: {e}")
             # Return empty data
             return (
@@ -458,7 +483,7 @@ class ForgejoPRHandler(ForgejoIssueHandler):
             for issue_ref in issue_refs:
                 try:
                     issue_url = f'{self.base_url}/issues/{issue_ref}'
-                    issue_response = httpx.get(issue_url, headers=self.headers)
+                    issue_response = httpx.get(issue_url, headers=self.headers, timeout=10.0)
                     if issue_response.status_code == 200:
                         issue_data = issue_response.json()
                         closing_issues_bodies.append(issue_data.get('body', ''))
@@ -474,7 +499,7 @@ class ForgejoPRHandler(ForgejoIssueHandler):
         try:
             while True:
                 review_response = httpx.get(
-                    review_url, headers=self.headers, params=review_params
+                    review_url, headers=self.headers, params=review_params, timeout=10.0
                 )
                 review_response.raise_for_status()
                 comments = review_response.json()
@@ -493,7 +518,7 @@ class ForgejoPRHandler(ForgejoIssueHandler):
                     review_comments.extend([c.get('body', '') for c in comments])
 
                 review_params['page'] += 1
-        except httpx.HTTPStatusError as e:
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
             logger.warning(f"Error fetching review comments: {e}")
             # Continue with empty review comments
 
@@ -505,7 +530,7 @@ class ForgejoPRHandler(ForgejoIssueHandler):
         try:
             while True:
                 thread_response = httpx.get(
-                    thread_url, headers=self.headers, params=thread_params
+                    thread_url, headers=self.headers, params=thread_params, timeout=10.0
                 )
                 thread_response.raise_for_status()
                 comments = thread_response.json()
@@ -524,7 +549,7 @@ class ForgejoPRHandler(ForgejoIssueHandler):
                     thread_comments.extend([c.get('body', '') for c in comments])
 
                 thread_params['page'] += 1
-        except httpx.HTTPStatusError as e:
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
             logger.warning(f"Error fetching thread comments: {e}")
             # Continue with empty thread comments
 
@@ -621,23 +646,32 @@ class ForgejoPRHandler(ForgejoIssueHandler):
         params: dict[str, int | str] = {'state': 'open', 'page': 1, 'limit': 100}
         all_prs = []
 
-        while True:
-            response = httpx.get(self.download_url, headers=self.headers, params=params)
-            response.raise_for_status()
-            prs = response.json()
-
-            if not prs:
-                break
-
-            if not isinstance(prs, list) or any(
-                [not isinstance(pr, dict) for pr in prs]
-            ):
-                raise ValueError(
-                    'Expected list of dictionaries from Service Forgejo API.'
+        try:
+            while True:
+                response = httpx.get(
+                    self.download_url, 
+                    headers=self.headers, 
+                    params=params,
+                    timeout=10.0  # Add a 10-second timeout
                 )
+                response.raise_for_status()
+                prs = response.json()
 
-            all_prs.extend(prs)
-            assert isinstance(params['page'], int)
-            params['page'] += 1
+                if not prs:
+                    break
 
+                if not isinstance(prs, list) or any(
+                    [not isinstance(pr, dict) for pr in prs]
+                ):
+                    raise ValueError(
+                        'Expected list of dictionaries from Service Forgejo API.'
+                    )
+
+                all_prs.extend(prs)
+                assert isinstance(params['page'], int)
+                params['page'] += 1
+        except (httpx.HTTPStatusError, httpx.ReadTimeout) as e:
+            logger.warning(f"Error downloading pull requests: {e}")
+            # Return whatever we've got so far
+            
         return all_prs
