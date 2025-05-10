@@ -14,7 +14,9 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.server.config.server_config import ServerConfig
 from openhands.server.shared import server_config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_access_token,
     get_provider_tokens,
@@ -39,9 +41,12 @@ async def get_user_repositories(
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(
-                sort, server_config.APP_MODE
+            app_mode = (
+                server_config.app_mode
+                if isinstance(server_config, ServerConfig)
+                else AppMode.OSS
             )
+            repos: list[Repository] = await client.get_repositories(sort, app_mode)
             return repos
 
         except AuthenticationError as e:

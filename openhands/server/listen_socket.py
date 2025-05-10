@@ -20,6 +20,7 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
+from openhands.server.config.server_config import ServerConfig
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     SecretsStoreImpl,
@@ -94,7 +95,11 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         git_provider_tokens = create_provider_tokens_object(providers_set)
         # Use user_secrets provider tokens if available and not in SAAS mode
-        if server_config.APP_MODE != AppMode.SAAS and user_secrets:
+        if (
+            isinstance(server_config, ServerConfig)
+            and server_config.app_mode != AppMode.SAAS
+            and user_secrets
+        ):
             git_provider_tokens = user_secrets.provider_tokens
 
         session_init_args['git_provider_tokens'] = git_provider_tokens
