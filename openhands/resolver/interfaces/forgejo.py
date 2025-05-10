@@ -191,9 +191,17 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return branch_name
 
     def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
-        # Forgejo doesn't support replying to specific comments in the same way as GitHub
-        # So we'll just add a new comment to the PR
-        self.send_comment_msg(pr_number, reply)
+        """Reply to a specific comment on a pull request.
+        
+        Forgejo doesn't have a direct API endpoint for replying to specific comments
+        like GitHub does. While the internal data model supports reference comments,
+        there's no exposed API for this functionality.
+        
+        As a workaround, we'll add a new comment that mentions the original comment.
+        """
+        # Format the reply to reference the original comment
+        formatted_reply = f"In response to comment {comment_id}:\n\n{reply}"
+        self.send_comment_msg(pr_number, formatted_reply)
 
     def get_pull_url(self, pr_number: int) -> str:
         return f'https://codeberg.org/{self.owner}/{self.repo}/pulls/{pr_number}'
