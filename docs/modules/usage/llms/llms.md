@@ -17,6 +17,8 @@ Based on these findings and community feedback, the following models have been v
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
 - [openai/o3-mini](https://openai.com/index/openai-o3-mini/)
+- [openai/o3](https://openai.com/index/introducing-o3-and-o4-mini/)
+- [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
 
 

@@ -44,6 +44,15 @@ def mock_parent_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     return agent
 
 
@@ -56,6 +65,15 @@ def mock_child_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     return agent
 
 
@@ -113,23 +131,23 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
-    assert (
-        mock_event_stream.get_latest_event_id() == 3
-    )  # Microagents and AgentChangeState
+
+    # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
+    assert mock_event_stream.get_latest_event_id() == 5
 
     # a RecallObservation and an AgentDelegateAction should be in the list
     assert any(isinstance(event, RecallObservation) for event in events)
     assert any(isinstance(event, AgentDelegateAction) for event in events)
 
     # Verify that a delegate agent controller is created
-    assert (
-        parent_controller.delegate is not None
-    ), "Parent's delegate controller was not set."
+    assert parent_controller.delegate is not None, (
+        "Parent's delegate controller was not set."
+    )
 
     # The parent's iteration should have incremented
-    assert (
-        parent_controller.state.iteration == 1
-    ), 'Parent iteration should be incremented after step.'
+    assert parent_controller.state.iteration == 1, (
+        'Parent iteration should be incremented after step.'
+    )
 
     # Now simulate that the child increments local iteration and finishes its subtask
     delegate_controller = parent_controller.delegate
@@ -142,14 +160,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     await asyncio.sleep(0.5)
 
     # Now the parent's delegate is None
-    assert (
-        parent_controller.delegate is None
-    ), 'Parent delegate should be None after child finishes.'
+    assert parent_controller.delegate is None, (
+        'Parent delegate should be None after child finishes.'
+    )
 
     # Parent's global iteration is updated from the child
-    assert (
-        parent_controller.state.iteration == 6
-    ), "Parent iteration should be the child's iteration + 1 after child is done."
+    assert parent_controller.state.iteration == 6, (
+        "Parent iteration should be the child's iteration + 1 after child is done."
+    )
 
     # Cleanup
     await parent_controller.close()

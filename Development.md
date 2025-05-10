@@ -14,7 +14,7 @@ Otherwise, you can clone the OpenHands project directly.
 - [NodeJS](https://nodejs.org/en/download/package-manager) >= 22.x
 - [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 - OS-specific dependencies:
-  - Ubuntu: build-essential => `sudo apt-get install build-essential`
+  - Ubuntu: build-essential => `sudo apt-get install build-essential python3.12-dev`
   - WSL: netcat => `sudo apt-get install netcat`
 
 Make sure you have all these dependencies installed before moving on to `make build`.
@@ -118,7 +118,7 @@ poetry run pytest ./tests/unit/test_*.py
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image by
 setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
-Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.32-nikolaik`
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.37-nikolaik`
 
 ## Develop inside Docker container
 

@@ -8,7 +8,7 @@ import pytest
 from pytest import TempPathFactory
 
 from openhands.core.schema import ActionType, ObservationType
-from openhands.events import EventSource, EventStream
+from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     NullAction,
 )
@@ -328,9 +328,9 @@ def test_memory_usage_file_operations(temp_dir: str):
     os.remove(test_file)
 
     # Memory increase should be reasonable (less than 50MB after 20 iterations)
-    assert (
-        max_memory_increase < 50
-    ), f'Memory increase of {max_memory_increase:.1f}MB exceeds limit of 50MB'
+    assert max_memory_increase < 50, (
+        f'Memory increase of {max_memory_increase:.1f}MB exceeds limit of 50MB'
+    )
 
 
 def test_cache_page_creation(temp_dir: str):
@@ -364,9 +364,9 @@ def test_cache_page_creation(temp_dir: str):
 
         # Verify each event in the cache
         for i, event_data in enumerate(cache_data):
-            assert (
-                event_data['content'] == f'test{i}'
-            ), f"Event {i} content should be 'test{i}'"
+            assert event_data['content'] == f'test{i}', (
+                f"Event {i} content should be 'test{i}'"
+            )
 
 
 def test_cache_page_loading(temp_dir: str):
@@ -393,9 +393,9 @@ def test_cache_page_loading(temp_dir: str):
 
     # Verify the events we did get are in the correct order and format
     for i, event in enumerate(events):
-        assert isinstance(
-            event, NullObservation
-        ), f'Event {i} should be a NullObservation'
+        assert isinstance(event, NullObservation), (
+            f'Event {i} should be a NullObservation'
+        )
         assert event.content == f'test{i}', f"Event {i} content should be 'test{i}'"
 
 
@@ -444,6 +444,72 @@ def test_cache_page_performance(temp_dir: str):
     # In real-world scenarios with many more events, the performance difference would be more significant.
 
 
+def test_callback_dictionary_modification(temp_dir: str):
+    """Test that the event stream can handle dictionary modification during iteration.
+
+    This test verifies that the fix for the 'dictionary changed size during iteration' error works.
+    The test adds a callback that adds a new callback during iteration, which would cause an error
+    without the fix.
+    """
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('callback_test', file_store)
+
+    # Track callback execution
+    callback_executed = [False, False, False]
+
+    # Define a callback that will be added during iteration
+    def callback_added_during_iteration(event):
+        callback_executed[2] = True
+
+    # First callback that will be called
+    def callback1(event):
+        callback_executed[0] = True
+        # This callback will add a new callback during iteration
+        # Without our fix, this would cause a "dictionary changed size during iteration" error
+        event_stream.subscribe(
+            EventStreamSubscriber.TEST, callback_added_during_iteration, 'callback3'
+        )
+
+    # Second callback that will be called
+    def callback2(event):
+        callback_executed[1] = True
+
+    # Subscribe both callbacks
+    event_stream.subscribe(EventStreamSubscriber.TEST, callback1, 'callback1')
+    event_stream.subscribe(EventStreamSubscriber.TEST, callback2, 'callback2')
+
+    # Add an event to trigger callbacks
+    event_stream.add_event(NullObservation('test'), EventSource.AGENT)
+
+    # Give some time for the callbacks to execute
+    time.sleep(0.5)
+
+    # Verify that the first two callbacks were executed
+    assert callback_executed[0] is True, 'First callback should have been executed'
+    assert callback_executed[1] is True, 'Second callback should have been executed'
+
+    # The third callback should not have been executed for this event
+    # since it was added during iteration
+    assert callback_executed[2] is False, (
+        'Third callback should not have been executed for this event'
+    )
+
+    # Add another event to trigger all callbacks including the newly added one
+    callback_executed = [False, False, False]  # Reset execution tracking
+    event_stream.add_event(NullObservation('test2'), EventSource.AGENT)
+
+    # Give some time for the callbacks to execute
+    time.sleep(0.5)
+
+    # Now all three callbacks should have been executed
+    assert callback_executed[0] is True, 'First callback should have been executed'
+    assert callback_executed[1] is True, 'Second callback should have been executed'
+    assert callback_executed[2] is True, 'Third callback should have been executed'
+
+    # Clean up
+    event_stream.close()
+
+
 def test_cache_page_partial_retrieval(temp_dir: str):
     """Test retrieving events with start_id and end_id parameters using the cache."""
     file_store = get_file_store('local', temp_dir)
@@ -464,10 +530,10 @@ def test_cache_page_partial_retrieval(temp_dir: str):
 
     # Verify the events we did get are in the correct order
     for i, event in enumerate(events):
-        expected_content = f'test{i+3}'
-        assert (
-            event.content == expected_content
-        ), f"Event {i} content should be '{expected_content}'"
+        expected_content = f'test{i + 3}'
+        assert event.content == expected_content, (
+            f"Event {i} content should be '{expected_content}'"
+        )
 
     # Test retrieving events in reverse order
     reverse_events = list(event_stream.get_events(start_id=3, end_id=12, reverse=True))
@@ -477,9 +543,9 @@ def test_cache_page_partial_retrieval(temp_dir: str):
 
     # Check the first few events to ensure they're in reverse order
     if len(reverse_events) >= 3:
-        assert reverse_events[0].content.startswith(
-            'test1'
-        ), 'First reverse event should be near the end of the range'
+        assert reverse_events[0].content.startswith('test1'), (
+            'First reverse event should be near the end of the range'
+        )
         assert int(reverse_events[0].content[4:]) > int(
             reverse_events[1].content[4:]
         ), 'Events should be in descending order'
@@ -520,9 +586,9 @@ def test_cache_page_with_missing_events(temp_dir: str):
         events_after_deletion = list(reload_stream.get_events())
 
         # We should have fewer events than before
-        assert (
-            len(events_after_deletion) <= initial_count
-        ), 'Should have fewer or equal events after deletion'
+        assert len(events_after_deletion) <= initial_count, (
+            'Should have fewer or equal events after deletion'
+        )
 
         # Test that we can still retrieve events successfully
         assert len(events_after_deletion) > 0, 'Should still retrieve some events'

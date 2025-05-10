@@ -2,76 +2,31 @@ import logging
 import multiprocessing as mp
 import os
 import re
-from enum import Enum
 from typing import Callable
 
-import httpx
+from pydantic import SecretStr
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+from openhands.integrations.service_types import ProviderType
+from openhands.integrations.utils import validate_provider_token
 
 
-class Platform(Enum):
-    INVALID = 0
-    GITHUB = 1
-    GITLAB = 2
-
-
-def identify_token(token: str, selected_repo: str | None = None) -> Platform:
+async def identify_token(token: str, base_domain: str | None) -> ProviderType:
     """
     Identifies whether a token belongs to GitHub or GitLab.
-
     Parameters:
         token (str): The personal access token to check.
-        selected_repo (str): Repository in format "owner/repo" for GitHub Actions token validation.
-
-    Returns:
-        Platform: "GitHub" if the token is valid for GitHub,
-             "GitLab" if the token is valid for GitLab,
-             "Invalid" if the token is not recognized by either.
+        base_domain (str): Custom base domain for provider (e.g GitHub Enterprise)
     """
-    # Try GitHub Actions token format (Bearer) with repo endpoint if repo is provided
-    if selected_repo:
-        github_repo_url = f'https://api.github.com/repos/{selected_repo}'
-        github_bearer_headers = {
-            'Authorization': f'Bearer {token}',
-            'Accept': 'application/vnd.github+json',
-        }
+    provider = await validate_provider_token(SecretStr(token), base_domain)
+    if not provider:
+        raise ValueError('Token is invalid.')
 
-        try:
-            github_repo_response = httpx.get(
-                github_repo_url, headers=github_bearer_headers, timeout=5
-            )
-            if github_repo_response.status_code == 200:
-                return Platform.GITHUB
-        except httpx.HTTPError as e:
-            logger.error(f'Error connecting to GitHub API (selected_repo check): {e}')
-
-    # Try GitHub PAT format (token)
-    github_url = 'https://api.github.com/user'
-    github_headers = {'Authorization': f'token {token}'}
-
-    try:
-        github_response = httpx.get(github_url, headers=github_headers, timeout=5)
-        if github_response.status_code == 200:
-            return Platform.GITHUB
-    except httpx.HTTPError as e:
-        logger.error(f'Error connecting to GitHub API: {e}')
-
-    # Try GitLab token
-    gitlab_url = 'https://gitlab.com/api/v4/user'
-    gitlab_headers = {'Authorization': f'Bearer {token}'}
-
-    try:
-        gitlab_response = httpx.get(gitlab_url, headers=gitlab_headers, timeout=5)
-        if gitlab_response.status_code == 200:
-            return Platform.GITLAB
-    except httpx.HTTPError as e:
-        logger.error(f'Error connecting to GitLab API: {e}')
-    return Platform.INVALID
+    return provider
 
 
 def codeact_user_response(

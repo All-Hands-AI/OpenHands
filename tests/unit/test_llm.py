@@ -87,8 +87,8 @@ def test_metrics_merge_accumulated_token_usage():
     metrics2 = Metrics(model_name='model2')
 
     # Add token usage to each
-    metrics1.add_token_usage(10, 5, 3, 2, 'response-1')
-    metrics2.add_token_usage(8, 6, 2, 4, 'response-2')
+    metrics1.add_token_usage(10, 5, 3, 2, 1000, 'response-1')
+    metrics2.add_token_usage(8, 6, 2, 4, 1000, 'response-2')
 
     # Verify initial accumulated token usage
     metrics1_data = metrics1.get()
@@ -218,7 +218,7 @@ def test_llm_reset():
     initial_metrics = copy.deepcopy(llm.metrics)
     initial_metrics.add_cost(1.0)
     initial_metrics.add_response_latency(0.5, 'test-id')
-    initial_metrics.add_token_usage(10, 5, 3, 2, 'test-id')
+    initial_metrics.add_token_usage(10, 5, 3, 2, 1000, 'test-id')
     llm.reset()
     assert llm.metrics.accumulated_cost != initial_metrics.accumulated_cost
     assert llm.metrics.costs != initial_metrics.costs
@@ -324,7 +324,9 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         wait_time = mock_sleep.call_args[0][0]
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        ), (
+            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -449,35 +451,84 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     This test verifies that when LLMNoResponseError is raised with a non-zero temperature:
     1. The retry mechanism is triggered
     2. The temperature remains unchanged (not set to 0.2)
-    3. After all retries are exhausted, the exception is propagated
+    3. After all retries are exhausted, the error is raised
     """
-    # Define a side effect function that always raises LLMNoResponseError
     mock_litellm_completion.side_effect = LLMNoResponseError(
         'LLM did not return a response'
     )
 
-    # Create LLM instance and make a completion call with non-zero temperature
     llm = LLM(config=default_config)
-
-    # We expect this to raise an exception after all retries are exhausted
     with pytest.raises(LLMNoResponseError):
         llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
-            temperature=0.7,  # Initial temperature is non-zero
+            temperature=0.7,  # Non-zero temperature
         )
 
-    # Verify that litellm_completion was called multiple times (retries happened)
-    # The default_config has num_retries=2, so it should be called 2 times
-    assert mock_litellm_completion.call_count == 2
+    # Verify that litellm_completion was called the expected number of times
+    assert mock_litellm_completion.call_count == default_config.num_retries
 
-    # Check the temperature in the first call (should be 0.7)
-    first_call_kwargs = mock_litellm_completion.call_args_list[0][1]
-    assert first_call_kwargs.get('temperature') == 0.7
+    # Check that all calls used the original temperature
+    for call in mock_litellm_completion.call_args_list:
+        assert call[1].get('temperature') == 0.7
 
-    # Check the temperature in the second call (should remain 0.7, not changed to 0.2)
-    second_call_kwargs = mock_litellm_completion.call_args_list[1][1]
-    assert second_call_kwargs.get('temperature') == 0.7
+
+@patch('openhands.llm.llm.litellm.get_model_info')
+@patch('openhands.llm.llm.httpx.get')
+def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
+    """
+    Test that Gemini 2.5 Pro models have function calling enabled by default.
+    This includes testing various model name formats with different prefixes.
+    """
+    # Mock the model info response
+    mock_get_model_info.return_value = {
+        'max_input_tokens': 8000,
+        'max_output_tokens': 2000,
+    }
+
+    # Mock the httpx response for litellm proxy
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        'data': [
+            {
+                'model_name': 'gemini-2.5-pro-preview-03-25',
+                'model_info': {
+                    'max_input_tokens': 8000,
+                    'max_output_tokens': 2000,
+                },
+            }
+        ]
+    }
+    mock_httpx_get.return_value = mock_response
+
+    # Test cases with model names and expected function calling support
+    test_cases = [
+        # Base model names
+        ('gemini-2.5-pro-preview-03-25', True),
+        ('gemini-2.5-pro-exp-03-25', True),
+        # With gemini/ prefix
+        ('gemini/gemini-2.5-pro-preview-03-25', True),
+        ('gemini/gemini-2.5-pro-exp-03-25', True),
+        # With litellm_proxy/ prefix
+        ('litellm_proxy/gemini-2.5-pro-preview-03-25', True),
+        ('litellm_proxy/gemini-2.5-pro-exp-03-25', True),
+        # With openrouter/gemini/ prefix
+        ('openrouter/gemini/gemini-2.5-pro-preview-03-25', True),
+        ('openrouter/gemini/gemini-2.5-pro-exp-03-25', True),
+        # With litellm_proxy/gemini/ prefix
+        ('litellm_proxy/gemini/gemini-2.5-pro-preview-03-25', True),
+        ('litellm_proxy/gemini/gemini-2.5-pro-exp-03-25', True),
+        # Control case - a model that shouldn't have function calling
+        ('gemini-1.0-pro', False),
+    ]
+
+    for model_name, expected_support in test_cases:
+        config = LLMConfig(model=model_name, api_key='test_key')
+        llm = LLM(config)
+
+        assert llm.is_function_calling_active() == expected_support, (
+            f'Expected function calling support to be {expected_support} for model {model_name}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')

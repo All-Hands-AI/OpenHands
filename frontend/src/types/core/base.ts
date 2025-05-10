@@ -1,5 +1,6 @@
 export type OpenHandsEventType =
   | "message"
+  | "system"
   | "agent_state_changed"
   | "run"
   | "read"
@@ -13,7 +14,9 @@ export type OpenHandsEventType =
   | "think"
   | "finish"
   | "error"
-  | "recall";
+  | "recall"
+  | "mcp"
+  | "call_tool_mcp";
 
 interface OpenHandsBaseEvent {
   id: number;

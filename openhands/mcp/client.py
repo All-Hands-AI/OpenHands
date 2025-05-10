@@ -1,12 +1,13 @@
+import asyncio
 from contextlib import AsyncExitStack
-from typing import Dict, List, Optional
+from typing import Optional
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.tool import BaseTool, MCPClientTool
+from openhands.mcp.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
@@ -17,13 +18,15 @@ class MCPClient(BaseModel):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
-    tools: List[BaseTool] = Field(default_factory=list)
-    tool_map: Dict[str, BaseTool] = Field(default_factory=dict)
+    tools: list[MCPClientTool] = Field(default_factory=list)
+    tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
 
-    async def connect_sse(self, server_url: str, timeout: float = 30.0) -> None:
+    async def connect_sse(
+        self, server_url: str, api_key: str | None = None, timeout: float = 30.0
+    ) -> None:
         """Connect to an MCP server using SSE transport.
 
         Args:
@@ -36,17 +39,30 @@ class MCPClient(BaseModel):
             await self.disconnect()
 
         try:
-            streams_context = sse_client(
-                url=server_url,
-            )
-            streams = await self.exit_stack.enter_async_context(streams_context)
-            self.session = await self.exit_stack.enter_async_context(
-                ClientSession(*streams)
-            )
+            # Use asyncio.wait_for to enforce the timeout
+            async def connect_with_timeout():
+                streams_context = sse_client(
+                    url=server_url,
+                    headers={'Authorization': f'Bearer {api_key}'} if api_key else None,
+                    timeout=timeout,
+                )
+                streams = await self.exit_stack.enter_async_context(streams_context)
+                self.session = await self.exit_stack.enter_async_context(
+                    ClientSession(*streams)
+                )
+                await self._initialize_and_list_tools()
 
-            await self._initialize_and_list_tools()
+            # Apply timeout to the entire connection process
+            await asyncio.wait_for(connect_with_timeout(), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.error(
+                f'Connection to {server_url} timed out after {timeout} seconds'
+            )
+            await self.disconnect()  # Clean up resources
+            raise  # Re-raise the TimeoutError
         except Exception as e:
             logger.error(f'Error connecting to {server_url}: {str(e)}')
+            await self.disconnect()  # Clean up resources
             raise
 
     async def _initialize_and_list_tools(self) -> None:
@@ -75,11 +91,14 @@ class MCPClient(BaseModel):
             f'Connected to server with tools: {[tool.name for tool in response.tools]}'
         )
 
-    async def call_tool(self, tool_name: str, args: Dict):
+    async def call_tool(self, tool_name: str, args: dict):
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
-        return await self.tool_map[tool_name].execute(**args)
+        # The MCPClientTool is primarily for metadata; use the session to call the actual tool.
+        if not self.session:
+            raise RuntimeError('Client session is not available.')
+        return await self.session.call_tool(name=tool_name, arguments=args)
 
     async def disconnect(self) -> None:
         """Disconnect from the MCP server and clean up resources."""

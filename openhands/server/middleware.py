@@ -12,8 +12,8 @@ from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
 from openhands.server import shared
-from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
+from openhands.server.user_auth import get_user_id
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -147,9 +147,10 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Attach the user's session based on the provided authentication token.
         """
+        user_id = await get_user_id(request)
         request.state.conversation = (
             await shared.conversation_manager.attach_to_conversation(
-                request.state.sid, get_user_id(request)
+                request.state.sid, user_id
             )
         )
         if not request.state.conversation:
@@ -183,27 +184,3 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
-
-
-class ProviderTokenMiddleware(SessionMiddlewareInterface):
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, request: Request, call_next: Callable):
-        settings_store = await shared.SettingsStoreImpl.get_instance(
-            shared.config, get_user_id(request)
-        )
-        settings = await settings_store.load()
-
-        # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
-        if getattr(request.state, 'provider_tokens', None) is None:
-            if (
-                settings
-                and settings.secrets_store
-                and settings.secrets_store.provider_tokens
-            ):
-                request.state.provider_tokens = settings.secrets_store.provider_tokens
-            else:
-                request.state.provider_tokens = None
-
-        return await call_next(request)

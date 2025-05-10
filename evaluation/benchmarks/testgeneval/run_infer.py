@@ -95,9 +95,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
 
     return instruction
@@ -158,9 +156,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -243,7 +241,7 @@ def initialize_runtime(
 
             # Copy the file to the desired location
             action = CmdRunAction(
-                command=f"cp /tmp/test_suite.py /testbed/{instance['test_file']}"
+                command=f'cp /tmp/test_suite.py /testbed/{instance["test_file"]}'
             )
             action.set_hard_timeout(600)
             logger.info(action, extra={'msg_type': 'ACTION'})

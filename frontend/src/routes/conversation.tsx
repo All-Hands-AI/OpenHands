@@ -1,10 +1,13 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { FaServer } from "react-icons/fa";
+import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import { DiGit } from "react-icons/di";
+import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import {
   ConversationProvider,
   useConversation,
@@ -13,11 +16,11 @@ import { Controls } from "#/components/features/controls/controls";
 import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
-import ListIcon from "#/icons/list-type-number.svg?react";
+import JupyterIcon from "#/icons/jupyter.svg?react";
+import TerminalIcon from "#/icons/terminal.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
-import { FilesProvider } from "#/context/files";
+
 import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
@@ -28,15 +31,15 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
+import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
   useConversationConfig();
@@ -49,31 +52,21 @@ function AppContent() {
   const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
-  const endSession = useEndSession();
+  const navigate = useNavigate();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
 
   const [width, setWidth] = React.useState(window.innerWidth);
 
-  const secrets = React.useMemo(
-    // secrets to filter go here
-    () => [].filter((secret) => secret !== null),
-    [],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
-
   React.useEffect(() => {
     if (isFetched && !conversation) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
-      endSession();
+      navigate("/");
     }
   }, [conversation, isFetched]);
 
@@ -119,6 +112,8 @@ function AppContent() {
   } = useDisclosure();
 
   function renderMain() {
+    const basePath = `/conversations/${conversationId}`;
+
     if (width <= 640) {
       return (
         <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
@@ -135,56 +130,84 @@ function AppContent() {
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <ResizablePanel
-            orientation={Orientation.VERTICAL}
-            className="grow h-full min-h-0 min-w-0"
-            initialSize={500}
-            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
-            secondClassName="flex flex-col overflow-hidden"
-            firstChild={
-              <Container
-                className="h-full"
-                labels={[
-                  {
-                    label: t(I18nKey.WORKSPACE$TITLE),
-                    to: "",
-                    icon: <CodeIcon />,
-                  },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: <ServedAppLabel />,
-                    to: "served",
-                    icon: <FaServer />,
-                  },
-                  {
-                    label: (
-                      <div className="flex items-center gap-1">
-                        {t(I18nKey.BROWSER$TITLE)}
-                      </div>
-                    ),
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                  },
-                ]}
-              >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
-              </Container>
-            }
-            secondChild={
-              <Container
-                className="h-full overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                 * that it loads only in the client-side. */}
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
-              </Container>
-            }
-          />
+          <Container
+            className="h-full w-full"
+            labels={[
+              {
+                label: "Changes",
+                to: "",
+                icon: <DiGit className="w-6 h-6" />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.VSCODE$TITLE)}
+                  </div>
+                ),
+                to: "vscode",
+                icon: <VscCode className="w-5 h-5" />,
+                rightContent: !RUNTIME_INACTIVE_STATES.includes(
+                  curAgentState,
+                ) ? (
+                  <FaExternalLinkAlt
+                    className="w-3 h-3 text-neutral-400 cursor-pointer"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (conversationId) {
+                        try {
+                          const response = await fetch(
+                            `/api/conversations/${conversationId}/vscode-url`,
+                          );
+                          const data = await response.json();
+                          if (data.vscode_url) {
+                            const transformedUrl = transformVSCodeUrl(
+                              data.vscode_url,
+                            );
+                            if (transformedUrl) {
+                              window.open(transformedUrl, "_blank");
+                            }
+                          }
+                        } catch (err) {
+                          // Silently handle the error
+                        }
+                      }
+                    }}
+                  />
+                ) : null,
+              },
+              {
+                label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
+                to: "terminal",
+                icon: <TerminalIcon />,
+              },
+              { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
+              {
+                label: <ServedAppLabel />,
+                to: "served",
+                icon: <FaServer />,
+              },
+              {
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.BROWSER$TITLE)}
+                  </div>
+                ),
+                to: "browser",
+                icon: <GlobeIcon />,
+              },
+            ]}
+          >
+            {/* Use both Outlet and TabContent */}
+            <div className="h-full w-full">
+              {/* Keep the Outlet for React Router to work properly */}
+              <div className="hidden">
+                <Outlet />
+              </div>
+              {/* Use TabContent to keep all tabs loaded but only show the active one */}
+              <TabContent conversationPath={basePath} />
+            </div>
+          </Container>
         }
       />
     );

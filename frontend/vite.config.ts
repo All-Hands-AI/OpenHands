@@ -31,6 +31,8 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       port: FE_PORT,
+      host: true,
+      allowedHosts: true,
       proxy: {
         "/api": {
           target: API_URL,

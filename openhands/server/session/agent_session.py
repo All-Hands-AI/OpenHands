@@ -17,7 +17,7 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.integrations.service_types import Repository
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
@@ -58,7 +58,7 @@ class AgentSession:
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
-    ):
+    ) -> None:
         """Initializes a new instance of the Session class
 
         Parameters:
@@ -85,11 +85,11 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        selected_repository: Repository | None = None,
+        selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
-    ):
+    ) -> None:
         """Starts the Agent session
         Parameters:
         - runtime_name: The name of the runtime associated with the session
@@ -124,6 +124,11 @@ class AgentSession:
                 selected_branch=selected_branch,
             )
 
+            # NOTE: this needs to happen before controller is created
+            # so MCP tools can be included into the SystemMessageAction
+            if self.runtime and runtime_connected:
+                await add_mcp_tools_to_agent(agent, self.runtime, config.mcp)
+
             if replay_json:
                 initial_message = self._run_replay(
                     initial_message,
@@ -147,7 +152,8 @@ class AgentSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.full_name.split('/')[-1]
+                repo_directory = selected_repository.split('/')[-1]
+
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
@@ -182,7 +188,7 @@ class AgentSession:
                 },
             )
 
-    async def close(self):
+    async def close(self) -> None:
         """Closes the Agent session"""
         if self._closed:
             return
@@ -239,7 +245,7 @@ class AgentSession:
         assert isinstance(replay_events[0], MessageAction)
         return replay_events[0]
 
-    def _create_security_analyzer(self, security_analyzer: str | None):
+    def _create_security_analyzer(self, security_analyzer: str | None) -> None:
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
         Parameters:
@@ -258,7 +264,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-        selected_repository: Repository | None = None,
+        selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
         """Creates a runtime instance
@@ -323,11 +329,11 @@ class AgentSession:
                 )
             return False
 
-        if selected_repository and git_provider_tokens:
-            await self.runtime.clone_repo(
-                git_provider_tokens, selected_repository, selected_branch
-            )
-            await call_sync_from_async(self.runtime.maybe_run_setup_script)
+        await self.runtime.clone_or_init_repo(
+            git_provider_tokens, selected_repository, selected_branch
+        )
+        await call_sync_from_async(self.runtime.maybe_run_setup_script)
+        await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -394,7 +400,7 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: Repository | None, repo_directory: str | None
+        self, selected_repository: str | None, repo_directory: str | None
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -409,14 +415,12 @@ class AgentSession:
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
-                selected_repository.full_name if selected_repository else None,
+                selected_repository or None,
             )
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(
-                    selected_repository.full_name, repo_directory
-                )
+                memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:

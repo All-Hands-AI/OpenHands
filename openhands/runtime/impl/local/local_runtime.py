@@ -5,6 +5,7 @@ This runtime runs the action_execution_server directly on the local machine with
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 from typing import Callable
@@ -40,6 +41,18 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
+def get_user_info():
+    """Get user ID and username in a cross-platform way."""
+    username = os.getenv('USER')
+    if sys.platform == 'win32':
+        # On Windows, we don't use user IDs the same way
+        # Return a default value that won't cause issues
+        return 1000, username
+    else:
+        # On Unix systems, use os.getuid()
+        return os.getuid(), username
+
+
 def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
@@ -62,25 +75,33 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
     if 'jupyter' not in output.lower():
         raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
 
-    # Check libtmux is installed
-    logger.debug('Checking dependencies: libtmux')
-    import libtmux
+    # Check libtmux is installed (skip on Windows)
 
-    server = libtmux.Server()
-    session = server.new_session(session_name='test-session')
-    pane = session.attached_pane
-    pane.send_keys('echo "test"')
-    pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
-    session.kill_session()
-    if 'test' not in pane_output:
-        raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
+    if sys.platform != 'win32':
+        logger.debug('Checking dependencies: libtmux')
+        import libtmux
 
-    # Check browser works
-    logger.debug('Checking dependencies: browser')
-    from openhands.runtime.browser.browser_env import BrowserEnv
+        server = libtmux.Server()
+        try:
+            session = server.new_session(session_name='test-session')
+        except Exception:
+            raise ValueError('tmux is not properly installed or available on the path.')
+        pane = session.attached_pane
+        pane.send_keys('echo "test"')
+        pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
+        session.kill_session()
+        if 'test' not in pane_output:
+            raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
 
-    browser = BrowserEnv()
-    browser.close()
+    # Skip browser environment check on Windows
+    if sys.platform != 'win32':
+        logger.debug('Checking dependencies: browser')
+        from openhands.runtime.browser.browser_env import BrowserEnv
+
+        browser = BrowserEnv()
+        browser.close()
+    else:
+        logger.warning('Running on Windows - browser environment check skipped.')
 
 
 class LocalRuntime(ActionExecutionClient):
@@ -106,9 +127,15 @@ class LocalRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
+        self.is_windows = sys.platform == 'win32'
+        if self.is_windows:
+            logger.warning(
+                'Running on Windows - some features that require tmux will be limited. '
+                'For full functionality, please consider using WSL or Docker runtime.'
+            )
+
         self.config = config
-        self._user_id = os.getuid()
-        self._username = os.getenv('USER')
+        self._user_id, self._username = get_user_info()
 
         if self.config.workspace_base is not None:
             logger.warning(
@@ -157,6 +184,7 @@ class LocalRuntime(ActionExecutionClient):
         self.status_callback = status_callback
         self.server_process: subprocess.Popen[str] | None = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
+        self._log_thread_exit_event = threading.Event()  # Add exit event
 
         # Update env vars
         if self.config.sandbox.runtime_startup_env_vars:
@@ -174,7 +202,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     async def connect(self):
@@ -194,7 +223,7 @@ class LocalRuntime(ActionExecutionClient):
             server_port=self._host_port,
             plugins=self.plugins,
             app_config=self.config,
-            python_prefix=[],
+            python_prefix=['poetry', 'run'],
             override_user_id=self._user_id,
             override_username=self._username,
         )
@@ -203,46 +232,72 @@ class LocalRuntime(ActionExecutionClient):
         env = os.environ.copy()
         # Get the code repo path
         code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-        env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
+        env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
-        # run poetry show -v | head -n 1 | awk '{print $2}'
-        poetry_venvs_path = (
-            subprocess.check_output(
-                ['poetry', 'show', '-v'],
-                env=env,
-                cwd=code_repo_path,
-                text=True,
-                shell=False,
-            )
-            .splitlines()[0]
-            .split(':')[1]
-            .strip()
-        )
-        env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
-        logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
-        check_dependencies(code_repo_path, poetry_venvs_path)
-        self.server_process = subprocess.Popen(
+        # Derive environment paths using sys.executable
+        interpreter_path = sys.executable
+        python_bin_path = os.path.dirname(interpreter_path)
+        env_root_path = os.path.dirname(python_bin_path)
+
+        # Prepend the interpreter's bin directory to PATH for subprocesses
+        env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
+        logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
+
+        # Check dependencies using the derived env_root_path
+        check_dependencies(code_repo_path, env_root_path)
+        self.server_process = subprocess.Popen(  # noqa: ASYNC101
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
             bufsize=1,
             env=env,
+            cwd=code_repo_path,  # Explicitly set the working directory
         )
 
         # Start a thread to read and log server output
         def log_output():
-            while (
-                self.server_process
-                and self.server_process.poll()
-                and self.server_process.stdout
-            ):
-                line = self.server_process.stdout.readline()
-                if not line:
-                    break
-                self.log('debug', f'Server: {line.strip()}')
+            if not self.server_process or not self.server_process.stdout:
+                self.log('error', 'Server process or stdout not available for logging.')
+                return
+
+            try:
+                # Read lines while the process is running and stdout is available
+                while self.server_process.poll() is None:
+                    if self._log_thread_exit_event.is_set():  # Check exit event
+                        self.log('info', 'Log thread received exit signal.')
+                        break  # Exit loop if signaled
+                    line = self.server_process.stdout.readline()
+                    if not line:
+                        # Process might have exited between poll() and readline()
+                        break
+                    self.log('info', f'Server: {line.strip()}')
+
+                # Capture any remaining output after the process exits OR if signaled
+                if (
+                    not self._log_thread_exit_event.is_set()
+                ):  # Check again before reading remaining
+                    self.log('info', 'Server process exited, reading remaining output.')
+                    for line in self.server_process.stdout:
+                        if (
+                            self._log_thread_exit_event.is_set()
+                        ):  # Check inside loop too
+                            self.log(
+                                'info',
+                                'Log thread received exit signal while reading remaining output.',
+                            )
+                            break
+                        self.log('info', f'Server (remaining): {line.strip()}')
+
+            except Exception as e:
+                # Log the error, but don't prevent the thread from potentially exiting
+                self.log('error', f'Error reading server output: {e}')
+            finally:
+                self.log(
+                    'info', 'Log output thread finished.'
+                )  # Add log for thread exit
 
         self._log_thread = threading.Thread(target=log_output, daemon=True)
         self._log_thread.start()
@@ -292,7 +347,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
-        if not self._runtime_initialized:
+        if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:
@@ -312,6 +367,8 @@ class LocalRuntime(ActionExecutionClient):
 
     def close(self):
         """Stop the server process."""
+        self._log_thread_exit_event.set()  # Signal the log thread to exit
+
         if self.server_process:
             self.server_process.terminate()
             try:
@@ -319,7 +376,7 @@ class LocalRuntime(ActionExecutionClient):
             except subprocess.TimeoutExpired:
                 self.server_process.kill()
             self.server_process = None
-            self._log_thread.join()
+            self._log_thread.join(timeout=5)  # Add timeout to join
 
         if self._temp_workspace:
             shutil.rmtree(self._temp_workspace)

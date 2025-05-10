@@ -51,6 +51,7 @@ class Condenser(ABC):
 
     def __init__(self):
         self._metadata_batch: dict[str, Any] = {}
+        self._llm_metadata: dict[str, Any] = {}
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add information to the current metadata batch.
@@ -100,6 +101,7 @@ class Condenser(ABC):
 
     def condensed_history(self, state: State) -> View | Condensation:
         """Condense the state's history."""
+        self._llm_metadata = state.to_llm_metadata('condenser')
         with self.metadata_batch(state):
             return self.condense(state.view)
 
