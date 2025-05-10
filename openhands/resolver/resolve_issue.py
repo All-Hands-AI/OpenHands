@@ -28,13 +28,12 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
-from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
+from openhands.resolver.issue_handler_factory import IssueHandlerFactory
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     codeact_user_response,
@@ -177,6 +176,18 @@ class IssueResolver:
         self.comment_id = args.comment_id
         self.base_domain = base_domain
         self.platform = platform
+
+        factory = IssueHandlerFactory(
+            owner=self.owner,
+            repo=self.repo,
+            token=self.token,
+            username=self.username,
+            platform=self.platform,
+            base_domain=self.base_domain,
+            issue_type=self.issue_type,
+            llm_config=self.llm_config,
+        )
+        self.issue_handler = factory.create()
 
     def initialize_runtime(
         self,
@@ -445,58 +456,6 @@ class IssueResolver:
         )
         return output
 
-    def issue_handler_factory(self) -> ServiceContextIssue | ServiceContextPR:
-        # Determine default base_domain based on platform
-
-        if self.issue_type == 'issue':
-            if self.platform == ProviderType.GITHUB:
-                return ServiceContextIssue(
-                    GithubIssueHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-            else:  # platform == Platform.GITLAB
-                return ServiceContextIssue(
-                    GitlabIssueHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-        elif self.issue_type == 'pr':
-            if self.platform == ProviderType.GITHUB:
-                return ServiceContextPR(
-                    GithubPRHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-            else:  # platform == Platform.GITLAB
-                return ServiceContextPR(
-                    GitlabPRHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-        else:
-            raise ValueError(f'Invalid issue type: {self.issue_type}')
-
     async def resolve_issue(
         self,
         reset_logger: bool = False,
@@ -507,10 +466,8 @@ class IssueResolver:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
 
-        issue_handler = self.issue_handler_factory()
-
         # Load dataset
-        issues: list[Issue] = issue_handler.get_converted_issues(
+        issues: list[Issue] = self.issue_handler.get_converted_issues(
             issue_numbers=[self.issue_number], comment_id=self.comment_id
         )
 
@@ -556,7 +513,7 @@ class IssueResolver:
                 [
                     'git',
                     'clone',
-                    issue_handler.get_clone_url(),
+                    self.issue_handler.get_clone_url(),
                     f'{self.output_dir}/repo',
                 ]
             ).decode('utf-8')
@@ -635,7 +592,7 @@ class IssueResolver:
             output = await self.process_issue(
                 issue,
                 base_commit,
-                issue_handler,
+                self.issue_handler,
                 reset_logger,
             )
             output_fp.write(output.model_dump_json() + '\n')
