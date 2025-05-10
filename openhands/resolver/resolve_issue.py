@@ -161,8 +161,6 @@ class IssueResolver:
 
         self.owner = owner
         self.repo = repo
-        self.token = token
-        self.username = username
         self.platform = platform
         self.runtime_container_image = runtime_container_image
         self.base_container_image = base_container_image
@@ -174,16 +172,15 @@ class IssueResolver:
         self.repo_instruction = repo_instruction
         self.issue_number = args.issue_number
         self.comment_id = args.comment_id
-        self.base_domain = base_domain
         self.platform = platform
 
         factory = IssueHandlerFactory(
             owner=self.owner,
             repo=self.repo,
-            token=self.token,
-            username=self.username,
+            token=token,
+            username=username,
             platform=self.platform,
-            base_domain=self.base_domain,
+            base_domain=base_domain,
             issue_type=self.issue_type,
             llm_config=self.llm_config,
         )
