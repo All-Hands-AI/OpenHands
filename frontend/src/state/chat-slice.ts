@@ -36,8 +36,6 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "system",
   "call_tool_mcp",
   "mcp",
-  "message",
-  "finish",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -163,25 +161,6 @@ export const chatSlice = createSlice({
         }
       } else if (actionID === "think") {
         text = action.payload.args.thought;
-      } else if (actionID === "message") {
-        // Check if content exists in the payload args
-        if ("content" in action.payload.args) {
-          text = (action.payload.args.content as string) || "";
-        } else if ("thought" in action.payload.args) {
-          text = (action.payload.args.thought as string) || "";
-        }
-      } else if (actionID === "finish") {
-        // Check if message exists in the payload args
-        if ("message" in action.payload.args) {
-          text = (action.payload.args.message as string) || "";
-        } else if ("final_thought" in action.payload.args) {
-          text = (action.payload.args.final_thought as string) || "";
-        }
-      }
-
-      // Skip adding a message if there's no content for message or finish actions
-      if ((actionID === "message" || actionID === "finish") && !text) {
-        return;
       }
 
       const message: Message = {
@@ -193,7 +172,6 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
         action,
-        // Add critic score if present in the action payload
         criticScore: action.payload.critic_score,
       };
 

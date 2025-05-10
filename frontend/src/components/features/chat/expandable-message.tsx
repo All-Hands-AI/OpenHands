@@ -29,17 +29,17 @@ const trimText = (text: string, maxLength: number): string => {
 export const getCriticScoreColor = (score?: number): string => {
   if (score === undefined) return "";
 
-  // Use 10 discrete bins from red (0) to green (1)
-  if (score < 0.1) return "border-red-600";
-  if (score < 0.2) return "border-red-500";
-  if (score < 0.3) return "border-orange-600";
-  if (score < 0.4) return "border-orange-500";
-  if (score < 0.5) return "border-yellow-600";
-  if (score < 0.6) return "border-yellow-500";
-  if (score < 0.7) return "border-lime-600";
-  if (score < 0.8) return "border-lime-500";
-  if (score < 0.9) return "border-green-600";
-  return "border-green-500";
+  // Use 10 discrete bins from red (0) to green (1) with lower saturation
+  if (score < 0.1) return "border-red-400";
+  if (score < 0.2) return "border-red-300";
+  if (score < 0.3) return "border-orange-400";
+  if (score < 0.4) return "border-orange-300";
+  if (score < 0.5) return "border-yellow-400";
+  if (score < 0.6) return "border-yellow-300";
+  if (score < 0.7) return "border-lime-400";
+  if (score < 0.8) return "border-lime-300";
+  if (score < 0.9) return "border-green-400";
+  return "border-green-300";
 };
 
 // Function to get the border color class based on critic score and message type
