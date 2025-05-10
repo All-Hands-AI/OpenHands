@@ -38,7 +38,16 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 @dataclass
 class StandaloneConversationManager(ConversationManager):
-    """Manages conversations in standalone mode (single server instance)."""
+    """Manages conversations in standalone mode (single server instance).
+
+    This is the default implementation of ConversationManager, designed for single-server deployments.
+    Applications can substitute their own implementation (e.g., a clustered manager) by:
+    1. Creating a class that inherits from ConversationManager
+    2. Implementing all required methods
+    3. Setting server_config.conversation_manager_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
 
     sio: socketio.AsyncServer
     config: AppConfig
