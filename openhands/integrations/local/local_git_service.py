@@ -1,11 +1,11 @@
 import os
 import subprocess
-from datetime import datetime
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from pydantic import SecretStr
 
+from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
@@ -32,12 +32,14 @@ class LocalGitService(BaseGitService, GitService):
         token: SecretStr | None = None,
         external_token_manager: bool = False,
         base_domain: str | None = None,
+        config: AppConfig | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
-        self.token = token or SecretStr("")
+        self.token = token or SecretStr('')
+        self.config = config
 
     @property
     def provider(self) -> str:
@@ -63,36 +65,38 @@ class LocalGitService(BaseGitService, GitService):
         # For local git, we use a placeholder user
         return User(
             id=0,
-            login="local-user",
-            avatar_url="",
+            login='local-user',
+            avatar_url='',
             company=None,
-            name="Local Git User",
+            name='Local Git User',
             email=None,
         )
 
-    def _find_git_repositories(self, base_dir: str) -> List[Repository]:
+    def _find_git_repositories(self, base_dir: str) -> list[Repository]:
         """
         Find git repositories in the given directory and one level deep.
-        
+
         Args:
             base_dir: The base directory to search for git repositories
-            
+
         Returns:
             A list of Repository objects for git repositories found
         """
         if not os.path.exists(base_dir) or not os.path.isdir(base_dir):
-            logger.warning(f"WORKSPACE_BASE directory does not exist or is not a directory: {base_dir}")
+            logger.warning(
+                f'workspace_base directory does not exist or is not a directory: {base_dir}'
+            )
             return []
-            
+
         repositories = []
         base_path = Path(base_dir)
-        
+
         # Check if the base directory itself is a git repository
         if (base_path / '.git').is_dir():
             repo = self._create_repository_from_local_git(base_path)
             if repo:
                 repositories.append(repo)
-                
+
         # Check one level deep
         for item in base_path.iterdir():
             if item.is_dir():
@@ -101,83 +105,92 @@ class LocalGitService(BaseGitService, GitService):
                     repo = self._create_repository_from_local_git(item)
                     if repo:
                         repositories.append(repo)
-                        
+
         return repositories
-        
+
     def _create_repository_from_local_git(self, repo_path: Path) -> Repository | None:
         """
         Create a Repository object from a local git repository.
-        
+
         Args:
             repo_path: Path to the git repository
-            
+
         Returns:
             A Repository object or None if the repository information cannot be extracted
         """
         try:
             # Get repository name from directory name
             repo_name = repo_path.name
-            
+
             # Try to get the remote URL to extract the full name
             try:
                 result = subprocess.run(
-                    ["git", "-C", str(repo_path), "config", "--get", "remote.origin.url"],
+                    [
+                        'git',
+                        '-C',
+                        str(repo_path),
+                        'config',
+                        '--get',
+                        'remote.origin.url',
+                    ],
                     capture_output=True,
                     text=True,
-                    check=False
+                    check=False,
                 )
                 remote_url = result.stdout.strip()
-                
+
                 # Extract full name from remote URL if possible
                 if remote_url:
                     # Handle different URL formats
-                    if remote_url.startswith("https://"):
+                    if remote_url.startswith('https://'):
                         # Format: https://github.com/username/repo.git
-                        parts = remote_url.split("/")
+                        parts = remote_url.split('/')
                         if len(parts) >= 5:
                             owner = parts[-2]
                             repo = parts[-1]
-                            if repo.endswith(".git"):
+                            if repo.endswith('.git'):
                                 repo = repo[:-4]
-                            full_name = f"{owner}/{repo}"
+                            full_name = f'{owner}/{repo}'
                         else:
-                            full_name = f"local/{repo_name}"
-                    elif remote_url.startswith("git@"):
+                            full_name = f'local/{repo_name}'
+                    elif remote_url.startswith('git@'):
                         # Format: git@github.com:username/repo.git
-                        parts = remote_url.split(":")
+                        parts = remote_url.split(':')
                         if len(parts) == 2:
                             repo_part = parts[1]
-                            if repo_part.endswith(".git"):
+                            if repo_part.endswith('.git'):
                                 repo_part = repo_part[:-4]
                             full_name = repo_part
                         else:
-                            full_name = f"local/{repo_name}"
+                            full_name = f'local/{repo_name}'
                     else:
-                        full_name = f"local/{repo_name}"
+                        full_name = f'local/{repo_name}'
                 else:
-                    full_name = f"local/{repo_name}"
-                    
+                    full_name = f'local/{repo_name}'
+
             except Exception as e:
-                logger.warning(f"Error getting remote URL for repository {repo_path}: {e}")
-                full_name = f"local/{repo_name}"
-                
+                logger.warning(
+                    f'Error getting remote URL for repository {repo_path}: {e}'
+                )
+                full_name = f'local/{repo_name}'
+
             # Create a unique ID for the repository
             repo_id = hash(str(repo_path.absolute()))
-            
+
             # Get last commit date if available
             pushed_at = None
             try:
                 result = subprocess.run(
-                    ["git", "-C", str(repo_path), "log", "-1", "--format=%cI"],
+                    ['git', '-C', str(repo_path), 'log', '-1', '--format=%cI'],
                     capture_output=True,
                     text=True,
-                    check=False
+                    check=False,
                 )
                 if result.stdout.strip():
                     pushed_at = result.stdout.strip()
             except Exception:
                 pass
-                
+
             # Create the Repository object
             return Repository(
                 id=abs(repo_id),  # Use absolute value to ensure positive ID
@@ -187,9 +200,9 @@ class LocalGitService(BaseGitService, GitService):
                 stargazers_count=0,
                 pushed_at=pushed_at,
             )
-            
+
         except Exception as e:
-            logger.warning(f"Error creating repository object for {repo_path}: {e}")
+            logger.warning(f'Error creating repository object for {repo_path}: {e}')
             return None
 
     async def search_repositories(
@@ -200,15 +213,25 @@ class LocalGitService(BaseGitService, GitService):
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories from the local workspace"""
-        workspace_base = os.environ.get('WORKSPACE_BASE')
+        # Check config first, then fall back to environment variable
+        workspace_base = None
+        if self.config is not None:
+            workspace_base = self.config.workspace_base
+
+        # Fall back to environment variable if not set in config
+        if not workspace_base:
+            workspace_base = os.environ.get('WORKSPACE_BASE')
+
         if not workspace_base:
             return []
-            
-        logger.info(f"Looking for git repositories in WORKSPACE_BASE: {workspace_base}")
+
+        logger.info(f'Looking for git repositories in workspace_base: {workspace_base}')
         local_repos = self._find_git_repositories(workspace_base)
         if local_repos:
-            logger.info(f"Found {len(local_repos)} local git repositories in WORKSPACE_BASE")
-            
+            logger.info(
+                f'Found {len(local_repos)} local git repositories in workspace_base'
+            )
+
         return local_repos
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:

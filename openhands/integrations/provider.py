@@ -11,6 +11,7 @@ from pydantic import (
     WithJsonSchema,
 )
 
+from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
@@ -78,6 +79,7 @@ class ProviderHandler:
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
+        config: AppConfig | None = None,
     ):
         if not isinstance(provider_tokens, MappingProxyType):
             raise TypeError(
@@ -93,19 +95,26 @@ class ProviderHandler:
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager
-        
+        self.config = config
+
         # Create a mutable copy of the provider tokens
         provider_tokens_dict = dict(provider_tokens)
-        
-        # Add local git provider if WORKSPACE_BASE is set
-        if os.environ.get('WORKSPACE_BASE') and ProviderType.LOCAL not in provider_tokens_dict:
-            logger.info("WORKSPACE_BASE environment variable is set, adding local git provider")
+
+        # Add local git provider if workspace_base is set in config
+        workspace_base = None
+        if config is not None:
+            workspace_base = config.workspace_base
+
+        if (
+            workspace_base or os.environ.get('WORKSPACE_BASE')
+        ) and ProviderType.LOCAL not in provider_tokens_dict:
+            logger.info('workspace_base is set in config, adding local git provider')
             provider_tokens_dict[ProviderType.LOCAL] = ProviderToken(
-                token=SecretStr(""),  # No token needed for local git
+                token=SecretStr(''),  # No token needed for local git
                 user_id=None,
-                host=None
+                host=None,
             )
-            
+
         # Convert back to MappingProxyType
         self._provider_tokens = MappingProxyType(provider_tokens_dict)
 
@@ -145,11 +154,11 @@ class ProviderHandler:
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
-        Get repositories from providers, including local git repositories if WORKSPACE_BASE is set
+        Get repositories from providers, including local git repositories if workspace_base is set in config
         """
 
         all_repos: list[Repository] = []
-        
+
         # Get repositories from configured providers
         for provider in self.provider_tokens:
             try:
@@ -158,9 +167,13 @@ class ProviderHandler:
                 all_repos.extend(service_repos)
             except Exception as e:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
-        
-        # Check for local git repositories if WORKSPACE_BASE is set
-        if os.environ.get('WORKSPACE_BASE'):
+
+        # Check for local git repositories if workspace_base is set in config
+        workspace_base = None
+        if self.config is not None:
+            workspace_base = self.config.workspace_base
+
+        if workspace_base or os.environ.get('WORKSPACE_BASE'):
             try:
                 # Create a local git service instance
                 local_service = LocalGitServiceImpl()
