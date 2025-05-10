@@ -223,7 +223,13 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         Forgejo supports requesting reviewers via the API.
         """
         url = f'{self.base_url}/pulls/{pr_number}/requested_reviewers'
-        data = {'reviewers': [reviewer]}
+        
+        # The API expects a PullReviewRequestOptions object with reviewers as a list of strings
+        data = {
+            'reviewers': [reviewer],
+            'team_reviewers': []
+        }
+        
         response = httpx.post(url, headers=self.headers, json=data)
         
         if response.status_code not in (200, 201):
