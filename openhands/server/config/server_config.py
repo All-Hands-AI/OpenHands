@@ -27,30 +27,32 @@ class ServerConfig(ServerConfigInterface):
         'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
     )
 
-    def verify_config(self):
+    def verify_config(self) -> None:
         if self.config_cls:
             raise ValueError('Unexpected config path provided')
 
-    def get_config(self):
-        config = {
-            'APP_MODE': self.app_mode,
+    async def get_config(self) -> dict[str, str]:
+        config: dict[str, str] = {
+            'APP_MODE': str(self.app_mode),
             'GITHUB_CLIENT_ID': self.github_client_id,
             'POSTHOG_CLIENT_KEY': self.posthog_client_key,
-            'FEATURE_FLAGS': {
-                'ENABLE_BILLING': self.enable_billing,
-                'HIDE_LLM_SETTINGS': self.hide_llm_settings,
-            },
+            'FEATURE_FLAGS': str(
+                {
+                    'ENABLE_BILLING': str(self.enable_billing),
+                    'HIDE_LLM_SETTINGS': str(self.hide_llm_settings),
+                }
+            ),
         }
 
         return config
 
 
-def load_server_config():
+def load_server_config() -> ServerConfigInterface:
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
 
     server_config_cls = get_impl(ServerConfig, config_cls)
-    server_config = server_config_cls()
+    server_config: ServerConfigInterface = server_config_cls()
     server_config.verify_config()
 
     return server_config

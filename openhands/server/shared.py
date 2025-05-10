@@ -4,7 +4,7 @@ import socketio
 from dotenv import load_dotenv
 
 from openhands.core.config import load_app_config
-from openhands.server.config.server_config import load_server_config
+from openhands.server.config.server_config import ServerConfig, load_server_config
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
@@ -34,27 +34,49 @@ sio = socketio.AsyncServer(
     async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
 )
 
+monitoring_class = (
+    getattr(server_config, 'monitoring_listener_class', None)
+    if isinstance(server_config, ServerConfig)
+    else None
+)
 MonitoringListenerImpl = get_impl(
     MonitoringListener,
-    server_config.monitoring_listener_class,
+    monitoring_class,
 )
 
 monitoring_listener = MonitoringListenerImpl.get_instance(config)
 
+conversation_manager_class = (
+    getattr(server_config, 'conversation_manager_class', None)
+    if isinstance(server_config, ServerConfig)
+    else None
+)
 ConversationManagerImpl = get_impl(
-    ConversationManager,  # type: ignore
-    server_config.conversation_manager_class,
+    ConversationManager,
+    conversation_manager_class,
 )
 
-conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
+conversation_manager = ConversationManagerImpl.get_instance(
     sio, config, file_store, server_config, monitoring_listener
 )
 
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
-
-SecretsStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
-
-ConversationStoreImpl = get_impl(
-    ConversationStore,  # type: ignore
-    server_config.conversation_store_class,
+settings_store_class = (
+    getattr(server_config, 'settings_store_class', None)
+    if isinstance(server_config, ServerConfig)
+    else None
 )
+SettingsStoreImpl = get_impl(SettingsStore, settings_store_class)
+
+secret_store_class = (
+    getattr(server_config, 'secret_store_class', None)
+    if isinstance(server_config, ServerConfig)
+    else None
+)
+SecretsStoreImpl = get_impl(SecretsStore, secret_store_class)
+
+conversation_store_class = (
+    getattr(server_config, 'conversation_store_class', None)
+    if isinstance(server_config, ServerConfig)
+    else None
+)
+ConversationStoreImpl = get_impl(ConversationStore, conversation_store_class)
