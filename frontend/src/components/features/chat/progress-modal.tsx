@@ -12,6 +12,7 @@ import { PayloadAction } from "@reduxjs/toolkit";
 import { OpenHandsAction } from "../../../types/core/actions";
 import { cn } from "../../../utils/utils";
 import { RootState } from "../../../store";
+import { Message } from "../../../message";
 
 interface ProgressModalProps {
   isOpen: boolean;
