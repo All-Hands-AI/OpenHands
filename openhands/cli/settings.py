@@ -220,7 +220,6 @@ async def modify_llm_settings_basic(
     config.set_llm_config(llm_config)
 
     config.default_agent = OH_DEFAULT_AGENT
-    config.security.confirmation_mode = False
     config.enable_default_condenser = True
 
     agent_config = config.get_agent_config(config.default_agent)
@@ -238,7 +237,6 @@ async def modify_llm_settings_basic(
     settings.llm_api_key = SecretStr(api_key)
     settings.llm_base_url = None
     settings.agent = OH_DEFAULT_AGENT
-    settings.confirmation_mode = False
     settings.enable_default_condenser = True
 
     await settings_store.store(settings)

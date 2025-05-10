@@ -74,7 +74,6 @@ class ActionExecutionClient(Runtime):
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         super().__init__(
@@ -93,10 +92,6 @@ class ActionExecutionClient(Runtime):
     @property
     def action_execution_server_url(self) -> str:
         raise NotImplementedError('Action execution server URL is not implemented')
-
-    @property
-    def runtime_initialized(self) -> bool:
-        return self._runtime_initialized
 
     @retry(
         retry=retry_if_exception(_is_retryable_error),
@@ -351,7 +346,7 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def get_updated_mcp_config(self) -> MCPConfig:
+    def get_mcp_config(self) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
         # Send a request to the action execution server to updated MCP config
@@ -395,7 +390,7 @@ class ActionExecutionClient(Runtime):
         from openhands.mcp.utils import create_mcp_clients
 
         # Get the updated MCP config
-        updated_mcp_config = self.get_updated_mcp_config()
+        updated_mcp_config = self.get_mcp_config()
         self.log(
             'debug',
             f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',

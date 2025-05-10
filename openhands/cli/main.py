@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 from uuid import uuid4
 
@@ -22,6 +23,7 @@ from openhands.cli.tui import (
     process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    update_streaming_output,
 )
 from openhands.cli.utils import (
     update_usage_metrics,
@@ -119,6 +121,12 @@ async def run_session(
         headless_mode=True,
         agent=agent,
     )
+
+    def stream_to_console(output: str) -> None:
+        # Instead of printing to stdout, pass the string to the TUI module
+        update_streaming_output(output)
+
+    runtime.subscribe_to_shell_stream(stream_to_console)
 
     controller, _ = create_controller(agent, runtime, config)
 
@@ -319,6 +327,11 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
             agent_config.condenser = NoOpCondenserConfig(type='noop')
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
+
+    if not args.override_cli_mode:
+        config.runtime = 'cli'
+        config.workspace_base = os.getcwd()
+        config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base

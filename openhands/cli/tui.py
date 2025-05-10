@@ -40,10 +40,16 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileEditObservation,
     FileReadObservation,
 )
 from openhands.llm.metrics import Metrics
+
+ENABLE_STREAMING = True  # Enable streaming output in TextArea
+
+# Global TextArea for streaming output
+streaming_output_text_area: TextArea | None = None
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -168,6 +174,7 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 # Prompt output display functions
 def display_event(event: Event, config: AppConfig) -> None:
+    global streaming_output_text_area
     with print_lock:
         if isinstance(event, Action):
             if hasattr(event, 'thought'):
@@ -179,6 +186,8 @@ def display_event(event: Event, config: AppConfig) -> None:
                 display_message(event.content)
         if isinstance(event, CmdRunAction):
             display_command(event)
+            if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
+                initialize_streaming_output()
         if isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         if isinstance(event, FileEditObservation):
@@ -187,6 +196,8 @@ def display_event(event: Event, config: AppConfig) -> None:
             display_file_read(event)
         if isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
+        if isinstance(event, ErrorObservation):
+            display_error(event.content)
 
 
 def display_message(message: str) -> None:
@@ -196,20 +207,37 @@ def display_message(message: str) -> None:
         print_formatted_text(f'\n{message}')
 
 
-def display_command(event: CmdRunAction) -> None:
-    if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+def display_error(error: str) -> None:
+    error = error.strip()
+
+    if error:
         container = Frame(
             TextArea(
-                text=f'$ {event.command}',
+                text=error,
                 read_only=True,
-                style=COLOR_GREY,
+                style='ansired',
                 wrap_lines=True,
             ),
-            title='Action',
+            title='Error',
             style='ansired',
         )
         print_formatted_text('')
         print_container(container)
+
+
+def display_command(event: CmdRunAction) -> None:
+    container = Frame(
+        TextArea(
+            text=f'$ {event.command}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Command',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_command_output(output: str) -> None:
@@ -233,7 +261,7 @@ def display_command_output(output: str) -> None:
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Action Output',
+        title='Command Output',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -269,6 +297,44 @@ def display_file_read(event: FileReadObservation) -> None:
     )
     print_formatted_text('')
     print_container(container)
+
+
+def initialize_streaming_output():
+    """Initialize the streaming output TextArea."""
+    if not ENABLE_STREAMING:
+        return
+    global streaming_output_text_area
+    streaming_output_text_area = TextArea(
+        text='',
+        read_only=True,
+        style=COLOR_GREY,
+        wrap_lines=True,
+        focusable=False,  # Make it non-focusable since it's just for display
+        accept_handler=lambda _: None,  # Prevent any input handling
+    )
+    container = Frame(
+        streaming_output_text_area,
+        title='Streaming Output',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+    # Force initial render
+    streaming_output_text_area.buffer.cursor_position = 0
+
+
+def update_streaming_output(text: str):
+    """Update the streaming output TextArea with new text."""
+    global streaming_output_text_area
+
+    # Append the new text to the existing content
+    if streaming_output_text_area is not None:
+        current_text = streaming_output_text_area.text
+        streaming_output_text_area.text = current_text + text
+        # Force a redraw of the TextArea
+        streaming_output_text_area.buffer.cursor_position = len(
+            streaming_output_text_area.text
+        )
 
 
 # Interactive command output display functions

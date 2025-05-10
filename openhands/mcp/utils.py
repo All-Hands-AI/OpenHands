@@ -154,19 +154,12 @@ async def add_mcp_tools_to_agent(
     """
     Add MCP tools to an agent.
     """
-    from openhands.runtime.impl.action_execution.action_execution_client import (
-        ActionExecutionClient,  # inline import to avoid circular import
-    )
-
-    assert isinstance(runtime, ActionExecutionClient), (
-        'Runtime must be an instance of ActionExecutionClient'
-    )
     assert runtime.runtime_initialized, (
         'Runtime must be initialized before adding MCP tools'
     )
 
     # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config()
+    updated_mcp_config = runtime.get_mcp_config()
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
