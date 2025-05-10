@@ -194,7 +194,7 @@ export const chatSlice = createSlice({
         timestamp: new Date().toISOString(),
         action,
         // Add critic score if present in the action payload
-        criticScore: action.payload.critic_score
+        criticScore: action.payload.critic_score,
       };
 
       state.messages.push(message);

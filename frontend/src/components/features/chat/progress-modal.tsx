@@ -44,15 +44,13 @@ export function ProgressModal({
     if (isOpen) {
       const actionsWithScores = messages
         .filter(
-          (msg: Message) => 
+          (msg: Message) =>
             msg.action !== undefined && msg.criticScore !== undefined,
         )
-        .map(
-          (msg: Message) => ({
-            action: msg.action as PayloadAction<OpenHandsAction>,
-            score: msg.criticScore as number,
-          }),
-        );
+        .map((msg: Message) => ({
+          action: msg.action as PayloadAction<OpenHandsAction>,
+          score: msg.criticScore as number,
+        }));
 
       setActionData({
         actions: actionsWithScores.map(
@@ -214,9 +212,13 @@ export function ProgressModal({
             <div className="mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs">{t("CRITIC_SCORE_SCALE")}:</span>
-                <div className="flex-1 h-4 rounded-md" style={{
-                  background: "linear-gradient(to right, hsl(0, 100%, 40%), hsl(60, 100%, 40%), hsl(120, 100%, 40%))"
-                }} />
+                <div
+                  className="flex-1 h-4 rounded-md"
+                  style={{
+                    background:
+                      "linear-gradient(to right, hsl(0, 100%, 40%), hsl(60, 100%, 40%), hsl(120, 100%, 40%))",
+                  }}
+                />
               </div>
               <div className="flex justify-between mt-1">
                 <span className="text-xs text-red-500">0%</span>
