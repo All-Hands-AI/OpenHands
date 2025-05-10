@@ -9,6 +9,7 @@ from openhands.server.types import AppMode
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    FORGEJO = 'forgejo'
 
 
 class TaskType(str, Enum):
