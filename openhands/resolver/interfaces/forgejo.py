@@ -455,54 +455,62 @@ class ForgejoPRHandler(ForgejoIssueHandler):
         review_params = {'page': 1, 'limit': 100}
         review_comments = []
 
-        while True:
-            review_response = httpx.get(
-                review_url, headers=self.headers, params=review_params
-            )
-            review_response.raise_for_status()
-            comments = review_response.json()
+        try:
+            while True:
+                review_response = httpx.get(
+                    review_url, headers=self.headers, params=review_params
+                )
+                review_response.raise_for_status()
+                comments = review_response.json()
 
-            if not comments:
-                break
-
-            if comment_id:
-                matching_comments = [c for c in comments if c.get('id') == comment_id]
-                if matching_comments:
-                    review_comments.extend(
-                        [c.get('body', '') for c in matching_comments]
-                    )
+                if not comments:
                     break
-            else:
-                review_comments.extend([c.get('body', '') for c in comments])
 
-            review_params['page'] += 1
+                if comment_id:
+                    matching_comments = [c for c in comments if c.get('id') == comment_id]
+                    if matching_comments:
+                        review_comments.extend(
+                            [c.get('body', '') for c in matching_comments]
+                        )
+                        break
+                else:
+                    review_comments.extend([c.get('body', '') for c in comments])
+
+                review_params['page'] += 1
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Error fetching review comments: {e}")
+            # Continue with empty review comments
 
         # Get PR comments (thread comments)
         thread_url = f'{self.base_url}/issues/{pull_number}/comments'
         thread_params = {'page': 1, 'limit': 100}
         thread_comments = []
 
-        while True:
-            thread_response = httpx.get(
-                thread_url, headers=self.headers, params=thread_params
-            )
-            thread_response.raise_for_status()
-            comments = thread_response.json()
+        try:
+            while True:
+                thread_response = httpx.get(
+                    thread_url, headers=self.headers, params=thread_params
+                )
+                thread_response.raise_for_status()
+                comments = thread_response.json()
 
-            if not comments:
-                break
-
-            if comment_id:
-                matching_comments = [c for c in comments if c.get('id') == comment_id]
-                if matching_comments:
-                    thread_comments.extend(
-                        [c.get('body', '') for c in matching_comments]
-                    )
+                if not comments:
                     break
-            else:
-                thread_comments.extend([c.get('body', '') for c in comments])
 
-            thread_params['page'] += 1
+                if comment_id:
+                    matching_comments = [c for c in comments if c.get('id') == comment_id]
+                    if matching_comments:
+                        thread_comments.extend(
+                            [c.get('body', '') for c in matching_comments]
+                        )
+                        break
+                else:
+                    thread_comments.extend([c.get('body', '') for c in comments])
+
+                thread_params['page'] += 1
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Error fetching thread comments: {e}")
+            # Continue with empty thread comments
 
         # Create review threads
         # Forgejo organizes code comments into "CodeConversations" which are collections
