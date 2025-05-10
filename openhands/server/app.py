@@ -6,7 +6,11 @@ with warnings.catch_warnings():
 
 from fastapi import (
     FastAPI,
+    Request,
+    Response,
 )
+from fastmcp import FastMCP
+from mcp.server.sse import SseServerTransport
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
@@ -17,6 +21,7 @@ from openhands.server.routes.git import app as git_api_router
 from openhands.server.routes.manage_conversations import (
     app as manage_conversation_api_router,
 )
+from openhands.server.routes.mcp import mcp_server
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
@@ -37,6 +42,35 @@ app = FastAPI(
     version=__version__,
     lifespan=_lifespan,
 )
+
+
+def register_mcp_router(
+    fastapi_app: FastAPI,
+    mcp_server: FastMCP,
+    base_path: str,
+):
+    sse = SseServerTransport(f'{base_path}/messages/')
+
+    async def handle_sse(request: Request) -> None:
+        async with sse.connect_sse(
+            request.scope,
+            request.receive,
+            request._send,  # noqa: SLF001
+        ) as (read_stream, write_stream):
+            await mcp_server._mcp_server.run(
+                read_stream,
+                write_stream,
+                mcp_server._mcp_server.create_initialization_options(),
+            )
+
+        return Response()
+
+    fastapi_app.add_route(f'{base_path}/sse', handle_sse)
+    fastapi_app.mount(f'{base_path}/messages/', sse.handle_post_message)
+
+
+base_path = '/mcp'
+register_mcp_router(app, mcp_server, base_path)
 
 
 @app.get('/health')
