@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, overload
 
@@ -16,6 +17,7 @@ from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+from openhands.integrations.local.local_git_service import LocalGitServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
@@ -85,12 +87,27 @@ class ProviderHandler:
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
+            ProviderType.LOCAL: LocalGitServiceImpl,
         }
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager
-        self._provider_tokens = provider_tokens
+        
+        # Create a mutable copy of the provider tokens
+        provider_tokens_dict = dict(provider_tokens)
+        
+        # Add local git provider if WORKSPACE_BASE is set
+        if os.environ.get('WORKSPACE_BASE') and ProviderType.LOCAL not in provider_tokens_dict:
+            logger.info("WORKSPACE_BASE environment variable is set, adding local git provider")
+            provider_tokens_dict[ProviderType.LOCAL] = ProviderToken(
+                token=SecretStr(""),  # No token needed for local git
+                user_id=None,
+                host=None
+            )
+            
+        # Convert back to MappingProxyType
+        self._provider_tokens = MappingProxyType(provider_tokens_dict)
 
     @property
     def provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
@@ -128,10 +145,12 @@ class ProviderHandler:
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
-        Get repositories from providers
+        Get repositories from providers, including local git repositories if WORKSPACE_BASE is set
         """
 
         all_repos: list[Repository] = []
+        
+        # Get repositories from configured providers
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
@@ -139,6 +158,16 @@ class ProviderHandler:
                 all_repos.extend(service_repos)
             except Exception as e:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
+        
+        # Check for local git repositories if WORKSPACE_BASE is set
+        if os.environ.get('WORKSPACE_BASE'):
+            try:
+                # Create a local git service instance
+                local_service = LocalGitServiceImpl()
+                local_repos = await local_service.get_repositories(sort, app_mode)
+                all_repos.extend(local_repos)
+            except Exception as e:
+                logger.warning(f'Error fetching local git repositories: {e}')
 
         return all_repos
 

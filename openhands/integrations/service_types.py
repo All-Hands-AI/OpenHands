@@ -13,6 +13,7 @@ from openhands.server.types import AppMode
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    LOCAL = 'local'
 
 
 class TaskType(str, Enum):
