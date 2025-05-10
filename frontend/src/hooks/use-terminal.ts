@@ -7,6 +7,7 @@ import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
+import { getTerminalStreamService } from "#/services/terminal-stream-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 
 /*
@@ -23,6 +24,13 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
 };
 
 const renderCommand = (command: Command, terminal: Terminal) => {
+  if (
+    command.type === "output" &&
+    !command.isPartial &&
+    command.content === "<end_of_output>"
+  )
+    return;
+
   const { content } = command;
 
   terminal.writeln(
@@ -45,6 +53,7 @@ export const useTerminal = ({
   const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
   const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const streamInitialized = React.useRef<boolean>(false);
 
   const createTerminal = () =>
     new Terminal({
@@ -109,6 +118,33 @@ export const useTerminal = ({
     return command.slice(0, -1);
   };
 
+  // Initialize terminal streaming service
+  React.useEffect(() => {
+    if (!streamInitialized.current && !disabled) {
+      try {
+        // Get the base URL for the terminal stream service
+        const baseUrl = "http://localhost:36276"; // FIXME: Get this from a GET endpoint
+        const streamService = getTerminalStreamService(baseUrl);
+        streamService.connect();
+        streamInitialized.current = true;
+      } catch (error) {
+        console.error("Failed to initialize terminal stream service:", error);
+      }
+    }
+
+    return () => {
+      if (streamInitialized.current) {
+        try {
+          const streamService = getTerminalStreamService();
+          streamService.disconnect();
+          streamInitialized.current = false;
+        } catch (error) {
+          console.error("Error disconnecting terminal stream:", error);
+        }
+      }
+    };
+  }, [disabled]);
+
   // Initialize terminal and handle cleanup
   React.useEffect(() => {
     terminal.current = createTerminal();
@@ -141,13 +177,20 @@ export const useTerminal = ({
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
-      let lastCommandType = "";
+      let lastCommand;
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        lastCommandType = commands[i].type;
-        renderCommand(commands[i], terminal.current);
+        lastCommand = commands[i];
+        // Skip the output indicating completion
+        if (commands[i].type !== "output" || commands[i].isPartial) {
+          renderCommand(commands[i], terminal.current);
+        }
       }
       lastCommandIndex.current = commands.length;
-      if (lastCommandType === "output") {
+      if (
+        lastCommand?.type === "output" &&
+        !lastCommand.isPartial &&
+        lastCommand.content === "<end_of_output>"
+      ) {
         terminal.current.write("$ ");
       }
     }
