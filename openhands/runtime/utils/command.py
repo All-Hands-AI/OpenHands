@@ -1,3 +1,5 @@
+import warnings
+
 from openhands.core.config import AppConfig
 from openhands.runtime.plugins import PluginRequirement
 
@@ -19,6 +21,18 @@ def get_action_execution_server_startup_command(
     override_user_id: int | None = None,
     override_username: str | None = None,
 ) -> list[str]:
+    """
+    DEPRECATED: This function has been moved to a method on the DockerRuntime class.
+    Use DockerRuntime.get_action_execution_server_startup_command() instead.
+
+    This function will be removed in a future release.
+    """
+    warnings.warn(
+        'get_action_execution_server_startup_command is deprecated. '
+        'Use DockerRuntime.get_action_execution_server_startup_command() instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
     sandbox_config = app_config.sandbox
 
     # Plugin args
