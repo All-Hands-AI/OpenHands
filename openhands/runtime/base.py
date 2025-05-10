@@ -621,7 +621,6 @@ fi
             A list of loaded microagents from the org/user level repository
         """
         loaded_microagents: list[BaseMicroagent] = []
-        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
 
         repo_parts = selected_repository.split('/')
         if len(repo_parts) < 2:
@@ -644,7 +643,7 @@ fi
         # Try to clone the org-level .openhands repo
         try:
             # Create a temporary directory for the org-level repo
-            org_repo_dir = workspace_root / f'org_openhands_{org_name}'
+            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
@@ -693,7 +692,6 @@ fi
         For example, if the repository is github.com/acme-co/api, it will also check for
         github.com/acme-co/.openhands and load microagents from there if it exists.
         """
-
         loaded_microagents: list[BaseMicroagent] = []
         microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
@@ -705,7 +703,7 @@ fi
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
-            repo_root = workspace_root / selected_repository.split('/')[-1]
+            repo_root = self.workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
 
         self.log(
