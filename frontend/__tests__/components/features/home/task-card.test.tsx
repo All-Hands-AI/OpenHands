@@ -85,7 +85,6 @@ describe("TaskCard", () => {
       await userEvent.click(launchButton);
 
       expect(createConversationSpy).toHaveBeenCalledWith(
-        "suggested_task",
         MOCK_RESPOSITORIES[0].full_name,
         MOCK_RESPOSITORIES[0].git_provider,
         undefined,
