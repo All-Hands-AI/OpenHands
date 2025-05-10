@@ -162,7 +162,11 @@ class IssueResolver:
         self.repo_instruction = repo_instruction
         self.issue_number = args.issue_number
         self.comment_id = args.comment_id
+<<<<<<< HEAD
         self.platform = platform
+=======
+        self.base_domain = base_domain
+>>>>>>> d75a2ec40 (Remove unused platform attribute from IssueResolver initialization)
 
         factory = IssueHandlerFactory(
             owner=self.owner,
