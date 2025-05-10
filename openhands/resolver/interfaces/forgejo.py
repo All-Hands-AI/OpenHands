@@ -50,6 +50,14 @@ class ForgejoIssueHandler(IssueHandlerInterface):
             else f'x-auth-token:{self.token}'
         )
         return f'https://{username_and_token}@codeberg.org/{self.owner}/{self.repo}.git'
+        
+    def get_graphql_url(self) -> str:
+        """Get the GraphQL API URL.
+        
+        Note: Forgejo doesn't support GraphQL, but we need to implement this method
+        to satisfy the interface. This method will never be called in practice.
+        """
+        return f'https://codeberg.org/api/graphql'
 
     def get_compare_url(self, branch_name: str) -> str:
         return f'https://codeberg.org/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
