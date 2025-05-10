@@ -20,6 +20,52 @@ interface ProgressModalProps {
   currentActionId?: number;
 }
 
+interface TooltipProps {
+  position: { x: number; y: number };
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  children: React.ReactNode;
+}
+
+function Tooltip({ position, containerRef, children }: TooltipProps) {
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!tooltipRef.current || !containerRef.current) return;
+
+    const tooltip = tooltipRef.current;
+    const container = containerRef.current;
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+
+    // Calculate initial position
+    let x = position.x - tooltipWidth / 2;
+    let y = position.y - tooltipHeight - 12;
+
+    // Adjust for container boundaries
+    x = Math.max(8, Math.min(x, containerWidth - tooltipWidth - 8));
+    y = Math.max(8, Math.min(y, containerHeight - tooltipHeight - 8));
+
+    setTooltipPosition({ x, y });
+  }, [position, containerRef]);
+
+  return (
+    <div
+      ref={tooltipRef}
+      className="absolute z-10 border border-gray-200 max-w-xs bg-white shadow-lg rounded-md p-3"
+      style={{
+        left: tooltipPosition.x,
+        top: tooltipPosition.y,
+        pointerEvents: 'none',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function ProgressModal({
   isOpen,
   onClose,
@@ -38,6 +84,7 @@ export function ProgressModal({
   } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Extract all actions with critic scores
   useEffect(() => {
@@ -99,6 +146,50 @@ export function ProgressModal({
   // Function to format score as percentage
   const formatScore = (score: number) => `${Math.round(score * 100)}%`;
 
+  // SVG padding
+  const SVG_WIDTH = Math.max(actionData.actions.length * 50, 400);
+  const SVG_HEIGHT = 256;
+  const PADDING_X = 32;
+  const PADDING_Y = 24;
+  const plotWidth = SVG_WIDTH - 2 * PADDING_X;
+  const plotHeight = SVG_HEIGHT - 2 * PADDING_Y;
+  const n = actionData.actions.length;
+
+  // Helper to get X/Y positions scaled to fill SVG
+  const getX = (i: number) => {
+    if (n === 1) return SVG_WIDTH / 2;
+    return PADDING_X + (plotWidth * i) / (n - 1);
+  };
+  const getY = (score: number) => PADDING_Y + plotHeight * (1 - score);
+
+  // Tooltip rendering logic extracted to a variable to avoid IIFE in JSX
+  let tooltip = null;
+  if (hoveredAction) {
+    const cx = getX(hoveredAction.index);
+    const cy = getY(hoveredAction.score);
+    let left = cx;
+    if (scrollContainerRef.current) {
+      left = cx - scrollContainerRef.current.scrollLeft;
+    }
+    // Make tooltip closer to the point (smaller vertical offset)
+    tooltip = (
+      <Tooltip
+        position={{ x: left, y: cy - 8 }} // 8px above the point
+        containerRef={scrollContainerRef}
+      >
+        <div className="text-base font-semibold text-gray-900 mb-1">
+          {getActionTypeName(hoveredAction.action)}
+        </div>
+        <div className="text-xs text-gray-500 mb-1">
+          {t("ACTION_ID")}: <span className="text-gray-700">{hoveredAction.action.payload.id}</span>
+        </div>
+        <div className="text-xs text-gray-700">
+          {t("CRITIC_SCORE")}: <span className={cn("font-bold", getScoreTextColorClass(hoveredAction.score))}>{formatScore(hoveredAction.score)}</span>
+        </div>
+      </Tooltip>
+    );
+  }
+
   return (
     <Modal
       isOpen={isOpen}
@@ -126,88 +217,64 @@ export function ProgressModal({
             </div>
 
             {/* Visualization */}
-            <div className="relative h-64 border border-gray-200 rounded-lg p-4 mb-4">
+            <div
+              className="relative h-64 border border-gray-200 rounded-lg p-4 mb-4 overflow-x-auto"
+              ref={scrollContainerRef}
+            >
               {actionData.actions.length > 0 ? (
                 <>
-                  <svg
-                    ref={svgRef}
-                    className="w-full h-full"
-                    viewBox={`0 0 ${actionData.actions.length * 50} 100`}
-                    preserveAspectRatio="none"
-                  >
-                    {/* Draw the line connecting all points */}
-                    <polyline
-                      points={actionData.scores
-                        .map(
-                          (score, i) => `${i * 50 + 25},${100 - score * 100}`,
-                        )
-                        .join(" ")}
-                      fill="none"
-                      stroke="rgb(59, 130, 246)" // blue-500
-                      strokeWidth="2"
-                    />
-
-                    {/* Draw dots for each action */}
-                    {actionData.scores.map((score, i) => (
-                      <g key={i}>
-                        <circle
-                          cx={i * 50 + 25}
-                          cy={100 - score * 100}
-                          r={
-                            currentActionId === actionData.actions[i].payload.id
-                              ? 6
-                              : 4
-                          }
-                          fill={getScoreColor(score)}
-                          stroke={
-                            currentActionId === actionData.actions[i].payload.id
-                              ? "black"
-                              : "white"
-                          }
-                          strokeWidth="2"
-                          className="cursor-pointer transition-all duration-200"
-                          onMouseEnter={() =>
-                            setHoveredAction({
-                              action: actionData.actions[i],
-                              score,
-                              index: i,
-                            })
-                          }
-                          onMouseLeave={() => setHoveredAction(null)}
-                        />
-                      </g>
-                    ))}
-                  </svg>
-
-                  {/* Tooltip */}
-                  {hoveredAction && (
-                    <div
-                      className="absolute bg-white shadow-lg rounded-md p-2 z-10 border border-gray-200 max-w-xs"
-                      style={{
-                        left: `${(hoveredAction.index / (actionData.actions.length - 1 || 1)) * 100}%`,
-                        top: `${100 - hoveredAction.score * 100}%`,
-                        transform: `translate(-50%, -120%)`, // Position tooltip above the point
-                      }}
+                  <div style={{ minWidth: `${SVG_WIDTH}px` }}>
+                    <svg
+                      ref={svgRef}
+                      width={SVG_WIDTH}
+                      height={SVG_HEIGHT}
+                      viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+                      preserveAspectRatio="xMinYMin meet"
+                      style={{ display: "block", margin: "0 auto" }}
                     >
-                      <div className="text-sm font-medium">
-                        {getActionTypeName(hoveredAction.action)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t("ACTION_ID")}: {hoveredAction.action.payload.id}
-                      </div>
-                      <div className="text-xs">
-                        {t("CRITIC_SCORE")}:{" "}
-                        <span
-                          className={cn(
-                            "font-medium",
-                            getScoreTextColorClass(hoveredAction.score),
-                          )}
-                        >
-                          {formatScore(hoveredAction.score)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                      {/* Draw the line connecting all points */}
+                      <polyline
+                        points={actionData.scores
+                          .map((score, i) => `${getX(i)},${getY(score)}`)
+                          .join(" ")}
+                        fill="none"
+                        stroke="rgb(59, 130, 246)" // blue-500
+                        strokeWidth="2"
+                      />
+
+                      {/* Draw dots for each action */}
+                      {actionData.scores.map((score, i) => (
+                        <g key={i}>
+                          <circle
+                            cx={getX(i)}
+                            cy={getY(score)}
+                            r={
+                              currentActionId === actionData.actions[i].payload.id
+                                ? 6
+                                : 4
+                            }
+                            fill={getScoreColor(score)}
+                            stroke={
+                              currentActionId === actionData.actions[i].payload.id
+                                ? "black"
+                                : "white"
+                            }
+                            strokeWidth="2"
+                            className="cursor-pointer transition-all duration-200"
+                            onMouseEnter={() =>
+                              setHoveredAction({
+                                action: actionData.actions[i],
+                                score,
+                                index: i,
+                              })
+                            }
+                            onMouseLeave={() => setHoveredAction(null)}
+                          />
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                  {tooltip}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
