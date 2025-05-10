@@ -66,6 +66,9 @@ export function ExpandableMessage({
     observation,
     action,
   });
+  
+  // State for progress modal
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
   useEffect(() => {
     // If we have a translation ID, process it
@@ -139,25 +142,42 @@ export function ExpandableMessage({
   }
 
   return (
-    <div className="flex flex-row">
+    <>
+      {/* Progress Modal */}
+      <ProgressModal 
+        isOpen={isProgressModalOpen} 
+        onClose={() => setIsProgressModalOpen(false)}
+        currentActionId={action?.payload.id}
+      />
+      
+      <div className="flex flex-row">
       {/* Critic score indicator or default border */}
       <div
         className={cn(
           "border-l-4 my-2 relative group",
           criticScore !== undefined
-            ? getCriticScoreColorClass(criticScore)
+            ? `${getCriticScoreColorClass(criticScore)} cursor-pointer hover:border-l-6 transition-all duration-200`
             : type === "error" ? "border-danger" : "border-neutral-300",
         )}
         title={
           criticScore !== undefined
-            ? `${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`
+            ? `${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)} - ${t("Click to view progress")}`
             : ""
         }
+        onClick={() => {
+          if (criticScore !== undefined) {
+            setIsProgressModalOpen(true);
+          }
+        }}
       >
         {/* Tooltip - only shown when there's a critic score */}
         {criticScore !== undefined && (
           <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
             {`${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`}
+            <div className="flex items-center mt-1 text-xs">
+              <ChartLine className="w-3 h-3 mr-1" />
+              {t("Click to view progress")}
+            </div>
           </div>
         )}
       </div>
@@ -244,5 +264,6 @@ export function ExpandableMessage({
         </div>
       </div>
     </div>
+    </>
   );
 }
