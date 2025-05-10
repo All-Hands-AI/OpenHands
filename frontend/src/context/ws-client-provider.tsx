@@ -11,10 +11,13 @@ import {
   CommandAction,
   FileEditAction,
   FileWriteAction,
+  OpenHandsAction,
   UserMessageAction,
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { OpenHandsObservation } from "#/types/core/observations";
+import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -65,6 +68,7 @@ interface UseWsClient {
   status: WsClientProviderStatus;
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
+  parsedEvents: (OpenHandsAction | OpenHandsObservation)[];
   send: (event: Record<string, unknown>) => void;
 }
 
@@ -72,6 +76,7 @@ const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
+  parsedEvents: [],
   send: () => {
     throw new Error("not connected");
   },
@@ -127,6 +132,9 @@ export function WsClientProvider({
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const [parsedEvents, setParsedEvents] = React.useState<
+    (OpenHandsAction | OpenHandsObservation)[]
+  >([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
   const { providers } = useUserProviders();
 
@@ -146,6 +154,10 @@ export function WsClientProvider({
 
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event)) {
+      if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
+        setParsedEvents((prevEvents) => [...prevEvents, event]);
+      }
+
       if (isMessageAction(event)) {
         messageRateHandler.record(new Date().getTime());
       }
@@ -267,9 +279,10 @@ export function WsClientProvider({
       status,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
+      parsedEvents,
       send,
     }),
-    [status, messageRateHandler.isUnderThreshold, events],
+    [status, messageRateHandler.isUnderThreshold, events, parsedEvents],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;

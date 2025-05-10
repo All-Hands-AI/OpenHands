@@ -36,7 +36,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
+  const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -137,7 +137,7 @@ export function ChatInterface() {
 
         {!isLoadingMessages && (
           <Messages
-            messages={messages}
+            messages={parsedEvents}
             isAwaitingUserConfirmation={
               curAgentState === AgentState.AWAITING_USER_CONFIRMATION
             }
