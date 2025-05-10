@@ -1,6 +1,6 @@
 # Forgejo Integration
 
-OpenHands supports integration with Forgejo, a self-hosted Git service that is a fork of Gitea. This integration allows you to interact with Forgejo instances like Codeberg.org.
+OpenHands supports integration with Forgejo, a self-hosted Git service that is a fork of Gitea. This integration allows you to interact with Forgejo instances like Codeberg.org and other self-hosted Forgejo servers.
 
 ## Setting Up Forgejo Integration
 
@@ -49,8 +49,11 @@ Once configured, you can use the Forgejo integration to:
 - View issues and pull requests
 - Clone repositories
 - Create pull requests
+- Request reviewers for pull requests
+- Comment on issues and pull requests
+- View and interact with review threads
 
-The Forgejo integration works similarly to the GitHub and GitLab integrations, with the same interface and functionality.
+The Forgejo integration works similarly to the GitHub and GitLab integrations, with the same interface and functionality. Our implementation handles API differences transparently, so you can use the same code regardless of which Git service you're using.
 
 ## Customizing the Base URL
 
@@ -90,7 +93,23 @@ forgejo_service = ForgejoService(
 
 The base URL should always point to the API endpoint of your Forgejo instance, which typically ends with `/api/v1`.
 
-## Limitations
+## Limitations and Considerations
 
-- The Forgejo API may have some differences from the GitHub API
 - API rate limits may vary depending on the Forgejo instance
+- Some Forgejo instances may have different API configurations or versions
+- The implementation includes robust error handling and timeouts to ensure reliability
+- Network connectivity issues are handled gracefully with appropriate fallbacks
+
+## Implementation Details
+
+Our Forgejo integration includes several key features:
+
+- **Error Handling**: All API calls include proper error handling to ensure robustness
+- **Timeouts**: API calls include timeouts to prevent hanging on slow or unresponsive servers
+- **Fallbacks**: When certain API calls fail, the implementation falls back to alternative methods
+- **Review Threads**: Support for code review threads, organized by file path and line number
+- **Reviewer Requests**: Support for requesting reviewers on pull requests
+
+## Testing
+
+The Forgejo integration has been tested against Codeberg.org, which is one of the most popular public Forgejo instances. If you encounter any issues with other Forgejo instances, please report them so we can improve the integration.

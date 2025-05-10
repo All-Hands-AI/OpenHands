@@ -1,6 +1,6 @@
 # Forgejo Knowledge
 
-Forgejo is a self-hosted Git service that is a fork of Gitea. It provides a lightweight, open-source alternative to GitHub and GitLab. Codeberg.org is a popular instance of Forgejo.
+Forgejo is a self-hosted Git service that is a fork of Gitea. It provides a lightweight, open-source alternative to GitHub and GitLab. Codeberg.org is a popular instance of Forgejo. OpenHands provides robust integration with Forgejo instances, with full support for repository operations, issue tracking, and code review.
 
 ## API
 
@@ -42,7 +42,9 @@ The API supports pagination with the `page` and `limit` parameters. The `Link` h
 
 - Forgejo uses `limit` instead of `per_page` for pagination
 - Forgejo uses `stars_count` instead of `stargazers_count` for repository stars
-- Forgejo doesn't support replying to specific comments in the same way as GitHub
+- Forgejo organizes code review comments differently, using "CodeConversations" for comments on the same line
+- Forgejo doesn't support replying to specific comments in the same way as GitHub, but our implementation provides a workaround
+- Forgejo doesn't support GraphQL, only REST API
 
 ## Codeberg Specifics
 
@@ -64,6 +66,7 @@ Example:
 ```python
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.provider import ProviderHandler
+from pydantic import SecretStr
 
 # Create a provider handler with Forgejo token
 provider_handler = ProviderHandler({
@@ -76,3 +79,21 @@ user = await provider_handler.get_user()
 # Search repositories
 repos = await provider_handler.search_repositories("query", 10, "updated", "desc")
 ```
+
+## Implementation Details
+
+The OpenHands Forgejo integration includes:
+
+- **Robust Error Handling**: All API calls include proper error handling to ensure reliability
+- **Timeouts**: API calls include 10-second timeouts to prevent hanging on slow servers
+- **Fallbacks**: When certain API calls fail, the implementation falls back to alternative methods
+- **Review Threads**: Support for code review threads, organized by file path and line number
+- **Reviewer Requests**: Support for requesting reviewers on pull requests
+
+## Network Considerations
+
+When working with Forgejo instances, especially self-hosted ones, be aware of:
+
+- **API Rate Limits**: Different instances may have different rate limits
+- **Network Reliability**: The implementation handles network timeouts and errors gracefully
+- **API Versions**: Different Forgejo instances may run different versions with slight API differences
