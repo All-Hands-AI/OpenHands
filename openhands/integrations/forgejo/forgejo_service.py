@@ -18,7 +18,8 @@ from openhands.utils.import_utils import get_impl
 
 
 class ForgejoService(GitService):
-    BASE_URL = 'https://codeberg.org/api/v1'  # Default to Codeberg, can be overridden
+    # Default to Codeberg, can be overridden
+    BASE_URL = os.environ.get('FORGEJO_BASE_URL', 'https://codeberg.org/api/v1')
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -37,6 +38,7 @@ class ForgejoService(GitService):
         if token:
             self.token = token
             
+        # Override BASE_URL with provided base_url parameter
         if base_url:
             self.BASE_URL = base_url
 

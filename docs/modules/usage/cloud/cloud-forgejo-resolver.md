@@ -54,7 +54,28 @@ The Forgejo integration works similarly to the GitHub and GitLab integrations, w
 
 ## Customizing the Base URL
 
-By default, the Forgejo integration uses Codeberg.org as the base URL. If you're using a different Forgejo instance, you can customize the base URL:
+By default, the Forgejo integration uses Codeberg.org as the base URL (`https://codeberg.org/api/v1`). If you're using a different Forgejo instance, you can customize the base URL in several ways:
+
+### Using Environment Variables
+
+You can set the `FORGEJO_BASE_URL` environment variable:
+
+```bash
+export FORGEJO_BASE_URL=https://your-forgejo-instance.com/api/v1
+```
+
+### Using Configuration File
+
+Add the base URL to your OpenHands configuration file:
+
+```yaml
+forgejo:
+  base_url: https://your-forgejo-instance.com/api/v1
+```
+
+### Programmatically
+
+You can also set the base URL programmatically when creating a Forgejo service:
 
 ```python
 from openhands.integrations.forgejo.forgejo_service import ForgejoService
@@ -66,6 +87,8 @@ forgejo_service = ForgejoService(
     base_url="https://your-forgejo-instance.com/api/v1"
 )
 ```
+
+The base URL should always point to the API endpoint of your Forgejo instance, which typically ends with `/api/v1`.
 
 ## Limitations
 
