@@ -23,6 +23,17 @@ const trimText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
+// Function to determine the color class based on the critic score
+const getCriticScoreColorClass = (score?: number): string => {
+  if (score === undefined) return "";
+
+  if (score >= 0.8) return "border-success";
+  if (score >= 0.6) return "border-lime-500";
+  if (score >= 0.4) return "border-yellow-500";
+  if (score >= 0.2) return "border-orange-500";
+  return "border-danger";
+};
+
 interface ExpandableMessageProps {
   id?: string;
   message: string;
@@ -30,6 +41,7 @@ interface ExpandableMessageProps {
   success?: boolean;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
+  criticScore?: number;
 }
 
 export function ExpandableMessage({
@@ -39,6 +51,7 @@ export function ExpandableMessage({
   success,
   observation,
   action,
+  criticScore,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -124,85 +137,117 @@ export function ExpandableMessage({
   }
 
   return (
-    <div
-      className={cn(
-        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
-        type === "error" ? "border-danger" : "border-neutral-300",
-      )}
-    >
-      <div className="text-sm w-full">
-        <div className="flex flex-row justify-between items-center w-full">
-          <span
-            className={cn(
-              "font-bold",
-              type === "error" ? "text-danger" : "text-neutral-300",
-            )}
-          >
-            {translationId && i18n.exists(translationId) ? (
-              <Trans
-                i18nKey={translationId}
-                values={translationParams}
-                components={{
-                  bold: <strong />,
-                  path: <PathComponent />,
-                  cmd: <MonoComponent />,
-                }}
-              />
-            ) : (
-              message
-            )}
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="cursor-pointer text-left"
-            >
-              {showDetails ? (
-                <ArrowUp
-                  className={cn(
-                    "h-4 w-4 ml-2 inline",
-                    type === "error" ? "fill-danger" : "fill-neutral-300",
-                  )}
-                />
-              ) : (
-                <ArrowDown
-                  className={cn(
-                    "h-4 w-4 ml-2 inline",
-                    type === "error" ? "fill-danger" : "fill-neutral-300",
-                  )}
-                />
-              )}
-            </button>
-          </span>
-          {type === "action" && success !== undefined && (
-            <span className="flex-shrink-0">
-              {success ? (
-                <CheckCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-success")}
-                />
-              ) : (
-                <XCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-danger")}
-                />
-              )}
-            </span>
-          )}
-        </div>
-        {showDetails && (
-          <div className="text-sm">
-            <Markdown
-              components={{
-                code,
-                ul,
-                ol,
-              }}
-              remarkPlugins={[remarkGfm]}
-            >
-              {details}
-            </Markdown>
+    <div className="flex flex-row">
+      {/* Main border */}
+      <div
+        className={cn(
+          "border-l-2 my-2",
+          type === "error" ? "border-danger" : "border-neutral-300",
+        )}
+      />
+
+      {/* Critic score indicator - always present but color depends on whether there's a score */}
+      <div
+        className={cn(
+          "border-l-4 my-2 relative group w-1",
+          criticScore !== undefined
+            ? getCriticScoreColorClass(criticScore)
+            : "border-white",
+        )}
+        title={
+          criticScore !== undefined
+            ? t("CRITIC_SCORE", { score: criticScore.toFixed(2) })
+            : ""
+        }
+      >
+        {/* Tooltip - only shown when there's a critic score */}
+        {criticScore !== undefined && (
+          <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+            {t("CRITIC_SCORE", { score: criticScore.toFixed(2) })}
           </div>
         )}
+      </div>
+
+      <div
+        className={cn(
+          "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
+          type === "error" ? "border-danger" : "border-neutral-300",
+        )}
+      >
+        <div className="text-sm w-full">
+          <div className="flex flex-row justify-between items-center w-full">
+            <span
+              className={cn(
+                "font-bold",
+                type === "error" ? "text-danger" : "text-neutral-300",
+              )}
+            >
+              {translationId && i18n.exists(translationId) ? (
+                <Trans
+                  i18nKey={translationId}
+                  values={translationParams}
+                  components={{
+                    bold: <strong />,
+                    path: <PathComponent />,
+                    cmd: <MonoComponent />,
+                  }}
+                />
+              ) : (
+                message
+              )}
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="cursor-pointer text-left"
+              >
+                {showDetails ? (
+                  <ArrowUp
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
+                ) : (
+                  <ArrowDown
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
+                )}
+              </button>
+            </span>
+            {type === "action" && success !== undefined && (
+              <span className="flex-shrink-0">
+                {success ? (
+                  <CheckCircle
+                    data-testid="status-icon"
+                    className={cn(statusIconClasses, "fill-success")}
+                  />
+                ) : (
+                  <XCircle
+                    data-testid="status-icon"
+                    className={cn(statusIconClasses, "fill-danger")}
+                  />
+                )}
+              </span>
+            )}
+          </div>
+          {showDetails && (
+            <div className="text-sm">
+              <Markdown
+                components={{
+                  code,
+                  ul,
+                  ol,
+                }}
+                remarkPlugins={[remarkGfm]}
+              >
+                {details}
+              </Markdown>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

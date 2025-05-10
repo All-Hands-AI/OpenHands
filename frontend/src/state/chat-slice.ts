@@ -171,6 +171,8 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
         action,
+        // Add critic score if present in the action payload
+        criticScore: action.payload.critic_score,
       };
 
       state.messages.push(message);
