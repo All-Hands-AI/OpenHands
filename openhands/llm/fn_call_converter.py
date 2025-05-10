@@ -18,6 +18,12 @@ from openhands.core.exceptions import (
     FunctionCallConversionError,
     FunctionCallValidationError,
 )
+from openhands.llm.tool_names import (
+    BROWSER_TOOL_NAME,
+    EXECUTE_BASH_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
+    WEB_READ_TOOL_NAME,
+)
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
 SYSTEM_PROMPT_SUFFIX_TEMPLATE = """
@@ -48,22 +54,18 @@ Reminder:
 
 STOP_WORDS = ['</function']
 
-
 def refine_prompt(prompt: str) -> str:
     if sys.platform == 'win32':
         return prompt.replace('bash', 'powershell')
     return prompt
 
+# NOTE: we need to make sure these examples are always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
 
-# NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
-IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = refine_prompt("""
-Here's a running example of how to perform a task with the provided tools.
-
---------------------- START OF EXAMPLE ---------------------
-
-USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
-
-ASSISTANT: Sure! Let me first check the current directory:
+# Example snippets for each tool
+TOOL_EXAMPLES = {
+    'execute_bash': {
+        'check_dir': """
+ASSISTANT: Let me first check the current directory:
 <function=execute_bash>
 <parameter=command>
 pwd && ls
@@ -73,29 +75,10 @@ pwd && ls
 USER: EXECUTION RESULT of [execute_bash]:
 /workspace
 openhands@runtime:~/workspace$
+""",
+        'run_server': """
+ASSISTANT: Let me run the Python file for you:
 
-ASSISTANT: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
-<function=str_replace_editor>
-<parameter=command>create</parameter>
-<parameter=path>/workspace/app.py</parameter>
-<parameter=file_text>
-from flask import Flask
-app = Flask(__name__)
-
-@app.route('/')
-def index() -> str:
-    numbers = list(range(1, 11))
-    return str(numbers)
-
-if __name__ == '__main__':
-    app.run(port=5000)
-</parameter>
-</function>
-
-USER: EXECUTION RESULT of [str_replace_editor]:
-File created successfully at: /workspace/app.py
-
-ASSISTANT: I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
 <function=execute_bash>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
@@ -106,7 +89,7 @@ USER: EXECUTION RESULT of [execute_bash]:
 [1] 121
 [1]+  Exit 1                  python3 app.py > server.log 2>&1
 
-ASSISTANT: Looks like the server is running with PID 121 then crashed. Let me check the server log:
+ASSISTANT: Looks like the server crashed. Let me check the server log:
 <function=execute_bash>
 <parameter=command>
 cat server.log
@@ -153,8 +136,7 @@ python3 app.py > server.log 2>&1 &
 USER: EXECUTION RESULT of [execute_bash]:
 [1] 124
 
-ASSISTANT:
-Let me check the server log again:
+ASSISTANT: Let me check the server log again:
 <function=execute_bash>
 <parameter=command>
 cat server.log
@@ -163,18 +145,10 @@ cat server.log
 
 USER: EXECUTION RESULT of [execute_bash]:
 * Serving Flask app 'app'
- * Debug mode: off
-WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
  * Running on http://127.0.0.1:5000
-Press CTRL+C to quit
-
-ASSISTANT:
-The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
-
-USER: Now kill the server, make it display the numbers in a table format.
-
-ASSISTANT:
-Sure! Let me stop the server first:
+""",
+        'kill_server': """
+ASSISTANT: Let me stop the server first:
 <function=execute_bash>
 <parameter=command>
 kill 124
@@ -183,9 +157,33 @@ kill 124
 
 USER: EXECUTION RESULT of [execute_bash]:
 [1]+  Terminated              python3 app.py > server.log 2>&1
+""",
+    },
+    'str_replace_editor': {
+        'create_file': """
+ASSISTANT: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
+<function=str_replace_editor>
+<parameter=command>create</parameter>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=file_text>
+from flask import Flask
+app = Flask(__name__)
 
-ASSISTANT:
-Now let me display the numbers in a table format:
+@app.route('/')
+def index():
+    numbers = list(range(1, 11))
+    return str(numbers)
+
+if __name__ == '__main__':
+    app.run(port=5000)
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+File created successfully at: /workspace/app.py
+""",
+        'edit_file': """
+ASSISTANT: Now let me display the numbers in a table format:
 <function=str_replace_editor>
 <parameter=command>str_replace</parameter>
 <parameter=path>/workspace/app.py</parameter>
@@ -194,19 +192,88 @@ Now let me display the numbers in a table format:
 </function>
 
 USER: EXECUTION RESULT of [str_replace_editor]:
-The file /workspace/app.py has been edited. Here's the result of running `cat -n` on a snippet of /workspace/app.py:
-     3
-     4  @app.route('/')
-     5  def index():
-     6      numbers = list(range(1, 11))
-     7      return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-     8
-     9  if __name__ == '__main__':
-    10      app.run(port=5000)
-Review the changes and make sure they are as expected. Edit the file again if necessary.
+The file /workspace/app.py has been edited successfully.
+""",
+    },
+    'web_read': {
+        'read_docs': """
+ASSISTANT: Let me check the Flask documentation for table formatting:
+<function=web_read>
+<parameter=url>https://flask.palletsprojects.com/en/3.0.x/quickstart/</parameter>
+</function>
 
-ASSISTANT:
-Running the updated file:
+USER: EXECUTION RESULT of [web_read]:
+[Documentation content about Flask HTML templates and responses]
+"""
+    },
+    'browser': {
+        'view_page': """
+ASSISTANT: Let me check how the page looks in the browser:
+<function=browser>
+<parameter=code>
+goto('http://127.0.0.1:5000')
+noop(1000)  # Wait for page to load
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [browser]:
+[Browser shows the numbers in a table format]
+"""
+    },
+}
+
+
+def get_example_for_tools(tools: list[dict]) -> str:
+    """Generate an in-context learning example based on available tools."""
+    available_tools = set()
+    for tool in tools:
+        if tool['type'] == 'function':
+            name = tool['function']['name']
+            if name == EXECUTE_BASH_TOOL_NAME:
+                available_tools.add('execute_bash')
+            elif name == STR_REPLACE_EDITOR_TOOL_NAME:
+                available_tools.add('str_replace_editor')
+            elif name == WEB_READ_TOOL_NAME:
+                available_tools.add('web_read')
+            elif name == BROWSER_TOOL_NAME:
+                available_tools.add('browser')
+
+    if not available_tools:
+        return ''
+
+    example = """Here's a running example of how to perform a task with the provided tools.
+
+--------------------- START OF EXAMPLE ---------------------
+
+USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
+
+"""
+
+    # Build example based on available tools
+    if 'execute_bash' in available_tools:
+        example += TOOL_EXAMPLES['execute_bash']['check_dir']
+
+    if 'str_replace_editor' in available_tools:
+        example += TOOL_EXAMPLES['str_replace_editor']['create_file']
+
+    if 'execute_bash' in available_tools:
+        example += TOOL_EXAMPLES['execute_bash']['run_server']
+
+    if 'web_read' in available_tools:
+        example += TOOL_EXAMPLES['web_read']['read_docs']
+
+    if 'browser' in available_tools:
+        example += TOOL_EXAMPLES['browser']['view_page']
+
+    if 'execute_bash' in available_tools:
+        example += TOOL_EXAMPLES['execute_bash']['kill_server']
+
+    if 'str_replace_editor' in available_tools:
+        example += TOOL_EXAMPLES['str_replace_editor']['edit_file']
+
+    if 'execute_bash' in available_tools:
+        example += """
+ASSISTANT: Running the updated file:
 <function=execute_bash>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
@@ -216,17 +283,22 @@ python3 app.py > server.log 2>&1 &
 USER: EXECUTION RESULT of [execute_bash]:
 [1] 126
 
-ASSISTANT:
-The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
-<function=finish>
-</function>
+ASSISTANT: The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+"""
 
+    example += """
 --------------------- END OF EXAMPLE ---------------------
 
 Do NOT assume the environment is the same as in the example above.
 
 --------------------- NEW TASK DESCRIPTION ---------------------
-""").lstrip()
+"""
+    example = example.lstrip()
+
+    return example
+
+
+IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = get_example_for_tools
 
 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
@@ -352,74 +424,42 @@ def convert_fncall_messages_to_non_fncall_messages(
             # Add in-context learning example for the first user message
             if not first_user_message_encountered and add_in_context_learning_example:
                 first_user_message_encountered = True
-                # Check tools
-                if not (
-                    tools
-                    and len(tools) > 0
-                    and any(
-                        (
-                            tool['type'] == 'function'
-                            and tool['function']['name']
-                            == refine_prompt('execute_bash')
-                            and 'command'
-                            in tool['function']['parameters']['properties']
-                        )
-                        for tool in tools
-                    )
-                    and any(
-                        (
-                            tool['type'] == 'function'
-                            and tool['function']['name'] == 'str_replace_editor'
-                            and 'path' in tool['function']['parameters']['properties']
-                            and 'file_text'
-                            in tool['function']['parameters']['properties']
-                            and 'old_str'
-                            in tool['function']['parameters']['properties']
-                            and 'new_str'
-                            in tool['function']['parameters']['properties']
-                        )
-                        for tool in tools
-                    )
-                ):
-                    raise FunctionCallConversionError(
-                        'The currently provided tool set are NOT compatible with the in-context learning example for FnCall to Non-FnCall conversion. '
-                        'Please update your tool set OR the in-context learning example in openhands/llm/fn_call_converter.py'
-                    )
 
-                # add in-context learning example
-                if isinstance(content, str):
-                    content = (
-                        IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
-                        + content
-                        + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
-                    )
-                elif isinstance(content, list):
-                    if content and content[0]['type'] == 'text':
-                        content[0]['text'] = (
-                            IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
-                            + content[0]['text']
-                            + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
-                        )
+                # Generate example based on available tools
+                example = IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)
+
+                # Add example if we have any tools
+                if example:
+                    # add in-context learning example
+                    if isinstance(content, str):
+                        content = example + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                    elif isinstance(content, list):
+                        if content and content[0]['type'] == 'text':
+                            content[0]['text'] = (
+                                example
+                                + content[0]['text']
+                                + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                            )
+                        else:
+                            content = (
+                                [
+                                    {
+                                        'type': 'text',
+                                        'text': example,
+                                    }
+                                ]
+                                + content
+                                + [
+                                    {
+                                        'type': 'text',
+                                        'text': IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
+                                    }
+                                ]
+                            )
                     else:
-                        content = (
-                            [
-                                {
-                                    'type': 'text',
-                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
-                                }
-                            ]
-                            + content
-                            + [
-                                {
-                                    'type': 'text',
-                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
-                                }
-                            ]
+                        raise FunctionCallConversionError(
+                            f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                         )
-                else:
-                    raise FunctionCallConversionError(
-                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
-                    )
             converted_messages.append(
                 {
                     'role': 'user',
@@ -604,17 +644,26 @@ def convert_non_fncall_messages_to_fncall_messages(
             if not first_user_message_encountered:
                 first_user_message_encountered = True
                 if isinstance(content, str):
-                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, '')
-                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, '')
+                    # Remove any existing example
+                    if content.startswith(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)):
+                        content = content[
+                            len(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)) :
+                        ]
+                    if content.endswith(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX):
+                        content = content[: -len(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX)]
                 elif isinstance(content, list):
                     for item in content:
                         if item['type'] == 'text':
-                            item['text'] = item['text'].replace(
-                                IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, ''
-                            )
-                            item['text'] = item['text'].replace(
-                                IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, ''
-                            )
+                            # Remove any existing example
+                            example = IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)
+                            if item['text'].startswith(example):
+                                item['text'] = item['text'][len(example) :]
+                            if item['text'].endswith(
+                                IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                            ):
+                                item['text'] = item['text'][
+                                    : -len(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX)
+                                ]
                 else:
                     raise FunctionCallConversionError(
                         f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
