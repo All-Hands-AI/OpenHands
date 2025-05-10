@@ -15,4 +15,7 @@ export type Message = {
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
   criticScore?: number;
+  // Special properties for message and finish actions
+  isSpecialAction?: boolean;
+  specialActionType?: "message" | "finish";
 };

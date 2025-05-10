@@ -10,6 +10,7 @@ import ArrowDown from "#/icons/angle-down-solid.svg?react";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
+import ChartLine from "#/icons/chart-line-solid.svg?react";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { cn } from "#/utils/utils";
@@ -17,6 +18,7 @@ import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
+import { ProgressModal } from "./progress-modal";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -138,32 +140,24 @@ export function ExpandableMessage({
 
   return (
     <div className="flex flex-row">
-      {/* Main border */}
+      {/* Critic score indicator or default border */}
       <div
         className={cn(
-          "border-l-2 my-2",
-          type === "error" ? "border-danger" : "border-neutral-300",
-        )}
-      />
-
-      {/* Critic score indicator - always present but color depends on whether there's a score */}
-      <div
-        className={cn(
-          "border-l-4 my-2 relative group w-1",
+          "border-l-4 my-2 relative group",
           criticScore !== undefined
             ? getCriticScoreColorClass(criticScore)
-            : "border-white",
+            : type === "error" ? "border-danger" : "border-neutral-300",
         )}
         title={
           criticScore !== undefined
-            ? t("CRITIC_SCORE", { score: criticScore.toFixed(2) })
+            ? `${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`
             : ""
         }
       >
         {/* Tooltip - only shown when there's a critic score */}
         {criticScore !== undefined && (
           <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-            {t("CRITIC_SCORE", { score: criticScore.toFixed(2) })}
+            {`${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`}
           </div>
         )}
       </div>

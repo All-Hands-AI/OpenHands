@@ -36,6 +36,8 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "system",
   "call_tool_mcp",
   "mcp",
+  "message",
+  "finish",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -161,11 +163,20 @@ export const chatSlice = createSlice({
         }
       } else if (actionID === "think") {
         text = action.payload.args.thought;
+      } else if (actionID === "message") {
+        text = action.payload.args.content as string || "";
+      } else if (actionID === "finish") {
+        text = action.payload.args.message as string || "";
       }
+      
+      // Determine if this is a special action type (message or finish)
+      const isSpecialAction = actionID === "message" || actionID === "finish";
+      
       const message: Message = {
-        type: "action",
+        // For message and finish actions, use "thought" type to display them differently
+        type: isSpecialAction ? "thought" : "action",
         sender: "assistant",
-        translationID,
+        translationID: isSpecialAction ? undefined : translationID,
         eventID: action.payload.id,
         content: text,
         imageUrls: [],
@@ -173,6 +184,9 @@ export const chatSlice = createSlice({
         action,
         // Add critic score if present in the action payload
         criticScore: action.payload.critic_score,
+        // Add a special flag for message and finish actions
+        isSpecialAction: isSpecialAction,
+        specialActionType: isSpecialAction ? actionID : undefined,
       };
 
       state.messages.push(message);

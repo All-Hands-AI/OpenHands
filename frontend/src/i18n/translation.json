@@ -1,4 +1,20 @@
 {
+    "CRITIC_SCORE": {
+        "en": "Critic Score",
+        "ja": "批評スコア",
+        "zh-CN": "评价分数",
+        "zh-TW": "評價分數",
+        "ko-KR": "비평 점수",
+        "no": "Kritikerscore",
+        "it": "Punteggio del Critico",
+        "pt": "Pontuação do Crítico",
+        "es": "Puntuación del Crítico",
+        "ar": "درجة الناقد",
+        "fr": "Score du Critique",
+        "tr": "Eleştirmen Puanı",
+        "de": "Kritikerbewertung",
+        "uk": "Оцінка критика"
+    },
     "SETTINGS$MCP_TITLE": {
         "en": "Model Context Protocol (MCP)",
         "ja": "モデルコンテキストプロトコル (MCP)",
