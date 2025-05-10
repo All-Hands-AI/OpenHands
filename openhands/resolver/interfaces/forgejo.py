@@ -427,15 +427,31 @@ class ForgejoPRHandler(ForgejoIssueHandler):
             - List of review threads
             - List of thread comments
         """
-        # Get the PR details
-        pr_url = f'{self.base_url}/pulls/{pull_number}'
-        pr_response = httpx.get(pr_url, headers=self.headers)
-        pr_response.raise_for_status()
-        pr_data = pr_response.json()
-
-        # Get closing issues from PR body
+        # Initialize empty return values
         closing_issues_bodies = []
         closing_issue_numbers = []
+        review_comments = []
+        review_threads = []
+        thread_comments = []
+        
+        try:
+            # Get the PR details
+            pr_url = f'{self.base_url}/pulls/{pull_number}'
+            pr_response = httpx.get(pr_url, headers=self.headers)
+            pr_response.raise_for_status()
+            pr_data = pr_response.json()
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Error fetching pull request {pull_number}: {e}")
+            # Return empty data
+            return (
+                closing_issues_bodies,
+                closing_issue_numbers,
+                review_comments,
+                review_threads,
+                thread_comments,
+            )
+
+        # Get closing issues from PR body
         if pr_data.get('body'):
             # Extract issue references from PR body
             issue_refs = extract_issue_references(pr_data['body'])
