@@ -95,6 +95,22 @@
         "de": "Klicken Sie, um den Fortschritt anzuzeigen",
         "uk": "Натисніть, щоб переглянути прогрес"
     },
+    "CRITIC_SCORE_SCALE": {
+        "en": "Score Scale",
+        "ja": "スコアスケール",
+        "zh-CN": "分数刻度",
+        "zh-TW": "分數刻度",
+        "ko-KR": "점수 척도",
+        "no": "Poengskala",
+        "it": "Scala di Punteggio",
+        "pt": "Escala de Pontuação",
+        "es": "Escala de Puntuación",
+        "ar": "مقياس الدرجة",
+        "fr": "Échelle de Score",
+        "tr": "Puan Ölçeği",
+        "de": "Bewertungsskala",
+        "uk": "Шкала оцінок"
+    },
     "AGENT_PROGRESS_VISUALIZATION": {
         "en": "Agent Progress Visualization",
         "ja": "エージェント進捗の可視化",

@@ -25,21 +25,20 @@ const trimText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
-// Function to determine the color class based on the critic score
-const getCriticScoreColorClass = (score?: number): string => {
+// Function to determine the color for critic score using a continuous gradient
+const getCriticScoreColor = (score?: number): string => {
   if (score === undefined) return "";
 
-  if (score >= 0.8) return "border-success";
-  if (score >= 0.6) return "border-lime-500";
-  if (score >= 0.4) return "border-yellow-500";
-  if (score >= 0.2) return "border-orange-500";
-  return "border-danger";
+  // Use a gradient from red (0) to green (1)
+  // Convert score to a hue value (0-120, where 0 is red and 120 is green)
+  const hue = Math.round(score * 120);
+  return `border-[hsl(${hue},100%,40%)]`;
 };
 
 // Function to get the border color class based on critic score and message type
 const getBorderColorClass = (criticScore?: number, type?: string): string => {
   if (criticScore !== undefined) {
-    return `${getCriticScoreColorClass(criticScore)} cursor-pointer hover:border-l-6 transition-all duration-200`;
+    return `${getCriticScoreColor(criticScore)} cursor-pointer hover:border-l-6 transition-all duration-200`;
   }
 
   if (type === "error") {

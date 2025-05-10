@@ -179,29 +179,22 @@ export const chatSlice = createSlice({
         }
       }
 
-      // Determine if this is a special action type (message or finish)
-      const isSpecialAction = actionID === "message" || actionID === "finish";
-
-      // Skip adding a message if there's no content for special actions
-      if (isSpecialAction && !text) {
+      // Skip adding a message if there's no content for message or finish actions
+      if ((actionID === "message" || actionID === "finish") && !text) {
         return;
       }
 
       const message: Message = {
-        // For message and finish actions, use "thought" type to display them differently
-        type: isSpecialAction ? "thought" : "action",
+        type: "action",
         sender: "assistant",
-        translationID: isSpecialAction ? undefined : translationID,
+        translationID,
         eventID: action.payload.id,
         content: text,
         imageUrls: [],
         timestamp: new Date().toISOString(),
         action,
         // Add critic score if present in the action payload
-        criticScore: action.payload.critic_score,
-        // Add a special flag for message and finish actions
-        isSpecialAction,
-        specialActionType: isSpecialAction ? actionID : undefined,
+        criticScore: action.payload.critic_score
       };
 
       state.messages.push(message);

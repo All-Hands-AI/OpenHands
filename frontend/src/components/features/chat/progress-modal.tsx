@@ -77,17 +77,20 @@ export function ProgressModal({
     return actionType.charAt(0).toUpperCase() + actionType.slice(1);
   };
 
-  // Function to get color based on score
+  // Function to get color based on score using a continuous gradient
   const getScoreColor = (score: number) => {
-    if (score >= 0.7) return "rgb(34, 197, 94)"; // green-500
-    if (score >= 0.4) return "rgb(234, 179, 8)"; // yellow-500
-    return "rgb(239, 68, 68)"; // red-500
+    // Convert score to a hue value (0-120, where 0 is red and 120 is green)
+    const hue = Math.round(score * 120);
+    return `hsl(${hue}, 100%, 40%)`;
   };
 
   // Function to get text color class based on score
   const getScoreTextColorClass = (score: number) => {
-    if (score >= 0.7) return "text-green-500";
+    // We'll use a few discrete classes for text since we can't use arbitrary CSS in class names as easily
+    if (score >= 0.8) return "text-green-500";
+    if (score >= 0.6) return "text-lime-500";
     if (score >= 0.4) return "text-yellow-500";
+    if (score >= 0.2) return "text-orange-500";
     return "text-red-500";
   };
 
@@ -211,19 +214,18 @@ export function ProgressModal({
               )}
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-xs">{t("CRITIC_SCORE_GOOD")}</span>
+            {/* Gradient Legend */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs">{t("CRITIC_SCORE_SCALE")}:</span>
+                <div className="flex-1 h-4 rounded-md" style={{
+                  background: "linear-gradient(to right, hsl(0, 100%, 40%), hsl(60, 100%, 40%), hsl(120, 100%, 40%))"
+                }} />
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span className="text-xs">{t("CRITIC_SCORE_AVERAGE")}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-xs">{t("CRITIC_SCORE_POOR")}</span>
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-red-500">0%</span>
+                <span className="text-xs text-yellow-500">50%</span>
+                <span className="text-xs text-green-500">100%</span>
               </div>
             </div>
 

@@ -63,24 +63,23 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         );
       }
 
-      // Special handling for message and finish actions
-      if (message.isSpecialAction && message.specialActionType) {
-        // Create a styled wrapper based on the action type
-        const specialActionClass = message.specialActionType === "finish" 
-          ? "border-l-4 border-success pl-2 py-2 my-2" 
-          : "border-l-4 border-primary pl-2 py-2 my-2";
-        
+      // Handle regular messages with critic scores
+      if (message.criticScore !== undefined && message.criticScore !== 0) {
         return (
-          <div key={index} className={specialActionClass}>
-            <ChatMessage
-              type={message.sender}
+          <div key={index}>
+            <ExpandableMessage
+              type={message.type || "thought"}
+              id={message.translationID}
               message={message.content}
-            >
-              {message.imageUrls && message.imageUrls.length > 0 && (
-                <ImageCarousel size="small" images={message.imageUrls} />
-              )}
-              {shouldShowConfirmationButtons && <ConfirmationButtons />}
-            </ChatMessage>
+              success={message.success}
+              observation={message.observation}
+              action={message.action}
+              criticScore={message.criticScore}
+            />
+            {message.imageUrls && message.imageUrls.length > 0 && (
+              <ImageCarousel size="small" images={message.imageUrls} />
+            )}
+            {shouldShowConfirmationButtons && <ConfirmationButtons />}
           </div>
         );
       }
