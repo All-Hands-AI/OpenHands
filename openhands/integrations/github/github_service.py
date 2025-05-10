@@ -28,6 +28,16 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitHubService(BaseGitService, GitService):
+    """Default implementation of GitService for GitHub integration.
+
+    This is an extension point in OpenHands that allows applications to customize GitHub
+    integration behavior. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from GitService
+    2. Implementing all required methods
+    3. Setting server_config.github_service_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
