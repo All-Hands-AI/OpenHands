@@ -34,9 +34,15 @@ def file_store():
 
 
 @pytest.fixture
-def event_stream(file_store):
+def event_stream(file_store, request):
     """Create a test event stream."""
-    return EventStream(sid='test_sid', file_store=file_store)
+    stream = EventStream(sid='test_sid', file_store=file_store)
+
+    def cleanup():
+        stream.close()
+
+    request.addfinalizer(cleanup)
+    return stream
 
 
 @pytest.fixture
@@ -69,10 +75,13 @@ def mock_agent():
     agent.llm.config = AppConfig().get_llm_config()
 
     # Add a proper system message mock
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    def get_system_message():
+        system_message = SystemMessageAction(content='Test system message')
+        system_message._source = EventSource.AGENT
+        system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
+        return system_message
+
+    agent.get_system_message.side_effect = get_system_message
 
 
 @pytest.mark.asyncio
