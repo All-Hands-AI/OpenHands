@@ -17,19 +17,23 @@
     },
     "CRITIC_SCORE": {
         "en": "Critic Score",
-        "ja": "批評スコア",
-        "zh-CN": "评价分数",
-        "zh-TW": "評價分數",
-        "ko-KR": "비평 점수",
-        "no": "Kritikerscore",
-        "it": "Punteggio del Critico",
-        "pt": "Pontuação do Crítico",
-        "es": "Puntuación del Crítico",
-        "ar": "درجة الناقد",
-        "fr": "Score du Critique",
-        "tr": "Eleştirmen Puanı",
-        "de": "Kritikerbewertung",
-        "uk": "Оцінка критика"
+        "ja": "批評スコア"
+    },
+    "CHAT$CRITIC_SCORE": {
+        "en": "critic model predicted score for this message: {{score}}",
+        "ja": "このメッセージの批評モデル予測スコア: {{score}}",
+        "zh-CN": "评论模型对此消息的预测分数: {{score}}",
+        "zh-TW": "評論模型對此訊息的預測分數: {{score}}",
+        "ko-KR": "이 메시지에 대한 비평 모델 예측 점수: {{score}}",
+        "no": "kritisk modell forutsagt poengsum for denne meldingen: {{score}}",
+        "it": "punteggio previsto dal modello critico per questo messaggio: {{score}}",
+        "pt": "pontuação prevista pelo modelo crítico para esta mensagem: {{score}}",
+        "es": "puntuación predicha por el modelo crítico para este mensaje: {{score}}",
+        "ar": "درجة التقييم المتوقعة من نموذج النقد لهذه الرسالة: {{score}}",
+        "fr": "score prédit par le modèle critique pour ce message: {{score}}",
+        "tr": "bu mesaj için eleştiri modeli tarafından tahmin edilen puan: {{score}}",
+        "de": "vom Kritikmodell vorhergesagte Punktzahl für diese Nachricht: {{score}}",
+        "uk": "прогнозована оцінка критичної моделі для цього повідомлення: {{score}}"
     },
     "CRITIC_SCORE_GOOD": {
         "en": "Good (≥70%)",
@@ -108,7 +112,26 @@
         "ar": "مقياس الدرجة",
         "fr": "Échelle de Score",
         "tr": "Puan Ölçeği",
-        "de": "Bewertungsskala",
+        "de": "Punkteskala",
+        "uk": "Шкала оцінок"
+    },
+    "SVG_PRESERVE_ASPECT_RATIO": {
+        "en": "xMinYMin meet",
+        "ja": "xMinYMin meet",
+        "zh-CN": "xMinYMin meet",
+        "zh-TW": "xMinYMin meet",
+        "ko-KR": "xMinYMin meet",
+        "no": "xMinYMin meet",
+        "it": "xMinYMin meet",
+        "pt": "xMinYMin meet",
+        "es": "xMinYMin meet",
+        "ar": "xMinYMin meet",
+        "fr": "xMinYMin meet",
+        "tr": "xMinYMin meet",
+        "de": "xMinYMin meet",
+        "uk": "xMinYMin meet"
+    },
+    "CRITIC_SCORE_SCALE_UNUSED": {
         "uk": "Шкала оцінок"
     },
     "AGENT_PROGRESS_VISUALIZATION": {

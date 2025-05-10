@@ -1,6 +1,7 @@
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
@@ -10,13 +11,16 @@ import { anchor } from "../markdown/anchor";
 interface ChatMessageProps {
   type: "user" | "assistant";
   message: string;
+  criticScore?: number;
 }
 
 export function ChatMessage({
   type,
   message,
+  criticScore,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
+  const { t } = useTranslation();
   const [isHovering, setIsHovering] = React.useState(false);
   const [isCopy, setIsCopy] = React.useState(false);
 
@@ -69,6 +73,11 @@ export function ChatMessage({
         >
           {message}
         </Markdown>
+        {criticScore !== undefined && type === "assistant" && (
+          <div className="text-xs italic text-gray-500 mt-2">
+            {t("CHAT$CRITIC_SCORE", { score: criticScore.toFixed(2) })}
+          </div>
+        )}
       </div>
       {children}
     </article>

@@ -58,7 +58,7 @@ function Tooltip({ position, containerRef, children }: TooltipProps) {
       style={{
         left: tooltipPosition.x,
         top: tooltipPosition.y,
-        pointerEvents: 'none',
+        pointerEvents: "none",
       }}
     >
       {children}
@@ -181,10 +181,21 @@ export function ProgressModal({
           {getActionTypeName(hoveredAction.action)}
         </div>
         <div className="text-xs text-gray-500 mb-1">
-          {t("ACTION_ID")}: <span className="text-gray-700">{hoveredAction.action.payload.id}</span>
+          {t("ACTION_ID")}:{" "}
+          <span className="text-gray-700">
+            {hoveredAction.action.payload.id}
+          </span>
         </div>
         <div className="text-xs text-gray-700">
-          {t("CRITIC_SCORE")}: <span className={cn("font-bold", getScoreTextColorClass(hoveredAction.score))}>{formatScore(hoveredAction.score)}</span>
+          {t("CRITIC_SCORE")}:{" "}
+          <span
+            className={cn(
+              "font-bold",
+              getScoreTextColorClass(hoveredAction.score),
+            )}
+          >
+            {formatScore(hoveredAction.score)}
+          </span>
         </div>
       </Tooltip>
     );
@@ -229,7 +240,7 @@ export function ProgressModal({
                       width={SVG_WIDTH}
                       height={SVG_HEIGHT}
                       viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-                      preserveAspectRatio="xMinYMin meet"
+                      preserveAspectRatio={t("SVG_PRESERVE_ASPECT_RATIO")}
                       style={{ display: "block", margin: "0 auto" }}
                     >
                       {/* Draw the line connecting all points */}
@@ -249,13 +260,15 @@ export function ProgressModal({
                             cx={getX(i)}
                             cy={getY(score)}
                             r={
-                              currentActionId === actionData.actions[i].payload.id
+                              currentActionId ===
+                              actionData.actions[i].payload.id
                                 ? 6
                                 : 4
                             }
                             fill={getScoreColor(score)}
                             stroke={
-                              currentActionId === actionData.actions[i].payload.id
+                              currentActionId ===
+                              actionData.actions[i].payload.id
                                 ? "black"
                                 : "white"
                             }

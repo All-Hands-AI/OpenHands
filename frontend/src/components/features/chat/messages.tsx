@@ -68,6 +68,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           key={index}
           type={message.sender}
           message={message.content}
+          criticScore={message.criticScore}
         >
           {message.imageUrls && message.imageUrls.length > 0 && (
             <ImageCarousel size="small" images={message.imageUrls} />
