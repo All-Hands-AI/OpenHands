@@ -79,7 +79,7 @@ describe("Settings Screen", () => {
   };
 
   it("should render the navbar", async () => {
-    const sectionsToInclude = ["llm", "git", "application"];
+    const sectionsToInclude = ["llm", "git", "application", "secrets"];
     const sectionsToExclude = ["api keys", "credits"];
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return app mode
@@ -110,7 +110,13 @@ describe("Settings Screen", () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
-    const sectionsToInclude = ["git", "application", "credits", "api keys"];
+    const sectionsToInclude = [
+      "git",
+      "application",
+      "credits",
+      "secrets",
+      "api keys",
+    ];
     const sectionsToExclude = ["llm"];
 
     renderSettingsScreen();
