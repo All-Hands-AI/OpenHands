@@ -25,14 +25,21 @@ const trimText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
-// Function to determine the color for critic score using a continuous gradient
+// Function to determine the color for critic score using 10 discrete bins
 export const getCriticScoreColor = (score?: number): string => {
   if (score === undefined) return "";
 
-  // Use a gradient from red (0) to green (1)
-  // Convert score to a hue value (0-120, where 0 is red and 120 is green)
-  const hue = Math.round(score * 120);
-  return `border-[hsl(${hue},100%,40%)]`;
+  // Use 10 discrete bins from red (0) to green (1)
+  if (score < 0.1) return "border-red-600";
+  if (score < 0.2) return "border-red-500";
+  if (score < 0.3) return "border-orange-600";
+  if (score < 0.4) return "border-orange-500";
+  if (score < 0.5) return "border-yellow-600";
+  if (score < 0.6) return "border-yellow-500";
+  if (score < 0.7) return "border-lime-600";
+  if (score < 0.8) return "border-lime-500";
+  if (score < 0.9) return "border-green-600";
+  return "border-green-500";
 };
 
 // Function to get the border color class based on critic score and message type

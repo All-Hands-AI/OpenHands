@@ -71,11 +71,19 @@ export function ProgressModal({
     return actionType.charAt(0).toUpperCase() + actionType.slice(1);
   };
 
-  // Function to get color based on score using a continuous gradient
+  // Function to get color based on score using 10 discrete bins
   const getScoreColor = (score: number) => {
-    // Convert score to a hue value (0-120, where 0 is red and 120 is green)
-    const hue = Math.round(score * 120);
-    return `hsl(${hue}, 100%, 40%)`;
+    // Use 10 discrete bins from red (0) to green (1)
+    if (score < 0.1) return "rgb(220, 38, 38)"; // red-600
+    if (score < 0.2) return "rgb(239, 68, 68)"; // red-500
+    if (score < 0.3) return "rgb(234, 88, 12)"; // orange-600
+    if (score < 0.4) return "rgb(249, 115, 22)"; // orange-500
+    if (score < 0.5) return "rgb(202, 138, 4)"; // yellow-600
+    if (score < 0.6) return "rgb(234, 179, 8)"; // yellow-500
+    if (score < 0.7) return "rgb(101, 163, 13)"; // lime-600
+    if (score < 0.8) return "rgb(132, 204, 22)"; // lime-500
+    if (score < 0.9) return "rgb(22, 163, 74)"; // green-600
+    return "rgb(34, 197, 94)"; // green-500
   };
 
   // Function to get text color class based on score
@@ -208,17 +216,22 @@ export function ProgressModal({
               )}
             </div>
 
-            {/* Gradient Legend */}
+            {/* Discrete Bins Legend */}
             <div className="mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs">{t("CRITIC_SCORE_SCALE")}:</span>
-                <div
-                  className="flex-1 h-4 rounded-md"
-                  style={{
-                    background:
-                      "linear-gradient(to right, hsl(0, 100%, 40%), hsl(60, 100%, 40%), hsl(120, 100%, 40%))",
-                  }}
-                />
+                <div className="flex-1 h-4 rounded-md flex">
+                  <div className="flex-1 h-full bg-red-600" />
+                  <div className="flex-1 h-full bg-red-500" />
+                  <div className="flex-1 h-full bg-orange-600" />
+                  <div className="flex-1 h-full bg-orange-500" />
+                  <div className="flex-1 h-full bg-yellow-600" />
+                  <div className="flex-1 h-full bg-yellow-500" />
+                  <div className="flex-1 h-full bg-lime-600" />
+                  <div className="flex-1 h-full bg-lime-500" />
+                  <div className="flex-1 h-full bg-green-600" />
+                  <div className="flex-1 h-full bg-green-500" />
+                </div>
               </div>
               <div className="flex justify-between mt-1">
                 <span className="text-xs text-red-500">0%</span>
