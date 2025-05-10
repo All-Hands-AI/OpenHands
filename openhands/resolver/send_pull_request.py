@@ -158,67 +158,79 @@ def initialize_repo(
     return dest_dir
 
 
-def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
+def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> bool:
     """Make a commit with the changes to the repository.
 
     Args:
         repo_dir: The directory containing the repository
         issue: The issue to fix
         issue_type: The type of the issue
+
+    Returns:
+        bool: True if changes were committed, False if there were no changes to commit
     """
-    # Check if git username is set
-    result = subprocess.run(
-        f'git -C {repo_dir} config user.name',
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
-
-    if not result.stdout.strip():
-        # If username is not set, configure git
-        subprocess.run(
-            f'git -C {repo_dir} config user.name "openhands" && '
-            f'git -C {repo_dir} config user.email "openhands@all-hands.dev" && '
-            f'git -C {repo_dir} config alias.git "git --no-pager"',
+    try:
+        # Check if git username is set
+        result = subprocess.run(
+            f'git -C {repo_dir} config user.name',
             shell=True,
-            check=True,
+            capture_output=True,
+            text=True,
         )
-        logger.info('Git user configured as openhands')
 
-    # Add all changes to the git index
-    result = subprocess.run(
-        f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        logger.error(f'Error adding files: {result.stderr}')
-        raise RuntimeError('Failed to add files to git')
+        if not result.stdout.strip():
+            # If username is not set, configure git
+            subprocess.run(
+                f'git -C {repo_dir} config user.name "openhands" && '
+                f'git -C {repo_dir} config user.email "openhands@all-hands.dev" && '
+                f'git -C {repo_dir} config alias.git "git --no-pager"',
+                shell=True,
+            )
+            logger.info('Git user configured as openhands')
 
-    # Check the status of the git index
-    status_result = subprocess.run(
-        f'git -C {repo_dir} status --porcelain',
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
-
-    # If there are no changes, raise an error
-    if not status_result.stdout.strip():
-        logger.error(
-            f'No changes to commit for issue #{issue.number}. Skipping commit.'
+        # Add all changes to the git index
+        result = subprocess.run(
+            f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
         )
-        raise RuntimeError('ERROR: Openhands failed to make code changes.')
+        if result.returncode != 0:
+            logger.error(f'Error adding files: {result.stderr}')
+            return False
 
-    # Prepare the commit message
-    commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
+        # Check the status of the git index
+        status_result = subprocess.run(
+            f'git -C {repo_dir} status --porcelain',
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        if status_result.returncode != 0:
+            logger.error(f'Error checking git status: {status_result.stderr}')
+            return False
 
-    # Commit the changes
-    result = subprocess.run(
-        ['git', '-C', repo_dir, 'commit', '-m', commit_message],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f'Failed to commit changes: {result}')
+        # If there are no changes, log it and return False
+        if not status_result.stdout.strip():
+            logger.info(
+                f'No changes to commit for issue #{issue.number}. Skipping commit.'
+            )
+            return False
+
+        # Prepare the commit message
+        commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
+
+        # Commit the changes
+        result = subprocess.run(
+            ['git', '-C', repo_dir, 'commit', '-m', commit_message],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            logger.error(f'Failed to commit changes: {result}')
+            return False
+
+        return True
+    except Exception as e:
+        logger.error(f'Error during git operations: {e}')
+        return False
 
 
 def send_pull_request(
@@ -518,7 +530,39 @@ def process_single_issue(
 
     apply_patch(patched_repo_dir, resolver_output.git_patch)
 
-    make_commit(patched_repo_dir, resolver_output.issue, issue_type)
+    has_changes = make_commit(patched_repo_dir, resolver_output.issue, issue_type)
+
+    # If there are no changes, we still want to post a comment with the result explanation
+    if not has_changes:
+        # Create a handler to post comments for both issues and PRs
+        handler = (
+            ServiceContextIssue(
+                GithubIssueHandler(
+                    resolver_output.issue.owner,
+                    resolver_output.issue.repo,
+                    token,
+                    username,
+                    base_domain,
+                ),
+                llm_config,
+            )
+            if platform == ProviderType.GITHUB
+            else ServiceContextIssue(
+                GitlabIssueHandler(
+                    resolver_output.issue.owner,
+                    resolver_output.issue.repo,
+                    token,
+                    username,
+                    base_domain,
+                ),
+                llm_config,
+            )
+        )
+        if resolver_output.result_explanation:
+            handler.send_comment_msg(
+                resolver_output.issue.number, resolver_output.result_explanation
+            )
+        return
 
     if issue_type == 'pr':
         update_existing_pull_request(
