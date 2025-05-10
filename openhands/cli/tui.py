@@ -309,8 +309,6 @@ def initialize_streaming_output():
         read_only=True,
         style=COLOR_GREY,
         wrap_lines=True,
-        focusable=False,  # Make it non-focusable since it's just for display
-        accept_handler=lambda _: None,  # Prevent any input handling
     )
     container = Frame(
         streaming_output_text_area,
@@ -319,8 +317,6 @@ def initialize_streaming_output():
     )
     print_formatted_text('')
     print_container(container)
-    # Force initial render
-    streaming_output_text_area.buffer.cursor_position = 0
 
 
 def update_streaming_output(text: str):
@@ -331,10 +327,6 @@ def update_streaming_output(text: str):
     if streaming_output_text_area is not None:
         current_text = streaming_output_text_area.text
         streaming_output_text_area.text = current_text + text
-        # Force a redraw of the TextArea
-        streaming_output_text_area.buffer.cursor_position = len(
-            streaming_output_text_area.text
-        )
 
 
 # Interactive command output display functions
