@@ -14,6 +14,7 @@ class RuntimeInfo:
     date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+    custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
