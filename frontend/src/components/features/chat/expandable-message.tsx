@@ -26,7 +26,7 @@ const trimText = (text: string, maxLength: number): string => {
 };
 
 // Function to determine the color for critic score using a continuous gradient
-const getCriticScoreColor = (score?: number): string => {
+export const getCriticScoreColor = (score?: number): string => {
   if (score === undefined) return "";
 
   // Use a gradient from red (0) to green (1)
