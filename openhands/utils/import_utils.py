@@ -34,7 +34,7 @@ def import_from(qual_name: str):
 def get_impl(cls: type[T], impl_name: str | None) -> type[T]:
     """Import and validate a named implementation of a base class.
 
-    This function is a key extensibility mechanism in OpenHands that allows runtime substitution
+    This function is an extensibility mechanism in OpenHands that allows runtime substitution
     of implementations. It enables applications to customize behavior by providing their own
     implementations of OpenHands base classes.
 
