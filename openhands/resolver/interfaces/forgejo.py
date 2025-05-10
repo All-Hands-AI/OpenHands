@@ -267,6 +267,48 @@ class ForgejoIssueHandler(IssueHandlerInterface):
             params['page'] += 1
 
         return all_comments
+        
+    def get_pr_comments(
+        self, pr_number: int, comment_id: int | None = None
+    ) -> list[str] | None:
+        """Download comments for a specific pull request from Forgejo.
+        
+        Args:
+            pr_number: The pull request number
+            comment_id: Optional ID of a specific comment to focus on
+            
+        Returns:
+            List of comment bodies or None if no comments
+        """
+        url = f'{self.base_url}/issues/{pr_number}/comments'
+        params = {'page': 1, 'limit': 100}
+        all_comments = []
+        
+        while True:
+            response = httpx.get(url, headers=self.headers, params=params)
+            response.raise_for_status()
+            comments = response.json()
+            
+            if not comments:
+                break
+                
+            if comment_id:
+                matching_comment = next(
+                    (
+                        comment['body']
+                        for comment in comments
+                        if comment['id'] == comment_id
+                    ),
+                    None,
+                )
+                if matching_comment:
+                    return [matching_comment]
+            else:
+                all_comments.extend([comment['body'] for comment in comments])
+                
+            params['page'] += 1
+            
+        return all_comments if all_comments else None
 
     def get_review_threads(self, pr_number: int) -> list[dict[str, Any]]:
         """Get review threads for a pull request.
