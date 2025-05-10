@@ -88,10 +88,33 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
 
 
 class Runtime(FileEditRuntimeMixin):
-    """The runtime is how the agent interacts with the external environment.
-    This includes a bash sandbox, a browser, and filesystem interactions.
+    """Abstract base class for agent runtime environments.
 
-    sid is the session id, which is used to identify the current user session.
+    This is an extension point in OpenHands that allows applications to customize how
+    agents interact with the external environment. The runtime provides a sandbox with:
+    - Bash shell access
+    - Browser interaction
+    - Filesystem operations
+    - Git operations
+    - Environment variable management
+
+    Applications can substitute their own implementation by:
+    1. Creating a class that inherits from Runtime
+    2. Implementing all required methods
+    3. Setting the runtime name in configuration or using get_runtime_cls()
+
+    The class is instantiated via get_impl() in get_runtime_cls().
+
+    Built-in implementations include:
+    - DockerRuntime: Containerized environment using Docker
+    - E2BRuntime: Secure sandbox using E2B
+    - RemoteRuntime: Remote execution environment
+    - ModalRuntime: Scalable cloud environment using Modal
+    - LocalRuntime: Local execution for development
+    - DaytonaRuntime: Cloud development environment using Daytona
+
+    Args:
+        sid: Session ID that uniquely identifies the current user session
     """
 
     sid: str
