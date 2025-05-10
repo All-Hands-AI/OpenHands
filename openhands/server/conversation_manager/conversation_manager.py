@@ -22,7 +22,8 @@ class ConversationManager(ABC):
     or clustered mode. It handles the lifecycle of conversations, including creation,
     attachment, detachment, and cleanup.
 
-    This is a key extension point in OpenHands. Applications can provide their own
+    This is an extension point in OpenHands, that applications built on it can use to modify behavior via server configuration, without modifying its code.
+    Applications can provide their own
     implementation by:
     1. Creating a class that inherits from ConversationManager
     2. Implementing all required abstract methods
