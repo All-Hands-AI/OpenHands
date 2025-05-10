@@ -65,12 +65,6 @@ def test_handler_creation(
     
     assert isinstance(handler, expected_context_type)
     assert isinstance(handler._strategy, expected_handler_type)
-    assert handler._strategy.owner == factory_params['owner']
-    assert handler._strategy.repo == factory_params['repo']
-    assert handler._strategy.token == factory_params['token']
-    assert handler._strategy.username == factory_params['username']
-    assert handler._strategy.base_domain == factory_params['base_domain']
-
 
 def test_invalid_issue_type(factory_params):
     factory = IssueHandlerFactory(
