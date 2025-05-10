@@ -1,6 +1,8 @@
 import json
 import os
+import subprocess
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -52,6 +54,125 @@ class GitHubService(BaseGitService, GitService):
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
+
+    def _find_git_repositories(self, base_dir: str) -> list[Repository]:
+        """
+        Find git repositories in the given directory and one level deep.
+
+        Args:
+            base_dir: The base directory to search for git repositories
+
+        Returns:
+            A list of Repository objects for git repositories found
+        """
+        if not os.path.exists(base_dir) or not os.path.isdir(base_dir):
+            logger.warning(
+                f'WORKSPACE_BASE directory does not exist or is not a directory: {base_dir}'
+            )
+            return []
+
+        repositories = []
+        base_path = Path(base_dir)
+
+        # Check if the base directory itself is a git repository
+        if (base_path / '.git').is_dir():
+            repo = self._create_repository_from_local_git(base_path)
+            if repo:
+                repositories.append(repo)
+
+        # Check one level deep
+        for item in base_path.iterdir():
+            if item.is_dir():
+                # Check if this directory is a git repository
+                if (item / '.git').is_dir():
+                    repo = self._create_repository_from_local_git(item)
+                    if repo:
+                        repositories.append(repo)
+
+        return repositories
+
+    def _create_repository_from_local_git(self, repo_path: Path) -> Repository | None:
+        """
+        Create a Repository object from a local git repository.
+
+        Args:
+            repo_path: Path to the git repository
+
+        Returns:
+            A Repository object or None if the repository information cannot be extracted
+        """
+        try:
+            # Get repository name from directory name
+            repo_name = repo_path.name
+
+            # Try to get the remote URL to extract the full name
+            try:
+                result = subprocess.run(
+                    [
+                        'git',
+                        '-C',
+                        str(repo_path),
+                        'config',
+                        '--get',
+                        'remote.origin.url',
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                remote_url = result.stdout.strip()
+
+                # Extract full name from remote URL if possible
+                if remote_url:
+                    # Handle different URL formats
+                    if remote_url.startswith('https://'):
+                        # Format: https://github.com/username/repo.git
+                        parts = remote_url.split('/')
+                        if len(parts) >= 5:
+                            owner = parts[-2]
+                            repo = parts[-1]
+                            if repo.endswith('.git'):
+                                repo = repo[:-4]
+                            full_name = f'{owner}/{repo}'
+                        else:
+                            full_name = f'local/{repo_name}'
+                    elif remote_url.startswith('git@'):
+                        # Format: git@github.com:username/repo.git
+                        parts = remote_url.split(':')
+                        if len(parts) == 2:
+                            repo_part = parts[1]
+                            if repo_part.endswith('.git'):
+                                repo_part = repo_part[:-4]
+                            full_name = repo_part
+                        else:
+                            full_name = f'local/{repo_name}'
+                    else:
+                        full_name = f'local/{repo_name}'
+                else:
+                    full_name = f'local/{repo_name}'
+
+            except Exception as e:
+                logger.warning(
+                    f'Error getting remote URL for repository {repo_path}: {e}'
+                )
+                full_name = f'local/{repo_name}'
+
+            # Create a unique ID for the repository
+            repo_id = hash(str(repo_path.absolute()))
+
+            # Create the Repository object
+            return Repository(
+                id=abs(repo_id),  # Use absolute value to ensure positive ID
+                full_name=full_name,
+                git_provider=ProviderType.GITHUB,
+                is_public=False,  # Assume local repositories are private
+                stargazers_count=0,
+                pushed_at=None,
+            )
+
+        except Exception as e:
+            logger.warning(f'Error creating repository object for {repo_path}: {e}')
+            return None
 
     @property
     def provider(self) -> str:
@@ -215,7 +336,7 @@ class GitHubService(BaseGitService, GitService):
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
 
         # Convert to Repository objects
-        return [
+        github_repos = [
             Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
@@ -225,6 +346,23 @@ class GitHubService(BaseGitService, GitService):
             )
             for repo in all_repos
         ]
+
+        # Check for local git repositories in WORKSPACE_BASE if the environment variable is set
+        workspace_base = os.environ.get('WORKSPACE_BASE')
+        local_repos = []
+
+        if workspace_base:
+            logger.info(
+                f'Looking for git repositories in WORKSPACE_BASE: {workspace_base}'
+            )
+            local_repos = self._find_git_repositories(workspace_base)
+            if local_repos:
+                logger.info(
+                    f'Found {len(local_repos)} local git repositories in WORKSPACE_BASE'
+                )
+
+        # Combine GitHub repositories and local repositories
+        return github_repos + local_repos
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
