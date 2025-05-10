@@ -332,7 +332,9 @@ def update_streaming_output(text: str):
         current_text = streaming_output_text_area.text
         streaming_output_text_area.text = current_text + text
         # Force a redraw of the TextArea
-        streaming_output_text_area.buffer.cursor_position = len(streaming_output_text_area.text)
+        streaming_output_text_area.buffer.cursor_position = len(
+            streaming_output_text_area.text
+        )
 
 
 # Interactive command output display functions

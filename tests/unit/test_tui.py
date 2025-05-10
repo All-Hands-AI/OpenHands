@@ -1,25 +1,23 @@
-import pytest
-from prompt_toolkit.widgets import TextArea
-
 from openhands.cli.tui import (
-    ENABLE_STREAMING,
     initialize_streaming_output,
     update_streaming_output,
-    streaming_output_text_area,
 )
+
 
 class MockTextArea:
     def __init__(self, **kwargs):
-        self.text = ""
+        self.text = ''
         self.buffer = self
         self.cursor_position = 0
 
     def __str__(self):
         return self.text
 
+
 class MockFrame:
     def __init__(self, content, **kwargs):
         self.content = content
+
 
 def test_streaming_output(monkeypatch):
     # Ensure streaming is enabled
@@ -37,19 +35,20 @@ def test_streaming_output(monkeypatch):
 
     # Get the global variable from the module
     import openhands.cli.tui
+
     text_area = openhands.cli.tui.streaming_output_text_area
     assert text_area is not None
     assert isinstance(text_area, MockTextArea)
-    assert text_area.text == ""
+    assert text_area.text == ''
 
     # Test updating with single line
-    update_streaming_output("Hello")
-    assert text_area.text == "Hello"
+    update_streaming_output('Hello')
+    assert text_area.text == 'Hello'
 
     # Test appending more text
-    update_streaming_output(" World")
-    assert text_area.text == "Hello World"
+    update_streaming_output(' World')
+    assert text_area.text == 'Hello World'
 
     # Test multiline output
-    update_streaming_output("\nNew line")
-    assert text_area.text == "Hello World\nNew line"
+    update_streaming_output('\nNew line')
+    assert text_area.text == 'Hello World\nNew line'
