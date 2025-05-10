@@ -119,7 +119,6 @@ class StandaloneConversationManager(ConversationManager):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
     ) -> EventStore:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
@@ -127,9 +126,7 @@ class StandaloneConversationManager(ConversationManager):
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self.maybe_start_agent_loop(
-            sid, settings, user_id, github_user_id=github_user_id
-        )
+        event_stream = await self.maybe_start_agent_loop(sid, settings, user_id)
         if not event_stream:
             logger.error(
                 f'No event stream after joining conversation: {sid}',
@@ -197,9 +194,7 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
-    async def _get_conversation_store(
-        self, user_id: str | None, github_user_id: str | None
-    ) -> ConversationStore:
+    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
@@ -256,12 +251,11 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
     ) -> EventStore:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         if not await self.is_agent_loop_running(sid):
             await self._start_agent_loop(
-                sid, settings, user_id, initial_user_msg, replay_json, github_user_id
+                sid, settings, user_id, initial_user_msg, replay_json
             )
 
         event_store = await self._get_event_store(sid, user_id)
@@ -280,7 +274,6 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
     ) -> Session:
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
 
@@ -291,9 +284,7 @@ class StandaloneConversationManager(ConversationManager):
                 extra={'session_id': sid, 'user_id': user_id},
             )
             # Get the conversations sorted (oldest first)
-            conversation_store = await self._get_conversation_store(
-                user_id, github_user_id
-            )
+            conversation_store = await self._get_conversation_store(user_id)
             conversations = await conversation_store.get_all_metadata(response_ids)
             conversations.sort(key=_last_updated_at_key, reverse=True)
 
@@ -332,9 +323,7 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(
-                    user_id, github_user_id, sid, settings
-                ),
+                self._create_conversation_update_callback(user_id, sid, settings),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:
@@ -433,7 +422,6 @@ class StandaloneConversationManager(ConversationManager):
     def _create_conversation_update_callback(
         self,
         user_id: str | None,
-        github_user_id: str | None,
         conversation_id: str,
         settings: Settings,
     ) -> Callable:
@@ -442,7 +430,6 @@ class StandaloneConversationManager(ConversationManager):
                 self._update_conversation_for_event,
                 GENERAL_TIMEOUT,
                 user_id,
-                github_user_id,
                 conversation_id,
                 settings,
                 event,
@@ -453,12 +440,11 @@ class StandaloneConversationManager(ConversationManager):
     async def _update_conversation_for_event(
         self,
         user_id: str,
-        github_user_id: str,
         conversation_id: str,
         settings: Settings,
         event=None,
     ):
-        conversation_store = await self._get_conversation_store(user_id, github_user_id)
+        conversation_store = await self._get_conversation_store(user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
 

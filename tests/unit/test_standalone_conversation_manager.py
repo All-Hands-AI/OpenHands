@@ -74,7 +74,6 @@ async def test_init_new_local_session():
                     'new-session-id',
                     ConversationInitData(),
                     1,
-                    '12345',
                 )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 1
@@ -119,14 +118,12 @@ async def test_join_local_session():
                     'new-session-id',
                     ConversationInitData(),
                     None,
-                    '12345',
                 )
                 await conversation_manager.join_conversation(
                     'new-session-id',
                     'new-session-id',
                     ConversationInitData(),
                     None,
-                    '12345',
                 )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
@@ -159,7 +156,7 @@ async def test_add_to_local_event_stream():
                 'new-session-id', ConversationInitData(), 1
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'connection-id', ConversationInitData(), 1, '12345'
+                'new-session-id', 'connection-id', ConversationInitData(), 1
             )
             await conversation_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}

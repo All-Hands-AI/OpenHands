@@ -73,9 +73,7 @@ async def connect(connection_id: str, environ):
 
         cookies_str = environ.get('HTTP_COOKIE', '')
         conversation_validator = create_conversation_validator()
-        user_id, github_user_id = await conversation_validator.validate(
-            conversation_id, cookies_str
-        )
+        user_id = await conversation_validator.validate(conversation_id, cookies_str)
 
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
@@ -104,7 +102,6 @@ async def connect(connection_id: str, environ):
             connection_id,
             conversation_init_data,
             user_id,
-            github_user_id,
         )
         logger.info(
             f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
