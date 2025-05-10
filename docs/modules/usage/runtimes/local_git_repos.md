@@ -9,6 +9,10 @@ When using OpenHands with Docker runtime, you can mount a local directory contai
 3. These repositories will be included in the list of repositories returned by the API endpoint.
 4. Local repositories are identified with the `local` provider type, separate from GitHub or GitLab repositories.
 
+## Implementation Details
+
+Local git repositories are handled by a dedicated provider type (`local`) that is automatically added when the `WORKSPACE_BASE` environment variable is set. This provider works alongside other providers like GitHub and GitLab, allowing you to see all your repositories in one place.
+
 ## Example
 
 ```bash

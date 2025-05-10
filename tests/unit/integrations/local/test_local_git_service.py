@@ -1,13 +1,14 @@
 import os
 import tempfile
 from pathlib import Path
+from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
 from openhands.integrations.local.local_git_service import LocalGitService
-from openhands.integrations.provider import ProviderHandler
+from openhands.integrations.provider import ProviderHandler, ProviderToken
 from openhands.integrations.service_types import ProviderType, Repository
 from openhands.server.types import AppMode
 
@@ -96,21 +97,28 @@ def test_find_git_repositories(mock_local_git_service, temp_workspace):
 
 @pytest.mark.asyncio
 @patch.dict(os.environ, {})
-async def test_provider_handler_includes_local_repos(temp_workspace):
-    """Test that ProviderHandler includes local git repositories."""
+async def test_provider_handler_adds_local_provider(temp_workspace):
+    """Test that ProviderHandler automatically adds the local git provider when WORKSPACE_BASE is set."""
     # Set WORKSPACE_BASE environment variable
     os.environ["WORKSPACE_BASE"] = temp_workspace
     
-    # Skip the provider handler test since it requires MappingProxyType
-    # Instead, test the LocalGitService directly
-    local_service = LocalGitService()
+    # Create provider tokens without local provider
+    provider_tokens = MappingProxyType({
+        ProviderType.GITHUB: ProviderToken(token=None, user_id=None, host=None)
+    })
     
-    # Call the method
-    repos = await local_service.get_repositories("pushed", AppMode.OSS)
+    # Create provider handler
+    handler = ProviderHandler(provider_tokens)
     
-    # Verify the result
-    assert len(repos) == 2  # Should find 2 local repos
+    # Verify that the local provider was added
+    assert ProviderType.LOCAL in handler.provider_tokens
     
-    # Verify that all repos have the LOCAL provider type
-    for repo in repos:
-        assert repo.git_provider == ProviderType.LOCAL
+    # Get repositories from all providers
+    repos = await handler.get_repositories("pushed", AppMode.OSS)
+    
+    # Verify that local repositories were found
+    assert len(repos) > 0
+    
+    # Verify that at least some repositories have the LOCAL provider type
+    local_repos = [repo for repo in repos if repo.git_provider == ProviderType.LOCAL]
+    assert len(local_repos) > 0
