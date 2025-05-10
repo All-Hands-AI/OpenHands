@@ -142,8 +142,8 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_github_toke
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
 
-    # Mock the issue_handler_factory method
-    resolver.issue_handler_factory = MagicMock(return_value=mock_handler)
+    # Mock the issue handler
+    resolver.issue_handler = mock_handler
 
     # Test that the correct exception is raised
     with pytest.raises(ValueError) as exc_info:
@@ -153,8 +153,6 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_github_toke
     assert 'No issues found for issue number 5432' in str(exc_info.value)
     assert 'test-owner/test-repo' in str(exc_info.value)
 
-    # Verify that the handler was correctly configured and called
-    resolver.issue_handler_factory.assert_called_once()
     mock_handler.get_converted_issues.assert_called_once_with(
         issue_numbers=[5432], comment_id=None
     )
@@ -447,7 +445,8 @@ async def test_process_issue(
     resolver = IssueResolver(default_mock_args)
     resolver.prompt_template = mock_prompt_template
 
-    # Mock the handler
+    # Mock the handler with LLM config
+    llm_config = LLMConfig(model='test', api_key='test')
     handler_instance = MagicMock()
     handler_instance.guess_success.return_value = (
         test_case['expected_success'],
@@ -456,6 +455,7 @@ async def test_process_issue(
     )
     handler_instance.get_instruction.return_value = ('Test instruction', [])
     handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
+    handler_instance.llm = LLM(llm_config)
 
     # Mock the runtime and its methods
     mock_runtime = MagicMock()
