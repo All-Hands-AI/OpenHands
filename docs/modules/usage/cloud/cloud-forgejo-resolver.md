@@ -93,5 +93,4 @@ The base URL should always point to the API endpoint of your Forgejo instance, w
 ## Limitations
 
 - The Forgejo API may have some differences from the GitHub API
-- Some advanced features like requesting reviewers work differently in Forgejo
 - API rate limits may vary depending on the Forgejo instance

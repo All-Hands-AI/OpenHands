@@ -42,7 +42,6 @@ The API supports pagination with the `page` and `limit` parameters. The `Link` h
 
 - Forgejo uses `limit` instead of `per_page` for pagination
 - Forgejo uses `stars_count` instead of `stargazers_count` for repository stars
-- Forgejo doesn't have a direct API for requesting reviewers on pull requests
 - Forgejo doesn't support replying to specific comments in the same way as GitHub
 
 ## Codeberg Specifics

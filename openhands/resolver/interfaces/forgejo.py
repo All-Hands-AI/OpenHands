@@ -218,10 +218,19 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return dict(pr_data)
 
     def request_reviewers(self, reviewer: str, pr_number: int) -> None:
-        # Forgejo doesn't have a direct API for requesting reviewers
-        # We'll add a comment mentioning the reviewer instead
-        msg = f"@{reviewer} Could you please review this pull request?"
-        self.send_comment_msg(pr_number, msg)
+        """Request a reviewer for a pull request.
+        
+        Forgejo supports requesting reviewers via the API.
+        """
+        url = f'{self.base_url}/pulls/{pr_number}/requested_reviewers'
+        data = {'reviewers': [reviewer]}
+        response = httpx.post(url, headers=self.headers, json=data)
+        
+        if response.status_code not in (200, 201):
+            logger.warning(f"Failed to request review from {reviewer}: {response.text}")
+            # Fallback to mentioning the reviewer in a comment
+            msg = f"@{reviewer} Could you please review this pull request?"
+            self.send_comment_msg(pr_number, msg)
 
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
         """Send a comment message to a Forgejo issue or pull request.
