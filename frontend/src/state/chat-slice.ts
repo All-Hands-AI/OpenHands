@@ -182,6 +182,11 @@ export const chatSlice = createSlice({
       // Determine if this is a special action type (message or finish)
       const isSpecialAction = actionID === "message" || actionID === "finish";
 
+      // Skip adding a message if there's no content for special actions
+      if (isSpecialAction && !text) {
+        return;
+      }
+
       const message: Message = {
         // For message and finish actions, use "thought" type to display them differently
         type: isSpecialAction ? "thought" : "action",

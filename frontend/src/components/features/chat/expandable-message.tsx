@@ -183,7 +183,7 @@ export function ExpandableMessage({
         >
           {/* Tooltip - only shown when there's a critic score */}
           {criticScore !== undefined && (
-            <div className="absolute left-0 -top-8 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+            <div className="absolute left-0 -top-10 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
               {`${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`}
               <div className="flex items-center mt-1 text-xs">
                 <ChartLine className="w-3 h-3 mr-1" />
