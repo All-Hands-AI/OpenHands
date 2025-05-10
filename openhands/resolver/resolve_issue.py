@@ -166,7 +166,6 @@ class IssueResolver:
         self.issue_number = args.issue_number
         self.comment_id = args.comment_id
         self.base_domain = base_domain
-        self.platform = platform
 
     def _setup_sandbox_config(
         self,
