@@ -328,7 +328,15 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
 
-    if not args.override_cli_mode:
+    # Determine if CLI defaults should be overridden
+    val_override = args.override_cli_mode
+    should_override_cli_defaults = (
+        val_override is True
+        or (isinstance(val_override, str) and val_override.lower() in ('true', '1'))
+        or (isinstance(val_override, int) and val_override == 1)
+    )
+
+    if not should_override_cli_defaults:
         config.runtime = 'cli'
         config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
