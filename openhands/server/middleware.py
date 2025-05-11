@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import Any
 from urllib.parse import urlparse
 
 from fastapi import Request, status
@@ -46,7 +46,7 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Response]
+        self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         response = await call_next(request)
         if request.url.path.startswith('/assets'):
@@ -175,7 +175,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         )
 
     async def __call__(
-        self, request: Request, call_next: Callable[[Request], Response]
+        self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         if not self._should_attach(request):
             return await call_next(request)
