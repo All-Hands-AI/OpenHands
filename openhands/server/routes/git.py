@@ -41,13 +41,7 @@ async def get_user_repositories(
         )
 
         try:
-            app_mode = (
-                server_config.app_mode
-                if isinstance(server_config, ServerConfig)
-                else AppMode.OSS
-            )
-            repos: list[Repository] = await client.get_repositories(sort, app_mode)
-            return repos
+            return await client.get_repositories(sort, server_config.app_mode)
 
         except AuthenticationError as e:
             return JSONResponse(
