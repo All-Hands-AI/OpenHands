@@ -55,13 +55,16 @@ class UserSecrets(BaseModel):
 
             token = None
             if provider_token.token:
-                token = provider_token.token.get_secret_value() if expose_secrets else pydantic_encoder(provider_token.token)
+                token = (
+                    provider_token.token.get_secret_value()
+                    if expose_secrets
+                    else pydantic_encoder(provider_token.token)
+                )
 
             tokens[token_type_str] = {
                 'token': token,
                 'host': provider_token.host,
                 'user_id': provider_token.user_id,
-                
             }
 
         return tokens

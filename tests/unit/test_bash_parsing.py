@@ -180,6 +180,21 @@ def test_unclosed_backtick():
         raise e
 
 
+def test_over_escaped_command():
+    # This test reproduces issue #8369 Example 1
+    # The issue occurs when parsing a command with over-escaped quotes
+    over_escaped_command = r'# 0. Setup directory\\nrm -rf /workspace/repro_sphinx_bug && mkdir -p /workspace/repro_sphinx_bug && cd /workspace/repro_sphinx_bug\\n\\n# 1. Run sphinx-quickstart\\nsphinx-quickstart --no-sep --project myproject --author me -v 0.1.0 --release 0.1.0 --language en . -q\\n\\n# 2. Create index.rst\\necho -e \'Welcome\\\\\\\\n=======\\\\\\\\n\\\\\\\\n.. toctree::\\\\n   :maxdepth: 2\\\\\\\\n\\\\\\\\n   mypackage_file\\\\\\\\n\' > index.rst'
+
+    # Should not raise any exception
+    try:
+        result = split_bash_commands(over_escaped_command)
+        # If parsing fails, it should return the original command
+        assert result == [over_escaped_command]
+    except Exception as e:
+        # This is the error we're trying to fix
+        pytest.fail(f'split_bash_commands raised {type(e).__name__} unexpectedly: {e}')
+
+
 @pytest.fixture
 def sample_commands():
     return [

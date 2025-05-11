@@ -195,7 +195,8 @@ class ProviderHandler:
                     query, per_page, sort, order
                 )
                 all_repos.extend(service_repos)
-            except Exception:
+            except Exception as e:
+                logger.warning(f'Error searching repos from {provider}: {e}')
                 continue
 
         return all_repos
