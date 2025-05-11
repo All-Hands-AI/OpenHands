@@ -65,4 +65,4 @@ async def get_config() -> dict[str, Any]:
     Returns:
         dict[str, Any]: The current server configuration.
     """
-    return server_config.get_config().model_dump()
+    return server_config.get_config()
