@@ -1,5 +1,5 @@
 import os
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +27,7 @@ class ServerConfig(ServerConfigInterface, BaseModel):
     attach_session_middleware_path: str = Field(default='')
     config_path: str | None = Field(default=None)
     config_cls: str | None = Field(default=os.environ.get('OPENHANDS_CONFIG_CLS', None))
-    
+
     enable_billing: bool = Field(
         default=os.environ.get('ENABLE_BILLING', 'false') == 'true'
     )
