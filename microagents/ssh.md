@@ -5,12 +5,12 @@ version: 1.0.0
 agent: CodeActAgent
 triggers:
   - ssh
-  - remote server
-  - remote machine
-  - remote host
-  - remote connection
   - secure shell
   - ssh keys
+  - ssh connection
+  - ssh config
+  - ssh-keygen
+  - scp
 ---
 
 # SSH Microagent
