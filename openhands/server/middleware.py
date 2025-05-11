@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 from starlette.types import ASGIApp
@@ -105,9 +105,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.rate_limiter = rate_limiter
 
     async def dispatch(
-        self,
-        request: StarletteRequest,
-        call_next: Callable[[StarletteRequest], Response],
+        self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         if not self.is_rate_limited_request(request):
             return await call_next(request)
