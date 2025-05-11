@@ -13,9 +13,11 @@ interface SettingsDropdownInputProps {
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   defaultSelectedKey?: string;
+  selectedKey?: string;
   isClearable?: boolean;
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
+  defaultFilter?: (textValue: string, inputValue: string) => boolean;
 }
 
 export function SettingsDropdownInput({
@@ -28,9 +30,11 @@ export function SettingsDropdownInput({
   showOptionalTag,
   isDisabled,
   defaultSelectedKey,
+  selectedKey,
   isClearable,
   onSelectionChange,
   onInputChange,
+  defaultFilter,
 }: SettingsDropdownInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
@@ -46,6 +50,7 @@ export function SettingsDropdownInput({
         name={name}
         defaultItems={items}
         defaultSelectedKey={defaultSelectedKey}
+        selectedKey={selectedKey}
         onSelectionChange={onSelectionChange}
         onInputChange={onInputChange}
         isClearable={isClearable}
@@ -61,6 +66,7 @@ export function SettingsDropdownInput({
               "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
           },
         }}
+        defaultFilter={defaultFilter}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>

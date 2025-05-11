@@ -28,13 +28,12 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
-from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
+from openhands.resolver.issue_handler_factory import IssueHandlerFactory
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     codeact_user_response,
@@ -111,12 +110,22 @@ class IssueResolver:
         model = args.llm_model or os.environ['LLM_MODEL']
         base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
         api_version = os.environ.get('LLM_API_VERSION', None)
+        llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
+        llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT', '5'))
+        llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT', '30'))
+        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER', 2))
+        llm_timeout = int(os.environ.get('LLM_TIMEOUT', 0))
 
         # Create LLMConfig instance
         llm_config = LLMConfig(
             model=model,
             api_key=SecretStr(api_key) if api_key else None,
             base_url=base_url,
+            num_retries=llm_num_retries,
+            retry_min_wait=llm_retry_min_wait,
+            retry_max_wait=llm_retry_max_wait,
+            retry_multiplier=llm_retry_multiplier,
+            timeout=llm_timeout,
         )
 
         # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
@@ -152,8 +161,6 @@ class IssueResolver:
 
         self.owner = owner
         self.repo = repo
-        self.token = token
-        self.username = username
         self.platform = platform
         self.runtime_container_image = runtime_container_image
         self.base_container_image = base_container_image
@@ -165,8 +172,19 @@ class IssueResolver:
         self.repo_instruction = repo_instruction
         self.issue_number = args.issue_number
         self.comment_id = args.comment_id
-        self.base_domain = base_domain
         self.platform = platform
+
+        factory = IssueHandlerFactory(
+            owner=self.owner,
+            repo=self.repo,
+            token=token,
+            username=username,
+            platform=self.platform,
+            base_domain=base_domain,
+            issue_type=self.issue_type,
+            llm_config=self.llm_config,
+        )
+        self.issue_handler = factory.create()
 
     def initialize_runtime(
         self,
@@ -435,58 +453,6 @@ class IssueResolver:
         )
         return output
 
-    def issue_handler_factory(self) -> ServiceContextIssue | ServiceContextPR:
-        # Determine default base_domain based on platform
-
-        if self.issue_type == 'issue':
-            if self.platform == ProviderType.GITHUB:
-                return ServiceContextIssue(
-                    GithubIssueHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-            else:  # platform == Platform.GITLAB
-                return ServiceContextIssue(
-                    GitlabIssueHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-        elif self.issue_type == 'pr':
-            if self.platform == ProviderType.GITHUB:
-                return ServiceContextPR(
-                    GithubPRHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-            else:  # platform == Platform.GITLAB
-                return ServiceContextPR(
-                    GitlabPRHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-        else:
-            raise ValueError(f'Invalid issue type: {self.issue_type}')
-
     async def resolve_issue(
         self,
         reset_logger: bool = False,
@@ -497,10 +463,8 @@ class IssueResolver:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
 
-        issue_handler = self.issue_handler_factory()
-
         # Load dataset
-        issues: list[Issue] = issue_handler.get_converted_issues(
+        issues: list[Issue] = self.issue_handler.get_converted_issues(
             issue_numbers=[self.issue_number], comment_id=self.comment_id
         )
 
@@ -546,7 +510,7 @@ class IssueResolver:
                 [
                     'git',
                     'clone',
-                    issue_handler.get_clone_url(),
+                    self.issue_handler.get_clone_url(),
                     f'{self.output_dir}/repo',
                 ]
             ).decode('utf-8')
@@ -625,7 +589,7 @@ class IssueResolver:
             output = await self.process_issue(
                 issue,
                 base_commit,
-                issue_handler,
+                self.issue_handler,
                 reset_logger,
             )
             output_fp.write(output.model_dump_json() + '\n')

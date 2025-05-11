@@ -11,8 +11,9 @@ from pydantic import (
 from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import SecretStore
+from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class Settings(BaseModel):
@@ -29,12 +30,15 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    secrets_store: SecretStore = Field(default_factory=SecretStore, frozen=True)
+    # Planned to be removed from settings
+    secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
     enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
+    enable_proactive_conversation_starters: bool = True
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
+    mcp_config: MCPConfig | None = None
 
     model_config = {
         'validate_assignment': True,
@@ -55,7 +59,7 @@ class Settings(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def convert_provider_tokens(cls, data: dict | object) -> dict | object:
-        """Convert provider tokens from JSON format to SecretStore format."""
+        """Convert provider tokens from JSON format to UserSecrets format."""
         if not isinstance(data, dict):
             return data
 
@@ -66,10 +70,10 @@ class Settings(BaseModel):
         custom_secrets = secrets_store.get('custom_secrets')
         tokens = secrets_store.get('provider_tokens')
 
-        secret_store = SecretStore(provider_tokens={}, custom_secrets={})
+        secret_store = UserSecrets(provider_tokens={}, custom_secrets={})
 
         if isinstance(tokens, dict):
-            converted_store = SecretStore(provider_tokens=tokens)
+            converted_store = UserSecrets(provider_tokens=tokens)
             secret_store = secret_store.model_copy(
                 update={'provider_tokens': converted_store.provider_tokens}
             )
@@ -77,7 +81,7 @@ class Settings(BaseModel):
             secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
-            converted_store = SecretStore(custom_secrets=custom_secrets)
+            converted_store = UserSecrets(custom_secrets=custom_secrets)
             secret_store = secret_store.model_copy(
                 update={'custom_secrets': converted_store.custom_secrets}
             )
@@ -89,16 +93,11 @@ class Settings(BaseModel):
         return data
 
     @field_serializer('secrets_store')
-    def secrets_store_serializer(self, secrets: SecretStore, info: SerializationInfo):
+    def secrets_store_serializer(self, secrets: UserSecrets, info: SerializationInfo):
         """Custom serializer for secrets store."""
-        return {
-            'provider_tokens': secrets.provider_tokens_serializer(
-                secrets.provider_tokens, info
-            ),
-            'custom_secrets': secrets.custom_secrets_serializer(
-                secrets.custom_secrets, info
-            ),
-        }
+
+        """Force invalidate secret store"""
+        return {'provider_tokens': {}}
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -108,6 +107,12 @@ class Settings(BaseModel):
             # If no api key has been set, we take this to mean that there is no reasonable default
             return None
         security = app_config.security
+
+        # Get MCP config if available
+        mcp_config = None
+        if hasattr(app_config, 'mcp'):
+            mcp_config = app_config.mcp
+
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -118,5 +123,6 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
+            mcp_config=mcp_config,
         )
         return settings

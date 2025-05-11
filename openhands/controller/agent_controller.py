@@ -5,7 +5,7 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable, ClassVar, Tuple, Type
+from typing import Callable, ClassVar
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -91,7 +91,7 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
+    _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
@@ -675,7 +675,7 @@ class AgentController:
         Args:
             action (AgentDelegateAction): The action containing information about the delegate agent to start.
         """
-        agent_cls: Type[Agent] = Agent.get_cls(action.agent)
+        agent_cls: type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)

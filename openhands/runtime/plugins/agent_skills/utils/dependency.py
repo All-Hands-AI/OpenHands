@@ -2,7 +2,7 @@ from types import ModuleType
 
 
 def import_functions(
-    module: ModuleType, function_names: list[str], target_globals: dict
+    module: ModuleType, function_names: list[str], target_globals: dict[str, object]
 ) -> None:
     for name in function_names:
         if hasattr(module, name):

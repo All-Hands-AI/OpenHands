@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, TypedDict
+from typing import Any, TypedDict
 
 import boto3
 import botocore
@@ -16,7 +16,7 @@ class GetObjectOutputDict(TypedDict):
 
 
 class ListObjectsV2OutputDict(TypedDict):
-    Contents: List[S3ObjectDict] | None
+    Contents: list[S3ObjectDict] | None
 
 
 class S3FileStore(FileStore):
