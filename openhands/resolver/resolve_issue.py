@@ -175,8 +175,9 @@ class IssueResolver:
         )
         self.issue_handler = factory.create()
 
+    @classmethod
     def _setup_sandbox_config(
-        self,
+        cls,
         base_container_image: str | None,
         runtime_container_image: str | None,
         is_experimental: bool,
@@ -212,7 +213,7 @@ class IssueResolver:
         )
 
         # Configure sandbox for GitLab CI environment
-        if self.GITLAB_CI:
+        if cls.GITLAB_CI:
             sandbox_config.local_runtime_url = os.getenv(
                 'LOCAL_RUNTIME_URL', 'http://localhost'
             )
