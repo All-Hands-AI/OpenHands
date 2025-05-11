@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter
 
 from openhands.controller.agent import Agent
@@ -21,7 +23,7 @@ async def get_litellm_models() -> list[str]:
     ```
 
     Returns:
-        list[str]: A sorted list of unique model names.
+        List[str]: A sorted list of unique model names.
     """
     return get_supported_llm_models(config)
 
@@ -36,7 +38,7 @@ async def get_agents() -> list[str]:
     ```
 
     Returns:
-        list[str]: A sorted list of agent names.
+        List[str]: A sorted list of agent names.
     """
     return sorted(Agent.list_agents())
 
@@ -51,16 +53,16 @@ async def get_security_analyzers() -> list[str]:
     ```
 
     Returns:
-        list[str]: A sorted list of security analyzer names.
+        List[str]: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get('/config', response_model=dict[str, str])
-async def get_config() -> dict[str, str]:
+@app.get('/config', response_model=dict[str, Any])
+async def get_config() -> dict[str, Any]:
     """Get current config.
 
     Returns:
-        dict[str, str]: The current server configuration.
+        dict[str, Any]: The current server configuration.
     """
-    return await server_config.get_config()
+    return server_config.get_config()

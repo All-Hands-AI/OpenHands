@@ -1,8 +1,27 @@
 import os
+from typing import Any
+
+from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.types import AppMode, ServerConfigInterface
 from openhands.utils.import_utils import get_impl
+
+
+class FeatureFlags(BaseModel):
+    """Feature flags configuration."""
+
+    ENABLE_BILLING: bool
+    HIDE_LLM_SETTINGS: bool
+
+
+class ServerConfigModel(BaseModel):
+    """Server configuration model."""
+
+    APP_MODE: AppMode
+    GITHUB_CLIENT_ID: str
+    POSTHOG_CLIENT_KEY: str
+    FEATURE_FLAGS: FeatureFlags
 
 
 class ServerConfig(ServerConfigInterface):
@@ -31,20 +50,23 @@ class ServerConfig(ServerConfigInterface):
         if self.config_cls:
             raise ValueError('Unexpected config path provided')
 
-    async def get_config(self) -> dict[str, str]:
-        config: dict[str, str] = {
-            'APP_MODE': str(self.app_mode),
-            'GITHUB_CLIENT_ID': self.github_client_id,
-            'POSTHOG_CLIENT_KEY': self.posthog_client_key,
-            'FEATURE_FLAGS': str(
-                {
-                    'ENABLE_BILLING': str(self.enable_billing),
-                    'HIDE_LLM_SETTINGS': str(self.hide_llm_settings),
-                }
-            ),
-        }
+    def get_config(self) -> dict[str, Any]:
+        """Get server configuration.
 
-        return config
+        Returns:
+            dict[str, Any]: Server configuration as a dictionary.
+        """
+        config_model = ServerConfigModel(
+            APP_MODE=self.app_mode,
+            GITHUB_CLIENT_ID=self.github_client_id,
+            POSTHOG_CLIENT_KEY=self.posthog_client_key,
+            FEATURE_FLAGS=FeatureFlags(
+                ENABLE_BILLING=self.enable_billing,
+                HIDE_LLM_SETTINGS=self.hide_llm_settings,
+            ),
+        )
+
+        return config_model.model_dump()
 
 
 def load_server_config() -> ServerConfigInterface:
