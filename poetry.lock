@@ -2871,7 +2871,7 @@ grpcio = {version = ">=1.49.1,<2.0dev", optional = true, markers = "python_versi
 grpcio-status = {version = ">=1.49.1,<2.0.dev0", optional = true, markers = "python_version >= \"3.11\" and extra == \"grpc\""}
 proto-plus = [
     {version = ">=1.25.0,<2.0.0dev", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0dev", markers = "python_version < \"3.13\""},
+    {version = ">=1.22.3,<2.0.0dev"},
 ]
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
 requests = ">=2.18.0,<3.0.0.dev0"
@@ -3087,7 +3087,7 @@ google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0dev"
 grpc-google-iam-v1 = ">=0.14.0,<1.0.0dev"
 proto-plus = [
     {version = ">=1.25.0,<2.0.0dev", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0dev"},
+    {version = ">=1.22.3,<2.0.0dev", markers = "python_version < \"3.13\""},
 ]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0dev"
 
@@ -6093,27 +6093,31 @@ name = "openhands-aci"
 version = "0.2.12"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "<4.0,>=3.12"
+python-versions = "^3.12"
 groups = ["main"]
-files = [
-    {file = "openhands_aci-0.2.12-py3-none-any.whl", hash = "sha256:8e7ffbca65049c5c31c8360892695ac3db1af4d59705d7d42283c0c0925ca452"},
-    {file = "openhands_aci-0.2.12.tar.gz", hash = "sha256:04500e1bb300ab4de2992c36c17f3234001655920424bdec3796e6fa5c706785"},
-]
+files = []
+develop = false
 
 [package.dependencies]
-binaryornot = ">=0.4.4,<0.5.0"
-cachetools = ">=5.5.2,<6.0.0"
-charset-normalizer = ">=3.4.1,<4.0.0"
+binaryornot = "^0.4.4"
+cachetools = "^5.5.2"
+charset-normalizer = "^3.4.1"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
-pydantic = ">=2.11.3,<3.0.0"
-tree-sitter = ">=0.24.0,<0.25.0"
-tree-sitter-javascript = ">=0.23.1,<0.24.0"
-tree-sitter-python = ">=0.23.6,<0.24.0"
-tree-sitter-ruby = ">=0.23.1,<0.24.0"
-tree-sitter-typescript = ">=0.23.2,<0.24.0"
-whatthepatch = ">=1.0.6,<2.0.0"
+pydantic = "^2.11.3"
+tree-sitter = "^0.24.0"
+tree-sitter-javascript = "^0.23.1"
+tree-sitter-python = "^0.23.6"
+tree-sitter-ruby = "^0.23.1"
+tree-sitter-typescript = "^0.23.2"
+whatthepatch = "^1.0.6"
+
+[package.source]
+type = "git"
+url = "https://github.com/enyst/openhands-aci.git"
+reference = "a51f5523e3d973ee329c472c5c71fb9d0f469571"
+resolved_reference = "a51f5523e3d973ee329c472c5c71fb9d0f469571"
 
 [[package]]
 name = "opentelemetry-api"
@@ -11249,4 +11253,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "3289d4f57295bf215347f6c2ad766788e8530bb18708cb81851dcbbf809a4457"
+content-hash = "e560f0aa37a2f52b376a9fca12d84619588831fde574af055f4f4781d4ed15e8"

@@ -68,7 +68,7 @@ runloop-api-client = "0.32.0"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
-openhands-aci = "0.2.12"
+openhands-aci = {git = "https://github.com/enyst/openhands-aci.git", rev = "a51f5523e3d973ee329c472c5c71fb9d0f469571"}
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
 sse-starlette = "^2.1.3"
