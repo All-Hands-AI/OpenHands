@@ -7,6 +7,7 @@ from fastapi import Request
 from pydantic import SecretStr
 
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.server.shared import server_config
 from openhands.server.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
@@ -71,7 +72,7 @@ async def get_user_auth(request: Request) -> UserAuth:
     user_auth: UserAuth | None = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
-    impl_name = 'openhands.server.user_auth.default_user_auth.DefaultUserAuth'  # Use default instead of server_config.user_auth_class
+    impl_name = server_config.user_auth_class
     impl = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
     if user_auth is None:
