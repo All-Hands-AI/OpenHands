@@ -22,6 +22,8 @@ class ServerConfigModel(BaseModel):
     GITHUB_CLIENT_ID: str
     POSTHOG_CLIENT_KEY: str
     FEATURE_FLAGS: FeatureFlags
+    APP_SLUG: str | None = None
+    STRIPE_PUBLISHABLE_KEY: str | None = None
 
 
 class ServerConfig(ServerConfigInterface):
