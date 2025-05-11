@@ -54,10 +54,12 @@ Reminder:
 
 STOP_WORDS = ['</function']
 
+
 def refine_prompt(prompt: str) -> str:
     if sys.platform == 'win32':
         return prompt.replace('bash', 'powershell')
     return prompt
+
 
 # NOTE: we need to make sure these examples are always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
 
