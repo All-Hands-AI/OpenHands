@@ -14,7 +14,7 @@ Otherwise, you can clone the OpenHands project directly.
 - [NodeJS](https://nodejs.org/en/download/package-manager) >= 22.x
 - [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 - OS-specific dependencies:
-  - Ubuntu: build-essential => `sudo apt-get install build-essential`
+  - Ubuntu: build-essential => `sudo apt-get install build-essential python3.12-dev`
   - WSL: netcat => `sudo apt-get install netcat`
 
 Make sure you have all these dependencies installed before moving on to `make build`.

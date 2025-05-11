@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.settings import (
@@ -55,31 +55,47 @@ async def invalidate_legacy_secrets_store(
 
 
 def process_token_validation_result(
-        confirmed_token_type: ProviderType | None, 
-        token_type: ProviderType):
-    
+    confirmed_token_type: ProviderType | None, token_type: ProviderType
+):
     if not confirmed_token_type or confirmed_token_type != token_type:
-        return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
-    
+        return (
+            f'Invalid token. Please make sure it is a valid {token_type.value} token.'
+        )
+
     return ''
+
 
 async def check_provider_tokens(
     incoming_provider_tokens: POSTProviderModel,
-    existing_provider_tokens: PROVIDER_TOKEN_TYPE) -> str:
-
+    existing_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+) -> str:
     msg = ''
     if incoming_provider_tokens.provider_tokens:
         # Determine whether tokens are valid
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
             if token_value.token:
-                confirmed_token_type = await validate_provider_token(token_value.token, token_value.host) # FE always sends latest host
+                confirmed_token_type = await validate_provider_token(
+                    token_value.token, token_value.host
+                )  # FE always sends latest host
                 msg = process_token_validation_result(confirmed_token_type, token_type)
 
-            existing_token = existing_provider_tokens.get(token_type, None)
-            if existing_token and (existing_token.host != token_value.host) and existing_token.token:
-                confirmed_token_type = await validate_provider_token(existing_token.token, token_value.host) # Host has changed, check it against existing token
+            existing_token = (
+                existing_provider_tokens.get(token_type, None)
+                if existing_provider_tokens
+                else None
+            )
+            if (
+                existing_token
+                and (existing_token.host != token_value.host)
+                and existing_token.token
+            ):
+                confirmed_token_type = await validate_provider_token(
+                    existing_token.token, token_value.host
+                )  # Host has changed, check it against existing token
                 if not confirmed_token_type or confirmed_token_type != token_type:
-                    msg = process_token_validation_result(confirmed_token_type, token_type)
+                    msg = process_token_validation_result(
+                        confirmed_token_type, token_type
+                    )
 
     return msg
 
@@ -88,9 +104,8 @@ async def check_provider_tokens(
 async def store_provider_tokens(
     provider_info: POSTProviderModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
-    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens)
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
 ) -> JSONResponse:
-
     provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
         return JSONResponse(
@@ -113,7 +128,9 @@ async def store_provider_tokens(
                     if existing_token and existing_token.token:
                         provider_info.provider_tokens[provider] = existing_token
 
-                provider_info.provider_tokens[provider] = provider_info.provider_tokens[provider].model_copy(update={'host': token_value.host})
+                provider_info.provider_tokens[provider] = provider_info.provider_tokens[
+                    provider
+                ].model_copy(update={'host': token_value.host})
 
         updated_secrets = user_secrets.model_copy(
             update={'provider_tokens': provider_info.provider_tokens}
