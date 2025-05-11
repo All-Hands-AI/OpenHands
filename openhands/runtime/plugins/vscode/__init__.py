@@ -41,8 +41,6 @@ class VSCodePlugin(Plugin):
         self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
         assert check_port_available(self.vscode_port)
-        # Copy the openhands-changes-viewer extension to the VSCode extensions directory
-        self._setup_vscode_extensions()
         
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
@@ -96,35 +94,6 @@ class VSCodePlugin(Plugin):
         os.chmod(target_path, 0o666)
 
         logger.debug(f'VSCode settings copied to {target_path}')
-        
-    def _setup_vscode_extensions(self) -> None:
-        """
-        Set up VSCode extensions by copying them from the OpenHands codebase
-        to the VSCode extensions directory.
-        """
-        # Get the path to the extensions directory in the OpenHands codebase
-        extensions_src_dir = Path('/workspace/OpenHands/openhands/runtime/utils/vscode-extensions')
-        
-        # Get the path to the VSCode extensions directory
-        vscode_extensions_dir = Path('/openhands/.openvscode-server/extensions')
-        
-        # Make sure the extensions directory exists
-        vscode_extensions_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Copy each extension to the VSCode extensions directory
-        for extension_dir in extensions_src_dir.iterdir():
-            if extension_dir.is_dir():
-                extension_name = extension_dir.name
-                target_dir = vscode_extensions_dir / extension_name
-                
-                # Remove the target directory if it already exists
-                if target_dir.exists():
-                    shutil.rmtree(target_dir)
-                
-                # Copy the extension directory
-                shutil.copytree(extension_dir, target_dir)
-                
-                logger.debug(f'VSCode extension {extension_name} copied to {target_dir}')
 
     async def run(self, action: Action) -> Observation:
         """Run the plugin for a given action."""
