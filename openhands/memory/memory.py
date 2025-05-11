@@ -2,7 +2,7 @@ import asyncio
 import os
 import uuid
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Any, Callable
 
 import openhands
 from openhands.core.logger import openhands_logger as logger
@@ -20,6 +20,7 @@ from openhands.microagent import (
     RepoMicroagent,
     load_microagents_from_dir,
 )
+from openhands.microagent.types import TriggerType
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
@@ -258,26 +259,29 @@ class Memory:
         for name, agent in repo_agents.items():
             if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
-                
-    def get_microagent_mcp_tools(self) -> list[dict]:
+
+    def get_microagent_mcp_tools(self) -> list[dict[Any, Any]]:
         """
         Get MCP tools from all microagents with trigger_type=ALWAYS
-        
+
         Returns:
             A list of MCP tools configurations from microagents
         """
-        mcp_configs = []
-        
+        mcp_configs: list[dict[Any, Any]] = []
+
         # Check all knowledge microagents for MCP tools
         for agent in self.knowledge_microagents.values():
-            if agent.metadata.trigger_type == TriggerType.ALWAYS and agent.metadata.mcp_tools:
+            if (
+                agent.metadata.trigger_type == TriggerType.ALWAYS
+                and agent.metadata.mcp_tools
+            ):
                 mcp_configs.append(agent.metadata.mcp_tools)
-                
+
         # Check all repo microagents for MCP tools
         for agent in self.repo_microagents.values():
             if agent.metadata.mcp_tools:
                 mcp_configs.append(agent.metadata.mcp_tools)
-                
+
         return mcp_configs
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:

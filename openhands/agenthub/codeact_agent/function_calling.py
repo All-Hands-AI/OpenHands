@@ -203,6 +203,16 @@ def response_to_actions(
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
 
             # ================================================
+            # WebReadTool
+            # ================================================
+            elif tool_call.function.name == 'web_read':
+                if 'url' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "url" in tool call {tool_call.function.name}'
+                    )
+                action = BrowseURLAction(url=arguments['url'])
+
+            # ================================================
             # MCPAction (MCP)
             # ================================================
             elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
