@@ -81,7 +81,7 @@ async def connect(connection_id: str, environ):
         settings = await settings_store.load()
 
         secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-        user_secrets: UserSecrets = await secrets_store.load()
+        user_secrets: UserSecrets | None = await secrets_store.load()
 
         if not settings:
             raise ConnectionRefusedError(
@@ -92,7 +92,7 @@ async def connect(connection_id: str, environ):
             session_init_args = {**settings.__dict__, **session_init_args}
 
         git_provider_tokens = create_provider_tokens_object(providers_set)
-        if server_config.app_mode != AppMode.SAAS:
+        if server_config.app_mode != AppMode.SAAS and user_secrets:
             git_provider_tokens = user_secrets.provider_tokens
 
         session_init_args['git_provider_tokens'] = git_provider_tokens
