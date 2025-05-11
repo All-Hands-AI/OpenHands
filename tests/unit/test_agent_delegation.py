@@ -15,6 +15,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     MessageAction,
 )
 from openhands.events.action.agent import RecallAction
@@ -227,9 +228,15 @@ async def test_delegate_step_different_states(
         loop_in_thread = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop_in_thread)
+            # First send a message to trigger the delegate state check
             msg_action = MessageAction(content='Test message')
             msg_action._source = EventSource.USER
             controller.on_event(msg_action)
+
+            # Then send a reject action to trigger delegate cleanup
+            reject_action = AgentRejectAction()
+            reject_action._source = EventSource.USER
+            controller.on_event(reject_action)
         finally:
             loop_in_thread.close()
 

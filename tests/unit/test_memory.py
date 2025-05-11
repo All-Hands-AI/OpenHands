@@ -12,7 +12,7 @@ from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
     RecallType,
@@ -82,6 +82,7 @@ def mock_agent():
         return system_message
 
     agent.get_system_message.side_effect = get_system_message
+    return agent
 
 
 @pytest.mark.asyncio
