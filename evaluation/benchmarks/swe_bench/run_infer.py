@@ -989,11 +989,11 @@ if __name__ == '__main__':
             instances = prepare_dataset(
                 swe_bench_tests, cur_output_file, args.eval_n_limit, eval_ids=eval_ids
             )
-            try:
-                instances = instances[instances['repo'] == 'bpmn-io/bpmn-js']
-            except Exception as _:
-                pass
-            instances = instances.head(45)
+            # try:
+            #     instances = instances[instances['repo'] == 'quarto-dev/quarto-cli']
+            # except Exception as _:
+            #     pass
+            # instances = instances.head(135)
             if len(instances) > 0 and not isinstance(
                 instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
             ):
