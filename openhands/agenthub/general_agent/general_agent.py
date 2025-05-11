@@ -3,7 +3,7 @@ import os
 import sys
 from collections import deque
 from typing import TYPE_CHECKING
-
+from langfuse.decorators import observe
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -142,7 +142,8 @@ class GeneralAgent(Agent):
         super().reset()
         self.pending_actions.clear()
 
-    def step(self, state: State) -> Action:
+    @observe(name="general_agent_step")
+    def step(self, state: State) -> 'Action':
         """Performs one step using the General Agent.
 
         This includes gathering info on previous steps and prompting the model to make a command to execute.

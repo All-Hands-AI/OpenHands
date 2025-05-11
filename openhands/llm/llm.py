@@ -6,6 +6,7 @@ from functools import partial
 from typing import Any, Callable
 
 import httpx
+from langfuse.decorators import langfuse_context, observe
 
 from openhands.core.config import LLMConfig
 
@@ -198,6 +199,7 @@ class LLM(RetryMixin, DebugMixin):
             retry_multiplier=self.config.retry_multiplier,
             retry_listener=self.retry_listener,
         )
+        @observe(name='llm_completion')
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
@@ -277,8 +279,16 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(
                 f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
             )
+            langfuse_context.update_current_observation(
+                input=messages, model=self.config.model, metadata=kwargs.copy()
+            )
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
-
+            langfuse_context.update_current_observation(
+                usage_details={
+                    'input': resp.usage.input_tokens,
+                    'output': resp.usage.output_tokens,
+                }
+            )
             # Calculate and record latency
             latency = time.time() - start_time
             response_id = resp.get('id', 'unknown')
