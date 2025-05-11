@@ -25,7 +25,7 @@ This microagent provides capabilities for establishing and managing SSH connecti
 - Execute commands on remote machines
 - Transfer files between local and remote machines
 - Manage SSH configurations and known hosts
-- Store and retrieve SSH keys securely using AWS Secrets Manager
+- Store and retrieve SSH keys securely using various methods (local, password managers, or AWS Secrets Manager)
 
 ## Authentication Methods
 
@@ -124,11 +124,38 @@ ssh-add ~/.ssh/key_name
 
 ## Secure SSH Key Management
 
-### Storing SSH Keys in AWS Secrets Manager
+SSH keys should be stored securely to prevent unauthorized access. There are several options for managing SSH keys securely:
 
-For secure storage and retrieval of SSH keys across multiple machines, you can use AWS Secrets Manager:
+### Local Storage with Proper Permissions
+
+The most basic approach is to ensure proper file permissions:
+
+```bash
+# Set correct permissions for private keys
+chmod 600 ~/.ssh/id_ed25519
+# Set correct permissions for public keys
+chmod 644 ~/.ssh/id_ed25519.pub
+# Set correct permissions for SSH directory
+chmod 700 ~/.ssh
+```
+
+### Using a Password Manager
+
+Many password managers support storing SSH keys securely:
+- 1Password
+- LastPass
+- Bitwarden
+- KeePass
+
+### Using AWS Secrets Manager (Optional)
+
+If AWS credentials are available (via environment variables, AWS CLI configuration, or IAM roles), you can use AWS Secrets Manager for secure storage and retrieval of SSH keys across multiple machines:
 
 ```python
+# Check if AWS credentials are available
+aws sts get-caller-identity
+
+# If credentials are available, you can use these scripts:
 # Store SSH keys in AWS Secrets Manager
 python /workspace/store_ssh_keys.py
 
