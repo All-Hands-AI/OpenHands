@@ -66,7 +66,7 @@ class ServerConfig(ServerConfigInterface):
             ),
         )
 
-        return config_model.model_dump()
+        return config_model
 
 
 def load_server_config() -> ServerConfigInterface:
