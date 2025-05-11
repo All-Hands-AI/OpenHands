@@ -6,7 +6,7 @@ _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, c
 * The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
-* All commands that work with line numbers are 1-indexed
+* All commands that include line numbers are 1-indexed
 * The `insert` command will insert a string after a specific line number in the file. Note that if you want to insert a string at the start of the file (line 1), you should use `insert_line=0`, and it will inserted *after* 0, so it will be on line 1.
 * The `view` command will show the file's contents in the indicated line number range, 1-indexed.
 * The line numbers are added by the tool as an aid for you, they are not part of the file.
