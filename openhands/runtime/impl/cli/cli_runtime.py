@@ -21,6 +21,7 @@ from openhands_aci.utils.diff import get_diff
 from openhands.core.config import AppConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -248,7 +249,7 @@ class CLIRuntime(Runtime):
         # if path is absolute, ensure it starts with _workspace_path
         if filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
-                raise ValueError(
+                raise LLMMalformedActionError(
                     f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
                 )
         else:
@@ -259,7 +260,7 @@ class CLIRuntime(Runtime):
 
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
-            raise ValueError(
+            raise LLMMalformedActionError(
                 f'Invalid path traversal: {filename}. Path resolves outside the workspace.'
             )
 
