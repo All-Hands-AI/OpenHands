@@ -50,7 +50,7 @@ class ServerConfig(ServerConfigInterface):
         if self.config_cls:
             raise ValueError('Unexpected config path provided')
 
-    def get_config(self) -> dict[str, Any]:
+    def get_config(self) -> ServerConfigModel:
         """Get server configuration.
 
         Returns:
