@@ -23,7 +23,7 @@ async def get_litellm_models() -> list[str]:
     ```
 
     Returns:
-        List[str]: A sorted list of unique model names.
+        list[str]: A sorted list of unique model names.
     """
     return get_supported_llm_models(config)
 
@@ -38,7 +38,7 @@ async def get_agents() -> list[str]:
     ```
 
     Returns:
-        List[str]: A sorted list of agent names.
+        list[str]: A sorted list of agent names.
     """
     return sorted(Agent.list_agents())
 
@@ -53,7 +53,7 @@ async def get_security_analyzers() -> list[str]:
     ```
 
     Returns:
-        List[str]: A sorted list of security analyzer names.
+        list[str]: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
 
