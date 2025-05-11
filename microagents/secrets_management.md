@@ -6,483 +6,578 @@ agent: CodeActAgent
 triggers:
   - secrets management
   - manage secrets
+  - store secrets
+  - retrieve secrets
   - secure credentials
-  - password management
   - api keys
-  - environment variables
-  - aws secrets manager
   - vault
-  - keychain
-  - credential storage
+  - keyring
+  - secure storage
+  - aws secrets
+  - aws secretsmanager
 ---
 
 # Secrets Management Microagent
 
-This microagent provides guidance on securely managing sensitive information such as API keys, passwords, and other credentials.
+This microagent provides guidance and capabilities for securely storing, retrieving, and managing secrets across different platforms and environments, with special focus on AWS Secrets Manager and SSH keys.
 
 ## Capabilities
 
-- Store and retrieve secrets securely
-- Manage environment variables
-- Work with various secrets management tools
-- Implement best practices for secrets handling
-- Integrate with cloud-based secrets managers
-- Secure local development environments
+- Store and retrieve secrets using various methods
+- Implement best practices for secrets management
+- Configure applications to use secrets securely
+- Rotate and update secrets
+- Integrate with different secret storage solutions
+- Manage SSH keys securely
 
-## Secrets Management Options
+## Secret Storage Solutions
 
-### Environment Variables
+### 1. AWS Secrets Manager
 
-Environment variables are a simple way to store secrets, but they have limitations:
+Enterprise-grade secret management with rotation capabilities.
+
+#### Prerequisites
+
+- AWS CLI installed and configured with appropriate credentials
+- Python with boto3 library for programmatic access
+
+#### Configuration
+
+Set up AWS credentials:
 
 ```bash
-# Set environment variables
-export API_KEY="your_api_key_here"
-export DB_PASSWORD="your_password_here"
-
-# Access environment variables in code
-api_key = os.environ.get("API_KEY")
-db_password = os.environ.get("DB_PASSWORD")
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_DEFAULT_REGION=us-east-1
 ```
 
-For persistence, add to shell profile:
+Or configure using AWS CLI:
+
 ```bash
-echo 'export API_KEY="your_api_key_here"' >> ~/.bashrc
-echo 'export DB_PASSWORD="your_password_here"' >> ~/.bashrc
-source ~/.bashrc
+aws configure
 ```
 
-### .env Files
+#### Creating and Managing Secrets
 
-Store secrets in a .env file (never commit to version control):
+**Create a New Secret:**
 
-```
-# .env file
-API_KEY=your_api_key_here
-DB_PASSWORD=your_password_here
-```
-
-Load in Python with python-dotenv:
-```python
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-api_key = os.environ.get("API_KEY")
-db_password = os.environ.get("DB_PASSWORD")
+```bash
+aws secretsmanager create-secret \
+    --name "your-secret-name" \
+    --description "Description of your secret" \
+    --secret-string '{"key1":"value1","key2":"value2"}'
 ```
 
-### AWS Secrets Manager
-
-For cloud-based applications, AWS Secrets Manager provides a secure way to store and retrieve secrets:
+**Using Python:**
 
 ```python
 import boto3
 import json
 
-def get_secret(secret_name, region_name="us-east-1"):
-    """Retrieve a secret from AWS Secrets Manager"""
-    client = boto3.client('secretsmanager', region_name=region_name)
+def create_secret(secret_name, secret_value, description=""):
+    """Create a new secret in AWS Secrets Manager"""
+    client = boto3.client('secretsmanager')
     
-    try:
-        response = client.get_secret_value(SecretId=secret_name)
-        if 'SecretString' in response:
-            return json.loads(response['SecretString'])
-        else:
-            return response['SecretBinary']
-    except Exception as e:
-        print(f"Error retrieving secret: {e}")
-        return None
-
-def store_secret(secret_name, secret_value, region_name="us-east-1"):
-    """Store a secret in AWS Secrets Manager"""
-    client = boto3.client('secretsmanager', region_name=region_name)
+    response = client.create_secret(
+        Name=secret_name,
+        Description=description,
+        SecretString=json.dumps(secret_value)
+    )
     
-    try:
-        if isinstance(secret_value, dict):
-            secret_value = json.dumps(secret_value)
-            
-        response = client.create_secret(
-            Name=secret_name,
-            SecretString=secret_value
-        )
-        return response
-    except client.exceptions.ResourceExistsException:
-        response = client.update_secret(
-            SecretId=secret_name,
-            SecretString=secret_value
-        )
-        return response
-    except Exception as e:
-        print(f"Error storing secret: {e}")
-        return None
+    return response['ARN']
 ```
 
-### HashiCorp Vault
+**Retrieve a Secret:**
 
-For enterprise environments, HashiCorp Vault provides comprehensive secrets management:
+```bash
+aws secretsmanager get-secret-value --secret-id "your-secret-name"
+```
+
+**Using Python:**
+
+```python
+def get_secret(secret_name):
+    """Retrieve a secret from AWS Secrets Manager"""
+    client = boto3.client('secretsmanager')
+    
+    response = client.get_secret_value(SecretId=secret_name)
+    
+    if 'SecretString' in response:
+        return json.loads(response['SecretString'])
+    else:
+        # For binary secrets
+        return response['SecretBinary']
+```
+
+**Update an Existing Secret:**
+
+```bash
+aws secretsmanager put-secret-value \
+    --secret-id "your-secret-name" \
+    --secret-string '{"key1":"new-value1","key2":"new-value2","key3":"value3"}'
+```
+
+**List All Secrets:**
+
+```bash
+aws secretsmanager list-secrets
+```
+
+**Delete a Secret:**
+
+```bash
+# With recovery window
+aws secretsmanager delete-secret \
+    --secret-id "your-secret-name" \
+    --recovery-window-in-days 7
+```
+
+#### Organizing Secrets in AWS
+
+Organize secrets in a structured JSON format:
+
+```json
+{
+  "environment": "development",
+  "api_keys": {
+    "service1": "key1",
+    "service2": "key2"
+  },
+  "database": {
+    "host": "db_host",
+    "username": "db_user",
+    "password": "db_password"
+  },
+  "ssh_keys": {
+    "key_name1": {
+      "private_key": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+      "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID85dE8jVI9B4RiGSzBbRqifCoCQ+D+BuBcvKayA92tU key-comment"
+    },
+    "config": "Host example-server\n    HostName example.com\n    User admin\n    IdentityFile ~/.ssh/key_name\n    Port 22"
+  }
+}
+```
+
+#### Adding to Categories
+
+```python
+def add_to_category(secret_name, category, key, value):
+    """Add a key-value pair to a category in a secret"""
+    # Get current secret
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=secret_name)
+    secret_data = json.loads(response['SecretString'])
+    
+    # Create category if it doesn't exist
+    if category not in secret_data:
+        secret_data[category] = {}
+    
+    # Add or update the key-value pair
+    secret_data[category][key] = value
+    
+    # Update the secret
+    client.put_secret_value(
+        SecretId=secret_name,
+        SecretString=json.dumps(secret_data)
+    )
+```
+
+### 2. Environment Variables
+
+Simple but effective for local development and containerized applications.
+
+**Setting environment variables:**
+
+```bash
+# Linux/macOS
+export API_KEY="your-api-key"
+
+# Windows (Command Prompt)
+set API_KEY=your-api-key
+
+# Windows (PowerShell)
+$env:API_KEY="your-api-key"
+```
+
+**Using in applications:**
+
+```python
+# Python
+import os
+api_key = os.environ.get('API_KEY')
+```
+
+### 3. .env Files
+
+Popular for development environments, using libraries like python-dotenv or dotenv.
+
+**Creating a .env file:**
+
+```
+DATABASE_URL=postgres://user:password@localhost/dbname
+API_KEY=your-api-key
+DEBUG=True
+```
+
+**Using in applications:**
+
+```python
+# Python with python-dotenv
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+api_key = os.environ.get('API_KEY')
+```
+
+### 4. HashiCorp Vault
+
+Advanced secret management with fine-grained access control.
 
 ```python
 import hvac
 
-def get_vault_secret(path, key=None):
-    """Retrieve a secret from HashiCorp Vault"""
-    client = hvac.Client(url='http://localhost:8200')
-    client.token = os.environ.get('VAULT_TOKEN')
-    
-    try:
-        if client.is_authenticated():
-            secret = client.secrets.kv.v2.read_secret_version(path=path)
-            if key:
-                return secret['data']['data'].get(key)
-            return secret['data']['data']
-        else:
-            print("Vault authentication failed")
-            return None
-    except Exception as e:
-        print(f"Error retrieving secret from Vault: {e}")
-        return None
+# Initialize the client
+client = hvac.Client(url='https://vault.example.com:8200')
 
-def store_vault_secret(path, secret_data):
-    """Store a secret in HashiCorp Vault"""
-    client = hvac.Client(url='http://localhost:8200')
-    client.token = os.environ.get('VAULT_TOKEN')
+# Authenticate
+client.auth.token.login(token='my-token')
+
+# Read a secret
+secret = client.secrets.kv.v2.read_secret_version(
+    path='my-secret',
+    mount_point='secret'
+)
+```
+
+### 5. System Keyring
+
+Local secure storage using the operating system's credential manager.
+
+```python
+import keyring
+
+# Store a secret
+keyring.set_password("system", "username", "password")
+
+# Retrieve a secret
+password = keyring.get_password("system", "username")
+```
+
+## Managing SSH Keys
+
+SSH keys require special handling due to their format, permissions requirements, and usage patterns.
+
+### Generating SSH Keys
+
+```bash
+# Generate ED25519 key (modern, recommended)
+ssh-keygen -t ed25519 -f ~/.ssh/key_name -C "your_email@example.com"
+
+# Generate RSA key (traditional)
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/key_name -C "your_email@example.com"
+```
+
+### Storing SSH Keys in AWS Secrets Manager
+
+Create a Python script to store SSH keys:
+
+```python
+#!/usr/bin/env python3
+import boto3
+import json
+import os
+
+def read_file(file_path):
+    """Read the content of a file"""
+    with open(file_path, 'r') as file:
+        return file.read().strip()
+
+def update_secret_with_ssh_keys(secret_name):
+    """Update AWS Secrets Manager secret with SSH keys"""
+    client = boto3.client('secretsmanager')
     
-    try:
-        if client.is_authenticated():
-            client.secrets.kv.v2.create_or_update_secret(
-                path=path,
-                secret=secret_data
-            )
-            return True
-        else:
-            print("Vault authentication failed")
-            return False
-    except Exception as e:
-        print(f"Error storing secret in Vault: {e}")
+    # Get the current secret value
+    response = client.get_secret_value(SecretId=secret_name)
+    current_secret = json.loads(response['SecretString'])
+    
+    # Initialize ssh_keys category if it doesn't exist
+    if 'ssh_keys' not in current_secret:
+        current_secret['ssh_keys'] = {}
+    
+    # Read SSH keys
+    ssh_dir = os.path.expanduser('~/.ssh')
+    
+    # Example for a specific key
+    key_name = "my_key"
+    private_key = read_file(os.path.join(ssh_dir, key_name))
+    public_key = read_file(os.path.join(ssh_dir, f"{key_name}.pub"))
+    
+    current_secret['ssh_keys'][key_name] = {
+        'private_key': private_key,
+        'public_key': public_key
+    }
+    
+    # SSH config
+    ssh_config = read_file(os.path.join(ssh_dir, 'config'))
+    current_secret['ssh_keys']['config'] = ssh_config
+    
+    # Update the secret
+    client.put_secret_value(
+        SecretId=secret_name,
+        SecretString=json.dumps(current_secret)
+    )
+    
+    print(f"Successfully stored SSH keys in {secret_name}")
+```
+
+### Retrieving SSH Keys from AWS Secrets Manager
+
+Create a Python script to retrieve SSH keys:
+
+```python
+#!/usr/bin/env python3
+import boto3
+import json
+import os
+import stat
+
+def ensure_directory(directory):
+    """Ensure a directory exists with proper permissions"""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        os.chmod(directory, stat.S_IRWXU)  # 700 permissions (rwx------)
+
+def write_file(file_path, content, permissions=0o600):
+    """Write content to a file with specific permissions"""
+    with open(file_path, 'w') as file:
+        file.write(content)
+    os.chmod(file_path, permissions)
+
+def retrieve_ssh_keys(secret_name):
+    """Retrieve SSH keys from AWS Secrets Manager"""
+    client = boto3.client('secretsmanager')
+    
+    # Get the secret value
+    response = client.get_secret_value(SecretId=secret_name)
+    secret_data = json.loads(response['SecretString'])
+    
+    if 'ssh_keys' not in secret_data:
+        print("No SSH keys found in the secret")
         return False
+    
+    ssh_keys = secret_data['ssh_keys']
+    ssh_dir = os.path.expanduser('~/.ssh')
+    
+    # Ensure SSH directory exists with proper permissions
+    ensure_directory(ssh_dir)
+    
+    # Process each key set
+    for key_name, key_data in ssh_keys.items():
+        if key_name == 'config':
+            # Handle SSH config file
+            config_path = os.path.join(ssh_dir, 'config')
+            write_file(config_path, key_data, 0o600)
+            print(f"Saved SSH config to {config_path}")
+        else:
+            # Handle key pairs
+            if isinstance(key_data, dict) and 'private_key' in key_data and 'public_key' in key_data:
+                # Save private key
+                private_key_path = os.path.join(ssh_dir, key_name)
+                write_file(private_key_path, key_data['private_key'], 0o600)
+                print(f"Saved private key to {private_key_path}")
+                
+                # Save public key
+                public_key_path = os.path.join(ssh_dir, f"{key_name}.pub")
+                write_file(public_key_path, key_data['public_key'], 0o644)
+                print(f"Saved public key to {public_key_path}")
+    
+    print("SSH keys retrieved and saved successfully")
+    return True
 ```
 
-### System Keychains
+### SSH Key Permissions
 
-For desktop applications, system keychains provide secure storage:
+SSH requires specific file permissions:
 
-#### macOS Keychain
+```bash
+# Set correct permissions for SSH directory
+chmod 700 ~/.ssh
 
-```python
-# Using keyring library (cross-platform)
-import keyring
+# Set correct permissions for private keys
+chmod 600 ~/.ssh/id_ed25519
 
-# Store a secret
-keyring.set_password("service_name", "username", "password")
+# Set correct permissions for public keys
+chmod 644 ~/.ssh/id_ed25519.pub
 
-# Retrieve a secret
-password = keyring.get_password("service_name", "username")
-```
-
-#### Windows Credential Manager
-
-```python
-# Using keyring library (cross-platform)
-import keyring
-
-# Store a secret
-keyring.set_password("service_name", "username", "password")
-
-# Retrieve a secret
-password = keyring.get_password("service_name", "username")
+# Set correct permissions for config file
+chmod 600 ~/.ssh/config
 ```
 
 ## Best Practices
 
 ### General Guidelines
 
-1. **Never hardcode secrets** in source code
-2. **Don't store secrets** in version control
-3. **Rotate secrets** regularly
-4. **Use least privilege** when granting access to secrets
-5. **Encrypt secrets** at rest and in transit
-6. **Audit access** to sensitive information
-7. **Implement secret rotation** policies
+1. **Never hardcode secrets** in application code or commit them to version control
+2. **Use different secrets** for development, testing, and production environments
+3. **Implement least privilege access** to secrets
+4. **Rotate secrets regularly**, especially after team member departures
+5. **Audit secret access** to detect unauthorized usage
+6. **Encrypt secrets at rest and in transit**
+7. **Use temporary credentials** when possible
+8. **Implement secret revocation** procedures
 
-### Development Workflow
+### AWS Secrets Manager Best Practices
 
-1. Use `.env` files for local development (add to `.gitignore`)
-2. Use environment variables for CI/CD pipelines
-3. Use a secrets manager for production environments
-4. Implement different secrets for different environments
+1. Use IAM roles with least privilege for accessing secrets
+2. Enable AWS CloudTrail to audit secret access
+3. Use VPC endpoints to access Secrets Manager without internet exposure
+4. Implement automatic secret rotation for sensitive credentials
+5. Use resource-based policies to control access to specific secrets
+6. Tag secrets for better organization and access control
+7. Use AWS KMS customer managed keys for additional encryption control
 
-### Handling Secrets in CI/CD
+### SSH Key Best Practices
 
-Most CI/CD platforms provide secure ways to handle secrets:
+1. Use ED25519 or RSA 4096-bit keys for strong security
+2. Protect private keys with passphrases
+3. Store private keys securely and never share them
+4. Regularly rotate SSH keys, especially after team member departures
+5. Use SSH config files to manage multiple connections
+6. Consider certificate-based authentication for enterprise environments
+7. Implement SSH key management solutions for teams
 
-#### GitHub Actions
+## Secret Rotation
 
-```yaml
-# GitHub Actions workflow
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use secret
-        env:
-          API_KEY: ${{ secrets.API_KEY }}
-        run: ./deploy.sh
+### Manual Rotation Process
+
+1. Generate a new secret value
+2. Update the secret in the storage solution
+3. Update applications to use the new secret
+4. Verify functionality with the new secret
+5. Revoke the old secret
+
+### Automated Rotation
+
+Many cloud providers offer automated rotation:
+
+- AWS Secrets Manager can automatically rotate RDS credentials
+- Azure Key Vault supports automatic rotation with Function Apps
+- HashiCorp Vault provides dynamic secrets with automatic expiration
+
+## Application Integration
+
+### Example: Retrieving Database Credentials from AWS Secrets Manager
+
+```python
+import boto3
+import json
+import os
+from botocore.exceptions import ClientError
+
+def get_database_credentials():
+    """Retrieve database credentials from Secrets Manager"""
+    secret_name = os.environ.get('DB_SECRET_NAME', 'database-credentials')
+    region_name = os.environ.get('AWS_REGION', 'us-east-1')
+    
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+    
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+        secret = json.loads(response['SecretString'])
+        
+        return {
+            'host': secret.get('database', {}).get('host'),
+            'username': secret.get('database', {}).get('username'),
+            'password': secret.get('database', {}).get('password'),
+            'port': secret.get('database', {}).get('port', 5432)
+        }
+    except ClientError as e:
+        print(f"Error retrieving secret: {e}")
+        raise e
 ```
 
-#### GitLab CI
+### Example: Using SSH Keys from AWS Secrets Manager
 
-```yaml
-# GitLab CI configuration
-deploy:
-  stage: deploy
-  script:
-    - ./deploy.sh
-  variables:
-    API_KEY: $API_KEY
-```
+```python
+import boto3
+import json
+import os
+import subprocess
+import tempfile
 
-## Security Considerations
-
-- **Encryption**: Always encrypt secrets at rest and in transit
-- **Access Control**: Implement strict access controls for secrets
-- **Monitoring**: Monitor access to secrets and alert on suspicious activity
-- **Rotation**: Implement automatic secret rotation
-- **Revocation**: Have a process for revoking compromised secrets
-
-## Tool-Specific Guidance
-
-### AWS Secrets Manager
-
-```bash
-# Store a secret using AWS CLI
-aws secretsmanager create-secret \
-    --name MySecret \
-    --secret-string '{"username":"admin","password":"password123"}'
-
-# Retrieve a secret using AWS CLI
-aws secretsmanager get-secret-value --secret-id MySecret
-```
-
-### Docker Secrets
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  app:
-    image: myapp
-    secrets:
-      - db_password
-secrets:
-  db_password:
-    file: ./db_password.txt
-```
-
-### Kubernetes Secrets
-
-```yaml
-# Create a secret
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysecret
-type: Opaque
-data:
-  username: YWRtaW4=  # base64 encoded "admin"
-  password: cGFzc3dvcmQxMjM=  # base64 encoded "password123"
-```
-
-```yaml
-# Use a secret in a pod
-apiVersion: v1
-kind: Pod
-metadata:
-  name: mypod
-spec:
-  containers:
-  - name: mycontainer
-    image: myimage
-    env:
-    - name: DB_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: mysecret
-          key: username
-    - name: DB_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: mysecret
-          key: password
+def run_ssh_command_with_stored_key(secret_name, host, command):
+    """Run SSH command using a key stored in AWS Secrets Manager"""
+    # Get the key from Secrets Manager
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=secret_name)
+    secret_data = json.loads(response['SecretString'])
+    
+    # Get the SSH key
+    ssh_keys = secret_data.get('ssh_keys', {})
+    key_name = 'my_key'  # Replace with your key name
+    key_data = ssh_keys.get(key_name, {})
+    
+    if not key_data or 'private_key' not in key_data:
+        raise ValueError(f"SSH key '{key_name}' not found in secret")
+    
+    # Create a temporary file for the private key
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as key_file:
+        key_file.write(key_data['private_key'])
+        key_file_path = key_file.name
+    
+    try:
+        # Set proper permissions for the key file
+        os.chmod(key_file_path, 0o600)
+        
+        # Run the SSH command
+        ssh_cmd = [
+            'ssh',
+            '-i', key_file_path,
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            host,
+            command
+        ]
+        
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise Exception(f"SSH command failed: {result.stderr}")
+        
+        return result.stdout
+    finally:
+        # Clean up the temporary key file
+        os.unlink(key_file_path)
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Permission denied**: Check that your application has the necessary permissions to access the secrets
-2. **Secret not found**: Verify the secret name and path
-3. **Authentication failed**: Check your credentials for the secrets manager
-4. **Encryption errors**: Ensure you're using the correct encryption keys
+1. **Secret not found**: Verify the secret name and environment
+2. **Permission denied**: Check access permissions for the current user/role
+3. **Expired credentials**: Renew authentication tokens or credentials
+4. **SSH key permission issues**: Ensure correct file permissions (600 for private keys)
+5. **SSH connection failures**: Check network connectivity and server configuration
 
 ### Debugging Tips
 
-1. Use verbose logging when interacting with secrets managers
-2. Check environment variables are correctly set
-3. Verify network connectivity to external secrets managers
-4. Test access to secrets outside your application
+- Use verbose logging temporarily (ensure secrets are redacted)
+- Verify environment variables are correctly set
+- Check for typos in secret names or paths
+- Ensure the correct region/project is configured for cloud services
+- Use `ssh -v` (or `-vv`, `-vvv`) for detailed SSH connection debugging
 
-## Example: Complete Secrets Management Utility
+## Security Considerations
 
-```python
-#!/usr/bin/env python3
-import os
-import sys
-import json
-import argparse
-import keyring
-import boto3
-from dotenv import load_dotenv
-
-class SecretsManager:
-    """A utility for managing secrets across different storage backends"""
-    
-    def __init__(self):
-        # Load environment variables from .env file if it exists
-        load_dotenv()
-    
-    def get_secret(self, name, backend="env"):
-        """Retrieve a secret from the specified backend"""
-        if backend == "env":
-            return os.environ.get(name)
-        elif backend == "keyring":
-            service, username = name.split(":", 1) if ":" in name else (name, "default")
-            return keyring.get_password(service, username)
-        elif backend == "aws":
-            return self._get_aws_secret(name)
-        else:
-            raise ValueError(f"Unsupported backend: {backend}")
-    
-    def set_secret(self, name, value, backend="env"):
-        """Store a secret in the specified backend"""
-        if backend == "env":
-            os.environ[name] = value
-            return True
-        elif backend == "keyring":
-            service, username = name.split(":", 1) if ":" in name else (name, "default")
-            keyring.set_password(service, username, value)
-            return True
-        elif backend == "aws":
-            return self._set_aws_secret(name, value)
-        else:
-            raise ValueError(f"Unsupported backend: {backend}")
-    
-    def _get_aws_secret(self, name, region_name="us-east-1"):
-        """Retrieve a secret from AWS Secrets Manager"""
-        client = boto3.client('secretsmanager', region_name=region_name)
-        
-        try:
-            response = client.get_secret_value(SecretId=name)
-            if 'SecretString' in response:
-                return json.loads(response['SecretString'])
-            else:
-                return response['SecretBinary']
-        except Exception as e:
-            print(f"Error retrieving secret from AWS: {e}", file=sys.stderr)
-            return None
-    
-    def _set_aws_secret(self, name, value, region_name="us-east-1"):
-        """Store a secret in AWS Secrets Manager"""
-        client = boto3.client('secretsmanager', region_name=region_name)
-        
-        try:
-            if isinstance(value, dict):
-                value = json.dumps(value)
-                
-            try:
-                response = client.create_secret(
-                    Name=name,
-                    SecretString=value
-                )
-            except client.exceptions.ResourceExistsException:
-                response = client.update_secret(
-                    SecretId=name,
-                    SecretString=value
-                )
-            return True
-        except Exception as e:
-            print(f"Error storing secret in AWS: {e}", file=sys.stderr)
-            return False
-
-def main():
-    parser = argparse.ArgumentParser(description="Manage secrets across different storage backends")
-    parser.add_argument("action", choices=["get", "set"], help="Action to perform")
-    parser.add_argument("name", help="Name of the secret")
-    parser.add_argument("--value", help="Value of the secret (for 'set' action)")
-    parser.add_argument("--backend", choices=["env", "keyring", "aws"], default="env", 
-                        help="Backend to use for storing/retrieving secrets")
-    
-    args = parser.parse_args()
-    
-    manager = SecretsManager()
-    
-    if args.action == "get":
-        value = manager.get_secret(args.name, args.backend)
-        if value:
-            if isinstance(value, dict):
-                print(json.dumps(value, indent=2))
-            else:
-                print(value)
-        else:
-            print(f"Secret '{args.name}' not found in {args.backend} backend", file=sys.stderr)
-            sys.exit(1)
-    elif args.action == "set":
-        if not args.value:
-            print("Error: --value is required for 'set' action", file=sys.stderr)
-            sys.exit(1)
-        
-        success = manager.set_secret(args.name, args.value, args.backend)
-        if success:
-            print(f"Secret '{args.name}' successfully stored in {args.backend} backend")
-        else:
-            print(f"Failed to store secret '{args.name}' in {args.backend} backend", file=sys.stderr)
-            sys.exit(1)
-
-if __name__ == "__main__":
-    main()
-```
-
-## Usage Examples
-
-1. **Store a secret in the system keyring**:
-   ```bash
-   python secrets_manager.py set "myapp:api_key" --value "your_api_key_here" --backend keyring
-   ```
-
-2. **Retrieve a secret from the system keyring**:
-   ```bash
-   python secrets_manager.py get "myapp:api_key" --backend keyring
-   ```
-
-3. **Store a secret in AWS Secrets Manager**:
-   ```bash
-   python secrets_manager.py set "myapp/api_key" --value '{"key": "your_api_key_here"}' --backend aws
-   ```
-
-4. **Retrieve a secret from AWS Secrets Manager**:
-   ```bash
-   python secrets_manager.py get "myapp/api_key" --backend aws
-   ```
-
-5. **Store a secret as an environment variable**:
-   ```bash
-   python secrets_manager.py set "API_KEY" --value "your_api_key_here" --backend env
-   ```
-
-6. **Retrieve a secret from environment variables**:
-   ```bash
-   python secrets_manager.py get "API_KEY" --backend env
-   ```
-
-When you're finished managing secrets, ensure that sensitive information is properly secured and not left in plaintext files or terminal history.
+1. **Secure the CI/CD pipeline**: Use dedicated secret management for CI/CD
+2. **Container security**: Use Kubernetes secrets or mount secrets at runtime
+3. **Monitoring**: Set up alerts for unusual secret access patterns
+4. **Secret sprawl**: Regularly audit and clean up unused secrets
+5. **Compliance**: Ensure secret management meets regulatory requirements
