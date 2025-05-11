@@ -26,14 +26,16 @@ class ServerConfig(ServerConfigInterface, BaseModel):
     )
     ATTACH_SESSION_MIDDLEWARE_PATH: ClassVar[str] = ''
     CONFIG_PATH: ClassVar[str | None] = None
-
+    
     # Configuration attributes
     config_cls: ClassVar[str | None] = os.environ.get('OPENHANDS_CONFIG_CLS', None)
 
     # Pydantic model fields for configuration
-    app_mode: AppMode = Field(default=APP_MODE)
-    github_client_id: str = Field(default=GITHUB_CLIENT_ID)
-    posthog_client_key: str = Field(default=POSTHOG_CLIENT_KEY)
+    app_mode: AppMode = Field(default=AppMode.OSS)
+    github_client_id: str = Field(default=os.environ.get('GITHUB_APP_CLIENT_ID', ''))
+    posthog_client_key: str = Field(
+        default='phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
+    )
     enable_billing: bool = Field(
         default=os.environ.get('ENABLE_BILLING', 'false') == 'true'
     )
