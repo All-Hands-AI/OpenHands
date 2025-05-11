@@ -18,24 +18,16 @@ class FeatureFlags(BaseModel):
 class ServerConfig(ServerConfigInterface, BaseModel):
     """Server configuration."""
 
-    # Class variables required by ServerConfigInterface
-    APP_MODE: ClassVar[AppMode] = AppMode.OSS
-    GITHUB_CLIENT_ID: ClassVar[str] = os.environ.get('GITHUB_APP_CLIENT_ID', '')
-    POSTHOG_CLIENT_KEY: ClassVar[str] = (
-        'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
-    )
-    ATTACH_SESSION_MIDDLEWARE_PATH: ClassVar[str] = ''
-    CONFIG_PATH: ClassVar[str | None] = None
-    
-    # Configuration attributes
-    config_cls: ClassVar[str | None] = os.environ.get('OPENHANDS_CONFIG_CLS', None)
-
     # Pydantic model fields for configuration
     app_mode: AppMode = Field(default=AppMode.OSS)
     github_client_id: str = Field(default=os.environ.get('GITHUB_APP_CLIENT_ID', ''))
     posthog_client_key: str = Field(
         default='phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     )
+    attach_session_middleware_path: str = Field(default='')
+    config_path: str | None = Field(default=None)
+    config_cls: str | None = Field(default=os.environ.get('OPENHANDS_CONFIG_CLS', None))
+    
     enable_billing: bool = Field(
         default=os.environ.get('ENABLE_BILLING', 'false') == 'true'
     )
