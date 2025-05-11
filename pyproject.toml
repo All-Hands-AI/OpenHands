@@ -132,7 +132,7 @@ pyarrow = "20.0.0"                                                    # transiti
 datasets = "*"
 
 [tool.poetry.scripts]
-openhands = "openhands.core.cli:main"
+openhands = "openhands.cli.main:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"
