@@ -158,12 +158,12 @@ async def add_mcp_tools_to_agent(
         ActionExecutionClient,  # inline import to avoid circular import
     )
 
-    assert isinstance(
-        runtime, ActionExecutionClient
-    ), 'Runtime must be an instance of ActionExecutionClient'
-    assert (
-        runtime.runtime_initialized
-    ), 'Runtime must be initialized before adding MCP tools'
+    assert isinstance(runtime, ActionExecutionClient), (
+        'Runtime must be an instance of ActionExecutionClient'
+    )
+    assert runtime.runtime_initialized, (
+        'Runtime must be initialized before adding MCP tools'
+    )
 
     # Get the memory object from the runtime to access microagent MCP tools
     memory = getattr(runtime, 'memory', None)
@@ -191,7 +191,7 @@ async def add_mcp_tools_to_agent(
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
     logger.info(
-        f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}"
+        f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'
     )
 
     # Set the MCP tools on the agent

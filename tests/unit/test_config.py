@@ -344,6 +344,33 @@ user_id = 1001
     assert default_config.sandbox.user_id == 1001
 
 
+def test_load_from_env_with_list(monkeypatch, default_config):
+    """Test loading list values from environment variables, particularly SANDBOX_RUNTIME_EXTRA_BUILD_ARGS."""
+    # Set the environment variable with a list-formatted string
+    monkeypatch.setenv(
+        'SANDBOX_RUNTIME_EXTRA_BUILD_ARGS',
+        '['
+        + '  "--add-host=host.docker.internal:host-gateway",'
+        + '  "--build-arg=https_proxy=https://my-proxy:912",'
+        + ']',
+    )
+
+    # Load configuration from environment
+    load_from_env(default_config, os.environ)
+
+    # Verify that the list was correctly parsed
+    assert isinstance(default_config.sandbox.runtime_extra_build_args, list)
+    assert len(default_config.sandbox.runtime_extra_build_args) == 2
+    assert (
+        '--add-host=host.docker.internal:host-gateway'
+        in default_config.sandbox.runtime_extra_build_args
+    )
+    assert (
+        '--build-arg=https_proxy=https://my-proxy:912'
+        in default_config.sandbox.runtime_extra_build_args
+    )
+
+
 def test_security_config_from_toml(default_config, temp_toml_file):
     """Test loading security specific configurations."""
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -880,24 +907,24 @@ def test_api_keys_repr_str():
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_llm
         ):
-            assert (
-                'key' not in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'key' in LLMConfig"
-            assert (
-                'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'token' in LLMConfig"
+            assert 'key' not in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'key' in LLMConfig"
+            )
+            assert 'token' not in attr_name.lower() or 'tokens' in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'token' in LLMConfig"
+            )
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
     agent_config = AgentConfig(enable_prompt_extensions=True, enable_browsing=False)
     for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
-            assert (
-                'key' not in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'key' in AgentConfig"
-            assert (
-                'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'token' in AgentConfig"
+            assert 'key' not in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'key' in AgentConfig"
+            )
+            assert 'token' not in attr_name.lower() or 'tokens' in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'token' in AgentConfig"
+            )
 
     # Test AppConfig
     app_config = AppConfig(
@@ -937,12 +964,12 @@ def test_api_keys_repr_str():
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_app
         ):
-            assert (
-                'key' not in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'key' in AppConfig"
-            assert (
-                'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'token' in AppConfig"
+            assert 'key' not in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'key' in AppConfig"
+            )
+            assert 'token' not in attr_name.lower() or 'tokens' in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'token' in AppConfig"
+            )
 
 
 def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):

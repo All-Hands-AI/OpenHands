@@ -47,6 +47,7 @@ def _is_retryable_wait_until_alive_error(exception):
         exception,
         (
             ConnectionError,
+            httpx.ConnectTimeout,
             httpx.NetworkError,
             httpx.RemoteProtocolError,
             httpx.HTTPStatusError,
@@ -488,8 +489,9 @@ class DockerRuntime(ActionExecutionClient):
     def web_hosts(self):
         hosts: dict[str, int] = {}
 
+        host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
         for port in self._app_ports:
-            hosts[f'http://localhost:{port}'] = port
+            hosts[f'http://{host_addr}:{port}'] = port
 
         return hosts
 

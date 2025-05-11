@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -102,7 +101,7 @@ async def _create_new_conversation(
             )
 
     else:
-        logger.warn('Settings not present, not starting conversation')
+        logger.warning('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
@@ -295,7 +294,7 @@ async def get_conversation(
         return conversation_info
     except FileNotFoundError:
         return None
-    
+
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
