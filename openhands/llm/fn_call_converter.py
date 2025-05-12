@@ -21,6 +21,7 @@ from openhands.core.exceptions import (
 from openhands.llm.tool_names import (
     BROWSER_TOOL_NAME,
     EXECUTE_BASH_TOOL_NAME,
+    FINISH_TOOL_NAME,
     STR_REPLACE_EDITOR_TOOL_NAME,
     WEB_READ_TOOL_NAME,
 )
@@ -222,6 +223,18 @@ USER: EXECUTION RESULT of [browser]:
 [Browser shows the numbers in a table format]
 """
     },
+    'finish': {
+        'task_completed': """
+ASSISTANT: I have successfully created and configured the web server to display the numbers in a table format. You can access it at http://127.0.0.1:5000.
+<function=finish>
+<parameter=message>The task has been completed. The web server is running and displaying numbers 1-10 in a table format at http://127.0.0.1:5000.</parameter>
+<parameter=task_completed>true</parameter>
+</function>
+
+USER: EXECUTION RESULT of [finish]:
+[Task completed successfully]
+"""
+    },
 }
 
 
@@ -239,6 +252,8 @@ def get_example_for_tools(tools: list[dict]) -> str:
                 available_tools.add('web_read')
             elif name == BROWSER_TOOL_NAME:
                 available_tools.add('browser')
+            elif name == FINISH_TOOL_NAME:
+                available_tools.add('finish')
 
     if not available_tools:
         return ''
@@ -285,8 +300,11 @@ python3 app.py > server.log 2>&1 &
 USER: EXECUTION RESULT of [execute_bash]:
 [1] 126
 
-ASSISTANT: The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+ASSISTANT: The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000.
 """
+
+    if 'finish' in available_tools:
+        example += TOOL_EXAMPLES['finish']['task_completed']
 
     example += """
 --------------------- END OF EXAMPLE ---------------------
