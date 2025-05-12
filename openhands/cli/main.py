@@ -338,7 +338,8 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
 
     if not should_override_cli_defaults:
         config.runtime = 'cli'
-        config.workspace_base = os.getcwd()
+        if not config.workspace_base:
+            config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
