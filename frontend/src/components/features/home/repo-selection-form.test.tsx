@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RepositorySelectionForm } from "./repo-selection-form";
 
 // Create mock functions
@@ -74,9 +75,16 @@ vi.mock("#/context/auth-context", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-describe("RepositorySelectionForm", () => {
-  const mockOnRepoSelection = vi.fn();
+const renderRepositorySelectionForm = () =>
+  render(<RepositorySelectionForm onRepoSelection={vi.fn()} />, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
+    ),
+  });
 
+describe("RepositorySelectionForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -89,7 +97,7 @@ describe("RepositorySelectionForm", () => {
       isError: false,
     });
 
-    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    renderRepositorySelectionForm();
 
     // Check if loading indicator is displayed
     expect(screen.getByTestId("repo-dropdown-loading")).toBeInTheDocument();
@@ -117,7 +125,7 @@ describe("RepositorySelectionForm", () => {
       isError: false,
     });
 
-    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    renderRepositorySelectionForm();
 
     // Check if dropdown is displayed
     expect(screen.getByTestId("repo-dropdown")).toBeInTheDocument();
@@ -132,7 +140,7 @@ describe("RepositorySelectionForm", () => {
       error: new Error("Failed to fetch repositories"),
     });
 
-    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    renderRepositorySelectionForm();
 
     // Check if error message is displayed
     expect(screen.getByTestId("repo-dropdown-error")).toBeInTheDocument();
