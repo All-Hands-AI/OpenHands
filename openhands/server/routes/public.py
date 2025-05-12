@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from openhands.controller.agent import Agent
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.config.server_config import ServerConfig
 from openhands.server.shared import config, server_config
 from openhands.utils.llm import get_supported_llm_models
 
@@ -58,11 +59,11 @@ async def get_security_analyzers() -> list[str]:
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get('/config', response_model=dict[str, Any])
-async def get_config() -> dict[str, Any]:
+@app.get('/config', response_model=ServerConfig)
+async def get_config() -> ServerConfig:
     """Get current config.
 
     Returns:
         dict[str, Any]: The current server configuration.
     """
-    return server_config.get_config()
+    return server_config

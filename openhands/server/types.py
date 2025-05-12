@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, ClassVar, Protocol
+from typing import ClassVar, Protocol
+
+from openhands.server.config.server_config import ServerConfig
 
 
 class AppMode(Enum):
@@ -27,7 +29,7 @@ class ServerConfigInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_config(self) -> dict[str, Any]:
+    def get_config(self) -> ServerConfig:
         """Configure attributes for frontend"""
         raise NotImplementedError
 
