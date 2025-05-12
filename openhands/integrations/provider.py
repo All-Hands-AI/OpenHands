@@ -120,11 +120,11 @@ class ProviderHandler:
         raise AuthenticationError('Need valid provider token')
 
     async def _get_latest_provider_token(
-        self, provider: ProviderType
+        self, provider: ProviderType, force_refresh: bool = False
     ) -> SecretStr | None:
         """Get latest token from service"""
         service = self._get_service(provider)
-        return await service.get_latest_token()
+        return await service.get_latest_token(force_refresh=force_refresh)
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
@@ -259,7 +259,9 @@ class ProviderHandler:
                 )
 
                 if get_latest:
-                    token = await self._get_latest_provider_token(provider)
+                    token = await self._get_latest_provider_token(
+                        provider, force_refresh=get_latest
+                    )
 
                 if token:
                     env_vars[provider] = token

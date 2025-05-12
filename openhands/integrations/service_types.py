@@ -188,8 +188,12 @@ class GitService(Protocol):
         """Initialize the service with authentication details"""
         ...
 
-    async def get_latest_token(self) -> SecretStr | None:
-        """Get latest working token of the user"""
+    async def get_latest_token(self, force_refresh: bool = False) -> SecretStr | None:
+        """Get latest working token of the user
+
+        Args:
+            force_refresh: If True, force a refresh of the token even if it's already cached
+        """
         ...
 
     async def get_user(self) -> User:

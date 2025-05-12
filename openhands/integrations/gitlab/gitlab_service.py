@@ -63,7 +63,7 @@ class GitLabService(BaseGitService, GitService):
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def get_latest_token(self) -> SecretStr | None:
+    async def get_latest_token(self, force_refresh: bool = False) -> SecretStr | None:
         return self.token
 
     async def _make_request(
@@ -87,7 +87,7 @@ class GitLabService(BaseGitService, GitService):
 
                 # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
+                    await self.get_latest_token(force_refresh=True)
                     gitlab_headers = await self._get_gitlab_headers()
                     response = await self.execute_request(
                         client=client,
@@ -140,7 +140,7 @@ class GitLabService(BaseGitService, GitService):
                 )
 
                 if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
+                    await self.get_latest_token(force_refresh=True)
                     gitlab_headers = await self._get_gitlab_headers()
                     gitlab_headers['Content-Type'] = 'application/json'
                     response = await client.post(
@@ -196,7 +196,7 @@ class GitLabService(BaseGitService, GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
-                is_public=True
+                is_public=True,
             )
             for repo in response
         ]

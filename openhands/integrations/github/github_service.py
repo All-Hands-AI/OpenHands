@@ -70,7 +70,7 @@ class GitHubService(BaseGitService, GitService):
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def get_latest_token(self) -> SecretStr | None:
+    async def get_latest_token(self, force_refresh: bool = False) -> SecretStr | None:
         return self.token
 
     async def _make_request(
@@ -94,7 +94,7 @@ class GitHubService(BaseGitService, GitService):
 
                 # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
+                    await self.get_latest_token(force_refresh=True)
                     github_headers = await self._get_github_headers()
                     response = await self.execute_request(
                         client=client,
