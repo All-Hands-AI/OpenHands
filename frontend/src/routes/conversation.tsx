@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -200,11 +200,6 @@ function AppContent() {
           >
             {/* Use both Outlet and TabContent */}
             <div className="h-full w-full">
-              {/* Keep the Outlet for React Router to work properly */}
-              <div className="hidden">
-                <Outlet />
-              </div>
-              {/* Use TabContent to keep all tabs loaded but only show the active one */}
               <TabContent conversationPath={basePath} />
             </div>
           </Container>
