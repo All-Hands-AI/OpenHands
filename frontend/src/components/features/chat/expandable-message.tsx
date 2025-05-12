@@ -42,7 +42,8 @@ export function ExpandableMessage({
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
-  const [showDetails, setShowDetails] = useState(true);
+  // Initialize showDetails to false for error messages, true for other types
+  const [showDetails, setShowDetails] = useState(type !== "error");
   const [details, setDetails] = useState(message);
   const [translationId, setTranslationId] = useState<string | undefined>(id);
   const [translationParams, setTranslationParams] = useState<
