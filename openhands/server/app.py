@@ -1,16 +1,14 @@
 import warnings
 from contextlib import asynccontextmanager
 
+from fastapi.routing import Mount
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
 from fastapi import (
     FastAPI,
-    Request,
-    Response,
 )
-from fastmcp import FastMCP
-from mcp.server.sse import SseServerTransport
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
@@ -41,36 +39,8 @@ app = FastAPI(
     description='OpenHands: Code Less, Make More',
     version=__version__,
     lifespan=_lifespan,
+    routes=[Mount(path='/mcp', app=mcp_server.sse_app())],
 )
-
-
-def register_mcp_router(
-    fastapi_app: FastAPI,
-    mcp_server: FastMCP,
-    base_path: str,
-):
-    sse = SseServerTransport(f'{base_path}/messages/')
-
-    async def handle_sse(request: Request) -> None:
-        async with sse.connect_sse(
-            request.scope,
-            request.receive,
-            request._send,  # noqa: SLF001
-        ) as (read_stream, write_stream):
-            await mcp_server._mcp_server.run(
-                read_stream,
-                write_stream,
-                mcp_server._mcp_server.create_initialization_options(),
-            )
-
-        return Response()
-
-    fastapi_app.add_route(f'{base_path}/sse', handle_sse)
-    fastapi_app.mount(f'{base_path}/messages/', sse.handle_post_message)
-
-
-base_path = '/mcp'
-register_mcp_router(app, mcp_server, base_path)
 
 
 @app.get('/health')

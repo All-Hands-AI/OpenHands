@@ -1,7 +1,6 @@
 import os
 
 import socketio
-from fastmcp.server.http import RequestContextMiddleware
 
 from openhands.server.app import app as base_app
 from openhands.server.listen_socket import sio
@@ -32,5 +31,4 @@ base_app.add_middleware(
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
-base_app.add_middleware(RequestContextMiddleware)
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
