@@ -254,6 +254,7 @@ class GitHubService(BaseGitService, GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
+                is_public=True,
             )
             for repo in repo_items
         ]

@@ -99,13 +99,6 @@ check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-s
 There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
 
-### Custom Scripts
-
-OpenHands supports custom scripts that run at different points in the runtime lifecycle:
-
-- **setup.sh**: Place this script in the `.openhands` directory of your repository to run custom setup commands when the runtime initializes.
-- **pre-commit.sh**: Place this script in the `.openhands` directory to add a custom git pre-commit hook that runs before each commit. This can be used to enforce code quality standards, run tests, or perform other checks before allowing commits.
-
 ## 🤝 How to Join the Community
 
 OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
