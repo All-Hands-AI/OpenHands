@@ -29,6 +29,7 @@ export interface OpenHandsActionEvent<T extends OpenHandsEventType>
   extends OpenHandsBaseEvent {
   action: T;
   args: Record<string, unknown>;
+  critic_score?: number;
 }
 
 export interface OpenHandsObservationEvent<T extends OpenHandsEventType>

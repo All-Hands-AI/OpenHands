@@ -162,6 +162,7 @@ export const chatSlice = createSlice({
       } else if (actionID === "think") {
         text = action.payload.args.thought;
       }
+
       const message: Message = {
         type: "action",
         sender: "assistant",
@@ -171,6 +172,7 @@ export const chatSlice = createSlice({
         imageUrls: [],
         timestamp: new Date().toISOString(),
         action,
+        criticScore: action.payload.critic_score,
       };
 
       state.messages.push(message);

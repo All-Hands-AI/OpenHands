@@ -10,6 +10,7 @@ import ArrowDown from "#/icons/angle-down-solid.svg?react";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
+import ChartLine from "#/icons/chart-line-solid.svg?react";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { cn } from "#/utils/utils";
@@ -17,10 +18,41 @@ import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
+import { ProgressModal } from "./progress-modal";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
+// Function to determine the color for critic score using 10 discrete bins
+export const getCriticScoreColor = (score?: number): string => {
+  if (score === undefined) return "";
+
+  // Use 10 discrete bins from red (0) to green (1) with lower saturation
+  if (score < 0.1) return "border-red-400";
+  if (score < 0.2) return "border-red-300";
+  if (score < 0.3) return "border-orange-400";
+  if (score < 0.4) return "border-orange-300";
+  if (score < 0.5) return "border-yellow-400";
+  if (score < 0.6) return "border-yellow-300";
+  if (score < 0.7) return "border-lime-400";
+  if (score < 0.8) return "border-lime-300";
+  if (score < 0.9) return "border-green-400";
+  return "border-green-300";
+};
+
+// Function to get the border color class based on critic score and message type
+const getBorderColorClass = (criticScore?: number, type?: string): string => {
+  if (criticScore !== undefined) {
+    return `${getCriticScoreColor(criticScore)} cursor-pointer hover:border-l-6 transition-all duration-200`;
+  }
+
+  if (type === "error") {
+    return "border-danger";
+  }
+
+  return "border-neutral-300";
 };
 
 interface ExpandableMessageProps {
@@ -30,6 +62,7 @@ interface ExpandableMessageProps {
   success?: boolean;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
+  criticScore?: number;
 }
 
 export function ExpandableMessage({
@@ -39,6 +72,7 @@ export function ExpandableMessage({
   success,
   observation,
   action,
+  criticScore,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -51,6 +85,9 @@ export function ExpandableMessage({
     observation,
     action,
   });
+
+  // State for progress modal
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
   useEffect(() => {
     // If we have a translation ID, process it
@@ -124,86 +161,126 @@ export function ExpandableMessage({
   }
 
   return (
-    <div
-      className={cn(
-        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
-        type === "error" ? "border-danger" : "border-neutral-300",
-      )}
-    >
-      <div className="text-sm w-full">
-        <div className="flex flex-row justify-between items-center w-full">
-          <span
-            className={cn(
-              "font-bold",
-              type === "error" ? "text-danger" : "text-neutral-300",
-            )}
-          >
-            {translationId && i18n.exists(translationId) ? (
-              <Trans
-                i18nKey={translationId}
-                values={translationParams}
-                components={{
-                  bold: <strong />,
-                  path: <PathComponent />,
-                  cmd: <MonoComponent />,
-                }}
-              />
-            ) : (
-              message
-            )}
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="cursor-pointer text-left"
-            >
-              {showDetails ? (
-                <ArrowUp
-                  className={cn(
-                    "h-4 w-4 ml-2 inline",
-                    type === "error" ? "fill-danger" : "fill-neutral-300",
-                  )}
-                />
-              ) : (
-                <ArrowDown
-                  className={cn(
-                    "h-4 w-4 ml-2 inline",
-                    type === "error" ? "fill-danger" : "fill-neutral-300",
-                  )}
-                />
-              )}
-            </button>
-          </span>
-          {type === "action" && success !== undefined && (
-            <span className="flex-shrink-0">
-              {success ? (
-                <CheckCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-success")}
-                />
-              ) : (
-                <XCircle
-                  data-testid="status-icon"
-                  className={cn(statusIconClasses, "fill-danger")}
-                />
-              )}
-            </span>
+    <>
+      {/* Progress Modal */}
+      <ProgressModal
+        isOpen={isProgressModalOpen}
+        onClose={() => setIsProgressModalOpen(false)}
+        currentActionId={action?.payload.id}
+      />
+
+      <div className="flex flex-row">
+        {/* Critic score indicator or default border */}
+        <div
+          className={cn(
+            "border-l-4 my-2 relative group",
+            getBorderColorClass(criticScore, type),
+          )}
+          title={
+            criticScore !== undefined
+              ? `${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)} - ${t("CLICK_TO_VIEW_PROGRESS")}`
+              : ""
+          }
+          onClick={() => {
+            if (criticScore !== undefined) {
+              setIsProgressModalOpen(true);
+            }
+          }}
+        >
+          {/* Tooltip - only shown when there's a critic score */}
+          {criticScore !== undefined && (
+            <div className="absolute left-0 -top-10 bg-neutral-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+              {`${t("CRITIC_SCORE")}: ${criticScore.toFixed(2)}`}
+              <div className="flex items-center mt-1 text-xs">
+                <ChartLine className="w-3 h-3 mr-1" />
+                {t("CLICK_TO_VIEW_PROGRESS")}
+              </div>
+            </div>
           )}
         </div>
-        {showDetails && (
-          <div className="text-sm">
-            <Markdown
-              components={{
-                code,
-                ul,
-                ol,
-              }}
-              remarkPlugins={[remarkGfm]}
-            >
-              {details}
-            </Markdown>
+
+        <div
+          className={cn(
+            "flex-1 pl-2 py-2 flex gap-2 items-center justify-start",
+            type === "error" ? "border-danger" : "border-neutral-300",
+          )}
+        >
+          <div className="text-sm w-full">
+            <div className="flex flex-row justify-between items-center w-full">
+              <span
+                className={cn(
+                  "font-bold",
+                  type === "error" ? "text-danger" : "text-neutral-300",
+                )}
+              >
+                {translationId && i18n.exists(translationId) ? (
+                  <Trans
+                    i18nKey={translationId}
+                    values={translationParams}
+                    components={{
+                      bold: <strong />,
+                      path: <PathComponent />,
+                      cmd: <MonoComponent />,
+                    }}
+                  />
+                ) : (
+                  message
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="cursor-pointer text-left"
+                >
+                  {showDetails ? (
+                    <ArrowUp
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  ) : (
+                    <ArrowDown
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  )}
+                </button>
+              </span>
+              {type === "action" && success !== undefined && (
+                <span className="flex-shrink-0">
+                  {success ? (
+                    <CheckCircle
+                      data-testid="status-icon"
+                      className={cn(statusIconClasses, "fill-success")}
+                    />
+                  ) : (
+                    <XCircle
+                      data-testid="status-icon"
+                      className={cn(statusIconClasses, "fill-danger")}
+                    />
+                  )}
+                </span>
+              )}
+            </div>
+            {showDetails && (
+              <div className="text-sm">
+                <Markdown
+                  components={{
+                    code,
+                    ul,
+                    ol,
+                  }}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {details}
+                </Markdown>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

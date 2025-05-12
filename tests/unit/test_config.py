@@ -901,6 +901,7 @@ def test_api_keys_repr_str():
         'input_cost_per_token',
         'output_cost_per_token',
         'custom_tokenizer',
+        'critic_api_key',
     ]
     for attr_name in LLMConfig.model_fields.keys():
         if (

@@ -115,6 +115,17 @@ class Event:
     def llm_metrics(self, value: Metrics) -> None:
         self._llm_metrics = value
 
+    # optional metadata, LLM call cost of the edit
+    @property
+    def critic_score(self) -> float | None:
+        if hasattr(self, '_critic_score'):
+            return getattr(self, '_critic_score')
+        return None
+
+    @critic_score.setter
+    def critic_score(self, value: float) -> None:
+        self._critic_score = value
+
     # optional field, metadata about the tool call, if the event has a tool call
     @property
     def tool_call_metadata(self) -> ToolCallMetadata | None:
