@@ -132,7 +132,7 @@ async def fetch_search_tools_from_config(
             if search_engine_config.type.startswith('mcp'):
                 mcp_mode = search_engine_config.type.split('_')[1]
                 dict_mcp_config = {}
-                dict_mcp_config[f'search_engine_{name}'] = MCPConfig(
+                dict_mcp_config[f'{name}'] = MCPConfig(
                     url=search_engine_config.url,
                     mode=mcp_mode,
                 )

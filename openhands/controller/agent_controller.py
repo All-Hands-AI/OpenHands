@@ -532,9 +532,6 @@ class AgentController:
                 if is_first_user_message
                 else RecallType.KNOWLEDGE
             )
-            print(f'User ID: {self.user_id}')
-            print(f'Space ID: {self.space_id}')
-            print(f'Thread Follow Up: {self.thread_follow_up}')
 
             # update new knowledge base with the user message
             if self.user_id and (self.space_id or self.thread_follow_up):
