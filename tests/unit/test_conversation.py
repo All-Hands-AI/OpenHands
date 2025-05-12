@@ -110,7 +110,11 @@ async def test_search_conversations():
                 async def mock_get_running_agent_loops(*args, **kwargs):
                     return set()
 
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
                 mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
                 with patch(
                     'openhands.server.routes.manage_conversations.datetime'
                 ) as mock_datetime:
@@ -162,6 +166,7 @@ async def test_search_conversations():
                                 ),
                                 status=ConversationStatus.STOPPED,
                                 selected_repository='foobar',
+                                number_of_connections=0,
                             )
                         ]
                     )
@@ -190,6 +195,7 @@ async def test_get_conversation():
             'openhands.server.routes.manage_conversations.conversation_manager'
         ) as mock_manager:
             mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+            mock_manager.get_connections = AsyncMock(return_value={})
 
             conversation = await get_conversation(
                 'some_conversation_id', conversation_store=mock_store
@@ -202,6 +208,7 @@ async def test_get_conversation():
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 status=ConversationStatus.STOPPED,
                 selected_repository='foobar',
+                number_of_connections=0,
             )
             assert conversation == expected
 
@@ -420,6 +427,7 @@ async def test_delete_conversation():
                 'openhands.server.routes.manage_conversations.conversation_manager'
             ) as mock_manager:
                 mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+                mock_manager.get_connections = AsyncMock(return_value={})
 
                 # Mock the runtime class
                 with patch(
