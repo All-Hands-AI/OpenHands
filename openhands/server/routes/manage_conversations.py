@@ -275,7 +275,7 @@ async def search_conversations(
             _get_conversation_info(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
-                number_of_connections=sum(
+                num_connections=sum(
                     1 for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 )
@@ -324,7 +324,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-    number_of_connections: int
+    num_connections: int
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -340,7 +340,7 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
-            number_of_connections=number_of_connections
+            num_connections=num_connections
         )
     except Exception as e:
         logger.error(
