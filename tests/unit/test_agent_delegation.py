@@ -219,10 +219,22 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     mock_child_agent.step = mock_child_step
 
-    # The child is done, so we simulate it finishing:
-    message_action = MessageAction(content='finish task')
-    message_action._source = EventSource.USER
-    await delegate_controller._on_event(message_action)
+    # The child is done, so we simulate it finishing by having it return an AgentFinishAction
+    # This will be handled by the parent controller's on_event method
+    finish_action = AgentFinishAction(
+        outputs={'delegate_result': 'done'},
+        thought='Finished delegated task',
+        task_completed=True,
+        final_thought='Task completed successfully',
+    )
+    finish_action._source = EventSource.AGENT
+    finish_action._metadata = {
+        'function_name': 'finish',
+        'tool_call_id': '1',
+        'model_response': 'Task completed successfully',
+        'total_calls_in_response': 1,
+    }
+    await delegate_controller._on_event(finish_action)
     await asyncio.sleep(0.5)
 
     # Now the parent's delegate is None
