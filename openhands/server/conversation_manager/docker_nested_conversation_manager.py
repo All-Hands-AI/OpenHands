@@ -5,6 +5,7 @@ from types import MappingProxyType
 from typing import cast
 
 import docker
+import httpx
 import socketio
 
 from openhands.controller.agent import Agent
@@ -99,10 +100,14 @@ class DockerNestedConversationManager(ConversationManager):
                 continue
             conversation_id = container.name[len('openhands-runtime-'):]
             if filter_to_sids is None or conversation_id in filter_to_sids:
-                # Filter to sids
-                host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
-                for port in self._app_ports:
-                    hosts[f'http://{host_addr}:{port}'] = port
+                env = container.attrs['Config']['Env']
+                container_port = int(next(e[5:] for e in env if e.startswith('port=')))
+                api_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(f'{api_url}/conversations/{conversation_id}')
+                    conversation_info = await response.json()
+                    conversation_info['num_connections']
+
         return results
 
     async def maybe_start_agent_loop(
