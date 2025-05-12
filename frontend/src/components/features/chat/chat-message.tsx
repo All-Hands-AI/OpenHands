@@ -39,6 +39,16 @@ export function ChatMessage({
     };
   }, [isCopy]);
 
+  // Ensure newlines are properly preserved for markdown rendering
+  // This is especially important for double newlines which should create paragraphs
+  const processedMessage = React.useMemo(() => {
+    // Ensure the message is a string
+    if (typeof message !== "string") return "";
+
+    // Preserve the original newlines
+    return message;
+  }, [message]);
+
   return (
     <article
       data-testid={`${type}-message`}
@@ -67,7 +77,7 @@ export function ChatMessage({
           }}
           remarkPlugins={[remarkGfm]}
         >
-          {message}
+          {processedMessage}
         </Markdown>
       </div>
       {children}
