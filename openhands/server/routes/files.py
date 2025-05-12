@@ -226,7 +226,7 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
 
 @app.get(
     '/git/changes',
-    response_model=dict[str, Any],
+    response_model=list[dict[str, str]],
     responses={
         404: {'description': 'Not a git repository', 'model': dict},
         500: {'description': 'Error getting changes', 'model': dict},
@@ -236,7 +236,7 @@ async def git_changes(
     request: Request,
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-) -> dict[str, Any] | JSONResponse:
+) -> list[dict[str, str]] | JSONResponse:
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
         config,
