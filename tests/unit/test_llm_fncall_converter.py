@@ -184,6 +184,33 @@ def test_get_example_for_tools_single_tool():
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
     assert TOOL_EXAMPLES['web_read']['read_docs'] not in example
     assert TOOL_EXAMPLES['browser']['view_page'] not in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+
+
+def test_get_example_for_tools_single_tool_is_finish():
+    """Test get_example_for_tools with only the finish tool."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'finish',
+                'description': 'Finish the interaction when the task is complete.',
+            },
+        }
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] not in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
+    assert TOOL_EXAMPLES['web_read']['read_docs'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
 
 
 def test_get_example_for_tools_multiple_tools():
@@ -250,17 +277,19 @@ def test_get_example_for_tools_multiple_tools():
     assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
     assert TOOL_EXAMPLES['web_read']['read_docs'] not in example
     assert TOOL_EXAMPLES['browser']['view_page'] not in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
 
 
-def test_get_example_for_tools_all_tools():
-    """Test that get_example_for_tools generates correct example with all tools."""
+def test_get_example_for_tools_multiple_tools_with_finish():
+    """Test get_example_for_tools with multiple tools including finish."""
+    # Uses execute_bash and finish tools
     tools = [
         {
             'type': 'function',
             'function': {
                 'name': 'execute_bash',
                 'description': 'Execute a bash command in the terminal.',
-                'parameters': {
+                'parameters': {  # Params added for completeness, not strictly needed by get_example_for_tools
                     'type': 'object',
                     'properties': {
                         'command': {
@@ -334,7 +363,42 @@ def test_get_example_for_tools_all_tools():
                 },
             },
         },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'finish',
+                'description': 'Finish the interaction.',
+            },
+        },
     ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+
+    # Check for execute_bash parts (order matters for get_example_for_tools)
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert 'ASSISTANT: Running the updated file:\n<function=execute_bash>' in example
+
+    # Check for finish part
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+
+    # Check for absence of other tool examples
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] not in example
+    assert TOOL_EXAMPLES['web_read']['read_docs'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+
+
+def test_get_example_for_tools_all_tools():
+    """Test that get_example_for_tools generates correct example with all tools."""
+    tools = FNCALL_TOOLS  # FNCALL_TOOLS already includes 'finish'
     example = get_example_for_tools(tools)
     assert example.startswith(
         "Here's a running example of how to perform a task with the provided tools."
@@ -350,6 +414,7 @@ def test_get_example_for_tools_all_tools():
     assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
     assert TOOL_EXAMPLES['web_read']['read_docs'] in example
     assert TOOL_EXAMPLES['browser']['view_page'] in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
 
 
 FNCALL_MESSAGES = [
