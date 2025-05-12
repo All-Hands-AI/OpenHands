@@ -386,14 +386,18 @@ def test_get_example_for_tools_multiple_tools_with_finish():
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
     assert 'ASSISTANT: Running the updated file:\n<function=execute_bash>' in example
 
+    # Check for str_replace_editor parts
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+
+    # Check for web_read part
+    assert TOOL_EXAMPLES['web_read']['read_docs'] in example
+
+    # Check for browser part
+    assert TOOL_EXAMPLES['browser']['view_page'] in example
+
     # Check for finish part
     assert TOOL_EXAMPLES['finish']['task_completed'] in example
-
-    # Check for absence of other tool examples
-    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
-    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] not in example
-    assert TOOL_EXAMPLES['web_read']['read_docs'] not in example
-    assert TOOL_EXAMPLES['browser']['view_page'] not in example
 
 
 def test_get_example_for_tools_all_tools():
@@ -412,9 +416,11 @@ def test_get_example_for_tools_all_tools():
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
     assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
-    assert TOOL_EXAMPLES['web_read']['read_docs'] in example
-    assert TOOL_EXAMPLES['browser']['view_page'] in example
     assert TOOL_EXAMPLES['finish']['task_completed'] in example
+
+    # These are not in global FNCALL_TOOLS
+    assert TOOL_EXAMPLES['web_read']['read_docs'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
 
 
 FNCALL_MESSAGES = [
