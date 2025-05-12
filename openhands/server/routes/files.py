@@ -258,7 +258,7 @@ async def git_changes(
                 content={'error': 'Not a git repository'},
             )
         # Wrap the list in a dictionary to match the response_model
-        return {'changes': changes}
+        return changes
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Runtime unavailable: {e}')
         return JSONResponse(
