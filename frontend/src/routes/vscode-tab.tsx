@@ -1,46 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { useConversation } from "#/context/conversation-context";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 
 function VSCodeTab() {
   const { t } = useTranslation();
-  const { conversationId } = useConversation();
-  const [vsCodeUrl, setVsCodeUrl] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const { data, isLoading, error } = useVSCodeUrl();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
-
-  React.useEffect(() => {
-    async function fetchVSCodeUrl() {
-      if (!conversationId || isRuntimeInactive) return;
-
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/conversations/${conversationId}/vscode-url`,
-        );
-        const data = await response.json();
-
-        if (data.vscode_url) {
-          setVsCodeUrl(data.vscode_url);
-        } else {
-          setError(t(I18nKey.VSCODE$URL_NOT_AVAILABLE));
-        }
-      } catch (err) {
-        setError(t(I18nKey.VSCODE$FETCH_ERROR));
-        // Error is handled by setting the error state
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchVSCodeUrl();
-  }, [conversationId, isRuntimeInactive, t]);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   if (isRuntimeInactive) {
     return (
@@ -58,10 +29,10 @@ function VSCodeTab() {
     );
   }
 
-  if (error || !vsCodeUrl) {
+  if (error || (data && data.error) || !data?.url) {
     return (
       <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {error || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
+        {data?.error || String(error) || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
       </div>
     );
   }
@@ -69,8 +40,9 @@ function VSCodeTab() {
   return (
     <div className="h-full w-full">
       <iframe
+        ref={iframeRef}
         title={t(I18nKey.VSCODE$TITLE)}
-        src={vsCodeUrl}
+        src={data.url}
         className="w-full h-full border-0"
         allow={t(I18nKey.VSCODE$IFRAME_PERMISSIONS)}
       />
@@ -78,4 +50,5 @@ function VSCodeTab() {
   );
 }
 
+// Export the VSCodeTab directly since we're using the provider at a higher level
 export default VSCodeTab;

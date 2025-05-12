@@ -1,3 +1,5 @@
+import sys
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
@@ -28,6 +30,12 @@ _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."""
 
 
+def refine_prompt(prompt: str):
+    if sys.platform == 'win32':
+        return prompt.replace('bash', 'powershell')
+    return prompt
+
+
 def create_cmd_run_tool(
     use_short_description: bool = False,
 ) -> ChatCompletionToolParam:
@@ -37,18 +45,22 @@ def create_cmd_run_tool(
     return ChatCompletionToolParam(
         type='function',
         function=ChatCompletionToolParamFunctionChunk(
-            name='execute_bash',
-            description=description,
+            name=refine_prompt('execute_bash'),
+            description=refine_prompt(description),
             parameters={
                 'type': 'object',
                 'properties': {
                     'command': {
                         'type': 'string',
-                        'description': 'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.',
+                        'description': refine_prompt(
+                            'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.'
+                        ),
                     },
                     'is_input': {
                         'type': 'string',
-                        'description': 'If True, the command is an input to the running process. If False, the command is a bash command to be executed in the terminal. Default is False.',
+                        'description': refine_prompt(
+                            'If True, the command is an input to the running process. If False, the command is a bash command to be executed in the terminal. Default is False.'
+                        ),
                         'enum': ['true', 'false'],
                     },
                     'timeout': {

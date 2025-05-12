@@ -37,10 +37,9 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.mcp import MCPClientTool
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -53,7 +52,9 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse, mcp_tool_names: list[str] | None = None
+) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -75,7 +76,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
-                raise RuntimeError(
+                raise FunctionCallValidationError(
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
 
@@ -166,11 +167,29 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
                         other_kwargs.pop('view_range')
+
+                    # Filter out unexpected arguments
+                    valid_kwargs = {}
+                    # Get valid parameters from the str_replace_editor tool definition
+                    str_replace_editor_tool = create_str_replace_editor_tool()
+                    valid_params = set(
+                        str_replace_editor_tool['function']['parameters'][
+                            'properties'
+                        ].keys()
+                    )
+                    for key, value in other_kwargs.items():
+                        if key in valid_params:
+                            valid_kwargs[key] = value
+                        else:
+                            raise FunctionCallValidationError(
+                                f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
+                            )
+
                     action = FileEditAction(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
+                        **valid_kwargs,
                     )
             # ================================================
             # AgentThinkAction
@@ -199,12 +218,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = BrowseURLAction(url=arguments['url'])
 
             # ================================================
-            # McpAction (MCP)
+            # MCPAction (MCP)
             # ================================================
-            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
-                action = McpAction(
-                    name=tool_call.function.name.removesuffix(MCPClientTool.postfix()),
-                    arguments=tool_call.function.arguments,
+            elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
+                action = MCPAction(
+                    name=tool_call.function.name,
+                    arguments=arguments,
                 )
             else:
                 raise FunctionCallNotExistsError(

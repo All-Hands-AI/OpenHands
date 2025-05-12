@@ -40,6 +40,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
             {t(I18nKey.SETTINGS$SEE_ADVANCED_SETTINGS)}
           </Link>
         </p>
+
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
             <LoadingSpinner size="small" />

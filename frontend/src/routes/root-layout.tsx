@@ -5,7 +5,6 @@ import {
   Outlet,
   useNavigate,
   useLocation,
-  useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -21,6 +20,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -58,9 +58,9 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [searchParams] = useSearchParams();
+  const tosPageStatus = useIsOnTosPage();
   const { data: settings } = useSettings();
-  const { error, isFetching } = useBalance();
+  const { error } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
 
@@ -71,49 +71,72 @@ export default function MainApp() {
     isError: authError,
   } = useIsAuthed();
 
+  // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
 
+  // When on TOS page, we don't use the GitHub auth URL
+  const effectiveGitHubAuthUrl = tosPageStatus ? null : gitHubAuthUrl;
+
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
-    if (settings?.LANGUAGE) {
+    // Don't change language when on TOS page
+    if (!tosPageStatus && settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings?.LANGUAGE]);
+  }, [settings?.LANGUAGE, tosPageStatus]);
 
   React.useEffect(() => {
-    const consentFormModalIsOpen =
-      settings?.USER_CONSENTS_TO_ANALYTICS === null;
+    // Don't show consent form when on TOS page
+    if (!tosPageStatus) {
+      const consentFormModalIsOpen =
+        settings?.USER_CONSENTS_TO_ANALYTICS === null;
 
-    setConsentFormIsOpen(consentFormModalIsOpen);
-  }, [settings]);
-
-  React.useEffect(() => {
-    // Migrate user consent to the server if it was previously stored in localStorage
-    migrateUserConsent({
-      handleAnalyticsWasPresentInLocalStorage: () => {
-        setConsentFormIsOpen(false);
-      },
-    });
-  }, []);
+      setConsentFormIsOpen(consentFormModalIsOpen);
+    }
+  }, [settings, tosPageStatus]);
 
   React.useEffect(() => {
-    // Don't allow users to use the app if it 402s
-    if (error?.status === 402 && pathname !== "/") {
-      navigate("/");
-    } else if (!isFetching && searchParams.get("free_credits") === "success") {
+    // Don't migrate user consent when on TOS page
+    if (!tosPageStatus) {
+      // Migrate user consent to the server if it was previously stored in localStorage
+      migrateUserConsent({
+        handleAnalyticsWasPresentInLocalStorage: () => {
+          setConsentFormIsOpen(false);
+        },
+      });
+    }
+  }, [tosPageStatus]);
+
+  React.useEffect(() => {
+    if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
       displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
-      searchParams.delete("free_credits");
+    }
+  }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
+
+  React.useEffect(() => {
+    // Don't do any redirects when on TOS page
+    // Don't allow users to use the app if it 402s
+    if (!tosPageStatus && error?.status === 402 && pathname !== "/") {
       navigate("/");
     }
-  }, [error?.status, pathname, isFetching]);
+  }, [error?.status, pathname, tosPageStatus]);
 
-  const userIsAuthed = !!isAuthed && !authError;
+  // When on TOS page, we don't make any API calls, so we need to handle this case
+  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
+
+  // Only show the auth modal if:
+  // 1. User is not authenticated
+  // 2. We're not currently on the TOS page
+  // 3. We're in SaaS mode
   const renderAuthModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
+    !isFetchingAuth &&
+    !userIsAuthed &&
+    !tosPageStatus &&
+    config.data?.APP_MODE === "saas";
 
   return (
     <div
@@ -131,7 +154,7 @@ export default function MainApp() {
 
       {renderAuthModal && (
         <AuthModal
-          githubAuthUrl={gitHubAuthUrl}
+          githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
         />
       )}

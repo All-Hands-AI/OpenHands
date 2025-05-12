@@ -249,7 +249,7 @@ class Memory:
         """
         Loads microagents from the global microagents_dir
         """
-        repo_agents, knowledge_agents, _ = load_microagents_from_dir(
+        repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
         for name, agent in knowledge_agents.items():

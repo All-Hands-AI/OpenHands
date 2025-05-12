@@ -70,7 +70,7 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
-export type ConversationTrigger = "resolver" | "gui";
+export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
 
 export interface Conversation {
   conversation_id: string;

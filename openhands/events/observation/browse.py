@@ -14,6 +14,7 @@ class BrowserOutputObservation(Observation):
     url: str
     trigger_by_action: str
     screenshot: str = field(repr=False, default='')  # don't show in repr
+    screenshot_path: str | None = field(default=None)  # path to saved screenshot file
     set_of_marks: str = field(default='', repr=False)  # don't show in repr
     error: bool = False
     observation: str = ObservationType.BROWSE
@@ -49,6 +50,8 @@ class BrowserOutputObservation(Observation):
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
         )
+        if self.screenshot_path:
+            ret += f'Screenshot saved to: {self.screenshot_path}\n'
         ret += '--- Agent Observation ---\n'
         ret += self.get_agent_obs_text()
         return ret
@@ -57,7 +60,14 @@ class BrowserOutputObservation(Observation):
         """Get a concise text that will be shown to the agent."""
         if self.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
             text = f'[Current URL: {self.url}]\n'
-            text += f'[Focused element bid: {self.focused_element_bid}]\n\n'
+            text += f'[Focused element bid: {self.focused_element_bid}]\n'
+
+            # Add screenshot path information if available
+            if self.screenshot_path:
+                text += f'[Screenshot saved to: {self.screenshot_path}]\n'
+
+            text += '\n'
+
             if self.error:
                 text += (
                     '================ BEGIN error message ===============\n'
@@ -85,6 +95,7 @@ class BrowserOutputObservation(Observation):
 
         elif self.trigger_by_action == ActionType.BROWSE:
             text = f'[Current URL: {self.url}]\n'
+
             if self.error:
                 text += (
                     '================ BEGIN error message ===============\n'
