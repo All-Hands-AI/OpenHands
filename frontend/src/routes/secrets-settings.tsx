@@ -96,22 +96,25 @@ function SecretsSettingsScreen() {
       )}
 
       {view === "list" && (
-        <ul>
-          {secrets?.map((secret) => (
-            <SecretListItem
-              key={secret.name}
-              title={secret.name}
-              onEdit={() => {
-                setView("edit-secret-form");
-                setSelectedSecret(secret.name);
-              }}
-              onDelete={() => {
-                setConfirmationModalIsVisible(true);
-                setSelectedSecret(secret.name);
-              }}
-            />
-          ))}
-        </ul>
+        <table className="w-full">
+          <tbody>
+            {secrets?.map((secret) => (
+              <SecretListItem
+                key={secret.name}
+                title={secret.name}
+                description={secret.description}
+                onEdit={() => {
+                  setView("edit-secret-form");
+                  setSelectedSecret(secret.name);
+                }}
+                onDelete={() => {
+                  setConfirmationModalIsVisible(true);
+                  setSelectedSecret(secret.name);
+                }}
+              />
+            ))}
+          </tbody>
+        </table>
       )}
 
       {!shouldRenderConnectToGitButton && view === "list" && (
