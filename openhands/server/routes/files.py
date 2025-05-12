@@ -226,7 +226,7 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
 
 @app.get(
     '/git/changes',
-    response_model=list[dict[str, str]],
+    response_model=dict[str, Any],
     responses={
         404: {'description': 'Not a git repository', 'model': dict},
         500: {'description': 'Error getting changes', 'model': dict},
@@ -236,7 +236,7 @@ async def git_changes(
     request: Request,
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-) -> list[dict[str, str]] | JSONResponse:
+) -> dict[str, Any] | JSONResponse:
     runtime: Runtime = request.state.conversation.runtime
     conversation_store = await ConversationStoreImpl.get_instance(
         config,
@@ -308,38 +308,9 @@ async def get_cwd(
     workspace_mount_path_in_sandbox: str,
 ) -> str:
     metadata = await conversation_store.get_metadata(conversation_id)
-    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-    conversation_info = await _get_conversation_info(metadata, is_running)
-
     cwd = workspace_mount_path_in_sandbox
-    if conversation_info and conversation_info.selected_repository:
-        repo_dir = conversation_info.selected_repository.split('/')[-1]
+    if metadata and metadata.selected_repository:
+        repo_dir = metadata.selected_repository.split('/')[-1]
         cwd = os.path.join(cwd, repo_dir)
 
     return cwd
-
-
-async def _get_conversation_info(
-    conversation: ConversationMetadata,
-    is_running: bool,
-) -> ConversationInfo | None:
-    try:
-        title = conversation.title
-        if not title:
-            title = f'Conversation {conversation.conversation_id[:5]}'
-        return ConversationInfo(
-            conversation_id=conversation.conversation_id,
-            title=title,
-            last_updated_at=conversation.last_updated_at,
-            created_at=conversation.created_at,
-            selected_repository=conversation.selected_repository,
-            status=ConversationStatus.RUNNING
-            if is_running
-            else ConversationStatus.STOPPED,
-        )
-    except Exception as e:
-        logger.error(
-            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
-            extra={'session_id': conversation.conversation_id},
-        )
-        return None
