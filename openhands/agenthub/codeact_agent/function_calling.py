@@ -117,7 +117,7 @@ def response_to_actions(
                     outputs=arguments.get('outputs', {}),
                     thought=arguments.get('thought', ''),
                     task_completed=arguments.get('task_completed', None),
-                    final_thought=arguments.get('final_thought', '')
+                    final_thought=arguments.get('final_thought', ''),
                 )
 
             # ================================================

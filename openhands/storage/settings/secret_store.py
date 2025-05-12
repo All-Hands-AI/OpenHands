@@ -1,10 +1,9 @@
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+
 from openhands.core.config.app_config import AppConfig
 from openhands.storage.data_models.user_secrets import UserSecrets
-
 
 
 class SecretsStore(ABC):
@@ -20,7 +19,5 @@ class SecretsStore(ABC):
 
     @classmethod
     @abstractmethod
-    async def get_instance(
-        cls, config: AppConfig, user_id: str | None
-    ) -> SecretsStore:
+    async def get_instance(cls, config: AppConfig, user_id: str | None) -> SecretsStore:
         """Get a store for the user represented by the token given."""
