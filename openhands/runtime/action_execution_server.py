@@ -602,7 +602,7 @@ class ActionExecutor:
                 'Browser functionality is not supported on Windows.'
             )
         await self._ensure_browser_ready()
-        return await browse(action, self.browser)
+        return await browse(action, self.browser, self.initial_cwd)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         if self.browser is None:
@@ -610,7 +610,7 @@ class ActionExecutor:
                 'Browser functionality is not supported on Windows.'
             )
         await self._ensure_browser_ready()
-        return await browse(action, self.browser)
+        return await browse(action, self.browser, self.initial_cwd)
 
     def close(self):
         self.memory_monitor.stop_monitoring()
