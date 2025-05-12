@@ -63,6 +63,7 @@ export const useGetGitChanges = () => {
 
   return {
     data: orderedChanges,
+    isLoading: result.isLoading,
     isSuccess: result.isSuccess,
     isError: result.isError,
     error: result.error,
