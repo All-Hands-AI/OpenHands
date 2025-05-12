@@ -7,7 +7,10 @@ class ConversationValidator:
     """Storage for conversation metadata. May or may not support multiple users depending on the environment."""
 
     async def validate(
-        self, conversation_id: str, cookies_str: str
+        self,
+        conversation_id: str,
+        cookies_str: str,
+        authorization_header: str | None = None,
     ) -> tuple[None, None]:
         return None, None
 
