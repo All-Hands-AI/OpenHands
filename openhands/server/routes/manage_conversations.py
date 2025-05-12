@@ -1,4 +1,6 @@
 import uuid
+import os
+
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -49,7 +51,6 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
-
 app = APIRouter(prefix='/api')
 
 
@@ -101,7 +102,10 @@ async def _create_new_conversation(
     )
 
     running_conversations = await conversation_manager.get_running_agent_loops(user_id)
-    if len(running_conversations) >= config.max_concurrent_conversations:
+    if (
+        len(running_conversations) >= config.max_concurrent_conversations
+        and os.getenv('RUN_MODE') == 'PROD'
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f'You have reached the maximum limit of {config.max_concurrent_conversations} concurrent conversations.',
