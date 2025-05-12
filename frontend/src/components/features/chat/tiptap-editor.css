@@ -1,0 +1,57 @@
+.ProseMirror {
+  padding: 0.5rem;
+  min-height: 2rem;
+  outline: none;
+  width: 100%;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: white;
+  background-color: transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.ProseMirror p {
+  margin: 0;
+}
+
+.ProseMirror:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.microagent-mention {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.microagent-suggestions-popup {
+  z-index: 50;
+}
+
+/* Placeholder styling */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Dropdown styling */
+.microagent-suggestions-popup .bg-neutral-800 {
+  background-color: #262626;
+  border-color: #525252;
+}
+
+.microagent-suggestions-popup .hover\:bg-neutral-700:hover,
+.microagent-suggestions-popup .bg-neutral-700 {
+  background-color: #404040;
+}
+
+.microagent-suggestions-popup .text-white {
+  color: white;
+}
+
+.microagent-suggestions-popup .text-neutral-400 {
+  color: #a3a3a3;
+}
