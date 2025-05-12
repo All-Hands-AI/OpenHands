@@ -73,7 +73,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o3-mini',
     'gemini-2.5-pro',
     'Llama-4-Maverick-17B-128E-Instruct-FP8',
-    'Qwen3-235B-A22B-fp8-tput'
+    'Qwen3-235B-A22B-fp8-tput',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
