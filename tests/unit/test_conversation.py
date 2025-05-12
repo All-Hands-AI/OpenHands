@@ -166,7 +166,7 @@ async def test_search_conversations():
                                 ),
                                 status=ConversationStatus.STOPPED,
                                 selected_repository='foobar',
-                                number_of_connections=0,
+                                num_connections=0,
                             )
                         ]
                     )
@@ -208,7 +208,7 @@ async def test_get_conversation():
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 status=ConversationStatus.STOPPED,
                 selected_repository='foobar',
-                number_of_connections=0,
+                num_connections=0,
             )
             assert conversation == expected
 
