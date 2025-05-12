@@ -438,12 +438,13 @@ class AgentController:
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
             assert self.delegate is not None
-            # Post a MessageAction with the task for the delegate
-            if 'task' in action.inputs:
+            # Post a MessageAction with the prompt for the delegate
+            if action.prompt:
                 self.event_stream.add_event(
-                    MessageAction(content='TASK: ' + action.inputs['task']),
-                    EventSource.USER,
+                    MessageAction(content=action.prompt),
+                    EventSource.USER,  # Source is USER, as it represents the task prompt for the delegate
                 )
+                # Delegate starts in RUNNING state as it receives the prompt immediately
                 await self.delegate.set_agent_state_to(AgentState.RUNNING)
             return
 
@@ -727,34 +728,22 @@ class AgentController:
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())
 
-        if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
-            # retrieve delegate result
-            delegate_outputs = (
-                self.delegate.state.outputs if self.delegate.state else {}
-            )
+        # prepare delegate result observation
+        delegate_outputs = self.delegate.state.outputs if self.delegate.state else {}
+        formatted_output = ', '.join(
+            f'{key}: {value}' for key, value in delegate_outputs.items()
+        )
 
-            # prepare delegate result observation
-            # TODO: replace this with AI-generated summary (#2395)
-            formatted_output = ', '.join(
-                f'{key}: {value}' for key, value in delegate_outputs.items()
-            )
+        if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
             )
         else:
             # delegate state is ERROR
-            # emit AgentDelegateObservation with error content
-            delegate_outputs = (
-                self.delegate.state.outputs if self.delegate.state else {}
-            )
-            content = (
-                f'{self.delegate.agent.name} encountered an error during execution.'
-            )
-
-        content = f'Delegated agent finished with result:\n\n{content}'
+            content = f'{self.delegate.agent.name} encountered an error during execution. Known results: {delegate_outputs}'
 
         # emit the delegate result observation
-        obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+        obs = AgentDelegateObservation(content=content, outputs={})
 
         # associate the delegate action with the initiating tool call
         for event in reversed(self.state.history):

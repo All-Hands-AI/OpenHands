@@ -162,7 +162,7 @@ class BrowsingAgent(Agent):
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
+                return AgentFinishAction(final_thought=event.content)
             elif isinstance(event, Observation):
                 last_obs = event
 
@@ -201,10 +201,8 @@ class BrowsingAgent(Agent):
                 )
                 return MessageAction('Error encountered when browsing.')
 
-        goal, _ = state.get_current_user_intent()
-
-        if goal is None:
-            goal = state.inputs['task']
+        user_message_action = state.get_current_user_intent()
+        goal = user_message_action.content
 
         system_msg = get_system_message(
             goal,

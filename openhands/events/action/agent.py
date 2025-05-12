@@ -86,6 +86,13 @@ class AgentRejectAction(Action):
 class AgentDelegateAction(Action):
     agent: str
     inputs: dict
+    """Deprecated.
+    Delegate agents run similarly to the main agent:
+        - start from a prompt (passed in the 'prompt' field)
+        - end with an AgentFinishAction.
+    """
+    prompt: str
+    """The prompt/task for the delegate agent"""
     thought: str = ''
     action: str = ActionType.DELEGATE
 
