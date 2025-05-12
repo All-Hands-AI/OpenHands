@@ -254,6 +254,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         if conversation_id and user_id is not None:
             await create_thread(
                 space_id,
+                thread_follow_up,
                 conversation_id,
                 data.initial_user_msg,
                 bearer_token,
