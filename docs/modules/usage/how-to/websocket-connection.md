@@ -31,7 +31,7 @@ Here's a basic example of connecting to the WebSocket using JavaScript:
 ```javascript
 import { io } from "socket.io-client";
 
-const socket = io("http://your-openhands-server", {
+const socket = io("http://localhost:3000", {
   transports: ["websocket"],
   query: {
     conversation_id: "your-conversation-id",
@@ -114,7 +114,7 @@ sudo mv websocat /usr/local/bin/
 ```bash
 # Connect to the WebSocket and print all received messages
 echo "40{}" | \
-websocat "ws://your-openhands-server/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
+websocat "ws://localhost:3000/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
 ```
 
 ### Sending a Message
@@ -122,7 +122,7 @@ websocat "ws://your-openhands-server/socket.io/?EIO=4&transport=websocket&conver
 ```bash
 # Send a message to the agent
 echo '42["oh_user_action",{"type":"message","source":"user","message":"Hello, agent!"}]' | \
-websocat "ws://your-openhands-server/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
+websocat "ws://localhost:3000/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
 ```
 
 ### Complete Example with Websocat
@@ -131,11 +131,11 @@ Here's a complete example of connecting to the WebSocket, sending a message, and
 
 ```bash
 # Start a persistent connection
-websocat -v "ws://your-openhands-server/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
+websocat -v "ws://localhost:3000/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
 
 # In another terminal, send a message
 echo '42["oh_user_action",{"type":"message","source":"user","message":"Can you help me with my project?"}]' | \
-websocat "ws://your-openhands-server/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
+websocat "ws://localhost:3000/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
 ```
 
 ## Event Structure
