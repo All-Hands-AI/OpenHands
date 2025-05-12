@@ -29,7 +29,7 @@ export const useGetGitChanges = () => {
 
   // Latest changes should be on top
   React.useEffect(() => {
-    if (result.data) {
+    if (!result.isFetching && result.isSuccess && result.data) {
       const currentData = result.data;
 
       // If this is new data (not the same reference as before)
@@ -59,7 +59,7 @@ export const useGetGitChanges = () => {
         }
       }
     }
-  }, [result.data]);
+  }, [result.isFetching, result.isSuccess, result.data]);
 
   return {
     data: orderedChanges,
