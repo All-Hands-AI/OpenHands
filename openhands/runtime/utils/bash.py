@@ -25,7 +25,13 @@ def split_bash_commands(commands: str) -> list[str]:
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except (bashlex.errors.ParsingError, NotImplementedError, TypeError):
+    except (
+        bashlex.errors.ParsingError,
+        NotImplementedError,
+        TypeError,
+        AttributeError,
+    ):
+        # Added AttributeError to catch 'str' object has no attribute 'kind' error (issue #8369)
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'

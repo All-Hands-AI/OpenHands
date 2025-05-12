@@ -163,6 +163,13 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       case "browse":
+        if (message.extras?.screenshot) {
+          store.dispatch(setScreenshotSrc(message.extras.screenshot));
+        }
+        if (message.extras?.url) {
+          store.dispatch(setUrl(message.extras.url));
+        }
+
         store.dispatch(
           addAssistantObservation({
             ...baseObservation,
@@ -203,6 +210,13 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       case "browse_interactive":
+        if (message.extras?.screenshot) {
+          store.dispatch(setScreenshotSrc(message.extras.screenshot));
+        }
+        if (message.extras?.url) {
+          store.dispatch(setUrl(message.extras.url));
+        }
+
         store.dispatch(
           addAssistantObservation({
             ...baseObservation,
