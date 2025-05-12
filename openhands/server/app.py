@@ -1,6 +1,8 @@
 import warnings
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
@@ -37,6 +39,9 @@ app = FastAPI(
     version=__version__,
     lifespan=_lifespan,
 )
+
+
+load_dotenv()
 
 
 @app.get('/health')

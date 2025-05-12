@@ -8,7 +8,6 @@ import traceback
 from typing import Callable, ClassVar
 
 import litellm  # noqa
-from langfuse.decorators import observe
 from litellm.exceptions import (  # noqa
     APIConnectionError,
     APIError,
@@ -769,7 +768,6 @@ class AgentController:
         # unset delegate so parent can resume normal handling
         self.delegate = None
 
-    @observe(name='agent_step')
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
