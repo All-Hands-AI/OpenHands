@@ -1,3 +1,13 @@
+---
+name: forgejo
+type: knowledge
+version: 1.0.0
+agent: CodeActAgent
+triggers:
+- forgejo
+- codeberg
+---
+
 # Forgejo Knowledge
 
 Forgejo is a self-hosted Git service that is a fork of Gitea. It provides a lightweight, open-source alternative to GitHub and GitLab. Codeberg.org is a popular instance of Forgejo. OpenHands provides robust integration with Forgejo instances, with full support for repository operations, issue tracking, and code review.
@@ -110,3 +120,4 @@ When working with Forgejo instances, especially self-hosted ones, be aware of:
 - **API Rate Limits**: Different instances may have different rate limits
 - **Network Reliability**: The implementation handles network timeouts and errors gracefully
 - **API Versions**: Different Forgejo instances may run different versions with slight API differences
+

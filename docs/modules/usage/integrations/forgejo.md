@@ -131,3 +131,4 @@ While our current implementation doesn't directly use the ActivityPub API, it's 
 ## Testing
 
 The Forgejo integration has been tested against Codeberg.org, which is one of the most popular public Forgejo instances. If you encounter any issues with other Forgejo instances, please report them so we can improve the integration.
+
