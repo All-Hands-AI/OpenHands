@@ -67,13 +67,14 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <div className="text-sm break-words">
+      <div className="text-sm break-words markdown-content">
         <Markdown
           components={{
             code,
             ul,
             ol,
             a: anchor,
+            p: ({ children }) => <p className="mb-4">{children}</p>,
           }}
           remarkPlugins={[remarkGfm]}
         >
