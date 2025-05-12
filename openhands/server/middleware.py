@@ -231,6 +231,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             '/api/options/security-analyzers',
             '/api/options/use-cases',
             '/api/options/use-cases/conversations',
+            '/api/options/conversations',
             '/api/invitation/',
             '/api/user/status',
             '/api/invitation/validate',
@@ -239,6 +240,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
 
         self.public_path_patterns = [
             '/api/options/use-cases/conversations/',
+            '/api/options/conversations/events/',
         ]
 
     async def dispatch(self, request: Request, call_next):
@@ -247,7 +249,6 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
         for pattern in self.public_path_patterns:
             if request.url.path.startswith(pattern):
                 remaining = request.url.path[len(pattern) :]
-                logger.info(f'Remaining path: {remaining}')
                 if remaining and '/' not in remaining:
                     return await call_next(request)
 
@@ -297,11 +298,13 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             '/api/options/security-analyzers',
             '/api/options/use-cases',
             '/api/options/use-cases/conversations',
+            '/api/options/conversations',
             '/api/usecases',
         ]
 
         self.public_path_patterns = [
             '/api/options/use-cases/conversations/',
+            '/api/options/conversations/events/',
         ]
 
     async def dispatch(self, request: Request, call_next):

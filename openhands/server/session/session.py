@@ -42,6 +42,8 @@ class Session:
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
+    space_id: int | None
+    thread_follow_up: int | None
 
     def __init__(
         self,
@@ -50,6 +52,8 @@ class Session:
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
+        space_id: int | None = None,
+        thread_follow_up: int | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -61,6 +65,8 @@ class Session:
             file_store,
             status_callback=self.queue_status_message,
             user_id=user_id,
+            space_id=space_id,
+            thread_follow_up=thread_follow_up,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -69,6 +75,8 @@ class Session:
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
+        self.space_id = space_id
+        self.thread_follow_up = thread_follow_up
 
     async def close(self):
         if self.sio:
@@ -91,7 +99,7 @@ class Session:
         system_prompt: str | None = None,
         user_prompt: str | None = None,
         mcp_disable: dict[str, bool] | None = None,
-        knowledge_base: dict | None = None,
+        knowledge_base: list[dict] | None = None,
     ):
         start_time = time.time()
         self.agent_session.event_stream.add_event(
@@ -181,8 +189,10 @@ class Session:
         )
         agent.set_mcp_tools(mcp_tools)
         agent.set_search_tools(search_tools)
+
+        # update some metadata of the agent
         if knowledge_base:
-            agent.set_agent_knowledge_base([knowledge_base])
+            agent.update_agent_knowledge_base(knowledge_base)
 
         if system_prompt:
             agent.set_system_prompt(system_prompt)

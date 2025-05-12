@@ -85,7 +85,7 @@ Note: The current date is always available as {{CURRENT_DATE}} (e.g., “24 Apri
 <KNOWLEDGE_BASE>
 IMPORTANT: This is extra knowledge you can use for reasoning and answering user queries. Use it as context for your responses.
 {% for knowledge in knowledge_base %}
-- {{ knowledge.summary }}
+- {{ knowledge.content }}
 {% endfor %}
 </KNOWLEDGE_BASE>
 {% endif %}

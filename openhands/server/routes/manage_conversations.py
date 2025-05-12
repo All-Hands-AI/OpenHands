@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import (
     APIRouter,
@@ -42,7 +42,7 @@ from openhands.server.shared import (
     file_store,
     s3_handler,
 )
-from openhands.server.thesis_auth import create_thread, search_knowledge
+from openhands.server.thesis_auth import create_thread
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -91,7 +91,9 @@ async def _create_new_conversation(
     mnemonic: str | None = None,
     mcp_disable: dict[str, bool] | None = None,
     research_mode: str | None = None,
-    knowledge_base: dict | None = None,
+    knowledge_base: list[dict] | None = None,
+    space_id: int | None = None,
+    thread_follow_up: int | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -188,6 +190,8 @@ async def _create_new_conversation(
         mnemonic=mnemonic,
         mcp_disable=mcp_disable,
         knowledge_base=knowledge_base,
+        space_id=space_id,
+        thread_follow_up=thread_follow_up,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -219,17 +223,16 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
     try:
         knowledge_base = None
-        if space_id or thread_follow_up:
-            knowledge_base = await search_knowledge(
-                initial_user_msg, space_id, thread_follow_up, bearer_token, x_device_id
-            )
-            if knowledge_base and knowledge_base['data']['summary']:
-                knowledge_base = knowledge_base['data']
-            # if knowledge and knowledge['data']['summary']:
-            #     initial_user_msg = (
-            #         f"Reference information:\n{knowledge['data']['summary']}\n\n"
-            #         f"Question:\n{initial_user_msg}"
-            #     )
+        # if space_id or thread_follow_up:
+        #     knowledge_base = await search_knowledge(
+        #         initial_user_msg, space_id, thread_follow_up, user_id
+        # )
+        # if knowledge and knowledge['data']['summary']:
+        #     initial_user_msg = (
+        #         f"Reference information:\n{knowledge['data']['summary']}\n\n"
+        #         f"Question:\n{initial_user_msg}"
+        #     )
+
         conversation_id = await _create_new_conversation(
             user_id,
             provider_tokens,
@@ -244,6 +247,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             mcp_disable=data.mcp_disable,
             research_mode=data.research_mode,
             knowledge_base=knowledge_base,
+            space_id=space_id,
+            thread_follow_up=thread_follow_up,
         )
 
         if conversation_id and user_id is not None:
@@ -254,11 +259,17 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 bearer_token,
                 x_device_id,
             )
+            metadata: dict[str, Any] = {}
+            metadata['hidden_prompt'] = True
+            if space_id is not None:
+                metadata['space_id'] = space_id
+            if thread_follow_up is not None:
+                metadata['thread_follow_up'] = thread_follow_up
             await conversation_module._update_conversation_visibility(
                 conversation_id,
                 False,
                 user_id,
-                {'hidden_prompt': True},
+                metadata,
                 '',
                 'available',
             )

@@ -3,13 +3,21 @@ import warnings
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
+from openhands.events.action.agent import RecallAction
+from openhands.events.action.empty import NullAction
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_store import EventStore
+from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.empty import NullObservation
+from openhands.events.serialization.event import event_to_dict
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.modules.conversation import conversation_module
 from openhands.server.routes.manage_conversations import _get_conversation_info
 from openhands.server.shared import (
     conversation_manager,
@@ -28,6 +36,12 @@ from openhands.server.shared import ConversationStoreImpl, config, server_config
 from openhands.utils.async_utils import wait_all
 
 app = APIRouter(prefix='/api/options')
+
+
+def verify_thesis_backend_server(api_key: str = Header(..., alias='x-key-oh')):
+    expected_key = os.getenv('KEY_THESIS_BACKEND_SERVER')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail='Invalid API key')
 
 
 @app.get('/models', response_model=list[str])
@@ -204,3 +218,45 @@ async def get_conversation(
         return conversation_info
     except FileNotFoundError:
         return None
+
+
+@app.get('/conversations/events/{conversation_id}')
+async def get_conversation_events(
+    conversation_id: str,
+    x_key_oh: str = Depends(verify_thesis_backend_server),
+) -> Any:
+    conversation = await conversation_module._get_conversation_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail='Conversation not found')
+
+    # eventstore
+    event_store = EventStore(
+        conversation_id,
+        conversation_manager.file_store,
+        conversation.user_id,
+    )
+    if not event_store:
+        raise HTTPException(status_code=404, detail='Event store not found')
+    async_store = AsyncEventStoreWrapper(event_store, 0)
+    result = []
+    async for event in async_store:
+        try:
+            if isinstance(
+                event,
+                (
+                    NullAction,
+                    NullObservation,
+                    RecallAction,
+                    AgentStateChangedObservation,
+                ),
+            ):
+                continue
+            event_dict = event_to_dict(event)
+            if (
+                event_dict.get('source') == 'user'
+                or event_dict.get('source') == 'agent'
+            ):
+                result.append(event_dict)
+        except Exception as e:
+            logger.error(f'Error converting event to dict: {str(e)}')
+    return result

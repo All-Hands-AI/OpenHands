@@ -72,6 +72,7 @@ from openhands.events.observation.a2a import (
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.server.thesis_auth import search_knowledge, webhook_rag_conversation
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -100,6 +101,10 @@ class AgentController:
     )
     _cached_first_user_message: MessageAction | None = None
     a2a_manager: A2AManager | None = None
+    _rag_synced: bool = False
+    space_id: int | None = None
+    thread_follow_up: int | None = None
+    user_id: str | None = None
 
     def __init__(
         self,
@@ -117,6 +122,9 @@ class AgentController:
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
         a2a_manager: A2AManager | None = None,
+        space_id: int | None = None,
+        thread_follow_up: int | None = None,
+        user_id: str | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -170,6 +178,10 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
         self.a2a_manager = a2a_manager
+        self._rag_synced = False
+        self.space_id = space_id
+        self.thread_follow_up = thread_follow_up
+        self.user_id = user_id
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -381,6 +393,8 @@ class AgentController:
         # continue parent processing only if there's no active delegate
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
+        # I want to
+
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
             return
@@ -399,6 +413,18 @@ class AgentController:
 
         if self.should_step(event):
             self.step()
+
+        # sync rag when the agent is finished or waiting for user input
+        if (
+            self.state.agent_state
+            in (AgentState.FINISHED, AgentState.AWAITING_USER_INPUT)
+            and not self._rag_synced
+        ):
+            logger.info(f'webhook_rag_conversation: Update rag {self.id}')
+            await webhook_rag_conversation(self.id)
+            self._rag_synced = True
+        if self.state.agent_state == AgentState.RUNNING:
+            self._rag_synced = False
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""
@@ -422,6 +448,8 @@ class AgentController:
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.FINISHED)
+
+            # TODO: add a new event to the event stream sync rag job
         elif isinstance(action, AgentRejectAction):
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
@@ -504,6 +532,17 @@ class AgentController:
                 if is_first_user_message
                 else RecallType.KNOWLEDGE
             )
+            print(f'User ID: {self.user_id}')
+            print(f'Space ID: {self.space_id}')
+            print(f'Thread Follow Up: {self.thread_follow_up}')
+
+            # update new knowledge base with the user message
+            if self.user_id and (self.space_id or self.thread_follow_up):
+                knowledge_base = await search_knowledge(
+                    action.content, self.space_id, self.thread_follow_up, self.user_id
+                )
+                if knowledge_base:
+                    self.agent.update_agent_knowledge_base(knowledge_base)
 
             recall_action = RecallAction(query=action.content, recall_type=recall_type)
             self._pending_action = recall_action
@@ -516,6 +555,7 @@ class AgentController:
         elif action.source == EventSource.AGENT:
             # If the agent is waiting for a response, set the appropriate state
             if action.wait_for_response:
+                # I think this is finished user input
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
