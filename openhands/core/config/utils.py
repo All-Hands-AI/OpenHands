@@ -236,7 +236,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                     ):
                         cfg.dict_mcp_config = {}
 
-                    cfg.dict_mcp_config[f'search_engine_{name}'] = MCPConfig(
+                    cfg.dict_mcp_config[f'{name}'] = MCPConfig(
                         name=name, url=se_config.url, mode=mode
                     )
                     logger.openhands_logger.debug(
