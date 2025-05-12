@@ -1,11 +1,11 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { Mention } from '@tiptap/extension-mention';
-import Placeholder from '@tiptap/extension-placeholder';
-import { createRoot } from 'react-dom/client';
+import React, { useEffect, useCallback, useState } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { Mention } from "@tiptap/extension-mention";
+import Placeholder from "@tiptap/extension-placeholder";
+import { createRoot } from "react-dom/client";
 import { cn } from "#/utils/utils";
-import './tiptap-editor.css';
+import "./tiptap-editor.css";
 
 export interface MicroagentInfo {
   name: string;
@@ -30,7 +30,7 @@ export function TipTapEditor({
   onSubmit,
   onFocus,
   onBlur,
-  placeholder = 'What would you like to build?',
+  placeholder = "What would you like to build?",
   disabled = false,
   className,
 }: TipTapEditorProps) {
@@ -48,7 +48,7 @@ export function TipTapEditor({
           setMicroagents(data);
         }
       } catch (error) {
-        console.error('Error fetching microagents:', error);
+        // Error fetching microagents
       } finally {
         setLoading(false);
       }
@@ -58,15 +58,16 @@ export function TipTapEditor({
   }, []);
 
   // Custom suggestion handler for microagents
-  const suggestionHandler = useCallback(() => {
-    return {
-      char: '/',
+  const suggestionHandler = useCallback(
+    () => ({
+      char: "/",
       items: ({ query }: { query: string }) => {
         if (!query) return microagents;
-        
-        return microagents.filter(item => 
-          item.trigger.toLowerCase().includes(query.toLowerCase()) ||
-          item.name.toLowerCase().includes(query.toLowerCase())
+
+        return microagents.filter(
+          (item) =>
+            item.trigger.toLowerCase().includes(query.toLowerCase()) ||
+            item.name.toLowerCase().includes(query.toLowerCase()),
         );
       },
       render: () => {
@@ -74,29 +75,41 @@ export function TipTapEditor({
         let component: React.ReactNode | null = null;
 
         return {
-          onStart: (props: any) => {
-            popup = document.createElement('div');
-            popup.classList.add('microagent-suggestions-popup');
+          onStart: (props: {
+            items: MicroagentInfo[];
+            selectedIndex: number;
+            command: (item: MicroagentInfo) => void;
+          }) => {
+            popup = document.createElement("div");
+            popup.classList.add("microagent-suggestions-popup");
             document.body.appendChild(popup);
 
             component = (
               <div className="absolute z-50 bg-neutral-800 rounded-md shadow-lg border border-neutral-600 w-64 max-h-60 overflow-y-auto">
-                {loading ? (
-                  <div className="p-2 text-neutral-400">Loading microagents...</div>
-                ) : props.items.length === 0 ? (
-                  <div className="p-2 text-neutral-400">No microagents found</div>
-                ) : (
+                {loading && (
+                  <div className="p-2 text-neutral-400">
+                    Loading microagents...
+                  </div>
+                )}
+                {!loading && props.items.length === 0 && (
+                  <div className="p-2 text-neutral-400">
+                    No microagents found
+                  </div>
+                )}
+                {!loading && props.items.length > 0 && (
                   <ul className="py-1">
                     {props.items.map((item: MicroagentInfo, index: number) => (
                       <div
                         key={item.trigger}
                         className={cn(
                           "px-3 py-2 hover:bg-neutral-700 cursor-pointer flex flex-col",
-                          index === props.selectedIndex ? "bg-neutral-700" : ""
+                          index === props.selectedIndex ? "bg-neutral-700" : "",
                         )}
                         onClick={() => props.command(item)}
                       >
-                        <span className="font-medium text-white">{item.trigger}</span>
+                        <span className="font-medium text-white">
+                          {item.trigger}
+                        </span>
                         <span className="text-xs text-neutral-400 truncate">
                           {item.description}
                         </span>
@@ -108,39 +121,43 @@ export function TipTapEditor({
             );
 
             if (popup) {
-              const { view, clientRect } = props;
+              const { clientRect } = props;
               const { top, left } = clientRect();
-              
+
               // Position the popup
-              popup.style.position = 'absolute';
+              popup.style.position = "absolute";
               popup.style.top = `${top}px`;
               popup.style.left = `${left}px`;
-              
+
               // Render the component into the popup
               const root = createRoot(popup);
               root.render(component);
             }
           },
-          onUpdate: (props: any) => {
+          onUpdate: (props: {
+            items: MicroagentInfo[];
+            selectedIndex: number;
+            clientRect: () => { top: number; left: number };
+          }) => {
             if (popup) {
               const { clientRect } = props;
               const { top, left } = clientRect();
-              
+
               // Update position
               popup.style.top = `${top}px`;
               popup.style.left = `${left}px`;
-              
+
               // Re-render with updated props
               const root = createRoot(popup);
               root.render(component);
             }
           },
-          onKeyDown: (props: any) => {
-            if (props.event.key === 'Escape') {
+          onKeyDown: (props: { event: KeyboardEvent }) => {
+            if (props.event.key === "Escape") {
               props.event.preventDefault();
               return true;
             }
-            
+
             return false;
           },
           onExit: () => {
@@ -152,48 +169,66 @@ export function TipTapEditor({
           },
         };
       },
-      command: ({ editor, range, props }: any) => {
+      command: ({
+        editor,
+        range,
+        props,
+      }: {
+        editor: {
+          chain: () => {
+            focus: () => {
+              deleteRange: (range: { from: number; to: number }) => {
+                insertContent: (content: string) => { run: () => void };
+              };
+            };
+          };
+        };
+        range: { from: number; to: number };
+        props: MicroagentInfo;
+      }) => {
         // Insert the selected microagent trigger
         editor
           .chain()
           .focus()
           .deleteRange(range)
-          .insertContent(props.trigger.replace('/', '') + ' ')
+          .insertContent(`${props.trigger.replace("/", "")} `)
           .run();
       },
-    };
-  }, [microagents, loading]);
+    }),
+    [microagents, loading],
+  );
 
-  const editor = useEditor({
+  const tipTapEditor = useEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({
         placeholder,
-        emptyEditorClass: 'is-editor-empty',
+        emptyEditorClass: "is-editor-empty",
       }),
       Mention.configure({
         HTMLAttributes: {
-          class: 'microagent-mention',
+          class: "microagent-mention",
         },
         suggestion: suggestionHandler(),
         renderLabel: ({ node }) => node.attrs.label,
       }),
     ],
     content: value,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getText());
+    onUpdate: ({ editor: editorInstance }) => {
+      onChange(editorInstance.getText());
     },
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm focus:outline-none w-full max-w-full',
-          'text-white placeholder:text-neutral-400',
-          className
+          "prose prose-sm focus:outline-none w-full max-w-full",
+          "text-white placeholder:text-neutral-400",
+          className,
         ),
       },
+      // eslint-disable-next-line consistent-return
       handleKeyDown: (view, event) => {
         // Handle Enter key for submission
-        if (event.key === 'Enter' && !event.shiftKey && !disabled) {
+        if (event.key === "Enter" && !event.shiftKey && !disabled) {
           event.preventDefault();
           const text = view.state.doc.textContent;
           if (text.trim()) {
@@ -203,6 +238,7 @@ export function TipTapEditor({
           }
           return true;
         }
+        // Must return false for other keys
         return false;
       },
     },
@@ -210,14 +246,14 @@ export function TipTapEditor({
 
   // Update editor content when value prop changes
   useEffect(() => {
-    if (editor && editor.getText() !== value) {
-      editor.commands.setContent(value);
+    if (tipTapEditor && tipTapEditor.getText() !== value) {
+      tipTapEditor.commands.setContent(value);
     }
-  }, [value, editor]);
+  }, [value, tipTapEditor]);
 
   // Handle focus and blur events
   useEffect(() => {
-    if (!editor) return;
+    if (!tipTapEditor) return;
 
     const handleFocus = () => {
       if (onFocus) onFocus();
@@ -227,23 +263,24 @@ export function TipTapEditor({
       if (onBlur) onBlur();
     };
 
-    editor.on('focus', handleFocus);
-    editor.on('blur', handleBlur);
+    tipTapEditor.on("focus", handleFocus);
+    tipTapEditor.on("blur", handleBlur);
 
+    // eslint-disable-next-line consistent-return
     return () => {
-      editor.off('focus', handleFocus);
-      editor.off('blur', handleBlur);
+      tipTapEditor.off("focus", handleFocus);
+      tipTapEditor.off("blur", handleBlur);
     };
-  }, [editor, onFocus, onBlur]);
+  }, [tipTapEditor, onFocus, onBlur]);
 
   return (
-    <EditorContent 
-      editor={editor} 
+    <EditorContent
+      editor={tipTapEditor}
       className={cn(
         "grow text-sm self-center resize-none outline-none ring-0",
         "transition-all duration-200 ease-in-out",
         "bg-transparent",
-        className
+        className,
       )}
     />
   );
