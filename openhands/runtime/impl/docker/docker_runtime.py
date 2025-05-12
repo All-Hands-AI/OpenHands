@@ -205,6 +205,7 @@ class DockerRuntime(ActionExecutionClient):
         except Exception as ex:
             logger.error(
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
+                exc_info=True
             )
             raise ex
 

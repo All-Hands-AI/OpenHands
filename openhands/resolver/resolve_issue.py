@@ -289,7 +289,7 @@ class IssueResolver:
                     logger.info('Failed to get git diff, retrying...')
                     await asyncio.sleep(10)
             elif isinstance(obs, ErrorObservation):
-                logger.error(f'Error occurred: {obs.content}. Retrying...')
+                logger.error(f'Error occurred: {obs.content}. Retrying...', exc_info=True)
                 await asyncio.sleep(10)
             else:
                 raise ValueError(f'Unexpected observation type: {type(obs)}')
@@ -385,7 +385,7 @@ class IssueResolver:
                 raise RuntimeError('Failed to run the agent.')
         except (ValueError, RuntimeError) as e:
             error_msg = f'Agent failed with error: {str(e)}'
-            logger.error(error_msg)
+            logger.error(error_msg, exc_info=True)
             state = None
             last_error: str | None = error_msg
 
@@ -419,7 +419,7 @@ class IssueResolver:
                 except json.JSONDecodeError:
                     logger.error(
                         f'Failed to parse result_explanation as JSON: {result_explanation}'
-                    )
+                    , exc_info=True)
                     explanations = [
                         str(result_explanation)
                     ]  # Use raw string as fallback
@@ -546,7 +546,7 @@ class IssueResolver:
                     if data.issue.number == self.issue_number:
                         logger.warning(
                             f'Issue {self.issue_number} was already processed. Skipping.'
-                        )
+                        , exc_info=True)
                         return
 
         output_fp = open(output_file, 'a')  # noqa: ASYNC101

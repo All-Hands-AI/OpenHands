@@ -52,7 +52,7 @@ async def submit_feedback(request: Request, conversation_id: str) -> JSONRespons
         feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=status.HTTP_200_OK, content=feedback_data)
     except Exception as e:
-        logger.error(f'Error submitting feedback: {e}')
+        logger.error(f'Error submitting feedback: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Failed to submit feedback'},

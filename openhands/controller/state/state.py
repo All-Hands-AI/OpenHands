@@ -125,7 +125,7 @@ class State:
                 except Exception:
                     pass
         except Exception as e:
-            logger.error(f'Failed to save state to session: {e}')
+            logger.error(f'Failed to save state to session: {e}', exc_info=True)
             raise e
 
     @staticmethod

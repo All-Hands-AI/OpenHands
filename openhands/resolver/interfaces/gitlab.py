@@ -105,7 +105,10 @@ class GitlabIssueHandler(IssueHandlerInterface):
         converted_issues = []
         for issue in all_issues:
             if any([issue.get(key) is None for key in ['iid', 'title']]):
-                logger.warning(f'Skipping issue {issue} as it is missing iid or title.')
+                logger.warning(
+                    f'Skipping issue {issue} as it is missing iid or title.',
+                    exc_info=True,
+                )
                 continue
 
             # Handle empty body by using empty string
@@ -277,7 +280,8 @@ class GitlabIssueHandler(IssueHandlerInterface):
             )
             if review_response.status_code != 200:
                 logger.warning(
-                    f'Failed to request review from {reviewer}: {review_response.text}'
+                    f'Failed to request review from {reviewer}: {review_response.text}',
+                    exc_info=True,
                 )
 
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
@@ -295,7 +299,8 @@ class GitlabIssueHandler(IssueHandlerInterface):
         )
         if comment_response.status_code != 201:
             logger.error(
-                f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+                f'Failed to post comment: {comment_response.status_code} {comment_response.text}',
+                exc_info=True,
             )
         else:
             logger.info(f'Comment added to the PR: {msg}')
@@ -546,7 +551,9 @@ class GitlabPRHandler(GitlabIssueHandler):
                 if issue_body:
                     closing_issues.append(issue_body)
             except httpx.HTTPError as e:
-                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
+                logger.warning(
+                    f'Failed to fetch issue {issue_number}: {str(e)}'
+                )
 
         return closing_issues
 
@@ -564,7 +571,9 @@ class GitlabPRHandler(GitlabIssueHandler):
         for issue in all_issues:
             # For PRs, body can be None
             if any([issue.get(key) is None for key in ['iid', 'title']]):
-                logger.warning(f'Skipping #{issue} as it is missing iid or title.')
+                logger.warning(
+                    f'Skipping #{issue} as it is missing iid or title.', exc_info=True
+                )
                 continue
 
             # Handle None body for PRs

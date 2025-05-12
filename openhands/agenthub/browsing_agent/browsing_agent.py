@@ -198,7 +198,7 @@ class BrowsingAgent(Agent):
             except Exception as e:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e
-                )
+                , exc_info=True)
                 return MessageAction('Error encountered when browsing.')
 
         goal, _ = state.get_current_user_intent()

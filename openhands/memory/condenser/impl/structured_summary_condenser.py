@@ -289,7 +289,7 @@ Capture all relevant information, especially:
         except (ValueError, AttributeError, KeyError, json.JSONDecodeError) as e:
             logger.warning(
                 f'Failed to parse summary tool call: {e}. Using empty summary.'
-            )
+            , exc_info=True)
             summary = StateSummary()
 
         self.add_metadata('response', response.model_dump())

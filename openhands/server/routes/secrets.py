@@ -142,7 +142,7 @@ async def store_provider_tokens(
             content={'message': 'Git providers stored'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong storing git providers: {e}')
+        logger.warning(f'Something went wrong storing git providers: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong storing git providers'},
@@ -165,7 +165,7 @@ async def unset_provider_tokens(
         )
 
     except Exception as e:
-        logger.warning(f'Something went wrong unsetting tokens: {e}')
+        logger.warning(f'Something went wrong unsetting tokens: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong unsetting tokens'},
@@ -192,7 +192,7 @@ async def load_custom_secrets_names(
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
-        logger.warning(f'Failed to load secret names: {e}')
+        logger.warning(f'Failed to load secret names: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Failed to get secret names'},
@@ -231,7 +231,7 @@ async def create_custom_secret(
             content={'message': 'Secret created successfully'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong creating secret: {e}')
+        logger.warning(f'Something went wrong creating secret: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong creating secret'},
@@ -273,7 +273,7 @@ async def update_custom_secret(
             content={'message': 'Secret updated successfully'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong updating secret: {e}')
+        logger.warning(f'Something went wrong updating secret: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong updating secret'},
@@ -314,7 +314,7 @@ async def delete_custom_secret(
             content={'message': 'Secret deleted successfully'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong deleting secret: {e}')
+        logger.warning(f'Something went wrong deleting secret: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong deleting secret'},

@@ -49,7 +49,7 @@ class MemoryMonitor:
                 )
                 logger.info(f'Memory usage across time: {mem_usage}')
             except Exception as e:
-                logger.error(f'Memory monitoring failed: {e}')
+                logger.error(f'Memory monitoring failed: {e}', exc_info=True)
 
         self._monitoring_thread = threading.Thread(target=monitor_process, daemon=True)
         self._monitoring_thread.start()

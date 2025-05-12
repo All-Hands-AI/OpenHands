@@ -61,7 +61,8 @@ class CmdOutputMetadata(BaseModel):
             except json.JSONDecodeError:
                 logger.warning(
                     f'Failed to parse PS1 metadata: {match.group(1)}. Skipping.'
-                    + traceback.format_exc()
+                    + traceback.format_exc(),
+                    exc_info=True
                 )
                 continue  # Skip if not valid JSON
         return matches
@@ -83,7 +84,8 @@ class CmdOutputMetadata(BaseModel):
                 processed['exit_code'] = int(float(str(metadata['exit_code'])))
             except (ValueError, TypeError):
                 logger.warning(
-                    f'Failed to parse exit code: {metadata["exit_code"]}. Setting to -1.'
+                    f'Failed to parse exit code: {metadata["exit_code"]}. Setting to -1.',
+                    exc_info=True
                 )
                 processed['exit_code'] = -1
         return cls(**processed)

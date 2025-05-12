@@ -93,10 +93,10 @@ class EventStream(EventStore):
 
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str) -> None:
         if subscriber_id not in self._subscribers:
-            logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')
+            logger.warning(f'Subscriber not found during cleanup: {subscriber_id}', exc_info=True)
             return
         if callback_id not in self._subscribers[subscriber_id]:
-            logger.warning(f'Callback not found during cleanup: {callback_id}')
+            logger.warning(f'Callback not found during cleanup: {callback_id}', exc_info=True)
             return
         if (
             subscriber_id in self._thread_loops
@@ -108,7 +108,8 @@ class EventStream(EventStore):
                 loop.close()
             except Exception as e:
                 logger.warning(
-                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
+                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}',
+                    exc_info=True
                 )
             del self._thread_loops[subscriber_id][callback_id]
 
@@ -146,11 +147,11 @@ class EventStream(EventStore):
         self, subscriber_id: EventStreamSubscriber, callback_id: str
     ) -> None:
         if subscriber_id not in self._subscribers:
-            logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
+            logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}', exc_info=True)
             return
 
         if callback_id not in self._subscribers[subscriber_id]:
-            logger.warning(f'Callback not found during unsubscribe: {callback_id}')
+            logger.warning(f'Callback not found during unsubscribe: {callback_id}', exc_info=True)
             return
 
         self._clean_up_subscriber(subscriber_id, callback_id)
@@ -254,6 +255,7 @@ class EventStream(EventStore):
             except Exception as e:
                 logger.error(
                     f'Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}',
+                    exc_info=True
                 )
                 # Re-raise in the main thread so the error is not swallowed
                 raise e

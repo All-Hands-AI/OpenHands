@@ -274,7 +274,7 @@ class Runtime(FileEditRuntimeMixin):
         except Exception as e:
             logger.warning(
                 f'Failed export latest github token to runtime: {self.sid}, {e}'
-            )
+            , exc_info=True)
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:

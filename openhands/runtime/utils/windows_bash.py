@@ -144,8 +144,8 @@ class WindowsPowershellSession:
             self._initialized = True  # Set to True only on successful initialization
             logger.info(f'PowerShell runspace created. Initial CWD set to: {self._cwd}')
         except Exception as e:
-            logger.error(f'Failed to create or open PowerShell runspace: {e}')
-            logger.error(traceback.format_exc())
+            logger.error(f'Failed to create or open PowerShell runspace: {e}', exc_info=True)
+            logger.error(traceback.format_exc(), exc_info=True)
             self.close()  # Ensure cleanup if init fails partially
             raise RuntimeError(f'Failed to initialize PowerShell runspace: {e}')
 
@@ -158,7 +158,7 @@ class WindowsPowershellSession:
             ps.AddScript(f'Set-Location -Path "{self._cwd}"').Invoke()
             if ps.Streams.Error:
                 errors = '\n'.join([str(err) for err in ps.Streams.Error])
-                logger.warning(f"Error setting initial CWD to '{self._cwd}': {errors}")
+                logger.warning(f"Error setting initial CWD to '{self._cwd}': {errors}", exc_info=True)
                 # Confirm actual CWD if setting failed
                 self._confirm_cwd()
             else:
@@ -166,8 +166,8 @@ class WindowsPowershellSession:
                 # Optional: Confirm CWD even on success for robustness
                 # self._confirm_cwd()
         except Exception as e:
-            logger.error(f'Exception setting initial CWD: {e}')
-            logger.error(traceback.format_exc())
+            logger.error(f'Exception setting initial CWD: {e}', exc_info=True)
+            logger.error(traceback.format_exc(), exc_info=True)
             # Attempt to confirm CWD even if setting threw an exception
             self._confirm_cwd()
         finally:
@@ -187,7 +187,7 @@ class WindowsPowershellSession:
                 if os.path.isdir(actual_cwd):
                     if actual_cwd != self._cwd:
                         logger.warning(
-                            f'Runspace CWD ({actual_cwd}) differs from expected ({self._cwd}). Updating session CWD.'
+                            f'Runspace CWD ({actual_cwd}, exc_info=True) differs from expected ({self._cwd}). Updating session CWD.'
                         )
                         self._cwd = actual_cwd
                     else:
@@ -195,14 +195,14 @@ class WindowsPowershellSession:
                 else:
                     logger.error(
                         f'Get-Location returned an invalid path: {actual_cwd}. Session CWD may be inaccurate.'
-                    )
+                    , exc_info=True)
             elif ps_confirm.Streams.Error:
                 errors = '\n'.join([str(err) for err in ps_confirm.Streams.Error])
-                logger.error(f'Error confirming runspace CWD: {errors}')
+                logger.error(f'Error confirming runspace CWD: {errors}', exc_info=True)
             else:
-                logger.error('Could not confirm runspace CWD (No result or error).')
+                logger.error('Could not confirm runspace CWD (No result or error, exc_info=True).')
         except Exception as e:
-            logger.error(f'Exception confirming CWD: {e}')
+            logger.error(f'Exception confirming CWD: {e}', exc_info=True)
         finally:
             if ps_confirm:
                 ps_confirm.Dispose()
@@ -226,7 +226,7 @@ class WindowsPowershellSession:
             ps.AddScript(script)
             results = ps.Invoke()
         except Exception as e:
-            logger.error(f'Exception running script: {script}\n{e}')
+            logger.error(f'Exception running script: {script}\n{e}', exc_info=True)
         finally:
             if ps:
                 ps.Dispose()
@@ -247,7 +247,7 @@ class WindowsPowershellSession:
                 _ = underlying_job.JobStateInfo.State
                 return underlying_job
             except AttributeError:
-                logger.warning(f'Retrieved object is not a valid job. ID: {job_id}')
+                logger.warning(f'Retrieved object is not a valid job. ID: {job_id}', exc_info=True)
                 return None
         return None
 
@@ -271,7 +271,7 @@ class WindowsPowershellSession:
         except Exception as read_err:
             logger.error(
                 f'Failed to read job error stream directly for Job {job.Id}: {read_err}'
-            )
+            , exc_info=True)
             error_parts.append(f'[Direct Error Stream Read Exception: {read_err}]')
 
         # Run Receive-Job for the output stream
@@ -294,11 +294,11 @@ class WindowsPowershellSession:
                 receive_job_errors = [str(e) for e in ps_receive.Streams.Error]
                 logger.warning(
                     f'Errors during Receive-Job for Job ID {job.Id}: {receive_job_errors}'
-                )
+                , exc_info=True)
                 error_parts.extend(receive_job_errors)
 
         except Exception as e:
-            logger.error(f'Exception during Receive-Job for Job ID {job.Id}: {e}')
+            logger.error(f'Exception during Receive-Job for Job ID {job.Id}: {e}', exc_info=True)
             error_parts.append(f'[Receive-Job Exception: {e}]')
         finally:
             if ps_receive:
@@ -399,19 +399,19 @@ class WindowsPowershellSession:
 
             while not monitoring_loop_finished:
                 if not should_continue():
-                    logger.warning('Shutdown signal received during job check.')
+                    logger.warning('Shutdown signal received during job check.', exc_info=True)
                     monitoring_loop_finished = True
                     continue
 
                 elapsed_seconds = time.monotonic() - start_time
                 if elapsed_seconds > timeout_seconds:
-                    logger.warning(f'Job check timed out after {timeout_seconds}s.')
+                    logger.warning(f'Job check timed out after {timeout_seconds}s.', exc_info=True)
                     monitoring_loop_finished = True
                     continue
 
                 current_job_obj = self._get_job_object(job_id)
                 if not current_job_obj:
-                    logger.error(f'Job {job_id} object disappeared during check.')
+                    logger.error(f'Job {job_id} object disappeared during check.', exc_info=True)
                     accumulated_new_errors.append('[Job object lost during check]')
                     monitoring_loop_finished = True
                     exit_code = 1
@@ -435,7 +435,7 @@ class WindowsPowershellSession:
                     else:
                         logger.warning(
                             f'Job {job_id} check: Cumulative output changed unexpectedly'
-                        )
+                        , exc_info=True)
                         new_output_detected = polled_cumulative_output.removeprefix(
                             self._last_job_output
                         )
@@ -523,7 +523,7 @@ class WindowsPowershellSession:
                     self._last_job_output = ''
                     self._last_job_error = []
                 else:
-                    logger.warning(f'Could not get final job object {job_id}')
+                    logger.warning(f'Could not get final job object {job_id}', exc_info=True)
                     exit_code = 1
                     if self.active_job and self.active_job.Id == job_id:
                         self.active_job = None
@@ -593,7 +593,7 @@ class WindowsPowershellSession:
                 else:
                     logger.warning(
                         f"_get_current_cwd: Path '{fetched_cwd}' is not a valid directory. Returning cached CWD: {self._cwd}"
-                    )
+                    , exc_info=True)
                     return self._cwd
             else:
                 # Handle cases where Path attribute is missing (e.g., unexpected object type)
@@ -611,29 +611,29 @@ class WindowsPowershellSession:
                             return self._cwd
                         else:
                             logger.warning(
-                                f"_get_current_cwd: Path '{fetched_cwd}' (from BaseObject) is not a valid directory. Returning cached CWD: {self._cwd}"
+                                f"_get_current_cwd: Path '{fetched_cwd}' (from BaseObject, exc_info=True) is not a valid directory. Returning cached CWD: {self._cwd}"
                             )
                             return self._cwd
                     else:
                         logger.error(
                             f'_get_current_cwd: BaseObject also lacks Path attribute. Cannot determine CWD from result: {first_result}'
-                        )
+                        , exc_info=True)
                         return self._cwd  # Return cached
                 except AttributeError as ae:
                     logger.error(
                         f'_get_current_cwd: Error accessing BaseObject or its Path: {ae}. Result: {first_result}'
-                    )
+                    , exc_info=True)
                     return self._cwd  # Return cached
                 except Exception as ex:
                     logger.error(
                         f'_get_current_cwd: Unexpected error checking BaseObject: {ex}. Result: {first_result}'
-                    )
+                    , exc_info=True)
                     return self._cwd  # Return cached
 
         # This path is taken if _run_ps_command returned [] or results.Count was 0
         logger.error(
             f'_get_current_cwd: No valid results received from Get-Location call. Returning cached CWD: {self._cwd}'
-        )
+        , exc_info=True)
         return self._cwd
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
@@ -703,7 +703,7 @@ class WindowsPowershellSession:
                     # Job object disappeared, consider it finished/gone
                     logger.warning(
                         f'Could not retrieve active job object {finished_job_id}. Assuming finished and clearing.'
-                    )
+                    , exc_info=True)
                     job_is_finished = True
                     current_job_state = (
                         JobState.Failed
@@ -774,7 +774,7 @@ class WindowsPowershellSession:
                         # For now, return an error indicating this limitation.
                         logger.warning(
                             f"Received input command '{command}' while job active, but direct input injection is not supported in this implementation."
-                        )
+                        , exc_info=True)
                         # Get *new* output since last observation to provide context
                         cumulative_output, cumulative_errors = self._receive_job_output(
                             self.active_job, keep=True
@@ -816,7 +816,7 @@ class WindowsPowershellSession:
                         # Any other command arrives while a job is running -> Reject it (bash.py behavior)
                         logger.warning(
                             f"Received new command '{command}' while job {self.active_job.Id} is active. New command NOT executed."
-                        )
+                        , exc_info=True)
                         # Get *new* output since last observation to provide context
                         cumulative_output, cumulative_errors = self._receive_job_output(
                             self.active_job, keep=True
@@ -865,7 +865,7 @@ class WindowsPowershellSession:
 
         # Handle empty command when NO job is active
         if command == '':
-            logger.warning('Received empty command string (no active job).')
+            logger.warning('Received empty command string (no active job, exc_info=True).')
             current_cwd = self._get_current_cwd()  # Update CWD just in case
             python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
             metadata = CmdOutputMetadata(exit_code=0, working_dir=python_safe_cwd)
@@ -873,7 +873,7 @@ class WindowsPowershellSession:
             error_content = 'ERROR: No previous running command to retrieve logs from.'
             logger.warning(
                 f'Returning specific error message for empty command: {error_content}'
-            )
+            , exc_info=True)
             # No extra suffix needed
             # metadata.suffix = f"\n[Empty command received (no active job). CWD: {metadata.working_dir}]"
             return CmdOutputObservation(
@@ -884,7 +884,7 @@ class WindowsPowershellSession:
         if command.startswith('C-') and len(command) == 3:
             logger.warning(
                 f'Received control character command: {command}. Not supported when no job active.'
-            )
+            , exc_info=True)
             current_cwd = self._cwd  # Use cached CWD
             python_safe_cwd = current_cwd.replace('\\\\', '\\\\\\\\')
             # Align error message with bash.py (no running command to interact with)
@@ -906,7 +906,7 @@ class WindowsPowershellSession:
                         for err in parse_errors
                     ]
                 )
-                logger.error(f'Command failed PowerShell parsing:\n{error_messages}')
+                logger.error(f'Command failed PowerShell parsing:\n{error_messages}', exc_info=True)
                 return ErrorObservation(
                     content=(
                         f'ERROR: Command could not be parsed by PowerShell.\n'
@@ -917,7 +917,7 @@ class WindowsPowershellSession:
             if statements.Count > 1:
                 logger.error(
                     f'Detected {statements.Count} statements in the command. Only one is allowed.'
-                )
+                , exc_info=True)
                 # Align error message with bash.py
                 splited_cmds = [
                     str(s.Extent.Text) for s in statements
@@ -931,7 +931,7 @@ class WindowsPowershellSession:
                 )
             elif statements.Count == 0 and not command.strip().startswith('#'):
                 logger.warning(
-                    'Received command that resulted in zero executable statements (likely whitespace or comment).'
+                    'Received command that resulted in zero executable statements (likely whitespace or comment, exc_info=True).'
                 )
                 # Treat as empty command if it parses to nothing
                 return CmdOutputObservation(
@@ -941,8 +941,8 @@ class WindowsPowershellSession:
                 )
 
         except Exception as parse_ex:
-            logger.error(f'Exception during PowerShell command parsing: {parse_ex}')
-            logger.error(traceback.format_exc())
+            logger.error(f'Exception during PowerShell command parsing: {parse_ex}', exc_info=True)
+            logger.error(traceback.format_exc(), exc_info=True)
             return ErrorObservation(
                 content=f'ERROR: An exception occurred while parsing the command: {parse_ex}'
             )
@@ -1031,9 +1031,9 @@ class WindowsPowershellSession:
             except ImportError as imp_err:
                 logger.error(
                     f'execute: Failed to import CommandAst: {imp_err}. Cannot check for CWD commands.'
-                )
+                , exc_info=True)
             except Exception as ast_err:
-                logger.error(f'execute: Error checking command AST: {ast_err}')
+                logger.error(f'execute: Error checking command AST: {ast_err}', exc_info=True)
 
         # === Asynchronous Execution Path (for non-CWD commands) ===
         logger.info(
@@ -1067,7 +1067,7 @@ class WindowsPowershellSession:
 
             if ps_start.Streams.Error:
                 errors = [str(e) for e in ps_start.Streams.Error]
-                logger.error(f'Errors during Start-Job execution: {errors}')
+                logger.error(f'Errors during Start-Job execution: {errors}', exc_info=True)
                 all_errors.extend(errors)
 
             ps_get = PowerShell.Create()
@@ -1078,7 +1078,7 @@ class WindowsPowershellSession:
 
             if ps_get.Streams.Error:
                 errors = [str(e) for e in ps_get.Streams.Error]
-                logger.error(f'Errors getting latest job: {errors}')
+                logger.error(f'Errors getting latest job: {errors}', exc_info=True)
                 all_errors.extend(errors)
                 job_start_failed = True
 
@@ -1100,7 +1100,7 @@ class WindowsPowershellSession:
                     )
 
                     if job_state_test == JobState.Failed:
-                        logger.error(f'Job {job.Id} failed immediately after starting.')
+                        logger.error(f'Job {job.Id} failed immediately after starting.', exc_info=True)
                         output_chunk, error_chunk = self._receive_job_output(
                             job, keep=False
                         )
@@ -1116,19 +1116,19 @@ class WindowsPowershellSession:
                 except AttributeError as e:
                     logger.error(
                         f'Get-Job returned an object without expected properties on BaseObject: {e}'
-                    )
-                    logger.error(traceback.format_exc())
+                    , exc_info=True)
+                    logger.error(traceback.format_exc(), exc_info=True)
                     all_errors.append('Get-Job did not return a valid Job object.')
                     job_start_failed = True
 
             elif not job_start_failed:
-                logger.error('Get-Job did not return any results.')
+                logger.error('Get-Job did not return any results.', exc_info=True)
                 all_errors.append('Get-Job did not return any results.')
                 job_start_failed = True
 
         except Exception as start_ex:
-            logger.error(f'Exception during job start/retrieval: {start_ex}')
-            logger.error(traceback.format_exc())
+            logger.error(f'Exception during job start/retrieval: {start_ex}', exc_info=True)
+            logger.error(traceback.format_exc(), exc_info=True)
             all_errors.append(f'[Job Start/Get Exception: {start_ex}]')
             job_start_failed = True
         finally:
@@ -1172,7 +1172,7 @@ class WindowsPowershellSession:
 
         while not monitoring_loop_finished:
             if not should_continue():
-                logger.warning('Shutdown signal received during job monitoring.')
+                logger.warning('Shutdown signal received during job monitoring.', exc_info=True)
                 shutdown_requested = True
                 monitoring_loop_finished = True
                 exit_code = -1
@@ -1181,7 +1181,7 @@ class WindowsPowershellSession:
             elapsed_seconds = time.monotonic() - start_time
             if elapsed_seconds > timeout_seconds:
                 logger.warning(
-                    f'Command job monitoring exceeded timeout ({timeout_seconds}s). Leaving job running.'
+                    f'Command job monitoring exceeded timeout ({timeout_seconds}s, exc_info=True). Leaving job running.'
                 )
                 timed_out = True
                 monitoring_loop_finished = True
@@ -1190,7 +1190,7 @@ class WindowsPowershellSession:
 
             current_job_obj = self._get_job_object(job_id)
             if not current_job_obj:
-                logger.error(f'Job {job_id} object disappeared during monitoring.')
+                logger.error(f'Job {job_id} object disappeared during monitoring.', exc_info=True)
                 all_errors.append('[Job object lost during monitoring]')
                 monitoring_loop_finished = True
                 exit_code = 1
@@ -1257,7 +1257,7 @@ class WindowsPowershellSession:
             else:
                 logger.warning(
                     f'Could not get final job object {job_id} to clear output buffer.'
-                )
+                , exc_info=True)
                 # If object is gone, output is what was last seen relative to last observation
                 final_output_content = latest_cumulative_output.removeprefix(
                     self._last_job_output
@@ -1362,7 +1362,7 @@ class WindowsPowershellSession:
             if self.active_job:
                 logger.warning(  # type: ignore[unreachable]
                     f'Session closing with active job {self.active_job.Id}. Attempting to stop and remove.'
-                )
+                , exc_info=True)
                 job_id = self.active_job.Id
                 try:
                     # Ensure job object exists before trying to stop/remove
@@ -1381,11 +1381,11 @@ class WindowsPowershellSession:
                     else:
                         logger.warning(
                             f'Could not find job object {job_id} to stop/remove during close.'
-                        )
+                        , exc_info=True)
                 except Exception as e:
                     logger.error(
                         f'Error stopping/removing job {job_id} during close: {e}'
-                    )
+                    , exc_info=True)
                 # --- Reset state even if stop/remove failed ---
                 self._last_job_output = ''
                 self._last_job_error = []
@@ -1401,8 +1401,8 @@ class WindowsPowershellSession:
                 self.runspace.Dispose()
                 logger.info('PowerShell runspace closed and disposed.')
             except Exception as e:
-                logger.error(f'Error closing/disposing PowerShell runspace: {e}')
-                logger.error(traceback.format_exc())
+                logger.error(f'Error closing/disposing PowerShell runspace: {e}', exc_info=True)
+                logger.error(traceback.format_exc(), exc_info=True)
 
         self.runspace = None
         self._initialized = False

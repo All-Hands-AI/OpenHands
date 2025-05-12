@@ -67,7 +67,7 @@ class Agent(ABC):
             if not self.prompt_manager:
                 logger.warning(
                     f'[{self.name}] Prompt manager not initialized before getting system message'
-                )
+                , exc_info=True)
                 return None
 
             system_message = self.prompt_manager.get_system_message()
@@ -83,7 +83,7 @@ class Agent(ABC):
 
             return system_message_action
         except Exception as e:
-            logger.warning(f'[{self.name}] Failed to generate system message: {e}')
+            logger.warning(f'[{self.name}] Failed to generate system message: {e}', exc_info=True)
             return None
 
     @property
@@ -174,7 +174,7 @@ class Agent(ABC):
             if _tool['function']['name'] in self.mcp_tools:
                 logger.warning(
                     f'Tool {_tool["function"]["name"]} already exists, skipping'
-                )
+                , exc_info=True)
                 continue
             self.mcp_tools[_tool['function']['name']] = _tool
             self.tools.append(_tool)

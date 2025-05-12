@@ -157,7 +157,7 @@ def _execute_file_editor(
         return f'ERROR:\n{result.error}', (None, None)
 
     if not result.output:
-        logger.warning(f'No output from file_editor for {path}')
+        logger.warning(f'No output from file_editor for {path}', exc_info=True)
         return '', (None, None)
 
     return result.output, (result.old_content, result.new_content)
@@ -220,7 +220,9 @@ class ActionExecutor:
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
         if sys.platform == 'win32':
-            logger.warning('Browser environment not supported on windows')
+            logger.warning(
+                'Browser environment not supported on windows', exc_info=True
+            )
             return
 
         logger.debug('Initializing browser asynchronously')
@@ -228,7 +230,7 @@ class ActionExecutor:
             self.browser = BrowserEnv(self.browsergym_eval_env)
             logger.debug('Browser initialized asynchronously')
         except Exception as e:
-            logger.error(f'Failed to initialize browser: {e}')
+            logger.error(f'Failed to initialize browser: {e}', exc_info=True)
             self.browser = None
 
     async def _ensure_browser_ready(self):
@@ -401,7 +403,7 @@ class ActionExecutor:
             obs = await call_sync_from_async(self.bash_session.execute, action)
             return obs
         except Exception as e:
-            logger.error(f'Error running command: {e}')
+            logger.error(f'Error running command: {e}', exc_info=True)
             return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -621,7 +623,7 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
-    logger.warning('Starting Action Execution Server')
+    logger.warning('Starting Action Execution Server', exc_info=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
@@ -696,7 +698,9 @@ if __name__ == '__main__':
         conflicting_routes = main_app_routes.intersection(sse_app_routes)
 
         if conflicting_routes:
-            logger.error(f'Route conflicts detected: {conflicting_routes}')
+            logger.error(
+                f'Route conflicts detected: {conflicting_routes}', exc_info=True
+            )
             raise RuntimeError(
                 f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
             )
@@ -753,14 +757,14 @@ if __name__ == '__main__':
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-        logger.error(f'HTTP exception occurred: {exc.detail}')
+        logger.error(f'HTTP exception occurred: {exc.detail}', exc_info=True)
         return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ):
-        logger.error(f'Validation error occurred: {exc}')
+        logger.error(f'Validation error occurred: {exc}', exc_info=True)
         return JSONResponse(
             status_code=422,
             content={
@@ -807,7 +811,9 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error while running /execute_action: {str(e)}')
+            logger.error(
+                f'Error while running /execute_action: {str(e)}'
+            )
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
@@ -1040,7 +1046,7 @@ if __name__ == '__main__':
             return sorted_entries
 
         except Exception as e:
-            logger.error(f'Error listing files: {e}')
+            logger.error(f'Error listing files: {e}', exc_info=True)
             return []
 
     logger.debug(f'Starting action execution API on port {args.port}')

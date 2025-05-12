@@ -25,7 +25,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
         List of dicts of tools ready to be used by CodeActAgent
     """
     if mcp_clients is None:
-        logger.warning('mcp_clients is None, returning empty list')
+        logger.warning('mcp_clients is None, returning empty list', exc_info=True)
         return []
 
     all_mcp_tools = []
@@ -37,7 +37,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
                 mcp_tools = tool.to_param()
                 all_mcp_tools.append(mcp_tools)
     except Exception as e:
-        logger.error(f'Error in convert_mcp_clients_to_tools: {e}')
+        logger.error(f'Error in convert_mcp_clients_to_tools: {e}', exc_info=True)
         return []
     return all_mcp_tools
 
@@ -60,7 +60,9 @@ async def create_mcp_clients(
                 mcp_clients.append(client)
                 logger.info(f'Connected to MCP server {server_url} via SSE')
             except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
+                logger.error(
+                    f'Failed to connect to {server_url}: {str(e)}'
+                )
                 try:
                     await client.disconnect()
                 except Exception as disconnect_error:
@@ -99,7 +101,9 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
             try:
                 await mcp_client.disconnect()
             except Exception as disconnect_error:
-                logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
+                logger.error(
+                    f'Error disconnecting MCP client: {str(disconnect_error)}'
+                )
 
     except Exception as e:
         logger.error(f'Error fetching MCP tools: {str(e)}')

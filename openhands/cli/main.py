@@ -86,7 +86,7 @@ async def cleanup_session(
         runtime.close()
         await controller.close()
     except Exception as e:
-        logger.error(f'Error during session cleanup: {e}')
+        logger.error(f'Error during session cleanup: {e}', exc_info=True)
 
 
 async def run_session(

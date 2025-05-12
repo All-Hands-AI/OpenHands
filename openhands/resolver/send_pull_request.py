@@ -34,7 +34,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     diffs = parse_patch(patch)
     for diff in diffs:
         if not diff.header.new_path:
-            logger.warning('Could not determine file to patch')
+            logger.warning('Could not determine file to patch', exc_info=True)
             continue
 
         # Remove both "a/" and "b/" prefixes from paths
@@ -97,14 +97,14 @@ def apply_patch(repo_dir: str, patch: str) -> None:
                 with open(old_path, 'r', newline=newline) as f:
                     split_content = [x.strip(newline) for x in f.readlines()]
             except UnicodeDecodeError as e:
-                logger.error(f'Error reading file {old_path}: {e}')
+                logger.error(f'Error reading file {old_path}: {e}', exc_info=True)
                 split_content = []
         else:
             newline = '\n'
             split_content = []
 
         if diff.changes is None:
-            logger.warning(f'No changes to apply for {old_path}')
+            logger.warning(f'No changes to apply for {old_path}', exc_info=True)
             continue
 
         new_content = apply_diff(diff, split_content)
@@ -190,7 +190,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
     )
     if result.returncode != 0:
-        logger.error(f'Error adding files: {result.stderr}')
+        logger.error(f'Error adding files: {result.stderr}', exc_info=True)
         raise RuntimeError('Failed to add files to git')
 
     # Check the status of the git index
@@ -205,7 +205,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
     if not status_result.stdout.strip():
         logger.error(
             f'No changes to commit for issue #{issue.number}. Skipping commit.'
-        )
+        , exc_info=True)
         raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
     # Prepare the commit message
@@ -295,7 +295,7 @@ def send_pull_request(
         text=True,
     )
     if result.returncode != 0:
-        logger.error(f'Error creating new branch: {result.stderr}')
+        logger.error(f'Error creating new branch: {result.stderr}', exc_info=True)
         raise RuntimeError(
             f'Failed to create a new branch {branch_name} in {patch_dir}:'
         )
@@ -313,7 +313,7 @@ def send_pull_request(
         text=True,
     )
     if result.returncode != 0:
-        logger.error(f'Error pushing changes: {result.stderr}')
+        logger.error(f'Error pushing changes: {result.stderr}', exc_info=True)
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
@@ -418,7 +418,7 @@ def update_existing_pull_request(
     # Push the changes to the existing branch
     result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        logger.error(f'Error pushing changes: {result.stderr}')
+        logger.error(f'Error pushing changes: {result.stderr}', exc_info=True)
         raise RuntimeError('Failed to push changes to the remote repository')
 
     pr_url = handler.get_pull_url(issue.number)

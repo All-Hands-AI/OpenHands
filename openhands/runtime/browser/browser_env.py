@@ -58,7 +58,7 @@ class BrowserEnv:
             self.process = multiprocessing.Process(target=self.browser_process)
             self.process.start()
         except Exception as e:
-            logger.error(f'Failed to start browser process: {e}')
+            logger.error(f'Failed to start browser process: {e}', exc_info=True)
             raise
 
         if not self.check_alive(timeout=200):
@@ -212,7 +212,7 @@ class BrowserEnv:
             if self.process.is_alive():
                 logger.error(
                     'Browser process did not terminate, forcefully terminating...'
-                )
+                , exc_info=True)
                 self.process.terminate()
                 self.process.join(5)  # Wait for the process to terminate
                 if self.process.is_alive():
@@ -221,4 +221,4 @@ class BrowserEnv:
             self.agent_side.close()
             self.browser_side.close()
         except Exception as e:
-            logger.error(f'Encountered an error when closing browser env: {e}')
+            logger.error(f'Encountered an error when closing browser env: {e}', exc_info=True)

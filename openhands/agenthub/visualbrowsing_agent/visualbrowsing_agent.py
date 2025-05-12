@@ -268,7 +268,7 @@ Note:
             except Exception as e:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e
-                )
+                , exc_info=True)
                 return MessageAction('Error encountered when browsing.')
             set_of_marks = last_obs.set_of_marks
         goal, image_urls = state.get_current_user_intent()

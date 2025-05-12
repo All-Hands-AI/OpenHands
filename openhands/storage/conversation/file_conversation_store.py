@@ -87,7 +87,7 @@ class FileConversationStore(ConversationStore):
             except Exception:
                 logger.warning(
                     f'Could not load conversation metadata: {conversation_id}'
-                )
+                , exc_info=True)
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)

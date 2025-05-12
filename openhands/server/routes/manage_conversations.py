@@ -95,13 +95,15 @@ async def _create_new_conversation(
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):
-            logger.warning(f'Missing api key for model {settings.llm_model}')
+            logger.warning(
+                f'Missing api key for model {settings.llm_model}', exc_info=True
+            )
             raise LLMAuthenticationError(
                 'Error authenticating with the LLM provider. Please check your API key'
             )
 
     else:
-        logger.warning('Settings not present, not starting conversation')
+        logger.warning('Settings not present, not starting conversation', exc_info=True)
         raise MissingSettingsError('Settings not found')
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
@@ -114,7 +116,10 @@ async def _create_new_conversation(
 
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
-        logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
+        logger.warning(
+            f'Collision on conversation ID: {conversation_id}. Retrying...',
+            exc_info=True,
+        )
         conversation_id = uuid.uuid4().hex
     logger.info(
         f'New conversation ID: {conversation_id}',
@@ -269,16 +274,19 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         user_id, conversation_ids
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
+    )
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
                 num_connections=sum(
-                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
-                )
+                ),
             )
             for conversation in filtered_results
         ),
@@ -295,8 +303,12 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections)
+        num_connections = len(
+            await conversation_manager.get_connections(filter_to_sids={conversation_id})
+        )
+        conversation_info = await _get_conversation_info(
+            metadata, is_running, num_connections
+        )
         return conversation_info
     except FileNotFoundError:
         return None
@@ -322,9 +334,7 @@ async def delete_conversation(
 
 
 async def _get_conversation_info(
-    conversation: ConversationMetadata,
-    is_running: bool,
-    num_connections: int
+    conversation: ConversationMetadata, is_running: bool, num_connections: int
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -340,7 +350,7 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
-            num_connections=num_connections
+            num_connections=num_connections,
         )
     except Exception as e:
         logger.error(

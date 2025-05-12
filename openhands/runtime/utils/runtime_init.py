@@ -84,7 +84,7 @@ def init_user_and_working_directory(
         else:
             logger.warning(
                 f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
-            )
+            , exc_info=True)
             return existing_user_id
         return None
     except subprocess.CalledProcessError as e:
@@ -94,7 +94,7 @@ def init_user_and_working_directory(
                 f'User `{username}` does not exist. Proceeding with user creation.'
             )
         else:
-            logger.error(f'Error checking user `{username}`, skipping setup:\n{e}\n')
+            logger.error(f'Error checking user `{username}`, skipping setup:\n{e}\n', exc_info=True)
             raise
 
     # Add sudoer

@@ -405,7 +405,7 @@ class LLM(RetryMixin, DebugMixin):
             if 'data' not in resp_json:
                 logger.error(
                     f'Error getting model info from LiteLLM proxy: {resp_json}'
-                )
+                , exc_info=True)
             all_model_info = resp_json.get('data', [])
             current_model_info = next(
                 (
@@ -676,7 +676,8 @@ class LLM(RetryMixin, DebugMixin):
                     f'\ncustom_tokenizer: {self.config.custom_tokenizer}'
                     if self.config.custom_tokenizer is not None
                     else ''
-                )
+                ),
+                exc_info=True
             )
             return 0
 

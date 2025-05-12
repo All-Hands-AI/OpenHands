@@ -425,7 +425,8 @@ class LlmFileHandler(logging.FileHandler):
                     os.unlink(file_path)
                 except Exception as e:
                     openhands_logger.error(
-                        'Failed to delete %s. Reason: %s', file_path, e
+                        'Failed to delete %s. Reason: %s', file_path, e,
+                        exc_info=True
                     )
         filename = f'{self.filename}_{self.message_counter:03}.log'
         self.baseFilename = os.path.join(self.log_directory, filename)
