@@ -3,7 +3,8 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Mention } from "@tiptap/extension-mention";
 import Placeholder from "@tiptap/extension-placeholder";
-import { createRoot } from "react-dom/client";
+import tippy from "tippy.js";
+import "tippy.js/dist/tippy.css";
 import { cn } from "#/utils/utils";
 import "./tiptap-editor.css";
 
@@ -48,7 +49,7 @@ export function TipTapEditor({
           setMicroagents(data);
         }
       } catch (error) {
-        // Error fetching microagents
+        console.error("Error fetching microagents:", error);
       } finally {
         setLoading(false);
       }
@@ -57,9 +58,9 @@ export function TipTapEditor({
     fetchMicroagents();
   }, []);
 
-  // Custom suggestion handler for microagents
-  const suggestionHandler = useCallback(
-    () => ({
+  // Custom suggestion handler for microagents using tippy.js
+  const suggestionHandler = useCallback(() => {
+    return {
       char: "/",
       items: ({ query }: { query: string }) => {
         if (!query) return microagents;
@@ -67,125 +68,53 @@ export function TipTapEditor({
         return microagents.filter(
           (item) =>
             item.trigger.toLowerCase().includes(query.toLowerCase()) ||
-            item.name.toLowerCase().includes(query.toLowerCase()),
+            item.name.toLowerCase().includes(query.toLowerCase())
         );
       },
       render: () => {
-        let popup: HTMLElement | null = null;
-        let component: React.ReactNode | null = null;
+        let popup: any = null;
 
         return {
-          onStart: (props: {
-            items: MicroagentInfo[];
-            selectedIndex: number;
-            command: (item: MicroagentInfo) => void;
-          }) => {
-            popup = document.createElement("div");
-            popup.classList.add("microagent-suggestions-popup");
-            document.body.appendChild(popup);
-
-            component = (
-              <div className="absolute z-50 bg-neutral-800 rounded-md shadow-lg border border-neutral-600 w-64 max-h-60 overflow-y-auto">
-                {loading && (
-                  <div className="p-2 text-neutral-400">
-                    Loading microagents...
-                  </div>
-                )}
-                {!loading && props.items.length === 0 && (
-                  <div className="p-2 text-neutral-400">
-                    No microagents found
-                  </div>
-                )}
-                {!loading && props.items.length > 0 && (
-                  <ul className="py-1">
-                    {props.items.map((item: MicroagentInfo, index: number) => (
-                      <div
-                        key={item.trigger}
-                        className={cn(
-                          "px-3 py-2 hover:bg-neutral-700 cursor-pointer flex flex-col",
-                          index === props.selectedIndex ? "bg-neutral-700" : "",
-                        )}
-                        onClick={() => props.command(item)}
-                      >
-                        <span className="font-medium text-white">
-                          {item.trigger}
-                        </span>
-                        <span className="text-xs text-neutral-400 truncate">
-                          {item.description}
-                        </span>
-                      </div>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-
-            if (popup) {
-              const { clientRect } = props;
-              const { top, left } = clientRect();
-
-              // Position the popup
-              popup.style.position = "absolute";
-              popup.style.top = `${top}px`;
-              popup.style.left = `${left}px`;
-
-              // Render the component into the popup
-              const root = createRoot(popup);
-              root.render(component);
-            }
+          onStart: (props: any) => {
+            popup = tippy("body", {
+              getReferenceClientRect: props.clientRect,
+              appendTo: () => document.body,
+              content: renderItems(props),
+              showOnCreate: true,
+              interactive: true,
+              trigger: "manual",
+              placement: "bottom-start",
+              theme: "microagent",
+              arrow: false,
+              zIndex: 9999,
+            });
           },
-          onUpdate: (props: {
-            items: MicroagentInfo[];
-            selectedIndex: number;
-            clientRect: () => { top: number; left: number };
-          }) => {
-            if (popup) {
-              const { clientRect } = props;
-              const { top, left } = clientRect();
-
-              // Update position
-              popup.style.top = `${top}px`;
-              popup.style.left = `${left}px`;
-
-              // Re-render with updated props
-              const root = createRoot(popup);
-              root.render(component);
-            }
+          onUpdate: (props: any) => {
+            popup[0].setProps({
+              getReferenceClientRect: props.clientRect,
+              content: renderItems(props),
+            });
           },
-          onKeyDown: (props: { event: KeyboardEvent }) => {
+          onKeyDown: (props: any) => {
             if (props.event.key === "Escape") {
-              props.event.preventDefault();
+              popup[0].hide();
               return true;
             }
-
+            
+            // Handle arrow keys and Enter for selection
+            if (["ArrowUp", "ArrowDown", "Enter"].includes(props.event.key)) {
+              return true;
+            }
+            
             return false;
           },
           onExit: () => {
-            if (popup) {
-              document.body.removeChild(popup);
-              popup = null;
-              component = null;
-            }
+            popup && popup[0].destroy();
+            popup = null;
           },
         };
       },
-      command: ({
-        editor,
-        range,
-        props,
-      }: {
-        editor: {
-          chain: () => {
-            focus: () => {
-              deleteRange: (range: { from: number; to: number }) => {
-                insertContent: (content: string) => { run: () => void };
-              };
-            };
-          };
-        };
-        range: { from: number; to: number };
-        props: MicroagentInfo;
-      }) => {
+      command: ({ editor, range, props }: any) => {
         // Insert the selected microagent trigger
         editor
           .chain()
@@ -194,9 +123,52 @@ export function TipTapEditor({
           .insertContent(`${props.trigger.replace("/", "")} `)
           .run();
       },
-    }),
-    [microagents, loading],
-  );
+    };
+  }, [microagents, loading]);
+
+  // Render the suggestion items
+  const renderItems = useCallback((props: any) => {
+    const container = document.createElement("div");
+    container.classList.add("microagent-suggestions-container");
+
+    if (loading) {
+      container.innerHTML = '<div class="p-2 text-neutral-400">Loading microagents...</div>';
+      return container;
+    }
+
+    if (props.items.length === 0) {
+      container.innerHTML = '<div class="p-2 text-neutral-400">No microagents found</div>';
+      return container;
+    }
+
+    container.innerHTML = `
+      <div class="microagent-list">
+        ${props.items
+          .map(
+            (item: MicroagentInfo, index: number) => `
+            <div 
+              class="microagent-item ${index === props.selectedIndex ? "is-selected" : ""}"
+              data-index="${index}"
+            >
+              <span class="microagent-trigger">${item.trigger}</span>
+              <span class="microagent-description">${item.description}</span>
+            </div>
+          `
+          )
+          .join("")}
+      </div>
+    `;
+
+    // Add click event listeners
+    const items = container.querySelectorAll(".microagent-item");
+    items.forEach((item: Element, index: number) => {
+      item.addEventListener("click", () => {
+        props.command(props.items[index]);
+      });
+    });
+
+    return container;
+  }, [loading]);
 
   const tipTapEditor = useEditor({
     extensions: [
