@@ -323,6 +323,7 @@ async def _get_conversation_info(
         title = conversation.title
         if not title:
             title = get_default_conversation_title(conversation.conversation_id)
+        connections = conversation_manager.get_connections(filter_to_sids={conversation.conversation_id})
         return ConversationInfo(
             trigger=conversation.trigger,
             conversation_id=conversation.conversation_id,
@@ -333,6 +334,7 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
+            number_of_connections=len(connections)
         )
     except Exception as e:
         logger.error(

@@ -56,23 +56,16 @@ class DockerNestedConversationManager(ConversationManager):
             "sid": sid,
             "user_id": user_id,
         })
-        # TODO:
-        # Check whether the conversation exists in docker
-        # Pull the events from the exposed endpoint
-        # Our event stream needs to be backable by this!
-        # A snapshot may be more efficient than a websocket based solution.
-        # Or maybe we just mark this as unsupported!
-        #return await super().attach_to_conversation(sid, user_id)
+        # Attaching / Detaching conversations is simply not suported in this manager - clients should connect
+        # directly!
         raise ValueError('unsupported_operation')
 
     async def detach_from_conversation(self, conversation: Conversation):
         logger.info('DockerNestedConversationManager:detach_from_conversation', extra={
             "conversation": conversation,
         })
-        # TODO:
-        # Detach the event stream here
-        # If we are using websockets, then we will need to disconnect.
-        # Or maybe we just mark this as unsupported!
+        # Attaching / Detaching conversations is simply not suported in this manager - clients should connect
+        # directly!
         raise ValueError('unsupported_operation')
 
     async def join_conversation(
@@ -83,15 +76,8 @@ class DockerNestedConversationManager(ConversationManager):
         user_id: str | None,
         github_user_id: str | None,
     ) -> EventStore | None:
-        logger.info('DockerNestedConversationManager:join_conversation', extra={
-            "sid": sid,
-            "connection_id": connection_id,
-            "settings": settings,
-            "user_id": user_id,
-            "github_user_id": github_user_id,
-        })
-        # We need an event store that is backed by websocket
-        # Or maybe we just mark this as unsupported!
+        # Attaching / joining conversations is simply not suported in this manager - clients should connect
+        # directly!
         raise ValueError('unsupported_operation')
 
     async def get_running_agent_loops(
@@ -120,6 +106,7 @@ class DockerNestedConversationManager(ConversationManager):
             "user_id": user_id,
             "filter_to_sids": filter_to_sids,
         })
+        # This is still needed - we should be able to query the number of connections
         # Get connections directly from the docker container
         raise ValueError('unsupported_operation')
 
