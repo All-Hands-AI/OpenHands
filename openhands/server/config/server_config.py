@@ -21,7 +21,8 @@ class ServerConfig(ServerConfigInterface):
     conversation_store_class: str = (
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
-    conversation_manager_class: str = 'openhands.server.conversation_manager.docker_nested_conversation_manager.DockerNestedConversationManager'
+    #conversation_manager_class: str = 'openhands.server.conversation_manager.docker_nested_conversation_manager.DockerNestedConversationManager'
+    conversation_manager_class: str = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
     monitoring_listener_class: str = 'openhands.server.monitoring.MonitoringListener'
     user_auth_class: str = (
         'openhands.server.user_auth.default_user_auth.DefaultUserAuth'

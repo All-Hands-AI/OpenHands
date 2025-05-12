@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import os
 from types import MappingProxyType
 from typing import cast
 
@@ -52,20 +53,11 @@ class DockerNestedConversationManager(ConversationManager):
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
     ) -> Conversation | None:
-        logger.info('DockerNestedConversationManager:attach_to_conversation', extra={
-            "sid": sid,
-            "user_id": user_id,
-        })
-        # Attaching / Detaching conversations is simply not suported in this manager - clients should connect
-        # directly!
+        # Attaching conversations not suported in this manager - clients should connect directly!
         raise ValueError('unsupported_operation')
 
     async def detach_from_conversation(self, conversation: Conversation):
-        logger.info('DockerNestedConversationManager:detach_from_conversation', extra={
-            "conversation": conversation,
-        })
-        # Attaching / Detaching conversations is simply not suported in this manager - clients should connect
-        # directly!
+        # Attaching conversations not suported in this manager - clients should connect directly!
         raise ValueError('unsupported_operation')
 
     async def join_conversation(
@@ -76,8 +68,7 @@ class DockerNestedConversationManager(ConversationManager):
         user_id: str | None,
         github_user_id: str | None,
     ) -> EventStore | None:
-        # Attaching / joining conversations is simply not suported in this manager - clients should connect
-        # directly!
+        # Attaching conversations not suported in this manager - clients should connect directly!
         raise ValueError('unsupported_operation')
 
     async def get_running_agent_loops(
@@ -102,13 +93,17 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
-        logger.info('DockerNestedConversationManager:get_connections', extra={
-            "user_id": user_id,
-            "filter_to_sids": filter_to_sids,
-        })
-        # This is still needed - we should be able to query the number of connections
-        # Get connections directly from the docker container
-        raise ValueError('unsupported_operation')
+        results = {}
+        for container in self.docker_client.containers.list():
+            if not container.name.startswith('openhands-runtime-'):
+                continue
+            conversation_id = container.name[len('openhands-runtime-'):]
+            if filter_to_sids is None or conversation_id in filter_to_sids:
+                # Filter to sids
+                host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
+                for port in self._app_ports:
+                    hosts[f'http://{host_addr}:{port}'] = port
+        return results
 
     async def maybe_start_agent_loop(
         self,
