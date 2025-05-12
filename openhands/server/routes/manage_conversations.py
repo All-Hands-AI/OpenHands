@@ -1,6 +1,5 @@
-import uuid
 import os
-
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -44,13 +43,14 @@ from openhands.server.shared import (
     file_store,
     s3_handler,
 )
-from openhands.server.thesis_auth import create_thread
+from openhands.server.thesis_auth import create_thread, delete_thread
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import generate_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
+
 app = APIRouter(prefix='/api')
 
 
@@ -510,8 +510,14 @@ async def delete_conversation(
     # await runtime_cls.delete(conversation_id)
     # await conversation_store.delete_metadata(conversation_id)
 
-    # delete conversation from database
+    # delete conversation from databasedatab
+    await delete_thread(
+        conversation_id,
+        request.headers.get('Authorization'),
+        request.headers.get('x-device-id'),
+    )
     await conversation_module._delete_conversation(conversation_id, str(user_id))
+
     return True
 
 
