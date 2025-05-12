@@ -180,6 +180,7 @@ def check_access_token_in_header(request):
 
 async def create_thread(
     space_id: int | None = None,
+    follow_up_id: int | None = None,
     conversation_id: str | None = None,
     initial_user_msg: str | None = None,
     bearer_token: str | None = None,
@@ -193,6 +194,9 @@ async def create_thread(
         headers['x-device-id'] = x_device_id
     if space_id is not None:
         payload['spaceId'] = str(space_id)
+
+    if follow_up_id is not None:
+        payload['forkById'] = str(follow_up_id)
     try:
         response = await thesis_auth_client.post(url, headers=headers, json=payload)
         if response.status_code != 200:
