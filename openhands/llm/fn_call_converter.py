@@ -666,24 +666,26 @@ def convert_non_fncall_messages_to_fncall_messages(
                 if isinstance(content, str):
                     # Remove any existing example
                     if content.startswith(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)):
-                        content = content[
-                            len(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)) :
-                        ]
+                        content = content.replace(
+                            IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools), '', 1
+                        )
                     if content.endswith(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX):
-                        content = content[: -len(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX)]
+                        content = content.replace(
+                            IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, '', 1
+                        )
                 elif isinstance(content, list):
                     for item in content:
                         if item['type'] == 'text':
                             # Remove any existing example
                             example = IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(tools)
                             if item['text'].startswith(example):
-                                item['text'] = item['text'][len(example) :]
+                                item['text'] = item['text'].replace(example, '', 1)
                             if item['text'].endswith(
                                 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
                             ):
-                                item['text'] = item['text'][
-                                    : -len(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX)
-                                ]
+                                item['text'] = item['text'].replace(
+                                    IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, '', 1
+                                )
                 else:
                     raise FunctionCallConversionError(
                         f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
