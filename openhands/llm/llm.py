@@ -72,6 +72,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o3-mini-2025-01-31',
     'o3-mini',
     'gemini-2.5-pro',
+    'Llama-4-Maverick-17B-128E-Instruct-FP8',
+    'Qwen3-235B-A22B-fp8-tput',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -206,7 +208,7 @@ class LLM(RetryMixin, DebugMixin):
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
-
+            logger.info(f'Mock function calling: {mock_function_calling}')
             # Add session_id and user_id as span attributes if they exist
             try:
                 span = trace.get_current_span()
@@ -247,12 +249,12 @@ class LLM(RetryMixin, DebugMixin):
                         'openhands-lm' not in self.config.model
                     ),
                 )
-                logger.debug(f'Messages before transform: {messages}')
+                # logger.debug(f'Messages before transform: {messages}')
                 if self.config.model.split('/')[-1] in FORMATTED_MODELS:
                     logger.debug('Transforming messages for llama')
                     messages = transform_messages_for_llama(messages)
 
-                logger.debug(f'Messages: {messages}')
+                # logger.debug(f'Messages: {messages}')
                 kwargs['messages'] = messages
 
                 # add stop words if the model supports it
@@ -294,7 +296,7 @@ class LLM(RetryMixin, DebugMixin):
             #     f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
             # )
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
-            logger.debug(f'Response: {resp}')
+            logger.debug(f'Response raw: {resp}')
             # Calculate and record latency
             latency = time.time() - start_time
             response_id = resp.get('id', 'unknown')
