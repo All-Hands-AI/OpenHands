@@ -32,7 +32,7 @@ describe("handleObservationMessage", () => {
         screenshot: "base64-screenshot-data",
       },
     };
-    
+
     handleObservationMessage(message);
 
     // Check that setScreenshotSrc and setUrl were called with the correct values
@@ -52,7 +52,7 @@ describe("handleObservationMessage", () => {
         screenshot: "base64-screenshot-data",
       },
     };
-    
+
     handleObservationMessage(message);
 
     // Check that setScreenshotSrc and setUrl were called with the correct values
