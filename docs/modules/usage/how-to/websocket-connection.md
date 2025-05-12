@@ -113,6 +113,7 @@ sudo mv websocat /usr/local/bin/
 
 ```bash
 # Connect to the WebSocket and print all received messages
+echo "40{}" | \
 websocat "ws://your-openhands-server/socket.io/?EIO=4&transport=websocket&conversation_id=your-conversation-id&latest_event_id=-1"
 ```
 
