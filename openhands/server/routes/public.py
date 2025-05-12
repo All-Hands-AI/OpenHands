@@ -59,11 +59,11 @@ async def get_security_analyzers() -> list[str]:
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get('/config', response_model=ServerConfig)
-async def get_config() -> ServerConfig:
+@app.get('/config', response_model=dict[str, Any])
+async def get_config() -> dict[str, Any]:
     """Get current config.
 
     Returns:
         dict[str, Any]: The current server configuration.
     """
-    return server_config
+    return server_config.get_config()
