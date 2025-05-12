@@ -14,7 +14,7 @@ const GIT_REPO_ERROR_PATTERN = /not a git repository/i;
 
 function StatusMessage({ children }: React.PropsWithChildren) {
   return (
-    <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
+    <div className="w-full h-full flex flex-col items-center text-center justify-center text-2xl text-tertiary-light">
       {children}
     </div>
   );
@@ -22,7 +22,17 @@ function StatusMessage({ children }: React.PropsWithChildren) {
 
 function GitChanges() {
   const { t } = useTranslation();
-  const { data: gitChanges, isSuccess, isError, error } = useGetGitChanges();
+  const {
+    data: gitChanges,
+    isSuccess,
+    isError,
+    error,
+    isLoading: loadingGitChanges,
+  } = useGetGitChanges();
+
+  const [statusMessage, setStatusMessage] = React.useState<string[] | null>(
+    null,
+  );
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
@@ -30,29 +40,44 @@ function GitChanges() {
   const isNotGitRepoError =
     error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
 
-  let statusMessage: React.ReactNode = null;
-  if (!runtimeIsActive) {
-    statusMessage = <span>{t(I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME)}</span>;
-  } else if (isNotGitRepoError) {
-    if (error) {
-      statusMessage = <span>{retrieveAxiosErrorMessage(error)}</span>;
+  React.useEffect(() => {
+    if (!runtimeIsActive) {
+      setStatusMessage([I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME]);
+    } else if (error) {
+      const errorMessage = retrieveAxiosErrorMessage(error);
+      if (GIT_REPO_ERROR_PATTERN.test(errorMessage)) {
+        setStatusMessage([
+          I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO,
+          I18nKey.DIFF_VIEWER$ASK_OH,
+        ]);
+      } else {
+        setStatusMessage([errorMessage]);
+      }
+    } else if (loadingGitChanges) {
+      setStatusMessage([I18nKey.DIFF_VIEWER$LOADING]);
     } else {
-      statusMessage = (
-        <span>
-          {t(I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO)}
-          <br />
-          {t(I18nKey.DIFF_VIEWER$ASK_OH)}
-        </span>
-      );
+      setStatusMessage(null);
     }
-  }
+  }, [
+    runtimeIsActive,
+    isNotGitRepoError,
+    loadingGitChanges,
+    error,
+    setStatusMessage,
+  ]);
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
       {!isSuccess || !gitChanges.length ? (
         <div className="relative flex h-full w-full items-center">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-            {statusMessage && <StatusMessage>{statusMessage}</StatusMessage>}
+            {statusMessage && (
+              <StatusMessage>
+                {statusMessage.map((msg) => (
+                  <span key={msg}>{t(msg)}</span>
+                ))}
+              </StatusMessage>
+            )}
           </div>
 
           <div className="absolute inset-x-0 bottom-0">
