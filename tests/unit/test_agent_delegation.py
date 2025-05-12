@@ -150,26 +150,26 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Print events for debugging
     print('\nEvents in stream:')
     for i, event in enumerate(events):
-        print(f'{i+1}. {type(event).__name__}')
+        print(f'{i + 1}. {type(event).__name__}')
 
     # Verify that all required events are present in the first 5 events
     first_five_events = events[:5]
     event_types = [type(event).__name__ for event in first_five_events]
 
     # Check that all required events are present
-    assert (
-        'SystemMessageAction' in event_types
-    ), 'SystemMessageAction should be in first 5 events'
+    assert 'SystemMessageAction' in event_types, (
+        'SystemMessageAction should be in first 5 events'
+    )
     assert 'RecallAction' in event_types, 'RecallAction should be in first 5 events'
-    assert (
-        'AgentStateChangedObservation' in event_types
-    ), 'AgentStateChangedObservation should be in first 5 events'
-    assert (
-        'RecallObservation' in event_types
-    ), 'RecallObservation should be in first 5 events'
-    assert (
-        'AgentDelegateAction' in event_types
-    ), 'AgentDelegateAction should be in first 5 events'
+    assert 'AgentStateChangedObservation' in event_types, (
+        'AgentStateChangedObservation should be in first 5 events'
+    )
+    assert 'RecallObservation' in event_types, (
+        'RecallObservation should be in first 5 events'
+    )
+    assert 'AgentDelegateAction' in event_types, (
+        'AgentDelegateAction should be in first 5 events'
+    )
 
     # Verify specific event ordering requirements
     system_msg_idx = event_types.index('SystemMessageAction')
@@ -179,21 +179,21 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # SystemMessageAction should come first
     assert system_msg_idx == 0, 'SystemMessageAction should be the first event'
     # RecallAction should come before RecallObservation
-    assert recall_action_idx < event_types.index(
-        'RecallObservation'
-    ), 'RecallAction should come before RecallObservation'
+    assert recall_action_idx < event_types.index('RecallObservation'), (
+        'RecallAction should come before RecallObservation'
+    )
     # AgentDelegateAction should be last
     assert delegate_action_idx == 4, 'AgentDelegateAction should be the last event'
 
     # Verify that a delegate agent controller is created
-    assert (
-        parent_controller.delegate is not None
-    ), "Parent's delegate controller was not set."
+    assert parent_controller.delegate is not None, (
+        "Parent's delegate controller was not set."
+    )
 
     # The parent's iteration should have incremented
-    assert (
-        parent_controller.state.iteration == 1
-    ), 'Parent iteration should be incremented after step.'
+    assert parent_controller.state.iteration == 1, (
+        'Parent iteration should be incremented after step.'
+    )
 
     # Now simulate that the child increments local iteration and finishes its subtask
     delegate_controller = parent_controller.delegate
@@ -238,14 +238,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     await asyncio.sleep(0.5)
 
     # Now the parent's delegate is None
-    assert (
-        parent_controller.delegate is None
-    ), 'Parent delegate should be None after child finishes.'
+    assert parent_controller.delegate is None, (
+        'Parent delegate should be None after child finishes.'
+    )
 
     # Parent's global iteration is updated from the child
-    assert (
-        parent_controller.state.iteration == 6
-    ), "Parent iteration should be the child's iteration + 1 after child is done."
+    assert parent_controller.state.iteration == 6, (
+        "Parent iteration should be the child's iteration + 1 after child is done."
+    )
 
     # Cleanup
     await parent_controller.close()

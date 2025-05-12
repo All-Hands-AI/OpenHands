@@ -10,7 +10,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
 from openhands.server.shared import server_config
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.settings.secret_store import SecretsStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
