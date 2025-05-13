@@ -18,8 +18,10 @@ async def create_pr(
     ],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
+    title: Annotated[str, Field(description='PR Title')],
+    body: Annotated[str | None, Field(description='PR body')]
 ) -> str:
-    """Open a PR in GitHub"""
+    """Open a draft PR in GitHub"""
     
     request = get_http_request()
     provider_tokens = await get_provider_tokens(request)
@@ -33,9 +35,18 @@ async def create_pr(
         external_auth_id=user_id,
         external_auth_token=access_token,
         token=github_token.token,
-        host=github_token.host
+        base_domain=github_token.host
     )
 
-    response = await github_service.create_pr()
+    try:
+        response = await github_service.create_pr(
+            repo_name=repo_name,
+            source_branch=source_branch,
+            target_branch=target_branch,
+            title=title,
+            body=body
+        )
+    except Exception as e:
+        response = str(e)
 
     return response

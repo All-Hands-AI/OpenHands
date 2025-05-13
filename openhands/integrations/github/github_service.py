@@ -455,9 +455,9 @@ class GitHubService(BaseGitService, GitService):
         repo_name: str,
         source_branch: str,
         target_branch: str,
-        title: str | None = None,
+        title: str,
         body: str | None = None,
-        draft: bool = False,
+        draft: bool = True,
     ) -> str:
         """
         Creates a PR using user credentials
