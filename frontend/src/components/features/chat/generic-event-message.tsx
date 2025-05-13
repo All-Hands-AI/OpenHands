@@ -24,17 +24,19 @@ export function GenericEventMessage({
     <div className="flex flex-col gap-2 border-l-2 pl-2 my-2 py-2 border-neutral-300 text-sm w-full">
       <div className="font-bold text-neutral-300">
         {title}
-        <button
-          type="button"
-          onClick={() => setShowDetails((prev) => !prev)}
-          className="cursor-pointer text-left"
-        >
-          {showDetails ? (
-            <ArrowUp className="h-4 w-4 ml-2 inline fill-neutral-300" />
-          ) : (
-            <ArrowDown className="h-4 w-4 ml-2 inline fill-neutral-300" />
-          )}
-        </button>
+        {details && (
+          <button
+            type="button"
+            onClick={() => setShowDetails((prev) => !prev)}
+            className="cursor-pointer text-left"
+          >
+            {showDetails ? (
+              <ArrowUp className="h-4 w-4 ml-2 inline fill-neutral-300" />
+            ) : (
+              <ArrowDown className="h-4 w-4 ml-2 inline fill-neutral-300" />
+            )}
+          </button>
+        )}
 
         {success !== undefined && <SuccessIndicator success={success} />}
       </div>
