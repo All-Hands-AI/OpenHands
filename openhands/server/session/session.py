@@ -116,7 +116,6 @@ class Session:
             else self.config.sandbox.runtime_container_image
         )
         self.config.mcp = create_default_mcp_config()
-        print("setting mcp", self.config.mcp)
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will

@@ -1790,13 +1790,13 @@ urllib3 = ">=1.25.3,<3.0.0"
 
 [[package]]
 name = "daytona-sdk"
-version = "0.15.0"
+version = "0.16.1"
 description = "Python SDK for Daytona"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "daytona_sdk-0.15.0-py3-none-any.whl", hash = "sha256:3d377e5c40e93173bc73c85916038f8e8b451f2588bf4cc8cce0c53fa8ab3996"},
-    {file = "daytona_sdk-0.15.0.tar.gz", hash = "sha256:332cc08a3732085f26a277967e4fd4593325dc82e3b5470d3d64d60a7cb8f94b"},
+    {file = "daytona_sdk-0.16.1-py3-none-any.whl", hash = "sha256:f3ab5c92688d1b767bb12c3ef38c56bdea9e77b2be7e7dd57df785a14489a425"},
+    {file = "daytona_sdk-0.16.1.tar.gz", hash = "sha256:97fa381e8363a74ce99bbdd62508709c9083f657d3816e7f24c0349b739784b2"},
 ]
 
 [package.dependencies]
@@ -10963,4 +10963,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.14"
-content-hash = "cbdd04d1868b2c3d0434d2f5191b380c4efe28dc7c1d50f77cc49225df3726c3"
+content-hash = "1ec697deb03f662615d0c0619718851852d76f9426c1da00e5ed8f94b94c060f"

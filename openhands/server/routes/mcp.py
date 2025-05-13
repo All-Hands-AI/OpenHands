@@ -64,7 +64,7 @@ async def create_mr(
     title: Annotated[str, Field(description='MR Title')],
     description: Annotated[str | None, Field(description='MR description')]
 ) -> str:
-    """Open a draft PR in GitHub"""
+    """Open a draft MR in GitLab"""
     
     request = get_http_request()
     provider_tokens = await get_provider_tokens(request)
@@ -93,6 +93,5 @@ async def create_mr(
         response = str(e)
 
     return response
-
 
 
