@@ -68,7 +68,8 @@ def refine_prompt(prompt: str) -> str:
 TOOL_EXAMPLES = {
     'execute_bash': {
         'check_dir': """
-ASSISTANT: Let me first check the current directory:
+
+ASSISTANT: Sure! Let me first check the current directory:
 <function=execute_bash>
 <parameter=command>
 pwd && ls
@@ -148,10 +149,19 @@ cat server.log
 
 USER: EXECUTION RESULT of [execute_bash]:
 * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
  * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+
+ASSISTANT:
+The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
 """,
         'kill_server': """
-ASSISTANT: Let me stop the server first:
+USER: Now kill the server, make it display the numbers in a table format.
+
+ASSISTANT:
+Sure! Let me stop the server first:
 <function=execute_bash>
 <parameter=command>
 kill 124
@@ -160,6 +170,19 @@ kill 124
 
 USER: EXECUTION RESULT of [execute_bash]:
 [1]+  Terminated              python3 app.py > server.log 2>&1
+""",
+        'run_server_again': """
+ASSISTANT: Running the updated file:
+<function=execute_bash>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 126
+
+ASSISTANT: The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000.
 """,
     },
     'str_replace_editor': {
@@ -195,7 +218,17 @@ ASSISTANT: Now let me display the numbers in a table format:
 </function>
 
 USER: EXECUTION RESULT of [str_replace_editor]:
-The file /workspace/app.py has been edited successfully.
+The file /workspace/app.py has been edited. Here's the result of running `cat -n` on a snippet of /workspace/app.py:
+     3
+     4  @app.route('/')
+     5  def index():
+     6      numbers = list(range(1, 11))
+     7      return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+     8
+     9  if __name__ == '__main__':
+    10      app.run(port=5000)
+Review the changes and make sure they are as expected. Edit the file again if necessary.
+
 """,
     },
     'web_read': {
@@ -225,14 +258,12 @@ USER: EXECUTION RESULT of [browser]:
     },
     'finish': {
         'task_completed': """
-ASSISTANT: I have successfully created and configured the web server to display the numbers in a table format. You can access it at http://127.0.0.1:5000.
+ASSISTANT:
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
 <function=finish>
 <parameter=message>The task has been completed. The web server is running and displaying numbers 1-10 in a table format at http://127.0.0.1:5000.</parameter>
 <parameter=task_completed>true</parameter>
 </function>
-
-USER: EXECUTION RESULT of [finish]:
-[Task completed successfully]
 """
     },
 }
@@ -289,19 +320,7 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
         example += TOOL_EXAMPLES['str_replace_editor']['edit_file']
 
     if 'execute_bash' in available_tools:
-        example += """
-ASSISTANT: Running the updated file:
-<function=execute_bash>
-<parameter=command>
-python3 app.py > server.log 2>&1 &
-</parameter>
-</function>
-
-USER: EXECUTION RESULT of [execute_bash]:
-[1] 126
-
-ASSISTANT: The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000.
-"""
+        example += TOOL_EXAMPLES['execute_bash']['run_server_again']
 
     if 'finish' in available_tools:
         example += TOOL_EXAMPLES['finish']['task_completed']
