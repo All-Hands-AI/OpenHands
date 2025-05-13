@@ -11,7 +11,8 @@ import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
 import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
-import { getEventContent, isSuccessObservation } from "./event-message.helpers";
+import { isSuccessObservation } from "./event-content-helpers/is-success-observation";
+import { getEventContent } from "./event-message.helpers";
 import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
 
