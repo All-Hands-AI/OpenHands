@@ -74,6 +74,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gemini-2.5-pro',
     'Llama-4-Maverick-17B-128E-Instruct-FP8',
     'Qwen3-235B-A22B-fp8-tput',
+    'grok-3-mini',
+    'grok-3-mini-beta'
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
