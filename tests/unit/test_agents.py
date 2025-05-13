@@ -78,7 +78,6 @@ def test_agent_with_default_config_has_default_tools():
         'finish',
         'str_replace_editor',
         'think',
-        'web_read',
     }.issubset(default_tool_names)
 
 
