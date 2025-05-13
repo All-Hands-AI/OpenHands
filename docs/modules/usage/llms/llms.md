@@ -25,8 +25,8 @@ OpenHands will issue many prompts to the LLM you configure. Most of these LLMs c
 limits and monitor usage.
 :::
 
-If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
-also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
+If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process 
+to help others using the same provider!
 
 For a full list of the providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
