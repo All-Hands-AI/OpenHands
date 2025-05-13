@@ -89,8 +89,14 @@ const getObservationContent = (event: OpenHandsObservation): string => {
       return event.content;
     case "write":
       return `Content here`;
-    case "run":
-      return `Command:\n\`${event.extras.command}\`\n\nOutput:\n\`\`\`sh\n${event.content || "[Command finished execution with no output]"}\n\`\`\``;
+    case "run_ipython":
+    case "run": {
+      let { content } = event;
+      if (content.length > MAX_CONTENT_LENGTH) {
+        content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+      }
+      return `Output:\n\`\`\`sh\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
+    }
     case "browse": {
       let contentDetails = `**URL:** ${event.extras.url}\n`;
       if (event.extras.error) {
@@ -102,8 +108,13 @@ const getObservationContent = (event: OpenHandsObservation): string => {
       }
       return contentDetails;
     }
-    case "mcp":
-      return `**Output:**\n\`\`\`\n${event.content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+    case "mcp": {
+      let { content } = event;
+      if (content.length > MAX_CONTENT_LENGTH) {
+        content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+      }
+      return `**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+    }
     default:
       return `\`\`\`\n${JSON.stringify(event.extras, null, 2)}\n\`\`\``;
   }

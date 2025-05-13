@@ -6,7 +6,6 @@ import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
 import {
   CommandObservation,
-  IPythonObservation,
   OpenHandsObservation,
   RecallObservation,
 } from "#/types/core/observations";
@@ -20,8 +19,6 @@ type SliceState = {
     agent_class: string | null;
   } | null;
 };
-
-const MAX_CONTENT_LENGTH = 1000;
 
 const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "run",
@@ -235,64 +232,6 @@ export const chatSlice = createSlice({
         } else {
           causeMessage.success = commandObs.extras.metadata.exit_code === 0;
         }
-      } else if (observationID === "run_ipython") {
-        // For IPython, we consider it successful if there's no error message
-        const ipythonObs = observation.payload as IPythonObservation;
-        causeMessage.success = !ipythonObs.content
-          .toLowerCase()
-          .includes("error:");
-      } else if (observationID === "read" || observationID === "edit") {
-        // For read/edit operations, we consider it successful if there's content and no error
-
-        if (observation.payload.extras.impl_source === "oh_aci") {
-          causeMessage.success =
-            observation.payload.content.length > 0 &&
-            !observation.payload.content.startsWith("ERROR:\n");
-        } else {
-          causeMessage.success =
-            observation.payload.content.length > 0 &&
-            !observation.payload.content.toLowerCase().includes("error:");
-        }
-      }
-
-      if (observationID === "run" || observationID === "run_ipython") {
-        let { content } = observation.payload;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-        }
-        content = `${causeMessage.content}\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
-        causeMessage.content = content; // Observation content includes the action
-      } else if (observationID === "read") {
-        causeMessage.content = `\`\`\`\n${observation.payload.content}\n\`\`\``; // Content is already truncated by the ACI
-      } else if (observationID === "edit") {
-        if (causeMessage.success) {
-          causeMessage.content = `\`\`\`diff\n${observation.payload.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
-        } else {
-          causeMessage.content = observation.payload.content;
-        }
-      } else if (observationID === "browse") {
-        let content = `**URL:** ${observation.payload.extras.url}\n`;
-        if (observation.payload.extras.error) {
-          content += `\n\n**Error:**\n${observation.payload.extras.error}\n`;
-        }
-        content += `\n\n**Output:**\n${observation.payload.content}`;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
-        }
-        causeMessage.content = content;
-      } else if (observationID === "mcp") {
-        // For MCP observations, we want to show the content as formatted output
-        // similar to how run/run_ipython actions are handled
-        let { content } = observation.payload;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-        }
-        content = `${causeMessage.content}\n\n**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
-        causeMessage.content = content; // Observation content includes the action
-        // Set success based on whether there's an error message
-        causeMessage.success = !observation.payload.content
-          .toLowerCase()
-          .includes("error:");
       }
     },
 
