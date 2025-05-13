@@ -43,8 +43,7 @@ const getActionContent = (event: OpenHandsAction): string => {
   switch (event.action) {
     case "read":
     case "edit":
-      return "placeholder";
-      break;
+      return "";
     case "write":
       if (event.args.content.length > MAX_CONTENT_LENGTH) {
         return `${event.args.content.slice(0, MAX_CONTENT_LENGTH)}...`;
@@ -152,7 +151,7 @@ export const getEventContent = (
   }
 
   return {
-    title: title || "Unknown event",
-    details: details || "Unknown event",
+    title: title ?? "Unknown event",
+    details: details ?? "Unknown event",
   };
 };
