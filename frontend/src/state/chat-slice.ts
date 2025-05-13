@@ -113,55 +113,19 @@ export const chatSlice = createSlice({
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
 
-      if (actionID === "system") {
-        // Store the system message in the state
-        state.systemMessage = {
-          content: action.payload.args.content,
-          tools: action.payload.args.tools,
-          openhands_version: action.payload.args.openhands_version,
-          agent_class: action.payload.args.agent_class,
-        };
-        // Don't add a message for system actions
-        return;
-      }
-      if (actionID === "run") {
-        text = `Command:\n\`${action.payload.args.command}\``;
-      } else if (actionID === "run_ipython") {
-        text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
-      } else if (actionID === "write") {
-        let { content } = action.payload.args;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-        }
-        text = `${action.payload.args.path}\n${content}`;
-      } else if (actionID === "browse") {
-        text = `Browsing ${action.payload.args.url}`;
-      } else if (actionID === "browse_interactive") {
-        // Include the browser_actions in the content
-        text = `**Action:**\n\n\`\`\`python\n${action.payload.args.browser_actions}\n\`\`\``;
-      } else if (actionID === "recall") {
+      if (actionID === "recall") {
         // skip recall actions
         return;
-      } else if (actionID === "call_tool_mcp") {
-        // Format MCP action with name and arguments
-        const name = action.payload.args.name || "";
-        const args = action.payload.args.arguments || {};
-        text = `**MCP Tool Call:** ${name}\n\n`;
-        // Include thought if available
-        if (action.payload.args.thought) {
-          text += `\n\n**Thought:**\n${action.payload.args.thought}`;
-        }
-        text += `\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
       }
+
       if (actionID === "run" || actionID === "run_ipython") {
         if (
           action.payload.args.confirmation_state === "awaiting_confirmation"
         ) {
           text += `\n\n${getRiskText(action.payload.args.security_risk as unknown as ActionSecurityRisk)}`;
         }
-      } else if (actionID === "think") {
-        text = action.payload.args.thought;
       }
+
       const message: Message = {
         type: "action",
         sender: "assistant",

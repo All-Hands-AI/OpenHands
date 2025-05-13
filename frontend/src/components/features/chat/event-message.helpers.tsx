@@ -44,11 +44,13 @@ const getActionContent = (event: OpenHandsAction): string => {
     case "read":
     case "edit":
       return "";
-    case "write":
-      if (event.args.content.length > MAX_CONTENT_LENGTH) {
-        return `${event.args.content.slice(0, MAX_CONTENT_LENGTH)}...`;
+    case "write": {
+      let { content } = event.args;
+      if (content.length > MAX_CONTENT_LENGTH) {
+        content = `${event.args.content.slice(0, MAX_CONTENT_LENGTH)}...`;
       }
-      return `${event.args.path}\n${event.args.content}`;
+      return `${event.args.path}\n${content}`;
+    }
     case "run":
       return `Command:\n\`${event.args.command}\``;
     case "run_ipython":
