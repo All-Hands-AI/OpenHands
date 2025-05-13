@@ -179,11 +179,19 @@ async def test_update_conversation():
 async def test_delete_conversation():
     with _patch_store():
         with patch.object(DockerRuntime, 'delete', return_value=None):
-            await delete_conversation(
-                'some_conversation_id',
-                MagicMock(state=MagicMock(github_token='')),
-            )
-            conversation = await get_conversation(
-                'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
-            )
-            assert conversation is None
+            # Mock the delete_thread function to prevent the headers.get() error
+            with patch(
+                'openhands.server.routes.manage_conversations.delete_thread',
+                return_value=None,
+            ):
+                mock_request = MagicMock()
+                # We don't need to worry about what headers.get returns now since the function is mocked
+
+                await delete_conversation(
+                    'some_conversation_id',
+                    mock_request,
+                )
+                conversation = await get_conversation(
+                    'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+                )
+                assert conversation is None
