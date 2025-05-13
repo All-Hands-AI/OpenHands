@@ -744,12 +744,21 @@ class AgentController:
         else:
             # delegate state is ERROR
             # emit AgentDelegateObservation with error content
-            delegate_outputs = (
-                self.delegate.state.outputs if self.delegate.state else {}
-            )
-            content = (
-                f'{self.delegate.agent.name} encountered an error during execution.'
-            )
+            delegate_outputs = {}
+            if (
+                self.delegate
+                and hasattr(self.delegate, 'state')
+                and self.delegate.state
+            ):
+                delegate_outputs = self.delegate.state.outputs
+            agent_name = 'Delegated agent'
+            if (
+                self.delegate
+                and hasattr(self.delegate, 'agent')
+                and self.delegate.agent
+            ):
+                agent_name = self.delegate.agent.name
+            content = f'{agent_name} encountered an error during execution.'
 
         content = f'Delegated agent finished with result:\n\n{content}'
 
