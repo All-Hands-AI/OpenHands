@@ -39,10 +39,7 @@ async def get_user_repositories(
         )
 
         try:
-            repos: list[Repository] = await client.get_repositories(
-                sort, server_config.app_mode
-            )
-            return repos
+            return await client.get_repositories(sort, server_config.app_mode)
 
         except AuthenticationError as e:
             return JSONResponse(
