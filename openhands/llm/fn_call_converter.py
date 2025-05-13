@@ -49,7 +49,7 @@ Reminder:
 STOP_WORDS = ['</function']
 
 
-def refine_prompt(prompt: str):
+def refine_prompt(prompt: str) -> str:
     if sys.platform == 'win32':
         return prompt.replace('bash', 'powershell')
     return prompt
@@ -83,7 +83,7 @@ from flask import Flask
 app = Flask(__name__)
 
 @app.route('/')
-def index():
+def index() -> str:
     numbers = list(range(1, 11))
     return str(numbers)
 

@@ -5,12 +5,14 @@ export interface RepositoryDropdownProps {
   items: { key: React.Key; label: string }[];
   onSelectionChange: (key: React.Key | null) => void;
   onInputChange: (value: string) => void;
+  defaultFilter?: (textValue: string, inputValue: string) => boolean;
 }
 
 export function RepositoryDropdown({
   items,
   onSelectionChange,
   onInputChange,
+  defaultFilter,
 }: RepositoryDropdownProps) {
   return (
     <SettingsDropdownInput
@@ -21,6 +23,7 @@ export function RepositoryDropdown({
       wrapperClassName="max-w-[500px]"
       onSelectionChange={onSelectionChange}
       onInputChange={onInputChange}
+      defaultFilter={defaultFilter}
     />
   );
 }

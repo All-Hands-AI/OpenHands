@@ -48,11 +48,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: poetry run pytest --forked -n auto -svv ./tests/unit
 
   # Run specific Windows python tests
   test-on-windows:
