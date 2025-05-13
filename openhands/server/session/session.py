@@ -117,7 +117,9 @@ class Session:
         )
         self.config.mcp = settings.mcp_config
         # Add OpenHands' MCP server by default
-        self.config.mcp.sse_servers.append(OpenHandsMCPConfigImpl.create_default_mcp_server_config(self.config.mcp_host, self.user_id))
+        openhands_mcp_server = OpenHandsMCPConfigImpl.create_default_mcp_server_config(self.config.mcp_host, self.user_id)
+        if openhands_mcp_server:
+            self.config.mcp.sse_servers.append(openhands_mcp_server)
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will

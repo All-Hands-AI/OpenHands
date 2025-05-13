@@ -112,7 +112,7 @@ class MCPConfig(BaseModel):
 
 class OpenHandsMCPConfig:
     @staticmethod
-    def create_default_mcp_server_config(host: str, user_id: str | None = None) -> MCPSSEServerConfig:
+    def create_default_mcp_server_config(host: str, user_id: str | None = None) -> MCPSSEServerConfig | None:
         """
         Create a default MCP server configuration.
 
