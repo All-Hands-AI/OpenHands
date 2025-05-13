@@ -9,17 +9,17 @@ class ConversationBroker(ABC):
     """
 
     @abstractmethod
-    def find_conversation(user_id: str | None, conversation_id: str):
+    def find_conversation(self, user_id: str | None, conversation_id: str):
         """Find a conversation"""
 
     @abstractmethod
-    def start_conversation(user_id: str):
+    def start_conversation(self, user_id: str):
         """Start a conversation"""
 
     @abstractmethod
-    def pause_conversation(user_id: str | None, conversation: str):
+    def pause_conversation(self, user_id: str | None, conversation: str):
         """Pause a conversation"""
 
     @abstractmethod
-    def resume_conversation(user_id: str | None, conversation_id: str):
+    def resume_conversation(self, user_id: str | None, conversation_id: str):
         """Pause a conversation"""
