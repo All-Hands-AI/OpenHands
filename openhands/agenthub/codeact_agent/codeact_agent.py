@@ -158,11 +158,6 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        is_chat_mode = latest_user_message is not None and (
-            latest_user_message.mode is None
-            or latest_user_message.mode == ResearchMode.CHAT
-        )
-
         # Condense the events from the state. If we get a view we'll pass those
         # to the conversation manager for processing, but if we get a condensation
         # event we'll just return that instead of an action. The controller will
@@ -178,8 +173,11 @@ class CodeActAgent(Agent):
         logger.info(
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
         )
+        research_mode = (
+            latest_user_message.mode if latest_user_message is not None else None
+        )
 
-        messages = self._get_messages(condensed_history, is_chat_mode=is_chat_mode)
+        messages = self._get_messages(condensed_history, research_mode=research_mode)
 
         # process the user input and check chatmode
 
@@ -189,7 +187,7 @@ class CodeActAgent(Agent):
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         # if chat mode, we need to use the search tools
         params['tools'] = []
-        if is_chat_mode:
+        if research_mode is None or research_mode == ResearchMode.CHAT:
             built_in_tools = codeact_function_calling.get_tools(
                 codeact_enable_browsing=False,
                 codeact_enable_jupyter=False,
@@ -197,6 +195,8 @@ class CodeActAgent(Agent):
                 llm=self.llm,
             )
             params['tools'] = built_in_tools + self.search_tools
+        if research_mode == ResearchMode.FOLLOW_UP:
+            params['tools'] = self.tools
         else:
             params['tools'] = self.tools
             if self.mcp_tools:
@@ -268,7 +268,7 @@ class CodeActAgent(Agent):
         return self.pending_actions.popleft()
 
     def _get_messages(
-        self, events: list[Event], is_chat_mode: bool | None = False
+        self, events: list[Event], research_mode: str | None = None
     ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
@@ -309,15 +309,21 @@ class CodeActAgent(Agent):
         convert_knowledge_to_list = [
             self.knowledge_base[k] for k in self.knowledge_base
         ]
+
         # Use ConversationMemory to process initial messages
-        messages = (
-            self.conversation_memory.process_initial_messages(
+        # switch mode and initial messages
+
+        messages = self.conversation_memory.process_initial_messages(
+            with_caching=self.llm.is_caching_prompt_active(),
+            agent_infos=agent_infos,
+            knowledge_base=convert_knowledge_to_list,
+        )
+        if research_mode == ResearchMode.FOLLOW_UP:
+            messages = self.conversation_memory.process_initial_followup_message(
                 with_caching=self.llm.is_caching_prompt_active(),
-                agent_infos=agent_infos,
-                knowledge_base=convert_knowledge_to_list,
             )
-            if not is_chat_mode
-            else self.conversation_memory.process_initial_chatmode_message(
+        elif research_mode is None or research_mode == ResearchMode.CHAT:
+            messages = self.conversation_memory.process_initial_chatmode_message(
                 with_caching=self.llm.is_caching_prompt_active(),
                 search_tools=[
                     {
@@ -328,7 +334,6 @@ class CodeActAgent(Agent):
                 ],
                 knowledge_base=convert_knowledge_to_list,
             )
-        )
         # Use ConversationMemory to process events
         messages = self.conversation_memory.process_events(
             condensed_history=events,

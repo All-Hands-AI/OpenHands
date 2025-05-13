@@ -70,8 +70,6 @@ class FileConversationStore(ConversationStore):
         limit: int = 20,
         filter_conversation_ids: list[str] | None = None,
     ) -> ConversationMetadataResultSet:
-        print('filter_conversation_ids', filter_conversation_ids)
-
         conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
         try:
