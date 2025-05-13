@@ -22,6 +22,7 @@ vi.mock("#/services/terminal-stream-service", () => ({
     disconnect: vi.fn(),
     isStreamConnected: vi.fn().mockReturnValue(true),
   })),
+  TerminalStreamService: {},
 }));
 
 // Mock the useActionExecutionServerUrl hook
