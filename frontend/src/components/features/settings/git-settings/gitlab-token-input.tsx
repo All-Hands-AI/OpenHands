@@ -51,10 +51,9 @@ export function GitLabTokenInput({
         placeholder="gitlab.com"
         defaultValue={gitlabHostSet || undefined}
         startContent={
-          gitlabHostSet && gitlabHostSet.trim() !== "" ? (
+          gitlabHostSet &&
+          gitlabHostSet.trim() !== "" && (
             <KeyStatusIcon testId="gl-set-host-indicator" isSet />
-          ) : (
-            <KeyStatusIcon testId="gl-set-host-indicator" isSet={false} />
           )
         }
       />
