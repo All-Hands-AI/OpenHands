@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pathlib
 import platform
@@ -96,8 +97,6 @@ def load_from_env(
                         or field_type is dict
                         or field_type is list
                     ):
-                        import json
-
                         try:
                             # First try json.loads for proper JSON formatting
                             cast_value = json.loads(value)
