@@ -6350,6 +6350,28 @@ qa = ["flake8 (==5.0.4)", "mypy (==0.971)", "types-setuptools (==67.2.0.1)"]
 testing = ["docopt", "pytest"]
 
 [[package]]
+name = "patchright"
+version = "1.52.3"
+description = "Undetected Python version of the Playwright testing and automation library."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "patchright-1.52.3-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:2540c0deebf011615fdedccd07abc13adb96ca2206380b1e2c024a8e5118e9b3"},
+    {file = "patchright-1.52.3-py3-none-macosx_11_0_arm64.whl", hash = "sha256:58a49559f9fed4e4a69b5dee963d4f4a90087e871d6e82247dc50258d96065dc"},
+    {file = "patchright-1.52.3-py3-none-macosx_11_0_universal2.whl", hash = "sha256:9906f3c7c0d167f6d6bdd027470ecadc5d96739c069d07e0a45bee148086e605"},
+    {file = "patchright-1.52.3-py3-none-manylinux1_x86_64.whl", hash = "sha256:83ddceffba57cf53f6414a6e63b04ea17254b5d26563b2dd0d81ed23563e271f"},
+    {file = "patchright-1.52.3-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:db0cf06421273811c8555a73ec370b4bc3d6a4622f10c926a67d0cdb4cdc12a9"},
+    {file = "patchright-1.52.3-py3-none-win32.whl", hash = "sha256:982f4ebf17d1e0d683ea5b76c5343c3fa04b8f8e9b7b302e6b3136518fc126aa"},
+    {file = "patchright-1.52.3-py3-none-win_amd64.whl", hash = "sha256:bbf39cb65f283f45472b354e0a88fabd828763a9b0853ce019cf6700452f8119"},
+    {file = "patchright-1.52.3-py3-none-win_arm64.whl", hash = "sha256:d69efa3ee3af33185dfecc46760d55920314ff4024650467197ff7c9c4854d14"},
+]
+
+[package.dependencies]
+greenlet = ">=3.1.1,<4.0.0"
+pyee = ">=13,<14"
+
+[[package]]
 name = "pathspec"
 version = "0.12.1"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -11249,4 +11271,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "e939bc50fd07aabf4d7bff3736ceba793a6490e6c68422233ac4ce7fe2bb302d"
+content-hash = "46aa17396a84a02eb6454bf5d9ab9d72072a3b6683939090b68e7b0fc1538e5a"
