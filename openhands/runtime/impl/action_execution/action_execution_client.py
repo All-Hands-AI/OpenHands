@@ -62,7 +62,7 @@ class ActionExecutionClient(Runtime):
     def __init__(
         self,
         config: AppConfig,
-        event_stream: EventStream | None,
+        event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,

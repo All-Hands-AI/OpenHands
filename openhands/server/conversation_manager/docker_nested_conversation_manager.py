@@ -13,6 +13,7 @@ from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.event_store import EventStore
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
 from openhands.runtime.builder.docker import DockerRuntimeBuilder
@@ -96,7 +97,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
-        results = {}
+        results: dict[str, str] = {}
         """
         for container in self.docker_client.containers.list():
             if not container.name.startswith('openhands-runtime-'):
@@ -122,29 +123,13 @@ class DockerNestedConversationManager(ConversationManager):
         replay_json: str | None = None,
         github_user_id: str | None = None,
     ) -> EventStore:
-        logger.info('DockerNestedConversationManager:maybe_start_agent_loop', extra={
-            "sid": sid,
-            "settings": settings,
-            "user_id": user_id,
-            "initial_user_msg": initial_user_msg,
-            "replay_json": replay_json,
-            "github_user_id": github_user_id,
-        })
         if not await self.is_agent_loop_running(sid):
             await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json, github_user_id
             )
+        event_store = EventStore(sid, self.file_store, user_id)
+        return event_store
 
-        #event_store = await self._get_event_store(sid, user_id)
-        #if not event_store:
-        #    logger.error(
-        #        f'No event stream after starting agent loop: {sid}',
-        #        extra={'session_id': sid},
-        #    )
-        #    raise RuntimeError(f'no_event_stream:{sid}')
-        #return event_store
-
-    
     async def _start_agent_loop(self, sid, settings, user_id, initial_user_msg = None, replay_json = None, github_user_id = None):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
 
@@ -234,15 +219,16 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
         env_vars['SERVE_FRONTEND'] = '0'
 
+        event_stream = EventStream(sid, self.file_store, user_id)
         runtime = DockerRuntime(
             config=self.config,
-            event_stream=None,
+            event_stream=event_stream,
             sid=sid,
             plugins=agent.sandbox_plugins,
             headless_mode=False,
             attach_to_existing=False,
             env_vars=env_vars,
-            module="openhands.server",
+            main_module="openhands.server",
         )
         await runtime.connect()
 
@@ -307,22 +293,6 @@ class DockerNestedConversationManager(ConversationManager):
             )
         store = await conversation_store_class.get_instance(self.config, user_id)
         return store
-    
-    async def _get_event_store(
-        self, sid: str, user_id: str | None
-    ) -> EventStore | None:
-        logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
-        session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
-            event_stream = session.agent_session.event_stream
-            return EventStore(
-                event_stream.sid,
-                event_stream.file_store,
-                user_id,
-                event_stream.cur_id,
-            )
-        return None
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
