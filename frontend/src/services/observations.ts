@@ -6,10 +6,7 @@ import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/state/command-slice";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
-import {
-  addAssistantMessage,
-  addAssistantObservation,
-} from "#/state/chat-slice";
+import { addAssistantObservation } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -42,11 +39,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(setCurrentAgentState(message.extras.agent_state));
       break;
     case ObservationType.DELEGATE:
-      // TODO: better UI for delegation result (#2309)
-      if (message.content) {
-        store.dispatch(addAssistantMessage(message.content));
-      }
-      break;
     case ObservationType.READ:
     case ObservationType.EDIT:
     case ObservationType.THINK:
@@ -56,7 +48,6 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.MCP:
       break; // We don't display the default message for these observations
     default:
-      store.dispatch(addAssistantMessage(message.message));
       break;
   }
   if (!message.extras?.hidden) {
