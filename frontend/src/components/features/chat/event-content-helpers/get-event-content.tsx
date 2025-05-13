@@ -2,10 +2,10 @@ import { Trans } from "react-i18next";
 import { OpenHandsAction } from "#/types/core/actions";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
-import { MonoComponent } from "./mono-component";
-import { PathComponent } from "./path-component";
-import { getActionContent } from "./event-content-helpers/get-action-content";
-import { getObservationContent } from "./event-content-helpers/get-observation-content";
+import { MonoComponent } from "../mono-component";
+import { PathComponent } from "../path-component";
+import { getActionContent } from "./get-action-content";
+import { getObservationContent } from "./get-observation-content";
 
 const hasPathProperty = (
   obj: Record<string, unknown>,

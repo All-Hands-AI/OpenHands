@@ -12,7 +12,7 @@ import { ImageCarousel } from "../images/image-carousel";
 import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
 import { isSuccessObservation } from "./event-content-helpers/is-success-observation";
-import { getEventContent } from "./event-message.helpers";
+import { getEventContent } from "./event-content-helpers/get-event-content";
 import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
 
