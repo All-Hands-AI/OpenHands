@@ -105,3 +105,17 @@ class MCPConfig(BaseModel):
             raise ValueError(f'Invalid MCP configuration: {e}')
 
         return mcp_mapping
+
+
+def create_default_mcp_server_config(host: str) -> MCPSSEServerConfig:
+    """
+    Create a default MCP server configuration.
+
+    Args:
+        host: Host string
+
+    Returns:
+        MCPSSEServerConfig: A default SSE server configuration
+    """
+
+    return MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)

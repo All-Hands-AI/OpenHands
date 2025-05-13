@@ -7,12 +7,12 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
+from openhands.core.config.mcp_config import create_default_mcp_server_config 
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.config.mcp_init import create_default_mcp_config
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -115,7 +115,9 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
-        self.config.mcp = create_default_mcp_config(host=self.config.mcp_host)
+        self.config.mcp = settings.mcp_config
+        # Add OpenHands' MCP server by default
+        self.config.mcp.sse_servers.append(create_default_mcp_server_config(self.config.mcp_host))
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will

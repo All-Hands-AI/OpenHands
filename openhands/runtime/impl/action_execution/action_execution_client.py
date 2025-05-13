@@ -353,13 +353,7 @@ class ActionExecutionClient(Runtime):
 
     def get_updated_mcp_config(self) -> MCPConfig:
         # Add the runtime as another MCP server
-        if self.config.mcp is None:
-            # Create a new MCP config if none exists
-            from openhands.core.config.mcp_init import create_default_mcp_config
-
-            updated_mcp_config = create_default_mcp_config(host=self.config.mcp_host)
-        else:
-            updated_mcp_config = self.config.mcp.model_copy()
+        updated_mcp_config = self.config.mcp.model_copy()
 
         # Send a request to the action execution server to updated MCP config
         stdio_tools = [

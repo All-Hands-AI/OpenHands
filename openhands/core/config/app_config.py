@@ -11,8 +11,7 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.mcp_init import create_default_mcp_config
+from openhands.core.config.mcp_config import MCPConfig, create_default_mcp_server_config
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -95,7 +94,7 @@ class AppConfig(BaseModel):
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
     mcp_host: str = Field(default='localhost:3000')
-    mcp: MCPConfig | None = Field(default=None)
+    mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -145,9 +144,8 @@ class AppConfig(BaseModel):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
 
-        # Initialize MCP config with the configured host if not already set
-        if self.mcp is None:
-            self.mcp = create_default_mcp_config(host=self.mcp_host)
+        # Initialize MCP config with the configured host
+        self.mcp.sse_servers.append(create_default_mcp_server_config(host=self.mcp_host))
 
         if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
             AppConfig.defaults_dict = model_defaults_to_dict(self)

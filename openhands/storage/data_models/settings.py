@@ -12,7 +12,6 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.mcp_init import create_default_mcp_config
 from openhands.core.config.utils import load_app_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 
@@ -39,7 +38,7 @@ class Settings(BaseModel):
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
-    mcp_config: MCPConfig = Field(default_factory=create_default_mcp_config)
+    mcp_config: MCPConfig = Field(default_factory=MCPConfig)
 
 
     model_config = {
