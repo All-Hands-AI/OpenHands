@@ -24,6 +24,13 @@ vi.mock("#/services/terminal-stream-service", () => ({
   })),
 }));
 
+// Mock the useActionExecutionServerUrl hook
+vi.mock("#/hooks/query/use-action-execution-server-url", () => ({
+    useActionExecutionServerUrl: () => ({
+      url: "http://localhost:8000",
+    }),
+  }));
+
 interface TestTerminalComponentProps {
   commands: Command[];
 }
@@ -94,7 +101,7 @@ describe("useTerminal", () => {
   it.skip("should initialize terminal stream service", () => {
     // Skip this test for now until we can properly mock the terminal stream service
     const terminalStreamService = require("#/services/terminal-stream-service");
-    
+
     renderWithProviders(<TestTerminalComponent commands={[]} />, {
       preloadedState: {
         agent: { curAgentState: AgentState.RUNNING },
