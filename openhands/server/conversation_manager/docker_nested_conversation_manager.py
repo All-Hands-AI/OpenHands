@@ -29,6 +29,7 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.import_utils import get_impl
 
 
@@ -37,9 +38,10 @@ from openhands.utils.import_utils import get_impl
 @dataclass
 class DockerNestedConversationManager(ConversationManager):
     """Conversation manager where the agent loops exist inside the docker containers."""
+    sio: socketio.AsyncServer
     config: AppConfig
     server_config: ServerConfig
-    runtime_container_image: str | None = None
+    file_store: FileStore
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
     _conversation_store_class: type[ConversationStore] | None = None
 
@@ -95,6 +97,7 @@ class DockerNestedConversationManager(ConversationManager):
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
         results = {}
+        """
         for container in self.docker_client.containers.list():
             if not container.name.startswith('openhands-runtime-'):
                 continue
@@ -107,7 +110,7 @@ class DockerNestedConversationManager(ConversationManager):
                     response = await client.get(f'{api_url}/conversations/{conversation_id}')
                     conversation_info = await response.json()
                     conversation_info['num_connections']
-
+        """
         return results
 
     async def maybe_start_agent_loop(
@@ -178,6 +181,7 @@ class DockerNestedConversationManager(ConversationManager):
 
         # Maybe we just create a runtime here.
         # We also attach runtimes
+        """
         if self.runtime_container_image is None:
             config = self.config
             builder = DockerRuntimeBuilder(self.docker_client)
@@ -194,9 +198,9 @@ class DockerNestedConversationManager(ConversationManager):
                 force_rebuild=config.sandbox.force_rebuild_runtime,
                 extra_build_args=config.sandbox.runtime_extra_build_args,
             )
+        """
 
-
-
+        # I think we need to change the API here. The manager should not need a session
         session = Session(
             sid=sid,
             file_store=self.file_store,
@@ -227,44 +231,23 @@ class DockerNestedConversationManager(ConversationManager):
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
         )
         env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
+        env_vars['SERVE_FRONTEND'] = '0'
 
-        """
         runtime = DockerRuntime(
             config=self.config,
-            event_stream=self.event_stream,
+            event_stream=None,
             sid=sid,
             plugins=agent.sandbox_plugins,
-            #status_callback=self._status_callback,
             headless_mode=False,
             attach_to_existing=False,
             env_vars=env_vars,
+            module="openhands.server",
         )
-        
-        runtime.connect()
+        await runtime.connect()
 
-        session = Session(
-            sid=sid,
-            file_store=self.file_store,
-            config=self.config,
-            sio=self.sio,
-            user_id=user_id,
-        )
-        self._local_agent_loops_by_sid[sid] = session
-        asyncio.create_task(
-            session.initialize_agent(settings, initial_user_msg, replay_json)
-        )
-        # This does not get added when resuming an existing conversation
-        try:
-            session.agent_session.event_stream.subscribe(
-                EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(
-                    user_id, github_user_id, sid, settings
-                ),
-                UPDATED_AT_CALLBACK_ID,
-            )
-        except ValueError:
-            pass  # Already subscribed - take no action
-        """
+        # TODO: After we start the nested server, we need to initialize the conversation
+
         return session
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
@@ -309,9 +292,10 @@ class DockerNestedConversationManager(ConversationManager):
         #    monitoring_listener or MonitoringListener(),
         #)
         return DockerNestedConversationManager(
+            sio=sio,
             config=config,
             server_config=server_config,
-            runtime_container_image=config.sandbox.runtime_container_image
+            file_store=file_store,
         )
 
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
