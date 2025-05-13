@@ -68,12 +68,9 @@ class BaseMicroagent(BaseModel):
             # Validate MCP tools configuration if present
             if metadata.mcp_tools:
                 # Check if there are any SSE servers but no stdio servers
-                if (
-                    metadata.mcp_tools.sse_servers
-                    and not metadata.mcp_tools.stdio_servers
-                ):
+                if metadata.mcp_tools.sse_servers:
                     logger.warning(
-                        f'Microagent {metadata.name} has SSE servers but no stdio servers in MCP tools. Only stdio servers are supported for security reasons.'
+                        f'Microagent {metadata.name} has SSE servers. Only stdio servers are currently supported.'
                     )
 
                 # Ensure there are stdio servers if MCP tools are specified

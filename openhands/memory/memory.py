@@ -271,11 +271,14 @@ class Memory:
 
         # Check all knowledge microagents for MCP tools
         for agent in self.knowledge_microagents.values():
-            if (
-                agent.metadata.trigger_type == TriggerType.ALWAYS
-                and agent.metadata.mcp_tools
-            ):
-                mcp_configs.append(agent.metadata.mcp_tools)
+            if agent.metadata.mcp_tools:
+                if agent.metadata.trigger_type == TriggerType.ALWAYS:
+                    mcp_configs.append(agent.metadata.mcp_tools)
+                else:
+                    logger.warning(
+                        f'Microagent {agent.name} has trigger_type={agent.metadata.trigger_type}, not adding MCP tools. '
+                        'MCP tools are only supported for knowledge microagents with trigger_type=ALWAYS or repo microagents.'
+                    )
 
         # Check all repo microagents for MCP tools
         for agent in self.repo_microagents.values():
