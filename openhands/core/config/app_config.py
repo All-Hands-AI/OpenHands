@@ -11,7 +11,7 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.mcp_config import MCPConfig, create_default_mcp_server_config
+from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -143,9 +143,6 @@ class AppConfig(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
-
-        # Initialize MCP config with the configured host
-        self.mcp.sse_servers.append(create_default_mcp_server_config(host=self.mcp_host))
 
         if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
             AppConfig.defaults_dict = model_defaults_to_dict(self)

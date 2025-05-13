@@ -107,15 +107,18 @@ class MCPConfig(BaseModel):
         return mcp_mapping
 
 
-def create_default_mcp_server_config(host: str) -> MCPSSEServerConfig:
-    """
-    Create a default MCP server configuration.
 
-    Args:
-        host: Host string
+class OpenHandsMCPConfig:
+    @staticmethod
+    def create_default_mcp_server_config(host: str, user_id: str | None = None) -> MCPSSEServerConfig:
+        """
+        Create a default MCP server configuration.
 
-    Returns:
-        MCPSSEServerConfig: A default SSE server configuration
-    """
+        Args:
+            host: Host string
 
-    return MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)
+        Returns:
+            MCPSSEServerConfig: A default SSE server configuration
+        """
+
+        return MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)

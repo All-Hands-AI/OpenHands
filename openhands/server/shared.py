@@ -4,6 +4,7 @@ import socketio
 from dotenv import load_dotenv
 
 from openhands.core.config import load_app_config
+from openhands.core.config.mcp_config import OpenHandsMCPConfig
 from openhands.server.config.server_config import load_server_config
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
@@ -57,4 +58,8 @@ SecretsStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
 ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
     server_config.conversation_store_class,
+)
+
+OpenHandsMCPConfigImpl = get_impl(
+    OpenHandsMCPConfig, server_config.openhands_mcp_config
 )

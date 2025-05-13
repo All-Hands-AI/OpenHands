@@ -26,6 +26,7 @@ class ServerConfig(ServerConfigInterface):
     user_auth_class: str = (
         'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
     )
+    openhands_mcp_config: str = 'openhands.core.config.mcp_config.OpenHandsMCPConfig'
 
     def verify_config(self):
         if self.config_cls:
