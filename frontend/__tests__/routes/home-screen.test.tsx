@@ -174,6 +174,16 @@ describe("HomeScreen", () => {
 
   describe("launch buttons", () => {
     const setupLaunchButtons = async () => {
+      // Mock the branch retrieval to return branches including main
+      const getRepositoryBranchesSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryBranches",
+      );
+      getRepositoryBranchesSpy.mockResolvedValue([
+        { name: "main" },
+        { name: "develop" }
+      ]);
+      
       let headerLaunchButton = screen.getByTestId("header-launch-button");
       let repoLaunchButton = await screen.findByTestId("repo-launch-button");
       let tasksLaunchButtons =
@@ -185,11 +195,17 @@ describe("HomeScreen", () => {
       await userEvent.click(dropdown);
       const repoOption = screen.getAllByText("octocat/hello-world")[1];
       await userEvent.click(repoOption);
+      
+      // Wait for the branch to be auto-selected
+      await waitFor(() => {
+        expect(repoLaunchButton).toBeEnabled();
+      });
 
-      expect(headerLaunchButton).not.toBeDisabled();
-      expect(repoLaunchButton).not.toBeDisabled();
+      // With the new branch selection logic, main branch should be auto-selected
+      expect(headerLaunchButton).toBeEnabled();
+      expect(repoLaunchButton).toBeEnabled();
       tasksLaunchButtons.forEach((button) => {
-        expect(button).not.toBeDisabled();
+        expect(button).toBeEnabled();
       });
 
       headerLaunchButton = screen.getByTestId("header-launch-button");
