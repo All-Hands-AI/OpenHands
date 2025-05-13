@@ -11,7 +11,7 @@ OpenHands can connect to any LLM supported by LiteLLM. However, it requires a po
 Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
 recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
-Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
+Based on these findings and community feedback, these are the latest models that have been verified to work reasonably well with OpenHands:
 
 - [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api) (recommended)
 - [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
