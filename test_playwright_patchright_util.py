@@ -6,53 +6,62 @@ Test script for the playwright_patchright_util module.
 import logging
 import sys
 
+from openhands.utils.playwright_patchright_util import use_patchright
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import the use_patchright function
-from openhands.utils.playwright_patchright_util import use_patchright
 
-# Use patchright as a replacement for playwright
-use_patchright()
+def test_patchright_import():
+    """Test that patchright can be imported and used as a replacement for playwright."""
+    # Use patchright as a replacement for playwright
+    use_patchright()
 
-# Now import playwright
-try:
+    # Now import playwright
+
+    # Check that the import worked
+    assert 'playwright.sync_api' in sys.modules
+
+    # Check that the actual module is patchright
+    playwright_modules = [
+        name
+        for name in sys.modules.keys()
+        if name == 'playwright' or name.startswith('playwright.')
+    ]
+    assert len(playwright_modules) > 0
+
+    # Check that patchright modules are loaded
+    patchright_modules = [
+        name
+        for name in sys.modules.keys()
+        if name == 'patchright' or name.startswith('patchright.')
+    ]
+    assert len(patchright_modules) > 0
+
+
+def test_patchright_functionality():
+    """Test that patchright functionality works through the playwright import."""
+    # Use patchright as a replacement for playwright
+    use_patchright()
+
+    # Import playwright
     from playwright.sync_api import sync_playwright
-    
-    logger.info("Successfully imported sync_playwright")
-    
-    # Use playwright
+
+    # Use playwright (which is actually patchright)
     with sync_playwright() as p:
-        logger.info("Successfully created sync_playwright instance")
-        
         # Launch a browser
         browser = p.chromium.launch(headless=True)
-        logger.info("Successfully launched browser")
-        
+
         # Create a new page
         page = browser.new_page()
-        logger.info("Successfully created page")
-        
+
         # Navigate to a URL
-        page.goto("https://example.com")
-        logger.info(f"Successfully navigated to example.com, title: {page.title()}")
-        
+        page.goto('https://example.com')
+
+        # Check that we can get the title
+        title = page.title()
+        assert 'Example' in title
+
         # Close the browser
         browser.close()
-        logger.info("Successfully closed browser")
-    
-except ImportError as e:
-    logger.error(f"Import failed: {e}")
-except Exception as e:
-    logger.error(f"Error during execution: {e}", exc_info=True)
-
-# Print all playwright modules in sys.modules
-playwright_modules = [name for name in sys.modules.keys() 
-                     if name == 'playwright' or name.startswith('playwright.')]
-logger.info(f"Playwright modules in sys.modules: {playwright_modules}")
-
-# Print all patchright modules in sys.modules
-patchright_modules = [name for name in sys.modules.keys() 
-                     if name == 'patchright' or name.startswith('patchright.')]
-logger.info(f"Patchright modules in sys.modules: {patchright_modules}")
