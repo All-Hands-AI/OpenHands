@@ -17,6 +17,7 @@ from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
 from openhands.runtime.builder.docker import DockerRuntimeBuilder
+from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.server.config.server_config import ServerConfig
@@ -257,9 +258,7 @@ class DockerNestedConversationManager(ConversationManager):
         logger.info('DockerNestedConversationManager:close_session', extra={
             "sid": sid,
         })
-        # TODO:
-        # pause the runtime
-        raise ValueError('unsupported_operation')
+        stop_all_containers(f'openhands-runtime-{sid}')
 
     @classmethod
     def get_instance(
