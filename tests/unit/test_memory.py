@@ -39,6 +39,9 @@ def event_stream(file_store, request):
     stream = EventStream(sid='test_sid', file_store=file_store)
 
     def cleanup():
+        # Ensure all subscribers are removed
+        stream._subscribers.clear()
+        # Close the stream
         stream.close()
 
     request.addfinalizer(cleanup)
@@ -82,6 +85,7 @@ def mock_agent():
         return system_message
 
     agent.get_system_message.side_effect = get_system_message
+    agent.name = 'TestAgent'  # Add a name to the agent
     return agent
 
 

@@ -220,30 +220,18 @@ async def test_delegate_step_different_states(
     mock_delegate._step = AsyncMock()
     mock_delegate.close = AsyncMock()
 
-    def call_on_event_with_new_loop():
-        """
-        In this thread, create and set a fresh event loop, so that the run_until_complete()
-        calls inside controller.on_event(...) find a valid loop.
-        """
-        loop_in_thread = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop_in_thread)
-            # First send a message to trigger the delegate state check
-            msg_action = MessageAction(content='Test message')
-            msg_action._source = EventSource.USER
-            controller.on_event(msg_action)
+    # First send a message to trigger the delegate state check
+    msg_action = MessageAction(content='Test message')
+    msg_action._source = EventSource.USER
+    await controller._on_event(msg_action)
 
-            # Then send a reject action to trigger delegate cleanup
-            reject_action = AgentRejectAction()
-            reject_action._source = EventSource.USER
-            controller.on_event(reject_action)
-        finally:
-            loop_in_thread.close()
+    # Then send a reject action to trigger delegate cleanup
+    reject_action = AgentRejectAction()
+    reject_action._source = EventSource.USER
+    await controller._on_event(reject_action)
 
-    loop = asyncio.get_running_loop()
-    with ThreadPoolExecutor() as executor:
-        future = loop.run_in_executor(executor, call_on_event_with_new_loop)
-        await future
+    # Give a little time for async operations to complete
+    await asyncio.sleep(0.1)
 
     if delegate_state == AgentState.RUNNING:
         assert controller.delegate is not None
