@@ -96,10 +96,10 @@ def response_to_actions(
                 # Set hard timeout if provided
                 if 'timeout' in arguments:
                     try:
-                        action.set_hard_timeout(float(arguments['timeout']))                    
+                        action.set_hard_timeout(float(arguments['timeout']))
                     except ValueError as e:
                         raise FunctionCallValidationError(
-                            f'Invalid float passed to 'timeout' argument: {arguments["timeout"]}'
+                            f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
                         ) from e
 
             # ================================================
