@@ -74,24 +74,37 @@ async def summarize_conversation(request: Request) -> JSONResponse:
 
         # Get the LLM from the agent controller
         from openhands.server.agent_controller import get_agent_controller
-        
+
         # Get the agent controller
         agent_controller = get_agent_controller()
-        
+
         # Use the agent controller's LLM directly
-        if agent_controller and hasattr(agent_controller, 'agent') and agent_controller.agent and hasattr(agent_controller.agent, 'llm') and agent_controller.agent.llm:
+        if (
+            agent_controller
+            and hasattr(agent_controller, 'agent')
+            and agent_controller.agent
+            and hasattr(agent_controller.agent, 'llm')
+            and agent_controller.agent.llm
+        ):
             llm = agent_controller.agent.llm
         else:
             # Try to get the LLM from the conversation's controller
             controller = getattr(request.state.conversation, 'controller', None)
-            if controller and hasattr(controller, 'agent') and controller.agent and hasattr(controller.agent, 'llm') and controller.agent.llm:
+            if (
+                controller
+                and hasattr(controller, 'agent')
+                and controller.agent
+                and hasattr(controller.agent, 'llm')
+                and controller.agent.llm
+            ):
                 llm = controller.agent.llm
             else:
                 # Fallback to creating a new LLM with default config if agent controller's LLM is not available
                 from openhands.config.llm import LLMConfig
+
                 llm_config = LLMConfig()
                 llm = LLM(config=llm_config)
-            
+
         # Create the condenser with the LLM
         condenser = LLMSummarizingCondenser(llm=llm, max_size=40, keep_first=3)
 

@@ -27,10 +27,10 @@ class ConversationManager(ABC):
     config: AppConfig
     file_store: FileStore
     conversation_store: ConversationStore
-    
+
     def get_active_conversation(self) -> Conversation | None:
         """Get the active conversation.
-        
+
         Returns:
             Conversation | None: The active conversation, or None if no conversation is active.
         """

@@ -208,7 +208,7 @@ class LocalRuntime(ActionExecutionClient):
         env['LOCAL_RUNTIME_MODE'] = '1'
         # run poetry show -v | head -n 1 | awk '{print $2}'
         poetry_venvs_path = (
-            subprocess.check_output(
+            subprocess.check_output(  # noqa: ASYNC101
                 ['poetry', 'show', '-v'],
                 env=env,
                 cwd=code_repo_path,
@@ -223,7 +223,7 @@ class LocalRuntime(ActionExecutionClient):
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
         check_dependencies(code_repo_path, poetry_venvs_path)
-        self.server_process = subprocess.Popen(
+        self.server_process = subprocess.Popen(  # noqa: ASYNC101
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

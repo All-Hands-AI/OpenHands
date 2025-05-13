@@ -53,27 +53,27 @@ class StandaloneConversationManager(ConversationManager):
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: Type | None = None
-    
+
     def get_active_conversation(self) -> Conversation | None:
         """Get the most recently active conversation.
-        
+
         Returns:
             Conversation | None: The most recently active conversation, or None if no conversation is active.
         """
         # Find the most recently active conversation
         most_recent_sid = None
-        most_recent_time = 0
-        
+        most_recent_time = 0.0
+
         for sid, (conversation, _) in self._active_conversations.items():
             if hasattr(conversation, 'last_activity_time'):
                 if conversation.last_activity_time > most_recent_time:
                     most_recent_time = conversation.last_activity_time
                     most_recent_sid = sid
-        
+
         if most_recent_sid:
             conversation, _ = self._active_conversations[most_recent_sid]
             return conversation
-            
+
         # If no active conversations, return None
         return None
 

@@ -20,14 +20,16 @@ class Conversation:
         self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
     ):
         import time
-        
+
         self.sid = sid
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
         self.event_stream = EventStream(sid, file_store, user_id)
-        self.last_activity_time = time.time()  # Track when this conversation was last active
-        
+        self.last_activity_time = (
+            time.time()
+        )  # Track when this conversation was last active
+
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer

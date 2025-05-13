@@ -39,13 +39,14 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.mcp import call_tool_mcp as call_tool_mcp_handler, create_mcp_clients, MCPClient
+from openhands.mcp import MCPClient, create_mcp_clients
+from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
-from openhands.utils.async_utils import call_async_from_sync
 
 
 def _is_retryable_error(exception):
@@ -325,10 +326,11 @@ class ActionExecutionClient(Runtime):
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
         if self.mcp_clients is None:
-            self.log('debug', f'Creating MCP clients with servers: {self.config.mcp.sse.mcp_servers}')
-            self.mcp_clients = await create_mcp_clients(
-                self.config.mcp.sse.mcp_servers
+            self.log(
+                'debug',
+                f'Creating MCP clients with servers: {self.config.mcp.sse.mcp_servers}',
             )
+            self.mcp_clients = await create_mcp_clients(self.config.mcp.sse.mcp_servers)
         return await call_tool_mcp_handler(self.mcp_clients, action)
 
     async def aclose(self) -> None:
