@@ -22,10 +22,15 @@ from openhands.utils.playwright_patchright_util import use_patchright
 use_patchright()
 
 # Now you can import and use modules that depend on playwright
+# IMPORTANT: These imports MUST come AFTER the use_patchright() call
 import browsergym
 # or
 from playwright.sync_api import sync_playwright
 ```
+
+### IMPORTANT: Import Order Matters
+
+The `use_patchright()` function must be called **before** any imports of playwright or modules that use playwright. If you import playwright before calling `use_patchright()`, the patching will not work correctly.
 
 ## How It Works
 

@@ -16,7 +16,7 @@ def test_patchright_import():
     # Use patchright as a replacement for playwright
     use_patchright()
 
-    # Now import playwright
+    # Now import playwright - this must be imported after use_patchright() is called
     import playwright.sync_api  # noqa: F401
 
     # Check that the import worked
@@ -44,7 +44,7 @@ def test_patchright_functionality():
     # Use patchright as a replacement for playwright
     use_patchright()
 
-    # Import playwright
+    # Import playwright - this must be imported after use_patchright() is called
     from playwright.sync_api import sync_playwright
 
     # Use playwright (which is actually patchright)
