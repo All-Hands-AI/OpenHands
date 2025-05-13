@@ -20,7 +20,6 @@ from openhands.microagent import (
     RepoMicroagent,
     load_microagents_from_dir,
 )
-from openhands.microagent.types import TriggerType
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
@@ -262,25 +261,14 @@ class Memory:
 
     def get_microagent_mcp_tools(self) -> list[dict[Any, Any]]:
         """
-        Get MCP tools from all microagents with trigger_type=ALWAYS
+        Get MCP tools from all repo microagents (always active)
 
         Returns:
             A list of MCP tools configurations from microagents
         """
         mcp_configs: list[dict[Any, Any]] = []
 
-        # Check all knowledge microagents for MCP tools
-        for agent in self.knowledge_microagents.values():
-            if agent.metadata.mcp_tools:
-                if agent.metadata.trigger_type == TriggerType.ALWAYS:
-                    mcp_configs.append(agent.metadata.mcp_tools)
-                else:
-                    logger.warning(
-                        f'Microagent {agent.name} has trigger_type={agent.metadata.trigger_type}, not adding MCP tools. '
-                        'MCP tools are only supported for knowledge microagents with trigger_type=ALWAYS or repo microagents.'
-                    )
-
-        # Check all repo microagents for MCP tools
+        # Check all repo microagents for MCP tools (always active)
         for agent in self.repo_microagents.values():
             if agent.metadata.mcp_tools:
                 mcp_configs.append(agent.metadata.mcp_tools)

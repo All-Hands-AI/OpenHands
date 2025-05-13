@@ -9,7 +9,7 @@ from openhands.core.exceptions import (
     MicroagentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroagentMetadata, MicroagentType, TriggerType
+from openhands.microagent.types import MicroagentMetadata, MicroagentType
 
 
 class BaseMicroagent(BaseModel):
@@ -89,13 +89,13 @@ class BaseMicroagent(BaseModel):
         }
 
         # Infer the agent type:
-        # 1. If triggers exist or trigger_type is ALWAYS -> KNOWLEDGE
-        # 2. Else (no triggers and trigger_type is KEYWORD) -> REPO
+        # 1. If triggers exist -> KNOWLEDGE (optional)
+        # 2. Else (no triggers) -> REPO (always active)
         inferred_type: MicroagentType
-        if metadata.triggers or metadata.trigger_type == TriggerType.ALWAYS:
+        if metadata.triggers:
             inferred_type = MicroagentType.KNOWLEDGE
         else:
-            # No triggers and not ALWAYS trigger_type, default to REPO
+            # No triggers, default to REPO
             # This handles cases where 'type' might be missing or defaulted by Pydantic
             inferred_type = MicroagentType.REPO_KNOWLEDGE
 
@@ -117,7 +117,7 @@ class BaseMicroagent(BaseModel):
 
 
 class KnowledgeMicroagent(BaseMicroagent):
-    """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations or other triggers. They help with:
+    """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations. They help with:
     - Language best practices
     - Framework guidelines
     - Common patterns
@@ -132,18 +132,12 @@ class KnowledgeMicroagent(BaseMicroagent):
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
 
-        It returns the first trigger that matches the message or "always" if the trigger_type is ALWAYS.
+        It returns the first trigger that matches the message.
         """
-        # If trigger_type is ALWAYS, always return a match
-        if self.metadata.trigger_type == TriggerType.ALWAYS:
-            return 'always'
-
-        # For KEYWORD trigger_type, check if any trigger matches
-        if self.metadata.trigger_type == TriggerType.KEYWORD:
-            message = message.lower()
-            for trigger in self.triggers:
-                if trigger.lower() in message:
-                    return trigger
+        message = message.lower()
+        for trigger in self.triggers:
+            if trigger.lower() in message:
+                return trigger
 
         return None
 

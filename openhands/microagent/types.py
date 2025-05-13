@@ -11,15 +11,8 @@ from openhands.core.config.mcp_config import (
 class MicroagentType(str, Enum):
     """Type of microagent."""
 
-    KNOWLEDGE = 'knowledge'
-    REPO_KNOWLEDGE = 'repo'
-
-
-class TriggerType(str, Enum):
-    """Type of trigger for microagent activation."""
-
-    ALWAYS = 'always'
-    KEYWORD = 'keyword'
+    KNOWLEDGE = 'knowledge'  # Optional microagent, triggered by keywords
+    REPO_KNOWLEDGE = 'repo'  # Always active microagent
 
 
 class MicroagentMetadata(BaseModel):
@@ -29,10 +22,7 @@ class MicroagentMetadata(BaseModel):
     type: MicroagentType = Field(default=MicroagentType.REPO_KNOWLEDGE)
     version: str = Field(default='1.0.0')
     agent: str = Field(default='CodeActAgent')
-    trigger_type: TriggerType = Field(default=TriggerType.KEYWORD)
-    triggers: list[
-        str
-    ] = []  # optional, only exists for knowledge microagents with keyword trigger_type
+    triggers: list[str] = []  # optional, only exists for knowledge microagents
     mcp_tools: Optional[MCPConfig] = (
         None  # optional, for microagents that provide additional MCP tools
     )
