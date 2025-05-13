@@ -54,7 +54,12 @@ export function RepositorySelectionForm({
 
   // Auto-select main or master branch if it exists
   React.useEffect(() => {
-    if (branches && branches.length > 0 && !isLoadingBranches) {
+    if (
+      branches &&
+      branches.length > 0 &&
+      !selectedBranch &&
+      !isLoadingBranches
+    ) {
       // Look for main or master branch
       const mainBranch = branches.find((branch) => branch.name === "main");
       const masterBranch = branches.find((branch) => branch.name === "master");
@@ -66,7 +71,7 @@ export function RepositorySelectionForm({
         setSelectedBranch(masterBranch);
       }
     }
-  }, [branches, isLoadingBranches]);
+  }, [branches, selectedBranch, isLoadingBranches]);
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
@@ -138,11 +143,22 @@ export function RepositorySelectionForm({
     );
   };
 
+  const handleBranchInputChange = (value: string) => {
+    if (value === "") {
+      setSelectedBranch(null);
+    }
+  };
+
   // Render the appropriate UI for branch selector based on the loading/error state
   const renderBranchSelector = () => {
     if (!selectedRepository) {
       return (
-        <BranchDropdown items={[]} onSelectionChange={() => {}} isDisabled />
+        <BranchDropdown
+          items={[]}
+          onSelectionChange={() => {}}
+          onInputChange={() => {}}
+          isDisabled
+        />
       );
     }
 
@@ -158,6 +174,7 @@ export function RepositorySelectionForm({
       <BranchDropdown
         items={branchesItems || []}
         onSelectionChange={handleBranchSelection}
+        onInputChange={handleBranchInputChange}
         isDisabled={false}
         selectedKey={selectedBranch?.name}
       />
