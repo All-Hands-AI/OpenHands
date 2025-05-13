@@ -21,3 +21,27 @@ sudo apt-get update
 sudo apt-get install -y lsof
 cd frontend && npm install ; cd ..
 ```
+
+## Pre-commit Script
+You can add a `.openhands/pre-commit.sh` file to create a custom git pre-commit hook that runs before each commit.
+This can be used to enforce code quality standards, run tests, or perform other checks before allowing commits.
+
+For example:
+```bash
+#!/bin/bash
+# Run linting checks
+cd frontend && npm run lint
+if [ $? -ne 0 ]; then
+  echo "Frontend linting failed. Please fix the issues before committing."
+  exit 1
+fi
+
+# Run tests
+cd backend && pytest tests/unit
+if [ $? -ne 0 ]; then
+  echo "Backend tests failed. Please fix the issues before committing."
+  exit 1
+fi
+
+exit 0
+```

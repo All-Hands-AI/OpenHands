@@ -1069,7 +1069,6 @@
         "fr": "Copier dans le presse-papiers",
         "tr": "Panoya kopyala",
         "de": "In die Zwischenablage kopieren",
-        "fa": "کپی به کلیپ‌بورد",
         "uk": "Копіювати в буфер обміну"
     },
     "BUTTON$COPIED": {
@@ -1086,7 +1085,6 @@
         "fr": "Copié dans le presse-papiers",
         "tr": "Panoya kopyalandı",
         "de": "In die Zwischenablage kopiert",
-        "fa": "در کلیپ‌بورد کپی شد",
         "uk": "Copied to clipboard"
     },
     "APP$TITLE": {
@@ -4245,7 +4243,6 @@
         "ar": "أو",
         "no": "Eller",
         "tr": "veya",
-        "fa": "یا",
         "uk": "Або"
     },
     "SUGGESTIONS$TEST_COVERAGE": {
@@ -4278,7 +4275,6 @@
         "ar": "دمج تلقائي لطلبات سحب Dependabot",
         "no": "Auto-flett Dependabot PRs",
         "tr": "Otomatik birleştirme",
-        "fa": "ادغام خودکار درخواست‌های Dependabot",
         "uk": "Автоматичне об'єднання Dependabot PR"
     },
     "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
@@ -5951,7 +5947,6 @@
         "pt": "Captura de tela do navegador",
         "es": "Captura de pantalla del navegador",
         "tr": "Tarayıcı ekran görüntüsü",
-        "fa": "تصویر صفحه مرورگر",
         "uk": "Знімок екрана браузера"
     },
     "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
@@ -7589,20 +7584,20 @@
         "uk": "Дію не виконано. Можливо, це сталося через натискання користувачем кнопки зупинки або через збій та перезапуск системи виконання через обмеження ресурсів. Можливо, було втрачено будь-який раніше встановлений стан системи, залежності або змінні середовища."
     },
     "DIFF_VIEWER$LOADING": {
-        "en": "Loading...",
-        "ja": "読み込み中...",
-        "zh-CN": "加载中...",
-        "zh-TW": "加載中...",
-        "ko-KR": "로딩 중...",
-        "no": "Laster inn...",
-        "it": "Caricamento in corso...",
-        "pt": "Carregando...",
-        "es": "Cargando...",
-        "ar": "جار التحميل...",
-        "fr": "Chargement...",
-        "tr": "Yükleniyor...",
-        "de": "Wird geladen...",
-        "uk": "Завантаження..."
+        "en": "Loading changes...",
+        "ja": "変更を読み込んでいます...",
+        "zh-CN": "正在加载更改...",
+        "zh-TW": "正在加載更改...",
+        "ko-KR": "변경 사항을 로드하는 중...",
+        "no": "Laster inn endringer...",
+        "it": "Caricamento modifiche...",
+        "pt": "Carregando alterações...",
+        "es": "Cargando cambios...",
+        "ar": "جارٍ تحميل التغييرات...",
+        "fr": "Chargement des modifications...",
+        "tr": "Değişiklikler yükleniyor...",
+        "de": "Änderungen werden geladen...",
+        "uk": "Завантаження змін..."
     },
     "DIFF_VIEWER$GETTING_LATEST_CHANGES": {
         "en": "Getting latest changes...",
