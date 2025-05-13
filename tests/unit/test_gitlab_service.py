@@ -77,7 +77,7 @@ async def test_gitlab_service_fetch_data():
         mock_client.get.reset_mock()
         mock_client.get.return_value = mock_response
 
-        with pytest.raises(Exception):
+        with pytest.raises():
             _ = await service._make_request('https://gitlab.com/api/v4/user')
 
 

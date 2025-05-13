@@ -12,12 +12,10 @@ from openhands.integrations.github.queries import (
     suggested_task_pr_graphql_query,
 )
 from openhands.integrations.service_types import (
-    AuthenticationError,
     BaseGitService,
     Branch,
     GitService,
     ProviderType,
-    RateLimitError,
     Repository,
     RequestMethod,
     SuggestedTask,
@@ -477,10 +475,6 @@ class GitHubService(BaseGitService, GitService):
         try:
             url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
-            # Set default title if none provided
-            if not title:
-                title = f'Pull request from {source_branch} to {target_branch}'
-
             # Set default body if none provided
             if not body:
                 body = f'Merging changes from {source_branch} into {target_branch}'
@@ -505,18 +499,8 @@ class GitHubService(BaseGitService, GitService):
             else:
                 return f'PR created but URL not found in response: {response}'
 
-        except AuthenticationError as e:
-            logger.error(f'Authentication error creating PR: {e}')
-            return f'Authentication error: {str(e)}'
-        except RateLimitError as e:
-            logger.error(f'Rate limit exceeded when creating PR: {e}')
-            return f'Rate limit error: {str(e)}'
-        except UnknownException as e:
-            logger.error(f'Unknown error creating PR: {e}')
-            return f'Error creating PR: {str(e)}'
         except Exception as e:
-            logger.error(f'Unexpected error creating PR: {e}')
-            return f'Unexpected error: {str(e)}'
+            return f'Error creating pull request: {str(e)}'
 
 
 github_service_cls = os.environ.get(

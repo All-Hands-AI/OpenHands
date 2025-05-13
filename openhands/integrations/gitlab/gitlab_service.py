@@ -443,9 +443,8 @@ class GitLabService(BaseGitService, GitService):
         id: int | str,
         source_branch: str,
         target_branch: str,
-        title: str | None = None,
+        title: str,
         description: str | None = None,
-        draft: bool = False,
     ) -> str:
         """
         Creates a merge request in GitLab
@@ -467,10 +466,6 @@ class GitLabService(BaseGitService, GitService):
             project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
             url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
 
-            # Set default title if none provided
-            if not title:
-                title = f'Merge request from {source_branch} to {target_branch}'
-
             # Set default description if none provided
             if not description:
                 description = f'Merging changes from {source_branch} into {target_branch}'
@@ -483,9 +478,6 @@ class GitLabService(BaseGitService, GitService):
                 'description': description,
             }
             
-            # Add draft flag if needed (GitLab uses different parameter name)
-            if draft:
-                payload['draft'] = True
 
             # Make the POST request to create the MR
             response, _ = await self._make_request(
@@ -499,7 +491,6 @@ class GitLabService(BaseGitService, GitService):
                 return f'MR created but URL not found in response: {response}'
 
         except Exception as e:
-            # Log the error and return a user-friendly message
             return f'Error creating merge request: {str(e)}'
 
 

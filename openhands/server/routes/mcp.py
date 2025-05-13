@@ -82,7 +82,13 @@ async def create_mr(
     )
 
     try:
-        response = await github_service.create_mr()
+        response = await github_service.create_mr(
+            id=id,
+            source_branch=source_branch,
+            target_branch=target_branch,
+            title=title,
+            description=description,
+        )
     except Exception as e:
         response = str(e)
 
