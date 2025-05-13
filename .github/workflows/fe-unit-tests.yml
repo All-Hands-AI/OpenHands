@@ -42,7 +42,3 @@ jobs:
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
