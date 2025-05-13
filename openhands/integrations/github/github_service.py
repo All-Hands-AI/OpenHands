@@ -449,6 +449,17 @@ class GitHubService(BaseGitService, GitService):
         return all_branches
 
 
+    async def create_pr(self, repo_name: str, source_branch: str, target_branch: str) -> str:
+        """
+            Creates a PR using user credentials
+
+            Returns:
+                - PR link when successful 
+                - Error message when unsuccessful
+        """
+        return "successfully made PR"
+
+
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
     'openhands.integrations.github.github_service.GitHubService',

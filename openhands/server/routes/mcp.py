@@ -2,7 +2,10 @@ from typing import Annotated
 from pydantic import Field
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
-from openhands.server.user_auth import get_provider_tokens
+from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.provider import ProviderToken
+from openhands.integrations.service_types import ProviderType
+from openhands.server.user_auth import get_access_token, get_provider_tokens, get_user_id
 
 
 mcp_server = FastMCP('mcp')
@@ -20,5 +23,19 @@ async def create_pr(
     
     request = get_http_request()
     provider_tokens = await get_provider_tokens(request)
+    access_token = await get_access_token(request)
+    user_id = await get_user_id(request)
 
-    return "pr was created successfully"
+    github_token = provider_tokens.get(ProviderType.GITHUB, ProviderToken()) if provider_tokens else ProviderToken()
+
+    github_service = GithubServiceImpl(
+        user_id=github_token.user_id,
+        external_auth_id=user_id,
+        external_auth_token=access_token,
+        token=github_token.token,
+        host=github_token.host
+    )
+
+    response = await github_service.create_pr()
+
+    return response
