@@ -400,7 +400,7 @@ class ConversationModule:
                 or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None))
             )
             query = query.offset(offset).limit(limit)
-            query = query.order_by(desc(Conversation.c))
+            query = query.order_by(desc(Conversation.c.created_at))
             items = await database.fetch_all(query)
             return items
         except Exception as e:
