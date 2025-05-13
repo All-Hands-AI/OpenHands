@@ -54,7 +54,6 @@ export class TerminalStreamService {
       this.eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as TerminalStreamChunk;
-          console.log("Received terminal stream data:", data);
           this.handleStreamChunk(data);
         } catch (error) {
           console.error("Error parsing terminal stream data:", error);
@@ -82,7 +81,6 @@ export class TerminalStreamService {
   }
 
   disconnect(): void {
-    console.log("Disconnecting from terminal stream...");
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
