@@ -7,42 +7,38 @@ import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 import { OpenHandsEventType } from "#/types/core/base";
 import { EventMessage } from "./event-message";
 
-const NO_RENDER_LIST: OpenHandsEventType[] = [
+const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
   "system",
   "agent_state_changed",
   "change_agent_state",
 ];
 
-/*
-We might want switch to a render list instead of a no render list
-
-const RENDER_LIST: OpenHandsEventType[] = [
-  "run",
-  "run_ipython",
-  "write",
-  "read",
-  "browse",
-  "browse_interactive",
-  "edit",
-  "recall",
-  "think",
-  "system",
-  "call_tool_mcp",
-  "mcp",
-];
-*/
+const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall"];
 
 const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
-  let eventType: OpenHandsEventType | null = null;
-
   if (isOpenHandsAction(event)) {
-    eventType = event.action;
-  }
-  if (isOpenHandsObservation(event)) {
-    eventType = event.observation;
+    const noRenderList = COMMON_NO_RENDER_LIST.concat(ACTION_NO_RENDER_LIST);
+    return !noRenderList.includes(event.action);
   }
 
-  return eventType ? !NO_RENDER_LIST.includes(eventType) : false;
+  if (isOpenHandsObservation(event)) {
+    return !COMMON_NO_RENDER_LIST.includes(event.observation);
+  }
+
+  return true;
+};
+
+const actionHasObservationPair = (
+  event: OpenHandsAction | OpenHandsObservation,
+  messages: (OpenHandsAction | OpenHandsObservation)[],
+): boolean => {
+  if (isOpenHandsAction(event)) {
+    return !messages.some(
+      (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
+    );
+  }
+
+  return true;
 };
 
 interface MessagesProps {
@@ -60,6 +56,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     return messages
       .filter(shouldRenderEvent)
+      .filter((message) => actionHasObservationPair(message, messages))
       .map((message, index) => (
         <EventMessage
           key={index}
