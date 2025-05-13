@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test script for the playwright_patchright_util module.
-"""
+"""Test script for the playwright_patchright_util module."""
 
 import logging
 import sys

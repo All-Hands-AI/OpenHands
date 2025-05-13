@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Utility to use patchright as a drop-in replacement for playwright.
+"""Utility to use patchright as a drop-in replacement for playwright.
 
 This module provides a function to patch all imports of playwright to use patchright instead.
 It uses Python's import system to intercept imports of playwright modules and redirect them
@@ -31,9 +30,7 @@ MODULE_MAPPING = {
 
 
 class PlaywrightToPatchrightLoader(importlib.abc.Loader):
-    """
-    Custom loader that loads a patchright module but presents it as a playwright module.
-    """
+    """Custom loader that loads a patchright module but presents it as a playwright module."""
 
     def __init__(
         self, fullname: str, patchright_name: str, original_loader: importlib.abc.Loader
@@ -74,9 +71,7 @@ class PlaywrightToPatchrightLoader(importlib.abc.Loader):
 
 
 class PlaywrightToPatchrightFinder(importlib.abc.MetaPathFinder):
-    """
-    Custom finder that intercepts imports of playwright modules and redirects them to patchright.
-    """
+    """Custom finder that intercepts imports of playwright modules and redirects them to patchright."""
 
     def find_spec(
         self,
@@ -135,8 +130,7 @@ class PlaywrightToPatchrightFinder(importlib.abc.MetaPathFinder):
 
 
 def use_patchright():
-    """
-    Configure the system to use patchright as a drop-in replacement for playwright.
+    """Configure the system to use patchright as a drop-in replacement for playwright.
 
     This function:
     1. Checks if patchright is installed
