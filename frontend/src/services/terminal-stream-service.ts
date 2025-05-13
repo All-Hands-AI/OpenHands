@@ -21,6 +21,12 @@ export class TerminalStreamService {
 
   private isConnected: boolean = false;
 
+  private reconnectAttempts: number = 0;
+
+  private maxReconnectAttempts: number = 5;
+
+  private reconnectDelay: number = 1000; // Start with 1 second delay
+
   private currentCommandId: string | null = null;
 
   private accumulatedOutput: string = "";
@@ -36,12 +42,34 @@ export class TerminalStreamService {
       const url = `${this.baseUrl}/terminal-stream`;
       this.eventSource = new EventSource(url);
 
+      this.eventSource.onopen = () => {
+        this.isConnected = true;
+        this.reconnectAttempts = 0;
+        this.reconnectDelay = 1000;
+      };
+
       this.eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as TerminalStreamChunk;
           this.handleStreamChunk(data);
         } catch (error) {
           console.error("Error parsing terminal stream data:", error);
+        }
+      };
+
+      this.eventSource.onerror = (error) => {
+        console.error("Terminal stream error:", error);
+        this.isConnected = false;
+        this.eventSource?.close();
+        this.eventSource = null;
+
+        // Attempt to reconnect with exponential backoff
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          setTimeout(() => {
+            this.reconnectAttempts += 1;
+            this.reconnectDelay *= 2; // Exponential backoff
+            this.connect();
+          }, this.reconnectDelay);
         }
       };
     } catch (error) {

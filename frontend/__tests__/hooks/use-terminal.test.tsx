@@ -83,8 +83,8 @@ describe("useTerminal", () => {
 
   it("should render the commands in the terminal", () => {
     const commands: Command[] = [
-      { content: "echo hello", type: "input", isPartial: false },
-      { content: "hello", type: "output", isPartial: false },
+      { content: "echo hello", type: "input" },
+      { content: "hello", type: "output" },
     ];
 
     renderWithProviders(<TestTerminalComponent commands={commands} />, {
@@ -98,21 +98,6 @@ describe("useTerminal", () => {
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
   });
 
-  it.skip("should initialize terminal stream service", () => {
-    // Skip this test for now until we can properly mock the terminal stream service
-    const terminalStreamService = require("#/services/terminal-stream-service");
-
-    renderWithProviders(<TestTerminalComponent commands={[]} />, {
-      preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
-        cmd: { commands: [] },
-      },
-    });
-
-    // Check if getTerminalStreamService was called
-    expect(terminalStreamService.getTerminalStreamService).toHaveBeenCalled();
-  });
-
   // This test is no longer relevant as secrets filtering has been removed
   it.skip("should hide secrets in the terminal", () => {
     const secret = "super_secret_github_token";
@@ -121,9 +106,8 @@ describe("useTerminal", () => {
       {
         content: `export GITHUB_TOKEN=${secret},${anotherSecret},${secret}`,
         type: "input",
-        isPartial: false,
       },
-      { content: secret, type: "output", isPartial: false },
+      { content: secret, type: "output" },
     ];
 
     renderWithProviders(
