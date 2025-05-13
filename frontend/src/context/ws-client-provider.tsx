@@ -142,9 +142,16 @@ export function WsClientProvider({
     sioRef.current.emit("oh_user_action", event);
   }
 
+  /**
+   * @author vbs_0
+   * Handles successful WebSocket connection and resets reconnection state
+   */
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
-    reconnectAttempts.current = 0; // Reset on successful connection
+    reconnectAttempts.current = 0;
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+    }
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -199,7 +206,7 @@ export function WsClientProvider({
   /**
    * @author vbs_0
    * Handles WebSocket disconnection with exponential backoff retry
-   * Improves terminal reliability by automatically recovering from disconnections
+   * Ensures only one socket is managed at a time and prevents duplicate connections
    */
   const handleDisconnect = React.useCallback(() => {
     setStatus(WsClientProviderStatus.DISCONNECTED);
@@ -209,26 +216,28 @@ export function WsClientProvider({
       return;
     }
 
-    // Clear any existing reconnection timeout
+    if (sioRef.current) {
+      sioRef.current.close();
+      sioRef.current = null;
+    }
+
     if (reconnectTimeout.current) {
       clearTimeout(reconnectTimeout.current);
     }
 
-    // Calculate exponential backoff delay with jitter
     const backoffDelay = Math.min(
-      INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current) *
-        (0.5 + Math.random()),
-      MAX_RECONNECT_DELAY,
+      INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current) * (0.5 + Math.random()),
+      MAX_RECONNECT_DELAY
     );
 
     reconnectTimeout.current = setTimeout(() => {
       reconnectAttempts.current++;
       console.log(
-        `Attempting to reconnect (${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})`,
+        `Attempting to reconnect (${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})`
       );
       connectToWs();
     }, backoffDelay);
-  }, []);
+  }, [connectToWs]);
 
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
@@ -238,47 +247,51 @@ export function WsClientProvider({
   /**
    * @author vbs_0
    * Establishes WebSocket connection with improved error handling and state management
+   * Uses the same URL logic as the rest of the file for consistency
    */
   const connectToWs = React.useCallback(() => {
     if (sioRef.current) {
       sioRef.current.close();
+      sioRef.current = null;
     }
 
     setStatus(WsClientProviderStatus.CONNECTING);
 
+    const lastEvent = lastEventRef.current;
+    const query = {
+      latest_event_id: lastEvent?.id ?? -1,
+      conversation_id: conversationId,
+      providers_set: providers,
+    };
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+
     try {
-      const socket = io(SOCKET_URL, {
+      const socket = io(baseUrl, {
         transports: ["websocket"],
-        query: { conversationId },
+        query,
       });
 
-      socket.on("connect", () => {
-        setStatus(WsClientProviderStatus.CONNECTED);
-        // Reset reconnection state on successful connection
-        reconnectAttempts.current = 0;
-        if (reconnectTimeout.current) {
-          clearTimeout(reconnectTimeout.current);
-        }
-      });
-
+      socket.on("connect", handleConnect);
+      socket.on("oh_event", handleMessage);
+      socket.on("connect_error", handleError);
+      socket.on("connect_failed", handleError);
       socket.on("disconnect", handleDisconnect);
-      socket.on("error", (error) => {
-        console.error("WebSocket error:", error);
-        handleDisconnect();
-      });
 
       sioRef.current = socket;
     } catch (error) {
       console.error("Failed to establish WebSocket connection:", error);
       handleDisconnect();
     }
-  }, [conversationId, handleDisconnect]);
+  }, [conversationId, providers, handleConnect, handleDisconnect, handleError, handleMessage]);
 
+  /**
+   * @author vbs_0
+   * Effect to manage WebSocket connection lifecycle and cleanup
+   * Only one socket is created and managed at a time
+   */
   React.useEffect(() => {
     connectToWs();
-
     return () => {
-      // Cleanup socket and reconnection state
       if (sioRef.current) {
         sioRef.current.close();
         sioRef.current = null;
@@ -294,54 +307,7 @@ export function WsClientProvider({
     lastEventRef.current = null;
   }, [conversationId]);
 
-  React.useEffect(() => {
-    if (!conversationId) {
-      throw new Error("No conversation ID provided");
-    }
-
-    let sio = sioRef.current;
-
-    const lastEvent = lastEventRef.current;
-    const query = {
-      latest_event_id: lastEvent?.id ?? -1,
-      conversation_id: conversationId,
-      providers_set: providers,
-    };
-
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-
-    sio = io(baseUrl, {
-      transports: ["websocket"],
-      query,
-    });
-    sio.on("connect", handleConnect);
-    sio.on("oh_event", handleMessage);
-    sio.on("connect_error", handleError);
-    sio.on("connect_failed", handleError);
-    sio.on("disconnect", handleDisconnect);
-
-    sioRef.current = sio;
-
-    return () => {
-      sio.off("connect", handleConnect);
-      sio.off("oh_event", handleMessage);
-      sio.off("connect_error", handleError);
-      sio.off("connect_failed", handleError);
-      sio.off("disconnect", handleDisconnect);
-    };
-  }, [conversationId]);
-
-  React.useEffect(
-    () => () => {
-      const sio = sioRef.current;
-      if (sio) {
-        sio.off("disconnect", handleDisconnect);
-        sio.disconnect();
-      }
-    },
-    [],
-  );
+  // (Removed duplicate disconnect cleanup effect)
 
   const value = React.useMemo<UseWsClient>(
     () => ({
