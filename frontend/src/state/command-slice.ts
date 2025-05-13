@@ -15,18 +15,18 @@ export const commandSlice = createSlice({
   },
   reducers: {
     appendInput: (state, action: PayloadAction<string>) => {
-      state.commands.push({
-        content: action.payload,
-        isPartial: false,
-        type: "input",
-      });
+      state.commands.push({ content: action.payload, type: "input" });
     },
     appendOutput: (
       state,
       action: PayloadAction<{ content: string; isPartial?: boolean }>,
     ) => {
       const { content, isPartial } = action.payload;
-      state.commands.push({ content, isPartial, type: "output" });
+      state.commands.push({
+        content,
+        isPartial: isPartial ?? false,
+        type: "output",
+      });
     },
     clearTerminal: (state) => {
       state.commands = [];

@@ -22,12 +22,7 @@ export function handleObservationMessage(message: ObservationMessage) {
         content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
       }
 
-      store.dispatch(
-        appendOutput({
-          content,
-          isPartial: false,
-        }),
-      );
+      store.dispatch(appendOutput({ content, isPartial: false }));
       break;
     }
     case ObservationType.RUN_IPYTHON:

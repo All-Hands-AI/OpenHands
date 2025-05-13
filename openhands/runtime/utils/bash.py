@@ -635,7 +635,6 @@ class BashSession:
                     chunk_metadata = {
                         'command': command,
                         'is_complete': False,
-                        'timestamp': last_change_time,
                     }
 
                     # Process the new content to remove command prefix if it's the first update
@@ -664,10 +663,6 @@ class BashSession:
                     chunk_metadata = {
                         'command': command,
                         'is_complete': True,
-                        'timestamp': time.time(),
-                        'exit_code': result.metadata.exit_code
-                        if hasattr(result, 'metadata')
-                        else None,
                     }
                     stream_callback(result.content, chunk_metadata)
 
@@ -699,7 +694,6 @@ class BashSession:
                         'is_complete': False,
                         'is_timeout': True,
                         'timeout_type': 'no_change',
-                        'timestamp': time.time(),
                     }
                     stream_callback(result.content, chunk_metadata)
 
@@ -726,8 +720,6 @@ class BashSession:
                         'is_complete': False,
                         'is_timeout': True,
                         'timeout_type': 'hard',
-                        'timeout_seconds': action.timeout,
-                        'timestamp': time.time(),
                     }
                     stream_callback(result.content, chunk_metadata)
 

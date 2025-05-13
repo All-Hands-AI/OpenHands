@@ -7,7 +7,10 @@ import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
-import { getTerminalStreamService } from "#/services/terminal-stream-service";
+import {
+  getTerminalStreamService,
+  TerminalStreamService,
+} from "#/services/terminal-stream-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 import { useActionExecutionServerUrl } from "#/hooks/query/use-action-execution-server-url";
 
@@ -28,9 +31,9 @@ const renderCommand = (command: Command, terminal: Terminal) => {
   if (
     command.type === "output" &&
     !command.isPartial &&
-    command.content === "<end_of_output>"
+    command.content === TerminalStreamService.END_OF_OUTPUT_INDICATOR
   )
-    return;
+    return; // Skip completion indicator when replaying commands
 
   const { content } = command;
 
@@ -124,7 +127,6 @@ export const useTerminal = ({
   React.useEffect(() => {
     if (!streamInitialized.current && !disabled) {
       try {
-        // Get the base URL for the terminal stream service
         const streamService = getTerminalStreamService(
           actionExecutionServerUrl,
         );
@@ -189,10 +191,13 @@ export const useTerminal = ({
         }
       }
       lastCommandIndex.current = commands.length;
+
+      // Print the input prompt if the last command is a completion indicator
       if (
-        lastCommand?.type === "output" &&
+        lastCommand &&
+        lastCommand.type === "output" &&
         !lastCommand.isPartial &&
-        lastCommand.content === "<end_of_output>"
+        lastCommand.content === TerminalStreamService.END_OF_OUTPUT_INDICATOR
       ) {
         terminal.current.write("$ ");
       }

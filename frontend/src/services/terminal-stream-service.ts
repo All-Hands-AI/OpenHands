@@ -8,7 +8,6 @@ interface TerminalStreamChunk {
     command: string;
     is_complete: boolean;
     exit_code?: number;
-    timestamp: number;
     is_timeout?: boolean;
     timeout_type?: string;
     command_id?: string;
@@ -16,15 +15,11 @@ interface TerminalStreamChunk {
 }
 
 export class TerminalStreamService {
+  static readonly END_OF_OUTPUT_INDICATOR = "<end_of_output>";
+
   private eventSource: EventSource | null = null;
 
   private isConnected: boolean = false;
-
-  private reconnectAttempts: number = 0;
-
-  private maxReconnectAttempts: number = 5;
-
-  private reconnectDelay: number = 1000; // Start with 1 second delay
 
   private currentCommandId: string | null = null;
 
@@ -34,25 +29,14 @@ export class TerminalStreamService {
 
   connect(): void {
     if (this.eventSource) {
-      //   console.warn("Already connected to terminal stream");
       this.disconnect();
     }
-    // console.log("Connecting to terminal stream...");
-    // console.log("eventSource:", this.eventSource);
 
     try {
       const url = `${this.baseUrl}/terminal-stream`;
       this.eventSource = new EventSource(url);
 
-      this.eventSource.onopen = () => {
-        // console.log("Terminal stream connected");
-        this.isConnected = true;
-        this.reconnectAttempts = 0;
-        this.reconnectDelay = 1000;
-      };
-
       this.eventSource.onmessage = (event) => {
-        console.log("Received terminal stream data:", event.data);
         try {
           const data = JSON.parse(event.data) as TerminalStreamChunk;
           this.handleStreamChunk(data);
@@ -60,26 +44,6 @@ export class TerminalStreamService {
           console.error("Error parsing terminal stream data:", error);
         }
       };
-
-      this.eventSource.onerror = (error) => {
-        console.error("Terminal stream error:", error);
-        // this.isConnected = false;
-        // this.eventSource?.close();
-        // this.eventSource = null;
-
-        // // Attempt to reconnect with exponential backoff
-        // if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        //   setTimeout(() => {
-        //     this.reconnectAttempts++;
-        //     this.reconnectDelay *= 2; // Exponential backoff
-        //     this.connect();
-        //   }, this.reconnectDelay);
-        // }
-      };
-
-      //   console.log("url:", url);
-      //   console.log("eventSource:", this.eventSource);
-      //   console.log("onmessage handler:", this.eventSource?.onmessage);
     } catch (error) {
       console.error("Failed to connect to terminal stream:", error);
     }
@@ -111,7 +75,7 @@ export class TerminalStreamService {
       this.currentCommandId = null;
       store.dispatch(
         appendOutput({
-          content: "<end_of_output>",
+          content: TerminalStreamService.END_OF_OUTPUT_INDICATOR,
           isPartial: false,
         }),
       );
@@ -122,7 +86,6 @@ export class TerminalStreamService {
       content.replaceAll("\n", "\r\n"),
     );
 
-    // Dispatch to Redux store
     store.dispatch(
       appendOutput({
         content: processedOutput,
