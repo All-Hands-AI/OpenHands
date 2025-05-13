@@ -612,7 +612,7 @@ class BashSession:
             logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
             logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
-            # current_ps1_count = len(ps1_matches)
+            current_ps1_count = len(ps1_matches)
 
             if cur_pane_output != last_pane_output:
                 cur_combined_output = self._combine_outputs_between_matches(
@@ -650,7 +650,7 @@ class BashSession:
             # Condition 2: The prompt count hasn't increased (potentially because the initial one scrolled off),
             # BUT the *current* visible pane ends with a prompt, indicating completion.
             if (
-                # current_ps1_count > initial_ps1_count
+                current_ps1_count > initial_ps1_count or
                 cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
             ):
                 result = self._handle_completed_command(
