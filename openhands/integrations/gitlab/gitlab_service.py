@@ -438,6 +438,24 @@ class GitLabService(BaseGitService, GitService):
 
         return all_branches
 
+    async def create_mr(
+        self,
+        id: int | str,
+        source_branch: str,
+        target_branch: str,
+        title: str,
+        description: str | None
+    ) -> str:
+        """
+            Create a MR on GitLab
+
+            Returns
+                - MR link if successful
+                - Error message otherwise
+        """
+
+        return "Created mr"
+
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',
