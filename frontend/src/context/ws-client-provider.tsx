@@ -123,6 +123,8 @@ export function WsClientProvider({
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
+  const reconnectAttempts = React.useRef(0);
+  const reconnectTimeout = React.useRef<NodeJS.Timeout>();
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -142,6 +144,7 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    reconnectAttempts.current = 0; // Reset on successful connection
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -193,21 +196,99 @@ export function WsClientProvider({
     handleAssistantMessage(event);
   }
 
-  function handleDisconnect(data: unknown) {
+  /**
+   * @author vbs_0
+   * Handles WebSocket disconnection with exponential backoff retry
+   * Improves terminal reliability by automatically recovering from disconnections
+   */
+  const handleDisconnect = React.useCallback(() => {
     setStatus(WsClientProviderStatus.DISCONNECTED);
-    const sio = sioRef.current;
-    if (!sio) {
+
+    if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
+      console.error("Max reconnection attempts reached");
       return;
     }
-    sio.io.opts.query = sio.io.opts.query || {};
-    sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
-    updateStatusWhenErrorMessagePresent(data);
-  }
+
+    // Clear any existing reconnection timeout
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+    }
+
+    // Calculate exponential backoff delay with jitter
+    const backoffDelay = Math.min(
+      INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current) *
+        (0.5 + Math.random()),
+      MAX_RECONNECT_DELAY,
+    );
+
+    reconnectTimeout.current = setTimeout(() => {
+      reconnectAttempts.current++;
+      console.log(
+        `Attempting to reconnect (${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})`,
+      );
+      connectToWs();
+    }, backoffDelay);
+  }, []);
 
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
   }
+
+  /**
+   * @author vbs_0
+   * Establishes WebSocket connection with improved error handling and state management
+   */
+  const connectToWs = React.useCallback(() => {
+    if (sioRef.current) {
+      sioRef.current.close();
+    }
+
+    setStatus(WsClientProviderStatus.CONNECTING);
+
+    try {
+      const socket = io(SOCKET_URL, {
+        transports: ["websocket"],
+        query: { conversationId },
+      });
+
+      socket.on("connect", () => {
+        setStatus(WsClientProviderStatus.CONNECTED);
+        // Reset reconnection state on successful connection
+        reconnectAttempts.current = 0;
+        if (reconnectTimeout.current) {
+          clearTimeout(reconnectTimeout.current);
+        }
+      });
+
+      socket.on("disconnect", handleDisconnect);
+      socket.on("error", (error) => {
+        console.error("WebSocket error:", error);
+        handleDisconnect();
+      });
+
+      sioRef.current = socket;
+    } catch (error) {
+      console.error("Failed to establish WebSocket connection:", error);
+      handleDisconnect();
+    }
+  }, [conversationId, handleDisconnect]);
+
+  React.useEffect(() => {
+    connectToWs();
+
+    return () => {
+      // Cleanup socket and reconnection state
+      if (sioRef.current) {
+        sioRef.current.close();
+        sioRef.current = null;
+      }
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
+      reconnectAttempts.current = 0;
+    };
+  }, [connectToWs]);
 
   React.useEffect(() => {
     lastEventRef.current = null;
@@ -279,3 +360,12 @@ export function useWsClient() {
   const context = React.useContext(WsClientContext);
   return context;
 }
+
+/**
+ * WebSocket reconnection constants and state management
+ * @author vbs_0
+ * Implements exponential backoff for reconnection attempts to fix terminal update issues
+ */
+const MAX_RECONNECT_ATTEMPTS = 5;
+const INITIAL_RECONNECT_DELAY = 1000;
+const MAX_RECONNECT_DELAY = 30000;
