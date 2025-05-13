@@ -17,6 +17,7 @@ def test_patchright_import():
     use_patchright()
 
     # Now import playwright
+    import playwright.sync_api  # noqa: F401
 
     # Check that the import worked
     assert 'playwright.sync_api' in sys.modules

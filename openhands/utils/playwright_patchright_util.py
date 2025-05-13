@@ -35,6 +35,13 @@ class PlaywrightToPatchrightLoader(importlib.abc.Loader):
     def __init__(
         self, fullname: str, patchright_name: str, original_loader: importlib.abc.Loader
     ):
+        """Initialize the loader with the module names and original loader.
+
+        Args:
+            fullname: The name of the playwright module to create
+            patchright_name: The name of the patchright module to load
+            original_loader: The original loader that would have loaded the module
+        """
         self.fullname = fullname
         self.patchright_name = patchright_name
         self.original_loader = original_loader
