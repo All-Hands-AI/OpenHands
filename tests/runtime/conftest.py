@@ -133,6 +133,9 @@ def get_runtime_classes() -> list[type[Runtime]]:
         return [RunloopRuntime]
     elif runtime.lower() == 'daytona':
         return [DaytonaRuntime]
+    elif runtime.lower() == 'cli':
+        from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
+        return [CLIRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
