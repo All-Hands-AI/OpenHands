@@ -12,6 +12,7 @@ from openhands.core.config.condenser_config import (
     CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -28,7 +29,6 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import OpenHandsMCPConfigImpl
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
