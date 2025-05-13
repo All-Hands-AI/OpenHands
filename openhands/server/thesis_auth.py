@@ -326,3 +326,35 @@ async def delete_thread(
     except Exception as e:
         logger.exception('Unexpected error while deleting thread')
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def change_thread_visibility(
+    conversation_id: str,
+    is_published: bool,
+    bearer_token: str,
+    x_device_id: str | None = None,
+) -> dict | None:
+    url = f'/api/threads/change-visibility-by-conversation-id/{conversation_id}'
+    payload = {'visibility': 0 if not is_published else 1}
+    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
+    if x_device_id:
+        headers['x-device-id'] = x_device_id
+    try:
+        response = await thesis_auth_client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to change thread visibility: {response.status_code} - {response.text}'
+            )
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get('error', 'Unknown error'),
+            )
+
+        return response.json()
+
+    except httpx.RequestError as exc:
+        logger.error(f'Request error while changing thread visibility: {str(exc)}')
+        raise HTTPException(status_code=500, detail='Could not connect to auth server')
+    except Exception as e:
+        logger.exception('Unexpected error while changing thread visibility')
+        raise HTTPException(status_code=500, detail=str(e))

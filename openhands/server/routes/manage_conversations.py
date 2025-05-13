@@ -43,7 +43,11 @@ from openhands.server.shared import (
     file_store,
     s3_handler,
 )
-from openhands.server.thesis_auth import create_thread, delete_thread
+from openhands.server.thesis_auth import (
+    change_thread_visibility,
+    create_thread,
+    delete_thread,
+)
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -548,6 +552,13 @@ async def change_visibility(
         file_url = await s3_handler.upload_file(file, folder_path)
         if file_url:
             extra_data['thumbnail_url'] = file_url
+
+    await change_thread_visibility(
+        conversation_id,
+        is_published,
+        request.headers.get('Authorization'),
+        request.headers.get('x-device-id'),
+    )
 
     return await conversation_module._update_conversation_visibility(
         conversation_id,
