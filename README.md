@@ -51,17 +51,17 @@ system requirements and more information.
 
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.37-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.37-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.37
+    docker.all-hands.dev/all-hands-ai/openhands:0.38
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
@@ -98,13 +98,6 @@ check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-s
 
 There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
-
-### Custom Scripts
-
-OpenHands supports custom scripts that run at different points in the runtime lifecycle:
-
-- **setup.sh**: Place this script in the `.openhands` directory of your repository to run custom setup commands when the runtime initializes.
-- **pre-commit.sh**: Place this script in the `.openhands` directory to add a custom git pre-commit hook that runs before each commit. This can be used to enforce code quality standards, run tests, or perform other checks before allowing commits.
 
 ## 🤝 How to Join the Community
 

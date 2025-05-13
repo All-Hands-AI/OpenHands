@@ -50,6 +50,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-7-sonnet-20250219',
     'claude-sonnet-3-7-latest',
+    'claude-3.7-sonnet',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -110,7 +111,7 @@ class LLM(RetryMixin, DebugMixin):
         config: LLMConfig,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
-    ):
+    ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
         Passing simple parameters always overrides config.
@@ -201,7 +202,7 @@ class LLM(RetryMixin, DebugMixin):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
-            messages: list[dict[str, Any]] | dict[str, Any] = []
+            messages_kwarg: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
@@ -211,16 +212,18 @@ class LLM(RetryMixin, DebugMixin):
                 # design wise: we don't allow overriding the configured values
                 # implementation wise: the partial function set the model as a kwarg already
                 # as well as other kwargs
-                messages = args[1] if len(args) > 1 else args[0]
-                kwargs['messages'] = messages
+                messages_kwarg = args[1] if len(args) > 1 else args[0]
+                kwargs['messages'] = messages_kwarg
 
                 # remove the first args, they're sent in kwargs
                 args = args[2:]
             elif 'messages' in kwargs:
-                messages = kwargs['messages']
+                messages_kwarg = kwargs['messages']
 
             # ensure we work with a list of messages
-            messages = messages if isinstance(messages, list) else [messages]
+            messages: list[dict[str, Any]] = (
+                messages_kwarg if isinstance(messages_kwarg, list) else [messages_kwarg]
+            )
 
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
@@ -292,6 +295,7 @@ class LLM(RetryMixin, DebugMixin):
                     )
 
                 non_fncall_response_message = resp.choices[0].message
+                # messages is already a list with proper typing from line 223
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
                         messages + [non_fncall_response_message], mock_fncall_tools
@@ -414,6 +418,7 @@ class LLM(RetryMixin, DebugMixin):
             )
             if current_model_info:
                 self.model_info = current_model_info['model_info']
+                logger.debug(f'Got model info from litellm proxy: {self.model_info}')
 
         # Last two attempts to get model info from NAME
         if not self.model_info:
@@ -469,7 +474,10 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
-            if 'claude-3-7-sonnet' in self.config.model:
+            if any(
+                model in self.config.model
+                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
+            ):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
@@ -483,13 +491,8 @@ class LLM(RetryMixin, DebugMixin):
         # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
             self._function_calling_active = model_name_supported
-        elif self.config.native_tool_calling is False:
-            self._function_calling_active = False
         else:
-            # try to enable native tool calling if supported by the model
-            self._function_calling_active = litellm.supports_function_calling(
-                model=self.config.model
-            )
+            self._function_calling_active = self.config.native_tool_calling
 
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
@@ -600,6 +603,12 @@ class LLM(RetryMixin, DebugMixin):
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
 
+            # Get context window from model info
+            context_window = 0
+            if self.model_info and 'max_input_tokens' in self.model_info:
+                context_window = self.model_info['max_input_tokens']
+                logger.debug(f'Using context window: {context_window}')
+
             # Record in metrics
             # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
             self.metrics.add_token_usage(
@@ -607,6 +616,7 @@ class LLM(RetryMixin, DebugMixin):
                 completion_tokens=completion_tokens,
                 cache_read_tokens=cache_hit_tokens,
                 cache_write_tokens=cache_write_tokens,
+                context_window=context_window,
                 response_id=response_id,
             )
 
@@ -633,7 +643,15 @@ class LLM(RetryMixin, DebugMixin):
             logger.info(
                 'Message objects now include serialized tool calls in token counting'
             )
-            messages = self.format_messages_for_llm(messages)  # type: ignore
+            # Assert the expected type for format_messages_for_llm
+            assert isinstance(messages, list) and all(
+                isinstance(m, Message) for m in messages
+            ), 'Expected list of Message objects'
+
+            # We've already asserted that messages is a list of Message objects
+            # Use explicit typing to satisfy mypy
+            messages_typed: list[Message] = messages  # type: ignore
+            messages = self.format_messages_for_llm(messages_typed)
 
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
