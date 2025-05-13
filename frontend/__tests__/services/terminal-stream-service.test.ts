@@ -123,7 +123,7 @@ describe("TerminalStreamService", () => {
             type: "command/appendOutput",
             payload: expect.objectContaining({
                 isPartial: false,
-                content: "<end_of_output>", // A dummy value for end of output
+                content: "Hello, world!",
             }),
         })
     });
