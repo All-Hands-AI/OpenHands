@@ -337,7 +337,6 @@ class DockerRuntime(ActionExecutionClient):
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
 
-        # Maybe we subclass this...
         command = self.get_action_execution_server_startup_command()
 
         try:
