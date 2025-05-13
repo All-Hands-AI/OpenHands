@@ -217,8 +217,11 @@ USER: EXECUTION RESULT of [execute_bash]:
 [1] 126
 
 ASSISTANT:
-The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
 <function=finish>
+<parameter=message>
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+</parameter>
+<parameter=task_completed>true</parameter>
 </function>
 
 --------------------- END OF EXAMPLE ---------------------
