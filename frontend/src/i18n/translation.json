@@ -4943,6 +4943,18 @@
     },
     "SETTINGS$API_KEYS_DESCRIPTION": {
         "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account. For more information on how to use the API, see our <a>API documentation</a>.",
+        "ja": "APIキーを使用すると、OpenHands APIにプログラムで認証できます。APIキーは安全に保管してください。APIキーを持っている人は誰でもあなたのアカウントにアクセスできます。APIの使用方法の詳細については、<a>APIドキュメント</a>をご覧ください。",
+        "zh-CN": "API密钥允许您以编程方式验证OpenHands API。请确保您的API密钥安全；任何拥有您API密钥的人都可以访问您的账户。有关如何使用API的更多信息，请参阅我们的<a>API文档</a>。",
+        "zh-TW": "API密鑰允許您以編程方式驗證OpenHands API。請確保您的API密鑰安全；任何擁有您API密鑰的人都可以訪問您的賬戶。有關如何使用API的更多信息，請參閱我們的<a>API文檔</a>。",
+        "ko-KR": "API 키를 사용하면 OpenHands API에 프로그래밍 방식으로 인증할 수 있습니다. API 키를 안전하게 보관하세요. API 키가 있는 사람은 누구나 귀하의 계정에 액세스할 수 있습니다. API 사용 방법에 대한 자세한 내용은 <a>API 문서</a>를 참조하세요.",
+        "no": "API-nøkler lar deg autentisere med OpenHands API programmatisk. Hold API-nøklene dine sikre; alle med API-nøkkelen din kan få tilgang til kontoen din. For mer informasjon om hvordan du bruker API-et, se vår <a>API-dokumentasjon</a>.",
+        "it": "Le chiavi API ti consentono di autenticarti con l'API OpenHands in modo programmatico. Mantieni le tue chiavi API al sicuro; chiunque abbia la tua chiave API può accedere al tuo account. Per ulteriori informazioni su come utilizzare l'API, consulta la nostra <a>documentazione API</a>.",
+        "pt": "As chaves de API permitem que você se autentique com a API OpenHands programaticamente. Mantenha suas chaves de API seguras; qualquer pessoa com sua chave de API pode acessar sua conta. Para obter mais informações sobre como usar a API, consulte nossa <a>documentação da API</a>.",
+        "es": "Las claves API le permiten autenticarse con la API de OpenHands de forma programática. Mantenga sus claves API seguras; cualquier persona con su clave API puede acceder a su cuenta. Para obtener más información sobre cómo usar la API, consulte nuestra <a>documentación de API</a>.",
+        "ar": "تتيح لك مفاتيح API المصادقة مع واجهة برمجة تطبيقات OpenHands برمجيًا. حافظ على أمان مفاتيح API الخاصة بك؛ يمكن لأي شخص لديه مفتاح API الخاص بك الوصول إلى حسابك. لمزيد من المعلومات حول كيفية استخدام واجهة برمجة التطبيقات، راجع <a>وثائق API</a> الخاصة بنا.",
+        "fr": "Les clés API vous permettent de vous authentifier auprès de l'API OpenHands par programmation. Gardez vos clés API en sécurité ; toute personne disposant de votre clé API peut accéder à votre compte. Pour plus d'informations sur l'utilisation de l'API, consultez notre <a>documentation API</a>.",
+        "tr": "API anahtarları, OpenHands API ile programlı olarak kimlik doğrulamanıza olanak tanır. API anahtarlarınızı güvende tutun; API anahtarınıza sahip olan herkes hesabınıza erişebilir. API'nin nasıl kullanılacağı hakkında daha fazla bilgi için <a>API belgelerimize</a> bakın.",
+        "de": "API-Schlüssel ermöglichen es Ihnen, sich programmatisch bei der OpenHands-API zu authentifizieren. Halten Sie Ihre API-Schlüssel sicher; jeder mit Ihrem API-Schlüssel kann auf Ihr Konto zugreifen. Weitere Informationen zur Verwendung der API finden Sie in unserer <a>API-Dokumentation</a>.",
         "uk": "Ключі API дозволяють вам програмно автентифікуватися за допомогою API OpenHands. Зберігайте свої ключі API в безпеці; будь-хто, хто має ваш ключ API, може отримати доступ до вашого облікового запису. Для отримання додаткової інформації про використання API, перегляньте нашу <a>документацію API</a>."
     },
     "SETTINGS$CREATE_API_KEY": {
