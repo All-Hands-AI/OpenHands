@@ -12,10 +12,12 @@ from openhands.integrations.github.queries import (
     suggested_task_pr_graphql_query,
 )
 from openhands.integrations.service_types import (
+    AuthenticationError,
     BaseGitService,
     Branch,
     GitService,
     ProviderType,
+    RateLimitError,
     Repository,
     RequestMethod,
     SuggestedTask,
@@ -448,16 +450,73 @@ class GitHubService(BaseGitService, GitService):
 
         return all_branches
 
-
-    async def create_pr(self, repo_name: str, source_branch: str, target_branch: str) -> str:
+    async def create_pr(
+        self,
+        repo_name: str,
+        source_branch: str,
+        target_branch: str,
+        title: str | None = None,
+        body: str | None = None,
+        draft: bool = False,
+    ) -> str:
         """
-            Creates a PR using user credentials
+        Creates a PR using user credentials
 
-            Returns:
-                - PR link when successful 
-                - Error message when unsuccessful
+        Args:
+            repo_name: The full name of the repository (owner/repo)
+            source_branch: The name of the branch where your changes are implemented
+            target_branch: The name of the branch you want the changes pulled into
+            title: The title of the pull request (optional, defaults to a generic title)
+            body: The body/description of the pull request (optional)
+            draft: Whether to create the PR as a draft (optional, defaults to False)
+
+        Returns:
+            - PR URL when successful
+            - Error message when unsuccessful
         """
-        return "successfully made PR"
+        try:
+            url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
+
+            # Set default title if none provided
+            if not title:
+                title = f'Pull request from {source_branch} to {target_branch}'
+
+            # Set default body if none provided
+            if not body:
+                body = f'Merging changes from {source_branch} into {target_branch}'
+
+            # Prepare the request payload
+            payload = {
+                'title': title,
+                'head': source_branch,
+                'base': target_branch,
+                'body': body,
+                'draft': draft,
+            }
+
+            # Make the POST request to create the PR
+            response, _ = await self._make_request(
+                url=url, params=payload, method=RequestMethod.POST
+            )
+
+            # Return the HTML URL of the created PR
+            if 'html_url' in response:
+                return response['html_url']
+            else:
+                return f'PR created but URL not found in response: {response}'
+
+        except AuthenticationError as e:
+            logger.error(f'Authentication error creating PR: {e}')
+            return f'Authentication error: {str(e)}'
+        except RateLimitError as e:
+            logger.error(f'Rate limit exceeded when creating PR: {e}')
+            return f'Rate limit error: {str(e)}'
+        except UnknownException as e:
+            logger.error(f'Unknown error creating PR: {e}')
+            return f'Error creating PR: {str(e)}'
+        except Exception as e:
+            logger.error(f'Unexpected error creating PR: {e}')
+            return f'Unexpected error: {str(e)}'
 
 
 github_service_cls = os.environ.get(
