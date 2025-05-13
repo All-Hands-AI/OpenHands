@@ -443,18 +443,64 @@ class GitLabService(BaseGitService, GitService):
         id: int | str,
         source_branch: str,
         target_branch: str,
-        title: str,
-        description: str | None
+        title: str | None = None,
+        description: str | None = None,
+        draft: bool = False,
     ) -> str:
         """
-            Create a MR on GitLab
+        Creates a merge request in GitLab
 
-            Returns
-                - MR link if successful
-                - Error message otherwise
+        Args:
+            id: The ID or URL-encoded path of the project
+            source_branch: The name of the branch where your changes are implemented
+            target_branch: The name of the branch you want the changes merged into
+            title: The title of the merge request (optional, defaults to a generic title)
+            description: The description of the merge request (optional)
+            draft: Whether to create the MR as a draft (optional, defaults to False)
+
+        Returns:
+            - MR URL when successful
+            - Error message when unsuccessful
         """
+        try:
+            # Convert string ID to URL-encoded path if needed
+            project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
+            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
 
-        return "Created mr"
+            # Set default title if none provided
+            if not title:
+                title = f'Merge request from {source_branch} to {target_branch}'
+
+            # Set default description if none provided
+            if not description:
+                description = f'Merging changes from {source_branch} into {target_branch}'
+
+            # Prepare the request payload
+            payload = {
+                'source_branch': source_branch,
+                'target_branch': target_branch,
+                'title': title,
+                'description': description,
+            }
+            
+            # Add draft flag if needed (GitLab uses different parameter name)
+            if draft:
+                payload['draft'] = True
+
+            # Make the POST request to create the MR
+            response, _ = await self._make_request(
+                url=url, params=payload, method=RequestMethod.POST
+            )
+
+            # Return the web URL of the created MR
+            if 'web_url' in response:
+                return response['web_url']
+            else:
+                return f'MR created but URL not found in response: {response}'
+
+        except Exception as e:
+            # Log the error and return a user-friendly message
+            return f'Error creating merge request: {str(e)}'
 
 
 gitlab_service_cls = os.environ.get(
