@@ -8,8 +8,7 @@ import {
   ThinkAction,
   OpenHandsAction,
 } from "#/types/core/actions";
-
-const MAX_CONTENT_LENGTH = 1000;
+import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 
 const getWriteActionContent = (event: FileWriteAction): string => {
   let { content } = event.args;
@@ -47,9 +46,6 @@ const getMcpActionContent = (event: MCPAction): string => {
 const getThinkActionContent = (event: ThinkAction): string =>
   event.args.thought;
 
-const getDefaultActionContent = (event: OpenHandsAction): string =>
-  `\`\`\`\n${JSON.stringify(event.args, null, 2)}\n\`\`\``;
-
 const getNoContentActionContent = (): string => "";
 
 export const getActionContent = (event: OpenHandsAction): string => {
@@ -72,6 +68,6 @@ export const getActionContent = (event: OpenHandsAction): string => {
     case "think":
       return getThinkActionContent(event);
     default:
-      return getDefaultActionContent(event);
+      return getDefaultEventContent(event);
   }
 };

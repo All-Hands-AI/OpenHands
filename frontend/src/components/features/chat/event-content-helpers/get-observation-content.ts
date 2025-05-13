@@ -7,8 +7,7 @@ import {
   OpenHandsObservation,
 } from "#/types/core/observations";
 import { isSuccessObservation } from "./is-success-observation";
-
-const MAX_CONTENT_LENGTH = 1000;
+import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 
 const getReadObservationContent = (event: ReadObservation): string =>
   `\`\`\`\n${event.content}\n\`\`\``;
@@ -53,9 +52,6 @@ const getMcpObservationContent = (event: OpenHandsObservation): string => {
   return `**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
 };
 
-const getDefaultObservationContent = (event: OpenHandsObservation): string =>
-  `\`\`\`\n${JSON.stringify(event.extras, null, 2)}\n\`\`\``;
-
 export const getObservationContent = (event: OpenHandsObservation): string => {
   switch (event.observation) {
     case "read":
@@ -70,6 +66,6 @@ export const getObservationContent = (event: OpenHandsObservation): string => {
     case "mcp":
       return getMcpObservationContent(event);
     default:
-      return getDefaultObservationContent(event);
+      return getDefaultEventContent(event);
   }
 };
