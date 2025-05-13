@@ -11,7 +11,7 @@ import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
 import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
-import { isSuccessObservation } from "./event-content-helpers/is-success-observation";
+import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
@@ -80,7 +80,7 @@ export function EventMessage({
         title={getEventContent(event).title}
         details={getEventContent(event).details}
         success={
-          isCommandObservation(event) ? isSuccessObservation(event) : undefined
+          isCommandObservation(event) ? getObservationResult(event) : undefined
         }
       />
 

@@ -1,24 +1,33 @@
+import { FaClock } from "react-icons/fa";
 import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
+import { ObservationResultStatus } from "./event-content-helpers/get-observation-result";
 
 interface SuccessIndicatorProps {
-  success: boolean;
+  status: ObservationResultStatus;
 }
 
-export function SuccessIndicator({ success }: SuccessIndicatorProps) {
+export function SuccessIndicator({ status }: SuccessIndicatorProps) {
   return (
     <span className="flex-shrink-0">
-      {success && (
+      {status === "success" && (
         <CheckCircle
           data-testid="status-icon"
           className="h-4 w-4 ml-2 inline fill-success"
         />
       )}
 
-      {!success && (
+      {status === "error" && (
         <XCircle
           data-testid="status-icon"
           className="h-4 w-4 ml-2 inline fill-danger"
+        />
+      )}
+
+      {status === "timeout" && (
+        <FaClock
+          data-testid="status-icon"
+          className="h-4 w-4 ml-2 inline fill-yellow-500"
         />
       )}
     </span>

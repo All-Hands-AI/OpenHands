@@ -13,6 +13,25 @@ const NO_RENDER_LIST: OpenHandsEventType[] = [
   "change_agent_state",
 ];
 
+/*
+We might want switch to a render list instead of a no render list
+
+const RENDER_LIST: OpenHandsEventType[] = [
+  "run",
+  "run_ipython",
+  "write",
+  "read",
+  "browse",
+  "browse_interactive",
+  "edit",
+  "recall",
+  "think",
+  "system",
+  "call_tool_mcp",
+  "mcp",
+];
+*/
+
 const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
   let eventType: OpenHandsEventType | null = null;
 

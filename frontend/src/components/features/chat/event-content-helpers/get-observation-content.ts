@@ -7,7 +7,7 @@ import {
   OpenHandsObservation,
   RecallObservation,
 } from "#/types/core/observations";
-import { isSuccessObservation } from "./is-success-observation";
+import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 
 const getReadObservationContent = (event: ReadObservation): string =>
@@ -102,7 +102,10 @@ export const getObservationContent = (event: OpenHandsObservation): string => {
     case "read":
       return getReadObservationContent(event);
     case "edit":
-      return getEditObservationContent(event, isSuccessObservation(event));
+      return getEditObservationContent(
+        event,
+        getObservationResult(event) === "success",
+      );
     case "run_ipython":
     case "run":
       return getCommandObservationContent(event);
