@@ -149,11 +149,19 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
 
 async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, mcp_config: MCPConfig
+    agent: 'Agent', runtime: Runtime, mcp_config: MCPConfig | None
 ):
     """
     Add MCP tools to an agent.
+
+    Args:
+        agent: The agent to add MCP tools to
+        runtime: The runtime to use for MCP tools
+        mcp_config: The MCP configuration, or None if not configured
     """
+    if mcp_config is None:
+        logger.warning('MCP config is None, skipping MCP tools')
+        return
     from openhands.runtime.impl.action_execution.action_execution_client import (
         ActionExecutionClient,  # inline import to avoid circular import
     )
