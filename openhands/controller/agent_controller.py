@@ -772,7 +772,7 @@ class AgentController:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             self.log(
-                'info',
+                'debug',
                 f'Agent not stepping because state is {self.get_agent_state()} (not RUNNING)',
                 extra={'msg_type': 'STEP_BLOCKED_STATE'},
             )
@@ -782,7 +782,7 @@ class AgentController:
             action_id = getattr(self._pending_action, 'id', 'unknown')
             action_type = type(self._pending_action).__name__
             self.log(
-                'info',
+                'debug',
                 f'Agent not stepping because of pending action: {action_type} (id={action_id})',
                 extra={'msg_type': 'STEP_BLOCKED_PENDING_ACTION'},
             )
