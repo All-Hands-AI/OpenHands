@@ -9,6 +9,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { getTerminalStreamService } from "#/services/terminal-stream-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
+import { useActionExecutionServerUrl } from "#/hooks/query/use-action-execution-server-url";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -54,6 +55,7 @@ export const useTerminal = ({
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
   const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
   const streamInitialized = React.useRef<boolean>(false);
+  const { url: actionExecutionServerUrl } = useActionExecutionServerUrl();
 
   const createTerminal = () =>
     new Terminal({
@@ -123,8 +125,9 @@ export const useTerminal = ({
     if (!streamInitialized.current && !disabled) {
       try {
         // Get the base URL for the terminal stream service
-        const baseUrl = "http://localhost:36276"; // FIXME: Get this from a GET endpoint
-        const streamService = getTerminalStreamService(baseUrl);
+        const streamService = getTerminalStreamService(
+          actionExecutionServerUrl,
+        );
         streamService.connect();
         streamInitialized.current = true;
       } catch (error) {
@@ -143,7 +146,7 @@ export const useTerminal = ({
         }
       }
     };
-  }, [disabled]);
+  }, [disabled, actionExecutionServerUrl]);
 
   // Initialize terminal and handle cleanup
   React.useEffect(() => {
