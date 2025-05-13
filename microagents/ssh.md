@@ -147,12 +147,7 @@ Many password managers support storing SSH keys securely:
 
 ### Using a Secrets Manager
 
-For more advanced key management across multiple machines, consider using a dedicated secrets manager.
-
-For more details on secrets management, use the Secrets Management microagent:
-```
-secrets management
-```
+For more advanced key management across multiple machines, consider using a dedicated secrets manager like HashiCorp Vault, Azure Key Vault, or other enterprise solutions.
 
 ## Security Best Practices
 
