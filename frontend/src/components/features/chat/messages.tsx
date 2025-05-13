@@ -9,7 +9,6 @@ import { EventMessage } from "./event-message";
 
 const NO_RENDER_LIST: OpenHandsEventType[] = [
   "system",
-  "recall",
   "agent_state_changed",
   "change_agent_state",
 ];

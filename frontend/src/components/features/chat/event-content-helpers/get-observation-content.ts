@@ -5,6 +5,7 @@ import {
   EditObservation,
   BrowseObservation,
   OpenHandsObservation,
+  RecallObservation,
 } from "#/types/core/observations";
 import { isSuccessObservation } from "./is-success-observation";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
@@ -52,6 +53,50 @@ const getMcpObservationContent = (event: OpenHandsObservation): string => {
   return `**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
 };
 
+const getRecallObservationContent = (event: RecallObservation): string => {
+  let content = "";
+
+  if (event.extras.recall_type === "workspace_context") {
+    if (event.extras.repo_name) {
+      content += `\n\n**Repository:** ${event.extras.repo_name}`;
+    }
+    if (event.extras.repo_directory) {
+      content += `\n\n**Directory:** ${event.extras.repo_directory}`;
+    }
+    if (event.extras.date) {
+      content += `\n\n**Date:** ${event.extras.date}`;
+    }
+    if (
+      event.extras.runtime_hosts &&
+      Object.keys(event.extras.runtime_hosts).length > 0
+    ) {
+      content += `\n\n**Available Hosts**`;
+      for (const [host, port] of Object.entries(event.extras.runtime_hosts)) {
+        content += `\n\n- ${host} (port ${port})`;
+      }
+    }
+    if (event.extras.repo_instructions) {
+      content += `\n\n**Repository Instructions:**\n\n${event.extras.repo_instructions}`;
+    }
+    if (event.extras.additional_agent_instructions) {
+      content += `\n\n**Additional Instructions:**\n\n${event.extras.additional_agent_instructions}`;
+    }
+  }
+
+  // Handle microagent knowledge
+  if (
+    event.extras.microagent_knowledge &&
+    event.extras.microagent_knowledge.length > 0
+  ) {
+    content += `\n\n**Triggered Microagent Knowledge:**`;
+    for (const knowledge of event.extras.microagent_knowledge) {
+      content += `\n\n- **${knowledge.name}** (triggered by keyword: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
+    }
+  }
+
+  return content;
+};
+
 export const getObservationContent = (event: OpenHandsObservation): string => {
   switch (event.observation) {
     case "read":
@@ -65,6 +110,8 @@ export const getObservationContent = (event: OpenHandsObservation): string => {
       return getBrowseObservationContent(event);
     case "mcp":
       return getMcpObservationContent(event);
+    case "recall":
+      return getRecallObservationContent(event);
     default:
       return getDefaultEventContent(event);
   }

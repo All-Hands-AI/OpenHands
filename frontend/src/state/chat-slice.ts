@@ -7,7 +7,6 @@ import { OpenHandsEventType } from "#/types/core/base";
 import {
   CommandObservation,
   OpenHandsObservation,
-  RecallObservation,
 } from "#/types/core/observations";
 
 type SliceState = {
@@ -110,11 +109,6 @@ export const chatSlice = createSlice({
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
 
-      if (actionID === "recall") {
-        // skip recall actions
-        return;
-      }
-
       if (actionID === "run" || actionID === "run_ipython") {
         if (
           action.payload.args.confirmation_state === "awaiting_confirmation"
@@ -144,71 +138,6 @@ export const chatSlice = createSlice({
       const observationID = observation.payload.observation;
       if (!HANDLED_ACTIONS.includes(observationID)) {
         return;
-      }
-
-      // Special handling for RecallObservation - create a new message instead of updating an existing one
-      if (observationID === "recall") {
-        const recallObs = observation.payload as RecallObservation;
-        let content = ``;
-
-        // Handle workspace context
-        if (recallObs.extras.recall_type === "workspace_context") {
-          if (recallObs.extras.repo_name) {
-            content += `\n\n**Repository:** ${recallObs.extras.repo_name}`;
-          }
-          if (recallObs.extras.repo_directory) {
-            content += `\n\n**Directory:** ${recallObs.extras.repo_directory}`;
-          }
-          if (recallObs.extras.date) {
-            content += `\n\n**Date:** ${recallObs.extras.date}`;
-          }
-          if (
-            recallObs.extras.runtime_hosts &&
-            Object.keys(recallObs.extras.runtime_hosts).length > 0
-          ) {
-            content += `\n\n**Available Hosts**`;
-            for (const [host, port] of Object.entries(
-              recallObs.extras.runtime_hosts,
-            )) {
-              content += `\n\n- ${host} (port ${port})`;
-            }
-          }
-          if (recallObs.extras.repo_instructions) {
-            content += `\n\n**Repository Instructions:**\n\n${recallObs.extras.repo_instructions}`;
-          }
-          if (recallObs.extras.additional_agent_instructions) {
-            content += `\n\n**Additional Instructions:**\n\n${recallObs.extras.additional_agent_instructions}`;
-          }
-        }
-
-        // Create a new message for the observation
-        // Use the correct translation ID format that matches what's in the i18n file
-        const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
-
-        // Handle microagent knowledge
-        if (
-          recallObs.extras.microagent_knowledge &&
-          recallObs.extras.microagent_knowledge.length > 0
-        ) {
-          content += `\n\n**Triggered Microagent Knowledge:**`;
-          for (const knowledge of recallObs.extras.microagent_knowledge) {
-            content += `\n\n- **${knowledge.name}** (triggered by keyword: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
-          }
-        }
-
-        const message: Message = {
-          type: "action",
-          sender: "assistant",
-          translationID,
-          eventID: observation.payload.id,
-          content,
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-          success: true,
-        };
-
-        state.messages.push(message);
-        return; // Skip the normal observation handling below
       }
 
       // Normal handling for other observation types
