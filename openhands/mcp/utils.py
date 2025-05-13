@@ -59,6 +59,9 @@ async def create_mcp_clients(
         logger.info(
             f'Initializing MCP {name} agent for {mcp_config.url} with {mcp_config.mode} connection...'
         )
+        # check if the name in a search engine config
+        if f'search_engine_{name}' in dict_mcp_config:
+            continue
         client = MCPClient(name=name)
         try:
             await client.connect_sse(mcp_config.url, sid, mnemonic)
@@ -132,7 +135,7 @@ async def fetch_search_tools_from_config(
             if search_engine_config.type.startswith('mcp'):
                 mcp_mode = search_engine_config.type.split('_')[1]
                 dict_mcp_config = {}
-                dict_mcp_config[f'{name}'] = MCPConfig(
+                dict_mcp_config[f'search_engine_{name}'] = MCPConfig(
                     url=search_engine_config.url,
                     mode=mcp_mode,
                 )

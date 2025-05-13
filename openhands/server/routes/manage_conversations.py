@@ -37,7 +37,6 @@ from openhands.server.modules import conversation_module
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
-    SettingsStoreImpl,
     config,
     conversation_manager,
     file_store,
@@ -430,8 +429,7 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
         if first_user_message:
             # Get LLM config from user settings
             try:
-                settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-                settings = await settings_store.load()
+                settings = await get_user_setting(user_id)
 
                 if settings and settings.llm_model:
                     # Create LLM config from settings
@@ -494,13 +492,13 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, get_github_user_id(request)
-    )
-    try:
-        await conversation_store.get_metadata(conversation_id)
-    except FileNotFoundError:
-        return False
+    # conversation_store = await ConversationStoreImpl.get_instance(
+    #     config, user_id, get_github_user_id(request)
+    # )
+    # try:
+    #     await conversation_store.get_metadata(conversation_id)
+    # except FileNotFoundError:
+    #     return False
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)

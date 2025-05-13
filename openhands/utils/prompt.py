@@ -49,6 +49,9 @@ class PromptManager:
         self.microagent_info_template: Template = self._load_template('microagent_info')
         self.a2a_info_template: Template = self._load_template('a2a_info')
         self.chat_mode_template: Template = self._load_template('chat_mode_prompt')
+        self.followup_mode_template: Template = self._load_template(
+            'followup_mode_prompt'
+        )
         self.system_prompt: str | None = None
         self.user_prompt: str | None = None
 
@@ -83,6 +86,9 @@ class PromptManager:
 
     def get_chat_mode_message(self, **kwargs) -> str:
         return self.chat_mode_template.render(**kwargs).strip()
+
+    def get_followup_mode_message(self, **kwargs) -> str:
+        return self.followup_mode_template.render(**kwargs).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

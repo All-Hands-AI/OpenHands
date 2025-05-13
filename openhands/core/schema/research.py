@@ -9,3 +9,7 @@ class ResearchMode(str, Enum):
     DEEP_RESEARCH = 'deep_research'
     """Deep research mode.
     """
+
+    FOLLOW_UP = 'follow_up'
+    """Follow up mode.
+    """
