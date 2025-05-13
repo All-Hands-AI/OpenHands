@@ -185,6 +185,7 @@ class GitService(Protocol):
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
+        host: str | None = None,
     ) -> None:
         """Initialize the service with authentication details"""
         ...

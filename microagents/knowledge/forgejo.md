@@ -120,4 +120,3 @@ When working with Forgejo instances, especially self-hosted ones, be aware of:
 - **API Rate Limits**: Different instances may have different rate limits
 - **Network Reliability**: The implementation handles network timeouts and errors gracefully
 - **API Versions**: Different Forgejo instances may run different versions with slight API differences
-

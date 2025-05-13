@@ -4,7 +4,6 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
@@ -19,7 +18,7 @@ from openhands.utils.import_utils import get_impl
 
 class ForgejoService(GitService):
     # Default to Codeberg, can be overridden
-    BASE_URL = os.environ.get('FORGEJO_BASE_URL', 'https://codeberg.org/api/v1')
+    DEFAULT_BASE_URL = 'https://codeberg.org/api/v1'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -31,16 +30,25 @@ class ForgejoService(GitService):
         token: SecretStr | None = None,
         external_token_manager: bool = False,
         base_url: str | None = None,
+        host: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
 
         if token:
             self.token = token
-            
-        # Override BASE_URL with provided base_url parameter
+
+        # Set the base URL with the following priority:
+        # 1. Explicitly provided base_url parameter
+        # 2. host parameter from ProviderToken
+        # 3. FORGEJO_BASE_URL environment variable
+        # 4. Default Codeberg URL
         if base_url:
-            self.BASE_URL = base_url
+            self.base_url = base_url
+        elif host:
+            self.base_url = host
+        else:
+            self.base_url = os.environ.get('FORGEJO_BASE_URL', self.DEFAULT_BASE_URL)
 
     async def _get_forgejo_headers(self) -> dict:
         """
@@ -90,7 +98,7 @@ class ForgejoService(GitService):
             raise UnknownException(f'HTTP error: {e}')
 
     async def get_user(self) -> User:
-        url = f'{self.BASE_URL}/user'
+        url = f'{self.base_url}/user'
         response, _ = await self._fetch_data(url)
 
         return User(
@@ -106,7 +114,7 @@ class ForgejoService(GitService):
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
     ) -> list[Repository]:
-        url = f'{self.BASE_URL}/repos/search'
+        url = f'{self.base_url}/repos/search'
         params = {
             'q': query,
             'limit': per_page,
@@ -122,6 +130,7 @@ class ForgejoService(GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stars_count'),
                 git_provider=ProviderType.FORGEJO,
+                is_public=not repo.get('private', False),
             )
             for repo in response.get('data', [])
         ]
@@ -134,7 +143,7 @@ class ForgejoService(GitService):
         all_repos: list[dict] = []
         page = 1
 
-        url = f'{self.BASE_URL}/user/repos'
+        url = f'{self.base_url}/user/repos'
         # Map GitHub's sort values to Forgejo's sort values
         sort_map = {
             'pushed': 'updated',
@@ -171,6 +180,7 @@ class ForgejoService(GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stars_count'),
                 git_provider=ProviderType.FORGEJO,
+                is_public=not repo.get('private', False),
             )
             for repo in all_repos
         ]
