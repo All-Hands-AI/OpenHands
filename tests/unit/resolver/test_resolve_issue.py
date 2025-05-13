@@ -10,7 +10,7 @@ import openhands
 def assert_sandbox_config(
     config: SandboxConfig,
     base_container_image = SandboxConfig.model_fields["base_container_image"].default,
-    runtime_container_image = "ghcr.io/all-hands-ai/runtime:0.37.0-nikolaik",
+    runtime_container_image = "ghcr.io/all-hands-ai/runtime:0.38.0-nikolaik",
     local_runtime_url = SandboxConfig.model_fields["local_runtime_url"].default,
     user_id = SandboxConfig.model_fields["user_id"].default,
 ):
