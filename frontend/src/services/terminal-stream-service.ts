@@ -21,6 +21,7 @@ export class TerminalStreamService {
 
   private isConnected: boolean = false;
 
+  // Configuration for reconnection
   private reconnectAttempts: number = 0;
 
   private maxReconnectAttempts: number = 5;
@@ -30,6 +31,8 @@ export class TerminalStreamService {
   private currentCommandId: string | null = null;
 
   private accumulatedOutput: string = "";
+
+  private chunkNumber: number = 0;
 
   constructor(private baseUrl: string) {}
 
@@ -51,6 +54,7 @@ export class TerminalStreamService {
       this.eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as TerminalStreamChunk;
+          console.log("Received terminal stream data:", data);
           this.handleStreamChunk(data);
         } catch (error) {
           console.error("Error parsing terminal stream data:", error);
@@ -93,26 +97,33 @@ export class TerminalStreamService {
     if (this.currentCommandId !== metadata.command_id) {
       this.currentCommandId = metadata.command_id || null;
       this.accumulatedOutput = "";
+      this.chunkNumber = 0;
     }
 
     // Add the new content to the accumulated output
     this.accumulatedOutput += content;
+    this.chunkNumber += 1;
 
-    // If this is the final chunk, reset the command ID and skip the full output
+    // Process the output
+    const processedOutput = parseTerminalOutput(
+      content.replaceAll("\n", "\r\n"),
+    );
+
+    // If this is the final chunk, reset the command ID and skip the full output if this is not the
+    // first chunk
     if (metadata.is_complete) {
       this.currentCommandId = null;
       store.dispatch(
         appendOutput({
-          content: TerminalStreamService.END_OF_OUTPUT_INDICATOR,
+          content:
+            this.chunkNumber === 1
+              ? processedOutput
+              : TerminalStreamService.END_OF_OUTPUT_INDICATOR,
           isPartial: false,
         }),
       );
       return;
     }
-    // Process the output
-    const processedOutput = parseTerminalOutput(
-      content.replaceAll("\n", "\r\n"),
-    );
 
     store.dispatch(
       appendOutput({

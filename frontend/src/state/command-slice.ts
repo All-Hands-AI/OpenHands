@@ -6,6 +6,12 @@ export type Command = {
   type: "input" | "output";
 };
 
+// Helper function to compare commands
+const areCommandsEqual = (cmd1: Command, cmd2: Command): boolean =>
+  cmd1.content === cmd2.content &&
+  cmd1.type === cmd2.type &&
+  cmd1.isPartial === cmd2.isPartial;
+
 const initialCommands: Command[] = [];
 
 export const commandSlice = createSlice({
@@ -22,11 +28,17 @@ export const commandSlice = createSlice({
       action: PayloadAction<{ content: string; isPartial?: boolean }>,
     ) => {
       const { content, isPartial } = action.payload;
-      state.commands.push({
+      const newCommand: Command = {
         content,
         isPartial: isPartial ?? false,
         type: "output",
-      });
+      };
+
+      // Check if current command is the same as the last command
+      const lastCommand = state.commands[state.commands.length - 1];
+      if (areCommandsEqual(lastCommand, newCommand)) return;
+
+      state.commands.push(newCommand);
     },
     clearTerminal: (state) => {
       state.commands = [];

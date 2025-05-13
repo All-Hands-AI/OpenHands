@@ -186,7 +186,11 @@ export const useTerminal = ({
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         lastCommand = commands[i];
         // Skip the output indicating completion
-        if (commands[i].type !== "output" || commands[i].isPartial) {
+        if (
+          commands[i].type !== "output" ||
+          commands[i].isPartial ||
+          commands[i].content !== TerminalStreamService.END_OF_OUTPUT_INDICATOR
+        ) {
           renderCommand(commands[i], terminal.current);
         }
       }
@@ -196,8 +200,7 @@ export const useTerminal = ({
       if (
         lastCommand &&
         lastCommand.type === "output" &&
-        !lastCommand.isPartial &&
-        lastCommand.content === TerminalStreamService.END_OF_OUTPUT_INDICATOR
+        !lastCommand.isPartial
       ) {
         terminal.current.write("$ ");
       }
