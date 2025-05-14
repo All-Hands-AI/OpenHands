@@ -205,12 +205,8 @@ class DockerNestedConversationManager(ConversationManager):
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         git_provider_tokens = None
-        selected_repository = None
-        selected_branch = None
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
-            selected_repository = settings.selected_repository
-            selected_branch = settings.selected_branch
 
         provider_handler = ProviderHandler(
             provider_tokens=git_provider_tokens
@@ -219,6 +215,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars = await provider_handler.get_env_vars(expose_secrets=True)
         env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
         env_vars['SERVE_FRONTEND'] = '0'
+        env_vars['RUNTIME'] = 'local'
 
         event_stream = EventStream(sid, self.file_store, user_id)
         runtime = DockerRuntime(
@@ -229,11 +226,30 @@ class DockerNestedConversationManager(ConversationManager):
             headless_mode=False,
             attach_to_existing=False,
             env_vars=env_vars,
+            # a custom nested server here??? It includes the conversation id from environment.
             main_module="openhands.server",
         )
+
+        # Hack - disable setting initial env.
+        runtime.setup_initial_env = lambda: None
+        
         await runtime.connect()
 
         # TODO: After we start the nested server, we need to initialize the conversation
+        async with httpx.AsyncClient() as client:
+            #setup the settings...
+            settings_json = settings.model_dump()
+            settings_json.pop('git_provider_tokens', None)
+            response = await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
+
+            response = await client.post(f"{runtime.api_url}/api/conversations", json={
+                "initial_user_msg": "Flip a coin!",
+                "image_urls": [],
+                "repository": settings.selected_repository,
+                #"git_provider": ,
+                "selected_branch": settings.selected_repository,
+                "initial_user_msg": initial_user_msg,
+            })
 
         return session
 

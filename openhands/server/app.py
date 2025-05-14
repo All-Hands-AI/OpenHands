@@ -44,6 +44,12 @@ async def health():
     return 'OK'
 
 
+@app.get('/alive')
+async def alive():
+    # Maybe I add here... conversation_id?
+    return {'status': 'ok'}
+
+
 app.include_router(public_api_router)
 app.include_router(files_api_router)
 app.include_router(security_api_router)
