@@ -1,5 +1,7 @@
 ---
-name: fetch
+# This is a repo microagent that is always activated
+# to include necessary default tools implemented with MCP
+name: default-tools
 type: repo
 version: 1.0.0
 agent: CodeActAgent

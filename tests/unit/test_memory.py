@@ -190,7 +190,7 @@ async def test_memory_with_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
 
-    # We now have two microagents: 'fetch' (always triggered) and 'flarglebargle' (triggered by keyword)
+    # We now have two microagents: 'default-tools' (always triggered) and 'flarglebargle' (triggered by keyword)
     assert len(observation.microagent_knowledge) == 2
 
     # Find the flarglebargle microagent in the list
@@ -331,7 +331,7 @@ async def test_memory_with_agent_microagents():
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
 
-    # We now have two microagents: 'fetch' (always triggered) and 'flarglebargle' (triggered by keyword)
+    # We now have two microagents: 'default-tools' (always triggered) and 'flarglebargle' (triggered by keyword)
     assert len(observation.microagent_knowledge) == 2
 
     # Find the flarglebargle microagent in the list
