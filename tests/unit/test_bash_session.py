@@ -415,9 +415,10 @@ def test_execute_long_running_command_with_stream_callback():
 
     # Assert that stream_callback was called multiple times
     assert len(streamed_outputs) > 1
-    assert any('1' in output for output, _ in streamed_outputs)
-    assert any('2' in output for output, _ in streamed_outputs)
-    assert any('3' in output for output, _ in streamed_outputs)
+    # Assert order of outputs
+    assert streamed_outputs[0][0].strip() == '1'
+    assert streamed_outputs[1][0].strip() == '2'
+    assert streamed_outputs[2][0].strip() == '3'
     # Assert the full output is also captured in the final observation
     assert any('1\n2\n3' in output for output, _ in streamed_outputs)
 
