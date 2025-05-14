@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.research import ResearchMode
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
@@ -37,13 +38,17 @@ from openhands.server.modules import conversation_module
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
-    SettingsStoreImpl,
     config,
     conversation_manager,
     file_store,
     s3_handler,
 )
-from openhands.server.thesis_auth import create_thread, delete_thread
+from openhands.server.thesis_auth import (
+    change_thread_visibility,
+    create_thread,
+    delete_thread,
+    get_thread_by_id,
+)
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -66,6 +71,7 @@ class InitSessionRequest(BaseModel):
     research_mode: str | None = None
     space_id: int | None = None
     thread_follow_up: int | None = None
+    followup_discover_id: str | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -95,6 +101,7 @@ async def _create_new_conversation(
     knowledge_base: list[dict] | None = None,
     space_id: int | None = None,
     thread_follow_up: int | None = None,
+    raw_followup_conversation_id: str | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -196,6 +203,8 @@ async def _create_new_conversation(
         knowledge_base=knowledge_base,
         space_id=space_id,
         thread_follow_up=thread_follow_up,
+        research_mode=research_mode,
+        raw_followup_conversation_id=raw_followup_conversation_id,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -224,9 +233,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     thread_follow_up = data.thread_follow_up
     bearer_token = request.headers.get('Authorization')
     x_device_id = request.headers.get('x-device-id')
+    followup_discover_id = data.followup_discover_id
 
     try:
         knowledge_base = None
+        raw_followup_conversation_id = None
         # if space_id or thread_follow_up:
         #     knowledge_base = await search_knowledge(
         #         initial_user_msg, space_id, thread_follow_up, user_id
@@ -236,6 +247,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         #         f"Reference information:\n{knowledge['data']['summary']}\n\n"
         #         f"Question:\n{initial_user_msg}"
         #     )
+        if thread_follow_up:
+            threadData = await get_thread_by_id(thread_follow_up)
+            if threadData:
+                raw_followup_conversation_id = threadData['conversationId']
 
         conversation_id = await _create_new_conversation(
             user_id,
@@ -253,6 +268,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             knowledge_base=knowledge_base,
             space_id=space_id,
             thread_follow_up=thread_follow_up,
+            raw_followup_conversation_id=raw_followup_conversation_id,
         )
 
         if conversation_id and user_id is not None:
@@ -263,6 +279,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 data.initial_user_msg,
                 bearer_token,
                 x_device_id,
+                followup_discover_id,
+                data.research_mode,
             )
             metadata: dict[str, Any] = {}
             metadata['hidden_prompt'] = True
@@ -270,6 +288,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 metadata['space_id'] = space_id
             if thread_follow_up is not None:
                 metadata['thread_follow_up'] = thread_follow_up
+            if raw_followup_conversation_id is not None:
+                metadata['raw_followup_conversation_id'] = raw_followup_conversation_id
+            if data.research_mode and data.research_mode == ResearchMode.FOLLOW_UP:
+                metadata['research_mode'] = ResearchMode.FOLLOW_UP
             await conversation_module._update_conversation_visibility(
                 conversation_id,
                 False,
@@ -379,6 +401,11 @@ async def get_conversation(
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         conversation_info = await _get_conversation_info(metadata, is_running)
+        # existed_conversation = await conversation_module._get_conversation_by_id(
+        #     conversation_id, str(get_user_id(request))
+        # )
+        # if existed_conversation:
+        #     conversation_info.research_mode = existed_conversation.configs.get('research_mode', None)
         return conversation_info
     except FileNotFoundError:
         return None
@@ -430,8 +457,7 @@ async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
         if first_user_message:
             # Get LLM config from user settings
             try:
-                settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-                settings = await settings_store.load()
+                settings = await get_user_setting(user_id)
 
                 if settings and settings.llm_model:
                     # Create LLM config from settings
@@ -494,13 +520,13 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, get_github_user_id(request)
-    )
-    try:
-        await conversation_store.get_metadata(conversation_id)
-    except FileNotFoundError:
-        return False
+    # conversation_store = await ConversationStoreImpl.get_instance(
+    #     config, user_id, get_github_user_id(request)
+    # )
+    # try:
+    #     await conversation_store.get_metadata(conversation_id)
+    # except FileNotFoundError:
+    #     return False
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)
@@ -548,6 +574,13 @@ async def change_visibility(
         file_url = await s3_handler.upload_file(file, folder_path)
         if file_url:
             extra_data['thumbnail_url'] = file_url
+
+    await change_thread_visibility(
+        conversation_id,
+        is_published,
+        request.headers.get('Authorization'),
+        request.headers.get('x-device-id'),
+    )
 
     return await conversation_module._update_conversation_visibility(
         conversation_id,

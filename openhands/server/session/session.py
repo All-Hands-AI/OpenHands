@@ -54,6 +54,7 @@ class Session:
         user_id: str | None = None,
         space_id: int | None = None,
         thread_follow_up: int | None = None,
+        raw_followup_conversation_id: str | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -67,6 +68,7 @@ class Session:
             user_id=user_id,
             space_id=space_id,
             thread_follow_up=thread_follow_up,
+            raw_followup_conversation_id=raw_followup_conversation_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -77,6 +79,7 @@ class Session:
         self.user_id = user_id
         self.space_id = space_id
         self.thread_follow_up = thread_follow_up
+        self.raw_followup_conversation_id = raw_followup_conversation_id
 
     async def close(self):
         if self.sio:
@@ -100,6 +103,7 @@ class Session:
         user_prompt: str | None = None,
         mcp_disable: dict[str, bool] | None = None,
         knowledge_base: list[dict] | None = None,
+        research_mode: str | None = None,
     ):
         start_time = time.time()
         self.agent_session.event_stream.add_event(
@@ -224,6 +228,7 @@ class Session:
                 initial_message=initial_message,
                 replay_json=replay_json,
                 mnemonic=mnemonic,
+                research_mode=research_mode,
             )
             end_time = time.time()
             total_time = end_time - start_time

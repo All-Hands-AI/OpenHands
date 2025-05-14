@@ -1,6 +1,7 @@
 import asyncio
 
 from openhands.core.config import AppConfig
+from openhands.core.schema.research import ResearchMode
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -13,11 +14,16 @@ class Conversation:
     sid: str
     file_store: FileStore
     event_stream: EventStream
-    runtime: Runtime
+    runtime: Runtime | None
     user_id: str | None
 
     def __init__(
-        self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
+        self,
+        sid: str,
+        file_store: FileStore,
+        config: AppConfig,
+        user_id: str | None,
+        research_mode: str | None = None,
     ):
         self.sid = sid
         self.config = config
@@ -30,18 +36,23 @@ class Conversation:
             )(self.event_stream)
 
         runtime_cls = get_runtime_cls(self.config.runtime)
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            attach_to_existing=True,
-            headless_mode=False,
-        )
+        if research_mode == ResearchMode.FOLLOW_UP:
+            self.runtime = None
+        else:
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                attach_to_existing=True,
+                headless_mode=False,
+            )
 
     async def connect(self):
-        await self.runtime.connect()
+        if self.runtime:
+            await self.runtime.connect()
 
     async def disconnect(self):
         if self.event_stream:
             self.event_stream.close()
-        asyncio.create_task(call_sync_from_async(self.runtime.close))
+        if self.runtime:
+            asyncio.create_task(call_sync_from_async(self.runtime.close))

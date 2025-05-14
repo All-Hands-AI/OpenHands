@@ -79,7 +79,6 @@ async def connect(connection_id: str, environ):
         conversation_id
     )
     conversation_configs = info
-    print(f'Conversation configs: {conversation_configs}')
 
     # check if conversation_id is shared
     if mode == 'shared':
@@ -185,8 +184,16 @@ async def connect(connection_id: str, environ):
         if conversation_configs
         else None
     )
-    print(f'Space ID: {space_id}')
-    print(f'Thread Follow Up: {thread_follow_up}')
+    research_mode = (
+        conversation_configs.get('research_mode', None)
+        if conversation_configs
+        else None
+    )
+    raw_followup_conversation_id = (
+        conversation_configs.get('raw_followup_conversation_id', None)
+        if conversation_configs
+        else None
+    )
     event_stream = await conversation_manager.join_conversation(
         conversation_id,
         connection_id,
@@ -200,6 +207,8 @@ async def connect(connection_id: str, environ):
         None,
         space_id,
         thread_follow_up,
+        research_mode,
+        raw_followup_conversation_id,
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
