@@ -32,13 +32,15 @@ def _generate_dockerfile(
     base_image: str,
     build_from: BuildFromImageType = BuildFromImageType.SCRATCH,
     extra_deps: str | None = None,
+    include_programming_languages: bool = False,
 ) -> str:
     """Generate the Dockerfile content for the runtime image based on the base image.
 
     Parameters:
     - base_image (str): The base image provided for the runtime image
     - build_from (BuildFromImageType): The build method for the runtime image.
-    - extra_deps (str):
+    - extra_deps (str): Extra dependencies to install
+    - include_programming_languages (bool): Whether to include programming language dependencies
 
     Returns:
     - str: The resulting Dockerfile content
@@ -55,6 +57,7 @@ def _generate_dockerfile(
         build_from_scratch=build_from == BuildFromImageType.SCRATCH,
         build_from_versioned=build_from == BuildFromImageType.VERSIONED,
         extra_deps=extra_deps if extra_deps is not None else '',
+        include_programming_languages=include_programming_languages,
     )
     return dockerfile_content
 
@@ -111,6 +114,7 @@ def build_runtime_image(
     dry_run: bool = False,
     force_rebuild: bool = False,
     extra_build_args: list[str] | None = None,
+    include_programming_languages: bool = False,
 ) -> str:
     """Prepares the final docker build folder.
 
@@ -120,11 +124,12 @@ def build_runtime_image(
     - base_image (str): The name of the base Docker image to use
     - runtime_builder (RuntimeBuilder): The runtime builder to use
     - platform (str): The target platform for the build (e.g. linux/amd64, linux/arm64)
-    - extra_deps (str):
+    - extra_deps (str): Extra dependencies to install
     - build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
     - force_rebuild (bool): if True, it will create the Dockerfile which uses the base_image
     - extra_build_args (List[str]): Additional build arguments to pass to the builder
+    - include_programming_languages (bool): Whether to include programming language dependencies
 
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
@@ -142,6 +147,7 @@ def build_runtime_image(
                 force_rebuild=force_rebuild,
                 platform=platform,
                 extra_build_args=extra_build_args,
+                include_programming_languages=include_programming_languages,
             )
             return result
 
@@ -154,6 +160,7 @@ def build_runtime_image(
         force_rebuild=force_rebuild,
         platform=platform,
         extra_build_args=extra_build_args,
+        include_programming_languages=include_programming_languages,
     )
     return result
 
@@ -167,6 +174,7 @@ def build_runtime_image_in_folder(
     force_rebuild: bool,
     platform: str | None = None,
     extra_build_args: list[str] | None = None,
+    include_programming_languages: bool = False,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
@@ -188,6 +196,7 @@ def build_runtime_image_in_folder(
             base_image,
             build_from=BuildFromImageType.SCRATCH,
             extra_deps=extra_deps,
+            include_programming_languages=include_programming_languages,
         )
         if not dry_run:
             _build_sandbox_image(
@@ -226,7 +235,13 @@ def build_runtime_image_in_folder(
     else:
         logger.debug(f'Build [{hash_image_name}] from scratch')
 
-    prep_build_folder(build_folder, base_image, build_from, extra_deps)
+    prep_build_folder(
+        build_folder,
+        base_image,
+        build_from,
+        extra_deps,
+        include_programming_languages=include_programming_languages,
+    )
     if not dry_run:
         _build_sandbox_image(
             build_folder,
@@ -251,6 +266,7 @@ def prep_build_folder(
     base_image: str,
     build_from: BuildFromImageType,
     extra_deps: str | None,
+    include_programming_languages: bool = False,
 ) -> None:
     # Copy the source code to directory. It will end up in build_folder/code
     # If package is not found, build from source code
@@ -282,6 +298,7 @@ def prep_build_folder(
         base_image,
         build_from=build_from,
         extra_deps=extra_deps,
+        include_programming_languages=include_programming_languages,
     )
     dockerfile_path = Path(build_folder, 'Dockerfile')
     with open(str(dockerfile_path), 'w') as f:
@@ -378,6 +395,12 @@ if __name__ == '__main__':
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
     parser.add_argument('--platform', type=str, default=None)
+    parser.add_argument(
+        '--include_programming_languages',
+        action='store_true',
+        default=False,
+        help='Include programming language dependencies (Java, Go, PHP, Ruby)',
+    )
     args = parser.parse_args()
 
     if args.build_folder is not None:
@@ -409,6 +432,7 @@ if __name__ == '__main__':
                 dry_run=True,
                 force_rebuild=args.force_rebuild,
                 platform=args.platform,
+                include_programming_languages=args.include_programming_languages,
             )
 
             _runtime_image_repo, runtime_image_source_tag = (
