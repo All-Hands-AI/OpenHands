@@ -240,7 +240,6 @@ async def test_new_conversation_success(provider_handler_mock):
             mock_create_conversation.return_value = 'test_conversation_id'
 
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -297,7 +296,6 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 )
 
                 test_request = InitSessionRequest(
-                    conversation_trigger=ConversationTrigger.SUGGESTED_TASK,
                     repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
@@ -347,7 +345,6 @@ async def test_new_conversation_missing_settings(provider_handler_mock):
             )
 
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -377,7 +374,6 @@ async def test_new_conversation_invalid_api_key(provider_handler_mock):
             )
 
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -469,7 +465,6 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
 
             # Create the request object
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,  # This should be overridden
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -503,7 +498,6 @@ async def test_new_conversation_with_null_repository():
 
             # Create the request object with null repository
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository=None,  # Explicitly set to None
                 selected_branch=None,
                 initial_user_msg='Hello, agent!',
@@ -541,7 +535,6 @@ async def test_new_conversation_with_provider_authentication_error(
 
             # Create the request object
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -571,7 +564,6 @@ async def test_new_conversation_with_provider_authentication_error(
 @pytest.mark.asyncio
 async def test_new_conversation_with_unsupported_params(test_client):
     test_request_data = {
-        'conversation_trigger': 'GUI',  # This is a valid parameter
         'repository': 'test/repo',  # This is valid
         'selected_branch': 'main',  # This is valid
         'initial_user_msg': 'Hello, agent!',  # Valid parameter
