@@ -226,7 +226,6 @@ class DockerNestedConversationManager(ConversationManager):
             headless_mode=False,
             attach_to_existing=False,
             env_vars=env_vars,
-            # a custom nested server here??? It includes the conversation id from environment.
             main_module="openhands.server",
         )
 
