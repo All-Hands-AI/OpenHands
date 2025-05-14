@@ -41,9 +41,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             json=$(jq -n -c '[
                 { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik", include_languages: false },
-                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik-full", include_languages: true },
-                { image: "ubuntu:24.04", tag: "ubuntu", include_languages: false },
-                { image: "ubuntu:24.04", tag: "ubuntu-full", include_languages: true }
+                { image: "ubuntu:24.04", tag: "ubuntu", include_languages: false }
               ]')
           else
             json=$(jq -n -c '[
