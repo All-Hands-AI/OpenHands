@@ -8,6 +8,8 @@ import { OpenHandsEventType } from "#/types/core/base";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { ErrorMessage } from "./error-message";
 
 const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
   "system",
@@ -56,10 +58,12 @@ interface MessagesProps {
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
+    const { getErrorMessage } = useWSErrorMessage();
     const { conversationId } = useConversation();
     const { data: conversation } = useUserConversation(conversationId || null);
 
     const optimisticUserMessage = getOptimisticUserMessage();
+    const errorMessage = getErrorMessage();
 
     // Check if conversation metadata has trigger=resolver
     const isResolverTrigger = conversation?.trigger === "resolver";
@@ -79,6 +83,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         {optimisticUserMessage && (
           <ChatMessage type="user" message={optimisticUserMessage} />
         )}
+
+        {errorMessage && <ErrorMessage defaultMessage={errorMessage} />}
       </>
     );
   },

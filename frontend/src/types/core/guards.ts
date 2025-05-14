@@ -41,3 +41,8 @@ export const isCommandObservation = (
   event: OpenHandsParsedEvent,
 ): event is CommandObservation =>
   isOpenHandsObservation(event) && event.observation === "run";
+
+export const isFinishAction = (
+  event: OpenHandsParsedEvent,
+): event is AssistantMessageAction =>
+  isOpenHandsAction(event) && event.action === "finish";

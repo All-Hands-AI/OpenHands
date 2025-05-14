@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
-import { showChatError } from "#/utils/error-handler";
+import { showChatError, trackError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
@@ -18,11 +18,19 @@ import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
+  isErrorObservation,
   isOpenHandsAction,
   isOpenHandsObservation,
   isUserMessage,
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+
+const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
+  typeof obj === "object" &&
+  obj !== null &&
+  "message" in obj &&
+  typeof obj.message === "string";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -124,6 +132,7 @@ export function WsClientProvider({
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const { removeOptimisticUserMessage } = useOptimisticUserMessage();
+  const { setErrorMessage } = useWSErrorMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
@@ -154,6 +163,14 @@ export function WsClientProvider({
     if (isOpenHandsEvent(event)) {
       if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
         setParsedEvents((prevEvents) => [...prevEvents, event]);
+      }
+
+      if (isErrorObservation(event)) {
+        trackError({
+          message: event.message,
+          source: "chat",
+          metadata: { msgId: event.id },
+        });
       }
 
       if (isUserMessage(event)) {
@@ -216,11 +233,23 @@ export function WsClientProvider({
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
     updateStatusWhenErrorMessagePresent(data);
+
+    setErrorMessage(
+      hasValidMessageProperty(data)
+        ? data.message
+        : "The WebSocket connection was closed.",
+    );
   }
 
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
+
+    setErrorMessage(
+      hasValidMessageProperty(data)
+        ? data.message
+        : "An unknown error occurred on the WebSocket connection.",
+    );
   }
 
   React.useEffect(() => {

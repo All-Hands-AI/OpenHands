@@ -1,3 +1,4 @@
+import Markdown from "react-markdown";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { I18nKey } from "#/i18n/declaration";
 import { OpenHandsAction } from "#/types/core/actions";
@@ -7,6 +8,7 @@ import {
   isAssistantMessage,
   isOpenHandsAction,
   isOpenHandsObservation,
+  isFinishAction,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -63,6 +65,10 @@ export function EventMessage({
         defaultMessage={event.message}
       />
     );
+  }
+
+  if (isFinishAction(event)) {
+    return <Markdown>{getEventContent(event).details}</Markdown>;
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {

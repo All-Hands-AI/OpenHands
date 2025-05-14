@@ -96,6 +96,16 @@ export const getActionContent = (event: OpenHandsAction): string => {
       return getMcpActionContent(event);
     case "think":
       return getThinkActionContent(event);
+    case "finish":
+      switch (event.args.task_completed) {
+        case "success":
+          return "I believe that the task was **completed successfully**.";
+        case "failure":
+          return "I believe that the task was **not completed**.";
+        case "partial":
+        default:
+          return "I believe that the task was **completed partially**.";
+      }
     default:
       return getDefaultEventContent(event);
   }

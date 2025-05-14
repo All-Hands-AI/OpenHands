@@ -1,4 +1,3 @@
-import { addErrorMessage } from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
@@ -58,11 +57,6 @@ export function handleStatusMessage(message: StatusMessage) {
       source: "chat",
       metadata: { msgId: message.id },
     });
-    store.dispatch(
-      addErrorMessage({
-        ...message,
-      }),
-    );
   }
 }
 
@@ -73,33 +67,5 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
-  } else if (message.error) {
-    // Handle error messages from the server
-    const errorMessage =
-      typeof message.message === "string"
-        ? message.message
-        : String(message.message || "Unknown error");
-    trackError({
-      message: errorMessage,
-      source: "websocket",
-      metadata: { raw_message: message },
-    });
-    store.dispatch(
-      addErrorMessage({
-        message: errorMessage,
-      }),
-    );
-  } else {
-    const errorMsg = "Unknown message type received";
-    trackError({
-      message: errorMsg,
-      source: "chat",
-      metadata: { raw_message: message },
-    });
-    store.dispatch(
-      addErrorMessage({
-        message: errorMsg,
-      }),
-    );
   }
 }
