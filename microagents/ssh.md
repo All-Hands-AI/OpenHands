@@ -145,10 +145,6 @@ Many password managers support storing SSH keys securely:
 - Bitwarden
 - KeePass
 
-### Using a Secrets Manager
-
-For more advanced key management across multiple machines, consider using a dedicated secrets manager like HashiCorp Vault, Azure Key Vault, or other enterprise solutions.
-
 ## Security Best Practices
 
 - Use key-based authentication instead of passwords
