@@ -172,24 +172,6 @@ def test_browser_missing_code():
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
 
-
-def test_web_read_valid():
-    """Test web_read with valid arguments."""
-    response = create_mock_response('web_read', {'url': 'https://example.com'})
-    actions = response_to_actions(response)
-    assert len(actions) == 1
-    assert isinstance(actions[0], BrowseURLAction)
-    assert actions[0].url == 'https://example.com'
-
-
-def test_web_read_missing_url():
-    """Test web_read with missing url argument."""
-    response = create_mock_response('web_read', {})
-    with pytest.raises(FunctionCallValidationError) as exc_info:
-        response_to_actions(response)
-    assert 'Missing required argument "url"' in str(exc_info.value)
-
-
 def test_invalid_json_arguments():
     """Test handling of invalid JSON in arguments."""
     response = ModelResponse(
