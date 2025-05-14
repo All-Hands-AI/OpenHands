@@ -8269,6 +8269,7 @@ python-versions = "<4,>=3.7"
 groups = ["test"]
 files = [
     {file = "reportlab-4.4.0-py3-none-any.whl", hash = "sha256:0a993f1d4a765fcbdf4e26adc96b3351004ebf4d27583340595ba7edafebec32"},
+    {file = "reportlab-4.4.0.tar.gz", hash = "sha256:a64d85513910e246c21dc97ccc3c9054a1d44370bf8fc1fab80af937814354d5"},
 ]
 
 [package.dependencies]
