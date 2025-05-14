@@ -156,6 +156,7 @@ class AgentSession:
             end_time = time.time()
             total_time = end_time - start_time
             self.logger.debug(f'Total create_runtime time: {total_time:.2f} seconds')
+            start_time = time.time()
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -192,7 +193,6 @@ class AgentSession:
                 )
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
-
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -206,6 +206,9 @@ class AgentSession:
                         EventSource.ENVIRONMENT,
                     )
             finished = True
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total create_controller time: {total_time:.2f} seconds')
         finally:
             self._starting = False
             success = finished and runtime_connected
