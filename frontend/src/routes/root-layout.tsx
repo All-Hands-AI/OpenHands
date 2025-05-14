@@ -21,7 +21,6 @@ import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
-import { useAuth } from "#/context/auth-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -57,7 +56,6 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const { clear } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const tosPageStatus = useIsOnTosPage();
@@ -73,8 +71,6 @@ export default function MainApp() {
     isError: authError,
   } = useIsAuthed();
 
-  // When on TOS page, we don't make any API calls, so we need to handle this case
-  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
@@ -129,11 +125,8 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, tosPageStatus]);
 
-  React.useEffect(() => {
-    if (!userIsAuthed && !isFetchingAuth && authError) {
-      clear();
-    }
-  }, [userIsAuthed, isFetchingAuth, authError, clear]);
+  // When on TOS page, we don't make any API calls, so we need to handle this case
+  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
 
   // Only show the auth modal if:
   // 1. User is not authenticated

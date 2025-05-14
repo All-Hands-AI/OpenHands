@@ -15,7 +15,7 @@ FILES_TO_IGNORE = [
 ]
 
 
-def sanitize_filename(filename):
+def sanitize_filename(filename: str) -> str:
     """Sanitize the filename to prevent directory traversal"""
     # Remove any directory components
     filename = os.path.basename(filename)
@@ -90,7 +90,7 @@ def load_file_upload_config(
 MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_config()
 
 
-def is_extension_allowed(filename):
+def is_extension_allowed(filename: str) -> bool:
     """Check if the file extension is allowed based on the current configuration.
 
     This function supports wildcards and files without extensions.

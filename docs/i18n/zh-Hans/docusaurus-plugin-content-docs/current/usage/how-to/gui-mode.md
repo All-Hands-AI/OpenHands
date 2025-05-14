@@ -1,166 +1,141 @@
 # GUI 模式
 
-## 简介
-
-OpenHands 提供了一个用户友好的图形用户界面（GUI）模式，用于与 AI 助手交互。这种模式提供了一种直观的方式来设置环境、管理设置和与 AI 通信。
+OpenHands 提供了一个图形用户界面(GUI)模式，用于与 AI 助手交互。
 
 ## 安装和设置
 
-1. 按照[安装](../installation)指南中的说明安装 OpenHands。
-
+1. 按照安装说明安装 OpenHands。
 2. 运行命令后，通过 [http://localhost:3000](http://localhost:3000) 访问 OpenHands。
 
 ## 与 GUI 交互
 
 ### 初始设置
 
-1. 首次启动时，您将看到一个设置模态框。
-2. 从下拉菜单中选择 `LLM Provider` 和 `LLM Model`。
-3. 输入所选提供商对应的 `API Key`。
-4. 点击"保存"应用设置。
+1. 首次启动时，您将看到一个设置弹窗。
+2. 从下拉菜单中选择 `LLM Provider` 和 `LLM Model`。如果所需模型不在列表中，
+   选择 `see advanced settings`。然后切换 `Advanced` 选项，并在
+   `Custom Model` 文本框中输入正确前缀的模型名称。
+3. 输入您所选提供商对应的 `API Key`。
+4. 点击 `Save Changes` 应用设置。
 
 ### 版本控制令牌
 
 OpenHands 支持多个版本控制提供商。您可以同时配置多个提供商的令牌。
 
-#### GitHub Token 设置
+#### GitHub 令牌设置
 
-如果可用，OpenHands 会自动将 `GITHUB_TOKEN` 导出到 shell 环境中。这可以通过两种方式实现：
+如果提供了 GitHub 令牌，OpenHands 会自动将 `GITHUB_TOKEN` 导出到 shell 环境：
 
-1. **本地（OSS）**：用户直接输入他们的 GitHub token
-2. **在线（SaaS）**：通过 GitHub OAuth 身份验证获取 token
+<details>
+  <summary>设置 GitHub 令牌</summary>
 
-##### 设置本地 GitHub Token
+  1. **生成个人访问令牌 (PAT)**：
+   - 在 GitHub 上，前往 Settings > Developer Settings > Personal Access Tokens > Tokens (classic)。
+   - **New token (classic)**
+     - 所需权限范围：
+     - `repo` (对私有仓库的完全控制)
+   - **Fine-Grained Tokens**
+     - 所有仓库（您可以选择特定仓库，但这会影响仓库搜索返回的结果）
+     - 最小权限（选择 `Meta Data = Read-only` 用于搜索，`Pull Requests = Read and Write` 和 `Content = Read and Write` 用于分支创建）
+  2. **在 OpenHands 中输入令牌**：
+   - 点击设置按钮（齿轮图标）。
+   - 在 `GitHub Token` 字段中粘贴您的令牌。
+   - 点击 `Save` 应用更改。
+</details>
 
-1. **生成个人访问令牌（PAT）**：
-   - 转到 GitHub 设置 > 开发者设置 > 个人访问令牌 > 令牌（经典）
-   - 点击"生成新令牌（经典）"
-   - 所需范围：
-     - `repo`（完全控制私有仓库）
-     - `workflow`（更新 GitHub Action 工作流）
-     - `read:org`（读取组织数据）
+<details>
+  <summary>组织令牌策略</summary>
 
-2. **在 OpenHands 中输入令牌**：
-   - 点击右上角的设置按钮（齿轮图标）
-   - 导航到"Git Provider Settings"部分
-   - 将令牌粘贴到"GitHub Token"字段中
-   - 点击"保存"应用更改
+  如果您使用组织仓库，可能需要额外设置：
 
-##### 组织令牌策略
+  1. **检查组织要求**：
+   - 组织管理员可能强制执行特定的令牌策略。
+   - 某些组织要求创建启用了 SSO 的令牌。
+   - 查看您组织的[令牌策略设置](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization)。
+  2. **验证组织访问权限**：
+   - 前往 GitHub 上的令牌设置。
+   - 在 `Organization access` 下查找您的组织。
+   - 如果需要，点击组织旁边的 `Enable SSO`。
+   - 完成 SSO 授权流程。
+</details>
 
-如果您使用组织仓库，可能需要额外的设置：
+<details>
+  <summary>故障排除</summary>
 
-1. **检查组织要求**：
-   - 组织管理员可能会强制执行特定的令牌策略
-   - 某些组织要求使用启用 SSO 的令牌
-   - 查看您组织的[令牌策略设置](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization)
+  常见问题和解决方案：
 
-2. **验证组织访问权限**：
-   - 转到 GitHub 上的令牌设置
-   - 在"组织访问"下查找组织
-   - 如果需要，点击组织旁边的"启用 SSO"
-   - 完成 SSO 授权过程
+  - **令牌未被识别**：
+     - 确保令牌已正确保存在设置中。
+     - 检查令牌是否已过期。
+     - 验证令牌是否具有所需的权限范围。
+     - 尝试重新生成令牌。
 
-##### OAuth 身份验证（在线模式）
+  - **组织访问被拒绝**：
+     - 检查是否需要 SSO 但未启用。
+     - 验证组织成员资格。
+     - 如果令牌策略阻止访问，请联系组织管理员。
 
-在在线模式下使用 OpenHands 时，GitHub OAuth 流程：
+  - **验证令牌是否有效**：
+     - 如果令牌有效，应用程序将显示绿色对勾。
+     - 尝试访问仓库以确认权限。
+     - 检查浏览器控制台是否有错误消息。
+</details>
 
-1. 请求以下权限：
-   - 仓库访问（读/写）
-   - 工作流管理
-   - 组织读取访问
+#### GitLab 令牌设置
 
-2. 身份验证步骤：
-   - 出现提示时，点击"使用 GitHub 登录"
-   - 查看请求的权限
-   - 授权 OpenHands 访问您的 GitHub 帐户
-   - 如果使用组织，在出现提示时授权组织访问
+如果提供了 GitLab 令牌，OpenHands 会自动将 `GITLAB_TOKEN` 导出到 shell 环境：
 
-##### 故障排除
+<details>
+  <summary>设置 GitLab 令牌</summary>
 
-常见问题和解决方案：
+  1. **生成个人访问令牌 (PAT)**：
+   - 在 GitLab 上，前往 User Settings > Access Tokens。
+   - 创建一个具有以下权限范围的新令牌：
+     - `api` (API 访问)
+     - `read_user` (读取用户信息)
+     - `read_repository` (读取仓库)
+     - `write_repository` (写入仓库)
+   - 设置过期日期，或留空以创建永不过期的令牌。
+  2. **在 OpenHands 中输入令牌**：
+   - 点击设置按钮（齿轮图标）。
+   - 在 `GitLab Token` 字段中粘贴您的令牌。
+   - 如果使用自托管 GitLab，请输入您的 GitLab 实例 URL。
+   - 点击 `Save` 应用更改。
+</details>
 
-1. **令牌无法识别**：
-   - 确保令牌已正确保存在设置中
-   - 检查令牌是否已过期
-   - 验证令牌是否具有所需的范围
-   - 尝试重新生成令牌
+<details>
+  <summary>故障排除</summary>
 
-2. **组织访问被拒绝**：
-   - 检查是否需要但未启用 SSO
-   - 验证组织成员资格
-   - 如果令牌策略阻止访问，请联系组织管理员
+  常见问题和解决方案：
 
-3. **验证令牌是否有效**：
-   - 如果令牌有效，应用程序将显示绿色复选标记
-   - 尝试访问仓库以确认权限
-   - 检查浏览器控制台中是否有任何错误消息
-   - 如果可用，使用设置中的"测试连接"按钮
+  - **令牌未被识别**：
+     - 确保令牌已正确保存在设置中。
+     - 检查令牌是否已过期。
+     - 验证令牌是否具有所需的权限范围。
+     - 对于自托管实例，验证实例 URL 是否正确。
 
-#### GitLab Token 设置
-
-OpenHands 会自动将 `GITLAB_TOKEN` 导出到 shell 环境中，仅适用于本地安装，如果它可用的话。
-
-##### 设置 GitLab Token
-
-1. **生成个人访问令牌（PAT）**：
-   - 在 GitLab 中，转到用户设置 > 访问令牌
-   - 创建具有以下范围的新令牌：
-     - `api`（API 访问）
-     - `read_user`（读取用户信息）
-     - `read_repository`（读取仓库）
-     - `write_repository`（写入仓库）
-   - 设置过期日期或留空以获取永不过期的令牌
-
-2. **在 OpenHands 中输入令牌**：
-   - 点击设置按钮（齿轮图标）
-   - 导航到 `Git Provider Settings` 部分
-   - 将令牌粘贴到 `GitLab Token` 字段中
-   - 如果使用自托管 GitLab，请输入您的 GitLab 实例 URL
-   - 点击 `Save Changes` 应用更改
-
-##### 故障排除
-
-常见问题和解决方案：
-
-1. **令牌无法识别**：
-   - 确保令牌已正确保存在设置中
-   - 检查令牌是否已过期
-   - 验证令牌是否具有所需的范围
-   - 对于自托管实例，验证正确的实例 URL
-
-2. **访问被拒绝**：
-   - 验证项目访问权限
-   - 检查令牌是否具有必要的范围
-   - 对于组/组织仓库，确保您拥有适当的访问权限
+  - **访问被拒绝**：
+     - 验证项目访问权限。
+     - 检查令牌是否具有必要的权限范围。
+     - 对于群组/组织仓库，确保您拥有适当的访问权限。
+</details>
 
 ### 高级设置
 
-1. 切换`高级选项`以访问其他设置。
-2. 如果列表中没有所需的模型，使用`自定义模型`文本框手动输入模型。
-3. 如果您的 LLM 提供商需要，请指定`基本 URL`。
-
-### 主界面
-
-主界面由几个关键组件组成：
-
-1. **聊天窗口**：中央区域，您可以在其中查看与 AI 助手的对话历史记录。
-2. **输入框**：位于屏幕底部，用于输入您要发送给 AI 的消息或命令。
-3. **发送按钮**：点击此按钮将消息发送给 AI。
-4. **设置按钮**：打开设置模态框的齿轮图标，允许您随时调整配置。
-5. **工作区面板**：显示工作区中的文件和文件夹，允许您导航和查看文件，或查看代理的过去命令或网页浏览历史记录。
+1. 在设置页面内，切换 `Advanced` 选项以访问其他设置。
+2. 如果模型不在列表中，使用 `Custom Model` 文本框手动输入模型。
+3. 如果您的 LLM 提供商需要，请指定 `Base URL`。
 
 ### 与 AI 交互
 
-1. 在输入框中输入您的问题、请求或任务描述。
-2. 点击发送按钮或按 Enter 键提交消息。
+1. 在输入框中输入您的提示。
+2. 点击发送按钮或按 Enter 键提交您的消息。
 3. AI 将处理您的输入并在聊天窗口中提供响应。
-4. 您可以通过询问后续问题或提供额外信息来继续对话。
+4. 您可以通过提出后续问题或提供额外信息来继续对话。
 
-## 有效使用的提示
+## 有效使用的技巧
 
-1. 在请求中要具体，以获得最准确和最有帮助的响应，如[提示最佳实践](../prompting/prompting-best-practices)中所述。
-2. 使用工作区面板探索项目结构。
-3. 使用[LLMs 部分](usage/llms/llms.md)中描述的推荐模型之一。
+- 在请求中具体明确，以获得最准确和最有帮助的回应，如[提示最佳实践](../prompting/prompting-best-practices)中所述。
+- 使用[LLMs 部分](usage/llms/llms.md)中描述的推荐模型之一。
 
-请记住，OpenHands 的 GUI 模式旨在使您与 AI 助手的交互尽可能流畅和直观。不要犹豫探索其功能以最大限度地提高您的工作效率。
+请记住，OpenHands 的 GUI 模式旨在使您与 AI 助手的交互尽可能顺畅和直观。请随时探索其功能，以最大限度地提高您的生产力。

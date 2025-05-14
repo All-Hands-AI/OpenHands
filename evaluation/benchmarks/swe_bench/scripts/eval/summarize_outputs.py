@@ -263,38 +263,38 @@ if __name__ == '__main__':
             # Print detailed results for single file
             print(f'\nResults for {args.input_path}:')
             print(
-                f"Number of resolved: {result['resolved']['count']} / {result['total_instances']} ({result['resolved']['percentage']:.2f}% [{result['resolved']['ci'][0]:.2f}%, {result['resolved']['ci'][1]:.2f}%])"
+                f'Number of resolved: {result["resolved"]["count"]} / {result["total_instances"]} ({result["resolved"]["percentage"]:.2f}% [{result["resolved"]["ci"][0]:.2f}%, {result["resolved"]["ci"][1]:.2f}%])'
             )
             print(
-                f"Number of empty patch: {result['empty_patches']['count']} / {result['total_instances']} ({result['empty_patches']['percentage']:.2f}%)"
+                f'Number of empty patch: {result["empty_patches"]["count"]} / {result["total_instances"]} ({result["empty_patches"]["percentage"]:.2f}%)'
             )
             print(
-                f"Number of error lines: {result['errors']['total']} / {result['total_instances']} ({result['errors']['percentage']:.2f}%)"
+                f'Number of error lines: {result["errors"]["total"]} / {result["total_instances"]} ({result["errors"]["percentage"]:.2f}%)'
             )
             print(
-                f"Number of agent stuck in loop: {result['errors']['stuck_in_loop']['count']} / {result['total_instances']} ({result['errors']['stuck_in_loop']['percentage']:.2f}%)"
+                f'Number of agent stuck in loop: {result["errors"]["stuck_in_loop"]["count"]} / {result["total_instances"]} ({result["errors"]["stuck_in_loop"]["percentage"]:.2f}%)'
             )
             print(
-                f"Number of unfinished runs: {result['unfinished_runs']['count']} / {result['total_instances']} ({result['unfinished_runs']['percentage']:.2f}%)"
+                f'Number of unfinished runs: {result["unfinished_runs"]["count"]} / {result["total_instances"]} ({result["unfinished_runs"]["percentage"]:.2f}%)'
             )
-            print(f"Total cost: {result['costs']['total']:.2f} USD")
+            print(f'Total cost: {result["costs"]["total"]:.2f} USD')
             print('## Statistics')
             print(
-                f"Avg. num of turns per instance: {result['statistics']['avg_turns']:.2f}"
+                f'Avg. num of turns per instance: {result["statistics"]["avg_turns"]:.2f}'
             )
             print(
-                f"Avg. agent cost per instance: {result['statistics']['costs']['main_agent']:.2f} USD"
+                f'Avg. agent cost per instance: {result["statistics"]["costs"]["main_agent"]:.2f} USD'
             )
             print(
-                f"Avg. editor cost per instance: {result['statistics']['costs']['editor']:.2f} USD"
+                f'Avg. editor cost per instance: {result["statistics"]["costs"]["editor"]:.2f} USD'
             )
             print(
-                f"Avg. total cost per instance: {result['statistics']['costs']['total']:.2f} USD"
+                f'Avg. total cost per instance: {result["statistics"]["costs"]["total"]:.2f} USD'
             )
 
             print('## Detailed error breakdown:')
             for error, data in result['errors']['breakdown'].items():
-                print(f"{error}: {data['count']} ({data['percentage']:.2f}%)")
+                print(f'{error}: {data["count"]} ({data["percentage"]:.2f}%)')
 
         except Exception as e:
             print(f'Error processing {args.input_path}: {str(e)}')

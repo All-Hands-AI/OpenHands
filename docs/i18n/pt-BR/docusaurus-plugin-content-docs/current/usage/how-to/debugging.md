@@ -1,10 +1,10 @@
-# Debugging
+# Depuração
 
-The following is intended as a primer on debugging OpenHands for Development purposes.
+O seguinte é destinado como uma introdução à depuração do OpenHands para fins de Desenvolvimento.
 
-## Server / VSCode
+## Servidor / VSCode
 
-The following `launch.json` will allow debugging the agent, controller and server elements, but not the sandbox (Which runs inside docker). It will ignore any changes inside the `workspace/` directory:
+O seguinte `launch.json` permitirá a depuração dos elementos do agente, controlador e servidor, mas não do sandbox (que é executado dentro do docker). Ele ignorará quaisquer alterações dentro do diretório `workspace/`:
 
 ```
 {
@@ -36,7 +36,7 @@ The following `launch.json` will allow debugging the agent, controller and serve
 }
 ```
 
-More specific debugging configurations which include more parameters may be specified:
+Configurações de depuração mais específicas que incluem mais parâmetros podem ser especificadas:
 
 ```
     ...
@@ -62,10 +62,10 @@ More specific debugging configurations which include more parameters may be spec
     ...
 ```
 
-Values in the snippet above can be updated such that:
+Os valores no trecho acima podem ser atualizados de modo que:
 
-    * *t*: the task
-    * *d*: the openhands workspace directory
-    * *c*: the agent
-    * *l*: the LLM config (pre-defined in config.toml)
-    * *n*: session name (e.g. eventstream name)
+    * *t*: a tarefa
+    * *d*: o diretório de workspace do openhands
+    * *c*: o agente
+    * *l*: a configuração do LLM (pré-definida em config.toml)
+    * *n*: nome da sessão (por exemplo, nome do eventstream)

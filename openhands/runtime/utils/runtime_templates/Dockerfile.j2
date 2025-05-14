@@ -88,7 +88,9 @@ RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
 {% endif %}
 
 # Install uv (required by MCP)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/openhands/bin" sh
+# Add /openhands/bin to PATH
+ENV PATH="/openhands/bin:${PATH}"
 
 # Remove UID 1000 named pn or ubuntu, so the 'openhands' user can be created from ubuntu hosts
 RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \

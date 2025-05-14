@@ -6,7 +6,7 @@ import uuid
 from enum import Enum
 from typing import Any
 
-import bashlex  # type: ignore
+import bashlex
 import libtmux
 
 from openhands.core.logger import openhands_logger as logger
@@ -25,7 +25,13 @@ def split_bash_commands(commands: str) -> list[str]:
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except (bashlex.errors.ParsingError, NotImplementedError, TypeError):
+    except (
+        bashlex.errors.ParsingError,
+        NotImplementedError,
+        TypeError,
+        AttributeError,
+    ):
+        # Added AttributeError to catch 'str' object has no attribute 'kind' error (issue #8369)
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
@@ -501,9 +507,9 @@ class BashSession:
         if len(splited_commands) > 1:
             return ErrorObservation(
                 content=(
-                    f"ERROR: Cannot execute multiple commands at once.\n"
-                    f"Please run each command separately OR chain them into a single command via && or ;\n"
-                    f"Provided commands:\n{'\n'.join(f'({i + 1}) {cmd}' for i, cmd in enumerate(splited_commands))}"
+                    f'ERROR: Cannot execute multiple commands at once.\n'
+                    f'Please run each command separately OR chain them into a single command via && or ;\n'
+                    f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
                 )
             )
 
@@ -591,8 +597,8 @@ class BashSession:
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
-            logger.debug(f"BEGIN OF PANE CONTENT: {cur_pane_output.split('\n')[:10]}")
-            logger.debug(f"END OF PANE CONTENT: {cur_pane_output.split('\n')[-10:]}")
+            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
+            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             current_ps1_count = len(ps1_matches)
 

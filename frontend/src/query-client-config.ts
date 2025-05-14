@@ -12,7 +12,6 @@ const handle401Error = (error: AxiosError, queryClient: QueryClient) => {
 };
 
 const shownErrors = new Set<string>();
-
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {

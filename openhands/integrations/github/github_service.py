@@ -6,6 +6,11 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.github.queries import (
+    suggested_task_issue_graphql_query,
+    suggested_task_pr_graphql_query,
+)
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -20,9 +25,6 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-from openhands.integrations.github.queries import suggested_task_pr_graphql_query, suggested_task_issue_graphql_query
-from datetime import datetime
-from openhands.core.logger import openhands_logger as logger
 
 
 class GitHubService(BaseGitService, GitService):
@@ -45,7 +47,7 @@ class GitHubService(BaseGitService, GitService):
         if token:
             self.token = token
 
-        if base_domain:
+        if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
 
         self.external_auth_id = external_auth_id
@@ -252,6 +254,7 @@ class GitHubService(BaseGitService, GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
+                is_public=True,
             )
             for repo in repo_items
         ]
@@ -275,7 +278,7 @@ class GitHubService(BaseGitService, GitService):
                 result = response.json()
                 if 'errors' in result:
                     raise UnknownException(
-                        f"GraphQL query error: {json.dumps(result['errors'])}"
+                        f'GraphQL query error: {json.dumps(result["errors"])}'
                     )
 
                 return dict(result)
@@ -291,7 +294,7 @@ class GitHubService(BaseGitService, GitService):
         Returns:
         - PRs authored by the user.
         - Issues assigned to the user.
-        
+
         Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
@@ -301,9 +304,11 @@ class GitHubService(BaseGitService, GitService):
         variables = {'login': login}
 
         try:
-            pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
+            pr_response = await self.execute_graphql_query(
+                suggested_task_pr_graphql_query, variables
+            )
             pr_data = pr_response['data']['user']
-            
+
             # Process pull requests
             for pr in pr_data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
@@ -341,16 +346,22 @@ class GitHubService(BaseGitService, GitService):
                         )
                     )
 
-            
         except Exception as e:
-            logger.info(f"Error fetching suggested task for PRs: {e}", 
-                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
-            
+            logger.info(
+                f'Error fetching suggested task for PRs: {e}',
+                extra={
+                    'signal': 'github_suggested_tasks',
+                    'user_id': self.external_auth_id,
+                },
+            )
+
         try:
             # Execute issue query
-            issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
+            issue_response = await self.execute_graphql_query(
+                suggested_task_issue_graphql_query, variables
+            )
             issue_data = issue_response['data']['user']
-            
+
             # Process issues
             for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
@@ -365,10 +376,15 @@ class GitHubService(BaseGitService, GitService):
                 )
 
             return tasks
-        
+
         except Exception as e:
-            logger.info(f"Error fetching suggested task for issues: {e}", 
-                         extra={'signal': 'github_suggested_tasks', 'user_id': self.external_auth_id})
+            logger.info(
+                f'Error fetching suggested task for issues: {e}',
+                extra={
+                    'signal': 'github_suggested_tasks',
+                    'user_id': self.external_auth_id,
+                },
+            )
 
         return tasks
 

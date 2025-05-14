@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { it, describe, expect, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
-import * as AuthHook from "#/context/auth-context";
 
 // Mock the useAuthUrl hook
 vi.mock("#/hooks/use-auth-url", () => ({
@@ -12,13 +11,6 @@ vi.mock("#/hooks/use-auth-url", () => ({
 describe("AuthModal", () => {
   beforeEach(() => {
     vi.stubGlobal("location", { href: "" });
-    vi.spyOn(AuthHook, "useAuth").mockReturnValue({
-      providersAreSet: false,
-      setProvidersAreSet: vi.fn(),
-      providerTokensSet: [],
-      setProviderTokensSet: vi.fn(),
-      clear: vi.fn(),
-    });
   });
 
   afterEach(() => {
