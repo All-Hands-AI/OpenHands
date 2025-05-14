@@ -25,7 +25,6 @@ This microagent provides capabilities for establishing and managing SSH connecti
 - Execute commands on remote machines
 - Transfer files between local and remote machines
 - Manage SSH configurations and known hosts
-- Store and retrieve SSH keys securely using various methods (local or password managers)
 
 ## Authentication Methods
 
