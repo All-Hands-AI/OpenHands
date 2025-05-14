@@ -58,6 +58,7 @@ from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
+from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
@@ -123,6 +124,15 @@ async def run_session(
     controller, _ = create_controller(agent, runtime, config)
 
     event_stream = runtime.event_stream
+
+    # Create memory before adding MCP tools
+    memory: Memory = create_memory(
+        runtime=runtime,
+        event_stream=event_stream,
+        sid=sid,
+        selected_repository=None,
+        repo_directory=current_dir,
+    )
 
     usage_metrics = UsageMetrics()
 
@@ -221,6 +231,7 @@ async def run_session(
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
+    assert memory is not None, 'Memory must be initialized before adding MCP tools'
     await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     # Initialize repository if needed
