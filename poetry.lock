@@ -6090,14 +6090,14 @@ voice-helpers = ["numpy (>=2.0.2)", "sounddevice (>=0.5.1)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.2.12"
+version = "0.2.13"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_aci-0.2.12-py3-none-any.whl", hash = "sha256:8e7ffbca65049c5c31c8360892695ac3db1af4d59705d7d42283c0c0925ca452"},
-    {file = "openhands_aci-0.2.12.tar.gz", hash = "sha256:04500e1bb300ab4de2992c36c17f3234001655920424bdec3796e6fa5c706785"},
+    {file = "openhands_aci-0.2.13-py3-none-any.whl", hash = "sha256:f95447b23b5b66dd8f6be6c112f25c4fbe8d916d4b178864fa2ffbc8522e4367"},
+    {file = "openhands_aci-0.2.13.tar.gz", hash = "sha256:a34a73a5d2a5230a096578b71b98af2d2724e6ea47db6dec61b3f981e8cc3b38"},
 ]
 
 [package.dependencies]
@@ -11250,4 +11250,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "dff64c3512d75655b08b25f4be39c732f0f42681ba2c958c0a9767eb0ebc767d"
+content-hash = "55a548011cd22a9ed9248191519100bc9cd053f35ccd33c2d5bc7d9c93a4d90b"
