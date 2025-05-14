@@ -77,7 +77,7 @@ async def connect(connection_id: str, environ: dict) -> None:
         # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
         authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
-        user_id, github_user_id = await conversation_validator.validate(
+        user_id = await conversation_validator.validate(
             conversation_id, cookies_str, authorization_header
         )
 
@@ -108,7 +108,6 @@ async def connect(connection_id: str, environ: dict) -> None:
             connection_id,
             conversation_init_data,
             user_id,
-            github_user_id,
         )
         logger.info(
             f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'

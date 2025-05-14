@@ -48,7 +48,6 @@ def _patch_store():
                 'title': 'Some Conversation',
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
-                'github_user_id': '12345',
                 'user_id': '12345',
                 'created_at': '2025-01-01T00:00:00+00:00',
                 'last_updated_at': '2025-01-01T00:01:00+00:00',
@@ -139,7 +138,6 @@ async def test_search_conversations():
                                         '2025-01-01T00:01:00+00:00'
                                     ),
                                     selected_repository='foobar',
-                                    github_user_id='12345',
                                     user_id='12345',
                                 )
                             ]
@@ -185,7 +183,6 @@ async def test_get_conversation():
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 selected_repository='foobar',
-                github_user_id='12345',
                 user_id='12345',
             )
         )
@@ -409,7 +406,6 @@ async def test_delete_conversation():
                     created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                     last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                     selected_repository='foobar',
-                    github_user_id='12345',
                     user_id='12345',
                 )
             )

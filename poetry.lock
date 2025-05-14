@@ -4775,14 +4775,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.66.3"
+version = "1.69.2"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.66.3-py3-none-any.whl", hash = "sha256:f1c662afec14225cee3bae7c93961857edf13fcece42fe46d921d9df50f70dd2"},
-    {file = "litellm-1.66.3.tar.gz", hash = "sha256:909564f5dc33d7dac236de6cc8066512834467bcebe3494a664d72ae6506a5ca"},
+    {file = "litellm-1.69.2-py3-none-any.whl", hash = "sha256:dac2e7203ddee82631230f9186eebe1db756d3c05b61166b77abc5c7e333615e"},
+    {file = "litellm-1.69.2.tar.gz", hash = "sha256:4be5748f8cf5263bd3db6ca9814b2b7cba68f423c52779c9def2e39568743e1a"},
 ]
 
 [package.dependencies]
@@ -5264,14 +5264,14 @@ files = [
 
 [[package]]
 name = "modal"
-version = "0.76.5"
+version = "0.77.0"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.76.5-py3-none-any.whl", hash = "sha256:7ca9eea67a8d66744b5ff1ee7a767aaafeb2bf597a9d773ea75e5ade57dd3eb8"},
-    {file = "modal-0.76.5.tar.gz", hash = "sha256:9cc8bae40fa8f5c066e1b88d3ada2c4bbeedb8a9742a69a3b5a036b1f9ce4aab"},
+    {file = "modal-0.77.0-py3-none-any.whl", hash = "sha256:f646d47e9950b929a03918124c4b12663fdc146287af3c0bd96de3ce23776399"},
+    {file = "modal-0.77.0.tar.gz", hash = "sha256:0a3c2b438a5d26c4b2a1100a7cecdd47e09f715e2a6e0de2a50aad235ddc92c3"},
 ]
 
 [package.dependencies]
@@ -11379,4 +11379,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "e4b3a1bddc386f49e91d2ff9ca5b6c288a664c9d075f927255618c3effde210f"
+content-hash = "b73d19fd4562283485caee750a1441d4c83a24b7726da45089be7a87700944cf"
