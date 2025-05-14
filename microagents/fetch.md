@@ -8,8 +8,6 @@ mcp_tools:
     - name: "fetch"
       command: "uvx"
       args: ["mcp-server-fetch"]
-      env:
-        MCP_FETCH_TIMEOUT: "30"
 # We leave the body empty because MCP tools will automatically add the
-# tool description for LLMs.
+# tool description for LLMs in tool calls, so there's no need to add extra descriptions.
 ---
