@@ -35,7 +35,7 @@ This microagent provides capabilities for establishing and managing SSH connecti
 ssh username@hostname
 ```
 
-When prompted, the user will need to enter their password.
+When prompted, you should ask the user for their password or a private key.
 
 ### Key-Based Authentication
 
@@ -158,5 +158,4 @@ For more advanced key management across multiple machines, consider using a dedi
 - Use non-standard ports for public-facing servers
 - Implement fail2ban or similar for brute force protection
 - Regularly update SSH server and client software
-- Store SSH keys securely using a secrets manager
 - Rotate SSH keys regularly, especially after team member departures
