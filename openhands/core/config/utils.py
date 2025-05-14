@@ -627,7 +627,6 @@ def register_custom_agents(config: AppConfig) -> None:
     This function is called after configuration is loaded to ensure all custom agents
     specified in the config are properly imported and registered.
     """
-
     # Import here to avoid circular dependency
     from openhands.controller.agent import Agent
 
