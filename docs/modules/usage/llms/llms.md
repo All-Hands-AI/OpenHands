@@ -11,14 +11,12 @@ OpenHands can connect to any LLM supported by LiteLLM. However, it requires a po
 Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
 recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
-Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
+Based on these findings and community feedback, these are the latest models that have been verified to work reasonably well with OpenHands:
 
 - [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api) (recommended)
+- [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
-- [openai/o3-mini](https://openai.com/index/openai-o3-mini/)
-- [openai/o3](https://openai.com/index/introducing-o3-and-o4-mini/)
-- [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
 
 
@@ -27,8 +25,8 @@ OpenHands will issue many prompts to the LLM you configure. Most of these LLMs c
 limits and monitor usage.
 :::
 
-If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
-also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
+If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process 
+to help others using the same provider!
 
 For a full list of the providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).

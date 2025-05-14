@@ -8,6 +8,7 @@ class ConversationTrigger(Enum):
     GUI = 'gui'
     SUGGESTED_TASK = 'suggested_task'
     REMOTE_API_KEY = 'openhands_api'
+    SLACK = 'slack'
 
 
 @dataclass

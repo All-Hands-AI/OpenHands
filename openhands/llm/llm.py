@@ -491,13 +491,8 @@ class LLM(RetryMixin, DebugMixin):
         # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
             self._function_calling_active = model_name_supported
-        elif self.config.native_tool_calling is False:
-            self._function_calling_active = False
         else:
-            # try to enable native tool calling if supported by the model
-            self._function_calling_active = litellm.supports_function_calling(
-                model=self.config.model
-            )
+            self._function_calling_active = self.config.native_tool_calling
 
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():

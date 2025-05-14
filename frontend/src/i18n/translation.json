@@ -1069,7 +1069,6 @@
         "fr": "Copier dans le presse-papiers",
         "tr": "Panoya kopyala",
         "de": "In die Zwischenablage kopieren",
-        "fa": "کپی به کلیپ‌بورد",
         "uk": "Копіювати в буфер обміну"
     },
     "BUTTON$COPIED": {
@@ -1086,7 +1085,6 @@
         "fr": "Copié dans le presse-papiers",
         "tr": "Panoya kopyalandı",
         "de": "In die Zwischenablage kopiert",
-        "fa": "در کلیپ‌بورد کپی شد",
         "uk": "Copied to clipboard"
     },
     "APP$TITLE": {
@@ -2158,7 +2156,8 @@
         "ar": "مضيف GitHub (اختياري)",
         "fr": "Hôte GitHub (optionnel)",
         "tr": "GitHub Sunucusu (isteğe bağlı)",
-        "de": "GitHub-Host (optional)"
+        "de": "GitHub-Host (optional)",
+        "uk": "Хост GitHub (необов'язково)"
     },
     "GITHUB$TOKEN_OPTIONAL": {
         "en": "GitHub Token (Optional)",
@@ -2756,13 +2755,33 @@
         "en": "Settings not found. Please check your API key",
         "es": "Configuraciones no encontradas. Por favor revisa tu API key",
         "zh-TW": "找不到設定。請檢查您的 API 金鑰",
-        "uk": "Налаштування не знайдено. Будь ласка, перевірте свій ключ API."
+        "uk": "Налаштування не знайдено. Будь ласка, перевірте свій ключ API.",
+        "ja": "設定が見つかりません。APIキーを確認してください",
+        "zh-CN": "未找到设置。请检查您的API密钥",
+        "ko-KR": "설정을 찾을 수 없습니다. API 키를 확인하세요",
+        "no": "Innstillinger ikke funnet. Vennligst sjekk API-nøkkelen din",
+        "ar": "لم يتم العثور على الإعدادات. يرجى التحقق من مفتاح API الخاص بك",
+        "de": "Einstellungen nicht gefunden. Bitte überprüfen Sie Ihren API-Schlüssel",
+        "fr": "Paramètres non trouvés. Veuillez vérifier votre clé API",
+        "it": "Impostazioni non trovate. Controlla la tua chiave API",
+        "pt": "Configurações não encontradas. Por favor, verifique sua chave API",
+        "tr": "Ayarlar bulunamadı. Lütfen API anahtarınızı kontrol edin"
     },
     "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE": {
         "en": "terms of service",
         "es": "términos de servicio",
         "zh-TW": "服務條款",
-        "uk": "умови обслуговування"
+        "uk": "умови обслуговування",
+        "ja": "利用規約",
+        "zh-CN": "服务条款",
+        "ko-KR": "서비스 약관",
+        "no": "tjenestevilkår",
+        "ar": "شروط الخدمة",
+        "de": "Nutzungsbedingungen",
+        "fr": "conditions d'utilisation",
+        "it": "termini di servizio",
+        "pt": "termos de serviço",
+        "tr": "hizmet şartları"
     },
     "SESSION$SERVER_CONNECTED_MESSAGE": {
         "en": "Connected to server",
@@ -2777,7 +2796,8 @@
         "ar": "تم الاتصال بالخادم",
         "tr": "Sunucuya bağlandı",
         "no": "Koblet til server",
-        "uk": "Підключено до сервера"
+        "uk": "Підключено до сервера",
+        "ja": "サーバーに接続しました"
     },
     "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
         "en": "Error handling message",
@@ -3734,7 +3754,10 @@
         "de": "Keine Ergebnisse gefunden.",
         "it": "Nessun risultato trovato.",
         "pt": "Nenhum resultado encontrado.",
-        "uk": "Результатів не знайдено."
+        "uk": "Результатів не знайдено.",
+        "no": "Ingen resultater funnet.",
+        "ar": "لم يتم العثور على نتائج.",
+        "tr": "Sonuç bulunamadı."
     },
     "GITHUB$LOADING_REPOSITORIES": {
         "en": "Loading repositories...",
@@ -4117,7 +4140,8 @@
         "ar": "Upload a .json",
         "no": "Upload a .json",
         "tr": "Upload a .json",
-        "uk": "Завантажити .json"
+        "uk": "Завантажити .json",
+        "ja": ".jsonをアップロード"
     },
     "LANDING$RECENT_CONVERSATION": {
         "en": "jump back to your most recent conversation",
@@ -4245,7 +4269,6 @@
         "ar": "أو",
         "no": "Eller",
         "tr": "veya",
-        "fa": "یا",
         "uk": "Або"
     },
     "SUGGESTIONS$TEST_COVERAGE": {
@@ -4278,7 +4301,6 @@
         "ar": "دمج تلقائي لطلبات سحب Dependabot",
         "no": "Auto-flett Dependabot PRs",
         "tr": "Otomatik birleştirme",
-        "fa": "ادغام خودکار درخواست‌های Dependabot",
         "uk": "Автоматичне об'єднання Dependabot PR"
     },
     "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
@@ -4939,83 +4961,323 @@
     },
     "SETTINGS$API_KEYS": {
         "en": "API Keys",
-        "uk": "API ключі"
+        "uk": "API ключі",
+        "ja": "APIキー",
+        "zh-CN": "API密钥",
+        "zh-TW": "API金鑰",
+        "ko-KR": "API 키",
+        "no": "API-nøkler",
+        "ar": "مفاتيح API",
+        "de": "API-Schlüssel",
+        "fr": "Clés API",
+        "it": "Chiavi API",
+        "pt": "Chaves API",
+        "es": "Claves API",
+        "tr": "API Anahtarları"
     },
     "SETTINGS$API_KEYS_DESCRIPTION": {
-        "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account.",
-        "uk": "Ключі API дозволяють вам програмно автентифікуватися за допомогою API OpenHands. Зберігайте свої ключі API в безпеці; будь-хто, хто має ваш ключ API, може отримати доступ до вашого облікового запису."
+        "en": "API keys allow you to authenticate with the OpenHands API programmatically. Keep your API keys secure; anyone with your API key can access your account. For more information on how to use the API, see our <a>API documentation</a>.",
+        "ja": "APIキーを使用すると、OpenHands APIにプログラムで認証できます。APIキーは安全に保管してください。APIキーを持っている人は誰でもあなたのアカウントにアクセスできます。APIの使用方法の詳細については、<a>APIドキュメント</a>をご覧ください。",
+        "zh-CN": "API密钥允许您以编程方式验证OpenHands API。请确保您的API密钥安全；任何拥有您API密钥的人都可以访问您的账户。有关如何使用API的更多信息，请参阅我们的<a>API文档</a>。",
+        "zh-TW": "API密鑰允許您以編程方式驗證OpenHands API。請確保您的API密鑰安全；任何擁有您API密鑰的人都可以訪問您的賬戶。有關如何使用API的更多信息，請參閱我們的<a>API文檔</a>。",
+        "ko-KR": "API 키를 사용하면 OpenHands API에 프로그래밍 방식으로 인증할 수 있습니다. API 키를 안전하게 보관하세요. API 키가 있는 사람은 누구나 귀하의 계정에 액세스할 수 있습니다. API 사용 방법에 대한 자세한 내용은 <a>API 문서</a>를 참조하세요.",
+        "no": "API-nøkler lar deg autentisere med OpenHands API programmatisk. Hold API-nøklene dine sikre; alle med API-nøkkelen din kan få tilgang til kontoen din. For mer informasjon om hvordan du bruker API-et, se vår <a>API-dokumentasjon</a>.",
+        "it": "Le chiavi API ti consentono di autenticarti con l'API OpenHands in modo programmatico. Mantieni le tue chiavi API al sicuro; chiunque abbia la tua chiave API può accedere al tuo account. Per ulteriori informazioni su come utilizzare l'API, consulta la nostra <a>documentazione API</a>.",
+        "pt": "As chaves de API permitem que você se autentique com a API OpenHands programaticamente. Mantenha suas chaves de API seguras; qualquer pessoa com sua chave de API pode acessar sua conta. Para obter mais informações sobre como usar a API, consulte nossa <a>documentação da API</a>.",
+        "es": "Las claves API le permiten autenticarse con la API de OpenHands de forma programática. Mantenga sus claves API seguras; cualquier persona con su clave API puede acceder a su cuenta. Para obtener más información sobre cómo usar la API, consulte nuestra <a>documentación de API</a>.",
+        "ar": "تتيح لك مفاتيح API المصادقة مع واجهة برمجة تطبيقات OpenHands برمجيًا. حافظ على أمان مفاتيح API الخاصة بك؛ يمكن لأي شخص لديه مفتاح API الخاص بك الوصول إلى حسابك. لمزيد من المعلومات حول كيفية استخدام واجهة برمجة التطبيقات، راجع <a>وثائق API</a> الخاصة بنا.",
+        "fr": "Les clés API vous permettent de vous authentifier auprès de l'API OpenHands par programmation. Gardez vos clés API en sécurité ; toute personne disposant de votre clé API peut accéder à votre compte. Pour plus d'informations sur l'utilisation de l'API, consultez notre <a>documentation API</a>.",
+        "tr": "API anahtarları, OpenHands API ile programlı olarak kimlik doğrulamanıza olanak tanır. API anahtarlarınızı güvende tutun; API anahtarınıza sahip olan herkes hesabınıza erişebilir. API'nin nasıl kullanılacağı hakkında daha fazla bilgi için <a>API belgelerimize</a> bakın.",
+        "de": "API-Schlüssel ermöglichen es Ihnen, sich programmatisch bei der OpenHands-API zu authentifizieren. Halten Sie Ihre API-Schlüssel sicher; jeder mit Ihrem API-Schlüssel kann auf Ihr Konto zugreifen. Weitere Informationen zur Verwendung der API finden Sie in unserer <a>API-Dokumentation</a>.",
+        "uk": "Ключі API дозволяють вам програмно автентифікуватися за допомогою API OpenHands. Зберігайте свої ключі API в безпеці; будь-хто, хто має ваш ключ API, може отримати доступ до вашого облікового запису. Для отримання додаткової інформації про використання API, перегляньте нашу <a>документацію API</a>."
     },
     "SETTINGS$CREATE_API_KEY": {
         "en": "Create API Key",
-        "uk": "Створити API ключ"
+        "uk": "Створити API ключ",
+        "ja": "APIキーを作成",
+        "zh-CN": "创建API密钥",
+        "zh-TW": "創建API金鑰",
+        "ko-KR": "API 키 생성",
+        "no": "Opprett API-nøkkel",
+        "ar": "إنشاء مفتاح API",
+        "de": "API-Schlüssel erstellen",
+        "fr": "Créer une clé API",
+        "it": "Crea chiave API",
+        "pt": "Criar chave API",
+        "es": "Crear clave API",
+        "tr": "API Anahtarı Oluştur"
     },
     "SETTINGS$CREATE_API_KEY_DESCRIPTION": {
         "en": "Give your API key a descriptive name to help you identify it later.",
-        "uk": "Дайте своєму ключу API змістовну назву, щоб ви могли його пізніше ідентифікувати."
+        "uk": "Дайте своєму ключу API змістовну назву, щоб ви могли його пізніше ідентифікувати.",
+        "ja": "後で識別しやすいように、APIキーにわかりやすい名前を付けてください。",
+        "zh-CN": "为您的API密钥提供一个描述性名称，以便您以后能够识别它。",
+        "zh-TW": "為您的API金鑰提供一個描述性名稱，以便您以後能夠識別它。",
+        "ko-KR": "나중에 식별하는 데 도움이 되도록 API 키에 설명적인 이름을 지정하세요.",
+        "no": "Gi API-nøkkelen din et beskrivende navn for å hjelpe deg med å identifisere den senere.",
+        "ar": "أعط مفتاح API الخاص بك اسمًا وصفيًا لمساعدتك في التعرف عليه لاحقًا.",
+        "de": "Geben Sie Ihrem API-Schlüssel einen beschreibenden Namen, um ihn später leichter identifizieren zu können.",
+        "fr": "Donnez à votre clé API un nom descriptif pour vous aider à l'identifier ultérieurement.",
+        "it": "Dai alla tua chiave API un nome descrittivo per aiutarti a identificarla in seguito.",
+        "pt": "Dê à sua chave API um nome descritivo para ajudá-lo a identificá-la posteriormente.",
+        "es": "Asigne a su clave API un nombre descriptivo para ayudarle a identificarla más adelante.",
+        "tr": "API anahtarınıza, daha sonra tanımlamanıza yardımcı olacak açıklayıcı bir isim verin."
     },
     "SETTINGS$DELETE_API_KEY": {
         "en": "Delete API Key",
-        "uk": "Видалити API ключ"
+        "uk": "Видалити API ключ",
+        "ja": "APIキーを削除",
+        "zh-CN": "删除API密钥",
+        "zh-TW": "刪除API金鑰",
+        "ko-KR": "API 키 삭제",
+        "no": "Slett API-nøkkel",
+        "ar": "حذف مفتاح API",
+        "de": "API-Schlüssel löschen",
+        "fr": "Supprimer la clé API",
+        "it": "Elimina chiave API",
+        "pt": "Excluir chave API",
+        "es": "Eliminar clave API",
+        "tr": "API Anahtarını Sil"
     },
     "SETTINGS$DELETE_API_KEY_CONFIRMATION": {
         "en": "Are you sure you want to delete the API key \"{{name}}\"? This action cannot be undone.",
-        "uk": "Ви впевнені, що хочете видалити ключ API \"{{name}}\"? Цю дію не можна скасувати."
+        "uk": "Ви впевнені, що хочете видалити ключ API \"{{name}}\"? Цю дію не можна скасувати.",
+        "ja": "APIキー\"{{name}}\"を削除してもよろしいですか？この操作は元に戻せません。",
+        "zh-CN": "您确定要删除API密钥\"{{name}}\"吗？此操作无法撤消。",
+        "zh-TW": "您確定要刪除API金鑰\"{{name}}\"嗎？此操作無法撤消。",
+        "ko-KR": "API 키 \"{{name}}\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+        "no": "Er du sikker på at du vil slette API-nøkkelen \"{{name}}\"? Denne handlingen kan ikke angres.",
+        "ar": "هل أنت متأكد أنك تريد حذف مفتاح API \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+        "de": "Sind Sie sicher, dass Sie den API-Schlüssel \"{{name}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "fr": "Êtes-vous sûr de vouloir supprimer la clé API \"{{name}}\" ? Cette action ne peut pas être annulée.",
+        "it": "Sei sicuro di voler eliminare la chiave API \"{{name}}\"? Questa azione non può essere annullata.",
+        "pt": "Tem certeza de que deseja excluir a chave API \"{{name}}\"? Esta ação não pode ser desfeita.",
+        "es": "¿Está seguro de que desea eliminar la clave API \"{{name}}\"? Esta acción no se puede deshacer.",
+        "tr": "\"{{name}}\" API anahtarını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
     },
     "SETTINGS$NO_API_KEYS": {
         "en": "You don't have any API keys yet. Create one to get started.",
-        "uk": "У вас ще немає API-ключів. Створіть один, щоб почати."
+        "uk": "У вас ще немає API-ключів. Створіть один, щоб почати.",
+        "ja": "まだAPIキーがありません。作成して始めましょう。",
+        "zh-CN": "您还没有任何API密钥。创建一个以开始使用。",
+        "zh-TW": "您還沒有任何API金鑰。創建一個以開始使用。",
+        "ko-KR": "아직 API 키가 없습니다. 시작하려면 하나를 생성하세요.",
+        "no": "Du har ingen API-nøkler ennå. Opprett en for å komme i gang.",
+        "ar": "ليس لديك أي مفاتيح API حتى الآن. قم بإنشاء واحد للبدء.",
+        "de": "Sie haben noch keine API-Schlüssel. Erstellen Sie einen, um zu beginnen.",
+        "fr": "Vous n'avez pas encore de clés API. Créez-en une pour commencer.",
+        "it": "Non hai ancora chiavi API. Creane una per iniziare.",
+        "pt": "Você ainda não tem nenhuma chave API. Crie uma para começar.",
+        "es": "Aún no tiene ninguna clave API. Cree una para comenzar.",
+        "tr": "Henüz API anahtarınız yok. Başlamak için bir tane oluşturun."
     },
     "SETTINGS$NAME": {
         "en": "Name",
-        "uk": "Назва"
+        "uk": "Назва",
+        "ja": "名前",
+        "zh-CN": "名称",
+        "zh-TW": "名稱",
+        "ko-KR": "이름",
+        "no": "Navn",
+        "ar": "الاسم",
+        "de": "Name",
+        "fr": "Nom",
+        "it": "Nome",
+        "pt": "Nome",
+        "es": "Nombre",
+        "tr": "İsim"
     },
     "SETTINGS$KEY_PREFIX": {
         "en": "Key Prefix",
-        "uk": "Префікс ключа"
+        "uk": "Префікс ключа",
+        "ja": "キーのプレフィックス",
+        "zh-CN": "密钥前缀",
+        "zh-TW": "金鑰前綴",
+        "ko-KR": "키 접두사",
+        "no": "Nøkkelprefix",
+        "ar": "بادئة المفتاح",
+        "de": "Schlüsselpräfix",
+        "fr": "Préfixe de clé",
+        "it": "Prefisso chiave",
+        "pt": "Prefixo da chave",
+        "es": "Prefijo de clave",
+        "tr": "Anahtar Öneki"
     },
     "SETTINGS$CREATED_AT": {
         "en": "Created",
-        "uk": "Створено"
+        "uk": "Створено",
+        "ja": "作成日時",
+        "zh-CN": "创建时间",
+        "zh-TW": "創建時間",
+        "ko-KR": "생성됨",
+        "no": "Opprettet",
+        "ar": "تم الإنشاء",
+        "de": "Erstellt",
+        "fr": "Créé",
+        "it": "Creato",
+        "pt": "Criado",
+        "es": "Creado",
+        "tr": "Oluşturuldu"
     },
     "SETTINGS$LAST_USED": {
         "en": "Last Used",
-        "uk": "Останнє використання"
+        "uk": "Останнє використання",
+        "ja": "最終使用日時",
+        "zh-CN": "最后使用时间",
+        "zh-TW": "最後使用時間",
+        "ko-KR": "마지막 사용",
+        "no": "Sist brukt",
+        "ar": "آخر استخدام",
+        "de": "Zuletzt verwendet",
+        "fr": "Dernière utilisation",
+        "it": "Ultimo utilizzo",
+        "pt": "Último uso",
+        "es": "Último uso",
+        "tr": "Son Kullanım"
     },
     "SETTINGS$ACTIONS": {
         "en": "Actions",
-        "uk": "Дії"
+        "uk": "Дії",
+        "ja": "アクション",
+        "zh-CN": "操作",
+        "zh-TW": "操作",
+        "ko-KR": "작업",
+        "no": "Handlinger",
+        "ar": "إجراءات",
+        "de": "Aktionen",
+        "fr": "Actions",
+        "it": "Azioni",
+        "pt": "Ações",
+        "es": "Acciones",
+        "tr": "İşlemler"
     },
     "SETTINGS$API_KEY_CREATED": {
         "en": "API Key Created",
-        "uk": "API-ключ створено"
+        "uk": "API-ключ створено",
+        "ja": "APIキーが作成されました",
+        "zh-CN": "API密钥已创建",
+        "zh-TW": "API金鑰已創建",
+        "ko-KR": "API 키 생성됨",
+        "no": "API-nøkkel opprettet",
+        "ar": "تم إنشاء مفتاح API",
+        "de": "API-Schlüssel erstellt",
+        "fr": "Clé API créée",
+        "it": "Chiave API creata",
+        "pt": "Chave API criada",
+        "es": "Clave API creada",
+        "tr": "API Anahtarı Oluşturuldu"
     },
     "SETTINGS$API_KEY_DELETED": {
         "en": "API key deleted successfully",
-        "uk": "API-ключ видалено"
+        "uk": "API-ключ видалено",
+        "ja": "APIキーが正常に削除されました",
+        "zh-CN": "API密钥已成功删除",
+        "zh-TW": "API金鑰已成功刪除",
+        "ko-KR": "API 키가 성공적으로 삭제되었습니다",
+        "no": "API-nøkkel slettet",
+        "ar": "تم حذف مفتاح API بنجاح",
+        "de": "API-Schlüssel erfolgreich gelöscht",
+        "fr": "Clé API supprimée avec succès",
+        "it": "Chiave API eliminata con successo",
+        "pt": "Chave API excluída com sucesso",
+        "es": "Clave API eliminada con éxito",
+        "tr": "API anahtarı başarıyla silindi"
     },
     "SETTINGS$API_KEY_WARNING": {
         "en": "This is the only time your API key will be displayed. Please copy it now and store it securely.",
-        "uk": "Це єдиний раз, коли буде відображено ваш ключ API. Будь ласка, скопіюйте його зараз і збережіть у безпеці.."
+        "uk": "Це єдиний раз, коли буде відображено ваш ключ API. Будь ласка, скопіюйте його зараз і збережіть у безпеці.",
+        "ja": "これはAPIキーが表示される唯一の機会です。今すぐコピーして安全に保管してください。",
+        "zh-CN": "这是您的API密钥唯一显示的时间。请立即复制并安全存储。",
+        "zh-TW": "這是您的API金鑰唯一顯示的時間。請立即複製並安全存儲。",
+        "ko-KR": "이것은 API 키가 표시되는 유일한 시간입니다. 지금 복사하여 안전하게 보관하세요.",
+        "no": "Dette er den eneste gangen API-nøkkelen din vil bli vist. Vennligst kopier den nå og lagre den sikkert.",
+        "ar": "هذه هي المرة الوحيدة التي سيتم فيها عرض مفتاح API الخاص بك. يرجى نسخه الآن وتخزينه بشكل آمن.",
+        "de": "Dies ist das einzige Mal, dass Ihr API-Schlüssel angezeigt wird. Bitte kopieren Sie ihn jetzt und speichern Sie ihn sicher.",
+        "fr": "C'est la seule fois que votre clé API sera affichée. Veuillez la copier maintenant et la stocker en toute sécurité.",
+        "it": "Questa è l'unica volta che la tua chiave API verrà visualizzata. Copiala ora e conservala in modo sicuro.",
+        "pt": "Esta é a única vez que sua chave API será exibida. Por favor, copie-a agora e armazene-a com segurança.",
+        "es": "Esta es la única vez que se mostrará su clave API. Por favor, cópiela ahora y guárdela de forma segura.",
+        "tr": "API anahtarınız yalnızca bu kez görüntülenecektir. Lütfen şimdi kopyalayın ve güvenli bir şekilde saklayın."
     },
     "SETTINGS$API_KEY_COPIED": {
         "en": "API key copied to clipboard",
-        "uk": "Ключ API скопійовано в буфер обміну"
+        "uk": "Ключ API скопійовано в буфер обміну",
+        "ja": "APIキーがクリップボードにコピーされました",
+        "zh-CN": "API密钥已复制到剪贴板",
+        "zh-TW": "API金鑰已複製到剪貼板",
+        "ko-KR": "API 키가 클립보드에 복사되었습니다",
+        "no": "API-nøkkel kopiert til utklippstavlen",
+        "ar": "تم نسخ مفتاح API إلى الحافظة",
+        "de": "API-Schlüssel in die Zwischenablage kopiert",
+        "fr": "Clé API copiée dans le presse-papiers",
+        "it": "Chiave API copiata negli appunti",
+        "pt": "Chave API copiada para a área de transferência",
+        "es": "Clave API copiada al portapapeles",
+        "tr": "API anahtarı panoya kopyalandı"
     },
     "SETTINGS$API_KEY_NAME_PLACEHOLDER": {
         "en": "My API Key",
-        "uk": "Мій ключ API"
+        "uk": "Мій ключ API",
+        "ja": "私のAPIキー",
+        "zh-CN": "我的API密钥",
+        "zh-TW": "我的API金鑰",
+        "ko-KR": "내 API 키",
+        "no": "Min API-nøkkel",
+        "ar": "مفتاح API الخاص بي",
+        "de": "Mein API-Schlüssel",
+        "fr": "Ma clé API",
+        "it": "La mia chiave API",
+        "pt": "Minha chave API",
+        "es": "Mi clave API",
+        "tr": "API Anahtarım"
     },
     "BUTTON$CREATE": {
         "en": "Create",
-        "uk": "Створити"
+        "uk": "Створити",
+        "ja": "作成",
+        "zh-CN": "创建",
+        "zh-TW": "創建",
+        "ko-KR": "생성",
+        "no": "Opprett",
+        "ar": "إنشاء",
+        "de": "Erstellen",
+        "fr": "Créer",
+        "it": "Crea",
+        "pt": "Criar",
+        "es": "Crear",
+        "tr": "Oluştur"
     },
     "BUTTON$DELETE": {
         "en": "Delete",
-        "uk": "Видалити"
+        "uk": "Видалити",
+        "ja": "削除",
+        "zh-CN": "删除",
+        "zh-TW": "刪除",
+        "ko-KR": "삭제",
+        "no": "Slett",
+        "ar": "حذف",
+        "de": "Löschen",
+        "fr": "Supprimer",
+        "it": "Elimina",
+        "pt": "Excluir",
+        "es": "Eliminar",
+        "tr": "Sil"
     },
     "BUTTON$COPY_TO_CLIPBOARD": {
         "en": "Copy to Clipboard",
-        "uk": "Копіювати в буфер обміну"
+        "uk": "Копіювати в буфер обміну",
+        "ja": "クリップボードにコピー",
+        "zh-CN": "复制到剪贴板",
+        "zh-TW": "複製到剪貼板",
+        "ko-KR": "클립보드에 복사",
+        "no": "Kopier til utklippstavlen",
+        "ar": "نسخ إلى الحافظة",
+        "de": "In die Zwischenablage kopieren",
+        "fr": "Copier dans le presse-papiers",
+        "it": "Copia negli appunti",
+        "pt": "Copiar para a área de transferência",
+        "es": "Copiar al portapapeles",
+        "tr": "Panoya Kopyala"
     },
     "BUTTON$REFRESH": {
         "en": "Refresh",
@@ -5035,7 +5297,19 @@
     },
     "ERROR$REQUIRED_FIELD": {
         "en": "This field is required",
-        "uk": "Це поле обов'язкове"
+        "uk": "Це поле обов'язкове",
+        "ja": "この項目は必須です",
+        "zh-CN": "此字段为必填项",
+        "zh-TW": "此欄位為必填項",
+        "ko-KR": "이 필드는 필수입니다",
+        "no": "Dette feltet er påkrevd",
+        "ar": "هذا الحقل مطلوب",
+        "de": "Dieses Feld ist erforderlich",
+        "fr": "Ce champ est obligatoire",
+        "it": "Questo campo è obbligatorio",
+        "pt": "Este campo é obrigatório",
+        "es": "Este campo es obligatorio",
+        "tr": "Bu alan zorunludur"
     },
     "PLANNER$EMPTY_MESSAGE": {
         "en": "No plan created.",
@@ -5839,7 +6113,19 @@
     },
     "AGENT_ERROR$TOO_MANY_CONVERSATIONS": {
         "en": "Too many conversations at once.",
-        "uk": "Занадто багато розмов одночасно."
+        "uk": "Занадто багато розмов одночасно.",
+        "ja": "一度に多すぎる会話があります。",
+        "zh-CN": "同时进行的对话过多。",
+        "zh-TW": "同時進行的對話過多。",
+        "ko-KR": "한 번에 너무 많은 대화가 있습니다.",
+        "no": "For mange samtaler på en gang.",
+        "ar": "الكثير من المحادثات في وقت واحد.",
+        "de": "Zu viele Gespräche auf einmal.",
+        "fr": "Trop de conversations à la fois.",
+        "it": "Troppe conversazioni contemporaneamente.",
+        "pt": "Muitas conversas ao mesmo tempo.",
+        "es": "Demasiadas conversaciones a la vez.",
+        "tr": "Aynı anda çok fazla konuşma var."
     },
     "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
         "en": "Connect to GitHub",
@@ -5951,7 +6237,6 @@
         "pt": "Captura de tela do navegador",
         "es": "Captura de pantalla del navegador",
         "tr": "Tarayıcı ekran görüntüsü",
-        "fa": "تصویر صفحه مرورگر",
         "uk": "Знімок екрана браузера"
     },
     "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
@@ -6597,7 +6882,18 @@
     "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
         "en": "Enable Memory Condenser",
         "zh-TW": "啟用記憶體壓縮器",
-        "uk": "Увімкнути конденсатор пам'яті"
+        "uk": "Увімкнути конденсатор пам'яті",
+        "ja": "メモリコンデンサーを有効にする",
+        "zh-CN": "启用内存压缩器",
+        "ko-KR": "메모리 컨덴서 활성화",
+        "no": "Aktiver minnekondensator",
+        "ar": "تمكين مكثف الذاكرة",
+        "de": "Speicherkondensator aktivieren",
+        "fr": "Activer le condensateur de mémoire",
+        "it": "Abilita condensatore di memoria",
+        "pt": "Ativar condensador de memória",
+        "es": "Habilitar condensador de memoria",
+        "tr": "Bellek Yoğunlaştırıcıyı Etkinleştir"
     },
     "BUTTON$MARK_HELPFUL": {
         "en": "Mark this solution as helpful",
@@ -7108,7 +7404,8 @@
         "es": "Ventana de contexto",
         "ar": "نافذة السياق",
         "fr": "Fenêtre de contexte",
-        "tr": "Bağlam Penceresi"
+        "tr": "Bağlam Penceresi",
+        "uk": "Вікно контексту"
     },
     "CONVERSATION$USED": {
         "en": "used",
@@ -7123,7 +7420,8 @@
         "es": "usado",
         "ar": "مستخدم",
         "fr": "utilisé",
-        "tr": "kullanıldı"
+        "tr": "kullanıldı",
+        "uk": "використано"
     },
     "SETTINGS$RUNTIME_SETTINGS": {
         "en": "Runtime Settings (",
@@ -7474,7 +7772,8 @@
         "ar": "مضيف GitLab (اختياري)",
         "fr": "Hôte GitLab (optionnel)",
         "tr": "GitLab Sunucusu (isteğe bağlı)",
-        "de": "GitLab-Host (optional)"
+        "de": "GitLab-Host (optional)",
+        "uk": "Хост GitLab (необов'язково)"
     },
     "GITLAB$GET_TOKEN": {
         "en": "Generate a token on",
@@ -7589,20 +7888,20 @@
         "uk": "Дію не виконано. Можливо, це сталося через натискання користувачем кнопки зупинки або через збій та перезапуск системи виконання через обмеження ресурсів. Можливо, було втрачено будь-який раніше встановлений стан системи, залежності або змінні середовища."
     },
     "DIFF_VIEWER$LOADING": {
-        "en": "Loading...",
-        "ja": "読み込み中...",
-        "zh-CN": "加载中...",
-        "zh-TW": "加載中...",
-        "ko-KR": "로딩 중...",
-        "no": "Laster inn...",
-        "it": "Caricamento in corso...",
-        "pt": "Carregando...",
-        "es": "Cargando...",
-        "ar": "جار التحميل...",
-        "fr": "Chargement...",
-        "tr": "Yükleniyor...",
-        "de": "Wird geladen...",
-        "uk": "Завантаження..."
+        "en": "Loading changes...",
+        "ja": "変更を読み込んでいます...",
+        "zh-CN": "正在加载更改...",
+        "zh-TW": "正在加載更改...",
+        "ko-KR": "변경 사항을 로드하는 중...",
+        "no": "Laster inn endringer...",
+        "it": "Caricamento modifiche...",
+        "pt": "Carregando alterações...",
+        "es": "Cargando cambios...",
+        "ar": "جارٍ تحميل التغييرات...",
+        "fr": "Chargement des modifications...",
+        "tr": "Değişiklikler yükleniyor...",
+        "de": "Änderungen werden geladen...",
+        "uk": "Завантаження змін..."
     },
     "DIFF_VIEWER$GETTING_LATEST_CHANGES": {
         "en": "Getting latest changes...",
@@ -7807,7 +8106,10 @@
         "de": "Nutzungsbedingungen akzeptieren",
         "it": "Accetta i termini di servizio",
         "pt": "Aceitar termos de serviço",
-        "uk": "Прийняти Умови надання послуг"
+        "uk": "Прийняти Умови надання послуг",
+        "no": "Godta vilkår for tjenesten",
+        "ar": "قبول شروط الخدمة",
+        "tr": "Hizmet Şartlarını Kabul Et"
     },
     "TOS$ACCEPT_TERMS_DESCRIPTION": {
         "en": "Please review and accept our terms of service before continuing",
@@ -7820,7 +8122,10 @@
         "de": "Bitte überprüfen und akzeptieren Sie unsere Nutzungsbedingungen, bevor Sie fortfahren",
         "it": "Si prega di rivedere e accettare i nostri termini di servizio prima di continuare",
         "pt": "Por favor, revise e aceite nossos termos de serviço antes de continuar",
-        "uk": "Будь ласка, ознайомтеся та прийміть наші умови надання послуг, перш ніж продовжити"
+        "uk": "Будь ласка, ознайомтеся та прийміть наші умови надання послуг, перш ніж продовжити",
+        "no": "Vennligst gjennomgå og godta våre vilkår for tjenesten før du fortsetter",
+        "ar": "يرجى مراجعة وقبول شروط الخدمة الخاصة بنا قبل المتابعة",
+        "tr": "Devam etmeden önce lütfen hizmet şartlarımızı gözden geçirin ve kabul edin"
     },
     "TOS$CONTINUE": {
         "en": "Continue",
@@ -7833,7 +8138,10 @@
         "de": "Fortfahren",
         "it": "Continua",
         "pt": "Continuar",
-        "uk": "Продовжити"
+        "uk": "Продовжити",
+        "no": "Fortsett",
+        "ar": "متابعة",
+        "tr": "Devam Et"
     },
     "TOS$ERROR_ACCEPTING": {
         "en": "Error accepting Terms of Service",
@@ -7846,7 +8154,10 @@
         "de": "Fehler beim Akzeptieren der Nutzungsbedingungen",
         "it": "Errore nell'accettazione dei Termini di Servizio",
         "pt": "Erro ao aceitar os Termos de Serviço",
-        "uk": "Помилка прийняття Умов обслуговування"
+        "uk": "Помилка прийняття Умов обслуговування",
+        "no": "Feil ved godkjenning av vilkår for tjenesten",
+        "ar": "خطأ في قبول شروط الخدمة",
+        "tr": "Hizmet Şartlarını kabul ederken hata oluştu"
     },
     "TIPS$CUSTOMIZE_MICROAGENT": {
         "en": "You can customize OpenHands for your repo using a microagent. Ask OpenHands to put a description of the repo, including how to run the code, into .openhands/microagents/repo.md.",
