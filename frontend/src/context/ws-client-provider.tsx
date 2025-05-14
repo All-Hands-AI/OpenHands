@@ -17,7 +17,12 @@ import {
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { OpenHandsObservation } from "#/types/core/observations";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
+import {
+  isOpenHandsAction,
+  isOpenHandsObservation,
+  isUserMessage,
+} from "#/types/core/guards";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -37,14 +42,6 @@ const isFileEditAction = (
 
 const isCommandAction = (event: OpenHandsParsedEvent): event is CommandAction =>
   "action" in event && event.action === "run";
-
-const isUserMessage = (
-  event: OpenHandsParsedEvent,
-): event is UserMessageAction =>
-  "source" in event &&
-  "type" in event &&
-  event.source === "user" &&
-  event.type === "message";
 
 const isAssistantMessage = (
   event: OpenHandsParsedEvent,
@@ -126,6 +123,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const { removeOptimisticUserMessage } = useOptimisticUserMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
@@ -156,6 +154,10 @@ export function WsClientProvider({
     if (isOpenHandsEvent(event)) {
       if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
         setParsedEvents((prevEvents) => [...prevEvents, event]);
+      }
+
+      if (isUserMessage(event)) {
+        removeOptimisticUserMessage();
       }
 
       if (isMessageAction(event)) {

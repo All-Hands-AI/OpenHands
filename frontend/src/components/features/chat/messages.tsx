@@ -6,6 +6,8 @@ import { OpenHandsObservation } from "#/types/core/observations";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 import { OpenHandsEventType } from "#/types/core/base";
 import { EventMessage } from "./event-message";
+import { ChatMessage } from "./chat-message";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
 const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
   "system",
@@ -53,23 +55,32 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
+    const { getOptimisticUserMessage } = useOptimisticUserMessage();
     const { conversationId } = useConversation();
     const { data: conversation } = useUserConversation(conversationId || null);
+
+    const optimisticUserMessage = getOptimisticUserMessage();
 
     // Check if conversation metadata has trigger=resolver
     const isResolverTrigger = conversation?.trigger === "resolver";
 
-    return messages
-      .filter(shouldRenderEvent)
-      .map((message, index) => (
-        <EventMessage
-          key={index}
-          event={message}
-          isFirstMessageWithResolverTrigger={index === 0 && isResolverTrigger}
-          isAwaitingUserConfirmation={isAwaitingUserConfirmation}
-          isLastMessage={messages.length - 1 === index}
-        />
-      ));
+    return (
+      <>
+        {messages.filter(shouldRenderEvent).map((message, index) => (
+          <EventMessage
+            key={index}
+            event={message}
+            isFirstMessageWithResolverTrigger={index === 0 && isResolverTrigger}
+            isAwaitingUserConfirmation={isAwaitingUserConfirmation}
+            isLastMessage={messages.length - 1 === index}
+          />
+        ))}
+
+        {optimisticUserMessage && (
+          <ChatMessage type="user" message={optimisticUserMessage} />
+        )}
+      </>
+    );
   },
 );
 

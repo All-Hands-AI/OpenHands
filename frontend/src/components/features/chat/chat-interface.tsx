@@ -24,6 +24,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -36,6 +37,7 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
+  const { setOptimisticUserMessage } = useOptimisticUserMessage();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -75,6 +77,7 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
     send(createChatMessage(content, imageUrls, timestamp));
+    setOptimisticUserMessage(content);
     setMessageToSend(null);
   };
 
