@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 
 class MCPSSEServerConfig(BaseModel):
@@ -43,6 +43,21 @@ class MCPConfig(BaseModel):
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
+
+    @model_validator(mode='before')
+    def convert_string_urls(cls, data):
+        """Convert string URLs to MCPSSEServerConfig objects."""
+        if isinstance(data, dict) and 'sse_servers' in data:
+            servers = []
+            for server in data['sse_servers']:
+                if isinstance(server, dict):
+                    servers.append(server)
+                elif isinstance(server, str):
+                    servers.append({'url': server})
+                else:
+                    servers.append(server)  # Pass through any other type for validation to catch
+            data['sse_servers'] = servers
+        return data
 
     def validate_servers(self) -> None:
         """Validate that server URLs are valid and unique."""
