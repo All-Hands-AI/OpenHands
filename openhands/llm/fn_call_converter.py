@@ -93,7 +93,7 @@ USER: EXECUTION RESULT of [execute_bash]:
 [1] 121
 [1]+  Exit 1                  python3 app.py > server.log 2>&1
 
-ASSISTANT: Looks like the server crashed. Let me check the server log:
+ASSISTANT: Looks like the server was running with PID 121 then crashed. Let me check the server log:
 <function=execute_bash>
 <parameter=command>
 cat server.log
@@ -140,7 +140,8 @@ python3 app.py > server.log 2>&1 &
 USER: EXECUTION RESULT of [execute_bash]:
 [1] 124
 
-ASSISTANT: Let me check the server log again:
+ASSISTANT:
+Let me check the server log again:
 <function=execute_bash>
 <parameter=command>
 cat server.log
@@ -172,7 +173,8 @@ USER: EXECUTION RESULT of [execute_bash]:
 [1]+  Terminated              python3 app.py > server.log 2>&1
 """,
         'run_server_again': """
-ASSISTANT: Running the updated file:
+ASSISTANT:
+Running the updated file:
 <function=execute_bash>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
@@ -209,7 +211,8 @@ USER: EXECUTION RESULT of [str_replace_editor]:
 File created successfully at: /workspace/app.py
 """,
         'edit_file': """
-ASSISTANT: Now let me display the numbers in a table format:
+ASSISTANT:
+Now let me display the numbers in a table format:
 <function=str_replace_editor>
 <parameter=command>str_replace</parameter>
 <parameter=path>/workspace/app.py</parameter>
