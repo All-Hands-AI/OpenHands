@@ -346,17 +346,26 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
-        # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
         if not repository:
             return ''
 
         provider = repository.git_provider
+
+        if provider == ProviderType.LOCAL:
+            logger.debug(f'Local repository selected: {selected_repository}')
+            dir_name = selected_repository.split('/')[-1]
+            action = CmdRunAction(
+                command=f'cd {dir_name}',
+            )
+            self.run_action(action)
+            return dir_name
+
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
         }
 
-        domain = provider_domains[provider]
+        domain = provider_domains[provider] if provider in provider_domains else None
 
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
