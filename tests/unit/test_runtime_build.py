@@ -87,6 +87,7 @@ def test_prep_build_folder(temp_dir):
             base_image=DEFAULT_BASE_IMAGE,
             build_from=BuildFromImageType.SCRATCH,
             extra_deps=None,
+            include_programming_languages=False,
         )
 
     # make sure that the code was copied
@@ -133,6 +134,7 @@ def test_generate_dockerfile_build_from_scratch():
     dockerfile_content = _generate_dockerfile(
         base_image,
         build_from=BuildFromImageType.SCRATCH,
+        include_programming_languages=False,
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
@@ -153,6 +155,7 @@ def test_generate_dockerfile_build_from_lock():
     dockerfile_content = _generate_dockerfile(
         base_image,
         build_from=BuildFromImageType.LOCK,
+        include_programming_languages=False,
     )
 
     # These commands SHOULD NOT include in the dockerfile if build_from_scratch is False
@@ -171,6 +174,7 @@ def test_generate_dockerfile_build_from_versioned():
     dockerfile_content = _generate_dockerfile(
         base_image,
         build_from=BuildFromImageType.VERSIONED,
+        include_programming_languages=False,
     )
 
     # these commands should not exist when build from versioned
@@ -247,7 +251,11 @@ def test_build_runtime_image_from_scratch():
             == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         )
         mock_prep_build_folder.assert_called_once_with(
-            ANY, base_image, BuildFromImageType.SCRATCH, None
+            ANY,
+            base_image,
+            BuildFromImageType.SCRATCH,
+            None,
+            include_programming_languages=False,
         )
 
 
@@ -342,6 +350,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
             f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag',
             BuildFromImageType.LOCK,
             None,
+            include_programming_languages=False,
         )
 
 
@@ -401,6 +410,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
             f'{get_runtime_image_repo()}:{OH_VERSION}_mock-versioned-tag',
             BuildFromImageType.VERSIONED,
             None,
+            include_programming_languages=False,
         )
 
 
