@@ -23,20 +23,15 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
-from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
-    conversation_manager,
 )
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation_store
-from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -238,20 +233,13 @@ async def git_changes(
     user_id: str = Depends(get_user_id),
 ) -> list[dict[str, str]] | JSONResponse:
     runtime: Runtime = request.state.conversation.runtime
-    conversation_store = await ConversationStoreImpl.get_instance(
+    await ConversationStoreImpl.get_instance(
         config,
         user_id,
     )
 
-    cwd = await get_cwd(
-        conversation_store,
-        conversation_id,
-        runtime.config.workspace_mount_path_in_sandbox,
-    )
-    logger.info(f'Getting git changes in {cwd}')
-
     try:
-        changes = await call_sync_from_async(runtime.get_git_changes, cwd)
+        changes = await call_sync_from_async(runtime.get_git_changes)
         if changes is None:
             return JSONResponse(
                 status_code=404,
@@ -285,14 +273,8 @@ async def git_diff(
 ) -> dict[str, Any] | JSONResponse:
     runtime: Runtime = request.state.conversation.runtime
 
-    cwd = await get_cwd(
-        conversation_store,
-        conversation_id,
-        runtime.config.workspace_mount_path_in_sandbox,
-    )
-
     try:
-        diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
+        diff = await call_sync_from_async(runtime.get_git_diff, path)
         return diff
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error getting diff: {e}')
@@ -300,17 +282,3 @@ async def git_diff(
             status_code=500,
             content={'error': f'Error getting diff: {e}'},
         )
-
-
-async def get_cwd(
-    conversation_store: ConversationStore,
-    conversation_id: str,
-    workspace_mount_path_in_sandbox: str,
-) -> str:
-    metadata = await conversation_store.get_metadata(conversation_id)
-    cwd = workspace_mount_path_in_sandbox
-    if metadata and metadata.selected_repository:
-        repo_dir = metadata.selected_repository.split('/')[-1]
-        cwd = os.path.join(cwd, repo_dir)
-
-    return cwd
