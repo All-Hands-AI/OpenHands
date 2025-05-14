@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
@@ -31,11 +33,13 @@ async def get_user_repositories(
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
+    # Check if any provider is connected (including local provider)
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens,
             external_auth_token=access_token,
             external_auth_id=user_id,
+            config=server_config,
         )
 
         try:
@@ -52,6 +56,20 @@ async def get_user_repositories(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+    
+    # Check if local git provider should be available
+    if server_config.workspace_base or os.environ.get('WORKSPACE_BASE'):
+        # Create a provider handler with just the local provider
+        from openhands.integrations.local.local_git_service import LocalGitServiceImpl
+        
+        try:
+            local_service = LocalGitServiceImpl(config=server_config)
+            return await local_service.get_repositories(sort, server_config.app_mode)
+        except Exception as e:
+            return JSONResponse(
+                content=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     return JSONResponse(
         content='Git provider token required. (such as GitHub).',
@@ -63,10 +81,15 @@ async def get_user_repositories(
 async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
 ) -> User | JSONResponse:
+    # Check if any provider is connected (including local provider)
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens, 
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+            config=server_config,
         )
 
         try:
@@ -84,6 +107,18 @@ async def get_user(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    # Check if local git provider should be available
+    if server_config.workspace_base or os.environ.get('WORKSPACE_BASE'):
+        # Return a placeholder user for local git provider
+        return User(
+            id=0,
+            login='local-user',
+            avatar_url='',
+            company=None,
+            name='Local Git User',
+            email=None,
+        )
 
     return JSONResponse(
         content='Git provider token required. (such as GitHub).',

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import type { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
-import { useUserProviders } from "#/hooks/use-user-providers";
+import { useUserConnected } from "#/hooks/query/use-user-connected";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -15,14 +15,14 @@ export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
-  const { providers } = useUserProviders();
+  const { data: isUserConnected } = useUserConnected();
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initialQuery,
   );
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
-  const providersAreSet = providers.length > 0;
+  const providersAreSet = isUserConnected === true;
   const isGitLab =
     selectedRepository !== null &&
     selectedRepository.git_provider &&

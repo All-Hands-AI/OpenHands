@@ -3,17 +3,17 @@ import { PrefetchPageLinks } from "react-router";
 import { HomeHeader } from "#/components/features/home/home-header";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
-import { useUserProviders } from "#/hooks/use-user-providers";
+import { useUserConnected } from "#/hooks/query/use-user-connected";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
 function HomeScreen() {
-  const { providers } = useUserProviders();
+  const { data: isUserConnected } = useUserConnected();
   const [selectedRepoTitle, setSelectedRepoTitle] = React.useState<
     string | null
   >(null);
 
-  const providersAreSet = providers.length > 0;
+  const providersAreSet = isUserConnected === true;
 
   return (
     <div
