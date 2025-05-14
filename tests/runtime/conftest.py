@@ -135,10 +135,6 @@ def get_runtime_classes() -> list[type[Runtime]]:
     elif runtime.lower() == 'daytona':
         return [DaytonaRuntime]
     elif runtime.lower() == 'cli':
-        import platform
-
-        if platform.system() == 'Windows':
-            pytest.skip('CLIRuntime tests are skipped on Windows')
         return [CLIRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')

@@ -80,5 +80,3 @@ jobs:
         run: poetry run pytest -svv tests/unit/test_windows_bash.py
       - name: Run Windows runtime tests with LocalRuntime
         run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
-      - name: Run Windows runtime tests with CLIRuntime
-        run: $env:TEST_RUNTIME="cli"; poetry run pytest -svv tests/runtime/test_bash.py
