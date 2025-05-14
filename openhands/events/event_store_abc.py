@@ -96,6 +96,9 @@ class EventStoreABC:
         Returns:
             list: List of matching events (as dicts)
         """
+        if limit < 1 or limit > 100:
+            raise ValueError('Limit must be between 1 and 100')
+
         events = self.search_events(
             start_id=start_id,
             reverse=reverse,

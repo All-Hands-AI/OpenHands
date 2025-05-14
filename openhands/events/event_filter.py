@@ -1,8 +1,6 @@
 import json
 from dataclasses import dataclass
 
-from duckdb import query
-
 from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
 
@@ -49,7 +47,7 @@ class EventFilter:
         if self.query:
             event_dict = event_to_dict(event)
             event_str = json.dumps(event_dict).lower()
-            if query.lower() not in event_str:
+            if self.query.lower() not in event_str:
                 return False
 
         return True
