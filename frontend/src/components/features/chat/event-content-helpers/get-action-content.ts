@@ -8,6 +8,7 @@ import {
   MCPAction,
   ThinkAction,
   OpenHandsAction,
+  FinishAction,
 } from "#/types/core/actions";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 
@@ -75,6 +76,26 @@ const getMcpActionContent = (event: MCPAction): string => {
 const getThinkActionContent = (event: ThinkAction): string =>
   event.args.thought;
 
+const getFinishActionContent = (event: FinishAction): string => {
+  let content = event.args.final_thought;
+
+  switch (event.args.task_completed) {
+    case "success":
+      content +=
+        "\n\n\nI believe that the task was **completed successfully**.";
+      break;
+    case "failure":
+      content += "\n\n\nI believe that the task was **not completed**.";
+      break;
+    case "partial":
+    default:
+      content += "\n\n\nI believe that the task was **completed partially**.";
+      break;
+  }
+
+  return content;
+};
+
 const getNoContentActionContent = (): string => "";
 
 export const getActionContent = (event: OpenHandsAction): string => {
@@ -97,15 +118,7 @@ export const getActionContent = (event: OpenHandsAction): string => {
     case "think":
       return getThinkActionContent(event);
     case "finish":
-      switch (event.args.task_completed) {
-        case "success":
-          return "I believe that the task was **completed successfully**.";
-        case "failure":
-          return "I believe that the task was **not completed**.";
-        case "partial":
-        default:
-          return "I believe that the task was **completed partially**.";
-      }
+      return getFinishActionContent(event);
     default:
       return getDefaultEventContent(event);
   }

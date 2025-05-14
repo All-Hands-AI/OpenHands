@@ -1,4 +1,3 @@
-import Markdown from "react-markdown";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { I18nKey } from "#/i18n/declaration";
 import { OpenHandsAction } from "#/types/core/actions";
@@ -68,7 +67,9 @@ export function EventMessage({
   }
 
   if (isFinishAction(event)) {
-    return <Markdown>{getEventContent(event).details}</Markdown>;
+    return (
+      <ChatMessage type="agent" message={getEventContent(event).details} />
+    );
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
