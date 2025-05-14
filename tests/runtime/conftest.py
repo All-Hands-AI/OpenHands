@@ -11,6 +11,7 @@ from openhands.core.config import AppConfig, MCPConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
@@ -137,7 +138,6 @@ def get_runtime_classes() -> list[type[Runtime]]:
         import platform
         if platform.system() == 'Windows':
             pytest.skip("CLIRuntime tests are skipped on Windows")
-        from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
         return [CLIRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
