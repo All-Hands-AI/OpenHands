@@ -1,8 +1,10 @@
+import json
 import os
 import random
 import shutil
 import stat
 import time
+from dataclasses import dataclass, field
 
 import pytest
 from pytest import TempPathFactory
@@ -18,7 +20,7 @@ from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'docker').lower()
@@ -28,15 +30,6 @@ project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 sandbox_test_folder = '/workspace'
-
-
-def _get_runtime_sid(runtime: Runtime) -> str:
-    logger.debug(f'\nruntime.sid: {runtime.sid}')
-    return runtime.sid
-
-
-def _get_host_folder(runtime: Runtime) -> str:
-    return runtime.config.workspace_mount_path
 
 
 def _remove_folder(folder: str) -> bool:
@@ -60,6 +53,7 @@ def _close_test_runtime(runtime: Runtime) -> None:
         runtime.close(rm_all_containers=False)
     else:
         runtime.close()
+    call_async_from_sync(runtime.__class__.delete, GENERAL_TIMEOUT, runtime.sid)
     time.sleep(1)
 
 
@@ -203,7 +197,108 @@ def base_container_image(request):
     return request.param
 
 
-def _load_runtime(
+def get_runtime_key(
+    run_as_openhands: bool = True,
+    enable_auto_lint: bool = False,
+    base_container_image: str | None = None,
+    browsergym_eval_env: str | None = None,
+    use_workspace: bool | None = None,
+    force_rebuild_runtime: bool = False,
+    runtime_startup_env_vars: dict[str, str] | None = None,
+    docker_runtime_kwargs: dict[str, str] | None = None,
+    override_mcp_config: MCPConfig | None = None,
+) -> str:
+    return json.dumps(
+        [
+            run_as_openhands,
+            enable_auto_lint,
+            base_container_image,
+            browsergym_eval_env,
+            use_workspace,
+            force_rebuild_runtime,
+            runtime_startup_env_vars,
+            docker_runtime_kwargs,
+            override_mcp_config.model_dump() if override_mcp_config else None,
+        ]
+    )
+
+
+@dataclass
+class RuntimeManager:
+    tmp_path_factory: TempPathFactory
+    node_name: str
+    runtime_cls: type
+    runtimes: dict[str, tuple[Runtime, AppConfig]] = field(default_factory=dict)
+
+    def __enter__(self):
+        return self
+
+    def load_runtime(
+        self,
+        run_as_openhands: bool = True,
+        enable_auto_lint: bool = False,
+        base_container_image: str | None = None,
+        browsergym_eval_env: str | None = None,
+        use_workspace: bool | None = None,
+        force_rebuild_runtime: bool = False,
+        runtime_startup_env_vars: dict[str, str] | None = None,
+        docker_runtime_kwargs: dict[str, str] | None = None,
+        override_mcp_config: MCPConfig | None = None,
+    ):
+        key = get_runtime_key(
+            run_as_openhands,
+            enable_auto_lint,
+            base_container_image,
+            browsergym_eval_env,
+            use_workspace,
+            force_rebuild_runtime,
+            runtime_startup_env_vars,
+            docker_runtime_kwargs,
+            override_mcp_config,
+        )
+        result = self.runtimes.get(key)
+        if result:
+            return result
+        temp_dir = self.tmp_path_factory.mktemp(
+            'rt_' + str(random.randint(100000, 999999)), numbered=False
+        )
+        logger.info(f'\n*** {self.node_name}\n>> temp folder: {temp_dir}\n')
+        result = _create_runtime(
+            temp_dir,
+            self.runtime_cls,
+            run_as_openhands,
+            enable_auto_lint,
+            base_container_image,
+            browsergym_eval_env,
+            use_workspace,
+            force_rebuild_runtime,
+            runtime_startup_env_vars,
+            docker_runtime_kwargs,
+            override_mcp_config,
+        )
+        self.runtimes[key] = result
+        return result
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Close all runtimes"""
+        for runtime, _ in self.runtimes.values():
+            try:
+                _close_test_runtime(runtime)
+            except Exception as e:
+                logger.error(e, exc_info=True, stack_info=True)
+
+
+@pytest.fixture(scope='module')
+def runtime_manager(runtime_cls, tmp_path_factory: TempPathFactory, request):
+    with RuntimeManager(
+        runtime_cls=runtime_cls,
+        tmp_path_factory=tmp_path_factory,
+        node_name=request.node.name,
+    ) as runtime_manager:
+        yield runtime_manager
+
+
+def _create_runtime(
     temp_dir,
     runtime_cls,
     run_as_openhands: bool = True,
@@ -272,11 +367,3 @@ def _load_runtime(
     call_async_from_sync(runtime.connect)
     time.sleep(2)
     return runtime, config
-
-
-# Export necessary function
-__all__ = [
-    '_load_runtime',
-    '_get_host_folder',
-    '_remove_folder',
-]
