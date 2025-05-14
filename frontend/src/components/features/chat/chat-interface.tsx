@@ -37,7 +37,8 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
-  const { setOptimisticUserMessage } = useOptimisticUserMessage();
+  const { setOptimisticUserMessage, getOptimisticUserMessage } =
+    useOptimisticUserMessage();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -55,6 +56,8 @@ export function ChatInterface() {
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
+
+  const optimisticUserMessage = getOptimisticUserMessage();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (parsedEvents.length === 0) {
@@ -118,7 +121,7 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
-      {parsedEvents.length === 0 && (
+      {parsedEvents.length === 0 && !optimisticUserMessage && (
         <ChatSuggestions onSuggestionsClick={setMessageToSend} />
       )}
 
