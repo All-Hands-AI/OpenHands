@@ -1,27 +1,51 @@
 import posthog from "posthog-js";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { I18nKey } from "#/i18n/declaration";
-import { useUserConnected } from "#/hooks/query/use-user-connected";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useConversation } from "#/context/conversation-context";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import type { RootState } from "#/store";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
+  // For testing purposes
+  conversationIdProp?: string;
+  conversationProp?: { selected_repository?: string | null };
 }
 
 export function ActionSuggestions({
   onSuggestionsClick,
+  conversationIdProp,
+  conversationProp,
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
-  const { data: isUserConnected } = useUserConnected();
   const { providers } = useUserProviders();
-  const { conversationId } = useConversation();
-  const { data: conversation } = useUserConversation(conversationId);
+
+  // Always declare hooks at the top level to follow React rules
+  const { data: fetchedConversation } = useUserConversation(
+    conversationIdProp || "",
+  );
+
+  // Use the conversation context if available, otherwise use props (for testing)
+  let conversationId: string | undefined;
+  let conversation: { selected_repository?: string | null } | undefined;
+
+  try {
+    const conversationContext = useConversation();
+    conversationId = conversationIdProp ?? conversationContext.conversationId;
+
+    if (!conversationProp && conversationId) {
+      // Use the fetched conversation data
+      conversation = fetchedConversation;
+    } else {
+      conversation = conversationProp;
+    }
+  } catch (error) {
+    // If useConversation throws (outside of provider), use props
+    conversationId = conversationIdProp;
+    conversation = conversationProp;
+  }
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
