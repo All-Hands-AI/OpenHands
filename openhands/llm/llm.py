@@ -50,6 +50,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-7-sonnet-20250219',
     'claude-sonnet-3-7-latest',
+    'claude-3.7-sonnet',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -473,7 +474,10 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
-            if 'claude-3-7-sonnet' in self.config.model:
+            if any(
+                model in self.config.model
+                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
+            ):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
@@ -487,13 +491,8 @@ class LLM(RetryMixin, DebugMixin):
         # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
             self._function_calling_active = model_name_supported
-        elif self.config.native_tool_calling is False:
-            self._function_calling_active = False
         else:
-            # try to enable native tool calling if supported by the model
-            self._function_calling_active = litellm.supports_function_calling(
-                model=self.config.model
-            )
+            self._function_calling_active = self.config.native_tool_calling
 
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():

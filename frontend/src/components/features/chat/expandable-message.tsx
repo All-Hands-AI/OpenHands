@@ -15,6 +15,7 @@ import { OpenHandsObservation } from "#/types/core/observations";
 import { cn } from "#/utils/utils";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
+import { paragraph } from "../markdown/paragraph";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
 
@@ -196,6 +197,7 @@ export function ExpandableMessage({
                 code,
                 ul,
                 ol,
+                p: paragraph,
               }}
               remarkPlugins={[remarkGfm]}
             >

@@ -198,7 +198,7 @@ class StandaloneConversationManager(ConversationManager):
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
-                ConversationStore,  # type: ignore
+                ConversationStore,
                 self.server_config.conversation_store_class,
             )
         store = await conversation_store_class.get_instance(self.config, user_id)

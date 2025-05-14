@@ -109,7 +109,11 @@ async def test_search_conversations():
                 async def mock_get_running_agent_loops(*args, **kwargs):
                     return set()
 
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
                 mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
                 with patch(
                     'openhands.server.routes.manage_conversations.datetime'
                 ) as mock_datetime:
@@ -160,6 +164,7 @@ async def test_search_conversations():
                                 ),
                                 status=ConversationStatus.STOPPED,
                                 selected_repository='foobar',
+                                num_connections=0,
                             )
                         ]
                     )
@@ -187,6 +192,7 @@ async def test_get_conversation():
             'openhands.server.routes.manage_conversations.conversation_manager'
         ) as mock_manager:
             mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+            mock_manager.get_connections = AsyncMock(return_value={})
 
             conversation = await get_conversation(
                 'some_conversation_id', conversation_store=mock_store
@@ -199,6 +205,7 @@ async def test_get_conversation():
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 status=ConversationStatus.STOPPED,
                 selected_repository='foobar',
+                num_connections=0,
             )
             assert conversation == expected
 
@@ -230,7 +237,6 @@ async def test_new_conversation_success(provider_handler_mock):
             mock_create_conversation.return_value = 'test_conversation_id'
 
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -287,7 +293,6 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 )
 
                 test_request = InitSessionRequest(
-                    conversation_trigger=ConversationTrigger.SUGGESTED_TASK,
                     repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
@@ -337,7 +342,6 @@ async def test_new_conversation_missing_settings(provider_handler_mock):
             )
 
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -367,7 +371,6 @@ async def test_new_conversation_invalid_api_key(provider_handler_mock):
             )
 
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -416,6 +419,7 @@ async def test_delete_conversation():
                 'openhands.server.routes.manage_conversations.conversation_manager'
             ) as mock_manager:
                 mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+                mock_manager.get_connections = AsyncMock(return_value={})
 
                 # Mock the runtime class
                 with patch(
@@ -457,7 +461,6 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
 
             # Create the request object
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,  # This should be overridden
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -491,7 +494,6 @@ async def test_new_conversation_with_null_repository():
 
             # Create the request object with null repository
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository=None,  # Explicitly set to None
                 selected_branch=None,
                 initial_user_msg='Hello, agent!',
@@ -529,7 +531,6 @@ async def test_new_conversation_with_provider_authentication_error(
 
             # Create the request object
             test_request = InitSessionRequest(
-                conversation_trigger=ConversationTrigger.GUI,
                 repository='test/repo',
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
@@ -559,7 +560,6 @@ async def test_new_conversation_with_provider_authentication_error(
 @pytest.mark.asyncio
 async def test_new_conversation_with_unsupported_params(test_client):
     test_request_data = {
-        'conversation_trigger': 'GUI',  # This is a valid parameter
         'repository': 'test/repo',  # This is valid
         'selected_branch': 'main',  # This is valid
         'initial_user_msg': 'Hello, agent!',  # Valid parameter

@@ -13,9 +13,11 @@ or custom tools. MCP is based on the open standard defined at [modelcontextproto
 
 ## Configuration
 
-MCP configuration is defined in the `[mcp]` section of your `config.toml` file.
+MCP configuration can be defined in:
+* The OpenHands UI through the Settings under the `MCP` tab.
+* The `config.toml` file under the `[mcp]` section if not using the UI.
 
-### Configuration Example
+### Configuration Example via config.toml
 
 ```toml
 [mcp]
@@ -82,7 +84,7 @@ Stdio servers are configured using an object with the following properties:
 
 When OpenHands starts, it:
 
-1. Reads the MCP configuration from `config.toml`.
+1. Reads the MCP configuration.
 2. Connects to any configured SSE servers.
 3. Starts any configured stdio servers.
 4. Registers the tools provided by these servers with the agent.

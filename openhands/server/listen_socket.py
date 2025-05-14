@@ -1,5 +1,6 @@
 import asyncio
 from types import MappingProxyType
+from typing import Any
 from urllib.parse import parse_qs
 
 from socketio.exceptions import ConnectionRefusedError
@@ -38,7 +39,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 def create_provider_tokens_object(
     providers_set: list[ProviderType],
 ) -> PROVIDER_TOKEN_TYPE:
-    provider_information = {}
+    provider_information: dict[ProviderType, ProviderToken] = {}
 
     for provider in providers_set:
         provider_information[provider] = ProviderToken(token=None, user_id=None)
@@ -47,7 +48,7 @@ def create_provider_tokens_object(
 
 
 @sio.event
-async def connect(connection_id: str, environ):
+async def connect(connection_id: str, environ: dict) -> None:
     try:
         logger.info(f'sio:connect: {connection_id}')
         query_params = parse_qs(environ.get('QUERY_STRING', ''))
@@ -72,8 +73,13 @@ async def connect(connection_id: str, environ):
             raise ConnectionRefusedError('No conversation_id in query params')
 
         cookies_str = environ.get('HTTP_COOKIE', '')
+        # Get Authorization header from the environment
+        # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
+        authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
-        user_id = await conversation_validator.validate(conversation_id, cookies_str)
+        user_id = await conversation_validator.validate(
+            conversation_id, cookies_str, authorization_header
+        )
 
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
@@ -135,18 +141,18 @@ async def connect(connection_id: str, environ):
 
 
 @sio.event
-async def oh_user_action(connection_id: str, data: dict):
+async def oh_user_action(connection_id: str, data: dict[str, Any]) -> None:
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
-async def oh_action(connection_id: str, data: dict):
+async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
     # TODO: Remove this handler once all clients are updated to use oh_user_action
     # Keeping for backward compatibility with in-progress sessions
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
-async def disconnect(connection_id: str):
+async def disconnect(connection_id: str) -> None:
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)

@@ -6,7 +6,12 @@ from openhands.utils.import_utils import get_impl
 class ConversationValidator:
     """Storage for conversation metadata. May or may not support multiple users depending on the environment."""
 
-    async def validate(self, conversation_id: str, cookies_str: str) -> str | None:
+    async def validate(
+        self,
+        conversation_id: str,
+        cookies_str: str,
+        authorization_header: str | None = None,
+    ) -> str | None:
         return None
 
 
