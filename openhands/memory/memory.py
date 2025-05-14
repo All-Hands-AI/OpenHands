@@ -258,6 +258,8 @@ class Memory:
         for name, agent in repo_agents.items():
             if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
+        logger.debug(f'Loaded {len(self.repo_microagents)} global repo microagents: {self.repo_microagents.keys()}')
+        logger.debug(f'Loaded {len(self.knowledge_microagents)} global knowledge microagents: {self.knowledge_microagents.keys()}')
 
     def get_microagent_mcp_tools(self) -> list[dict[Any, Any]]:
         """
@@ -270,8 +272,10 @@ class Memory:
 
         # Check all repo microagents for MCP tools (always active)
         for agent in self.repo_microagents.values():
+            logger.debug(f'Repo microagent {agent.name} metadata: {agent.metadata}')
             if agent.metadata.mcp_tools:
                 mcp_configs.append(agent.metadata.mcp_tools)
+                logger.debug(f'Found MCP tools in repo microagent {agent.name}: {agent.metadata.mcp_tools}')
 
         return mcp_configs
 

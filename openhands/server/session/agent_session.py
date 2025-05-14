@@ -124,10 +124,19 @@ class AgentSession:
                 selected_branch=selected_branch,
             )
 
+            repo_directory = None
+            if self.runtime and runtime_connected and selected_repository:
+                repo_directory = selected_repository.split('/')[-1]
+
+            self.memory = await self._create_memory(
+                selected_repository=selected_repository,
+                repo_directory=repo_directory,
+            )
+
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
             if self.runtime and runtime_connected:
-                await add_mcp_tools_to_agent(agent, self.runtime, config.mcp)
+                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config.mcp)
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -150,14 +159,6 @@ class AgentSession:
                     agent_configs=agent_configs,
                 )
 
-            repo_directory = None
-            if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.split('/')[-1]
-
-            self.memory = await self._create_memory(
-                selected_repository=selected_repository,
-                repo_directory=repo_directory,
-            )
 
             if git_provider_tokens:
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)

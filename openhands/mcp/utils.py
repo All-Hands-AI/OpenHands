@@ -11,7 +11,7 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.runtime.base import Runtime
-
+from openhands.memory.memory import Memory
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
     """
@@ -149,7 +149,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
 
 async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, mcp_config: MCPConfig
+    agent: 'Agent', runtime: Runtime, memory: 'Memory', mcp_config: MCPConfig
 ):
     """
     Add MCP tools to an agent.
@@ -165,30 +165,27 @@ async def add_mcp_tools_to_agent(
         'Runtime must be initialized before adding MCP tools'
     )
 
-    # Get the memory object from the runtime to access microagent MCP tools
-    memory = getattr(runtime, 'memory', None)
+    # Add microagent MCP tools if available
+    microagent_mcp_configs = memory.get_microagent_mcp_tools()
+    extra_stdio_servers = []
+    for mcp_config in microagent_mcp_configs:
+        # Only add stdio servers from microagents for security reasons
+        if mcp_config.sse_servers and not mcp_config.stdio_servers:
+            logger.warning(
+                'Microagent MCP config contains SSE servers but no stdio servers. SSE servers are not supported for security reasons.'
+            )
+
+        if mcp_config.stdio_servers:
+            for stdio_server in mcp_config.stdio_servers:
+                # Check if this stdio server is already in the config
+                if stdio_server not in extra_stdio_servers:
+                    extra_stdio_servers.append(stdio_server)
+                    logger.info(
+                        f'Added microagent stdio server: {stdio_server.name}'
+                    )
 
     # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config()
-
-    # Add microagent MCP tools if available
-    if memory is not None and hasattr(memory, 'get_microagent_mcp_tools'):
-        microagent_mcp_configs = memory.get_microagent_mcp_tools()
-        for mcp_config in microagent_mcp_configs:
-            # Only add stdio servers from microagents for security reasons
-            if mcp_config.sse_servers and not mcp_config.stdio_servers:
-                logger.warning(
-                    'Microagent MCP config contains SSE servers but no stdio servers. SSE servers are not supported for security reasons.'
-                )
-
-            if mcp_config.stdio_servers:
-                for stdio_server in mcp_config.stdio_servers:
-                    # Check if this stdio server is already in the config
-                    if stdio_server not in updated_mcp_config.stdio_servers:
-                        updated_mcp_config.stdio_servers.append(stdio_server)
-                        logger.info(
-                            f'Added microagent stdio server: {stdio_server.name}'
-                        )
+    updated_mcp_config = runtime.get_updated_mcp_config(extra_stdio_servers)
 
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)

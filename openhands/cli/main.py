@@ -221,7 +221,7 @@ async def run_session(
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
+    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None

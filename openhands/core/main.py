@@ -116,7 +116,7 @@ async def run_controller(
                 selected_repository=config.sandbox.selected_repo,
             )
 
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
+    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     event_stream = runtime.event_stream
 

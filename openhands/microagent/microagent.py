@@ -199,7 +199,7 @@ def load_microagents_from_dir(
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                logger.debug(f'Loaded agent {agent.name} from {file}')
+                logger.debug(f'Loaded agent {agent.name} from {file}. Type: {type(agent)}')
             except Exception as e:
                 raise ValueError(f'Error loading agent from {file}: {e}')
 
