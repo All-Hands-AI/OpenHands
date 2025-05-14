@@ -1,9 +1,14 @@
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from fastapi import Request
 from pydantic import SecretStr
 
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderToken,
+    ProviderType,
+)
 from openhands.server import shared
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import UserAuth
@@ -73,10 +78,11 @@ class DefaultUserAuth(UserAuth):
         self._user_secrets = user_secrets
         return user_secrets
 
-    async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
+    async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
         user_secrets = await self.get_user_secrets()
         if user_secrets is None:
-            return None
+            empty_dict = dict[ProviderType, ProviderToken]()
+            return MappingProxyType(empty_dict)
         return user_secrets.provider_tokens
 
     @classmethod
