@@ -92,7 +92,7 @@ const openHandsHandlers = [
       "gpt-4o",
       "gpt-4o-mini",
       "anthropic/claude-3.5",
-      "anthropic/claude-3-5-sonnet-20241022",
+      "anthropic/claude-3-7-sonnet-20250219",
     ]),
   ),
 
