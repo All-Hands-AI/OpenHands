@@ -128,8 +128,7 @@ async def run_controller(
             repo_directory=repo_directory,
         )
 
-    # Add MCP tools after memory is created
-    assert memory is not None, 'Memory must be initialized before adding MCP tools'
+    # Add MCP tools to the agent
     await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     replay_events: list[Event] | None = None
