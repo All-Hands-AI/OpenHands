@@ -75,7 +75,7 @@ class BaseMicroagent(BaseModel):
                 if not metadata.mcp_tools.stdio_servers:
                     raise MicroagentValidationError(
                         f'Microagent {metadata.name} has MCP tools configuration but no stdio servers. '
-                        'Only stdio servers are supported for security reasons.'
+                        'Only stdio servers are currently supported.'
                     )
         except Exception as e:
             raise MicroagentValidationError(f'Error loading metadata: {e}') from e
