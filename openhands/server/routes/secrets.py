@@ -56,7 +56,7 @@ async def invalidate_legacy_secrets_store(
 
 def process_token_validation_result(
     confirmed_token_type: ProviderType | None, token_type: ProviderType
-):
+) -> str:
     if not confirmed_token_type or confirmed_token_type != token_type:
         return (
             f'Invalid token. Please make sure it is a valid {token_type.value} token.'
