@@ -53,7 +53,6 @@ class ConversationManager(ABC):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
     ) -> EventStore | None:
         """Join a conversation and return its event stream."""
 
@@ -82,7 +81,6 @@ class ConversationManager(ABC):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
     ) -> EventStore:
         """Start an event loop if one is not already running"""
 

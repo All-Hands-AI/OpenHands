@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -64,7 +64,21 @@ export function ApiKeysManager() {
         </div>
 
         <p className="text-sm text-gray-300">
-          {t(I18nKey.SETTINGS$API_KEYS_DESCRIPTION)}
+          <Trans
+            i18nKey={I18nKey.SETTINGS$API_KEYS_DESCRIPTION}
+            components={{
+              a: (
+                <a
+                  href="https://docs.all-hands.dev/modules/usage/cloud/cloud-api"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  API documentation
+                </a>
+              ),
+            }}
+          />
         </p>
 
         {isLoading && (
