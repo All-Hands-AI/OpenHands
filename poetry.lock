@@ -496,18 +496,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.38.15"
+version = "1.38.16"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.38.15-py3-none-any.whl", hash = "sha256:f2239b8c2816dd03a2a97297d33d5f7899f23be3a261db9a09ca691c32b7ddc2"},
-    {file = "boto3-1.38.15.tar.gz", hash = "sha256:dca60f7a3ead91c05cf471f7750e54d63b92bfc0e61fa122e2e3f5140e020a8d"},
+    {file = "boto3-1.38.16-py3-none-any.whl", hash = "sha256:ea188276252bf95940925a92bb157239ae0f12406a14e347e2aa2029a1bea038"},
+    {file = "boto3-1.38.16.tar.gz", hash = "sha256:0d4d9da05f20cf4bf351735307d9cda8711a5f7ad15de88b4e9372c6ee40d99f"},
 ]
 
 [package.dependencies]
-botocore = ">=1.38.15,<1.39.0"
+botocore = ">=1.38.16,<1.39.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.12.0,<0.13.0"
 
@@ -516,14 +516,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.38.15"
-description = "Type annotations for boto3 1.38.15 generated with mypy-boto3-builder 8.11.0"
+version = "1.38.16"
+description = "Type annotations for boto3 1.38.16 generated with mypy-boto3-builder 8.11.0"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.38.15-py3-none-any.whl", hash = "sha256:b4c28839868f4a6b6d1004b2993f6054e33bc2c635eb6dd170ce93bb75842f4f"},
-    {file = "boto3_stubs-1.38.15.tar.gz", hash = "sha256:0be0b5857d080de92c6b40b35950c62224c50858b26a530cdebfad9802cd467f"},
+    {file = "boto3_stubs-1.38.16-py3-none-any.whl", hash = "sha256:af726a75b04c553566e0bd8b84c6821e25eaeb4e92d098d78f3cc75fb78de75d"},
+    {file = "boto3_stubs-1.38.16.tar.gz", hash = "sha256:759ae1589b4de6efeb4f47a1b84b4e6e3e77e9b35b4f46e9a834c49a911b7f04"},
 ]
 
 [package.dependencies]
@@ -579,7 +579,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.38.0,<1.39.0)"]
 billing = ["mypy-boto3-billing (>=1.38.0,<1.39.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.38.0,<1.39.0)"]
-boto3 = ["boto3 (==1.38.15)"]
+boto3 = ["boto3 (==1.38.16)"]
 braket = ["mypy-boto3-braket (>=1.38.0,<1.39.0)"]
 budgets = ["mypy-boto3-budgets (>=1.38.0,<1.39.0)"]
 ce = ["mypy-boto3-ce (>=1.38.0,<1.39.0)"]
@@ -943,14 +943,14 @@ xray = ["mypy-boto3-xray (>=1.38.0,<1.39.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.38.15"
+version = "1.38.16"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.38.15-py3-none-any.whl", hash = "sha256:9cc149ef56c3b99aff5436f26b71ad9558a45e4ac6b25b7b7046b0889279e601"},
-    {file = "botocore-1.38.15.tar.gz", hash = "sha256:6adb3b1b0739153d5dc9758e5e06f7596290999c07ed8f9167ca62a1f97c6592"},
+    {file = "botocore-1.38.16-py3-none-any.whl", hash = "sha256:e0e6f7cf0d94b31561034900e41f97fd0db0a2608ab41ff3605bbebd32325ec3"},
+    {file = "botocore-1.38.16.tar.gz", hash = "sha256:bf3666611259844b8e9478b88b162009082767789ed929059db4bbd370b75ee8"},
 ]
 
 [package.dependencies]
@@ -2292,14 +2292,14 @@ tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipyth
 
 [[package]]
 name = "faker"
-version = "37.1.0"
+version = "37.3.0"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.9"
 groups = ["evaluation"]
 files = [
-    {file = "faker-37.1.0-py3-none-any.whl", hash = "sha256:dc2f730be71cb770e9c715b13374d80dbcee879675121ab51f9683d262ae9a1c"},
-    {file = "faker-37.1.0.tar.gz", hash = "sha256:ad9dc66a3b84888b837ca729e85299a96b58fdaef0323ed0baace93c9614af06"},
+    {file = "faker-37.3.0-py3-none-any.whl", hash = "sha256:48c94daa16a432f2d2bc803c7ff602509699fca228d13e97e379cd860a7e216e"},
+    {file = "faker-37.3.0.tar.gz", hash = "sha256:77b79e7a2228d57175133af0bbcdd26dc623df81db390ee52f5104d46c010f2f"},
 ]
 
 [package.dependencies]
@@ -4775,14 +4775,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.69.2"
+version = "1.66.3"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.69.2-py3-none-any.whl", hash = "sha256:dac2e7203ddee82631230f9186eebe1db756d3c05b61166b77abc5c7e333615e"},
-    {file = "litellm-1.69.2.tar.gz", hash = "sha256:4be5748f8cf5263bd3db6ca9814b2b7cba68f423c52779c9def2e39568743e1a"},
+    {file = "litellm-1.66.3-py3-none-any.whl", hash = "sha256:f1c662afec14225cee3bae7c93961857edf13fcece42fe46d921d9df50f70dd2"},
+    {file = "litellm-1.66.3.tar.gz", hash = "sha256:909564f5dc33d7dac236de6cc8066512834467bcebe3494a664d72ae6506a5ca"},
 ]
 
 [package.dependencies]
@@ -9035,14 +9035,14 @@ win32 = ["pywin32 ; sys_platform == \"win32\""]
 
 [[package]]
 name = "setuptools"
-version = "80.4.0"
+version = "80.6.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation", "runtime", "test"]
 files = [
-    {file = "setuptools-80.4.0-py3-none-any.whl", hash = "sha256:6cdc8cb9a7d590b237dbe4493614a9b75d0559b888047c1f67d49ba50fc3edb2"},
-    {file = "setuptools-80.4.0.tar.gz", hash = "sha256:5a78f61820bc088c8e4add52932ae6b8cf423da2aff268c23f813cfbb13b4006"},
+    {file = "setuptools-80.6.0-py3-none-any.whl", hash = "sha256:3f6586e9196c76f59857319fdca6571efd156a4b57d6069fd774145c4b5655a2"},
+    {file = "setuptools-80.6.0.tar.gz", hash = "sha256:79cf4c44dfd0b5fb890be2dccc3fbd405253ce3baedd2700b54880a75219ea25"},
 ]
 
 [package.extras]
@@ -10101,18 +10101,18 @@ files = [
 
 [[package]]
 name = "typer"
-version = "0.15.3"
+version = "0.15.4"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 groups = ["main", "evaluation"]
 files = [
-    {file = "typer-0.15.3-py3-none-any.whl", hash = "sha256:c86a65ad77ca531f03de08d1b9cb67cd09ad02ddddf4b34745b5008f43b239bd"},
-    {file = "typer-0.15.3.tar.gz", hash = "sha256:818873625d0569653438316567861899f7e9972f2e6e0c16dab608345ced713c"},
+    {file = "typer-0.15.4-py3-none-any.whl", hash = "sha256:eb0651654dcdea706780c466cf06d8f174405a659ffff8f163cfbfee98c0e173"},
+    {file = "typer-0.15.4.tar.gz", hash = "sha256:89507b104f9b6a0730354f27c39fae5b63ccd0c95b1ce1f1a6ba0cfd329997c3"},
 ]
 
 [package.dependencies]
-click = ">=8.0.0"
+click = ">=8.0.0,<8.2"
 rich = ">=10.11.0"
 shellingham = ">=1.3.0"
 typing-extensions = ">=3.7.4.3"
@@ -11379,4 +11379,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "b73d19fd4562283485caee750a1441d4c83a24b7726da45089be7a87700944cf"
+content-hash = "46bc07f14be8c1ecfd0e2cdcb28d218de52d2626b5bdc37acf7ddd81c2c2bb1b"
