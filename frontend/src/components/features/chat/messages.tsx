@@ -28,6 +28,10 @@ const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
   return true;
 };
 
+/*
+// Used to check if an action has a corresponding observation
+// Useful for filtering out actions that have an observation (result)
+
 const actionHasObservationPair = (
   event: OpenHandsAction | OpenHandsObservation,
   messages: (OpenHandsAction | OpenHandsObservation)[],
@@ -40,6 +44,7 @@ const actionHasObservationPair = (
 
   return true;
 };
+*/
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -56,7 +61,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     return messages
       .filter(shouldRenderEvent)
-      .filter((message) => actionHasObservationPair(message, messages))
       .map((message, index) => (
         <EventMessage
           key={index}

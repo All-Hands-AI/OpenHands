@@ -5,7 +5,8 @@ import {
   isUserMessage,
   isErrorObservation,
   isAssistantMessage,
-  isCommandObservation,
+  isOpenHandsAction,
+  isOpenHandsObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -15,6 +16,10 @@ import { getObservationResult } from "./event-content-helpers/get-observation-re
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
+
+const hasThoughtProperty = (
+  obj: Record<string, unknown>,
+): obj is { thought: string } => "thought" in obj;
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -80,11 +85,16 @@ export function EventMessage({
         title={getEventContent(event).title}
         details={getEventContent(event).details}
         success={
-          isCommandObservation(event) ? getObservationResult(event) : undefined
+          isOpenHandsObservation(event)
+            ? getObservationResult(event)
+            : undefined
         }
       />
 
       {shouldShowConfirmationButtons && <ConfirmationButtons />}
+      {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
+        <ChatMessage type="agent" message={event.args.thought} />
+      )}
     </div>
   );
 }

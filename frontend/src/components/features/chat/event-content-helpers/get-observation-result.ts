@@ -18,8 +18,7 @@ export const getObservationResult = (event: OpenHandsObservation) => {
     case "read":
     case "edit":
     case "mcp":
-      if (!hasContent) return "error";
-      if (contentIncludesError) return "error"; // Content includes error message
+      if (!hasContent || contentIncludesError) return "error";
       return "success"; // Content is valid
     default:
       return "success";
