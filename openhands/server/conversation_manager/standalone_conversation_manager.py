@@ -74,6 +74,12 @@ class StandaloneConversationManager(ConversationManager):
         if not await session_exists(sid, self.file_store, user_id=user_id):
             return None
 
+        conversation_store = await self._get_conversation_store(user_id)
+        metadata = await conversation_store.get_metadata(sid)
+        if not metadata:
+            raise RuntimeError(
+                f'While attaching to conversation, no metadata found for conversation {sid}'
+            )
         async with self._conversations_lock:
             # Check if we have an active conversation we can reuse
             if sid in self._active_conversations:
@@ -95,7 +101,11 @@ class StandaloneConversationManager(ConversationManager):
 
             # Create new conversation if none exists
             c = Conversation(
-                sid, file_store=self.file_store, config=self.config, user_id=user_id
+                sid,
+                file_store=self.file_store,
+                config=self.config,
+                user_id=user_id,
+                metadata=metadata,
             )
             try:
                 await c.connect()
@@ -197,9 +207,7 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
-    async def _get_conversation_store(
-        self, user_id: str | None, github_user_id: str | None
-    ) -> ConversationStore:
+    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
@@ -291,9 +299,7 @@ class StandaloneConversationManager(ConversationManager):
                 extra={'session_id': sid, 'user_id': user_id},
             )
             # Get the conversations sorted (oldest first)
-            conversation_store = await self._get_conversation_store(
-                user_id, github_user_id
-            )
+            conversation_store = await self._get_conversation_store(user_id)
             conversations = await conversation_store.get_all_metadata(response_ids)
             conversations.sort(key=_last_updated_at_key, reverse=True)
 
@@ -458,7 +464,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         event=None,
     ):
-        conversation_store = await self._get_conversation_store(user_id, github_user_id)
+        conversation_store = await self._get_conversation_store(user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
 

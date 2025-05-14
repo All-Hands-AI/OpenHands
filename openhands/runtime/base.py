@@ -99,7 +99,6 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
-    git_dir: str
 
     def __init__(
         self,
@@ -310,27 +309,22 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
+    def set_git_dir(self, selected_repository: str | None) -> None:
+        if not selected_repository:
+            git_dir = self.config.workspace_mount_path_in_sandbox
+            self.git_handler.set_cwd(git_dir)
+            return
+        repo_name = selected_repository.split('/')[-1]
+        git_dir = str(Path(self.config.workspace_mount_path_in_sandbox) / repo_name)
+        self.git_handler.set_cwd(git_dir)
+
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
         selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
-        self.git_dir = await self._clone_or_init_repo(
-            git_provider_tokens,
-            selected_repository,
-            selected_branch,
-        )
-        full_git_path = Path(self.config.workspace_mount_path_in_sandbox) / self.git_dir
-        self.git_handler.set_cwd(str(full_git_path))
-        return self.git_dir
-
-    async def _clone_or_init_repo(
-        self,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-        selected_repository: str | None,
-        selected_branch: str | None,
-    ) -> str:
+        self.set_git_dir(selected_repository)
         repository = None
         if selected_repository:  # Determine provider from repo name
             try:
@@ -370,8 +364,12 @@ class Runtime(FileEditRuntimeMixin):
         if provider == ProviderType.LOCAL:
             logger.debug(f'Local repository selected: {selected_repository}')
             dir_name = selected_repository.split('/')[-1]
+            full_path = str(
+                Path(self.config.workspace_mount_path_in_sandbox) / dir_name
+            )
+            print('ADD SAFE DIRECTORY:', full_path)
             action = CmdRunAction(
-                command=f'cd {dir_name}',
+                command=f'cd {full_path}; git config --global --add safe.directory {full_path}',
             )
             self.run_action(action)
             return dir_name
