@@ -24,6 +24,7 @@ const hasThoughtProperty = (
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
+  hasObservationPair: boolean;
   isFirstMessageWithResolverTrigger: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
@@ -31,6 +32,7 @@ interface EventMessageProps {
 
 export function EventMessage({
   event,
+  hasObservationPair,
   isFirstMessageWithResolverTrigger,
   isAwaitingUserConfirmation,
   isLastMessage,
@@ -66,6 +68,14 @@ export function EventMessage({
     );
   }
 
+  if (
+    hasObservationPair &&
+    isOpenHandsAction(event) &&
+    hasThoughtProperty(event.args)
+  ) {
+    return <ChatMessage type="agent" message={event.args.thought} />;
+  }
+
   if (isFinishAction(event)) {
     return (
       <ChatMessage type="agent" message={getEventContent(event).details} />
@@ -88,6 +98,10 @@ export function EventMessage({
 
   return (
     <div>
+      {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
+        <ChatMessage type="agent" message={event.args.thought} />
+      )}
+
       <GenericEventMessage
         title={getEventContent(event).title}
         details={getEventContent(event).details}
@@ -99,9 +113,6 @@ export function EventMessage({
       />
 
       {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
-        <ChatMessage type="agent" message={event.args.thought} />
-      )}
     </div>
   );
 }

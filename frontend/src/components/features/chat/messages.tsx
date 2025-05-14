@@ -32,24 +32,6 @@ const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
   return true;
 };
 
-/*
-// Used to check if an action has a corresponding observation
-// Useful for filtering out actions that have an observation (result)
-
-const actionHasObservationPair = (
-  event: OpenHandsAction | OpenHandsObservation,
-  messages: (OpenHandsAction | OpenHandsObservation)[],
-): boolean => {
-  if (isOpenHandsAction(event)) {
-    return !messages.some(
-      (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
-    );
-  }
-
-  return true;
-};
-*/
-
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
   isAwaitingUserConfirmation: boolean;
@@ -68,12 +50,26 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     // Check if conversation metadata has trigger=resolver
     const isResolverTrigger = conversation?.trigger === "resolver";
 
+    const actionHasObservationPair = React.useCallback(
+      (event: OpenHandsAction | OpenHandsObservation): boolean => {
+        if (isOpenHandsAction(event)) {
+          return !!messages.some(
+            (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
+          );
+        }
+
+        return false;
+      },
+      [messages],
+    );
+
     return (
       <>
         {messages.filter(shouldRenderEvent).map((message, index) => (
           <EventMessage
             key={index}
             event={message}
+            hasObservationPair={actionHasObservationPair(message)}
             isFirstMessageWithResolverTrigger={index === 0 && isResolverTrigger}
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
