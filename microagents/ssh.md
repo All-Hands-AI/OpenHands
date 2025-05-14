@@ -136,13 +136,11 @@ chmod 644 ~/.ssh/id_ed25519.pub
 chmod 700 ~/.ssh
 ```
 
-### Using a Password Manager
+### Using Password and Secrets Managers
 
-Many password managers support storing SSH keys securely:
-- 1Password
-- LastPass
-- Bitwarden
-- KeePass
+Many solutions support storing SSH keys securely:
+- Password managers: 1Password, LastPass, Bitwarden, KeePass
+- Enterprise secrets managers: HashiCorp Vault, Azure Key Vault, AWS Secrets Manager
 
 ## Security Best Practices
 
