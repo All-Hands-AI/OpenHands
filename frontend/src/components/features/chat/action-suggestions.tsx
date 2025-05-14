@@ -1,9 +1,7 @@
 import posthog from "posthog-js";
 import React from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
-import type { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { useUserProviders } from "#/hooks/use-user-providers";
 
@@ -16,17 +14,11 @@ export function ActionSuggestions({
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
   const { providers } = useUserProviders();
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   const providersAreSet = providers.length > 0;
-  const isGitLab =
-    selectedRepository !== null &&
-    selectedRepository.git_provider &&
-    selectedRepository.git_provider.toLowerCase() === "gitlab";
+  const isGitLab = providers.includes("gitlab");
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
@@ -45,7 +37,7 @@ export function ActionSuggestions({
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {providersAreSet && selectedRepository && (
+      {providersAreSet && (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
