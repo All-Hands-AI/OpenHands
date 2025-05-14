@@ -202,8 +202,8 @@ class ActionExecutor:
 
         # Queue for terminal output streaming
         self.terminal_output_queue: deque = deque(
-            maxlen=1000
-        )  # Limit queue size to prevent memory issues
+            maxlen=1000  # Limit queue size to prevent memory issues
+        )
         self.terminal_output_event = asyncio.Event()
         self.current_command_id: str | None = None
 
