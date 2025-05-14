@@ -62,6 +62,8 @@ class ConversationManager(ABC):
         knowledge_base: list[dict] | None,
         space_id: int | None = None,
         thread_follow_up: int | None = None,
+        research_mode: str | None = None,
+        raw_followup_conversation_id: str | None = None,
     ) -> EventStore | None:
         """Join a conversation and return its event stream."""
 
@@ -98,6 +100,8 @@ class ConversationManager(ABC):
         knowledge_base: list[dict] | None = None,
         space_id: int | None = None,
         thread_follow_up: int | None = None,
+        research_mode: str | None = None,
+        raw_followup_conversation_id: str | None = None,
     ) -> EventStore:
         """Start an event loop if one is not already running"""
 

@@ -250,6 +250,7 @@ class LLM(RetryMixin, DebugMixin):
                     add_in_context_learning_example=bool(
                         'openhands-lm' not in self.config.model
                     ),
+                    research_mode=kwargs.get('research_mode', None),
                 )
                 # logger.debug(f'Messages before transform: {messages}')
                 if self.config.model.split('/')[-1] in FORMATTED_MODELS:

@@ -13,6 +13,7 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
+from openhands.core.schema.research import ResearchMode
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
@@ -63,6 +64,7 @@ class AgentSession:
         user_id: str | None = None,
         space_id: int | None = None,
         thread_follow_up: int | None = None,
+        raw_followup_conversation_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -81,6 +83,7 @@ class AgentSession:
         )
         self.space_id = space_id
         self.thread_follow_up = thread_follow_up
+        self.raw_followup_conversation_id = raw_followup_conversation_id
 
     async def start(
         self,
@@ -97,6 +100,7 @@ class AgentSession:
         initial_message: MessageAction | None = None,
         replay_json: str | None = None,
         mnemonic: str | None = None,
+        research_mode: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -136,18 +140,23 @@ class AgentSession:
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             start_time = time.time()
-            runtime_connected = await self._create_runtime(
-                runtime_name=runtime_name,
-                config=config,
-                agent=agent,
-                git_provider_tokens=git_provider_tokens,
-                selected_repository=selected_repository,
-                selected_branch=selected_branch,
-                mnemonic=mnemonic,
-            )
+            runtime_connected = True
+            if research_mode == ResearchMode.FOLLOW_UP:
+                runtime_connected = True
+            else:
+                runtime_connected = await self._create_runtime(
+                    runtime_name=runtime_name,
+                    config=config,
+                    agent=agent,
+                    git_provider_tokens=git_provider_tokens,
+                    selected_repository=selected_repository,
+                    selected_branch=selected_branch,
+                    mnemonic=mnemonic,
+                )
             end_time = time.time()
             total_time = end_time - start_time
             self.logger.debug(f'Total create_runtime time: {total_time:.2f} seconds')
+            start_time = time.time()
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -184,7 +193,6 @@ class AgentSession:
                 )
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
-
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -198,6 +206,9 @@ class AgentSession:
                         EventSource.ENVIRONMENT,
                     )
             finished = True
+            end_time = time.time()
+            total_time = end_time - start_time
+            self.logger.debug(f'Total create_controller time: {total_time:.2f} seconds')
         finally:
             self._starting = False
             success = finished and runtime_connected
@@ -397,10 +408,10 @@ class AgentSession:
 
         if self.controller is not None:
             raise RuntimeError('Controller already created')
-        if self.runtime is None:
-            raise RuntimeError(
-                'Runtime must be initialized before the agent controller'
-            )
+        # if self.runtime is None:
+        #     raise RuntimeError(
+        #         'Runtime must be initialized before the agent controller'
+        #     )
 
         msg = (
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
@@ -433,6 +444,7 @@ class AgentSession:
             user_id=self.user_id,
             space_id=self.space_id,
             thread_follow_up=self.thread_follow_up,
+            raw_followup_conversation_id=self.raw_followup_conversation_id,
         )
 
         return controller

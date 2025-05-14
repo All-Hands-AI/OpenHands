@@ -8,6 +8,8 @@ from httpx import request
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.a2a.A2AManager import A2AManager
 from openhands.a2a.tool import ListRemoteAgents, SendTask
+from openhands.agenthub.codeact_agent.tools.finish import FinishTool
+from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -187,6 +189,7 @@ class CodeActAgent(Agent):
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         # if chat mode, we need to use the search tools
         params['tools'] = []
+
         if research_mode is None or research_mode == ResearchMode.CHAT:
             built_in_tools = codeact_function_calling.get_tools(
                 codeact_enable_browsing=False,
@@ -196,7 +199,10 @@ class CodeActAgent(Agent):
             )
             params['tools'] = built_in_tools + self.search_tools
         if research_mode == ResearchMode.FOLLOW_UP:
-            params['tools'] = self.tools
+            params['tools'] = [
+                ThinkTool,
+                FinishTool,
+            ]
         else:
             params['tools'] = self.tools
             if self.mcp_tools:
@@ -321,6 +327,7 @@ class CodeActAgent(Agent):
         if research_mode == ResearchMode.FOLLOW_UP:
             messages = self.conversation_memory.process_initial_followup_message(
                 with_caching=self.llm.is_caching_prompt_active(),
+                knowledge_base=convert_knowledge_to_list,
             )
         elif research_mode is None or research_mode == ResearchMode.CHAT:
             messages = self.conversation_memory.process_initial_chatmode_message(

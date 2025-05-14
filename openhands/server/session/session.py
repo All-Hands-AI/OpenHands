@@ -11,6 +11,7 @@ from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
+from openhands.core.schema.research import ResearchMode
 from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import (
@@ -54,6 +55,7 @@ class Session:
         user_id: str | None = None,
         space_id: int | None = None,
         thread_follow_up: int | None = None,
+        raw_followup_conversation_id: str | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -67,6 +69,7 @@ class Session:
             user_id=user_id,
             space_id=space_id,
             thread_follow_up=thread_follow_up,
+            raw_followup_conversation_id=raw_followup_conversation_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -77,6 +80,7 @@ class Session:
         self.user_id = user_id
         self.space_id = space_id
         self.thread_follow_up = thread_follow_up
+        self.raw_followup_conversation_id = raw_followup_conversation_id
 
     async def close(self):
         if self.sio:
@@ -100,6 +104,7 @@ class Session:
         user_prompt: str | None = None,
         mcp_disable: dict[str, bool] | None = None,
         knowledge_base: list[dict] | None = None,
+        research_mode: str | None = None,
     ):
         start_time = time.time()
         self.agent_session.event_stream.add_event(
@@ -160,19 +165,27 @@ class Session:
                 if key in self.config.dict_mcp_config and mcp_disable[key]:
                     del self.config.dict_mcp_config[key]
 
-        mcp_tools = await fetch_mcp_tools_from_config(
-            self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic
-        )
-
-        search_tools = await fetch_search_tools_from_config(
-            self.config.dict_search_engine_config, sid=self.sid, mnemonic=mnemonic
-        )
-
         workspace_mount_path_in_sandbox_store_in_session = (
             self.config.workspace_mount_path_in_sandbox_store_in_session
         )
         if self.config.runtime == 'local':
             workspace_mount_path_in_sandbox_store_in_session = False
+
+        mcp_tools = (
+            await fetch_mcp_tools_from_config(
+                self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic
+            )
+            if research_mode == ResearchMode.FOLLOW_UP
+            else []
+        )
+
+        search_tools = (
+            await fetch_search_tools_from_config(
+                self.config.dict_search_engine_config, sid=self.sid, mnemonic=mnemonic
+            )
+            if research_mode == ResearchMode.FOLLOW_UP
+            else []
+        )
 
         a2a_manager: A2AManager = A2AManager(agent_config.a2a_server_urls)
         try:
@@ -224,6 +237,7 @@ class Session:
                 initial_message=initial_message,
                 replay_json=replay_json,
                 mnemonic=mnemonic,
+                research_mode=research_mode,
             )
             end_time = time.time()
             total_time = end_time - start_time

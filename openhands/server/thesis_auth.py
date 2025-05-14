@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.research import ResearchMode
 
 
 class UserStatus(IntEnum):
@@ -114,6 +115,28 @@ async def add_invite_code_to_user(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def handle_api_response(response, operation_name):
+    """
+    Process the response from the API
+    """
+    if response.status_code >= 400:
+        error_message = f'{operation_name} failed: {response.status_code}'
+        try:
+            error_detail = response.json().get('error', 'Unknown error')
+            if isinstance(error_detail, dict) and 'message' in error_detail:
+                error_detail = error_detail['message']
+        except Exception:
+            error_detail = response.text or 'Unknown error'
+
+        logger.error(f'{error_message} - {error_detail}')
+
+        # Return the correct status code from the API
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=error_detail,
+        )
+
+
 async def handle_thesis_auth_request(
     method: str,
     endpoint: str,
@@ -135,29 +158,25 @@ async def handle_thesis_auth_request(
             params=params,
         )
 
-        if response.status_code >= 400:
-            logger.error(
-                f'Thesis_auth request failed: {method} {endpoint} {response.status_code} - {response.text}'
-            )
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=response.json().get('error', 'Internal server error'),
-            )
-
+        await handle_api_response(response, f'Thesis_auth request {method} {endpoint}')
         return response.json()
 
     except httpx.RequestError as exc:
         logger.error(
             f'Connection error in Thesis_auth request: {method} {endpoint} {str(exc)}'
         )
-        raise HTTPException(status_code=500, detail='Unable to connect to auth server')
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail='Unable to connect to auth server',
+        )
 
     except Exception as e:
         logger.exception(
             f'Unexpected error in Thesis_auth request: {method} {endpoint}'
         )
         raise HTTPException(
-            status_code=500, detail=str(getattr(e, 'detail', 'Internal server error'))
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(getattr(e, 'detail', 'Internal server error')),
         )
 
 
@@ -185,6 +204,8 @@ async def create_thread(
     initial_user_msg: str | None = None,
     bearer_token: str | None = None,
     x_device_id: str | None = None,
+    followup_discover_id: str | None = None,
+    research_mode: str | None = None,
 ) -> dict | None:
     url = '/api/threads'
     payload = {'conversationId': conversation_id, 'prompt': initial_user_msg}
@@ -197,25 +218,25 @@ async def create_thread(
 
     if follow_up_id is not None:
         payload['forkById'] = str(follow_up_id)
+    if followup_discover_id is not None:
+        payload['followupDiscoverId'] = followup_discover_id
+    if research_mode is not None and research_mode == ResearchMode.FOLLOW_UP:
+        payload['researchMode'] = research_mode
     try:
         response = await thesis_auth_client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            logger.error(
-                f'Failed to create thread: {response.status_code} - {response.text}'
-            )
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=response.json().get('error', 'Unknown error'),
-            )
+        await handle_api_response(response, 'Create thread')
         return response.json()
     except httpx.RequestError as exc:
-        logger.error(f'Request error while creating thread: {str(exc)}')
+        logger.error(f'Connection error creating thread: {str(exc)}')
         raise HTTPException(
-            status_code=500, detail='Could not connect to thread server'
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail='Could not connect to thread server',
         )
     except Exception as e:
-        logger.exception('Unexpected error while creating thread')
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception('Unexpected error creating thread')
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 async def search_knowledge(
@@ -237,7 +258,7 @@ async def search_knowledge(
         'Content-Type': 'application/json',
         'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
     }
-    print(f'Payload search knowledge: {payload}')
+    logger.debug(f'payload: {payload}')
     try:
         async with httpx.AsyncClient(
             timeout=30.0,
@@ -245,14 +266,12 @@ async def search_knowledge(
             headers={'Content-Type': 'application/json'},
         ) as client:
             response = await client.post(url, headers=headers, json=payload)
+
         if response.status_code != 200:
             logger.error(
                 f'Failed to search knowledge: {response.status_code} - {response.text}'
             )
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=response.json().get('error', 'Unknown error'),
-            )
+            return None
         data = response.json()['data']
         print(f'Data search knowledge: {data}')
         if data:
@@ -266,7 +285,7 @@ async def search_knowledge(
         #     status_code=500, detail='Could not connect to knowledge server'
         # )
     except Exception:
-        logger.exception('Unexpected error while searching knowledge')
+        logger.error('Unexpected error while searching knowledge')
         return None
 
 
@@ -319,7 +338,6 @@ async def delete_thread(
             )
 
         return response.json()
-
     except httpx.RequestError as exc:
         logger.error(f'Request error while deleting thread: {str(exc)}')
         raise HTTPException(status_code=500, detail='Could not connect to auth server')
@@ -358,3 +376,25 @@ async def change_thread_visibility(
     except Exception as e:
         logger.exception('Unexpected error while changing thread visibility')
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def get_thread_by_id(
+    thread_id: int,
+) -> dict | None:
+    url = f'/api/threads/openhand-server/{thread_id}'
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+    }
+    try:
+        response = await thesis_auth_client.get(url, headers=headers)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to get thread: {response.status_code} - {response.text}'
+            )
+            return None
+        data = response.json()['data']
+        return data
+    except httpx.RequestError as exc:
+        logger.error(f'Request error while getting thread: {str(exc)}')
+        return None
