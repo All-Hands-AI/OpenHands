@@ -51,10 +51,9 @@ export function GitHubTokenInput({
         placeholder="github.com"
         defaultValue={githubHostSet || undefined}
         startContent={
-          githubHostSet && githubHostSet.trim() !== "" ? (
+          githubHostSet &&
+          githubHostSet.trim() !== "" && (
             <KeyStatusIcon testId="gh-set-host-indicator" isSet />
-          ) : (
-            <KeyStatusIcon testId="gh-set-host-indicator" isSet={false} />
           )
         }
       />
