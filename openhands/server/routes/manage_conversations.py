@@ -71,7 +71,7 @@ async def _create_new_conversation(
     replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
-) -> str:
+) -> ConversationInfo:
     logger.info(
         'Creating conversation',
         extra={
@@ -150,15 +150,15 @@ async def _create_new_conversation(
             content=user_msg or '',
             image_urls=image_urls or [],
         )
-    await conversation_manager.maybe_start_agent_loop(
+    conversation_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
     )
-    logger.info(f'Finished initializing conversation {conversation_id}')
-    return conversation_id
+    logger.info(f'Finished initializing conversation {conversation_info.conversation_id}')
+    return conversation_info
 
 
 @app.post('/conversations')
@@ -198,7 +198,7 @@ async def new_conversation(
             await provider_handler.verify_repo_provider(repository, git_provider)
 
         # Create conversation with initial message
-        conversation_id = await _create_new_conversation(
+        conversation_info = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             selected_repository=repository,
@@ -210,7 +210,7 @@ async def new_conversation(
         )
 
         return JSONResponse(
-            content={'status': 'ok', 'conversation_id': conversation_id}
+            content={'status': 'ok', 'conversation_id': conversation_info.conversation_id, 'conversation_url': conversation_info.url}
         )
     except MissingSettingsError as e:
         return JSONResponse(

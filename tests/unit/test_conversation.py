@@ -237,7 +237,10 @@ async def test_new_conversation_success(provider_handler_mock):
             'openhands.server.routes.manage_conversations._create_new_conversation'
         ) as mock_create_conversation:
             # Set up the mock to return a conversation ID
-            mock_create_conversation.return_value = 'test_conversation_id'
+            mock_create_conversation.return_value = ConversationInfo(
+                conversation_id='test_conversation_id',
+                url='https://my-conversation.com',
+            )
 
             test_request = InitSessionRequest(
                 repository='test/repo',
@@ -254,7 +257,7 @@ async def test_new_conversation_success(provider_handler_mock):
             assert response.status_code == 200
             assert (
                 response.body.decode('utf-8')
-                == '{"status":"ok","conversation_id":"test_conversation_id"}'
+                == '{"status":"ok","conversation_id":"test_conversation_id","conversation_url":"https://my-conversation.com"}'
             )
 
             # Verify that _create_new_conversation was called with the correct arguments
@@ -277,7 +280,10 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
             'openhands.server.routes.manage_conversations._create_new_conversation'
         ) as mock_create_conversation:
             # Set up the mock to return a conversation ID
-            mock_create_conversation.return_value = 'test_conversation_id'
+            mock_create_conversation.return_value = ConversationInfo(
+                conversation_id='test_conversation_id',
+                url='https://my-conversation.com',
+            )
 
             # Mock SuggestedTask.get_prompt_for_task
             with patch(
@@ -309,7 +315,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 assert response.status_code == 200
                 assert (
                     response.body.decode('utf-8')
-                    == '{"status":"ok","conversation_id":"test_conversation_id"}'
+                    == '{"status":"ok","conversation_id":"test_conversation_id","conversation_url":"https://my-conversation.com"}'
                 )
 
                 # Verify that _create_new_conversation was called with the correct arguments

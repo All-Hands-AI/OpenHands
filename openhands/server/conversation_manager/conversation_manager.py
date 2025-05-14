@@ -8,6 +8,7 @@ from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
 from openhands.events.event_store import EventStore
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -83,7 +84,7 @@ class ConversationManager(ABC):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
         github_user_id: str | None = None,
-    ) -> EventStore:
+    ) -> ConversationInfo:
         """Start an event loop if one is not already running"""
 
     @abstractmethod
