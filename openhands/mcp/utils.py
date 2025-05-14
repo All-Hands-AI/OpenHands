@@ -169,10 +169,9 @@ async def add_mcp_tools_to_agent(
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     extra_stdio_servers = []
     for mcp_config in microagent_mcp_configs:
-        # Only add stdio servers from microagents for security reasons
-        if mcp_config.sse_servers and not mcp_config.stdio_servers:
+        if mcp_config.sse_servers:
             logger.warning(
-                'Microagent MCP config contains SSE servers but no stdio servers. SSE servers are not supported for security reasons.'
+                'Microagent MCP config contains SSE servers, it is not yet supported.'
             )
 
         if mcp_config.stdio_servers:
