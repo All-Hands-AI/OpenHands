@@ -11,7 +11,7 @@ export const useActionExecutionServerUrl = () => {
   const { conversationId } = useConversation();
 
   const { data } = useQuery({
-    queryKey: [conversationId, "url"],
+    queryKey: ["conversation", "action_execution_server", conversationId],
     queryFn: async () => {
       const response = await openHands.get<{ url: string }>(
         `/api/conversations/${conversationId}/action-execution-server-url`,
