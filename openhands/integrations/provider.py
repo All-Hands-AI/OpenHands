@@ -173,7 +173,7 @@ class ProviderHandler:
         if self.config is not None:
             workspace_base = self.config.workspace_base
 
-        if workspace_base or os.environ.get('WORKSPACE_BASE'):
+        if workspace_base:
             try:
                 # Create a local git service instance
                 local_service = LocalGitServiceImpl()
