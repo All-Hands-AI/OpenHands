@@ -6,10 +6,6 @@ from sqlalchemy import desc, func, or_, select
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
 from openhands.server.models import Conversation, ResearchTrending, ResearchView
-from openhands.server.shared import (
-    ConversationStoreImpl,
-    config,
-)
 from openhands.server.static import SortBy
 
 
@@ -143,6 +139,10 @@ class ConversationModule:
                     'thread_follow_up': existing_record.configs.get(
                         'thread_follow_up', None
                     ),
+                    'research_mode': existing_record.configs.get('research_mode', None),
+                    'raw_followup_conversation_id': existing_record.configs.get(
+                        'raw_followup_conversation_id', None
+                    ),
                 }
             user_id = existing_record.user_id
             return None, {
@@ -151,6 +151,10 @@ class ConversationModule:
                 'space_id': existing_record.configs.get('space_id', None),
                 'thread_follow_up': existing_record.configs.get(
                     'thread_follow_up', None
+                ),
+                'research_mode': existing_record.configs.get('research_mode', None),
+                'raw_followup_conversation_id': existing_record.configs.get(
+                    'raw_followup_conversation_id', None
                 ),
             }
         except Exception as e:
@@ -180,6 +184,11 @@ class ConversationModule:
             return False
 
     async def _get_raw_conversation_info(self, conversation_id: str, user_id: str):
+        from openhands.server.shared import (
+            ConversationStoreImpl,
+            config,
+        )
+
         try:
             conversation_store = await ConversationStoreImpl.get_instance(
                 config, user_id, None

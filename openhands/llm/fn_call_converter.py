@@ -17,6 +17,7 @@ from openhands.core.exceptions import (
     FunctionCallConversionError,
     FunctionCallValidationError,
 )
+from openhands.core.schema.research import ResearchMode
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
 SYSTEM_PROMPT_SUFFIX_TEMPLATE = """
@@ -272,7 +273,7 @@ def convert_tools_to_description(tools: list[dict]) -> str:
         fn = tool['function']
         if i > 0:
             ret += '\n'
-        ret += f"---- BEGIN FUNCTION #{i+1}: {fn['name']} ----\n"
+        ret += f"---- BEGIN FUNCTION #{i + 1}: {fn['name']} ----\n"
         ret += f"Description: {fn['description']}\n"
 
         if 'parameters' in fn:
@@ -295,12 +296,12 @@ def convert_tools_to_description(tools: list[dict]) -> str:
                     desc += f'\nAllowed values: [{enum_values}]'
 
                 ret += (
-                    f'  ({j+1}) {param_name} ({param_type}, {param_status}): {desc}\n'
+                    f'  ({j + 1}) {param_name} ({param_type}, {param_status}): {desc}\n'
                 )
         else:
             ret += 'No parameters are required for this function.\n'
 
-        ret += f'---- END FUNCTION #{i+1} ----\n'
+        ret += f'---- END FUNCTION #{i + 1} ----\n'
     return ret
 
 
@@ -308,6 +309,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
     add_in_context_learning_example: bool = True,
+    research_mode: str | None = None,
 ) -> list[dict]:
     """Convert function calling messages to non-function calling messages."""
     messages = copy.deepcopy(messages)
@@ -346,30 +348,34 @@ def convert_fncall_messages_to_non_fncall_messages(
                 first_user_message_encountered = True
                 # Check tools
                 if not (
-                    tools
-                    and len(tools) > 0
-                    and any(
-                        (
-                            tool['type'] == 'function'
-                            and tool['function']['name'] == 'execute_bash'
-                            and 'command'
-                            in tool['function']['parameters']['properties']
+                    (research_mode and research_mode == ResearchMode.FOLLOW_UP)
+                    or (
+                        tools
+                        and len(tools) > 0
+                        and any(
+                            (
+                                tool['type'] == 'function'
+                                and tool['function']['name'] == 'execute_bash'
+                                and 'command'
+                                in tool['function']['parameters']['properties']
+                            )
+                            for tool in tools
                         )
-                        for tool in tools
-                    )
-                    and any(
-                        (
-                            tool['type'] == 'function'
-                            and tool['function']['name'] == 'str_replace_editor'
-                            and 'path' in tool['function']['parameters']['properties']
-                            and 'file_text'
-                            in tool['function']['parameters']['properties']
-                            and 'old_str'
-                            in tool['function']['parameters']['properties']
-                            and 'new_str'
-                            in tool['function']['parameters']['properties']
+                        and any(
+                            (
+                                tool['type'] == 'function'
+                                and tool['function']['name'] == 'str_replace_editor'
+                                and 'path'
+                                in tool['function']['parameters']['properties']
+                                and 'file_text'
+                                in tool['function']['parameters']['properties']
+                                and 'old_str'
+                                in tool['function']['parameters']['properties']
+                                and 'new_str'
+                                in tool['function']['parameters']['properties']
+                            )
+                            for tool in tools
                         )
-                        for tool in tools
                     )
                 ):
                     raise FunctionCallConversionError(
@@ -658,7 +664,7 @@ def convert_non_fncall_messages_to_fncall_messages(
                         'content': [{'type': 'text', 'text': tool_result}]
                         if isinstance(content, list)
                         else tool_result,
-                        'tool_call_id': f'toolu_{tool_call_counter-1:02d}',  # Use last generated ID
+                        'tool_call_id': f'toolu_{tool_call_counter - 1:02d}',  # Use last generated ID
                     }
                 )
             else:
