@@ -198,7 +198,7 @@ class CodeActAgent(Agent):
                 llm=self.llm,
             )
             params['tools'] = built_in_tools + self.search_tools
-        if research_mode == ResearchMode.FOLLOW_UP:
+        elif research_mode == ResearchMode.FOLLOW_UP:
             params['tools'] = [
                 ThinkTool,
                 FinishTool,
