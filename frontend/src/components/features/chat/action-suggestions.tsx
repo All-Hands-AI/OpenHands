@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { I18nKey } from "#/i18n/declaration";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { useConversation } from "#/context/conversation-context";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -14,6 +16,8 @@ export function ActionSuggestions({
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
   const { providers } = useUserProviders();
+  const { conversationId } = useConversation();
+  const { data: conversation } = useUserConversation(conversationId);
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
@@ -37,7 +41,7 @@ export function ActionSuggestions({
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {providersAreSet && (
+      {providersAreSet && conversation?.selected_repository && (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
