@@ -68,7 +68,8 @@
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
     "prepare": "cd .. && husky frontend/.husky",
     "typecheck": "react-router typegen && tsc",
-    "check-unlocalized-strings": "node scripts/check-unlocalized-strings.cjs"
+    "check-unlocalized-strings": "node scripts/check-unlocalized-strings.cjs",
+    "check-translation-completeness": "node scripts/check-translation-completeness.cjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [

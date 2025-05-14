@@ -1,8 +1,3 @@
----
-name: repo
-type: repo
-agent: CodeActAgent
----
 This repository contains the code for OpenHands, an automated AI software engineer. It has a Python backend
 (in the `openhands` directory) and React frontend (in the `frontend` directory).
 
