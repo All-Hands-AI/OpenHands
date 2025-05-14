@@ -3,6 +3,7 @@ import json
 import os
 import uuid
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -22,19 +23,8 @@ class Mem0MetadataType(Enum):
 client = MemoryClient(api_key=os.getenv('MEM0_API_KEY'))
 
 
-async def process_single_event_for_mem0(
-    conversation_id: str, event: dict
-) -> list[dict]:
-    """
-    Processes a single event dict and returns a list of mem0 events in the same format as retrieve_conversation_and_embedding_mem0.
-    Also adds the parsed events to mem0 in the background (non-blocking).
-    """
-    parsed_events = []
-    metadata = {'chunk_id': str(uuid.uuid4())}
-    source = event.get('source')
-    action = event.get('action')
-    observation = event.get('observation')
-    # Prefer 'message', fallback to 'args.content', then 'content'
+def _extract_content_from_event(event: dict) -> Optional[str]:
+    """Extracts the main content from an event, checking message, args.content, then content."""
     content = event.get('message')
     if not content:
         args = event.get('args')
@@ -42,19 +32,50 @@ async def process_single_event_for_mem0(
             content = args.get('content')
     if not content:
         content = event.get('content')
+    return content
+
+
+def _extract_file_text_from_tool_call(tool_calls: list) -> Optional[str]:
+    """Extracts file_text from the first tool_call's function.arguments, if present and valid JSON."""
+    if tool_calls and 'function' in tool_calls[0]:
+        arguments_str = tool_calls[0]['function'].get('arguments')
+        if arguments_str:
+            try:
+                arguments_json = json.loads(arguments_str)
+                return arguments_json.get('file_text') or arguments_str
+            except Exception as e:
+                logger.warning(f'Failed to parse arguments as JSON: {e}')
+                return arguments_str
+    return None
+
+
+async def process_single_event_for_mem0(
+    conversation_id: str, event: dict
+) -> List[Dict[str, Any]]:
+    """
+    Processes a single event dict and returns a list of mem0 events in the format {role, content}.
+    Also adds the parsed events to mem0 in the background (non-blocking).
+    """
+    parsed_events: List[Dict[str, Any]] = []
+    metadata: Dict[str, Any] = {'chunk_id': str(uuid.uuid4())}
+    source = event.get('source')
+    action = event.get('action')
+    observation = event.get('observation')
+    content = _extract_content_from_event(event)
+
     if (
         not content
         and not (source == 'agent' and observation == 'edit')
         and action != 'finish'
     ):
-        return []  # skip if no content unless it's an edit or finish event
+        return []
+
     if source == 'user':
         parsed_events.append({'role': 'user', 'content': content})
     elif source == 'agent':
         if observation == 'mcp':
             return []
         elif observation == 'edit':
-            # Add two events for edit: message content and tool_call arguments
             tool_call_metadata = event.get('tool_call_metadata', {})
             model_response = tool_call_metadata.get('model_response', {})
             choices = model_response.get('choices', [])
@@ -65,65 +86,35 @@ async def process_single_event_for_mem0(
                 if edit_content:
                     parsed_events.append({'role': 'assistant', 'content': edit_content})
                 # Second event: tool_calls[0].function.arguments (extract file_text)
-                tool_calls = message_obj.get('tool_calls', [])
-                if tool_calls and 'function' in tool_calls[0]:
-                    arguments_str = tool_calls[0]['function'].get('arguments')
-                    if arguments_str:
-                        try:
-                            arguments_json = json.loads(arguments_str)
-                            file_text = arguments_json.get('file_text')
-                            if file_text:
-                                parsed_events.append(
-                                    {'role': 'assistant', 'content': file_text}
-                                )
-                            else:
-                                parsed_events.append(
-                                    {'role': 'assistant', 'content': arguments_str}
-                                )
-                            # Use .value to ensure JSON serializable
-                            metadata['type'] = Mem0MetadataType.REPORT_FILE.value
-                        except Exception as e:
-                            logger.warning(f'Failed to parse arguments as JSON: {e}')
-            # No normal agent append for edit
+                file_text = _extract_file_text_from_tool_call(
+                    message_obj.get('tool_calls', [])
+                )
+                if file_text:
+                    parsed_events.append({'role': 'assistant', 'content': file_text})
+                metadata['type'] = Mem0MetadataType.REPORT_FILE.value
         elif action == 'finish':
-            # Add event for finish: tool_call arguments (extract file_text)
             tool_call_metadata = event.get('tool_call_metadata', {})
             model_response = tool_call_metadata.get('model_response', {})
             choices = model_response.get('choices', [])
             if choices and 'message' in choices[0]:
                 message_obj = choices[0]['message']
-                tool_calls = message_obj.get('tool_calls', [])
-                if tool_calls and 'function' in tool_calls[0]:
-                    arguments_str = tool_calls[0]['function'].get('arguments')
-                    if arguments_str:
-                        try:
-                            arguments_json = json.loads(arguments_str)
-                            file_text = arguments_json.get('file_text')
-                            if file_text:
-                                parsed_events.append(
-                                    {'role': 'assistant', 'content': file_text}
-                                )
-                            else:
-                                parsed_events.append(
-                                    {'role': 'assistant', 'content': arguments_str}
-                                )
-                            # Use .value to ensure JSON serializable
-                            metadata['type'] = Mem0MetadataType.FINISH_CONCLUSION.value
-                        except Exception as e:
-                            logger.warning(f'Failed to parse arguments as JSON: {e}')
-            # No normal agent append for finish
-            # else:
-            #     parsed_events.append({"role": "assistant", "content": content})
+                file_text = _extract_file_text_from_tool_call(
+                    message_obj.get('tool_calls', [])
+                )
+                if file_text:
+                    parsed_events.append({'role': 'assistant', 'content': file_text})
+                metadata['type'] = Mem0MetadataType.FINISH_CONCLUSION.value
+        # else:  # If you want to handle other agent cases, add here
+        #     parsed_events.append({'role': 'assistant', 'content': content})
 
     if MemoryClient is None:
         logger.warning('MemoryClient is not available. Skipping mem0 add.')
         return parsed_events
 
     logger.info(f'duongtd_parsed_events: {parsed_events}')
-    if len(parsed_events) > 0:
+    if parsed_events:
         add_result = await asyncio.to_thread(
             client.add,
-            # user_id=conversation_id,
             agent_id=conversation_id,
             messages=parsed_events,
             metadata=metadata,
@@ -134,43 +125,43 @@ async def process_single_event_for_mem0(
 
 
 async def search_knowledge_mem0(
-    question: str | None = None,
-    space_id: int | None = None,
-    raw_followup_conversation_id: str | None = None,
-    user_id: str | None = None,
-) -> list[dict] | None:
-    try:
-        # hardcode_testing_thread_id = '90d9c144cfa94ffea286c68c5bffc1be'
-        if MemoryClient is None:
-            logger.warning('MemoryClient is not available. Skipping mem0 search.')
-            return None
-        memories = client.search(
-            query=question,
-            agent_id=raw_followup_conversation_id,
-            metadata={'type': Mem0MetadataType.REPORT_FILE.value},
-            infer=True,
-            top_k=10,
-            keyword_search=True,
-        )
-        # logger.info(f'duongtd_memories: {memories}')
-        if len(memories) > 0:
-            memory_id = memories[0]['id']
-            histories = client.history(memory_id)
-            if len(histories) > 0:
-                knowledge = histories[0]['input']
-                chunk_id = histories[0]['metadata']['chunk_id']
-                # logger.info(f'duongtd_knowledge: {knowledge}')
-                knowledge_base = []
-                for k in knowledge:
-                    k['chunkId'] = chunk_id
-                    knowledge_base.append(k)
-                return knowledge_base
-            else:
-                return None
+    question: Optional[str] = None,
+    space_id: Optional[int] = None,
+    raw_followup_conversation_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+) -> Optional[List[dict]]:
+    """
+    Search mem0 for knowledge chunks related to the question and conversation.
+    Tries both REPORT_FILE and FINISH_CONCLUSION types. Returns a list of knowledge dicts, each with a chunkId, or None if not found.
+    """
+    if MemoryClient is None:
+        logger.warning('MemoryClient is not available. Skipping mem0 search.')
         return None
-    except Exception:
-        logger.exception('Unexpected error while searching knowledge')
-        return None
+
+    for meta_type in [Mem0MetadataType.REPORT_FILE, Mem0MetadataType.FINISH_CONCLUSION]:
+        try:
+            memories = client.search(
+                query=question,
+                agent_id=raw_followup_conversation_id,
+                metadata={'type': meta_type.value},
+                infer=True,
+                top_k=10,
+                keyword_search=True,
+            )
+            if memories:
+                memory_id = memories[0]['id']
+                histories = client.history(memory_id)
+                if histories:
+                    knowledge = histories[0]['input']
+                    chunk_id = histories[0]['metadata'].get(
+                        'chunk_id', str(uuid.uuid4())
+                    )
+                    return [{**k, 'chunkId': chunk_id} for k in knowledge]
+        except Exception:
+            logger.exception(
+                f'Unexpected error while searching knowledge for type {meta_type}'
+            )
+    return None
 
 
 # async def retrieve_conversation_and_embedding_mem0(
