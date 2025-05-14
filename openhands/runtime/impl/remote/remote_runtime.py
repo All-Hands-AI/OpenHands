@@ -93,9 +93,9 @@ class RemoteRuntime(ActionExecutionClient):
         )
         self.available_hosts: dict[str, int] = {}
 
-    def log(self, level: str, message: str) -> None:
+    def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
-        getattr(logger, level)(message, stacklevel=2)
+        getattr(logger, level)(message, stacklevel=2, exc_info=exc_info)
 
     @property
     def action_execution_server_url(self) -> str:
@@ -108,7 +108,7 @@ class RemoteRuntime(ActionExecutionClient):
             await call_sync_from_async(self._start_or_attach_to_runtime)
         except Exception:
             self.close()
-            self.log('error', 'Runtime failed to start')
+            self.log('error', 'Runtime failed to start', exc_info=True)
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
