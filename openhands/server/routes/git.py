@@ -11,7 +11,6 @@ from openhands.integrations.service_types import (
     Branch,
     Repository,
     SuggestedTask,
-    UnknownException,
     User,
 )
 from openhands.server.shared import config as app_config
@@ -55,47 +54,15 @@ async def get_user(
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> User | JSONResponse:
-    # Check if any provider is connected (including local provider)
-    if provider_tokens:
-        client = ProviderHandler(
-            provider_tokens=provider_tokens,
-            external_auth_token=access_token,
-            external_auth_id=user_id,
-            config=app_config,
-        )
-
-        try:
-            user: User = await client.get_user()
-            return user
-
-        except AuthenticationError as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        except UnknownException as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    # Check if local git provider should be available
-    if app_config.workspace_base:
-        # Return a placeholder user for local git provider
-        return User(
-            id=0,
-            login='local-user',
-            avatar_url='',
-            company=None,
-            name='Local Git User',
-            email=None,
-        )
-
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
+    client = ProviderHandler(
+        provider_tokens=provider_tokens,
+        external_auth_token=access_token,
+        external_auth_id=user_id,
+        config=app_config,
     )
+
+    user: User = await client.get_user()
+    return user
 
 
 @app.get('/search/repositories', response_model=list[Repository])
@@ -112,17 +79,10 @@ async def search_repositories(
         external_auth_token=access_token,
         config=app_config,
     )
-    try:
-        repos: list[Repository] = await client.search_repositories(
-            query, per_page, sort, order
-        )
-        return repos
-
-    except AuthenticationError as e:
-        return JSONResponse(
-            content=str(e),
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
+    repos: list[Repository] = await client.search_repositories(
+        query, per_page, sort, order
+    )
+    return repos
 
 
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
@@ -159,27 +119,8 @@ async def get_repository_branches(
     Returns:
         A list of branches for the repository
     """
-    if provider_tokens:
-        client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
-        )
-        try:
-            branches: list[Branch] = await client.get_branches(repository)
-            return branches
-
-        except AuthenticationError as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        except UnknownException as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
+    client = ProviderHandler(
+        provider_tokens=provider_tokens, external_auth_token=access_token
     )
+    branches: list[Branch] = await client.get_branches(repository)
+    return branches
