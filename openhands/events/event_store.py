@@ -124,19 +124,9 @@ class EventStore(EventStoreABC):
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id, self.user_id)
-        try:
-            content = self.file_store.read(filename)
-            data = json.loads(content)
-            return event_from_dict(data)
-        except FileNotFoundError:
-            logger.debug(f'File {filename} not found')
-            # TODO remove this block after 5/1/2025
-            if self.user_id:
-                filename = self._get_filename_for_id(id, None)
-                content = self.file_store.read(filename)
-                data = json.loads(content)
-                return event_from_dict(data)
-            raise
+        content = self.file_store.read(filename)
+        data = json.loads(content)
+        return event_from_dict(data)
 
     def get_latest_event(self) -> Event:
         return self.get_event(self.cur_id - 1)
