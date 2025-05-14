@@ -1,6 +1,7 @@
 # Azure
 
-OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their documentation on using Azure as a provider [here](https://docs.litellm.ai/docs/providers/azure).
+OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their documentation on using Azure as a 
+provider [here](https://docs.litellm.ai/docs/providers/azure).
 
 ## Azure OpenAI Configuration
 
@@ -18,7 +19,7 @@ docker run -it --pull=always \
     ...
 ```
 
-Then in the OpenHands UI Settings:
+Then in the OpenHands UI Settings under the `LLM` tab:
 
 :::note
 You will need your ChatGPT deployment name which can be found on the deployments page in Azure. This is referenced as

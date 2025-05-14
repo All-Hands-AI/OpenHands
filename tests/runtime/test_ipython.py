@@ -77,9 +77,9 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     action_read = FileReadAction(path='hello.sh')
     logger.info(action_read, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_read)
-    assert isinstance(
-        obs, FileReadObservation
-    ), 'The observation should be a FileReadObservation.'
+    assert isinstance(obs, FileReadObservation), (
+        'The observation should be a FileReadObservation.'
+    )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == 'echo "Hello, World!"\n'

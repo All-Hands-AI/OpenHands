@@ -6,6 +6,9 @@ import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
+import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
+import { useDebounce } from "#/hooks/use-debounce";
+import { sanitizeQuery } from "#/utils/sanitize-query";
 import {
   RepositoryDropdown,
   RepositoryLoadingState,
@@ -47,6 +50,10 @@ export function RepositorySelectionForm({
   const isCreatingConversationElsewhere = useIsCreatingConversation();
   const { t } = useTranslation();
 
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const { data: searchedRepos } = useSearchRepositories(debouncedSearchQuery);
+
   // Auto-select main or master branch if it exists, but only if the branch wasn't manually cleared
   React.useEffect(() => {
     if (
@@ -74,7 +81,8 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  const repositoriesItems = repositories?.map((repo) => ({
+  const allRepositories = repositories?.concat(searchedRepos || []);
+  const repositoriesItems = allRepositories?.map((repo) => ({
     key: repo.id,
     label: repo.full_name,
   }));
@@ -85,7 +93,7 @@ export function RepositorySelectionForm({
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = repositories?.find(
+    const selectedRepo = allRepositories?.find(
       (repo) => repo.id.toString() === key,
     );
 
@@ -107,6 +115,9 @@ export function RepositorySelectionForm({
       setSelectedRepository(null);
       setSelectedBranch(null);
       onRepoSelection(null);
+    } else if (value.startsWith("https://")) {
+      const repoName = sanitizeQuery(value);
+      setSearchQuery(repoName);
     }
   };
 
@@ -138,6 +149,15 @@ export function RepositorySelectionForm({
         items={repositoriesItems || []}
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
+        defaultFilter={(textValue, inputValue) => {
+          if (!inputValue) return true;
+
+          const repo = allRepositories?.find((r) => r.full_name === textValue);
+          if (!repo) return false;
+
+          const sanitizedInput = sanitizeQuery(inputValue);
+          return sanitizeQuery(textValue).includes(sanitizedInput);
+        }}
       />
     );
   };
@@ -193,7 +213,6 @@ export function RepositorySelectionForm({
         onClick={() =>
           createConversation({
             selectedRepository,
-            conversation_trigger: "gui",
             selected_branch: selectedBranch?.name,
           })
         }

@@ -2,15 +2,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -31,7 +28,6 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
-    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -48,13 +44,12 @@ from openhands.storage.data_models.conversation_metadata import (
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
-from openhands.utils.conversation_summary import generate_conversation_title
+from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api')
 
 
 class InitSessionRequest(BaseModel):
-    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
     repository: str | None = None
     git_provider: ProviderType | None = None
     selected_branch: str | None = None
@@ -99,13 +94,13 @@ async def _create_new_conversation(
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):
-            logger.warn(f'Missing api key for model {settings.llm_model}')
+            logger.warning(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
                 'Error authenticating with the LLM provider. Please check your API key'
             )
 
     else:
-        logger.warn('Settings not present, not starting conversation')
+        logger.warning('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
@@ -163,7 +158,6 @@ async def _create_new_conversation(
         replay_json=replay_json,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
-
     return conversation_id
 
 
@@ -186,8 +180,9 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
-    conversation_trigger = data.conversation_trigger
     git_provider = data.git_provider
+
+    conversation_trigger = ConversationTrigger.GUI
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
@@ -272,13 +267,18 @@ async def search_conversations(
         conversation.conversation_id for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
-        user_id, set(conversation_ids)
+        user_id, conversation_ids
     )
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
+                num_connections=sum(
+                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    if conversation_id == conversation.conversation_id
+                )
             )
             for conversation in filtered_results
         ),
@@ -295,113 +295,11 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-        conversation_info = await _get_conversation_info(metadata, is_running)
+        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
+        conversation_info = await _get_conversation_info(metadata, is_running, num_connections)
         return conversation_info
     except FileNotFoundError:
         return None
-
-
-def get_default_conversation_title(conversation_id: str) -> str:
-    """
-    Generate a default title for a conversation based on its ID.
-
-    Args:
-        conversation_id: The ID of the conversation
-
-    Returns:
-        A default title string
-    """
-    return f'Conversation {conversation_id[:5]}'
-
-
-async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
-    """
-    Auto-generate a title for a conversation based on the first user message.
-    Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
-
-    Args:
-        conversation_id: The ID of the conversation
-        user_id: The ID of the user
-
-    Returns:
-        A generated title string
-    """
-    logger.info(f'Auto-generating title for conversation {conversation_id}')
-
-    try:
-        # Create an event stream for the conversation
-        event_stream = EventStream(conversation_id, file_store, user_id)
-
-        # Find the first user message
-        first_user_message = None
-        for event in event_stream.get_events():
-            if (
-                event.source == EventSource.USER
-                and isinstance(event, MessageAction)
-                and event.content
-                and event.content.strip()
-            ):
-                first_user_message = event.content
-                break
-
-        if first_user_message:
-            # Get LLM config from user settings
-            try:
-                settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-                settings = await settings_store.load()
-
-                if settings and settings.llm_model:
-                    # Create LLM config from settings
-                    llm_config = LLMConfig(
-                        model=settings.llm_model,
-                        api_key=settings.llm_api_key,
-                        base_url=settings.llm_base_url,
-                    )
-
-                    # Try to generate title using LLM
-                    llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
-                    )
-                    if llm_title:
-                        logger.info(f'Generated title using LLM: {llm_title}')
-                        return llm_title
-            except Exception as e:
-                logger.error(f'Error using LLM for title generation: {e}')
-
-            # Fall back to simple truncation if LLM generation fails or is unavailable
-            first_user_message = first_user_message.strip()
-            title = first_user_message[:30]
-            if len(first_user_message) > 30:
-                title += '...'
-            logger.info(f'Generated title using truncation: {title}')
-            return title
-    except Exception as e:
-        logger.error(f'Error generating title: {str(e)}')
-    return ''
-
-
-@app.patch('/conversations/{conversation_id}')
-async def update_conversation(
-    conversation_id: str,
-    title: str = Body(embed=True),
-    user_id: str | None = Depends(get_user_id),
-) -> bool:
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if not metadata:
-        return False
-
-    # If title is empty or unspecified, auto-generate it
-    if not title or title.isspace():
-        title = await auto_generate_title(conversation_id, user_id)
-
-        # If we still don't have a title, use the default
-        if not title or title.isspace():
-            title = get_default_conversation_title(conversation_id)
-
-    metadata.title = title
-    await conversation_store.save_metadata(metadata)
-    return True
 
 
 @app.delete('/conversations/{conversation_id}')
@@ -426,6 +324,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
+    num_connections: int
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -441,6 +340,7 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
+            num_connections=num_connections
         )
     except Exception as e:
         logger.error(

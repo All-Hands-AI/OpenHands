@@ -10,7 +10,6 @@ import {
   GetTrajectoryResponse,
   GitChangeDiff,
   GitChange,
-  ConversationTrigger,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -143,15 +142,7 @@ class OpenHands {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
 
-  static async updateUserConversation(
-    conversationId: string,
-    conversation: Partial<Omit<Conversation, "conversation_id">>,
-  ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
-  }
-
   static async createConversation(
-    conversation_trigger: ConversationTrigger = "gui",
     selectedRepository?: string,
     git_provider?: Provider,
     initialUserMsg?: string,
@@ -161,7 +152,6 @@ class OpenHands {
     selected_branch?: string,
   ): Promise<Conversation> {
     const body = {
-      conversation_trigger,
       repository: selectedRepository,
       git_provider,
       selected_branch,
