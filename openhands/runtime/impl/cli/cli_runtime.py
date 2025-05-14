@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Callable, Optional, Tuple, Any
+from typing import Callable, Any
 
 from binaryornot.check import is_binary
 from openhands_aci.editor.editor import OHEditor
@@ -110,7 +110,7 @@ class CLIRuntime(Runtime):
         # Initialize runtime state
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
-        self._shell_stream_callback: Optional[Callable[[str], None]] = None
+        self._shell_stream_callback: Callable[[str], None] | None = None
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -351,7 +351,7 @@ class CLIRuntime(Runtime):
         new_str: str | None = None,
         insert_line: int | None = None,
         enable_linting: bool = False,
-    ) -> Tuple[str, Tuple[str | None, str | None]]:
+    ) -> tuple[str, tuple[str | None, str | None]]:
         """Execute file editor command and handle exceptions.
 
         Args:
