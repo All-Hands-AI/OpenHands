@@ -8,7 +8,7 @@ app = FastAPI()
 
 
 @app.websocket('/ws')
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket) -> None:
     await websocket.accept()
 
     try:
@@ -26,12 +26,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/')
-def read_root():
+def read_root() -> dict[str, str]:
     return {'message': 'This is a mock server'}
 
 
 @app.get('/api/options/models')
-def read_llm_models():
+def read_llm_models() -> list[str]:
     return [
         'gpt-4',
         'gpt-4-turbo-preview',
@@ -41,24 +41,24 @@ def read_llm_models():
 
 
 @app.get('/api/options/agents')
-def read_llm_agents():
+def read_llm_agents() -> list[str]:
     return [
         'CodeActAgent',
     ]
 
 
 @app.get('/api/list-files')
-def refresh_files():
+def refresh_files() -> list[str]:
     return ['hello_world.py']
 
 
 @app.get('/api/options/config')
-def get_config():
+def get_config() -> dict[str, str]:
     return {'APP_MODE': 'oss'}
 
 
 @app.get('/api/options/security-analyzers')
-def get_analyzers():
+def get_analyzers() -> list[str]:
     return []
 
 
