@@ -7,8 +7,6 @@ import { I18nKey } from "#/i18n/declaration";
 interface AccountSettingsContextMenuProps {
   onLogout: () => void;
   onClose: () => void;
-  // eslint-disable-next-line react/no-unused-prop-types
-  isLoggedIn: boolean; // Kept for backward compatibility but no longer used
 }
 
 export function AccountSettingsContextMenu({
