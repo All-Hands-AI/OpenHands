@@ -190,12 +190,12 @@ async def test_run_session_without_initial_action(
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
-    # Check that add_mcp_tools was called with the right agent and runtime
-    assert mock_add_mcp_tools.call_args[0][0] == mock_agent
-    assert mock_add_mcp_tools.call_args[0][1] == mock_runtime
+    mock_add_mcp_tools.assert_called_once_with(
+        mock_agent, mock_runtime, mock_config.mcp
+    )
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
-    # Memory is created twice in the code, so we don't check the call count
+    mock_create_memory.assert_called_once()
 
     # Check that run_agent_until_done was called
     mock_run_agent_until_done.assert_called_once()
