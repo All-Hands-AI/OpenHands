@@ -4,6 +4,10 @@ import multiprocessing
 import time
 import uuid
 
+from openhands.utils.playwright_patchright_util import use_patchright  # noqa F401
+use_patchright()  # noqa F401
+# NOTE: this overrides the playwright import in browsergym
+
 import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
 import gymnasium as gym
 import html2text
