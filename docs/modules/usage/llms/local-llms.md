@@ -75,7 +75,7 @@ Start OpenHands using `make run`.
 
 ### Configure OpenHands
 
-Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings:
+Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab: 
 1. Enable `Advanced` options.
 2. Set the following:
 - `Custom Model` to `openai/<served-model-name>` (e.g. `openai/openhands-lm-32b-v0.1`)

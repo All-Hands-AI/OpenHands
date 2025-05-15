@@ -50,7 +50,6 @@ app = APIRouter(prefix='/api')
 
 
 class InitSessionRequest(BaseModel):
-    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI
     repository: str | None = None
     git_provider: ProviderType | None = None
     selected_branch: str | None = None
@@ -130,7 +129,6 @@ async def _create_new_conversation(
             conversation_id=conversation_id,
             title=conversation_title,
             user_id=user_id,
-            github_user_id=None,
             selected_repository=selected_repository,
             selected_branch=selected_branch,
         )
@@ -181,8 +179,9 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
-    conversation_trigger = data.conversation_trigger
     git_provider = data.git_provider
+
+    conversation_trigger = ConversationTrigger.GUI
 
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()

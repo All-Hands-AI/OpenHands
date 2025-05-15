@@ -30,11 +30,12 @@ jobs:
         run: |
           cd frontend
           npm install --frozen-lockfile
-      - name: Lint and TypeScript compilation
+      - name: Lint, TypeScript compilation, and translation checks
         run: |
           cd frontend
           npm run lint
           npm run make-i18n && tsc
+          npm run check-translation-completeness
 
   # Run lint on the python code
   lint-python:

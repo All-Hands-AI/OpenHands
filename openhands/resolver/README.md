@@ -109,7 +109,7 @@ export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
-export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"  # Recommended
+export LLM_MODEL="anthropic/claude-3-7-sonnet-20250219"  # Recommended
 export LLM_API_KEY="your-llm-api-key"
 export LLM_BASE_URL="your-api-url"  # Optional, for API proxies
 ```

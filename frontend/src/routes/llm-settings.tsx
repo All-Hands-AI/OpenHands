@@ -304,9 +304,9 @@ function LlmSettingsScreen() {
                 name="llm-custom-model-input"
                 label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
                 defaultValue={
-                  settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+                  settings.LLM_MODEL || "anthropic/claude-3-7-sonnet-20250219"
                 }
-                placeholder="anthropic/claude-3-5-sonnet-20241022"
+                placeholder="anthropic/claude-3-7-sonnet-20250219"
                 type="text"
                 className="w-[680px]"
                 onChange={handleCustomModelIsDirty}

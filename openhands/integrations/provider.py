@@ -57,8 +57,31 @@ class ProviderToken(BaseModel):
             raise ValueError('Unsupported Provider token type')
 
 
+class CustomSecret(BaseModel):
+    secret: SecretStr = Field(default_factory=lambda: SecretStr(''))
+    description: str = Field(default='')
+
+    model_config = {
+        'frozen': True,  # Makes the entire model immutable
+        'validate_assignment': True,
+    }
+
+    @classmethod
+    def from_value(cls, secret_value: CustomSecret | dict[str, str]) -> CustomSecret:
+        """Factory method to create a ProviderToken from various input types"""
+        if isinstance(secret_value, CustomSecret):
+            return secret_value
+        elif isinstance(secret_value, dict):
+            secret = secret_value.get('secret')
+            description = secret_value.get('description')
+            return cls(secret=SecretStr(secret), description=description)
+
+        else:
+            raise ValueError('Unsupport Provider token type')
+
+
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
+CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
 PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),

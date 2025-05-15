@@ -2,12 +2,14 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.provider import CustomSecret
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.settings import (
+    CustomSecretModel,
+    CustomSecretWithoutValueModel,
     GETCustomSecrets,
-    POSTCustomSecrets,
     POSTProviderModel,
 )
 from openhands.server.user_auth import (
@@ -56,7 +58,7 @@ async def invalidate_legacy_secrets_store(
 
 def process_token_validation_result(
     confirmed_token_type: ProviderType | None, token_type: ProviderType
-):
+) -> str:
     if not confirmed_token_type or confirmed_token_type != token_type:
         return (
             f'Invalid token. Please make sure it is a valid {token_type.value} token.'
@@ -188,7 +190,15 @@ async def load_custom_secrets_names(
                 content={'error': 'User secrets not found'},
             )
 
-        custom_secrets = list(user_secrets.custom_secrets.keys())
+        custom_secrets: list[CustomSecretWithoutValueModel] = []
+        if user_secrets.custom_secrets:
+            for secret_name, secret_value in user_secrets.custom_secrets.items():
+                custom_secret = CustomSecretWithoutValueModel(
+                    name=secret_name,
+                    description=secret_value.description,
+                )
+                custom_secrets.append(custom_secret)
+
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
@@ -201,7 +211,7 @@ async def load_custom_secrets_names(
 
 @app.post('/secrets', response_model=dict[str, str])
 async def create_custom_secret(
-    incoming_secret: POSTCustomSecrets,
+    incoming_secret: CustomSecretModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
@@ -209,14 +219,20 @@ async def create_custom_secret(
         if existing_secrets:
             custom_secrets = dict(existing_secrets.custom_secrets)
 
-            for secret_name, secret_value in incoming_secret.custom_secrets.items():
-                if secret_name in custom_secrets:
-                    return JSONResponse(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        content={'message': f'Secret {secret_name} already exists'},
-                    )
+            secret_name = incoming_secret.name
+            secret_value = incoming_secret.value
+            secret_description = incoming_secret.description
 
-                custom_secrets[secret_name] = secret_value
+            if secret_name in custom_secrets:
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={'message': f'Secret {secret_name} already exists'},
+                )
+
+            custom_secrets[secret_name] = CustomSecret(
+                secret=secret_value,
+                description=secret_description or '',
+            )
 
             # Create a new UserSecrets that preserves provider tokens
             updated_user_secrets = UserSecrets(
@@ -227,7 +243,7 @@ async def create_custom_secret(
             await secrets_store.store(updated_user_secrets)
 
         return JSONResponse(
-            status_code=status.HTTP_200_OK,
+            status_code=status.HTTP_201_CREATED,
             content={'message': 'Secret created successfully'},
         )
     except Exception as e:
@@ -241,7 +257,7 @@ async def create_custom_secret(
 @app.put('/secrets/{secret_id}', response_model=dict[str, str])
 async def update_custom_secret(
     secret_id: str,
-    incoming_secret: POSTCustomSecrets,
+    incoming_secret: CustomSecretWithoutValueModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
@@ -254,13 +270,23 @@ async def update_custom_secret(
                     content={'error': f'Secret with ID {secret_id} not found'},
                 )
 
+            secret_name = incoming_secret.name
+            secret_description = incoming_secret.description
+
             custom_secrets = dict(existing_secrets.custom_secrets)
-            custom_secrets.pop(secret_id)
+            existing_secret = custom_secrets.pop(secret_id)
 
-            for secret_name, secret_value in incoming_secret.custom_secrets.items():
-                custom_secrets[secret_name] = secret_value
+            if secret_name != secret_id and secret_name in custom_secrets:
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={'message': f'Secret {secret_name} already exists'},
+                )
 
-            # Create a new UserSecrets that preserves provider tokens
+            custom_secrets[secret_name] = CustomSecret(
+                secret=existing_secret.secret,
+                description=secret_description or '',
+            )
+
             updated_secrets = UserSecrets(
                 custom_secrets=custom_secrets,
                 provider_tokens=existing_secrets.provider_tokens,
