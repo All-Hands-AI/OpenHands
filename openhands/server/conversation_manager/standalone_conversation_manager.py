@@ -56,6 +56,11 @@ class StandaloneConversationManager(ConversationManager):
     _conversation_store_class: Type | None = None
 
     async def __aenter__(self):
+        # Initialize Mem0 client
+        from openhands.server.mem0 import initialize_mem0
+
+        initialize_mem0(self.config)
+
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         return self
 

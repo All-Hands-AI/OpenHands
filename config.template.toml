@@ -23,6 +23,9 @@
 # Daytona Target
 #daytona_target = ""
 
+# API key for Mem0 knowledge base
+#mem0_api_key = ""
+
 # Base path for the workspace
 #workspace_base = "./workspace"
 
