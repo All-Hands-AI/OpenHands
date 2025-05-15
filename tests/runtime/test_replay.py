@@ -2,7 +2,7 @@
 
 import asyncio
 
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.controller.state.state import State
 from openhands.core.config.app_config import AppConfig
@@ -31,7 +31,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     A simple replay test that involves simple terminal operations and edits
     (creating a simple 2048 game), using the default agent
     """
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = './tests/runtime/trajs/basic.json'
 
     state: State | None = asyncio.run(
@@ -44,7 +44,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
 
     assert state.agent_state == AgentState.FINISHED
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
@@ -58,7 +58,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     2. In GUI mode, agents typically don't finish; rather, they wait for the next
     task from the user, so this exported trajectory ends with awaiting_user_input
     """
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     config = _get_config('basic_gui_mode')
 
@@ -74,7 +74,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
 
     assert state.agent_state == AgentState.FINISHED
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
@@ -86,7 +86,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     look like: the following events would still be replayed even though they are
     meaningless.
     """
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = './tests/runtime/trajs/wrong_initial_state.json'
 
     state: State | None = asyncio.run(
@@ -107,7 +107,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
 
     assert has_error_in_action
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
@@ -118,7 +118,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     interference (no asking for user input).
     2) The user messages in the trajectory should appear in the history.
     """
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     config = _get_config('basic_interactions')
 
@@ -147,4 +147,4 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
             i += 1
     assert i == len(user_messages)
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)

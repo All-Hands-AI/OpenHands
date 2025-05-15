@@ -1,8 +1,8 @@
 """Tests for the command helper functions in function_calling.py."""
 
 from conftest import (
-    _close_test_runtime,
-    _load_runtime,
+    close_test_runtime,
+    create_runtime_and_config,
 )
 
 from openhands.agenthub.readonly_agent.function_calling import (
@@ -38,7 +38,7 @@ def test_grep_to_cmdrun_basic():
 
 def test_grep_to_cmdrun_quotes(temp_dir, runtime_cls, run_as_openhands):
     """Test patterns with different types of quotes."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Double quotes in pattern
         cmd = grep_to_cmdrun(r'const message = "Hello"', '/workspace')
@@ -65,12 +65,12 @@ def test_grep_to_cmdrun_quotes(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == 0
         assert '/workspace/test_quotes2.js' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_grep_to_cmdrun_special_chars(runtime_cls, run_as_openhands, temp_dir):
     """Test patterns with special shell characters."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test directory and files with special pattern content
         setup_cmd = """
@@ -138,12 +138,12 @@ def test_grep_to_cmdrun_special_chars(runtime_cls, run_as_openhands, temp_dir):
             # elif "!important" in pattern:
             #     assert "bang.txt" in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_grep_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_dir):
     """Test paths with spaces and special characters."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test files with content in paths with spaces
         setup_cmd = """
@@ -178,7 +178,7 @@ def test_grep_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_di
             elif path == 'test files/unit tests':
                 assert 'test files/unit tests/test.js' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_glob_to_cmdrun_basic():
@@ -197,7 +197,7 @@ def test_glob_to_cmdrun_basic():
 
 def test_glob_to_cmdrun_special_patterns(runtime_cls, run_as_openhands, temp_dir):
     """Test glob patterns with special characters."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test files matching the patterns we'll test
         setup_cmd = r"""
@@ -250,12 +250,12 @@ def test_glob_to_cmdrun_special_patterns(runtime_cls, run_as_openhands, temp_dir
             elif pattern == 'file with spaces.js':
                 assert 'file with spaces.js' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_glob_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_dir):
     """Test paths with spaces and special characters for glob command."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test directories with spaces and special characters
         setup_cmd = """
@@ -288,4 +288,4 @@ def test_glob_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_di
                 assert 'test1.js' in obs.content
                 assert 'test2.js' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)

@@ -2,7 +2,7 @@
 
 import os
 
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -22,7 +22,7 @@ from openhands.events.observation import (
 
 
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     # Test browse
     action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
@@ -62,11 +62,11 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a PDF file using reportlab in the host environment
         from reportlab.lib.pagesizes import letter
@@ -132,11 +132,11 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         assert 'screenshot_' in obs.content
         assert '.png' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a PNG file using PIL in the host environment
         from PIL import Image, ImageDraw
@@ -197,4 +197,4 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         assert 'screenshot_' in obs.content
         assert '.png' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)

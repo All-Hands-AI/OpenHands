@@ -3,7 +3,7 @@
 import os
 from unittest.mock import MagicMock
 
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileWriteAction
@@ -11,7 +11,7 @@ from openhands.runtime.action_execution_server import _execute_file_editor
 
 
 def test_view_file(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -33,11 +33,11 @@ def test_view_file(temp_dir, runtime_cls, run_as_openhands):
         assert '2\tThis file is for testing purposes.' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -62,11 +62,11 @@ def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
         )
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_create_file(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         new_file = os.path.join(config.workspace_mount_path_in_sandbox, 'new_file.txt')
         action = FileEditAction(
@@ -88,11 +88,11 @@ def test_create_file(temp_dir, runtime_cls, run_as_openhands):
         assert 'New file content' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         new_file = os.path.join(config.workspace_mount_path_in_sandbox, 'new_file.txt')
         action = FileEditAction(
@@ -114,11 +114,11 @@ def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands)
         assert '1\t' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_create_with_none_file_text(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         new_file = os.path.join(
             config.workspace_mount_path_in_sandbox, 'none_content.txt'
@@ -135,11 +135,11 @@ def test_create_with_none_file_text(temp_dir, runtime_cls, run_as_openhands):
             == 'ERROR:\nParameter `file_text` is required for command: create.'
         )
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -168,11 +168,11 @@ def test_str_replace(temp_dir, runtime_cls, run_as_openhands):
         assert 'This is a sample file.' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_multi_line(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -195,11 +195,11 @@ def test_str_replace_multi_line(temp_dir, runtime_cls, run_as_openhands):
         assert 'This file is for testing purposes.' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileEditAction(
@@ -227,13 +227,13 @@ Review the changes and make sure they are as expected. Edit the file again if ne
         )
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_error_multiple_occurrences(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -250,13 +250,13 @@ def test_str_replace_error_multiple_occurrences(
         assert 'Multiple occurrences of old_str `test`' in obs.content
         assert '[1, 2]' in obs.content  # Should show both line numbers
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_error_multiple_multiline_occurrences(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         # Create a file with two identical multi-line blocks
@@ -283,11 +283,11 @@ def test_str_replace_error_multiple_multiline_occurrences(
         assert '[1, 7]' in obs.content  # Should show correct starting line numbers
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_nonexistent_string(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -309,11 +309,11 @@ def test_str_replace_nonexistent_string(temp_dir, runtime_cls, run_as_openhands)
             in obs.content
         )
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_with_empty_new_str(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -333,11 +333,11 @@ def test_str_replace_with_empty_new_str(temp_dir, runtime_cls, run_as_openhands)
         assert 'Line 3' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -358,11 +358,11 @@ def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands)
             in obs.content
         )
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_with_none_old_str(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -381,11 +381,11 @@ def test_str_replace_with_none_old_str(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'old_str' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_insert(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -416,11 +416,11 @@ def test_insert(temp_dir, runtime_cls, run_as_openhands):
         assert 'Line 2' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_insert_invalid_line(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -439,11 +439,11 @@ def test_insert_invalid_line(temp_dir, runtime_cls, run_as_openhands):
         assert 'Invalid `insert_line` parameter' in obs.content
         assert 'It should be within the range of allowed values' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_insert_with_empty_string(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -463,11 +463,11 @@ def test_insert_with_empty_string(temp_dir, runtime_cls, run_as_openhands):
         assert '2\t\n' in obs.content
         assert '3\tLine 2' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_insert_with_none_new_str(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -487,11 +487,11 @@ def test_insert_with_none_new_str(temp_dir, runtime_cls, run_as_openhands):
         assert 'ERROR' in obs.content
         assert 'Parameter `new_str` is required for command: insert' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_undo_edit(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -532,11 +532,11 @@ def test_undo_edit(temp_dir, runtime_cls, run_as_openhands):
         assert 'This is a test file.' in obs.content
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_validate_path_invalid(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         invalid_file = os.path.join(
             config.workspace_mount_path_in_sandbox, 'nonexistent.txt'
@@ -550,11 +550,11 @@ def test_validate_path_invalid(temp_dir, runtime_cls, run_as_openhands):
         assert 'Invalid `path` parameter' in obs.content
         assert f'The path {invalid_file} does not exist' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_create_existing_file_error(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -571,11 +571,11 @@ def test_create_existing_file_error(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'File already exists' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_missing_old_str(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -596,11 +596,11 @@ def test_str_replace_missing_old_str(temp_dir, runtime_cls, run_as_openhands):
             in obs.content
         )
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_str_replace_new_str_and_old_str_same(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -621,11 +621,11 @@ def test_str_replace_new_str_and_old_str_same(temp_dir, runtime_cls, run_as_open
             in obs.content
         )
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_insert_missing_line_param(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
         action = FileWriteAction(
@@ -642,11 +642,11 @@ def test_insert_missing_line_param(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Parameter `insert_line` is required for command: insert' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_undo_edit_no_history_error(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         empty_file = os.path.join(config.workspace_mount_path_in_sandbox, 'empty.txt')
         action = FileWriteAction(
@@ -663,11 +663,11 @@ def test_undo_edit_no_history_error(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'No edit history found for' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_view_large_file_with_truncation(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a large file to trigger truncation
         large_file = os.path.join(
@@ -691,7 +691,7 @@ def test_view_large_file_with_truncation(temp_dir, runtime_cls, run_as_openhands
             in obs.content
         )
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_insert_line_string_conversion():
