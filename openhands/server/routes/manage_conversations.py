@@ -47,7 +47,7 @@ from openhands.server.thesis_auth import (
     change_thread_visibility,
     create_thread,
     delete_thread,
-    get_thread_by_id
+    get_thread_by_id,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata

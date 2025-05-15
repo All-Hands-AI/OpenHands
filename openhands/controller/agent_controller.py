@@ -69,10 +69,15 @@ from openhands.events.observation.a2a import (
     A2ASendTaskArtifactObservation,
     A2ASendTaskUpdateObservation,
 )
-from openhands.events.serialization.event import event_to_trajectory, truncate_content
+from openhands.events.serialization.event import (
+    event_to_dict,
+    event_to_trajectory,
+    truncate_content,
+)
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
-from openhands.server.thesis_auth import search_knowledge, webhook_rag_conversation
+from openhands.server.mem0 import process_single_event_for_mem0, search_knowledge_mem0
+from openhands.server.thesis_auth import webhook_rag_conversation
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -418,6 +423,8 @@ class AgentController:
         if self.should_step(event):
             self.step()
 
+        # Retrieve conversation and embedding mem0
+        await process_single_event_for_mem0(self.id, event_to_dict(event))
         # sync rag when the agent is finished or waiting for user input
         if (
             self.state.agent_state
@@ -426,6 +433,7 @@ class AgentController:
         ):
             logger.info(f'webhook_rag_conversation: Update rag {self.id}')
             await webhook_rag_conversation(self.id)
+
             self._rag_synced = True
         if self.state.agent_state == AgentState.RUNNING:
             self._rag_synced = False
@@ -541,8 +549,11 @@ class AgentController:
 
             # update new knowledge base with the user message
             if self.user_id and (self.space_id or self.thread_follow_up):
-                knowledge_base = await search_knowledge(
-                    action.content, self.space_id, self.thread_follow_up, self.user_id
+                knowledge_base = await search_knowledge_mem0(
+                    action.content,
+                    self.space_id,
+                    self.raw_followup_conversation_id,
+                    self.user_id,
                 )
                 if knowledge_base:
                     self.agent.update_agent_knowledge_base(knowledge_base)

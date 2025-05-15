@@ -1,6 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -60,6 +60,17 @@ def mock_child_agent():
     return agent
 
 
+# Create separate mock functions so we can track calls
+async def mock_process_event(*args, **kwargs):
+    print(f'Mock process_single_event_for_mem0 called with: {args[0]}')
+    return []
+
+
+async def mock_webhook_rag(*args, **kwargs):
+    print(f'Mock webhook_rag_conversation called with: {args[0]}')
+    return True
+
+
 @pytest.mark.asyncio
 async def test_delegation_flow(
     mock_parent_agent, mock_child_agent, mock_event_stream, monkeypatch
@@ -102,103 +113,121 @@ async def test_delegation_flow(
         workspace_mount_path_in_sandbox_store_in_session=None: mock_child_agent
     )
 
-    # Create parent controller
-    parent_state = State(max_iterations=10)
-    parent_controller = AgentController(
-        agent=mock_parent_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='parent',
-        confirmation_mode=False,
-        headless_mode=True,
-        initial_state=parent_state,
+    process_patch = patch(
+        'openhands.controller.agent_controller.process_single_event_for_mem0',
+        new=AsyncMock(side_effect=mock_process_event),
+    )
+    webhook_patch = patch(
+        'openhands.controller.agent_controller.webhook_rag_conversation',
+        new=AsyncMock(side_effect=mock_webhook_rag),
     )
 
-    # Setup Memory to catch RecallActions
-    mock_memory = MagicMock(spec=Memory)
-    mock_memory.event_stream = mock_event_stream
+    # Apply both patches
+    with process_patch, webhook_patch:
+        # Create parent controller
+        parent_state = State(max_iterations=10)
+        parent_controller = AgentController(
+            agent=mock_parent_agent,
+            event_stream=mock_event_stream,
+            max_iterations=10,
+            sid='parent',
+            confirmation_mode=False,
+            headless_mode=True,
+            initial_state=parent_state,
+        )
 
-    def on_event(event: Event):
-        if isinstance(event, RecallAction):
-            # create a RecallObservation
-            microagent_observation = RecallObservation(
-                recall_type=RecallType.KNOWLEDGE,
-                content='Found info',
-            )
-            microagent_observation._cause = event.id  # ignore attr-defined warning
-            mock_event_stream.add_event(microagent_observation, EventSource.ENVIRONMENT)
+        # Setup Memory to catch RecallActions
+        mock_memory = MagicMock(spec=Memory)
+        mock_memory.event_stream = mock_event_stream
 
-    mock_memory.on_event = on_event
-    mock_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
-    )
+        def on_event(event: Event):
+            if isinstance(event, RecallAction):
+                # create a RecallObservation
+                microagent_observation = RecallObservation(
+                    recall_type=RecallType.KNOWLEDGE,
+                    content='Found info',
+                )
+                microagent_observation._cause = event.id  # ignore attr-defined warning
+                mock_event_stream.add_event(
+                    microagent_observation, EventSource.ENVIRONMENT
+                )
 
-    # Setup a delegate action from the parent
-    delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
-    mock_parent_agent.step.return_value = delegate_action
+        mock_memory.on_event = on_event
+        mock_event_stream.subscribe(
+            EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
+        )
 
-    # Simulate a user message event to cause parent.step() to run
-    message_action = MessageAction(content='please delegate now')
-    message_action._source = EventSource.USER
-    await parent_controller._on_event(message_action)
+        # Setup a delegate action from the parent
+        delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
+        mock_parent_agent.step.return_value = delegate_action
 
-    # Give time for the async step() to execute
-    await asyncio.sleep(1)
+        # Simulate a user message event to cause parent.step() to run
+        message_action = MessageAction(content='please delegate now')
+        message_action._source = EventSource.USER
+        await parent_controller._on_event(message_action)
 
-    # Verify that a RecallObservation was added to the event stream
-    events = list(mock_event_stream.get_events())
-    assert (
-        mock_event_stream.get_latest_event_id() == 3
-    )  # Microagents and AgentChangeState
+        # Give time for the async step() to execute
+        await asyncio.sleep(1)
 
-    # a RecallObservation and an AgentDelegateAction should be in the list
-    assert any(isinstance(event, RecallObservation) for event in events)
-    assert any(isinstance(event, AgentDelegateAction) for event in events)
+        # Verify that a RecallObservation was added to the event stream
+        events = list(mock_event_stream.get_events())
+        assert (
+            mock_event_stream.get_latest_event_id() == 3
+        )  # Microagents and AgentChangeState
 
-    # Verify that a delegate agent controller is created
-    assert (
-        parent_controller.delegate is not None
-    ), "Parent's delegate controller was not set."
+        # a RecallObservation and an AgentDelegateAction should be in the list
+        assert any(isinstance(event, RecallObservation) for event in events)
+        assert any(isinstance(event, AgentDelegateAction) for event in events)
 
-    # The parent's iteration should have incremented
-    assert (
-        parent_controller.state.iteration == 1
-    ), 'Parent iteration should be incremented after step.'
+        # Verify that a delegate agent controller is created
+        assert (
+            parent_controller.delegate is not None
+        ), "Parent's delegate controller was not set."
 
-    # Now simulate that the child increments local iteration and finishes its subtask
-    delegate_controller = parent_controller.delegate
-    delegate_controller.state.iteration = 5  # child had some steps
-    delegate_controller.state.outputs = {'delegate_result': 'done'}
+        # The parent's iteration should have incremented
+        assert (
+            parent_controller.state.iteration == 1
+        ), 'Parent iteration should be incremented after step.'
 
-    # Mock _react_to_exception to prevent errors
-    async def mock_react_to_exception(*args, **kwargs):
-        pass
+        # Now simulate that the child increments local iteration and finishes its subtask
+        delegate_controller = parent_controller.delegate
+        delegate_controller.state.iteration = 5  # child had some steps
+        delegate_controller.state.outputs = {'delegate_result': 'done'}
 
-    # Apply the mock to both controllers
-    monkeypatch.setattr(
-        delegate_controller, '_react_to_exception', mock_react_to_exception
-    )
-    monkeypatch.setattr(
-        parent_controller, '_react_to_exception', mock_react_to_exception
-    )
+        # Mock _react_to_exception to prevent errors
+        async def mock_react_to_exception(*args, **kwargs):
+            pass
 
-    # Mock the update_agent_knowledge_base function in Agent to prevent problems
-    mock_child_agent.update_agent_knowledge_base = Mock()
+        # Apply the mock to both controllers
+        monkeypatch.setattr(
+            delegate_controller, '_react_to_exception', mock_react_to_exception
+        )
+        monkeypatch.setattr(
+            parent_controller, '_react_to_exception', mock_react_to_exception
+        )
 
-    # The child is done, so we simulate it finishing:
-    child_finish_action = AgentFinishAction()
-    await delegate_controller._on_event(child_finish_action)
+        # Mock the update_agent_knowledge_base function in Agent to prevent problems
+        mock_child_agent.update_agent_knowledge_base = Mock()
 
-    # Verify parent is cleaned up
-    assert (
-        parent_controller.delegate is None
-    ), "Parent's delegate should be cleaned up after finishing."
+        # The child is done, so we simulate it finishing:
+        child_finish_action = AgentFinishAction()
+        await delegate_controller._on_event(child_finish_action)
 
-    # Instead of checking for exact iteration, check that it has been updated from the child
-    # using "greater than or equal" to handle possible additional increments
-    assert (
-        parent_controller.state.iteration >= 5
-    ), "Parent should have adopted at least child's iteration count."
+        # Send a dummy event to parent controller to trigger delegate cleanup check
+        dummy_message = MessageAction(content='Dummy event to check delegate status')
+        dummy_message._source = EventSource.USER
+        await parent_controller._on_event(dummy_message)
+
+        # Verify parent is cleaned up
+        assert (
+            parent_controller.delegate is None
+        ), "Parent's delegate should be cleaned up after finishing."
+
+        # Instead of checking for exact iteration, check that it has been updated from the child
+        # using "greater than or equal" to handle possible additional increments
+        assert (
+            parent_controller.state.iteration >= 5
+        ), "Parent should have adopted at least child's iteration count."
 
 
 @pytest.mark.asyncio
