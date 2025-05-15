@@ -4,6 +4,7 @@ import random
 import shutil
 import stat
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 import pytest
@@ -12,6 +13,7 @@ from pytest import TempPathFactory
 from openhands.core.config import AppConfig, MCPConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.action.commands import CmdRunAction
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
@@ -233,7 +235,7 @@ class RuntimeManager:
     def __enter__(self):
         return self
 
-    def load_runtime(
+    def get_reusable_runtime(
         self,
         run_as_openhands: bool = True,
         enable_auto_lint: bool = False,
@@ -245,6 +247,7 @@ class RuntimeManager:
         docker_runtime_kwargs: dict[str, str] | None = None,
         override_mcp_config: MCPConfig | None = None,
     ):
+        """Get a reusable runtime, suitable for tests where we are not running long tasks like servers."""
         key = get_runtime_key(
             run_as_openhands,
             enable_auto_lint,
@@ -258,6 +261,14 @@ class RuntimeManager:
         )
         result = self.runtimes.get(key)
         if result:
+            # Reset the current working directory to the workspace mount path
+            runtime, config = result
+            action = CmdRunAction(
+                command=f'cd {config.workspace_mount_path_in_sandbox}'
+            )
+            obs = runtime.run_action(action)
+            assert obs.exit_code == 0
+
             return result
         temp_dir = self.tmp_path_factory.mktemp(
             'rt_' + str(random.randint(100000, 999999)), numbered=False
@@ -277,6 +288,67 @@ class RuntimeManager:
             override_mcp_config,
         )
         self.runtimes[key] = result
+        return result
+
+    @contextmanager
+    def single_use_runtime(
+        self,
+        run_as_openhands: bool = True,
+        enable_auto_lint: bool = False,
+        base_container_image: str | None = None,
+        browsergym_eval_env: str | None = None,
+        use_workspace: bool | None = None,
+        force_rebuild_runtime: bool = False,
+        runtime_startup_env_vars: dict[str, str] | None = None,
+        docker_runtime_kwargs: dict[str, str] | None = None,
+        override_mcp_config: MCPConfig | None = None,
+    ):
+        """Create a single use runtime and reclaim it when finished."""
+        runtime, config = self._create_runtime(
+            run_as_openhands,
+            enable_auto_lint,
+            base_container_image,
+            browsergym_eval_env,
+            use_workspace,
+            force_rebuild_runtime,
+            runtime_startup_env_vars,
+            docker_runtime_kwargs,
+            override_mcp_config,
+        )
+        try:
+            yield runtime, config
+        finally:
+            _close_test_runtime(runtime)
+
+    def _create_runtime(
+        self,
+        run_as_openhands: bool = True,
+        enable_auto_lint: bool = False,
+        base_container_image: str | None = None,
+        browsergym_eval_env: str | None = None,
+        use_workspace: bool | None = None,
+        force_rebuild_runtime: bool = False,
+        runtime_startup_env_vars: dict[str, str] | None = None,
+        docker_runtime_kwargs: dict[str, str] | None = None,
+        override_mcp_config: MCPConfig | None = None,
+    ):
+        temp_dir = self.tmp_path_factory.mktemp(
+            'rt_' + str(random.randint(100000, 999999)), numbered=False
+        )
+        logger.info(f'\n*** {self.node_name}\n>> temp folder: {temp_dir}\n')
+        result = _create_runtime(
+            temp_dir,
+            self.runtime_cls,
+            run_as_openhands,
+            enable_auto_lint,
+            base_container_image,
+            browsergym_eval_env,
+            use_workspace,
+            force_rebuild_runtime,
+            runtime_startup_env_vars,
+            docker_runtime_kwargs,
+            override_mcp_config,
+        )
         return result
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

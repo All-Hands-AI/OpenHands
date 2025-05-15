@@ -37,110 +37,106 @@ def get_platform_command(linux_cmd, windows_cmd):
 
 
 def test_bash_server(runtime_manager, run_as_openhands):
-    runtime, config = runtime_manager.load_runtime(run_as_openhands=run_as_openhands)
+    with runtime_manager.single_use_runtime(
+        run_as_openhands=run_as_openhands
+    ) as single:
+        runtime, config = single
 
-    # Use python -u for unbuffered output, potentially helping capture initial output on Windows
-    action = CmdRunAction(command='python -u -m http.server 8081')
-    action.set_hard_timeout(1)
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == -1
-    assert 'Serving HTTP on' in obs.content
-    assert (
-        "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
-        in obs.metadata.suffix
-    )
+        # Use python -u for unbuffered output, potentially helping capture initial output on Windows
+        action = CmdRunAction(command='python -u -m http.server 8081')
+        action.set_hard_timeout(1)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == -1
+        assert 'Serving HTTP on' in obs.content
+        assert (
+            "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+            in obs.metadata.suffix
+        )
 
-    action = CmdRunAction(command='C-c', is_input=True)
-    action.set_hard_timeout(30)
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-    if not is_windows():
-        # Linux/macOS behavior
-        assert 'Keyboard interrupt received, exiting.' in obs.content
+        action = CmdRunAction(command='C-c', is_input=True)
+        action.set_hard_timeout(30)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        if not is_windows():
+            # Linux/macOS behavior
+            assert 'Keyboard interrupt received, exiting.' in obs.content
+            assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
+        else:
+            # Windows behavior: Stop-Job might not produce output, but exit code should be 0
+            # The working directory check might also be less relevant/predictable here
+            pass
+
+        # Verify the server is actually stopped by trying to start another one
+        # on the same port (regardless of OS)
+        action = CmdRunAction(command='ls')
+        action.set_hard_timeout(1)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        # Check that the interrupt message is NOT present in subsequent output
+        assert 'Keyboard interrupt received, exiting.' not in obs.content
+        # Check working directory remains correct after interrupt handling
         assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
-    else:
-        # Windows behavior: Stop-Job might not produce output, but exit code should be 0
-        # The working directory check might also be less relevant/predictable here
-        pass
 
-    # Verify the server is actually stopped by trying to start another one
-    # on the same port (regardless of OS)
-    action = CmdRunAction(command='ls')
-    action.set_hard_timeout(1)
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-    # Check that the interrupt message is NOT present in subsequent output
-    assert 'Keyboard interrupt received, exiting.' not in obs.content
-    # Check working directory remains correct after interrupt handling
-    assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
-
-    # run it again!
-    action = CmdRunAction(command='python -u -m http.server 8081')
-    action.set_hard_timeout(1)
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == -1
-    assert 'Serving HTTP on' in obs.content
-
-    time.sleep(5)
-    # Kill the server
-    kill_action = CmdRunAction('C-z')
-    kill_obs = runtime.run_action(kill_action)
-    logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(kill_obs, CmdOutputObservation)
-    assert kill_obs.exit_code == 0
-
-    test_bash_background_server(runtime_manager, run_as_openhands)
+        # run it again!
+        action = CmdRunAction(command='python -u -m http.server 8081')
+        action.set_hard_timeout(1)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == -1
+        assert 'Serving HTTP on' in obs.content
 
 
 def test_bash_background_server(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands=run_as_openhands)
-    server_port = 8081
-    # Start the server, expect it to timeout (run in background manner)
-    action = CmdRunAction(f'python3 -m http.server {server_port} &')
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0  # Should not timeout since this runs in background
+    with runtime_manager.single_use_runtime(
+        run_as_openhands=run_as_openhands
+    ) as single:
+        runtime, _ = single
+        server_port = 8081
+        # Start the server, expect it to timeout (run in background manner)
+        action = CmdRunAction(f'python3 -m http.server {server_port} &')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0  # Should not timeout since this runs in background
 
-    # Give the server a moment to be ready
-    time.sleep(1)
+        # Give the server a moment to be ready
+        time.sleep(1)
 
-    # Verify the server is running by curling it
-    if is_windows():
-        curl_action = CmdRunAction(
-            f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
-        )
-    else:
-        curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
-    curl_obs = runtime.run_action(curl_action)
-    logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(curl_obs, CmdOutputObservation)
-    assert curl_obs.exit_code == 0
-    # Check for content typical of python http.server directory listing
-    assert 'Directory listing for' in curl_obs.content
+        # Verify the server is running by curling it
+        if is_windows():
+            curl_action = CmdRunAction(
+                f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+            )
+        else:
+            curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
+        curl_obs = runtime.run_action(curl_action)
+        logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(curl_obs, CmdOutputObservation)
+        assert curl_obs.exit_code == 0
+        # Check for content typical of python http.server directory listing
+        assert 'Directory listing for' in curl_obs.content
 
-    # Kill the server
-    if is_windows():
-        # Use PowerShell job management commands instead of trying to kill process directly
-        kill_action = CmdRunAction('Get-Job | Stop-Job')
-    else:
-        kill_action = CmdRunAction('pkill -f "http.server"')
-    kill_obs = runtime.run_action(kill_action)
-    logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(kill_obs, CmdOutputObservation)
-    assert kill_obs.exit_code == 0
+        # Kill the server
+        if is_windows():
+            # Use PowerShell job management commands instead of trying to kill process directly
+            kill_action = CmdRunAction('Get-Job | Stop-Job')
+        else:
+            kill_action = CmdRunAction('pkill -f "http.server"')
+        kill_obs = runtime.run_action(kill_action)
+        logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(kill_obs, CmdOutputObservation)
+        assert kill_obs.exit_code == 0
 
 
 def test_multiline_commands(runtime_manager):
-    runtime, _ = runtime_manager.load_runtime()
+    runtime, _ = runtime_manager.get_reusable_runtime()
     if is_windows():
         # Windows PowerShell version using backticks for line continuation
         obs = _run_cmd_action(runtime, 'Write-Output `\n "foo"')
@@ -176,7 +172,7 @@ def test_multiline_commands(runtime_manager):
 
 def test_no_ps2_in_output(runtime_manager, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands=run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands=run_as_openhands)
     if is_windows():
         obs = _run_cmd_action(runtime, 'Write-Output "hello`nworld"')
     else:
@@ -204,7 +200,7 @@ done && echo "created files"
     mv "$file" "$new_date"
 done && echo "success"
 """
-    runtime, _ = runtime_manager.load_runtime()
+    runtime, _ = runtime_manager.get_reusable_runtime()
     obs = _run_cmd_action(runtime, init_cmd)
     assert obs.exit_code == 0, 'The exit code should be 0.'
     assert 'created files' in obs.content
@@ -241,7 +237,7 @@ def test_multiple_multiline_commands(runtime_manager, run_as_openhands):
         ]
     joined_cmds = '\n'.join(cmds)
 
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
 
     # First test that running multiple commands at once fails
     obs = _run_cmd_action(runtime, joined_cmds)
@@ -274,7 +270,7 @@ def test_multiple_multiline_commands(runtime_manager, run_as_openhands):
 
 
 def test_cmd_run(runtime_manager, run_as_openhands):
-    runtime, config = runtime_manager.load_runtime(run_as_openhands)
+    runtime, config = runtime_manager.get_reusable_runtime(run_as_openhands)
     runtime_cls = runtime.__class__
     if is_windows():
         # Windows PowerShell version
@@ -342,7 +338,7 @@ def test_cmd_run(runtime_manager, run_as_openhands):
 
 
 def test_run_as_user_correct_home_dir(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     runtime_cls = runtime.__class__
     if is_windows():
         # Windows PowerShell version
@@ -368,7 +364,7 @@ def test_run_as_user_correct_home_dir(runtime_manager, run_as_openhands):
 
 
 def test_multi_cmd_run_in_single_line(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     if is_windows():
         # Windows PowerShell version using semicolon
         obs = _run_cmd_action(runtime, 'Get-Location && Get-ChildItem')
@@ -384,7 +380,7 @@ def test_multi_cmd_run_in_single_line(runtime_manager):
 
 
 def test_stateful_cmd(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     if is_windows():
         # Windows PowerShell version
         obs = _run_cmd_action(runtime, 'New-Item -ItemType Directory -Path test -Force')
@@ -415,7 +411,7 @@ def test_stateful_cmd(runtime_manager):
 
 
 def test_failed_cmd(runtime_manager):
-    runtime, _ = runtime_manager.load_runtime()
+    runtime, _ = runtime_manager.get_reusable_runtime()
     obs = _run_cmd_action(runtime, 'non_existing_command')
     assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
 
@@ -427,7 +423,7 @@ def _create_test_file(host_temp_dir):
 
 
 def test_copy_single_file(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     temp_dir = config.file_store_path
     sandbox_dir = config.workspace_mount_path_in_sandbox
     sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
@@ -464,7 +460,7 @@ def _create_host_test_dir_with_files(test_dir):
 
 
 def test_copy_directory_recursively(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
 
     sandbox_dir = config.workspace_mount_path_in_sandbox
     temp_dir = config.file_store_path
@@ -507,7 +503,7 @@ def test_copy_directory_recursively(runtime_manager):
 
 
 def test_copy_to_non_existent_directory(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     temp_dir = config.file_store_path
     sandbox_dir = config.workspace_mount_path_in_sandbox
     _create_test_file(temp_dir)
@@ -519,10 +515,12 @@ def test_copy_to_non_existent_directory(runtime_manager):
 
 
 def test_overwrite_existing_file(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     temp_dir = config.file_store_path
 
-    sandbox_dir = config.workspace_mount_path_in_sandbox
+    sandbox_dir = os.path.join(config.workspace_mount_path_in_sandbox, 'overwrite')
+    obs = _run_cmd_action(runtime, f'mkdir {sandbox_dir}')
+    assert obs.exit_code == 0
     sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
 
     if is_windows():
@@ -582,7 +580,7 @@ def test_overwrite_existing_file(runtime_manager):
 
 
 def test_copy_non_existent_file(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     sandbox_dir = config.workspace_mount_path_in_sandbox
     with pytest.raises(FileNotFoundError):
         runtime.copy_to(
@@ -595,7 +593,7 @@ def test_copy_non_existent_file(runtime_manager):
 
 
 def test_copy_from_directory(runtime_manager):
-    runtime, config = runtime_manager.load_runtime()
+    runtime, config = runtime_manager.get_reusable_runtime()
     sandbox_dir = config.workspace_mount_path_in_sandbox
     temp_dir = config.file_store_path
     temp_dir_copy = os.path.join(temp_dir, 'test_dir')
@@ -622,7 +620,7 @@ def test_git_operation(runtime_manager):
     # do not mount workspace, since workspace mount by tests will be owned by root
     # while the user_id we get via os.getuid() is different from root
     # which causes permission issues
-    runtime, _ = runtime_manager.load_runtime(
+    runtime, _ = runtime_manager.get_reusable_runtime(
         use_workspace=False,
         # Need to use non-root user to expose issues
         run_as_openhands=True,
@@ -691,7 +689,7 @@ def test_git_operation(runtime_manager):
 
 
 def test_python_version(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
 
     obs = runtime.run_action(CmdRunAction(command='python --version'))
 
@@ -703,7 +701,7 @@ def test_python_version(runtime_manager, run_as_openhands):
 
 
 def test_pwd_property(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Create a subdirectory and verify pwd updates
     obs = _run_cmd_action(runtime, 'mkdir -p random_dir')
     assert obs.exit_code == 0
@@ -714,7 +712,7 @@ def test_pwd_property(runtime_manager, run_as_openhands):
 
 
 def test_basic_command(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
 
     if is_windows():
         # Test simple command
@@ -772,7 +770,7 @@ def test_basic_command(runtime_manager, run_as_openhands):
     is_windows(), reason='Powershell does not support interactive commands'
 )
 def test_interactive_command(runtime_manager, run_as_openhands):
-    runtime, config = runtime_manager.load_runtime(
+    runtime, config = runtime_manager.get_reusable_runtime(
         run_as_openhands,
         runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'},
     )
@@ -807,7 +805,7 @@ EOF""")
     reason='Test relies on Linux-specific commands like seq and bash for loops',
 )
 def test_long_output(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Generate a long output
     action = CmdRunAction('for i in $(seq 1 5000); do echo "Line $i"; done')
     action.set_hard_timeout(10)
@@ -822,7 +820,7 @@ def test_long_output(runtime_manager, run_as_openhands):
     reason='Test relies on Linux-specific commands like seq and bash for loops',
 )
 def test_long_output_exceed_history_limit(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Generate a long output
     action = CmdRunAction('for i in $(seq 1 50000); do echo "Line $i"; done')
     action.set_hard_timeout(30)
@@ -838,7 +836,7 @@ def test_long_output_exceed_history_limit(runtime_manager, run_as_openhands):
     is_windows(), reason='Test uses Linux-specific temp directory and bash for loops'
 )
 def test_long_output_from_nested_directories(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Create nested directories with many files
     setup_cmd = 'mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do mkdir -p "folder_$i"; for j in $(seq 1 100); do touch "folder_$i/file_$j.txt"; done; done'
     setup_action = CmdRunAction(setup_cmd.strip())
@@ -864,7 +862,7 @@ def test_long_output_from_nested_directories(runtime_manager, run_as_openhands):
     reason='Test uses Linux-specific commands like find and grep with complex syntax',
 )
 def test_command_backslash(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
 
     # Create a file with the content "implemented_function"
     action = CmdRunAction(
@@ -894,7 +892,7 @@ def test_command_backslash(runtime_manager, run_as_openhands):
 def test_stress_long_output_with_soft_and_hard_timeout(
     runtime_manager, run_as_openhands
 ):
-    runtime, _ = runtime_manager(
+    runtime, _ = runtime_manager.get_reusable_runtime(
         run_as_openhands,
         runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'},
         docker_runtime_kwargs={
@@ -975,7 +973,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
 
 
 def test_command_output_continuation(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     if is_windows():
         # Windows PowerShell version
         action = CmdRunAction(
@@ -1046,7 +1044,7 @@ def test_command_output_continuation(runtime_manager, run_as_openhands):
 
 
 def test_long_running_command_follow_by_execute(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     if is_windows():
         action = CmdRunAction('1..3 | ForEach-Object { Write-Output $_; sleep 3 }')
     else:
@@ -1088,7 +1086,7 @@ def test_long_running_command_follow_by_execute(runtime_manager, run_as_openhand
 
 
 def test_empty_command_errors(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Test empty command without previous command - behavior should be the same on all platforms
     obs = runtime.run_action(CmdRunAction(''))
     assert isinstance(obs, CmdOutputObservation)
@@ -1099,7 +1097,7 @@ def test_empty_command_errors(runtime_manager, run_as_openhands):
     is_windows(), reason='Powershell does not support interactive commands'
 )
 def test_python_interactive_input(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Test Python program that asks for input - same for both platforms
     python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
 
@@ -1128,7 +1126,7 @@ def test_python_interactive_input(runtime_manager, run_as_openhands):
     is_windows(), reason='Powershell does not support interactive commands'
 )
 def test_python_interactive_input_without_set_input(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # Test Python program that asks for input
     python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
 
@@ -1162,7 +1160,7 @@ def test_python_interactive_input_without_set_input(runtime_manager, run_as_open
 
 
 def test_bash_remove_prefix(runtime_manager, run_as_openhands):
-    runtime, _ = runtime_manager.load_runtime(run_as_openhands)
+    runtime, _ = runtime_manager.get_reusable_runtime(run_as_openhands)
     # create a git repo - same for both platforms
     action = CmdRunAction(
         'git init && git remote add origin https://github.com/All-Hands-AI/OpenHands'
