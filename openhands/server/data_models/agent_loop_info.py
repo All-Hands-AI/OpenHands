@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-from pydantic import SecretStr
-
 from openhands.events.event_store_abc import EventStoreABC
 
 
