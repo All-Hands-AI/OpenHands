@@ -3,6 +3,7 @@ import axios from "axios";
 import React from "react";
 import { useSelector } from "react-redux";
 import { openHands } from "#/api/open-hands-axios";
+import OpenHands from "#/api/open-hands";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RootState } from "#/store";
 import { useConversation } from "#/context/conversation-context";
@@ -16,8 +17,11 @@ export const useActiveHost = () => {
   const { data } = useQuery({
     queryKey: [conversationId, "hosts"],
     queryFn: async () => {
+      const baseUrl =
+        OpenHands.getConversationUrl() ||
+        `/api/conversations/${conversationId}`;
       const response = await openHands.get<{ hosts: string[] }>(
-        `/api/conversations/${conversationId}/web-hosts`,
+        `${baseUrl}/web-hosts`,
       );
       return { hosts: Object.keys(response.data.hosts) };
     },

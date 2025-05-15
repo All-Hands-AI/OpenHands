@@ -80,6 +80,7 @@ export interface Conversation {
   created_at: string;
   status: ProjectStatus;
   trigger?: ConversationTrigger;
+  url: string | null;
 }
 
 export interface ResultSet<T> {
