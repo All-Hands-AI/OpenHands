@@ -378,8 +378,6 @@ class ActionExecutionClient(Runtime):
                 self.log('warning', f'Failed to update MCP server: {response.text}')
 
             # No API key by default. Child runtime can override this when appropriate
-            from openhands.core.config.mcp_config import MCPSSEServerConfig
-
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
                     url=self.action_execution_server_url.rstrip('/') + '/sse',
