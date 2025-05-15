@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from openhands.core.config import SandboxConfig
-from openhands.resolver.resolve_issue import setup_sandbox_config
+from openhands.resolver.resolve_issue import setup_sandbox_config, SandboxContainerConfig
 import openhands
 
 def assert_sandbox_config(
@@ -116,4 +116,59 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
         config,
         local_runtime_url="http://localhost",
         user_id=1000
-    ) 
+    )
+
+# Additional tests for SandboxContainerConfig
+
+def test_sandbox_container_config_init():
+    """Test basic initialization of SandboxContainerConfig with various input combinations"""
+    # Test with None values
+    config = SandboxContainerConfig(None, None)
+    assert config.container_base is None
+    assert config.container_runtime is None
+
+    # Test with string values
+    config = SandboxContainerConfig("base-image", None)
+    assert config.container_base == "base-image"
+    assert config.container_runtime is None
+
+def test_sandbox_container_config_str_conversion():
+    """Test string type conversion in SandboxContainerConfig initialization"""
+    # Test conversion from numeric values to strings
+    config = SandboxContainerConfig(123, None)
+    assert config.container_base == "123"
+    assert config.container_runtime is None
+
+    config = SandboxContainerConfig(None, 456)
+    assert config.container_base is None
+    assert config.container_runtime == "456"
+
+def test_sandbox_container_config_both_images():
+    """Test error handling when both container images are provided"""
+    with pytest.raises(ValueError, match="Cannot provide both runtime and base container images."):
+        SandboxContainerConfig("base-image", "runtime-image")
+
+@mock.patch("openhands.__version__", "1.0.0")
+def test_sandbox_container_config_build_default():
+    """Test build_for_issue_resolver with default configuration"""
+    config = SandboxContainerConfig.build_for_issue_resolver(None, None, False)
+    assert config.container_base is None
+    assert config.container_runtime == "ghcr.io/all-hands-ai/runtime:1.0.0-nikolaik"
+
+def test_sandbox_container_config_build_experimental():
+    """Test build_for_issue_resolver behavior in experimental mode"""
+    config = SandboxContainerConfig.build_for_issue_resolver(None, None, True)
+    assert config.container_base is None
+    assert config.container_runtime is None
+
+def test_sandbox_container_config_build_with_custom_images():
+    """Test build_for_issue_resolver with custom container images"""
+    # Test with base image
+    config = SandboxContainerConfig.build_for_issue_resolver("custom-base", None, False)
+    assert config.container_base == "custom-base"
+    assert config.container_runtime is None
+
+    # Test with runtime image
+    config = SandboxContainerConfig.build_for_issue_resolver(None, "custom-runtime", False)
+    assert config.container_base is None
+    assert config.container_runtime == "custom-runtime"
