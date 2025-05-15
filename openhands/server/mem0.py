@@ -5,9 +5,12 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from mem0 import MemoryClient
-
 from openhands.core.logger import openhands_logger as logger
+
+try:
+    from mem0 import MemoryClient as _MemoryClient
+except ImportError:
+    _MemoryClient = None
 
 
 class Mem0MetadataType(Enum):
@@ -15,8 +18,68 @@ class Mem0MetadataType(Enum):
     REPORT_FILE = 'report_file'
 
 
-mem0_api_key = os.getenv('MEM0_API_KEY')
-client = MemoryClient(api_key=mem0_api_key if mem0_api_key else 'placeholder_api_key')
+class Mem0Client:
+    """
+    Singleton wrapper for MemoryClient to ensure a single instance is used across the application.
+    Lazily initialized on first use.
+    """
+
+    _instance = None
+    _client = None
+    _initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Mem0Client, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        # Only initialize once
+        if not Mem0Client._initialized:
+            Mem0Client._initialized = True
+            self._initialize_client()
+
+    def _initialize_client(self):
+        if _MemoryClient is None:
+            logger.warning(
+                'MemoryClient is not available. Mem0 features will be disabled.'
+            )
+            return
+
+        mem0_api_key = os.getenv('MEM0_API_KEY')
+        api_key = mem0_api_key if mem0_api_key else 'placeholder_api_key'
+        try:
+            Mem0Client._client = _MemoryClient(api_key=api_key)
+            logger.info('MemoryClient initialized successfully')
+        except Exception as e:
+            logger.error(f'Failed to initialize MemoryClient: {e}')
+            Mem0Client._client = None
+
+    @property
+    def client(self):
+        return Mem0Client._client
+
+    @property
+    def is_available(self) -> bool:
+        return Mem0Client._client is not None
+
+    def add(self, *args, **kwargs):
+        if not self.is_available:
+            logger.warning('MemoryClient not available. Skipping add operation.')
+            return None
+        return self.client.add(*args, **kwargs)
+
+    def search(self, *args, **kwargs):
+        if not self.is_available:
+            logger.warning('MemoryClient not available. Skipping search operation.')
+            return []
+        return self.client.search(*args, **kwargs)
+
+    def history(self, *args, **kwargs):
+        if not self.is_available:
+            logger.warning('MemoryClient not available. Skipping history operation.')
+            return []
+        return self.client.history(*args, **kwargs)
 
 
 def _extract_content_from_event(event: dict) -> Optional[str]:
@@ -103,14 +166,15 @@ async def process_single_event_for_mem0(
         # else:  # If you want to handle other agent cases, add here
         #     parsed_events.append({'role': 'assistant', 'content': content})
 
-    if MemoryClient is None:
+    mem0_client = Mem0Client()
+    if not mem0_client.is_available:
         logger.warning('MemoryClient is not available. Skipping mem0 add.')
         return parsed_events
 
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
         add_result = await asyncio.to_thread(
-            client.add,
+            mem0_client.add,
             agent_id=conversation_id,
             messages=parsed_events,
             metadata=metadata,
@@ -130,15 +194,18 @@ async def search_knowledge_mem0(
     Search mem0 for knowledge chunks related to the question and conversation.
     Tries both REPORT_FILE and FINISH_CONCLUSION types. Returns a list of knowledge dicts, each with a chunkId, or None if not found.
     """
-    if MemoryClient is None:
+    mem0_client = Mem0Client()
+    if not mem0_client.is_available:
         logger.warning('MemoryClient is not available. Skipping mem0 search.')
         return None
 
+    agent_id = raw_followup_conversation_id
+
     for meta_type in [Mem0MetadataType.REPORT_FILE, Mem0MetadataType.FINISH_CONCLUSION]:
         try:
-            memories = client.search(
+            memories = mem0_client.search(
                 query=question,
-                agent_id=raw_followup_conversation_id,
+                agent_id=agent_id,
                 metadata={'type': meta_type.value},
                 infer=True,
                 top_k=10,
@@ -146,7 +213,7 @@ async def search_knowledge_mem0(
             )
             if memories:
                 memory_id = memories[0]['id']
-                histories = client.history(memory_id)
+                histories = mem0_client.history(memory_id)
                 if histories:
                     knowledge = histories[0]['input']
                     chunk_id = histories[0]['metadata'].get(
