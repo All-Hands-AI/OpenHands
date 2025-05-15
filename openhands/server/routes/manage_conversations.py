@@ -18,6 +18,7 @@ from openhands.integrations.service_types import (
     SuggestedTask,
 )
 from openhands.runtime import get_runtime_cls
+from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -61,6 +62,14 @@ class InitSessionRequest(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class InitSessionResponse(BaseModel):
+    status: str
+    conversation_id: str
+    conversation_url: str
+    api_key: str | None
+    message: str | None = None
+
+
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
@@ -71,7 +80,7 @@ async def _create_new_conversation(
     replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
-) -> str:
+) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
         extra={
@@ -149,15 +158,15 @@ async def _create_new_conversation(
             content=user_msg or '',
             image_urls=image_urls or [],
         )
-    await conversation_manager.maybe_start_agent_loop(
+    agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
     )
-    logger.info(f'Finished initializing conversation {conversation_id}')
-    return conversation_id
+    logger.info(f'Finished initializing conversation {agent_loop_info.conversation_id}')
+    return agent_loop_info
 
 
 @app.post('/conversations')
@@ -166,7 +175,7 @@ async def new_conversation(
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     auth_type: AuthType | None = Depends(get_auth_type),
-) -> JSONResponse:
+) -> InitSessionResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -197,7 +206,7 @@ async def new_conversation(
             await provider_handler.verify_repo_provider(repository, git_provider)
 
         # Create conversation with initial message
-        conversation_id = await _create_new_conversation(
+        agent_loop_info = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             selected_repository=repository,
@@ -208,8 +217,11 @@ async def new_conversation(
             conversation_trigger=conversation_trigger,
         )
 
-        return JSONResponse(
-            content={'status': 'ok', 'conversation_id': conversation_id}
+        return InitSessionResponse(
+            status='ok',
+            conversation_id=agent_loop_info.conversation_id,
+            conversation_url=agent_loop_info.url,
+            api_key=agent_loop_info.api_key,
         )
     except MissingSettingsError as e:
         return JSONResponse(
@@ -269,6 +281,8 @@ async def search_conversations(
         user_id, conversation_ids
     )
     connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
+    agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
+    urls_by_conversation_id = {info.conversation_id: info.url for info in agent_loop_info}
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
@@ -277,7 +291,8 @@ async def search_conversations(
                 num_connections=sum(
                     1 for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
-                )
+                ),
+                url=urls_by_conversation_id.get(conversation.conversation_id),
             )
             for conversation in filtered_results
         ),
@@ -295,7 +310,9 @@ async def get_conversation(
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections)
+        agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        url = agent_loop_info[0].url if agent_loop_info else None
+        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, url)
         return conversation_info
     except FileNotFoundError:
         return None
@@ -323,7 +340,8 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
-    num_connections: int
+    num_connections: int,
+    url: str | None,
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -339,7 +357,8 @@ async def _get_conversation_info(
             status=(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
-            num_connections=num_connections
+            num_connections=num_connections,
+            url=url,
         )
     except Exception as e:
         logger.error(
