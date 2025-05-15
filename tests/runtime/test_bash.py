@@ -97,44 +97,46 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         close_test_runtime(runtime)
 
 
-def test_bash_background_server(reusable_runtime):
+def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
     server_port = 8081
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Start the server, expect it to timeout (run in background manner)
+        action = CmdRunAction(f'python3 -m http.server {server_port} &')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0  # Should not timeout since this runs in background
 
-    # Start the server, expect it to timeout (run in background manner)
-    action = CmdRunAction(f'python3 -m http.server {server_port} &')
-    obs = reusable_runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0  # Should not timeout since this runs in background
+        # Give the server a moment to be ready
+        time.sleep(1)
 
-    # Give the server a moment to be ready
-    time.sleep(1)
+        # Verify the server is running by curling it
+        if is_windows():
+            curl_action = CmdRunAction(
+                f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+            )
+        else:
+            curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
+        curl_obs = runtime.run_action(curl_action)
+        logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(curl_obs, CmdOutputObservation)
+        assert curl_obs.exit_code == 0
+        # Check for content typical of python http.server directory listing
+        assert 'Directory listing for' in curl_obs.content
 
-    # Verify the server is running by curling it
-    if is_windows():
-        curl_action = CmdRunAction(
-            f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
-        )
-    else:
-        curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
-    curl_obs = reusable_runtime.run_action(curl_action)
-    logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(curl_obs, CmdOutputObservation)
-    assert curl_obs.exit_code == 0
-    # Check for content typical of python http.server directory listing
-    assert 'Directory listing for' in curl_obs.content
-
-    # Kill the server
-    if is_windows():
-        # Use PowerShell job management commands instead of trying to kill process directly
-        kill_action = CmdRunAction('Get-Job | Stop-Job')
-    else:
-        kill_action = CmdRunAction('pkill -f "http.server"')
-    kill_obs = reusable_runtime.run_action(kill_action)
-    logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(kill_obs, CmdOutputObservation)
-    assert kill_obs.exit_code == 0
-
+        # Kill the server
+        if is_windows():
+            # Use PowerShell job management commands instead of trying to kill process directly
+            kill_action = CmdRunAction('Get-Job | Stop-Job')
+        else:
+            kill_action = CmdRunAction('pkill -f "http.server"')
+        kill_obs = runtime.run_action(kill_action)
+        logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(kill_obs, CmdOutputObservation)
+        assert kill_obs.exit_code == 0
+    finally:
+        close_test_runtime(runtime)
 
 def test_multiline_commands(reusable_runtime):
     if is_windows():
