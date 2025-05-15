@@ -1,3 +1,4 @@
+import re
 from typing import Annotated
 from pydantic import Field
 from fastmcp import FastMCP
@@ -6,11 +7,35 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
+from openhands.server.shared import ConversationStoreImpl, config
 from openhands.server.user_auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.core.logger import openhands_logger as logger
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 mcp_server = FastMCP('mcp')
 
+
+async def save_pr_metadata(user_id: str, conversation_id: str, tool_result: str):
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+    conversation: ConversationMetadata = await conversation_store.get_metadata(conversation_id)
+
+
+    pull_pattern = r"pulls/(\d+)"
+    merge_request_pattern = r"merge_requests/(\d+)"
+
+    # Check if the tool_result contains the PR number
+    pr_number = None
+    match_pull = re.search(pull_pattern, tool_result)
+    match_merge_request = re.search(merge_request_pattern, tool_result)
+
+    if match_pull:
+        pr_number = int(match_pull.group(1))
+    elif match_merge_request:
+        pr_number = int(match_merge_request.group(1))
+
+
+    conversation.pr_number = pr_number
+    await conversation_store.save_metadata(conversation)
 
 @mcp_server.tool()
 async def create_pr(
@@ -49,6 +74,8 @@ async def create_pr(
             title=title,
             body=body
         )
+
+
     except Exception as e:
         response = str(e)
 
