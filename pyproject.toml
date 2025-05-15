@@ -88,6 +88,7 @@ playwright = "^1.51.0"
 prompt-toolkit = "^3.0.50"
 traceloop-sdk = "0.24.0"
 PyYAML = "^6.0.1"
+mem0ai = "0.1.98"
 
 json-schema-to-pydantic = "0.2.3"
 autogen_core = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-core"}
@@ -146,8 +147,6 @@ gevent = "^24.2.1"
 concurrency = ["gevent"]
 
 
-
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -175,8 +174,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-
 
 
 [tool.poetry.group.evaluation.dependencies]

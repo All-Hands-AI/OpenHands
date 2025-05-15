@@ -5,14 +5,9 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from openhands.core.logger import openhands_logger as logger
+from mem0 import MemoryClient
 
-# Import MemoryClient if not already imported
-try:
-    from mem0 import MemoryClient
-except ImportError:
-    # Fallback or raise error if not available
-    MemoryClient = None
+from openhands.core.logger import openhands_logger as logger
 
 
 class Mem0MetadataType(Enum):
