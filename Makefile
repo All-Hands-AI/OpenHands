@@ -157,11 +157,11 @@ install-python-dependencies:
 			echo "$(BLUE)Detected Manjaro Linux. Installing Patchright dependencies...$(RESET)"; \
 			poetry run patchright install chromium; \
 		else \
-			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			if [ ! -f cache/patchright_chromium_is_installed.txt ]; then \
 				echo "Installing patchright chromium..."; \
 				poetry run patchright install chromium; \
 				mkdir -p cache; \
-				touch cache/playwright_chromium_is_installed.txt; \
+				touch cache/patchright_chromium_is_installed.txt; \
 			else \
 				echo "Setup already done. Skipping patchright installation."; \
 			fi \
