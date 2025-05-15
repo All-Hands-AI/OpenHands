@@ -100,6 +100,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             git_provider_tokens = user_secrets.provider_tokens
 
         session_init_args['git_provider_tokens'] = git_provider_tokens
+        if user_secrets:
+            print('pass secrets', user_secrets.custom_secrets)
+            session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
         conversation_init_data = ConversationInitData(**session_init_args)
 

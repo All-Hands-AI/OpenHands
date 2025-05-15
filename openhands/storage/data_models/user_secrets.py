@@ -152,9 +152,19 @@ class UserSecrets(BaseModel):
     def get_env_vars(self) -> dict[str, str]:
         secret_store = self.model_dump(context={'expose_secrets': True})
         custom_secrets = secret_store.get('custom_secrets', {})
-        return custom_secrets
+        secrets = {}
+        for secret_name, value in custom_secrets.items():
+            secrets[secret_name] = value['secret']
+
+        print('final secrets', secrets)
+        return secrets
 
 
     def get_custom_secrets_descriptions(self) -> dict[str, str]:
         # TODO: need to store decriptions with secrets first
-        return {"TEST-TOKEN": "use for testing"}
+        secrets = {}
+        for secret_name, secret in self.custom_secrets.items():
+            secrets[secret_name] = secret.description
+
+        print("secret descriptions", secrets)
+        return secrets

@@ -55,7 +55,6 @@ app = APIRouter(prefix='/api')
 class InitSessionRequest(BaseModel):
     repository: str | None = None
     git_provider: ProviderType | None = None
-    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA | None = None
     selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None

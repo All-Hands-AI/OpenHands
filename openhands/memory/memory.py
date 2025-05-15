@@ -277,6 +277,8 @@ class Memory:
         utc_now = datetime.now(timezone.utc)
         date = str(utc_now.date())
 
+        print('setting descriptions', custom_secrets_descriptions)
+
         if runtime.web_hosts or runtime.additional_agent_instructions:
             self.runtime_info = RuntimeInfo(
                 available_hosts=runtime.web_hosts,

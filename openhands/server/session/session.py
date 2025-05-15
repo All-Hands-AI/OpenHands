@@ -158,7 +158,9 @@ class Session:
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
-            custom_secrets = custom_secrets
+            custom_secrets = settings.custom_secrets
+
+            print("got custom secrets", custom_secrets)
 
         try:
             await self.agent_session.start(
