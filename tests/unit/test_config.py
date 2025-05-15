@@ -434,7 +434,7 @@ def test_defaults_dict_after_updates(default_config):
 
 
 def test_sandbox_volumes(monkeypatch, default_config):
-    # Test SANDBOX_VOLUMES with multiple mounts
+    # Test SANDBOX_VOLUMES with multiple mounts (no explicit /workspace mount)
     monkeypatch.setenv(
         'SANDBOX_VOLUMES',
         '/host/path1:/container/path1,/host/path2:/container/path2:ro',
@@ -449,14 +449,17 @@ def test_sandbox_volumes(monkeypatch, default_config):
         == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
     )
 
-    # Check that the old parameters are set from the first mount for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+    # With the new behavior, workspace_base and workspace_mount_path should be None
+    # when no explicit /workspace mount is found
+    assert default_config.workspace_base is None
+    assert default_config.workspace_mount_path is None
+    assert (
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
+    )  # Default value
 
 
 def test_sandbox_volumes_with_mode(monkeypatch, default_config):
-    # Test SANDBOX_VOLUMES with read-only mode
+    # Test SANDBOX_VOLUMES with read-only mode (no explicit /workspace mount)
     monkeypatch.setenv('SANDBOX_VOLUMES', '/host/path1:/container/path1:ro')
 
     load_from_env(default_config, os.environ)
@@ -465,10 +468,13 @@ def test_sandbox_volumes_with_mode(monkeypatch, default_config):
     # Check that sandbox.volumes is set correctly
     assert default_config.sandbox.volumes == '/host/path1:/container/path1:ro'
 
-    # Check that the old parameters are set for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+    # With the new behavior, workspace_base and workspace_mount_path should be None
+    # when no explicit /workspace mount is found
+    assert default_config.workspace_base is None
+    assert default_config.workspace_mount_path is None
+    assert (
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
+    )  # Default value
 
 
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
@@ -637,6 +643,37 @@ def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
     assert os.path.exists(default_config.cache_dir)
+
+
+def test_sandbox_volumes_with_workspace(default_config):
+    """Test that sandbox.volumes with explicit /workspace mount works correctly."""
+    default_config.sandbox.volumes = '/home/user/mydir:/workspace:rw,/data:/data:ro'
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path == '/home/user/mydir'
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_config.workspace_base == '/home/user/mydir'
+
+
+def test_sandbox_volumes_without_workspace(default_config):
+    """Test that sandbox.volumes without explicit /workspace mount doesn't set workspace paths."""
+    default_config.sandbox.volumes = '/data:/data:ro,/models:/models:ro'
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path is None
+    assert default_config.workspace_base is None
+    assert (
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
+    )  # Default value remains unchanged
+
+
+def test_sandbox_volumes_with_workspace_not_first(default_config):
+    """Test that sandbox.volumes with /workspace mount not as first entry works correctly."""
+    default_config.sandbox.volumes = (
+        '/data:/data:ro,/home/user/mydir:/workspace:rw,/models:/models:ro'
+    )
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path == '/home/user/mydir'
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_config.workspace_base == '/home/user/mydir'
 
 
 def test_agent_config_condenser_with_no_enabled():

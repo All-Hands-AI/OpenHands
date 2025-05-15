@@ -54,7 +54,6 @@ class ConversationManager(ABC):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
     ) -> EventStore | None:
         """Join a conversation and return its event stream."""
 
