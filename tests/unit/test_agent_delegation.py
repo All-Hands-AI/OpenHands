@@ -106,6 +106,13 @@ async def test_delegation_flow(
         else default,
     )
 
+    # Mock Mem0Client to avoid actual initialization attempts during tests
+    mock_mem0_client = MagicMock()
+    mock_mem0_client.is_available = False
+    monkeypatch.setattr(
+        'openhands.server.mem0.Mem0Client', MagicMock(return_value=mock_mem0_client)
+    )
+
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
     Agent.get_cls = Mock(
         return_value=lambda llm,

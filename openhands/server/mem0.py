@@ -5,12 +5,9 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from openhands.core.logger import openhands_logger as logger
+from mem0 import MemoryClient
 
-try:
-    from mem0 import MemoryClient as _MemoryClient
-except ImportError:
-    _MemoryClient = None
+from openhands.core.logger import openhands_logger as logger
 
 
 class Mem0MetadataType(Enum):
@@ -36,21 +33,16 @@ class Mem0Client:
     def __init__(self):
         # Only initialize once
         if not Mem0Client._initialized:
-            Mem0Client._initialized = True
             self._initialize_client()
 
     def _initialize_client(self):
-        if _MemoryClient is None:
-            logger.warning(
-                'MemoryClient is not available. Mem0 features will be disabled.'
-            )
-            return
-
         mem0_api_key = os.getenv('MEM0_API_KEY')
         api_key = mem0_api_key if mem0_api_key else 'placeholder_api_key'
         try:
-            Mem0Client._client = _MemoryClient(api_key=api_key)
+            Mem0Client._client = MemoryClient(api_key=api_key)
             logger.info('MemoryClient initialized successfully')
+            # Only set initialized to True when client is successfully created
+            Mem0Client._initialized = True
         except Exception as e:
             logger.error(f'Failed to initialize MemoryClient: {e}')
             Mem0Client._client = None
