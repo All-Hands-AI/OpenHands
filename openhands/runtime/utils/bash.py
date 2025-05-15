@@ -609,9 +609,8 @@ class BashSession:
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
-            # logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
-            # logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
-            logger.warning(f'🤔 PANE CONTENT: {cur_pane_output}')
+            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
+            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             current_ps1_count = len(ps1_matches)
 
@@ -622,7 +621,7 @@ class BashSession:
                 delta_output = (
                     cur_combined_output.removeprefix(last_combined_output)
                     if last_combined_output is not None
-                    else last_combined_output
+                    else cur_combined_output
                 )
                 last_combined_output = cur_combined_output
 

@@ -26,6 +26,7 @@ from zipfile import ZipFile
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from mcpm import MCPRouter, RouterConfig
@@ -778,6 +779,15 @@ if __name__ == '__main__':
         logger.info('Shutdown complete.')
 
     app = FastAPI(lifespan=lifespan)
+
+    # Add CORS middleware to allow cross-origin requests
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=['*'],  # Allow all origins
+        allow_credentials=True,
+        allow_methods=['*'],  # Allow all methods
+        allow_headers=['*'],  # Allow all headers
+    )
 
     # TODO below 3 exception handlers were recommended by Sonnet.
     # Are these something we should keep?
