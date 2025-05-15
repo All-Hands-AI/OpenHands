@@ -5,14 +5,11 @@ import os
 import pathlib
 import shutil
 import subprocess
-from argparse import Namespace
 from typing import Any
 from uuid import uuid4
 
-from pydantic import SecretStr
 from termcolor import colored
 
-import openhands
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
@@ -31,16 +28,12 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.issue_handler_factory import IssueHandlerFactory
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     codeact_user_response,
-    get_unique_uid,
-    identify_token,
     reset_logger_for_multiprocessing,
 )
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 # Don't make this confgurable for now, unless we have other competitive agents
 AGENT_CLASS = 'CodeActAgent'
@@ -95,164 +88,6 @@ class IssueResolver:
         self.comment_id = comment_id
         self.sandbox_config = sandbox_config
         self.issue_handler = issue_handler
-
-    @classmethod
-    def from_args(cls, args: Namespace) -> 'IssueResolver':
-        parts = args.selected_repo.rsplit('/', 1)
-        if len(parts) < 2:
-            raise ValueError('Invalid repository format. Expected owner/repo')
-        owner, repo = parts
-
-        token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
-        username = args.username if args.username else os.getenv('GIT_USERNAME')
-        if not username:
-            raise ValueError('Username is required.')
-
-        if not token:
-            raise ValueError('Token is required.')
-
-        platform = call_async_from_sync(
-            identify_token,
-            GENERAL_TIMEOUT,
-            token,
-            args.base_domain,
-        )
-
-        api_key = args.llm_api_key or os.environ['LLM_API_KEY']
-        model = args.llm_model or os.environ['LLM_MODEL']
-        base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
-        api_version = os.environ.get('LLM_API_VERSION', None)
-        llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
-        llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT', '5'))
-        llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT', '30'))
-        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER', 2))
-        llm_timeout = int(os.environ.get('LLM_TIMEOUT', 0))
-
-        # Create LLMConfig instance
-        llm_config = LLMConfig(
-            model=model,
-            api_key=SecretStr(api_key) if api_key else None,
-            base_url=base_url,
-            num_retries=llm_num_retries,
-            retry_min_wait=llm_retry_min_wait,
-            retry_max_wait=llm_retry_max_wait,
-            retry_multiplier=llm_retry_multiplier,
-            timeout=llm_timeout,
-        )
-
-        # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
-        if api_version is not None:
-            llm_config.api_version = api_version
-
-        repo_instruction = None
-        if args.repo_instruction_file:
-            with open(args.repo_instruction_file, 'r') as f:
-                repo_instruction = f.read()
-
-        issue_type = args.issue_type
-
-        # Read the prompt template
-        prompt_file = args.prompt_file
-        if prompt_file is None:
-            if issue_type == 'issue':
-                prompt_file = os.path.join(
-                    os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
-                )
-            else:
-                prompt_file = os.path.join(
-                    os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
-                )
-        with open(prompt_file, 'r') as f:
-            prompt_template = f.read()
-
-        base_domain = args.base_domain
-        if base_domain is None:
-            base_domain = (
-                'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
-            )
-
-        factory = IssueHandlerFactory(
-            owner=owner,
-            repo=repo,
-            token=token,
-            username=username,
-            platform=platform,
-            base_domain=base_domain,
-            issue_type=issue_type,
-            llm_config=llm_config,
-        )
-        issue_handler = factory.create()
-
-        # Setup and validate container images
-        sandbox_config = cls._setup_sandbox_config(
-            args.base_container_image,
-            args.runtime_container_image,
-            args.is_experimental,
-        )
-
-        return IssueResolver(
-            owner=owner,
-            repo=repo,
-            platform=platform,
-            max_iterations=args.max_iterations,
-            output_dir=args.output_dir,
-            llm_config=llm_config,
-            prompt_template=prompt_template,
-            issue_type=issue_type,
-            repo_instruction=repo_instruction,
-            issue_number=args.issue_number,
-            comment_id=args.comment_id,
-            sandbox_config=sandbox_config,
-            issue_handler=issue_handler,
-        )
-
-    @classmethod
-    def _setup_sandbox_config(
-        cls,
-        base_container_image: str | None,
-        runtime_container_image: str | None,
-        is_experimental: bool,
-    ) -> SandboxConfig:
-        if runtime_container_image is not None and base_container_image is not None:
-            raise ValueError('Cannot provide both runtime and base container images.')
-
-        if (
-            runtime_container_image is None
-            and base_container_image is None
-            and not is_experimental
-        ):
-            runtime_container_image = (
-                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
-            )
-
-        # Convert container image values to string or None
-        container_base = (
-            str(base_container_image) if base_container_image is not None else None
-        )
-        container_runtime = (
-            str(runtime_container_image)
-            if runtime_container_image is not None
-            else None
-        )
-
-        sandbox_config = SandboxConfig(
-            base_container_image=container_base,
-            runtime_container_image=container_runtime,
-            enable_auto_lint=False,
-            use_host_network=False,
-            timeout=300,
-        )
-
-        # Configure sandbox for GitLab CI environment
-        if cls.GITLAB_CI:
-            sandbox_config.local_runtime_url = os.getenv(
-                'LOCAL_RUNTIME_URL', 'http://localhost'
-            )
-            user_id = os.getuid() if hasattr(os, 'getuid') else 1000
-            if user_id == 0:
-                sandbox_config.user_id = get_unique_uid()
-
-        return sandbox_config
 
     def initialize_runtime(
         self,

@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from openhands.core.config import SandboxConfig
-from openhands.resolver.issue_resolver import IssueResolver
+from openhands.resolver.resolve_issue import setup_sandbox_config
 import openhands
 
 def assert_sandbox_config(
@@ -26,7 +26,7 @@ def assert_sandbox_config(
 
 def test_setup_sandbox_config_default():
     """Test default configuration when no images provided and not experimental"""
-    config = IssueResolver._setup_sandbox_config(
+    config = setup_sandbox_config(
         base_container_image=None,
         runtime_container_image=None,
         is_experimental=False,
@@ -37,7 +37,7 @@ def test_setup_sandbox_config_default():
 def test_setup_sandbox_config_both_images():
     """Test that providing both container images raises ValueError"""
     with pytest.raises(ValueError, match="Cannot provide both runtime and base container images."):
-        IssueResolver._setup_sandbox_config(
+        setup_sandbox_config(
             base_container_image="base-image",
             runtime_container_image="runtime-image",
             is_experimental=False,
@@ -46,7 +46,7 @@ def test_setup_sandbox_config_both_images():
 def test_setup_sandbox_config_base_only():
     """Test configuration when only base_container_image is provided"""
     base_image = "custom-base-image"
-    config = IssueResolver._setup_sandbox_config(
+    config = setup_sandbox_config(
         base_container_image=base_image,
         runtime_container_image=None,
         is_experimental=False,
@@ -61,7 +61,7 @@ def test_setup_sandbox_config_base_only():
 def test_setup_sandbox_config_runtime_only():
     """Test configuration when only runtime_container_image is provided"""
     runtime_image = "custom-runtime-image"
-    config = IssueResolver._setup_sandbox_config(
+    config = setup_sandbox_config(
         base_container_image=None,
         runtime_container_image=runtime_image,
         is_experimental=False,
@@ -74,7 +74,7 @@ def test_setup_sandbox_config_runtime_only():
  
 def test_setup_sandbox_config_experimental():
     """Test configuration when experimental mode is enabled"""
-    config = IssueResolver._setup_sandbox_config(
+    config = setup_sandbox_config(
         base_container_image=None,
         runtime_container_image=None,
         is_experimental=True,
@@ -85,35 +85,35 @@ def test_setup_sandbox_config_experimental():
         runtime_container_image=None
     )
 
-@mock.patch("openhands.resolver.issue_resolver.os.getuid", return_value=0)
-@mock.patch("openhands.resolver.issue_resolver.get_unique_uid", return_value=1001)
-def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
+@mock.patch("openhands.resolver.resolve_issue.os.environ", return_value="true")
+@mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=0)
+@mock.patch("openhands.resolver.utils.get_unique_uid", return_value=1001)
+def test_setup_sandbox_config_gitlab_ci(mock_envirion, mock_getuid, mock_get_unique_uid):
     """Test GitLab CI specific configuration when running as root"""
-    with mock.patch.object(IssueResolver, "GITLAB_CI", True):
-        config = IssueResolver._setup_sandbox_config(
-            base_container_image=None,
-            runtime_container_image=None,
-            is_experimental=False,
-        )
-        
-        assert_sandbox_config(
-            config,
-            local_runtime_url="http://localhost",
-            user_id=1001
-        )
+    config = setup_sandbox_config(
+        base_container_image=None,
+        runtime_container_image=None,
+        is_experimental=False,
+    )
+    
+    assert_sandbox_config(
+        config,
+        local_runtime_url="http://localhost",
+        user_id=1001
+    )
 
-@mock.patch("openhands.resolver.issue_resolver.os.getuid", return_value=1000)
-def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
+@mock.patch("openhands.resolver.resolve_issue.os.environ", return_value="true")
+@mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=1000)
+def test_setup_sandbox_config_gitlab_ci_non_root(mock_environ, mock_getuid):
     """Test GitLab CI configuration when not running as root"""
-    with mock.patch.object(IssueResolver, "GITLAB_CI", True):
-        config = IssueResolver._setup_sandbox_config(
-            base_container_image=None,
-            runtime_container_image=None,
-            is_experimental=False,
-        )
+    config = setup_sandbox_config(
+        base_container_image=None,
+        runtime_container_image=None,
+        is_experimental=False,
+    )
 
-        assert_sandbox_config(
-            config,
-            local_runtime_url="http://localhost",
-            user_id=1000
-        ) 
+    assert_sandbox_config(
+        config,
+        local_runtime_url="http://localhost",
+        user_id=1000
+    ) 
