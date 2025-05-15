@@ -115,7 +115,8 @@ class RecallObservation(Observation):
                     f'repo_instructions={self.repo_instructions[:20]}...',
                     f'runtime_hosts={self.runtime_hosts}',
                     f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
-                    f'date={self.date}',
+                    f'date={self.date}'
+                    f'custom_secrets_descriptions={self.custom_secrets_descriptions}',
                 ]
             )
         else:
