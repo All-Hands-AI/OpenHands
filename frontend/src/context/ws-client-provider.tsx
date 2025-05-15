@@ -132,7 +132,7 @@ export function WsClientProvider({
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const { removeOptimisticUserMessage } = useOptimisticUserMessage();
-  const { setErrorMessage } = useWSErrorMessage();
+  const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
@@ -171,6 +171,8 @@ export function WsClientProvider({
           source: "chat",
           metadata: { msgId: event.id },
         });
+      } else {
+        removeErrorMessage();
       }
 
       if (isUserMessage(event)) {

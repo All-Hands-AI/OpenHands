@@ -25,6 +25,45 @@ import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import i18n from "#/i18n";
+import { OpenHandsAction } from "#/types/core/actions";
+import { OpenHandsEventType } from "#/types/core/base";
+import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
+import { OpenHandsObservation } from "#/types/core/observations";
+
+const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
+  "system",
+  "agent_state_changed",
+  "change_agent_state",
+];
+
+const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall"];
+
+const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
+  if (isOpenHandsAction(event)) {
+    const noRenderList = COMMON_NO_RENDER_LIST.concat(ACTION_NO_RENDER_LIST);
+    return !noRenderList.includes(event.action);
+  }
+
+  if (isOpenHandsObservation(event)) {
+    return !COMMON_NO_RENDER_LIST.includes(event.observation);
+  }
+
+  return true;
+};
+
+interface ErrorMessageBannerProps {
+  message: string;
+}
+
+function ErrorMessageBanner({ message }: ErrorMessageBannerProps) {
+  return (
+    <div className="w-full rounded-lg p-2 text-black border border-red-800 bg-red-500">
+      {message}
+    </div>
+  );
+}
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -36,6 +75,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
+  const { getErrorMessage } = useWSErrorMessage();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessage();
@@ -58,9 +98,12 @@ export function ChatInterface() {
   const { mutate: getTrajectory } = useGetTrajectory();
 
   const optimisticUserMessage = getOptimisticUserMessage();
+  const errorMessage = getErrorMessage();
+
+  const events = parsedEvents.filter(shouldRenderEvent);
 
   const handleSendMessage = async (content: string, files: File[]) => {
-    if (parsedEvents.length === 0) {
+    if (events.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
@@ -71,7 +114,7 @@ export function ChatInterface() {
       });
     } else {
       posthog.capture("user_message_sent", {
-        session_message_count: parsedEvents.length,
+        session_message_count: events.length,
         current_message_length: content.length,
       });
     }
@@ -121,7 +164,7 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
-      {parsedEvents.length === 0 && !optimisticUserMessage && (
+      {events.length === 0 && !optimisticUserMessage && (
         <ChatSuggestions onSuggestionsClick={setMessageToSend} />
       )}
 
@@ -138,7 +181,7 @@ export function ChatInterface() {
 
         {!isLoadingMessages && (
           <Messages
-            messages={parsedEvents}
+            messages={events}
             isAwaitingUserConfirmation={
               curAgentState === AgentState.AWAITING_USER_CONFIRMATION
             }
@@ -170,6 +213,12 @@ export function ChatInterface() {
 
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
+
+        {errorMessage && (
+          <ErrorMessageBanner
+            message={i18n.exists(errorMessage) ? t(errorMessage) : errorMessage}
+          />
+        )}
 
         <InteractiveChatBox
           onSubmit={handleSendMessage}
