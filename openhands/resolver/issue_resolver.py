@@ -49,15 +49,27 @@ AGENT_CLASS = 'CodeActAgent'
 class IssueResolver:
     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
 
-    def __init__(self, args: Namespace) -> None:
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        platform: ProviderType,
+        max_iterations: int,
+        output_dir: str,
+        llm_config: LLMConfig,
+        prompt_template: str,
+        issue_type: str,
+        repo_instruction: str | None,
+        issue_number: int,
+        comment_id: int | None,
+        sandbox_config: SandboxConfig,
+        issue_handler: ServiceContextIssue | ServiceContextPR,
+    ) -> None:
         """Initialize the IssueResolver with the given parameters.
         Params initialized:
             owner: Owner of the repo.
             repo: Repository name.
-            token: Token to access the repository.
-            username: Username to access the repository.
             platform: Platform of the repository.
-            runtime_container_image: Container image to use.
             max_iterations: Maximum number of iterations to run.
             output_dir: Output directory to write the results.
             llm_config: Configuration for the language model.
@@ -66,16 +78,26 @@ class IssueResolver:
             repo_instruction: Repository instruction to use.
             issue_number: Issue number to resolve.
             comment_id: Optional ID of a specific comment to focus on.
-            base_domain: The base domain for the git server.
+            sandbox_config: Configuration for the sandbox environment.
+            issue_handler: Issue handler for the specific platform.
         """
 
-        # Setup and validate container images
-        self.sandbox_config = self._setup_sandbox_config(
-            args.base_container_image,
-            args.runtime_container_image,
-            args.is_experimental,
-        )
+        self.owner = owner
+        self.repo = repo
+        self.platform = platform
+        self.max_iterations = max_iterations
+        self.output_dir = output_dir
+        self.llm_config = llm_config
+        self.prompt_template = prompt_template
+        self.issue_type = issue_type
+        self.repo_instruction = repo_instruction
+        self.issue_number = issue_number
+        self.comment_id = comment_id
+        self.sandbox_config = sandbox_config
+        self.issue_handler = issue_handler
 
+    @classmethod
+    def from_args(cls, args: Namespace) -> 'IssueResolver':
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
             raise ValueError('Invalid repository format. Expected owner/repo')
@@ -149,29 +171,40 @@ class IssueResolver:
                 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
             )
 
-        self.owner = owner
-        self.repo = repo
-        self.platform = platform
-        self.max_iterations = args.max_iterations
-        self.output_dir = args.output_dir
-        self.llm_config = llm_config
-        self.prompt_template = prompt_template
-        self.issue_type = issue_type
-        self.repo_instruction = repo_instruction
-        self.issue_number = args.issue_number
-        self.comment_id = args.comment_id
-
         factory = IssueHandlerFactory(
-            owner=self.owner,
-            repo=self.repo,
+            owner=owner,
+            repo=repo,
             token=token,
             username=username,
-            platform=self.platform,
+            platform=platform,
             base_domain=base_domain,
-            issue_type=self.issue_type,
-            llm_config=self.llm_config,
+            issue_type=issue_type,
+            llm_config=llm_config,
         )
-        self.issue_handler = factory.create()
+        issue_handler = factory.create()
+
+        # Setup and validate container images
+        sandbox_config = cls._setup_sandbox_config(
+            args.base_container_image,
+            args.runtime_container_image,
+            args.is_experimental,
+        )
+
+        return IssueResolver(
+            owner=owner,
+            repo=repo,
+            platform=platform,
+            max_iterations=args.max_iterations,
+            output_dir=args.output_dir,
+            llm_config=llm_config,
+            prompt_template=prompt_template,
+            issue_type=issue_type,
+            repo_instruction=repo_instruction,
+            issue_number=args.issue_number,
+            comment_id=args.comment_id,
+            sandbox_config=sandbox_config,
+            issue_handler=issue_handler,
+        )
 
     @classmethod
     def _setup_sandbox_config(

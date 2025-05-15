@@ -121,7 +121,7 @@ def main() -> None:
 
     my_args = parser.parse_args()
 
-    issue_resolver = IssueResolver(my_args)
+    issue_resolver = IssueResolver.from_args(my_args)
     asyncio.run(issue_resolver.resolve_issue())
 
 
