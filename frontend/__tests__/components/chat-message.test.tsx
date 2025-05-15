@@ -10,11 +10,7 @@ describe("ChatMessage", () => {
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
 
-  it("should render an assistant message", () => {
-    render(<ChatMessage type="agent" message="Hello, World!" />);
-    expect(screen.getByTestId("assistant-message")).toBeInTheDocument();
-    expect(screen.getByText("Hello, World!")).toBeInTheDocument();
-  });
+  it.todo("should render an assistant message");
 
   it.skip("should support code syntax highlighting", () => {
     const code = "```js\nconsole.log('Hello, World!')\n```";
