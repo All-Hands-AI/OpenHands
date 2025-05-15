@@ -10,6 +10,13 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
     GIT_EDITOR="code --wait" \
     OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server
 
+{% if include_programming_languages %}
+ENV GOPATH=/go \
+    GOROOT=/usr/local/go \
+    PATH="/usr/local/go/bin:/go/bin:/root/.cargo/bin:${PATH}" \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+{% endif %}
+
 {% macro setup_base_system() %}
 
 # Install base system dependencies
@@ -27,9 +34,52 @@ RUN apt-get update && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
         apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv && \
     corepack enable yarn && \
-    {% endif -%}
+    {% endif %}
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Docker
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates gnupg lsb-release && \
+    if grep -q "Debian" /etc/os-release; then \
+        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    else \
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    fi && \
+    apt-get update && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+{% if include_programming_languages %}
+# Install Java
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jdk maven gradle && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Golang
+RUN curl -OL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz && \
+    rm go1.21.0.linux-amd64.tar.gz && \
+    echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && \
+    echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/bash.bashrc
+
+# Install PHP
+RUN apt-get update && \
+    apt-get install -y php && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Ruby
+RUN apt-get update && \
+    apt-get install -y ruby-full ruby-bundler && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+{% endif %}
+
 
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
@@ -51,6 +101,11 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
     mkdir -p /openhands/poetry
+
+{% if include_programming_languages %}
+RUN mkdir -p /go && \
+    chmod -R 777 /go
+{% endif %}
 
 {% endmacro %}
 
@@ -111,8 +166,19 @@ RUN /openhands/micromamba/bin/micromamba config set changeps1 False && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12
 
 # Install project dependencies in smaller chunks
+# Ensure we have all necessary build dependencies for pydantic-core
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    python3-dev \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install main dependencies first
 RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main --no-interaction --no-root
 
+# Then install runtime dependencies
 RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only runtime --no-interaction --no-root
 
 # Install playwright and its dependencies

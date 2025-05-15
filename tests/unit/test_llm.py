@@ -152,6 +152,7 @@ def test_llm_init_with_custom_config():
         max_output_tokens=1500,
         temperature=0.8,
         top_p=0.9,
+        top_k=None,
     )
     llm = LLM(custom_config)
     assert llm.config.model == 'custom-model'
@@ -160,6 +161,42 @@ def test_llm_init_with_custom_config():
     assert llm.config.max_output_tokens == 1500
     assert llm.config.temperature == 0.8
     assert llm.config.top_p == 0.9
+    assert llm.config.top_k is None
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_top_k_in_completion_when_set(mock_litellm_completion):
+    # Create a config with top_k set
+    config_with_top_k = LLMConfig(top_k=50)
+    llm = LLM(config_with_top_k)
+
+    # Define a side effect function to check top_k
+    def side_effect(*args, **kwargs):
+        assert 'top_k' in kwargs
+        assert kwargs['top_k'] == 50
+        return {'choices': [{'message': {'content': 'Mocked response'}}]}
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Call completion
+    llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion):
+    # Create a config with top_k set to None
+    config_without_top_k = LLMConfig(top_k=None)
+    llm = LLM(config_without_top_k)
+
+    # Define a side effect function to check top_k
+    def side_effect(*args, **kwargs):
+        assert 'top_k' not in kwargs
+        return {'choices': [{'message': {'content': 'Mocked response'}}]}
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Call completion
+    llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
 
 
 def test_llm_init_with_metrics():
