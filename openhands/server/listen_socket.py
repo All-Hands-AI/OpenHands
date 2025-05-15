@@ -105,7 +105,7 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         conversation_init_data = ConversationInitData(**session_init_args)
 
-        event_stream = await conversation_manager.join_conversation(
+        agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
             conversation_init_data,
@@ -115,9 +115,11 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
         )
         agent_state_changed = None
-        if event_stream is None:
+        if agent_loop_info is None:
             raise ConnectionRefusedError('Failed to join conversation')
-        async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+        async_store = AsyncEventStoreWrapper(
+            agent_loop_info.event_store, latest_event_id + 1
+        )
         async for event in async_store:
             logger.debug(f'oh_event: {event.__class__.__name__}')
             if isinstance(
