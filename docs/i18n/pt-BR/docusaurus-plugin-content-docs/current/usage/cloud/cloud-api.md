@@ -69,7 +69,7 @@ data = {
 response = requests.post(url, headers=headers, json=data)
 conversation = response.json()
 
-print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['id']}")
+print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['conversation_id']}")
 print(f"Status: {conversation['status']}")
 ```
 </details>

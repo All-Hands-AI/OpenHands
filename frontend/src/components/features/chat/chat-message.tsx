@@ -6,6 +6,7 @@ import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
+import { paragraph } from "../markdown/paragraph";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -64,6 +65,7 @@ export function ChatMessage({
             ul,
             ol,
             a: anchor,
+            p: paragraph,
           }}
           remarkPlugins={[remarkGfm]}
         >

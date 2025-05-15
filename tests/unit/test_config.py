@@ -344,6 +344,33 @@ user_id = 1001
     assert default_config.sandbox.user_id == 1001
 
 
+def test_load_from_env_with_list(monkeypatch, default_config):
+    """Test loading list values from environment variables, particularly SANDBOX_RUNTIME_EXTRA_BUILD_ARGS."""
+    # Set the environment variable with a list-formatted string
+    monkeypatch.setenv(
+        'SANDBOX_RUNTIME_EXTRA_BUILD_ARGS',
+        '['
+        + '  "--add-host=host.docker.internal:host-gateway",'
+        + '  "--build-arg=https_proxy=https://my-proxy:912",'
+        + ']',
+    )
+
+    # Load configuration from environment
+    load_from_env(default_config, os.environ)
+
+    # Verify that the list was correctly parsed
+    assert isinstance(default_config.sandbox.runtime_extra_build_args, list)
+    assert len(default_config.sandbox.runtime_extra_build_args) == 2
+    assert (
+        '--add-host=host.docker.internal:host-gateway'
+        in default_config.sandbox.runtime_extra_build_args
+    )
+    assert (
+        '--build-arg=https_proxy=https://my-proxy:912'
+        in default_config.sandbox.runtime_extra_build_args
+    )
+
+
 def test_security_config_from_toml(default_config, temp_toml_file):
     """Test loading security specific configurations."""
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -407,7 +434,7 @@ def test_defaults_dict_after_updates(default_config):
 
 
 def test_sandbox_volumes(monkeypatch, default_config):
-    # Test SANDBOX_VOLUMES with multiple mounts
+    # Test SANDBOX_VOLUMES with multiple mounts (no explicit /workspace mount)
     monkeypatch.setenv(
         'SANDBOX_VOLUMES',
         '/host/path1:/container/path1,/host/path2:/container/path2:ro',
@@ -422,14 +449,17 @@ def test_sandbox_volumes(monkeypatch, default_config):
         == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
     )
 
-    # Check that the old parameters are set from the first mount for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+    # With the new behavior, workspace_base and workspace_mount_path should be None
+    # when no explicit /workspace mount is found
+    assert default_config.workspace_base is None
+    assert default_config.workspace_mount_path is None
+    assert (
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
+    )  # Default value
 
 
 def test_sandbox_volumes_with_mode(monkeypatch, default_config):
-    # Test SANDBOX_VOLUMES with read-only mode
+    # Test SANDBOX_VOLUMES with read-only mode (no explicit /workspace mount)
     monkeypatch.setenv('SANDBOX_VOLUMES', '/host/path1:/container/path1:ro')
 
     load_from_env(default_config, os.environ)
@@ -438,10 +468,13 @@ def test_sandbox_volumes_with_mode(monkeypatch, default_config):
     # Check that sandbox.volumes is set correctly
     assert default_config.sandbox.volumes == '/host/path1:/container/path1:ro'
 
-    # Check that the old parameters are set for backward compatibility
-    assert default_config.workspace_base == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path == os.path.abspath('/host/path1')
-    assert default_config.workspace_mount_path_in_sandbox == '/container/path1'
+    # With the new behavior, workspace_base and workspace_mount_path should be None
+    # when no explicit /workspace mount is found
+    assert default_config.workspace_base is None
+    assert default_config.workspace_mount_path is None
+    assert (
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
+    )  # Default value
 
 
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
@@ -610,6 +643,37 @@ def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
     assert os.path.exists(default_config.cache_dir)
+
+
+def test_sandbox_volumes_with_workspace(default_config):
+    """Test that sandbox.volumes with explicit /workspace mount works correctly."""
+    default_config.sandbox.volumes = '/home/user/mydir:/workspace:rw,/data:/data:ro'
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path == '/home/user/mydir'
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_config.workspace_base == '/home/user/mydir'
+
+
+def test_sandbox_volumes_without_workspace(default_config):
+    """Test that sandbox.volumes without explicit /workspace mount doesn't set workspace paths."""
+    default_config.sandbox.volumes = '/data:/data:ro,/models:/models:ro'
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path is None
+    assert default_config.workspace_base is None
+    assert (
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
+    )  # Default value remains unchanged
+
+
+def test_sandbox_volumes_with_workspace_not_first(default_config):
+    """Test that sandbox.volumes with /workspace mount not as first entry works correctly."""
+    default_config.sandbox.volumes = (
+        '/data:/data:ro,/home/user/mydir:/workspace:rw,/models:/models:ro'
+    )
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path == '/home/user/mydir'
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_config.workspace_base == '/home/user/mydir'
 
 
 def test_agent_config_condenser_with_no_enabled():
@@ -880,24 +944,24 @@ def test_api_keys_repr_str():
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_llm
         ):
-            assert (
-                'key' not in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'key' in LLMConfig"
-            assert (
-                'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'token' in LLMConfig"
+            assert 'key' not in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'key' in LLMConfig"
+            )
+            assert 'token' not in attr_name.lower() or 'tokens' in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'token' in LLMConfig"
+            )
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
     agent_config = AgentConfig(enable_prompt_extensions=True, enable_browsing=False)
     for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
-            assert (
-                'key' not in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'key' in AgentConfig"
-            assert (
-                'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'token' in AgentConfig"
+            assert 'key' not in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'key' in AgentConfig"
+            )
+            assert 'token' not in attr_name.lower() or 'tokens' in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'token' in AgentConfig"
+            )
 
     # Test AppConfig
     app_config = AppConfig(
@@ -937,12 +1001,12 @@ def test_api_keys_repr_str():
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_app
         ):
-            assert (
-                'key' not in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'key' in AppConfig"
-            assert (
-                'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
-            ), f"Unexpected attribute '{attr_name}' contains 'token' in AppConfig"
+            assert 'key' not in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'key' in AppConfig"
+            )
+            assert 'token' not in attr_name.lower() or 'tokens' in attr_name.lower(), (
+                f"Unexpected attribute '{attr_name}' contains 'token' in AppConfig"
+            )
 
 
 def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):

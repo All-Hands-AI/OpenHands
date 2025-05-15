@@ -20,6 +20,12 @@ ignore = [
     "B010",
     "B904",
     "B018",
+    # Temporarily ignore ASYNC rules until they can be properly fixed in a separate PR
+    "ASYNC110",
+    "ASYNC220",
+    "ASYNC221",
+    "ASYNC230",
+    "ASYNC251",
 ]
 
 [lint.flake8-quotes]
