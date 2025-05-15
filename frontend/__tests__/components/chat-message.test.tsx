@@ -11,7 +11,7 @@ describe("ChatMessage", () => {
   });
 
   it("should render an assistant message", () => {
-    render(<ChatMessage type="assistant" message="Hello, World!" />);
+    render(<ChatMessage type="agent" message="Hello, World!" />);
     expect(screen.getByTestId("assistant-message")).toBeInTheDocument();
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
@@ -66,10 +66,7 @@ describe("ChatMessage", () => {
 
   it("should apply correct styles to inline code", () => {
     render(
-      <ChatMessage
-        type="assistant"
-        message="Here is some `inline code` text"
-      />,
+      <ChatMessage type="agent" message="Here is some `inline code` text" />,
     );
     const codeElement = screen.getByText("inline code");
 

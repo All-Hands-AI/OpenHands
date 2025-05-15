@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import type { Message } from "#/message";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
@@ -80,7 +79,6 @@ describe("Empty state", () => {
         status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
-      const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
@@ -103,7 +101,6 @@ describe("Empty state", () => {
       await user.click(displayedSuggestions[0]);
 
       // user message loaded to input
-      expect(addUserMessageSpy).not.toHaveBeenCalled();
       expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
       expect(store.getState().chat.messages).toHaveLength(0);
       expect(input).toHaveValue(displayedSuggestions[0].textContent);
