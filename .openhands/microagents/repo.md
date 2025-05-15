@@ -1,8 +1,3 @@
----
-name: repo
-type: repo
-agent: CodeActAgent
----
 This repository contains the code for OpenHands, an automated AI software engineer. It has a Python backend
 (in the `openhands` directory) and React frontend (in the `frontend` directory).
 
@@ -14,7 +9,7 @@ IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-p
 
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
-* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+* If you've made changes to the backend, you should run `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml` (this will run on staged files).
 * If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
 
 The pre-commit hooks MUST pass successfully before pushing any changes to the repository. This is a mandatory requirement to maintain code quality and consistency.

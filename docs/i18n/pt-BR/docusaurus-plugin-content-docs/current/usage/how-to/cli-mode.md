@@ -37,7 +37,7 @@ Para executar o OpenHands no modo CLI com Docker:
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.36-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -46,11 +46,11 @@ docker run -it \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.36 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.38 \
     python -m openhands.core.cli
 ```
 
 Este comando iniciará uma sessão interativa no Docker onde você pode inserir tarefas e receber respostas do OpenHands.
 
-O `-e SANDBOX_USER_ID=$(id -u)` é passado para o comando Docker para garantir que o usuário da sandbox corresponda às 
+O `-e SANDBOX_USER_ID=$(id -u)` é passado para o comando Docker para garantir que o usuário da sandbox corresponda às
 permissões do usuário do host. Isso impede que o agente crie arquivos pertencentes ao root no workspace montado.

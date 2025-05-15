@@ -40,7 +40,6 @@ export function TaskCard({ task }: TaskCardProps) {
     const repo = getRepo(task.repo, task.git_provider);
 
     return createConversation({
-      conversation_trigger: "suggested_task",
       selectedRepository: repo,
       suggested_task: task,
     });

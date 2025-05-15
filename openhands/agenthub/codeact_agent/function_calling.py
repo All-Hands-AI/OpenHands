@@ -93,6 +93,15 @@ def response_to_actions(
                 is_input = arguments.get('is_input', 'false') == 'true'
                 action = CmdRunAction(command=arguments['command'], is_input=is_input)
 
+                # Set hard timeout if provided
+                if 'timeout' in arguments:
+                    try:
+                        action.set_hard_timeout(float(arguments['timeout']))
+                    except ValueError as e:
+                        raise FunctionCallValidationError(
+                            f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
+                        ) from e
+
             # ================================================
             # IPythonTool (Jupyter)
             # ================================================
@@ -163,11 +172,29 @@ def response_to_actions(
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
                         other_kwargs.pop('view_range')
+
+                    # Filter out unexpected arguments
+                    valid_kwargs = {}
+                    # Get valid parameters from the str_replace_editor tool definition
+                    str_replace_editor_tool = create_str_replace_editor_tool()
+                    valid_params = set(
+                        str_replace_editor_tool['function']['parameters'][
+                            'properties'
+                        ].keys()
+                    )
+                    for key, value in other_kwargs.items():
+                        if key in valid_params:
+                            valid_kwargs[key] = value
+                        else:
+                            raise FunctionCallValidationError(
+                                f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
+                            )
+
                     action = FileEditAction(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
+                        **valid_kwargs,
                     )
             # ================================================
             # AgentThinkAction

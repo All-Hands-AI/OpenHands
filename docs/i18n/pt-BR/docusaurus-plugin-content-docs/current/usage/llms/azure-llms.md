@@ -4,7 +4,7 @@ OpenHands usa o LiteLLM para fazer chamadas aos modelos de chat do Azure. Você 
 
 ## Configuração do Azure OpenAI
 
-Ao executar o OpenHands, você precisará definir a seguinte variável de ambiente usando `-e` no 
+Ao executar o OpenHands, você precisará definir a seguinte variável de ambiente usando `-e` no
 [comando docker run](../installation#running-openhands):
 
 ```

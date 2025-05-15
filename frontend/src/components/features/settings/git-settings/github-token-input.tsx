@@ -6,14 +6,18 @@ import { KeyStatusIcon } from "../key-status-icon";
 
 interface GitHubTokenInputProps {
   onChange: (value: string) => void;
+  onGitHubHostChange: (value: string) => void;
   isGitHubTokenSet: boolean;
   name: string;
+  githubHostSet: string | null | undefined;
 }
 
 export function GitHubTokenInput({
   onChange,
+  onGitHubHostChange,
   isGitHubTokenSet,
   name,
+  githubHostSet,
 }: GitHubTokenInputProps) {
   const { t } = useTranslation();
 
@@ -33,6 +37,23 @@ export function GitHubTokenInput({
               testId="gh-set-token-indicator"
               isSet={isGitHubTokenSet}
             />
+          )
+        }
+      />
+
+      <SettingsInput
+        onChange={onGitHubHostChange || (() => {})}
+        name="github-host-input"
+        testId="github-host-input"
+        label={t(I18nKey.GITHUB$HOST_LABEL)}
+        type="text"
+        className="w-[680px]"
+        placeholder="github.com"
+        defaultValue={githubHostSet || undefined}
+        startContent={
+          githubHostSet &&
+          githubHostSet.trim() !== "" && (
+            <KeyStatusIcon testId="gh-set-host-indicator" isSet />
           )
         }
       />

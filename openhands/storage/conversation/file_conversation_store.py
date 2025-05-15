@@ -38,12 +38,14 @@ class FileConversationStore(ConversationStore):
         path = self.get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
 
-        # Temp: force int to str to stop pydandic being, well... pedantic
+        # Validate the JSON
         json_obj = json.loads(json_str)
         if 'created_at' not in json_obj:
             raise FileNotFoundError(path)
-        if isinstance(json_obj.get('github_user_id'), int):
-            json_obj['github_user_id'] = str(json_obj.get('github_user_id'))
+            
+        # Remove github_user_id if it exists
+        if 'github_user_id' in json_obj:
+            json_obj.pop('github_user_id')
 
         result = conversation_metadata_type_adapter.validate_python(json_obj)
         return result

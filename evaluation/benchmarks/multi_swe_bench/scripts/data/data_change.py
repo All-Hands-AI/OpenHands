@@ -3,9 +3,10 @@ import json
 input_file = 'XXX.jsonl'
 output_file = 'YYY.jsonl'
 
-with open(input_file, 'r', encoding='utf-8') as fin, open(
-    output_file, 'w', encoding='utf-8'
-) as fout:
+with (
+    open(input_file, 'r', encoding='utf-8') as fin,
+    open(output_file, 'w', encoding='utf-8') as fout,
+):
     for line in fin:
         line = line.strip()
         if not line:

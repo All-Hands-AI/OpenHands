@@ -6,14 +6,18 @@ import { KeyStatusIcon } from "../key-status-icon";
 
 interface GitLabTokenInputProps {
   onChange: (value: string) => void;
+  onGitLabHostChange: (value: string) => void;
   isGitLabTokenSet: boolean;
   name: string;
+  gitlabHostSet: string | null | undefined;
 }
 
 export function GitLabTokenInput({
   onChange,
+  onGitLabHostChange,
   isGitLabTokenSet,
   name,
+  gitlabHostSet,
 }: GitLabTokenInputProps) {
   const { t } = useTranslation();
 
@@ -33,6 +37,23 @@ export function GitLabTokenInput({
               testId="gl-set-token-indicator"
               isSet={isGitLabTokenSet}
             />
+          )
+        }
+      />
+
+      <SettingsInput
+        onChange={onGitLabHostChange || (() => {})}
+        name="gitlab-host-input"
+        testId="gitlab-host-input"
+        label={t(I18nKey.GITLAB$HOST_LABEL)}
+        type="text"
+        className="w-[680px]"
+        placeholder="gitlab.com"
+        defaultValue={gitlabHostSet || undefined}
+        startContent={
+          gitlabHostSet &&
+          gitlabHostSet.trim() !== "" && (
+            <KeyStatusIcon testId="gl-set-host-indicator" isSet />
           )
         }
       />
