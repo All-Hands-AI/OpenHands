@@ -138,6 +138,7 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
     finally:
         close_test_runtime(runtime)
 
+
 def test_multiline_commands(reusable_runtime):
     if is_windows():
         # Windows PowerShell version using backticks for line continuation
