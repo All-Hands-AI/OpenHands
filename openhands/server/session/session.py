@@ -172,19 +172,19 @@ class Session:
             workspace_mount_path_in_sandbox_store_in_session = False
 
         mcp_tools = (
-            await fetch_mcp_tools_from_config(
+            []
+            if research_mode == ResearchMode.FOLLOW_UP
+            else await fetch_mcp_tools_from_config(
                 self.config.dict_mcp_config, sid=self.sid, mnemonic=mnemonic
             )
-            if research_mode == ResearchMode.FOLLOW_UP
-            else []
         )
 
         search_tools = (
-            await fetch_search_tools_from_config(
+            []
+            if research_mode == ResearchMode.FOLLOW_UP
+            else await fetch_search_tools_from_config(
                 self.config.dict_search_engine_config, sid=self.sid, mnemonic=mnemonic
             )
-            if research_mode == ResearchMode.FOLLOW_UP
-            else []
         )
 
         a2a_manager: A2AManager = A2AManager(agent_config.a2a_server_urls)
