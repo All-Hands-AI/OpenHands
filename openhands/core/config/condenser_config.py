@@ -56,6 +56,32 @@ class RecentEventsCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class Mem0CondenserConfig(BaseModel):
+    """Configuration for Mem0Condenser.
+
+    This condenser removes events that have already been synchronized to Mem0
+    knowledge base, keeping only new events that happened after the last sync.
+    """
+
+    type: Literal['mem0'] = Field('mem0')
+
+    # at least one event by default, because the best guess is that it is the user task
+    keep_first: int = Field(
+        default=1,
+        description='The number of initial events to always keep (typically task description).',
+        ge=0,
+    )
+
+    # Maximum events before triggering condensation
+    max_events: int = Field(
+        default=100,
+        description='Maximum number of events before triggering condensation.',
+        ge=10,
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
@@ -163,6 +189,7 @@ CondenserConfig = (
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
+    | Mem0CondenserConfig
 )
 
 
@@ -248,24 +275,25 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
 
     Args:
         condenser_type: The type of condenser to create.
-        data: The configuration data.
+        data: The configuration data for the condenser.
 
     Returns:
-        A CondenserConfig instance.
+        CondenserConfig: A condenser configuration instance.
 
     Raises:
-        ValueError: If the condenser type is unknown.
-        ValidationError: If the provided data fails validation for the condenser type.
+        ValidationError: If the configuration is invalid.
+        ValueError: If the condenser type is not recognized.
     """
-    # Mapping of condenser types to their config classes
     condenser_classes = {
         'noop': NoOpCondenserConfig,
         'observation_masking': ObservationMaskingCondenserConfig,
+        'browser_output_masking': BrowserOutputCondenserConfig,
         'recent': RecentEventsCondenserConfig,
         'llm': LLMSummarizingCondenserConfig,
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
+        'mem0': Mem0CondenserConfig,
     }
 
     if condenser_type not in condenser_classes:

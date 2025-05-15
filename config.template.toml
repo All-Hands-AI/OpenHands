@@ -351,6 +351,7 @@ runtime_binding_address = "0.0.0.0"
 # - "llm": Uses an LLM to summarize conversation history
 # - "amortized": Intelligently forgets older events while preserving important context
 # - "llm_attention": Uses an LLM to prioritize most relevant context
+# - "mem0": Removes events that have been synchronized to Mem0 knowledge base
 type = "noop"
 
 # Examples for each condenser type (uncomment and modify as needed):
@@ -394,6 +395,13 @@ type = "noop"
 #keep_first = 1
 # Maximum size of history before triggering attention mechanism
 #max_size = 100
+
+# 7. Mem0 Condenser
+#type = "mem0"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum number of events before triggering condensation
+#max_events = 100
 
 # Example of a custom LLM configuration for condensers that require an LLM
 # If not provided, it falls back to the default LLM

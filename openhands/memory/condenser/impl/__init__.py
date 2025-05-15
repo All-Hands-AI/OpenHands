@@ -11,6 +11,7 @@ from openhands.memory.condenser.impl.llm_attention_condenser import (
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenser,
 )
+from openhands.memory.condenser.impl.mem0_condenser import Mem0Condenser
 from openhands.memory.condenser.impl.no_op_condenser import NoOpCondenser
 from openhands.memory.condenser.impl.observation_masking_condenser import (
     ObservationMaskingCondenser,
@@ -27,6 +28,7 @@ __all__ = [
     'LLMAttentionCondenser',
     'ImportantEventSelection',
     'LLMSummarizingCondenser',
+    'Mem0Condenser',
     'NoOpCondenser',
     'ObservationMaskingCondenser',
     'BrowserOutputCondenser',
