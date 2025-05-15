@@ -24,6 +24,7 @@ def list_foundation_models(
             '%s. Please config AWS_REGION_NAME AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY'
             ' if you want use bedrock model.',
             err,
+            exc_info=True
         )
         return []
 

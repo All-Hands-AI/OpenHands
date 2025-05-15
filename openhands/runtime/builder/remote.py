@@ -63,7 +63,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             )
         except httpx.HTTPError as e:
             if e.response.status_code == 429:
-                logger.warning('Build was rate limited. Retrying in 30 seconds.')
+                logger.warning('Build was rate limited. Retrying in 30 seconds.', exc_info=True)
                 time.sleep(30)
                 return self.build(path, tags, platform)
             else:
@@ -78,7 +78,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         timeout = 30 * 60  # 20 minutes in seconds
         while should_continue():
             if time.time() - start_time > timeout:
-                logger.error('Build timed out after 30 minutes')
+                logger.error('Build timed out after 30 minutes', exc_info=True)
                 raise AgentRuntimeBuildError('Build timed out after 30 minutes')
 
             status_response = send_request(
@@ -89,7 +89,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             )
 
             if status_response.status_code != 200:
-                logger.error(f'Failed to get build status: {status_response.text}')
+                logger.error(f'Failed to get build status: {status_response.text}', exc_info=True)
                 raise AgentRuntimeBuildError(
                     f'Failed to get build status: {status_response.text}'
                 )
@@ -111,7 +111,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 error_message = status_data.get(
                     'error', f'Build failed with status: {status}. Build ID: {build_id}'
                 )
-                logger.error(error_message)
+                logger.error(error_message, exc_info=True)
                 raise AgentRuntimeBuildError(error_message)
 
             # Wait before polling again
@@ -130,7 +130,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         )
 
         if response.status_code != 200:
-            logger.error(f'Failed to check image existence: {response.text}')
+            logger.error(f'Failed to check image existence: {response.text}', exc_info=True)
             raise AgentRuntimeBuildError(
                 f'Failed to check image existence: {response.text}'
             )

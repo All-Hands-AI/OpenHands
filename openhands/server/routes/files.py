@@ -83,7 +83,7 @@ async def list_files(
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error listing files: {e}')
+        logger.error(f'Error listing files: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error listing files: {e}'},
@@ -102,7 +102,7 @@ async def list_files(
                 GitWildMatchPattern, observation.content.splitlines()
             )
         except Exception as e:
-            logger.warning(e)
+            logger.warning(e, exc_info=True)
             return file_list
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
@@ -110,7 +110,7 @@ async def list_files(
     try:
         file_list = await filter_for_gitignore(file_list, '')
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error filtering files: {e}')
+        logger.error(f'Error filtering files: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error filtering files: {e}'},
@@ -159,7 +159,7 @@ async def select_file(file: str, request: Request) -> FileResponse | JSONRespons
     try:
         observation = await call_sync_from_async(runtime.run_action, read_action)
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error opening file {file}: {e}')
+        logger.error(f'Error opening file {file}: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {e}'},
@@ -169,7 +169,7 @@ async def select_file(file: str, request: Request) -> FileResponse | JSONRespons
         content = observation.content
         return JSONResponse(content={'code': content})
     elif isinstance(observation, ErrorObservation):
-        logger.error(f'Error opening file {file}: {observation}')
+        logger.error(f'Error opening file {file}: {observation}', exc_info=True)
 
         if 'ERROR_BINARY_FILE' in observation.message:
             return JSONResponse(
@@ -205,7 +205,7 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
         try:
             zip_file_path = runtime.copy_from(path)
         except AgentRuntimeUnavailableError as e:
-            logger.error(f'Error zipping workspace: {e}')
+            logger.error(f'Error zipping workspace: {e}', exc_info=True)
             return JSONResponse(
                 status_code=500,
                 content={'error': f'Error zipping workspace: {e}'},
@@ -217,7 +217,7 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
             background=BackgroundTask(lambda: os.unlink(zip_file_path)),
         )
     except Exception as e:
-        logger.error(f'Error zipping workspace: {e}')
+        logger.error(f'Error zipping workspace: {e}', exc_info=True)
         raise HTTPException(
             status_code=500,
             detail='Failed to zip workspace',
@@ -259,13 +259,13 @@ async def git_changes(
             )
         return changes
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Runtime unavailable: {e}')
+        logger.error(f'Runtime unavailable: {e}', exc_info=True)
         return JSONResponse(
             status_code=500,
             content={'error': f'Error getting changes: {e}'},
         )
     except Exception as e:
-        logger.error(f'Error getting changes: {e}')
+        logger.error(f'Error getting changes: {e}', exc_info=True)
         return JSONResponse(
             status_code=500,
             content={'error': str(e)},
@@ -295,7 +295,7 @@ async def git_diff(
         diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
         return diff
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error getting diff: {e}')
+        logger.error(f'Error getting diff: {e}', exc_info=True)
         return JSONResponse(
             status_code=500,
             content={'error': f'Error getting diff: {e}'},

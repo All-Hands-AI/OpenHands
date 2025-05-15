@@ -110,7 +110,7 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
                     args = tree.body[0].value.args  # type: ignore
                     msg_content = args[0].value
                 except SyntaxError:
-                    logger.error(f'Error parsing action: {sub_action}')
+                    logger.error(f'Error parsing action: {sub_action}', exc_info=True)
                     # the syntax was not correct, but we can still try to get the message
                     # e.g. send_msg_to_user("Hello, world!") or send_msg_to_user('Hello, world!'
                     match = re.search(r'send_msg_to_user\((["\'])(.*?)\1\)', sub_action)

@@ -118,7 +118,7 @@ class Memory:
                     return
         except Exception as e:
             error_str = f'Error: {str(e.__class__.__name__)}'
-            logger.error(error_str)
+            logger.error(error_str, exc_info=True)
             self.send_error_message('STATUS$ERROR_MEMORY', error_str)
             return
 
@@ -294,6 +294,7 @@ class Memory:
                 logger.error(
                     f'Error sending status message: {e.__class__.__name__}',
                     stack_info=False,
+                    exc_info=True
                 )
 
     async def _send_status_message(self, msg_type: str, id: str, message: str):

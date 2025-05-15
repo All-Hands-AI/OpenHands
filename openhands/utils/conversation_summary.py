@@ -58,7 +58,7 @@ async def generate_conversation_title(
 
         return title
     except Exception as e:
-        logger.error(f'Error generating conversation title: {e}')
+        logger.error(f'Error generating conversation title: {e}', exc_info=True)
         return None
 
 
@@ -126,7 +126,9 @@ async def auto_generate_title(
                         logger.info(f'Generated title using LLM: {llm_title}')
                         return llm_title
             except Exception as e:
-                logger.error(f'Error using LLM for title generation: {e}')
+                logger.error(
+                    f'Error using LLM for title generation: {e}', exc_info=True
+                )
 
             # Fall back to simple truncation if LLM generation fails or is unavailable
             first_user_message = first_user_message.strip()

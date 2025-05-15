@@ -161,7 +161,7 @@ class ProviderHandler:
                 service_repos = await service.get_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception as e:
-                logger.warning(f'Error fetching repos from {provider}: {e}')
+                logger.warning(f'Error fetching repos from {provider}: {e}', exc_info=True)
 
         return all_repos
 
@@ -176,7 +176,7 @@ class ProviderHandler:
                 service_repos = await service.get_suggested_tasks()
                 tasks.extend(service_repos)
             except Exception as e:
-                logger.warning(f'Error fetching repos from {provider}: {e}')
+                logger.warning(f'Error fetching repos from {provider}: {e}', exc_info=True)
 
         return tasks
 
@@ -196,7 +196,7 @@ class ProviderHandler:
                 )
                 all_repos.extend(service_repos)
             except Exception as e:
-                logger.warning(f'Error searching repos from {provider}: {e}')
+                logger.warning(f'Error searching repos from {provider}: {e}', exc_info=True)
                 continue
 
         return all_repos
@@ -360,7 +360,7 @@ class ProviderHandler:
             except Exception as e:
                 logger.warning(
                     f'Error fetching branches from {specified_provider}: {e}'
-                )
+                , exc_info=True)
 
         for provider in self.provider_tokens:
             try:
@@ -371,7 +371,7 @@ class ProviderHandler:
                 if all_branches:
                     break
             except Exception as e:
-                logger.warning(f'Error fetching branches from {provider}: {e}')
+                logger.warning(f'Error fetching branches from {provider}: {e}', exc_info=True)
 
         # Sort branches by last push date (newest first)
         all_branches.sort(

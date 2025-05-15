@@ -106,7 +106,7 @@ class AsyncLLM(LLM):
                 logger.debug('LLM request cancelled by user.')
                 raise
             except Exception as e:
-                logger.error(f'Completion Error occurred:\n{e}')
+                logger.error(f'Completion Error occurred:\n{e}', exc_info=True)
                 raise
 
             finally:

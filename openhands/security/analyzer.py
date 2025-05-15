@@ -40,7 +40,7 @@ class SecurityAnalyzer:
             event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
             await self.act(event)
         except Exception as e:
-            logger.error(f'Error occurred while analyzing the event: {e}')
+            logger.error(f'Error occurred while analyzing the event: {e}', exc_info=True)
 
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""

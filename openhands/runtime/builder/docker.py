@@ -117,8 +117,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         cmd, shell=True, check=True, stdout=subprocess.DEVNULL
                     )
                 except subprocess.CalledProcessError as e:
-                    logger.error(f'Image build failed:\n{e}')
-                    logger.error(f'Command output:\n{e.output}')
+                    logger.error(f'Image build failed:\n{e}', exc_info=True)
+                    logger.error(f'Command output:\n{e.output}', exc_info=True)
                     raise
             logger.info('Downloaded and installed docker binary')
 
@@ -193,30 +193,30 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
-            logger.error(f'Command output:\n{e.output}')
+            logger.error(f'Image build failed:\n{e}', exc_info=True)  # TODO: {e} is empty
+            logger.error(f'Command output:\n{e.output}', exc_info=True)
             if self.rolling_logger.is_enabled():
                 logger.error(
                     'Docker build output:\n' + self.rolling_logger.all_lines
-                )  # Show the error
+                , exc_info=True)  # Show the error
             raise
 
         except subprocess.TimeoutExpired:
-            logger.error('Image build timed out')
+            logger.error('Image build timed out', exc_info=True)
             raise
 
         except FileNotFoundError as e:
-            logger.error(f'Python executable not found: {e}')
+            logger.error(f'Python executable not found: {e}', exc_info=True)
             raise
 
         except PermissionError as e:
             logger.error(
                 f'Permission denied when trying to execute the build command:\n{e}'
-            )
+            , exc_info=True)
             raise
 
         except Exception as e:
-            logger.error(f'An unexpected error occurred during the build process: {e}')
+            logger.error(f'An unexpected error occurred during the build process: {e}', exc_info=True)
             raise
 
         logger.info(f'Image [{target_image_hash_name}] build finished.')
@@ -255,7 +255,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             bool: Whether the Docker image exists in the registry or in the local store
         """
         if not image_name:
-            logger.error(f'Invalid image name: `{image_name}`')
+            logger.error(f'Invalid image name: `{image_name}`', exc_info=True)
             return False
 
         try:
@@ -385,9 +385,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                             os.remove(file_path)
                             logger.debug(f'Removed old cache file: {file_path}')
                     except Exception as e:
-                        logger.warning(f'Error processing cache file {file_path}: {e}')
+                        logger.warning(f'Error processing cache file {file_path}: {e}', exc_info=True)
         except Exception as e:
-            logger.warning(f'Error during build cache pruning: {e}')
+            logger.warning(f'Error during build cache pruning: {e}', exc_info=True)
 
     def _is_cache_usable(self, cache_dir: str) -> bool:
         """Check if the cache directory is usable (exists and is writable).
@@ -409,7 +409,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         if not os.access(cache_dir, os.W_OK):
             logger.warning(
                 f'Cache directory {cache_dir} is not writable. Caches will not be used for Docker builds.'
-            )
+            , exc_info=True)
             return False
 
         self._prune_old_cache_files(cache_dir)

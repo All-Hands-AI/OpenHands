@@ -103,6 +103,7 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error(
                     f'Error connecting to conversation {c.sid}: {e}',
                     extra={'session_id': sid},
+                    exc_info=True
                 )
                 await c.disconnect()
                 return None
@@ -131,6 +132,7 @@ class StandaloneConversationManager(ConversationManager):
             logger.error(
                 f'No event stream after joining conversation: {sid}',
                 extra={'session_id': sid},
+                exc_info=True
             )
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
@@ -191,7 +193,7 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 return
             except Exception:
-                logger.error('error_cleaning_stale')
+                logger.error('error_cleaning_stale', exc_info=True)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
@@ -263,6 +265,7 @@ class StandaloneConversationManager(ConversationManager):
             logger.error(
                 f'No event stream after starting agent loop: {sid}',
                 extra={'session_id': sid},
+                exc_info=True
             )
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_store
@@ -369,6 +372,7 @@ class StandaloneConversationManager(ConversationManager):
             logger.warning(
                 f'disconnect_from_uninitialized_session:{connection_id}',
                 extra={'session_id': sid},
+                exc_info=True
             )
             return
 
@@ -395,7 +399,7 @@ class StandaloneConversationManager(ConversationManager):
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
-            logger.warning(f'no_session_to_close:{sid}', extra={'session_id': sid})
+            logger.warning(f'no_session_to_close:{sid}', extra={'session_id': sid}, exc_info=True)
             return
 
         logger.info(f'closing_session:{session.sid}', extra={'session_id': sid})
@@ -487,7 +491,7 @@ class StandaloneConversationManager(ConversationManager):
                         to=ROOM_KEY.format(sid=conversation_id),
                     )
                 except Exception as e:
-                    logger.error(f'Error emitting title update event: {e}')
+                    logger.error(f'Error emitting title update event: {e}', exc_info=True)
             else:
                 conversation.title = default_title
 

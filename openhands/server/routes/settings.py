@@ -70,7 +70,7 @@ async def load_settings(
         settings_with_token_data.llm_api_key = None
         return settings_with_token_data
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f'Invalid token: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
@@ -90,7 +90,7 @@ async def reset_settings() -> JSONResponse:
     """
     Resets user settings. (Deprecated)
     """
-    logger.warning('Deprecated endpoint /api/reset-settings called by user')
+    logger.warning('Deprecated endpoint /api/reset-settings called by user', exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_410_GONE,
         content={'error': 'Reset settings functionality has been removed.'},
@@ -158,7 +158,7 @@ async def store_settings(
             content={'message': 'Settings stored'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong storing settings: {e}')
+        logger.warning(f'Something went wrong storing settings: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong storing settings'},

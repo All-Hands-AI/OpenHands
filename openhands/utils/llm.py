@@ -51,6 +51,6 @@ def get_supported_llm_models(config: AppConfig) -> list[str]:
                     model_list.append('ollama/' + model['name'])
                 break
             except httpx.HTTPError as e:
-                logger.error(f'Error getting OLLAMA models: {e}')
+                logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
 
     return list(sorted(set(model_list)))
