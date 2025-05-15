@@ -21,7 +21,7 @@ from openhands.resolver.interfaces.issue_definitions import (
 )
 from openhands.resolver.resolve_issue import IssueResolver
 from openhands.resolver.resolver_output import ResolverOutput
-
+from openhands.resolver.resolve_issue import build_from_args
 
 @pytest.fixture
 def default_mock_args():
@@ -118,7 +118,7 @@ def test_initialize_runtime(default_mock_args, mock_github_token):
     ]
 
     # Create resolver with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    resolver = build_from_args(default_mock_args)
 
     resolver.initialize_runtime(mock_runtime)
 
@@ -140,7 +140,7 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_github_toke
     default_mock_args.issue_number = 5432
 
     # Create a resolver instance with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    resolver = build_from_args(default_mock_args)
 
     # Mock the issue handler
     resolver.issue_handler = mock_handler
@@ -349,7 +349,7 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
     ]
 
     # Create resolver with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    resolver = build_from_args(default_mock_args)
 
     result = await resolver.complete_runtime(mock_runtime, 'base_commit_hash')
 
@@ -442,7 +442,7 @@ async def test_process_issue(
     default_mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
     # Create a resolver instance with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    resolver = build_from_args(default_mock_args)
     resolver.prompt_template = mock_prompt_template
 
     # Mock the handler with LLM config
@@ -479,8 +479,8 @@ async def test_process_issue(
 
     # Patch the necessary functions and methods
     with (
-        patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime),
-        patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller),
+        patch('openhands.resolver.issue_resolver.create_runtime', mock_create_runtime),
+        patch('openhands.resolver.issue_resolver.run_controller', mock_run_controller),
         patch.object(
             resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}
         ),
