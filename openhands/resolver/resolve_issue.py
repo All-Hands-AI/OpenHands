@@ -18,34 +18,52 @@ from openhands.resolver.utils import (
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
+class SandboxContainerConfig:
+    def __init__(
+        self, base_container_image: str | None, runtime_container_image: str | None
+    ):
+        if runtime_container_image is not None and base_container_image is not None:
+            raise ValueError('Cannot provide both runtime and base container images.')
+
+        self.container_base = (
+            str(base_container_image) if base_container_image is not None else None
+        )
+
+        self.container_runtime = (
+            str(runtime_container_image)
+            if runtime_container_image is not None
+            else None
+        )
+
+    @staticmethod
+    def build_for_issue_resolver(
+        base_container_image: str | None,
+        runtime_container_image: str | None,
+        is_experimental: bool,
+    ) -> 'SandboxContainerConfig':
+        if (
+            runtime_container_image is None
+            and base_container_image is None
+            and not is_experimental
+        ):
+            runtime_container_image = (
+                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+            )
+
+        return SandboxContainerConfig(base_container_image, runtime_container_image)
+
+
 def setup_sandbox_config(
     base_container_image: str | None,
     runtime_container_image: str | None,
     is_experimental: bool,
 ) -> SandboxConfig:
-    if runtime_container_image is not None and base_container_image is not None:
-        raise ValueError('Cannot provide both runtime and base container images.')
-
-    if (
-        runtime_container_image is None
-        and base_container_image is None
-        and not is_experimental
-    ):
-        runtime_container_image = (
-            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
-        )
-
-    # Convert container image values to string or None
-    container_base = (
-        str(base_container_image) if base_container_image is not None else None
+    sandbox_conainer_config = SandboxContainerConfig.build_for_issue_resolver(
+        base_container_image, runtime_container_image, is_experimental
     )
-    container_runtime = (
-        str(runtime_container_image) if runtime_container_image is not None else None
-    )
-
     sandbox_config = SandboxConfig(
-        base_container_image=container_base,
-        runtime_container_image=container_runtime,
+        base_container_image=sandbox_conainer_config.container_base,
+        runtime_container_image=sandbox_conainer_config.container_runtime,
         enable_auto_lint=False,
         use_host_network=False,
         timeout=300,
