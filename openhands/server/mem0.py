@@ -120,7 +120,7 @@ async def process_single_event_for_mem0(
             metadata=metadata,
             infer=True,
         )
-        print(f'duongtd_add_mem0_result: {add_result}')
+        logger.info(f'duongtd_add_mem0_result: {add_result}')
     return parsed_events
 
 
