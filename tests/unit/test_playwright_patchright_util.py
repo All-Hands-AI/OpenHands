@@ -45,7 +45,13 @@ def test_patchright_functionality():
     use_patchright()
 
     # Import playwright - this must be imported after use_patchright() is called
+    import playwright
     from playwright.sync_api import sync_playwright
+
+    # print the actual package name and file
+    print(f'Actual playwright package name: {playwright.__name__}')
+    print(f'Actual playwright package file: {playwright.__file__}')
+    assert 'patchright' in playwright.__file__
 
     # Use playwright (which is actually patchright)
     with sync_playwright() as p:
