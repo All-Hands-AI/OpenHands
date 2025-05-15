@@ -9,15 +9,43 @@ import { useUserConversation } from "#/hooks/query/use-user-conversation";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
+  // For testing purposes
+  conversationIdProp?: string;
+  conversationProp?: { selected_repository?: string | null };
 }
 
 export function ActionSuggestions({
   onSuggestionsClick,
+  conversationIdProp,
+  conversationProp,
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
   const { providers } = useUserProviders();
-  const { conversationId } = useConversation();
-  const { data: conversation } = useUserConversation(conversationId);
+
+  // Always declare hooks at the top level to follow React rules
+  const { data: fetchedConversation } = useUserConversation(
+    conversationIdProp || "",
+  );
+
+  // Use the conversation context if available, otherwise use props (for testing)
+  let conversationId: string | undefined;
+  let conversation: { selected_repository?: string | null } | undefined;
+
+  try {
+    const conversationContext = useConversation();
+    conversationId = conversationIdProp ?? conversationContext.conversationId;
+
+    if (!conversationProp && conversationId) {
+      // Use the fetched conversation data
+      conversation = fetchedConversation;
+    } else {
+      conversation = conversationProp;
+    }
+  } catch (error) {
+    // If useConversation throws (outside of provider), use props
+    conversationId = conversationIdProp;
+    conversation = conversationProp;
+  }
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 

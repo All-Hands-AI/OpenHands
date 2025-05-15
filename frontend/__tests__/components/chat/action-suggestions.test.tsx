@@ -39,13 +39,19 @@ vi.mock("react-i18next", () => ({
 }));
 
 const renderActionSuggestions = () =>
-  render(<ActionSuggestions onSuggestionsClick={() => {}} />, {
-    wrapper: ({ children }) => (
-      <QueryClientProvider client={new QueryClient()}>
-        {children}
-      </QueryClientProvider>
-    ),
-  });
+  render(
+    <ActionSuggestions 
+      onSuggestionsClick={() => {}} 
+      conversationProp={{ selected_repository: "test-repo" }}
+    />, 
+    {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    }
+  );
 
 describe("ActionSuggestions", () => {
   // Setup mocks for each test
