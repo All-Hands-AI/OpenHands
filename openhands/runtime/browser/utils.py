@@ -75,8 +75,10 @@ async def browse(
                 Image.open(screenshot_path).verify()
             except Exception:
                 # If direct saving fails, fall back to the original method
-                image = png_base64_url_to_image(obs.get('screenshot'))
-                image.save(screenshot_path, format='PNG', optimize=True)
+                screenshot_data = obs.get('screenshot')
+                if screenshot_data is not None:
+                    image = png_base64_url_to_image(screenshot_data)
+                    image.save(screenshot_path, format='PNG', optimize=True)
 
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page

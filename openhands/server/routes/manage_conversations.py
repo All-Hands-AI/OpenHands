@@ -43,7 +43,6 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationTrigger,
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api')
@@ -268,19 +267,32 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         user_id, conversation_ids
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
-    result = ConversationInfoResultSet(
-        results=await wait_all(
-            _get_conversation_info(
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
+    )
+
+    # Create a list of ConversationInfo objects
+    conversation_infos: list[ConversationInfo] = []
+    for conversation in filtered_results:
+        try:
+            info = await _get_conversation_info(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
                 num_connections=sum(
-                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
-                )
+                ),
             )
-            for conversation in filtered_results
-        ),
+            conversation_infos.append(info)
+        except Exception as e:
+            logger.error(
+                f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+                extra={'session_id': conversation.conversation_id},
+            )
+
+    result = ConversationInfoResultSet(
+        results=conversation_infos,
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
@@ -294,10 +306,17 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections)
-        return conversation_info
+        num_connections = len(
+            await conversation_manager.get_connections(filter_to_sids={conversation_id})
+        )
+        return await _get_conversation_info(metadata, is_running, num_connections)
     except FileNotFoundError:
+        return None
+    except Exception as e:
+        logger.error(
+            f'Error loading conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id},
+        )
         return None
 
 
@@ -321,29 +340,20 @@ async def delete_conversation(
 
 
 async def _get_conversation_info(
-    conversation: ConversationMetadata,
-    is_running: bool,
-    num_connections: int
-) -> ConversationInfo | None:
-    try:
-        title = conversation.title
-        if not title:
-            title = get_default_conversation_title(conversation.conversation_id)
-        return ConversationInfo(
-            trigger=conversation.trigger,
-            conversation_id=conversation.conversation_id,
-            title=title,
-            last_updated_at=conversation.last_updated_at,
-            created_at=conversation.created_at,
-            selected_repository=conversation.selected_repository,
-            status=(
-                ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
-            ),
-            num_connections=num_connections
-        )
-    except Exception as e:
-        logger.error(
-            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
-            extra={'session_id': conversation.conversation_id},
-        )
-        return None
+    conversation: ConversationMetadata, is_running: bool, num_connections: int
+) -> ConversationInfo:
+    title = conversation.title
+    if not title:
+        title = get_default_conversation_title(conversation.conversation_id)
+    return ConversationInfo(
+        trigger=conversation.trigger,
+        conversation_id=conversation.conversation_id,
+        title=title,
+        last_updated_at=conversation.last_updated_at,
+        created_at=conversation.created_at,
+        selected_repository=conversation.selected_repository,
+        status=(
+            ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
+        ),
+        num_connections=num_connections,
+    )
