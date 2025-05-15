@@ -156,15 +156,12 @@ class UserSecrets(BaseModel):
         for secret_name, value in custom_secrets.items():
             secrets[secret_name] = value['secret']
 
-        print('final secrets', secrets)
         return secrets
 
 
     def get_custom_secrets_descriptions(self) -> dict[str, str]:
-        # TODO: need to store decriptions with secrets first
         secrets = {}
         for secret_name, secret in self.custom_secrets.items():
             secrets[secret_name] = secret.description
 
-        print("secret descriptions", secrets)
         return secrets

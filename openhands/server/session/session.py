@@ -160,8 +160,6 @@ class Session:
             selected_branch = settings.selected_branch
             custom_secrets = settings.custom_secrets
 
-            print("got custom secrets", custom_secrets)
-
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
