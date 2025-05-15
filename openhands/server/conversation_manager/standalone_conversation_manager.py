@@ -319,22 +319,6 @@ class StandaloneConversationManager(ConversationManager):
             pass  # Already subscribed - take no action
         return session
 
-    async def _get_event_store(
-        self, sid: str, user_id: str | None
-    ) -> EventStore | None:
-        logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
-        session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
-            event_stream = session.agent_session.event_stream
-            return EventStore(
-                event_stream.sid,
-                event_stream.file_store,
-                event_stream.user_id,
-                event_stream.cur_id,
-            )
-        return None
-
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # If there is a local session running, send to that
         sid = self._local_connection_id_to_session_id.get(connection_id)
