@@ -402,19 +402,37 @@ class ConversationModule:
     ):
         if not user_id:
             return []
+
         try:
             offset = (page - 1) * limit
-            query = Conversation.select().where(Conversation.c.user_id == user_id)
-            query = query.where(
-                or_(Conversation.c.status != 'deleted', Conversation.c.status.is_(None))
+
+            base_filter = or_(
+                Conversation.c.status != 'deleted', Conversation.c.status.is_(None)
             )
-            query = query.offset(offset).limit(limit)
-            query = query.order_by(desc(Conversation.c.created_at))
+
+            query = (
+                Conversation.select()
+                .where(Conversation.c.user_id == user_id)
+                .where(base_filter)
+                .order_by(desc(Conversation.c.created_at))
+                .offset(offset)
+                .limit(limit)
+            )
             items = await database.fetch_all(query)
-            return items
+
+            total_query = (
+                select(func.count())
+                .select_from(Conversation)
+                .where(Conversation.c.user_id == user_id)
+                .where(base_filter)
+            )
+            total = await database.fetch_val(total_query)
+
+            return {'total': total, 'items': items}
+
         except Exception as e:
             logger.error(f'Error getting conversation by user id: {str(e)}')
-            return []
+            return {'total': 0, 'items': []}
 
 
 conversation_module = ConversationModule()
