@@ -165,6 +165,7 @@ async def process_single_event_for_mem0(
 
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
+        # add to db mem0_conversation_events
         add_result = await asyncio.to_thread(
             mem0_client.add,
             agent_id=conversation_id,
