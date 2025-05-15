@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -41,6 +42,7 @@ def send_request(
     timeout: int = 10,
     **kwargs: Any,
 ) -> httpx.Response:
+    logger.info(f'sending {method} request to {url} with args {kwargs}')
     response = session.request(method, url, timeout=timeout, **kwargs)
     try:
         response.raise_for_status()
