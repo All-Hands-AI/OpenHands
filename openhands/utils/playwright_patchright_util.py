@@ -21,13 +21,6 @@ from typing import Optional, Sequence
 
 logger = logging.getLogger(__name__)
 
-# Create a mapping of playwright module structure to patchright module structure
-MODULE_MAPPING = {
-    'playwright': 'patchright',
-    'playwright.sync_api': 'patchright.sync_api',
-    'playwright.async_api': 'patchright.async_api',
-}
-
 
 class PlaywrightToPatchrightLoader(importlib.abc.Loader):
     """Custom loader that loads a patchright module but presents it as a playwright module."""
@@ -35,13 +28,6 @@ class PlaywrightToPatchrightLoader(importlib.abc.Loader):
     def __init__(
         self, fullname: str, patchright_name: str, original_loader: importlib.abc.Loader
     ):
-        """Initialize the loader with the module names and original loader.
-
-        Args:
-            fullname: The name of the playwright module to create
-            patchright_name: The name of the patchright module to load
-            original_loader: The original loader that would have loaded the module
-        """
         self.fullname = fullname
         self.patchright_name = patchright_name
         self.original_loader = original_loader
@@ -50,27 +36,12 @@ class PlaywrightToPatchrightLoader(importlib.abc.Loader):
         self, spec: importlib.machinery.ModuleSpec
     ) -> Optional[types.ModuleType]:
         """Create a module object for the patchright module."""
-        # Import the patchright module
-        patchright_module = importlib.import_module(self.patchright_name)
-
-        # Create a new module with the playwright name
-        module = types.ModuleType(self.fullname)
-
-        # Copy all attributes from the patchright module to our new module
-        for attr_name in dir(patchright_module):
-            if not attr_name.startswith('_') or attr_name == '__all__':
-                setattr(module, attr_name, getattr(patchright_module, attr_name))
-
-        # Set some special attributes
-        module.__file__ = getattr(patchright_module, '__file__', None)
-        module.__loader__ = self
-        module.__package__ = (
-            self.fullname.rpartition('.')[0] if '.' in self.fullname else ''
-        )
-        module.__path__ = getattr(patchright_module, '__path__', [])
-        module.__spec__ = spec
-
-        return module
+        try:
+            # Import the patchright module and return it directly
+            return importlib.import_module(self.patchright_name)
+        except ImportError as e:
+            logger.warning(f'Failed to import {self.patchright_name}: {e}')
+            return None
 
     def exec_module(self, module: types.ModuleType) -> None:
         """Execute the module (nothing to do here as we already set up the module)."""
@@ -88,52 +59,40 @@ class PlaywrightToPatchrightFinder(importlib.abc.MetaPathFinder):
     ) -> Optional[importlib.machinery.ModuleSpec]:
         """Find the module spec for the given module name."""
         # Only handle playwright modules
-        if fullname in MODULE_MAPPING or fullname.startswith('playwright.'):
-            # Get the corresponding patchright module name
-            patchright_name = MODULE_MAPPING.get(fullname)
-            if not patchright_name and fullname.startswith('playwright.'):
-                # For submodules not explicitly mapped, replace the prefix
-                patchright_name = 'patchright' + fullname[len('playwright') :]
+        if not fullname.startswith('playwright'):
+            return None
 
-            if patchright_name:
-                try:
-                    # Try to find the spec for the patchright module
-                    spec = importlib.util.find_spec(patchright_name)
-                    if spec is None:
-                        return None
+        # Replace playwright prefix with patchright
+        patchright_name = 'patchright' + fullname[len('playwright') :]
 
-                    # Create a loader that will load the patchright module but return it as playwright
-                    loader = PlaywrightToPatchrightLoader(
-                        fullname,
-                        patchright_name,
-                        spec.loader
-                        if spec.loader is not None
-                        else importlib.abc.Loader(),
-                    )
+        try:
+            # Try to find the spec for the patchright module
+            spec = importlib.util.find_spec(patchright_name)
+            if spec is None:
+                return None
 
-                    # Create a new spec with the original name but using our custom loader
-                    spec_kwargs = {
-                        'name': fullname,
-                        'loader': loader,
-                        'origin': spec.origin,
-                        'loader_state': spec.loader_state,
-                        'is_package': spec.submodule_search_locations is not None,
-                    }
+            # Create a loader that will load the patchright module
+            loader = PlaywrightToPatchrightLoader(
+                fullname, patchright_name, spec.loader or importlib.abc.Loader()
+            )
 
-                    # Create the spec
-                    new_spec = importlib.machinery.ModuleSpec(**spec_kwargs)
+            # Create a new spec with the original name but using our custom loader
+            new_spec = importlib.machinery.ModuleSpec(
+                name=fullname,
+                loader=loader,
+                origin=spec.origin,
+                loader_state=spec.loader_state,
+                is_package=spec.submodule_search_locations is not None,
+            )
 
-                    # Add submodule_search_locations only if it's a package
-                    if spec.submodule_search_locations is not None:
-                        new_spec.submodule_search_locations = (
-                            spec.submodule_search_locations
-                        )
+            # Set submodule_search_locations if it's a package
+            if spec.submodule_search_locations is not None:
+                new_spec.submodule_search_locations = spec.submodule_search_locations
 
-                    return new_spec
-                except (ImportError, AttributeError) as e:
-                    logger.warning(f'Failed to find spec for {patchright_name}: {e}')
-
-        return None
+            return new_spec
+        except (ImportError, AttributeError) as e:
+            logger.warning(f'Failed to find spec for {patchright_name}: {e}')
+            return None
 
 
 def use_patchright():
