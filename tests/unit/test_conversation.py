@@ -79,7 +79,7 @@ def create_new_test_conversation(
     # Create a mock UserSecrets object with the required custom_secrets attribute
     mock_user_secrets = MagicMock()
     mock_user_secrets.custom_secrets = MappingProxyType({})
-    
+
     return new_conversation(
         data=test_request,
         user_id='test_user',
