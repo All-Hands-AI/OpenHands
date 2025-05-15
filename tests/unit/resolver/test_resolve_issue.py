@@ -24,151 +24,110 @@ def assert_sandbox_config(
     assert config.local_runtime_url == local_runtime_url
     assert config.user_id == user_id
 
-def test_setup_sandbox_config_default():
-    """Test default configuration when no images provided and not experimental"""
-    config = setup_sandbox_config(
-        base_container_image=None,
-        runtime_container_image=None,
-        is_experimental=False,
-    )
+class TestSandboxContainerConfig:
+    """Test cases for SandboxContainerConfig"""
 
-    assert_sandbox_config(config)
+    def test_init_with_none_values(self):
+        """Test initialization with None values"""
+        config = SandboxContainerConfig(None, None)
+        assert config.container_base is None
+        assert config.container_runtime is None
 
-def test_setup_sandbox_config_both_images():
-    """Test that providing both container images raises ValueError"""
-    with pytest.raises(ValueError, match="Cannot provide both runtime and base container images."):
-        setup_sandbox_config(
-            base_container_image="base-image",
-            runtime_container_image="runtime-image",
-            is_experimental=False,
+    def test_init_with_string_values(self):
+        """Test initialization with string values"""
+        config = SandboxContainerConfig("base-image", None)
+        assert config.container_base == "base-image"
+        assert config.container_runtime is None
+
+    def test_str_conversion(self):
+        """Test automatic string conversion of input values"""
+        config = SandboxContainerConfig(123, None)
+        assert config.container_base == "123"
+        assert config.container_runtime is None
+
+        config = SandboxContainerConfig(None, 456)
+        assert config.container_base is None
+        assert config.container_runtime == "456"
+
+    def test_both_images_raises_error(self):
+        """Test that providing both images raises ValueError"""
+        with pytest.raises(ValueError, match="Cannot provide both runtime and base container images."):
+            SandboxContainerConfig("base-image", "runtime-image")
+
+    @mock.patch("openhands.__version__", "1.0.0")
+    def test_build_default_config(self):
+        """Test build_for_issue_resolver with default settings"""
+        config = SandboxContainerConfig.build_for_issue_resolver(None, None, False)
+        assert config.container_base is None
+        assert config.container_runtime == "ghcr.io/all-hands-ai/runtime:1.0.0-nikolaik"
+
+    def test_build_experimental_config(self):
+        """Test build_for_issue_resolver in experimental mode"""
+        config = SandboxContainerConfig.build_for_issue_resolver(None, None, True)
+        assert config.container_base is None
+        assert config.container_runtime is None
+
+    def test_build_with_custom_images(self):
+        """Test build_for_issue_resolver with custom images"""
+        base_config = SandboxContainerConfig.build_for_issue_resolver("custom-base", None, False)
+        assert base_config.container_base == "custom-base"
+        assert base_config.container_runtime is None
+
+        runtime_config = SandboxContainerConfig.build_for_issue_resolver(None, "custom-runtime", False)
+        assert runtime_config.container_base is None
+        assert runtime_config.container_runtime == "custom-runtime"
+
+class TestSetupSandboxConfig:
+    """Test cases for setup_sandbox_config"""
+
+    def test_default_configuration(self):
+        """Test setup with default container configuration"""
+        container_config = SandboxContainerConfig(None, "default-runtime")
+        config = setup_sandbox_config(container_config)
+        assert_sandbox_config(config, runtime_container_image="default-runtime")
+
+    def test_base_image_configuration(self):
+        """Test setup with base image configuration"""
+        container_config = SandboxContainerConfig("custom-base", None)
+        config = setup_sandbox_config(container_config)
+        assert_sandbox_config(
+            config,
+            base_container_image="custom-base",
+            runtime_container_image=None
         )
 
-def test_setup_sandbox_config_base_only():
-    """Test configuration when only base_container_image is provided"""
-    base_image = "custom-base-image"
-    config = setup_sandbox_config(
-        base_container_image=base_image,
-        runtime_container_image=None,
-        is_experimental=False,
-    )
+    def test_runtime_image_configuration(self):
+        """Test setup with runtime image configuration"""
+        container_config = SandboxContainerConfig(None, "custom-runtime")
+        config = setup_sandbox_config(container_config)
+        assert_sandbox_config(
+            config,
+            runtime_container_image="custom-runtime"
+        )
 
-    assert_sandbox_config(
-        config,
-        base_container_image=base_image,
-        runtime_container_image=None
-    )
+    @mock.patch.dict("openhands.resolver.resolve_issue.os.environ", {"GITLAB_CI": "true"})
+    @mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=0)
+    @mock.patch("openhands.resolver.utils.get_unique_uid", return_value=1001)
+    def test_gitlab_ci_root_configuration(self, mock_get_unique_uid, mock_getuid):
+        """Test GitLab CI configuration when running as root"""
+        container_config = SandboxContainerConfig(None, "runtime-image")
+        config = setup_sandbox_config(container_config)
+        assert_sandbox_config(
+            config,
+            runtime_container_image="runtime-image",
+            local_runtime_url="http://localhost",
+            user_id=1001
+        )
 
-def test_setup_sandbox_config_runtime_only():
-    """Test configuration when only runtime_container_image is provided"""
-    runtime_image = "custom-runtime-image"
-    config = setup_sandbox_config(
-        base_container_image=None,
-        runtime_container_image=runtime_image,
-        is_experimental=False,
-    )
-
-    assert_sandbox_config(
-        config,
-        runtime_container_image=runtime_image
-    )
- 
-def test_setup_sandbox_config_experimental():
-    """Test configuration when experimental mode is enabled"""
-    config = setup_sandbox_config(
-        base_container_image=None,
-        runtime_container_image=None,
-        is_experimental=True,
-    )
-
-    assert_sandbox_config(
-        config,
-        runtime_container_image=None
-    )
-
-@mock.patch.dict("openhands.resolver.resolve_issue.os.environ", {"GITLAB_CI": "true"})
-@mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=0)
-@mock.patch("openhands.resolver.utils.get_unique_uid", return_value=1001)
-def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
-    """Test GitLab CI specific configuration when running as root"""
-    config = setup_sandbox_config(
-        base_container_image=None,
-        runtime_container_image=None,
-        is_experimental=False,
-    )
-    
-    assert_sandbox_config(
-        config,
-        local_runtime_url="http://localhost",
-        user_id=1001
-    )
-
-@mock.patch.dict("openhands.resolver.resolve_issue.os.environ", {"GITLAB_CI": "true"})
-@mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=1000)
-def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
-    """Test GitLab CI configuration when not running as root"""
-    config = setup_sandbox_config(
-        base_container_image=None,
-        runtime_container_image=None,
-        is_experimental=False,
-    )
-
-    assert_sandbox_config(
-        config,
-        local_runtime_url="http://localhost",
-        user_id=1000
-    )
-
-# Additional tests for SandboxContainerConfig
-
-def test_sandbox_container_config_init():
-    """Test basic initialization of SandboxContainerConfig with various input combinations"""
-    # Test with None values
-    config = SandboxContainerConfig(None, None)
-    assert config.container_base is None
-    assert config.container_runtime is None
-
-    # Test with string values
-    config = SandboxContainerConfig("base-image", None)
-    assert config.container_base == "base-image"
-    assert config.container_runtime is None
-
-def test_sandbox_container_config_str_conversion():
-    """Test string type conversion in SandboxContainerConfig initialization"""
-    # Test conversion from numeric values to strings
-    config = SandboxContainerConfig(123, None)
-    assert config.container_base == "123"
-    assert config.container_runtime is None
-
-    config = SandboxContainerConfig(None, 456)
-    assert config.container_base is None
-    assert config.container_runtime == "456"
-
-def test_sandbox_container_config_both_images():
-    """Test error handling when both container images are provided"""
-    with pytest.raises(ValueError, match="Cannot provide both runtime and base container images."):
-        SandboxContainerConfig("base-image", "runtime-image")
-
-@mock.patch("openhands.__version__", "1.0.0")
-def test_sandbox_container_config_build_default():
-    """Test build_for_issue_resolver with default configuration"""
-    config = SandboxContainerConfig.build_for_issue_resolver(None, None, False)
-    assert config.container_base is None
-    assert config.container_runtime == "ghcr.io/all-hands-ai/runtime:1.0.0-nikolaik"
-
-def test_sandbox_container_config_build_experimental():
-    """Test build_for_issue_resolver behavior in experimental mode"""
-    config = SandboxContainerConfig.build_for_issue_resolver(None, None, True)
-    assert config.container_base is None
-    assert config.container_runtime is None
-
-def test_sandbox_container_config_build_with_custom_images():
-    """Test build_for_issue_resolver with custom container images"""
-    # Test with base image
-    config = SandboxContainerConfig.build_for_issue_resolver("custom-base", None, False)
-    assert config.container_base == "custom-base"
-    assert config.container_runtime is None
-
-    # Test with runtime image
-    config = SandboxContainerConfig.build_for_issue_resolver(None, "custom-runtime", False)
-    assert config.container_base is None
-    assert config.container_runtime == "custom-runtime"
+    @mock.patch.dict("openhands.resolver.resolve_issue.os.environ", {"GITLAB_CI": "true"})
+    @mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=1000)
+    def test_gitlab_ci_non_root_configuration(self, mock_getuid):
+        """Test GitLab CI configuration when not running as root"""
+        container_config = SandboxContainerConfig(None, "runtime-image")
+        config = setup_sandbox_config(container_config)
+        assert_sandbox_config(
+            config,
+            runtime_container_image="runtime-image",
+            local_runtime_url="http://localhost",
+            user_id=1000
+        )

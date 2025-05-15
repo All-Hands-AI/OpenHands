@@ -54,16 +54,11 @@ class SandboxContainerConfig:
 
 
 def setup_sandbox_config(
-    base_container_image: str | None,
-    runtime_container_image: str | None,
-    is_experimental: bool,
+    sandbox_container_config: SandboxContainerConfig,
 ) -> SandboxConfig:
-    sandbox_conainer_config = SandboxContainerConfig.build_for_issue_resolver(
-        base_container_image, runtime_container_image, is_experimental
-    )
     sandbox_config = SandboxConfig(
-        base_container_image=sandbox_conainer_config.container_base,
-        runtime_container_image=sandbox_conainer_config.container_runtime,
+        base_container_image=sandbox_container_config.container_base,
+        runtime_container_image=sandbox_container_config.container_runtime,
         enable_auto_lint=False,
         use_host_network=False,
         timeout=300,
@@ -166,11 +161,12 @@ def build_from_args(args: Namespace) -> IssueResolver:
     issue_handler = factory.create()
 
     # Setup and validate container images
-    sandbox_config = setup_sandbox_config(
+    sandbox_container_config = SandboxContainerConfig.build_for_issue_resolver(
         args.base_container_image,
         args.runtime_container_image,
         args.is_experimental,
     )
+    sandbox_config = setup_sandbox_config(sandbox_container_config)
 
     return IssueResolver(
         owner=owner,
