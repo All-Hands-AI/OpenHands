@@ -301,7 +301,8 @@ def convert_fncall_messages_and_candidate_responses_for_critic(
     for response_message in candidate_response_messages:
         non_fn_call_messages_with_response = (
             convert_fncall_messages_to_non_fncall_messages(
-                prefix_messages + [response_message], tools
+                prefix_messages + [response_message], tools,
+                add_in_context_learning_example=False
             )
         )
         non_fn_call_response_message = non_fn_call_messages_with_response[-1]
