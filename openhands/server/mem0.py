@@ -15,7 +15,8 @@ class Mem0MetadataType(Enum):
     REPORT_FILE = 'report_file'
 
 
-client = MemoryClient(api_key=os.getenv('MEM0_API_KEY'))
+mem0_api_key = os.getenv('MEM0_API_KEY')
+client = MemoryClient(api_key=mem0_api_key if mem0_api_key else 'placeholder_api_key')
 
 
 def _extract_content_from_event(event: dict) -> Optional[str]:
