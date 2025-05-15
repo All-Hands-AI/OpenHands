@@ -37,17 +37,18 @@ jobs:
         shell: bash
         id: define-base-images
         run: |
-          # Only build nikolaik on PRs, otherwise build both nikolaik and ubuntu.
+          # Only build nikolaik on PRs, otherwise build both nikolaik, nikolaik-full, ubuntu, and ubuntu-full.
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             json=$(jq -n -c '[
-                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
-                { image: "ubuntu:24.04", tag: "ubuntu" }
-
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik", include_languages: false },
+                { image: "ubuntu:24.04", tag: "ubuntu", include_languages: false }
               ]')
           else
             json=$(jq -n -c '[
-                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
-                { image: "ubuntu:24.04", tag: "ubuntu" }
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik", include_languages: false },
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik-full", include_languages: true },
+                { image: "ubuntu:24.04", tag: "ubuntu", include_languages: false },
+                { image: "ubuntu:24.04", tag: "ubuntu-full", include_languages: true }
               ]')
           fi
           echo "base_image=$json" >> "$GITHUB_OUTPUT"
@@ -149,7 +150,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild ${{ matrix.base_image.include_languages && '--include_programming_languages' || '' }}
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
