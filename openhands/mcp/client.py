@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Dict, List, Optional
 
 from mcp import ClientSession
@@ -8,6 +9,11 @@ from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.tool import MCPClientTool
+
+MCP_CONNECTION_DEFAULT_TIMEOUT = float(
+    os.getenv('MCP_CONNECTION_DEFAULT_TIMEOUT') or 5.0
+)
+MCP_READ_DEFAULT_TIMEOUT = float(os.getenv('MCP_READ_DEFAULT_TIMEOUT') or 120.0)
 
 
 class MCPClient(BaseModel):
@@ -27,8 +33,8 @@ class MCPClient(BaseModel):
         server_url: str,
         sid: Optional[str] = None,
         mnemonic: Optional[str] = None,
-        timeout: float = 5.0,
-        read_timeout: float = 45.0,
+        timeout: float = MCP_CONNECTION_DEFAULT_TIMEOUT,
+        read_timeout: float = MCP_READ_DEFAULT_TIMEOUT,
     ) -> None:
         """Connect to an MCP server using SSE transport.
 
