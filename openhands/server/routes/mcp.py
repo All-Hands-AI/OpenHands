@@ -15,7 +15,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 mcp_server = FastMCP('mcp')
 
 
-async def save_pr_metadata(user_id: str, conversation_id: str, tool_result: str):
+async def save_pr_metadata(user_id: str, conversation_id: str, tool_result: str) -> None:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation: ConversationMetadata = await conversation_store.get_metadata(conversation_id)
 
@@ -52,6 +52,9 @@ async def create_pr(
     logger.info('Calling OpenHands MCP create_pr')
 
     request = get_http_request()
+    headers = request.headers
+    conversation_id = headers.get('X-OpenHands-Conversation-ID', None)
+
     provider_tokens = await get_provider_tokens(request)
     access_token = await get_access_token(request)
     user_id = await get_user_id(request)
@@ -75,6 +78,8 @@ async def create_pr(
             body=body
         )
 
+        if conversation_id and user_id:
+            await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
         response = str(e)
@@ -98,6 +103,9 @@ async def create_mr(
     logger.info('Calling OpenHands MCP create_mr')
 
     request = get_http_request()
+    headers = request.headers
+    conversation_id = headers.get('X-OpenHands-Conversation-ID', None)
+
     provider_tokens = await get_provider_tokens(request)
     access_token = await get_access_token(request)
     user_id = await get_user_id(request)
@@ -120,6 +128,10 @@ async def create_mr(
             title=title,
             description=description,
         )
+
+        if conversation_id and user_id:
+            await save_pr_metadata(user_id, conversation_id, response)
+
     except Exception as e:
         response = str(e)
 
