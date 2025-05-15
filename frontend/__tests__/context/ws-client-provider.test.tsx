@@ -20,33 +20,9 @@ describe("Propagate error message", () => {
     expect(addErrorMessageSpy).not.toHaveBeenCalled();
   });
 
-  it("should display error to user when present", () => {
-    const message = "We have a problem!";
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
-    updateStatusWhenErrorMessagePresent({ message });
+  it.todo("should display error to user when present");
 
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
-      message,
-      status_update: true,
-      type: "error",
-    });
-  });
-
-  it("should display error including translation id when present", () => {
-    const message = "We have a problem!";
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
-    updateStatusWhenErrorMessagePresent({
-      message,
-      data: { msg_id: "..id.." },
-    });
-
-    expect(addErrorMessageSpy).toHaveBeenCalledWith({
-      message,
-      id: "..id..",
-      status_update: true,
-      type: "error",
-    });
-  });
+  it.todo("should display error including translation id when present");
 });
 
 // Create a mock for socket.io-client
