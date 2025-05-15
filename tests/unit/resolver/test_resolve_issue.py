@@ -85,10 +85,10 @@ def test_setup_sandbox_config_experimental():
         runtime_container_image=None
     )
 
-@mock.patch("openhands.resolver.resolve_issue.os.environ", return_value="true")
+@mock.patch.dict("openhands.resolver.resolve_issue.os.environ", {"GITLAB_CI": "true"})
 @mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=0)
 @mock.patch("openhands.resolver.utils.get_unique_uid", return_value=1001)
-def test_setup_sandbox_config_gitlab_ci(mock_envirion, mock_getuid, mock_get_unique_uid):
+def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
     """Test GitLab CI specific configuration when running as root"""
     config = setup_sandbox_config(
         base_container_image=None,
@@ -102,9 +102,9 @@ def test_setup_sandbox_config_gitlab_ci(mock_envirion, mock_getuid, mock_get_uni
         user_id=1001
     )
 
-@mock.patch("openhands.resolver.resolve_issue.os.environ", return_value="true")
+@mock.patch.dict("openhands.resolver.resolve_issue.os.environ", {"GITLAB_CI": "true"})
 @mock.patch("openhands.resolver.resolve_issue.os.getuid", return_value=1000)
-def test_setup_sandbox_config_gitlab_ci_non_root(mock_environ, mock_getuid):
+def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
     """Test GitLab CI configuration when not running as root"""
     config = setup_sandbox_config(
         base_container_image=None,
