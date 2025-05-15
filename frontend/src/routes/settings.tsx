@@ -18,6 +18,7 @@ function SettingsScreen() {
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
     { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
     { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
   ];
 
@@ -26,6 +27,7 @@ function SettingsScreen() {
     { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
   ];
 
   React.useEffect(() => {
