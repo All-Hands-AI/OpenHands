@@ -135,20 +135,3 @@ chmod 644 ~/.ssh/id_ed25519.pub
 # Set correct permissions for SSH directory
 chmod 700 ~/.ssh
 ```
-
-### Using Password and Secrets Managers
-
-Many solutions support storing SSH keys securely:
-- Password managers: 1Password, LastPass, Bitwarden, KeePass
-- Enterprise secrets managers: HashiCorp Vault, Azure Key Vault, AWS Secrets Manager
-
-## Security Best Practices
-
-- Use key-based authentication instead of passwords
-- Use strong, unique keys (ED25519 or RSA with at least 4096 bits)
-- Protect private keys with passphrases
-- Disable root login and password authentication on servers
-- Use non-standard ports for public-facing servers
-- Implement fail2ban or similar for brute force protection
-- Regularly update SSH server and client software
-- Rotate SSH keys regularly, especially after team member departures
