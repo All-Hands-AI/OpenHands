@@ -126,7 +126,9 @@ def mock_settings_store():
 @patch('openhands.cli.main.add_mcp_tools_to_agent')
 @patch('openhands.cli.main.create_runtime')
 @patch('openhands.cli.main.create_controller')
-@patch('openhands.cli.main.create_memory', new_callable=AsyncMock)
+@patch(
+    'openhands.cli.main.create_memory',
+)
 @patch('openhands.cli.main.run_agent_until_done')
 @patch('openhands.cli.main.cleanup_session')
 @patch('openhands.cli.main.initialize_repository_for_runtime')
@@ -162,7 +164,8 @@ async def test_run_session_without_initial_action(
     mock_controller_task = MagicMock()
     mock_create_controller.return_value = (mock_controller, mock_controller_task)
 
-    mock_memory = AsyncMock()
+    # Create a regular MagicMock for memory to avoid coroutine issues
+    mock_memory = MagicMock()
     mock_create_memory.return_value = mock_memory
 
     with patch(
@@ -191,7 +194,7 @@ async def test_run_session_without_initial_action(
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
     mock_add_mcp_tools.assert_called_once_with(
-        mock_agent, mock_runtime, mock_config.mcp
+        mock_agent, mock_runtime, mock_memory, mock_config.mcp
     )
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
