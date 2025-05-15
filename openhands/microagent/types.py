@@ -22,6 +22,6 @@ class MicroagentMetadata(BaseModel):
     version: str = Field(default='1.0.0')
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents
-    mcp_tools: Optional[MCPConfig] = (
+    mcp_tools: MCPConfig | None = (
         None  # optional, for microagents that provide additional MCP tools
     )
