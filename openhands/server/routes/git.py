@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -42,6 +43,7 @@ async def get_user_repositories(
             return await client.get_repositories(sort, server_config.app_mode)
 
         except AuthenticationError as e:
+            logger.info(f"Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}")
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -53,6 +55,7 @@ async def get_user_repositories(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    logger.info(f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}")
     return JSONResponse(
         content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -74,6 +77,7 @@ async def get_user(
             return user
 
         except AuthenticationError as e:
+            logger.info(f"Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}")
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,6 +90,7 @@ async def get_user(
             )
 
     return JSONResponse(
+    logger.info(f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}")
         content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
@@ -122,6 +127,7 @@ async def search_repositories(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    logger.info(f"Returning 401 Unauthorized - GitHub token required for user_id: {user_id}")
     return JSONResponse(
         content='GitHub token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -158,6 +164,7 @@ async def get_suggested_tasks(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+    logger.info(f"Returning 401 Unauthorized - No providers set for user_id: {user_id}")
 
     return JSONResponse(
         content='No providers set.',
@@ -197,6 +204,7 @@ async def get_repository_branches(
             return JSONResponse(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    logger.info(f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}")
             )
 
     return JSONResponse(

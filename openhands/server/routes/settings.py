@@ -71,6 +71,11 @@ async def load_settings(
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
+        # Get user_id from settings if available
+        user_id = getattr(settings, 'user_id', 'unknown') if settings else 'unknown'
+        logger.info(
+            f'Returning 401 Unauthorized - Invalid token for user_id: {user_id}'
+        )
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
