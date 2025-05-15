@@ -326,6 +326,205 @@ async def test_memory_with_agent_microagents():
     assert 'magic word' in observation.microagent_knowledge[0].content
 
 
+@pytest.mark.asyncio
+async def test_custom_secrets_descriptions():
+    """Test that custom_secrets_descriptions are properly stored in memory and included in RecallObservation."""
+    # Create a mock event stream
+    event_stream = MagicMock(spec=EventStream)
+
+    # Initialize Memory
+    memory = Memory(
+        event_stream=event_stream,
+        sid='test-session',
+    )
+
+    # Create a mock runtime with custom secrets descriptions
+    mock_runtime = MagicMock()
+    mock_runtime.web_hosts = {'test-host.example.com': 8080}
+    mock_runtime.additional_agent_instructions = 'Test instructions'
+
+    # Define custom secrets descriptions
+    custom_secrets = {
+        'API_KEY': 'API key for external service',
+        'DATABASE_URL': 'Connection string for the database',
+        'SECRET_TOKEN': 'Authentication token for secure operations',
+    }
+
+    # Set runtime info with custom secrets
+    memory.set_runtime_info(mock_runtime, custom_secrets)
+
+    # Set repository info
+    memory.set_repository_info('test-owner/test-repo', '/workspace/test-repo')
+
+    # Create a workspace context recall action
+    recall_action = RecallAction(
+        query='Initial message', recall_type=RecallType.WORKSPACE_CONTEXT
+    )
+    recall_action._source = EventSource.USER  # type: ignore[attr-defined]
+
+    # Mock the event_stream.add_event method
+    added_events = []
+
+    def mock_add_event(event, source):
+        added_events.append((event, source))
+
+    event_stream.add_event = mock_add_event
+
+    # Process the recall action
+    await memory._on_event(recall_action)
+
+    # Verify a RecallObservation was added to the event stream
+    assert len(added_events) == 1
+    observation, source = added_events[0]
+
+    # Verify the observation is a RecallObservation
+    assert isinstance(observation, RecallObservation)
+    assert source == EventSource.ENVIRONMENT
+    assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
+
+    # Verify custom_secrets_descriptions are included in the observation
+    assert observation.custom_secrets_descriptions == custom_secrets
+
+    # Verify repository info is included
+    assert observation.repo_name == 'test-owner/test-repo'
+    assert observation.repo_directory == '/workspace/test-repo'
+
+    # Verify runtime info is included
+    assert observation.runtime_hosts == {'test-host.example.com': 8080}
+    assert observation.additional_agent_instructions == 'Test instructions'
+
+
+def test_custom_secrets_descriptions_serialization(prompt_dir):
+    """Test that custom_secrets_descriptions are properly serialized in the message for the LLM."""
+    from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+
+    # Create a PromptManager with the test prompt directory
+    prompt_manager = PromptManager(prompt_dir)
+
+    # Create a RuntimeInfo with custom_secrets_descriptions
+    custom_secrets = {
+        'API_KEY': 'API key for external service',
+        'DATABASE_URL': 'Connection string for the database',
+        'SECRET_TOKEN': 'Authentication token for secure operations',
+    }
+    runtime_info = RuntimeInfo(
+        date='2025-05-15',
+        available_hosts={'test-host.example.com': 8080},
+        additional_agent_instructions='Test instructions',
+        custom_secrets_descriptions=custom_secrets,
+    )
+
+    # Create a RepositoryInfo
+    repository_info = RepositoryInfo(
+        repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
+    )
+
+    # Build the workspace context message
+    workspace_context = prompt_manager.build_workspace_context(
+        repository_info=repository_info,
+        runtime_info=runtime_info,
+        repo_instructions='Test repository instructions',
+    )
+
+    # Verify that the workspace context includes the custom_secrets_descriptions
+    assert '<CUSTOM_SECRETS>' in workspace_context
+    for secret_name, secret_description in custom_secrets.items():
+        assert f'$**{secret_name}**' in workspace_context
+        assert secret_description in workspace_context
+
+
+def test_backward_compatibility_custom_secrets_descriptions():
+    """Test that RecallObservation can be created without custom_secrets_descriptions for backward compatibility."""
+    from openhands.events.event import RecallType
+    from openhands.events.observation.agent import RecallObservation
+
+    # Create a RecallObservation without specifying custom_secrets_descriptions
+    observation = RecallObservation(
+        content='Test content',
+        recall_type=RecallType.WORKSPACE_CONTEXT,
+        repo_name='test-owner/test-repo',
+        repo_directory='/workspace/test-repo',
+        repo_instructions='Test repository instructions',
+        runtime_hosts={'test-host.example.com': 8080},
+        additional_agent_instructions='Test instructions',
+        date='2025-05-15',
+        # Intentionally omitting custom_secrets_descriptions
+    )
+
+    # Verify that the observation was created successfully
+    assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
+    assert observation.repo_name == 'test-owner/test-repo'
+    assert observation.repo_directory == '/workspace/test-repo'
+
+    # Verify that custom_secrets_descriptions defaults to an empty dict
+    assert observation.custom_secrets_descriptions == {}
+
+    # Verify that the string representation works
+    str_repr = str(observation)
+    assert 'RecallObservation' in str_repr
+    assert 'custom_secrets_descriptions={}' in str_repr
+
+
+def test_serialization_deserialization_with_custom_secrets():
+    """Test that RecallObservation can be serialized and deserialized with custom_secrets_descriptions."""
+    import json
+
+    from openhands.core.schema import ObservationType
+    from openhands.events.event import RecallType
+    from openhands.events.observation.agent import RecallObservation
+
+    # Create a serialized JSON string without custom_secrets_descriptions field
+    # This simulates an older version of the RecallObservation
+    legacy_json = json.dumps(
+        {
+            'content': 'Test content',
+            'observation': ObservationType.RECALL,
+            'recall_type': RecallType.WORKSPACE_CONTEXT,
+            'repo_name': 'test-owner/test-repo',
+            'repo_directory': '/workspace/test-repo',
+            'repo_instructions': 'Test repository instructions',
+            'runtime_hosts': {'test-host.example.com': 8080},
+            'additional_agent_instructions': 'Test instructions',
+            'date': '2025-05-15',
+            'microagent_knowledge': [],
+            # Intentionally omitting custom_secrets_descriptions
+        }
+    )
+
+    # Deserialize from legacy JSON
+    legacy_dict = json.loads(legacy_json)
+    legacy_observation = RecallObservation(**legacy_dict)
+
+    # Verify that the observation was created successfully
+    assert legacy_observation.recall_type == RecallType.WORKSPACE_CONTEXT
+    assert legacy_observation.repo_name == 'test-owner/test-repo'
+    assert legacy_observation.repo_directory == '/workspace/test-repo'
+
+    # Verify that custom_secrets_descriptions defaults to an empty dict
+    assert legacy_observation.custom_secrets_descriptions == {}
+
+    # Now add custom_secrets_descriptions to the observation
+    custom_secrets = {
+        'API_KEY': 'API key for external service',
+        'DATABASE_URL': 'Connection string for the database',
+    }
+    legacy_observation.custom_secrets_descriptions = custom_secrets
+
+    # Serialize the updated observation to JSON
+    updated_json = json.dumps(
+        {**legacy_dict, 'custom_secrets_descriptions': custom_secrets}
+    )
+
+    # Deserialize the updated JSON
+    updated_dict = json.loads(updated_json)
+    updated_observation = RecallObservation(**updated_dict)
+
+    # Verify that the custom_secrets_descriptions are included
+    assert updated_observation.custom_secrets_descriptions == custom_secrets
+    assert updated_observation.repo_name == 'test-owner/test-repo'
+    assert updated_observation.repo_directory == '/workspace/test-repo'
+
+
 def test_memory_multiple_repo_microagents(prompt_dir, file_store):
     """Test that Memory loads and concatenates multiple repo microagents correctly."""
     # Create real event stream
