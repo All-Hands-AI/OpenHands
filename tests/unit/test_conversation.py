@@ -245,6 +245,7 @@ async def test_new_conversation_success(provider_handler_mock):
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
+                api_key=None,
             )
 
             test_request = InitSessionRequest(
@@ -286,6 +287,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
+                api_key=None,
             )
 
             # Mock SuggestedTask.get_prompt_for_task
@@ -470,6 +472,7 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
+                api_key=None,
             )
 
             # Create the request object
@@ -506,6 +509,7 @@ async def test_new_conversation_with_null_repository():
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
+                api_key=None,
             )
 
             # Create the request object with null repository

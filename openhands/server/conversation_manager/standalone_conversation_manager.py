@@ -498,6 +498,7 @@ class StandaloneConversationManager(ConversationManager):
         return AgentLoopInfo(
             conversation_id=session.sid,
             url=self._get_conversation_url(session.sid),
+            api_key=None,
             event_store=session.agent_session.event_stream,
         )
 

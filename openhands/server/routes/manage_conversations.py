@@ -66,6 +66,7 @@ class InitSessionResponse(BaseModel):
     status: str
     conversation_id: str
     conversation_url: str
+    api_key: str | None
     message: str | None = None
 
 
@@ -219,7 +220,8 @@ async def new_conversation(
         return InitSessionResponse(
             status='ok',
             conversation_id=agent_loop_info.conversation_id,
-            conversation_url=agent_loop_info.url
+            conversation_url=agent_loop_info.url,
+            api_key=agent_loop_info.api_key,
         )
     except MissingSettingsError as e:
         return JSONResponse(

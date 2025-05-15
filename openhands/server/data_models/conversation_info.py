@@ -20,4 +20,5 @@ class ConversationInfo:
     trigger: ConversationTrigger | None = None
     num_connections: int = 0
     url: str | None = None
+    api_key: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
