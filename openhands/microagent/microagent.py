@@ -65,7 +65,14 @@ class BaseMicroagent(BaseModel):
         try:
             metadata = MicroagentMetadata(**metadata_dict)
         except Exception as e:
-            raise MicroagentValidationError(f'Error loading metadata: {e}') from e
+            # Provide more detailed error message for validation errors
+            error_msg = f'Error validating microagent metadata in {path.name}: {str(e)}'
+            if 'type' in metadata_dict and metadata_dict['type'] not in [
+                t.value for t in MicroagentType
+            ]:
+                valid_types = ', '.join([f'"{t.value}"' for t in MicroagentType])
+                error_msg += f'. Invalid "type" value: "{metadata_dict["type"]}". Valid types are: {valid_types}'
+            raise MicroagentValidationError(error_msg) from e
 
         # Create appropriate subclass based on type
         subclass_map = {
@@ -185,6 +192,13 @@ def load_microagents_from_dir(
                     knowledge_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:
-                raise ValueError(f'Error loading agent from {file}: {e}')
+                # Provide more detailed error information including the file path
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
+                if 'MicroagentValidationError' in e.__class__.__name__:
+                    # For validation errors, include the original exception
+                    raise MicroagentValidationError(error_msg) from e
+                else:
+                    # For other errors, wrap in a ValueError with detailed message
+                    raise ValueError(error_msg) from e
 
     return repo_agents, knowledge_agents

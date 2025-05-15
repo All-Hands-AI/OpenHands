@@ -176,7 +176,22 @@ class Session:
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             err_class = e.__class__.__name__
-            await self.send_error(f'Failed to create agent session: {err_class}')
+
+            # Get detailed error message
+            error_message = str(e)
+
+            # For microagent validation errors, provide more helpful information
+            if (
+                'MicroagentValidationError' in err_class
+                or 'ValueError' in err_class
+                and 'microagent' in error_message.lower()
+            ):
+                await self.send_error(
+                    f'Failed to create agent session: {error_message}'
+                )
+            else:
+                # For other errors, just show the error class to avoid exposing sensitive information
+                await self.send_error(f'Failed to create agent session: {err_class}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
