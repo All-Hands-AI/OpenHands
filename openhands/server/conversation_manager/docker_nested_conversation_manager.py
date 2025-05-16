@@ -23,6 +23,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import ConversationManager
 from openhands.server.conversation_manager.standalone_conversation_manager import StandaloneConversationManager
+from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -71,8 +72,7 @@ class DockerNestedConversationManager(ConversationManager):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
-    ) -> EventStore | None:
+    ) -> AgentLoopInfo:
         # Attaching conversations not suported in this manager - clients should connect directly!
         raise ValueError('unsupported_operation')
 
@@ -122,16 +122,22 @@ class DockerNestedConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
-    ) -> EventStore:
+    ) -> AgentLoopInfo:
         if not await self.is_agent_loop_running(sid):
             await self._start_agent_loop(
-                sid, settings, user_id, initial_user_msg, replay_json, github_user_id
+                sid, settings, user_id, initial_user_msg, replay_json
             )
+        nested_url = ""
+        return AgentLoopInfo(
+            conversation_id=sid,
+            url=nested_url,
+            api_key=None,
+            event_store=NestedEventStore(),
+        )
         event_store = EventStore(sid, self.file_store, user_id)
         return event_store
 
-    async def _start_agent_loop(self, sid, settings, user_id, initial_user_msg = None, replay_json = None, github_user_id = None):
+    async def _start_agent_loop(self, sid, settings, user_id, initial_user_msg = None, replay_json = None):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
 
         response_ids = await self.get_running_agent_loops(user_id)
