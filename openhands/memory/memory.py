@@ -271,7 +271,6 @@ class Memory:
 
         # Check all repo microagents for MCP tools (always active)
         for agent in self.repo_microagents.values():
-            logger.debug(f'Repo microagent {agent.name} metadata: {agent.metadata}')
             if agent.metadata.mcp_tools:
                 mcp_configs.append(agent.metadata.mcp_tools)
                 logger.debug(
