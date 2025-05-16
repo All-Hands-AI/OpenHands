@@ -58,7 +58,7 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const tosPageStatus = useIsOnTosPage();
+  const isOnTosPage = useIsOnTosPage();
   const { data: settings } = useSettings();
   const { error } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
@@ -78,30 +78,30 @@ export default function MainApp() {
   });
 
   // When on TOS page, we don't use the GitHub auth URL
-  const effectiveGitHubAuthUrl = tosPageStatus ? null : gitHubAuthUrl;
+  const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     // Don't change language when on TOS page
-    if (!tosPageStatus && settings?.LANGUAGE) {
+    if (!isOnTosPage && settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings?.LANGUAGE, tosPageStatus]);
+  }, [settings?.LANGUAGE, isOnTosPage]);
 
   React.useEffect(() => {
     // Don't show consent form when on TOS page
-    if (!tosPageStatus) {
+    if (!isOnTosPage) {
       const consentFormModalIsOpen =
         settings?.USER_CONSENTS_TO_ANALYTICS === null;
 
       setConsentFormIsOpen(consentFormModalIsOpen);
     }
-  }, [settings, tosPageStatus]);
+  }, [settings, isOnTosPage]);
 
   React.useEffect(() => {
     // Don't migrate user consent when on TOS page
-    if (!tosPageStatus) {
+    if (!isOnTosPage) {
       // Migrate user consent to the server if it was previously stored in localStorage
       migrateUserConsent({
         handleAnalyticsWasPresentInLocalStorage: () => {
@@ -109,7 +109,7 @@ export default function MainApp() {
         },
       });
     }
-  }, [tosPageStatus]);
+  }, [isOnTosPage]);
 
   React.useEffect(() => {
     if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
@@ -120,36 +120,16 @@ export default function MainApp() {
   React.useEffect(() => {
     // Don't do any redirects when on TOS page
     // Don't allow users to use the app if it 402s
-    if (!tosPageStatus && error?.status === 402 && pathname !== "/") {
+    if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
       navigate("/");
     }
-  }, [error?.status, pathname, tosPageStatus]);
+  }, [error?.status, pathname, isOnTosPage]);
 
-  // When on TOS page, we don't make any API calls, so we need to handle this case
-  // For auth errors, only show login modal for 401 errors
-  // Other errors (like connection issues) should not trigger the login modal
-  const is401Error =
-    authError &&
-    // Using type assertion since we need to access error details
-    (isAuthed as { error?: { response?: { status?: number } } })?.error
-      ?.response?.status === 401;
-
-  // Only treat the user as not authenticated (and show login modal) when:
-  // 1. We have a specific 401 error, OR
-  // 2. We have successful auth data showing they're not authenticated
-  const userIsAuthed = tosPageStatus
-    ? false
-    : (!!isAuthed && !authError) || // Successfully authenticated
-      (authError && !is401Error); // Error, but not a 401 (e.g., connection issues)
-
-  // Only show the auth modal if:
-  // 1. User is not authenticated
-  // 2. We're not currently on the TOS page
-  // 3. We're in SaaS mode
   const renderAuthModal =
     !isFetchingAuth &&
-    !userIsAuthed &&
-    !tosPageStatus &&
+    !authError &&
+    !isAuthed &&
+    !isOnTosPage &&
     config.data?.APP_MODE === "saas";
 
   return (
