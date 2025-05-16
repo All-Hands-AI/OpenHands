@@ -11,7 +11,6 @@ describe("Translations", () => {
       <AccountSettingsContextMenu
         onLogout={() => {}}
         onClose={() => {}}
-        isLoggedIn
       />,
     );
     expect(

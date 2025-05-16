@@ -48,7 +48,7 @@ describe("Content", () => {
 
       await waitFor(() => {
         expect(provider).toHaveValue("Anthropic");
-        expect(model).toHaveValue("claude-3-5-sonnet-20241022");
+        expect(model).toHaveValue("claude-3-7-sonnet-20250219");
 
         expect(apiKey).toHaveValue("");
         expect(apiKey).toHaveProperty("placeholder", "");
@@ -135,7 +135,7 @@ describe("Content", () => {
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-3-5-sonnet-20241022");
+      expect(model).toHaveValue("anthropic/claude-3-7-sonnet-20250219");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
@@ -542,7 +542,7 @@ describe("Form submission", () => {
 
     // select model
     await userEvent.click(model);
-    const modelOption = screen.getByText("claude-3-5-sonnet-20241022");
+    const modelOption = screen.getByText("claude-3-7-sonnet-20250219");
     await userEvent.click(modelOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        llm_model: "anthropic/claude-3-7-sonnet-20250219",
         llm_base_url: "",
         confirmation_mode: false,
       }),
