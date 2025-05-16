@@ -125,7 +125,7 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
-  const is401 = authError?.status === 401;
+  const is401 = authError?.status === 401 || authError?.response?.status === 401;
 
   const renderAuthModal =
     is401 &&
