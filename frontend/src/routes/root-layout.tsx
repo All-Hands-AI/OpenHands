@@ -126,7 +126,17 @@ export default function MainApp() {
   }, [error?.status, pathname, tosPageStatus]);
 
   // When on TOS page, we don't make any API calls, so we need to handle this case
-  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
+  // For auth errors, only show login modal for 401 errors
+  // Other errors (like connection issues) should not trigger the login modal
+  const is401Error = authError &&
+    (isAuthed as any)?.error?.response?.status === 401;
+
+  // Only treat the user as not authenticated (and show login modal) when:
+  // 1. We have a specific 401 error, OR
+  // 2. We have successful auth data showing they're not authenticated
+  const userIsAuthed = tosPageStatus ? false :
+    (!!isAuthed && !authError) || // Successfully authenticated
+    (authError && !is401Error);   // Error, but not a 401 (e.g., connection issues)
 
   // Only show the auth modal if:
   // 1. User is not authenticated
