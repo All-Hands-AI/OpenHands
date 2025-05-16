@@ -17,6 +17,7 @@ from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.service_types import ProviderType
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -298,6 +299,11 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
         if runtime_cls == RemoteRuntime:
+            if git_provider_tokens and ProviderType.GITLAB in git_provider_tokens:
+                tokens = dict(git_provider_tokens)
+                del tokens[ProviderType.GITLAB]
+                git_provider_tokens = MappingProxyType(tokens)
+
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
