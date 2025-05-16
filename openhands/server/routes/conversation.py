@@ -109,11 +109,9 @@ async def search_events(
         request: The incoming request object
         start_id: Starting ID in the event stream. Defaults to 0
         end_id: Ending ID in the event stream
+        reverse: Whether to retrieve events in reverse order. Defaults to False.
+        filter: Filter for events
         limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
-        event_type: Filter by event type (e.g., "FileReadAction")
-        source: Filter by event source
-        start_date: Filter events after this date (ISO format)
-        end_date: Filter events before this date (ISO format)
     Returns:
         dict: Dictionary containing:
             - events: List of matching events
