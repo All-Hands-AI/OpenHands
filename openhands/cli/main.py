@@ -89,11 +89,11 @@ async def cleanup_session(
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
 
-        for task in pending:
-            task.cancel()
-
         if pending:
             done, pending = await asyncio.wait(pending, timeout=2.0)
+
+        for task in pending:
+            task.cancel()
 
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
