@@ -228,6 +228,8 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
         env_vars['CONVERSATION_ID'] = sid
+        #env_vars['SANDBOX_USER_ID'] = 1000
+        env_vars['USER'] = 'CURRENT_USER'
 
         # This eventstream is never used - I only add it because it is required in order to create a docker runtime
         event_stream = EventStream(sid, self.file_store, user_id)
@@ -351,7 +353,8 @@ class DockerNestedConversationManager(ConversationManager):
     def get_nested_url_for_container(self, container: Container) -> str:
         env = container.attrs['Config']['Env']
         container_port = int(next(e[5:] for e in env if e.startswith('port=')))
-        nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
+        conversation_id = container.name[len("openhands-runtime-"):]
+        nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}/api/conversations/{conversation_id}'
         return nested_url
 
 
