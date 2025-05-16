@@ -27,7 +27,7 @@ class BaseMicroagent(BaseModel):
         path: Union[str, Path],
         microagent_dir: Path | None = None,
         file_content: str | None = None,
-    ) -> "BaseMicroagent":
+    ) -> 'BaseMicroagent':
         """Load a microagent from a markdown file with frontmatter.
 
         The agent's name is derived from its path relative to the microagent_dir.
@@ -38,7 +38,7 @@ class BaseMicroagent(BaseModel):
         # Otherwise, we will rely on the name from metadata later
         derived_name = None
         if microagent_dir is not None:
-            derived_name = str(path.relative_to(microagent_dir).with_suffix(""))
+            derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -46,11 +46,11 @@ class BaseMicroagent(BaseModel):
                 file_content = f.read()
 
         # Legacy repo instructions are stored in .openhands_instructions
-        if path.name == ".openhands_instructions":
+        if path.name == '.openhands_instructions':
             return RepoMicroagent(
-                name="repo_legacy",
+                name='repo_legacy',
                 content=file_content,
-                metadata=MicroagentMetadata(name="repo_legacy"),
+                metadata=MicroagentMetadata(name='repo_legacy'),
                 source=str(path),
                 type=MicroagentType.REPO_KNOWLEDGE,
             )
@@ -66,11 +66,11 @@ class BaseMicroagent(BaseModel):
             metadata = MicroagentMetadata(**metadata_dict)
         except Exception as e:
             # Provide more detailed error message for validation errors
-            error_msg = f"Error validating microagent metadata in {path.name}: {str(e)}"
-            if "type" in metadata_dict and metadata_dict["type"] not in [
+            error_msg = f'Error validating microagent metadata in {path.name}: {str(e)}'
+            if 'type' in metadata_dict and metadata_dict['type'] not in [
                 t.value for t in MicroagentType
             ]:
-                valid_types = ", ".join([f'"{t.value}"' for t in MicroagentType])
+                valid_types = ', '.join([f'"{t.value}"' for t in MicroagentType])
                 error_msg += f'. Invalid "type" value: "{metadata_dict["type"]}". Valid types are: {valid_types}'
             raise MicroagentValidationError(error_msg) from e
 
@@ -93,7 +93,7 @@ class BaseMicroagent(BaseModel):
 
         if inferred_type not in subclass_map:
             # This should theoretically not happen with the logic above
-            raise ValueError(f"Could not determine microagent type for: {path}")
+            raise ValueError(f'Could not determine microagent type for: {path}')
 
         # Use derived_name if available (from relative path), otherwise fallback to metadata.name
         agent_name = derived_name if derived_name is not None else metadata.name
@@ -119,7 +119,7 @@ class KnowledgeMicroagent(BaseMicroagent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroagentType.KNOWLEDGE:
-            raise ValueError("KnowledgeMicroagent must have type KNOWLEDGE")
+            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE')
 
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
@@ -153,7 +153,7 @@ class RepoMicroagent(BaseMicroagent):
         super().__init__(**data)
         if self.type != MicroagentType.REPO_KNOWLEDGE:
             raise ValueError(
-                f"RepoMicroagent initialized with incorrect type: {self.type}"
+                f'RepoMicroagent initialized with incorrect type: {self.type}'
             )
 
 
@@ -177,12 +177,12 @@ def load_microagents_from_dir(
     knowledge_agents = {}
 
     # Load all agents from microagents directory
-    logger.debug(f"Loading agents from {microagent_dir}")
+    logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
-        for file in microagent_dir.rglob("*.md"):
-            logger.debug(f"Checking file {file}...")
+        for file in microagent_dir.rglob('*.md'):
+            logger.debug(f'Checking file {file}...')
             # skip README.md
-            if file.name == "README.md":
+            if file.name == 'README.md':
                 continue
             try:
                 agent = BaseMicroagent.load(file, microagent_dir)
@@ -190,10 +190,10 @@ def load_microagents_from_dir(
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                logger.debug(f"Loaded agent {agent.name} from {file}")
+                logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:
                 # Provide more detailed error information including the file path
-                error_msg = f"Error loading microagent from {file}: {str(e)}"
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
                 if isinstance(e, MicroagentValidationError):
                     # For validation errors, include the original exception
                     raise MicroagentValidationError(error_msg) from e
