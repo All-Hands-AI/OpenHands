@@ -52,20 +52,8 @@ jobs:
           cache: 'pip'
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
-      - name: Install project in editable mode
-        run: pip install -e .
       - name: Run pre-commit hooks
         run: pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
-      - name: Run mypy directly (for better error reporting)
-        if: always()  # Run even if pre-commit fails
-        run: |
-          pip install mypy==1.9.0 \
-            types-requests types-setuptools types-pyyaml types-toml \
-            types-redis types-protobuf types-python-dateutil types-pyjwt \
-            types-docutils types-Pillow types-boto3 types-cryptography \
-            types-Jinja2 types-MarkupSafe types-click types-filelock \
-            types-decorator types-docopt types-emoji types-enum34 types-paramiko
-          PYTHONPATH=$PWD mypy --config-file dev_config/python/mypy.ini --scripts-are-modules openhands/
 
   # Check version consistency across documentation
   check-version-consistency:
