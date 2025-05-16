@@ -259,12 +259,6 @@ class Memory:
         for name, agent in repo_agents.items():
             if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
-        logger.debug(
-            f'Loaded {len(self.repo_microagents)} global repo microagents: {self.repo_microagents.keys()}'
-        )
-        logger.debug(
-            f'Loaded {len(self.knowledge_microagents)} global knowledge microagents: {self.knowledge_microagents.keys()}'
-        )
 
     def get_microagent_mcp_tools(self) -> list[MCPConfig]:
         """
