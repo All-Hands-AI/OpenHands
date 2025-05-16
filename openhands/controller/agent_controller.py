@@ -376,26 +376,45 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        # If we have a delegate that is not finished or errored, forward events to it
-        if self.delegate is not None:
-            delegate_state = self.delegate.get_agent_state()
-            if delegate_state not in (
-                AgentState.FINISHED,
-                AgentState.ERROR,
-                AgentState.REJECTED,
-            ):
-                # Forward the event to delegate and skip parent processing
-                asyncio.get_event_loop().run_until_complete(
-                    self.delegate._on_event(event)
-                )
-                return
-            else:
-                # delegate is done or errored, so end it
-                self.end_delegate()
-                return
+        try:
+            # If we have a delegate that is not finished or errored, forward events to it
+            if self.delegate is not None:
+                delegate_state = self.delegate.get_agent_state()
+                if delegate_state not in (
+                    AgentState.FINISHED,
+                    AgentState.ERROR,
+                    AgentState.REJECTED,
+                ):
+                    # Forward the event to delegate and skip parent processing
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if not loop.is_closed():
+                            loop.run_until_complete(self.delegate._on_event(event))
+                    except RuntimeError:
+                        # Event loop is closed, create a new one
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(self.delegate._on_event(event))
+                        loop.close()
+                    return
+                else:
+                    # delegate is done or errored, so end it
+                    self.end_delegate()
+                    return
 
-        # continue parent processing only if there's no active delegate
-        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+            # continue parent processing only if there's no active delegate
+            try:
+                loop = asyncio.get_event_loop()
+                if not loop.is_closed():
+                    loop.run_until_complete(self._on_event(event))
+            except RuntimeError:
+                # Event loop is closed, create a new one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self._on_event(event))
+                loop.close()
+        except Exception as e:
+            logger.error(f"Error in event handling: {str(e)}")
 
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
