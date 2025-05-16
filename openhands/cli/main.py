@@ -73,32 +73,65 @@ async def cleanup_session(
 ) -> None:
     """Clean up all resources from the current session."""
     try:
+        # First try to save the final state before canceling tasks
+        try:
+            event_stream = runtime.event_stream
+            end_state = controller.get_state()
+            end_state.save_to_session(
+                event_stream.sid,
+                event_stream.file_store,
+                event_stream.user_id,
+            )
+        except Exception as e:
+            logger.warning(f'Error saving final state: {e}')
+
         # Cancel all running tasks except the current one
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
+        
+        # First try to cancel tasks gracefully
         for task in pending:
             task.cancel()
 
-        # Wait for all tasks to complete with a timeout
+        # Wait for tasks with a short timeout first
         if pending:
-            await asyncio.wait(pending, timeout=5.0)
+            done, pending = await asyncio.wait(pending, timeout=2.0)
+            
+            # If there are still pending tasks, force cancel them
+            if pending:
+                logger.warning(f'Force canceling {len(pending)} tasks that did not respond to cancel')
+                for task in pending:
+                    try:
+                        task.cancel()
+                        # Give each task a very short time to cleanup
+                        await asyncio.wait([task], timeout=0.1)
+                    except Exception:
+                        pass
 
-        event_stream = runtime.event_stream
+        # Reset agent and close resources in a specific order
+        try:
+            agent.reset()
+        except Exception as e:
+            logger.warning(f'Error resetting agent: {e}')
 
-        # Save the final state
-        end_state = controller.get_state()
-        end_state.save_to_session(
-            event_stream.sid,
-            event_stream.file_store,
-            event_stream.user_id,
-        )
+        try:
+            runtime.close()
+        except Exception as e:
+            logger.warning(f'Error closing runtime: {e}')
 
-        # Reset agent, close runtime and controller
-        agent.reset()
-        runtime.close()
-        await controller.close()
+        try:
+            await controller.close()
+        except Exception as e:
+            logger.warning(f'Error closing controller: {e}')
+
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
+        # Even if we get an error, try to force close everything
+        try:
+            runtime.close()
+            await controller.close()
+        except Exception:
+            pass
 
 
 async def run_session(

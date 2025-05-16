@@ -93,6 +93,7 @@ class AgentController:
     delegate: 'AgentController | None' = None
     _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
+    _shutting_down: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -199,6 +200,9 @@ class AgentController:
 
         Note that it's fairly important that this closes properly, otherwise the state is incomplete.
         """
+        # Set shutting down flag first to prevent new event processing
+        self._shutting_down = True
+
         if set_stop_state:
             await self.set_agent_state_to(AgentState.STOPPED)
 
@@ -376,45 +380,40 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        try:
-            # If we have a delegate that is not finished or errored, forward events to it
-            if self.delegate is not None:
-                delegate_state = self.delegate.get_agent_state()
-                if delegate_state not in (
-                    AgentState.FINISHED,
-                    AgentState.ERROR,
-                    AgentState.REJECTED,
-                ):
-                    # Forward the event to delegate and skip parent processing
-                    try:
-                        loop = asyncio.get_event_loop()
-                        if not loop.is_closed():
-                            loop.run_until_complete(self.delegate._on_event(event))
-                    except RuntimeError:
-                        # Event loop is closed, create a new one
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
-                        loop.run_until_complete(self.delegate._on_event(event))
-                        loop.close()
-                    return
-                else:
-                    # delegate is done or errored, so end it
-                    self.end_delegate()
-                    return
+        # Skip event processing if we're shutting down
+        if self._shutting_down:
+            return
 
-            # continue parent processing only if there's no active delegate
-            try:
-                loop = asyncio.get_event_loop()
-                if not loop.is_closed():
-                    loop.run_until_complete(self._on_event(event))
-            except RuntimeError:
-                # Event loop is closed, create a new one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self._on_event(event))
-                loop.close()
-        except Exception as e:
-            logger.error(f"Error in event handling: {str(e)}")
+        # If we have a delegate that is not finished or errored, forward events to it
+        if self.delegate is not None:
+            delegate_state = self.delegate.get_agent_state()
+            if delegate_state not in (
+                AgentState.FINISHED,
+                AgentState.ERROR,
+                AgentState.REJECTED,
+            ):
+                # Forward the event to delegate and skip parent processing
+                try:
+                    loop = asyncio.get_event_loop()
+                    if not loop.is_closed():
+                        asyncio.create_task(self.delegate._on_event(event))
+                except RuntimeError:
+                    # Event loop is closed, we're probably shutting down
+                    return
+                return
+            else:
+                # delegate is done or errored, so end it
+                self.end_delegate()
+                return
+
+        # continue parent processing only if there's no active delegate
+        try:
+            loop = asyncio.get_event_loop()
+            if not loop.is_closed():
+                asyncio.create_task(self._on_event(event))
+        except RuntimeError:
+            # Event loop is closed, we're probably shutting down
+            return
 
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
