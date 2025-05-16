@@ -54,7 +54,7 @@ class ServerConfig(ServerConfigInterface):
         return config
 
 
-def load_server_config() -> ServerConfig:
+def load_server_config() -> ServerConfigInterface:
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
 
@@ -62,4 +62,4 @@ def load_server_config() -> ServerConfig:
     server_config_instance = server_config_cls()
     server_config_instance.verify_config()
 
-    return server_config_instance  # type: ignore
+    return server_config_instance
