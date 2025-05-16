@@ -200,6 +200,10 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
+        session_api_key = os.getenv("SESSION_API_KEY")
+        if session_api_key:
+            self.session.headers['X-Session-API-Key'] = session_api_key
+
     @property
     def action_execution_server_url(self) -> str:
         return self.api_url
