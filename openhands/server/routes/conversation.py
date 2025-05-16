@@ -95,7 +95,7 @@ async def get_hosts(request: Request) -> JSONResponse:
         )
 
 
-@app.get('/events/search')
+@app.get('/events')
 async def search_events(
     request: Request,
     start_id: int = 0,
