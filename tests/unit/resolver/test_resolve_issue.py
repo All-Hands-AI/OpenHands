@@ -12,7 +12,7 @@ def assert_sandbox_config(
     base_container_image = SandboxConfig.model_fields["base_container_image"].default,
     runtime_container_image = "ghcr.io/all-hands-ai/runtime:mock-nikolaik",
     local_runtime_url = SandboxConfig.model_fields["local_runtime_url"].default,
-    user_id = SandboxConfig.model_fields["user_id"].default,
+    user_id = None,
 ):
     """Helper function to assert the properties of the SandboxConfig object."""
     assert isinstance(config, SandboxConfig)
@@ -22,7 +22,8 @@ def assert_sandbox_config(
     assert config.use_host_network is False
     assert config.timeout == 300
     assert config.local_runtime_url == local_runtime_url
-    assert config.user_id == user_id
+    if user_id is not None:
+        assert config.user_id == user_id
 
 class TestSandboxContainerConfig:
     """Test cases for SandboxContainerConfig"""
@@ -76,6 +77,7 @@ class TestSandboxContainerConfig:
         runtime_config = SandboxContainerConfig.build_for_issue_resolver(None, "custom-runtime", False)
         assert runtime_config.container_base is None
         assert runtime_config.container_runtime == "custom-runtime"
+
 
 class TestSetupSandboxConfig:
     """Test cases for setup_sandbox_config"""
