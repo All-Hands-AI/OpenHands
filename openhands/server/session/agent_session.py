@@ -134,9 +134,17 @@ class AgentSession:
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.split('/')[-1]
 
+            if git_provider_tokens:
+                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+                await provider_handler.set_event_stream_secrets(self.event_stream)
+
+            if custom_secrets:
+                custom_secrets_handler.set_event_stream_secrets(self.event_stream)
+
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
+                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
             )
 
             # NOTE: this needs to happen before controller is created
@@ -164,13 +172,6 @@ class AgentSession:
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
                 )
-
-            if git_provider_tokens:
-                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
-                await provider_handler.set_event_stream_secrets(self.event_stream)
-
-            if custom_secrets:
-                custom_secrets_handler.set_event_stream_secrets(self.event_stream)
 
             if not self._closed:
                 if initial_message:
