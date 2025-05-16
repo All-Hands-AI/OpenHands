@@ -73,18 +73,6 @@ async def cleanup_session(
 ) -> None:
     """Clean up all resources from the current session."""
     try:
-        # First try to save the final state before canceling tasks
-        try:
-            event_stream = runtime.event_stream
-            end_state = controller.get_state()
-            end_state.save_to_session(
-                event_stream.sid,
-                event_stream.file_store,
-                event_stream.user_id,
-            )
-        except Exception as e:
-            logger.warning(f'Error saving final state: {e}')
-
         # Cancel all running tasks except the current one
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
