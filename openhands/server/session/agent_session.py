@@ -16,7 +16,11 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE,
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+)
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -116,7 +120,9 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets if custom_secrets else {})
+        custom_secrets_handler = UserSecrets(
+            custom_secrets=custom_secrets if custom_secrets else {}
+        )
 
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -163,7 +169,7 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
-                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
+                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
             )
 
             if git_provider_tokens:
@@ -315,7 +321,7 @@ class AgentSession:
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
-            
+
             # Merge git provider tokens with custom secrets before passing over to runtime
             env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
             self.runtime = runtime_cls(
@@ -415,7 +421,10 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None, custom_secrets_descriptions: dict[str, str]
+        self,
+        selected_repository: str | None,
+        repo_directory: str | None,
+        custom_secrets_descriptions: dict[str, str],
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
