@@ -52,3 +52,8 @@ export const isSystemMessage = (
   event: OpenHandsParsedEvent,
 ): event is SystemMessageAction =>
   isOpenHandsAction(event) && event.action === "system";
+
+export const isRejectObservation = (
+  event: OpenHandsParsedEvent,
+): event is OpenHandsObservation =>
+  isOpenHandsObservation(event) && event.observation === "user_rejected";

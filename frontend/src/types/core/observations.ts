@@ -137,6 +137,14 @@ export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   };
 }
 
+export interface UserRejectedObservation
+  extends OpenHandsObservationEvent<"user_rejected"> {
+  source: "agent";
+  extras: {
+    // Add any specific fields for MCP observations
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -150,4 +158,5 @@ export type OpenHandsObservation =
   | EditObservation
   | ErrorObservation
   | RecallObservation
-  | MCPObservation;
+  | MCPObservation
+  | UserRejectedObservation;

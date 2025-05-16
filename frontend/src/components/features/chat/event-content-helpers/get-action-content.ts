@@ -93,7 +93,7 @@ const getFinishActionContent = (event: FinishAction): string => {
       break;
   }
 
-  return content;
+  return content.trim();
 };
 
 const getNoContentActionContent = (): string => "";

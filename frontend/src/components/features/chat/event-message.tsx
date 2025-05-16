@@ -8,6 +8,7 @@ import {
   isOpenHandsAction,
   isOpenHandsObservation,
   isFinishAction,
+  isRejectObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -20,7 +21,7 @@ import { GenericEventMessage } from "./generic-event-message";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
-): obj is { thought: string } => "thought" in obj;
+): obj is { thought: string } => "thought" in obj && !!obj.thought;
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -94,6 +95,10 @@ export function EventMessage({
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </ChatMessage>
     );
+  }
+
+  if (isRejectObservation(event)) {
+    return <ChatMessage type="agent" message={event.content} />;
   }
 
   return (
