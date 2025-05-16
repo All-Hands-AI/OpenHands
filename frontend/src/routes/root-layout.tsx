@@ -7,7 +7,6 @@ import {
   useLocation,
 } from "react-router";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
