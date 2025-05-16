@@ -33,8 +33,9 @@ async def save_pr_metadata(user_id: str, conversation_id: str, tool_result: str)
     elif match_merge_request:
         pr_number = int(match_merge_request.group(1))
 
-
-    conversation.pr_number = pr_number
+    
+    if pr_number:
+        conversation.pr_number.append(pr_number)
     await conversation_store.save_metadata(conversation)
 
 @mcp_server.tool()
