@@ -19,6 +19,7 @@ from openhands.events.action.files import (
 )
 from openhands.events.action.message import MessageAction
 from openhands.events.event import FileEditSource, FileReadSource
+from openhands.events.event_filter import EventFilter
 from openhands.events.observation import NullObservation
 from openhands.events.observation.files import (
     FileEditObservation,
@@ -177,12 +178,8 @@ def test_get_matching_events_source_filter(temp_dir: str):
     )
 
     # Verify that source comparison works correctly
-    assert event_stream._should_filter_event(
-        event, source='agent'
-    )  # Should filter out None source events
-    assert not event_stream._should_filter_event(
-        event, source=None
-    )  # Should not filter out when source filter is None
+    assert EventFilter(source='agent').exclude(event)
+    assert EventFilter(source=None).include(event)
 
     # Filter by AGENT source again
     events = event_stream.get_matching_events(source='agent')
