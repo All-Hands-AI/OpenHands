@@ -78,19 +78,20 @@ ipywidgets = "^8.1.5"
 qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
 daytona-sdk = "0.16.1"
-mcp = "1.7.1"
 python-json-logger = "^3.2.1"
 prompt-toolkit = "^3.0.50"
-mcpm = "1.9.0"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 pythonnet = "*"
+mcp = "1.7.1"
+mcpm = "1.9.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.11.9"
+ruff = "0.11.10"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
+types-setuptools = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -132,7 +133,7 @@ pyarrow = "20.0.0"                                                    # transiti
 datasets = "*"
 
 [tool.poetry.scripts]
-openhands = "openhands.core.cli:main"
+openhands = "openhands.cli.main:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"
