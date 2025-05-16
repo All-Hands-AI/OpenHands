@@ -70,13 +70,18 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'General Repository Microagents',
+              label: 'General Microagents',
               id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
               label: 'Keyword-Triggered Microagents',
               id: 'usage/prompting/microagents-keyword',
+            },
+            {
+              type: 'doc',
+              label: 'Organization and User Microagents',
+              id: 'usage/prompting/microagents-org',
             },
             {
               type: 'doc',
