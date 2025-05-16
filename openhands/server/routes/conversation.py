@@ -5,6 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.event_filter import EventFilter
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
+from openhands.server.shared import conversation_manager
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
@@ -149,3 +150,10 @@ async def search_events(
         'events': events,
         'has_more': has_more,
     }
+
+
+@app.post('/events')
+async def add_event(request: Request):
+    data = request.json()
+    conversation_manager.send_to_event_stream(request.state.sid, data)
+    return JSONResponse({"success": True})
