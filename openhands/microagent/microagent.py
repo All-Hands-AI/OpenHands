@@ -191,14 +191,13 @@ def load_microagents_from_dir(
                 elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
                 logger.debug(f'Loaded agent {agent.name} from {file}')
-            except Exception as e:
-                # Provide more detailed error information including the file path
+            except MicroagentValidationError as e:
+                # For validation errors, include the original exception
                 error_msg = f'Error loading microagent from {file}: {str(e)}'
-                if isinstance(e, MicroagentValidationError):
-                    # For validation errors, include the original exception
-                    raise MicroagentValidationError(error_msg) from e
-                else:
-                    # For other errors, wrap in a ValueError with detailed message
-                    raise ValueError(error_msg) from e
+                raise MicroagentValidationError(error_msg) from e
+            except Exception as e:
+                # For other errors, wrap in a ValueError with detailed message
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
+                raise ValueError(error_msg) from e
 
     return repo_agents, knowledge_agents

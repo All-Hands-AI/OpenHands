@@ -174,25 +174,29 @@ class Session:
                 initial_message=initial_message,
                 replay_json=replay_json,
             )
-        except Exception as e:
+        except MicroagentValidationError as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            err_class = e.__class__.__name__
-
-            # Get detailed error message
-            error_message = str(e)
-
             # For microagent validation errors, provide more helpful information
-            if (
-                isinstance(e, MicroagentValidationError)
-                or isinstance(e, ValueError)
-                and 'microagent' in error_message.lower()
-            ):
+            await self.send_error(f'Failed to create agent session: {str(e)}')
+            return
+        except ValueError as e:
+            self.logger.exception(f'Error creating agent_session: {e}')
+            error_message = str(e)
+            # For ValueError related to microagents, provide more helpful information
+            if 'microagent' in error_message.lower():
                 await self.send_error(
                     f'Failed to create agent session: {error_message}'
                 )
             else:
-                # For other errors, just show the error class to avoid exposing sensitive information
-                await self.send_error(f'Failed to create agent session: {err_class}')
+                # For other ValueErrors, just show the error class
+                await self.send_error('Failed to create agent session: ValueError')
+            return
+        except Exception as e:
+            self.logger.exception(f'Error creating agent_session: {e}')
+            # For other errors, just show the error class to avoid exposing sensitive information
+            await self.send_error(
+                f'Failed to create agent session: {e.__class__.__name__}'
+            )
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
