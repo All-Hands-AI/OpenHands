@@ -3,8 +3,8 @@
 import pytest
 from conftest import (
     TEST_IN_CI,
-    _close_test_runtime,
-    _load_runtime,
+    close_test_runtime,
+    create_runtime_and_config,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -28,7 +28,7 @@ from openhands.events.observation import (
 
 
 def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
@@ -92,7 +92,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 @pytest.mark.skipif(
@@ -100,7 +100,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     reason='This test is not working in WSL (file ownership)',
 )
 def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -168,11 +168,11 @@ def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_ipython_simple(temp_dir, runtime_cls):
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls)
 
     # Test run ipython
     # get username
@@ -191,12 +191,12 @@ def test_ipython_simple(temp_dir, runtime_cls):
         ).strip()
     )
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_ipython_chdir(temp_dir, runtime_cls):
     """Test that os.chdir correctly handles paths with slashes."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls)
 
     # Create a test directory and get its absolute path
     test_code = """
@@ -237,12 +237,12 @@ shutil.rmtree('test_dir', ignore_errors=True)
     obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -272,12 +272,14 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
     )
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     """Test file editor permission behavior when running as different users."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
+    runtime, config = create_runtime_and_config(
+        temp_dir, runtime_cls, run_as_openhands=True
+    )
 
     # Create a file owned by root with restricted permissions
     action = CmdRunAction(
@@ -353,4 +355,4 @@ print(file_editor(command='undo_edit', path='/workspace/test.txt'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)

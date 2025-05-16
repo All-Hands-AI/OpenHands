@@ -42,7 +42,7 @@ from openhands.core.config import (
     SandboxConfig,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
+from openhands.core.main import create_runtime_and_config, run_controller
 from openhands.events.action import (
     CmdRunAction,
     FileEditAction,
@@ -154,7 +154,7 @@ def test_stress_remote_runtime_eval(n_eval_workers: int = 64):
         else:
             logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-        runtime = create_runtime(config, headless_mode=True)
+        runtime = create_runtime_and_config(config, headless_mode=True)
         call_async_from_sync(runtime.connect)
 
         try:
@@ -249,7 +249,7 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
     config = get_config()
 
     try:
-        runtime = create_runtime(config, headless_mode=True)
+        runtime = create_runtime_and_config(config, headless_mode=True)
         call_async_from_sync(runtime.connect)
         _time_for_test = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -394,7 +394,7 @@ def test_stress_runtime_memory_limits():
     }
 
     try:
-        runtime = create_runtime(config, headless_mode=True)
+        runtime = create_runtime_and_config(config, headless_mode=True)
         call_async_from_sync(runtime.connect)
 
         # Install stress-ng
@@ -444,7 +444,7 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
     }
 
     try:
-        runtime = create_runtime(config, headless_mode=True)
+        runtime = create_runtime_and_config(config, headless_mode=True)
         call_async_from_sync(runtime.connect)
 
         # Create initial test file with base content

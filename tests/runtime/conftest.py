@@ -18,7 +18,7 @@ from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'docker').lower()
@@ -28,15 +28,6 @@ project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 sandbox_test_folder = '/workspace'
-
-
-def _get_runtime_sid(runtime: Runtime) -> str:
-    logger.debug(f'\nruntime.sid: {runtime.sid}')
-    return runtime.sid
-
-
-def _get_host_folder(runtime: Runtime) -> str:
-    return runtime.config.workspace_mount_path
 
 
 def _remove_folder(folder: str) -> bool:
@@ -55,11 +46,12 @@ def _remove_folder(folder: str) -> bool:
     return success
 
 
-def _close_test_runtime(runtime: Runtime) -> None:
+def close_test_runtime(runtime: Runtime) -> None:
     if isinstance(runtime, DockerRuntime):
         runtime.close(rm_all_containers=False)
     else:
         runtime.close()
+    call_async_from_sync(runtime.__class__.delete, GENERAL_TIMEOUT, runtime.sid)
     time.sleep(1)
 
 
@@ -203,7 +195,7 @@ def base_container_image(request):
     return request.param
 
 
-def _load_runtime(
+def create_runtime_and_config(
     temp_dir,
     runtime_cls,
     run_as_openhands: bool = True,
@@ -216,6 +208,7 @@ def _load_runtime(
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
 ) -> tuple[Runtime, AppConfig]:
+    """Create a new runtime for use in tests"""
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
@@ -274,9 +267,33 @@ def _load_runtime(
     return runtime, config
 
 
-# Export necessary function
-__all__ = [
-    '_load_runtime',
-    '_get_host_folder',
-    '_remove_folder',
-]
+@pytest.fixture(scope='module')
+def reusable_runtime_and_config(runtime_cls, run_as_openhands, tmp_path_factory):
+    """Fixture for reusable runtime. Typically used for tests which do not alter the state of the container by
+    changing the directory or creating files."""
+
+    # create tmp dir
+    temp_dir_ = tmp_path_factory.mktemp(
+        'rt_' + str(random.randint(100000, 999999)), numbered=False
+    )
+
+    # Set permissions to ensure the directory is writable and deletable
+    os.chmod(temp_dir_, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777 permissions
+
+    runtime, config = create_runtime_and_config(
+        temp_dir_,
+        runtime_cls,
+        run_as_openhands,
+    )
+    yield runtime, config
+    close_test_runtime(runtime)
+
+
+@pytest.fixture
+def reusable_runtime(reusable_runtime_and_config):
+    return reusable_runtime_and_config[0]
+
+
+@pytest.fixture
+def reusable_config(reusable_runtime_and_config):
+    return reusable_runtime_and_config[1]

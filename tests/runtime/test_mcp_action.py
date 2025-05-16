@@ -8,7 +8,7 @@ import time
 import docker
 import pytest
 from conftest import (
-    _load_runtime,
+    create_runtime_and_config,
 )
 
 import openhands
@@ -120,7 +120,7 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
         name='fetch', command='uvx', args=['mcp-server-fetch']
     )
     override_mcp_config = MCPConfig(stdio_servers=[mcp_stdio_server_config])
-    runtime, config = _load_runtime(
+    runtime, config = create_runtime_and_config(
         temp_dir, runtime_cls, run_as_openhands, override_mcp_config=override_mcp_config
     )
 
@@ -169,7 +169,7 @@ async def test_filesystem_mcp_via_sse(
     try:
         mcp_sse_server_config = MCPSSEServerConfig(url=sse_url)
         override_mcp_config = MCPConfig(sse_servers=[mcp_sse_server_config])
-        runtime, config = _load_runtime(
+        runtime, config = create_runtime_and_config(
             temp_dir,
             runtime_cls,
             run_as_openhands,
@@ -208,7 +208,7 @@ async def test_both_stdio_and_sse_mcp(
         override_mcp_config = MCPConfig(
             sse_servers=[mcp_sse_server_config], stdio_servers=[mcp_stdio_server_config]
         )
-        runtime, config = _load_runtime(
+        runtime, config = create_runtime_and_config(
             temp_dir,
             runtime_cls,
             run_as_openhands,
