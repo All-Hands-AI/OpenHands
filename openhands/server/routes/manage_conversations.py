@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
@@ -35,6 +36,7 @@ from openhands.server.user_auth import (
     get_auth_type,
     get_provider_tokens,
     get_user_id,
+    get_user_secrets,
 )
 from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation_store
@@ -44,6 +46,7 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationTrigger,
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
@@ -73,6 +76,7 @@ class InitSessionResponse(BaseModel):
 async def _create_new_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA | None,
     selected_repository: str | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
@@ -114,6 +118,7 @@ async def _create_new_conversation(
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
     session_init_args['selected_repository'] = selected_repository
+    session_init_args['custom_secrets'] = custom_secrets
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
@@ -174,6 +179,7 @@ async def new_conversation(
     data: InitSessionRequest,
     user_id: str = Depends(get_user_id),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
+    user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
 ) -> InitSessionResponse:
     """Initialize a new session or join an existing one.
@@ -209,6 +215,7 @@ async def new_conversation(
         agent_loop_info = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
+            custom_secrets=user_secrets.custom_secrets if user_secrets else None,
             selected_repository=repository,
             selected_branch=selected_branch,
             initial_user_msg=initial_user_msg,

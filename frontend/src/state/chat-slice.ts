@@ -212,6 +212,17 @@ export const chatSlice = createSlice({
               content += `\n\n- ${host} (port ${port})`;
             }
           }
+          if (
+            recallObs.extras.custom_secrets_descriptions &&
+            Object.keys(recallObs.extras.custom_secrets_descriptions).length > 0
+          ) {
+            content += `\n\n**Custom Secrets**`;
+            for (const [name, description] of Object.entries(
+              recallObs.extras.custom_secrets_descriptions,
+            )) {
+              content += `\n\n- $${name}: ${description}`;
+            }
+          }
           if (recallObs.extras.repo_instructions) {
             content += `\n\n**Repository Instructions:**\n\n${recallObs.extras.repo_instructions}`;
           }

@@ -20,7 +20,6 @@ describe("AccountSettingsContextMenu", () => {
       <AccountSettingsContextMenu
         onLogout={onLogoutMock}
         onClose={onCloseMock}
-        isLoggedIn
       />,
     );
 
@@ -35,7 +34,6 @@ describe("AccountSettingsContextMenu", () => {
       <AccountSettingsContextMenu
         onLogout={onLogoutMock}
         onClose={onCloseMock}
-        isLoggedIn
       />,
     );
 
@@ -45,19 +43,18 @@ describe("AccountSettingsContextMenu", () => {
     expect(onLogoutMock).toHaveBeenCalledOnce();
   });
 
-  test("onLogout should be disabled if the user is not logged in", async () => {
+  test("logout button is always enabled", async () => {
     render(
       <AccountSettingsContextMenu
         onLogout={onLogoutMock}
         onClose={onCloseMock}
-        isLoggedIn={false}
       />,
     );
 
     const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
-    expect(onLogoutMock).not.toHaveBeenCalled();
+    expect(onLogoutMock).toHaveBeenCalledOnce();
   });
 
   it("should call onClose when clicking outside of the element", async () => {
@@ -65,7 +62,6 @@ describe("AccountSettingsContextMenu", () => {
       <AccountSettingsContextMenu
         onLogout={onLogoutMock}
         onClose={onCloseMock}
-        isLoggedIn
       />,
     );
 
