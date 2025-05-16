@@ -96,9 +96,9 @@ class OpenHands {
   ): Promise<boolean> {
     if (appMode === "oss") return true;
 
-    const response =
-      await openHands.post<AuthenticateResponse>("/api/authenticate");
-    return response.status === 200;
+    // Just make the request, if it succeeds (no exception thrown), return true
+    await openHands.post<AuthenticateResponse>("/api/authenticate");
+    return true;
   }
 
   /**
@@ -198,8 +198,9 @@ class OpenHands {
   static async getConversation(
     conversationId: string,
   ): Promise<Conversation | null> {
-    const url = this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<Conversation | null>(url);
+    const { data } = await openHands.get<Conversation | null>(
+      `/api/conversations/${conversationId}`,
+    );
 
     return data;
   }
