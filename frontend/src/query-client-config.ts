@@ -6,7 +6,9 @@ import { retrieveAxiosErrorMessage } from "./utils/retrieve-axios-error-message"
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 
 const handle401Error = (error: AxiosError, queryClient: QueryClient) => {
-  if (error?.response?.status === 401 || error?.status === 401) {
+  // Only invalidate auth queries for genuine 401 errors (with a response)
+  // This prevents showing the login modal for connection issues
+  if (error?.response?.status === 401) {
     queryClient.invalidateQueries({ queryKey: ["user", "authenticated"] });
   }
 };
