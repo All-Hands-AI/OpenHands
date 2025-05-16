@@ -10077,6 +10077,18 @@ files = [
 ]
 
 [[package]]
+name = "types-setuptools"
+version = "80.7.0.20250516"
+description = "Typing stubs for setuptools"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_setuptools-80.7.0.20250516-py3-none-any.whl", hash = "sha256:c1da6c11698139c8307c6df5987592df940e956912c204e42d844ba821dd2741"},
+    {file = "types_setuptools-80.7.0.20250516.tar.gz", hash = "sha256:57274b58e05434de42088a86074c9e630e5786f759cf9cc1e3015e886297ca21"},
+]
+
+[[package]]
 name = "types-toml"
 version = "0.10.8.20240310"
 description = "Typing stubs for toml"
@@ -11253,4 +11265,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "27d37f3628300dd919b6ff1bff9f558dc1a46052d68fc831a72642402e2c58fe"
+content-hash = "998d731b9d5cfa2239ef2019e95b681c44c70294f467cf9fdadbf2d551422ebe"
