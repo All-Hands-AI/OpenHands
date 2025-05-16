@@ -70,7 +70,6 @@ export default function MainApp() {
     data: isAuthed,
     isFetching: isFetchingAuth,
     isError: isAuthError,
-    error: authError,
   } = useIsAuthed();
 
   // Always call the hook, but we'll only use the result when not on TOS page
@@ -127,15 +126,9 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
-  // Check if the error is a 401 Unauthorized error
-  const is401 =
-    isAuthError &&
-    ((authError as AxiosError)?.status === 401 ||
-      (authError as AxiosError)?.response?.status === 401);
-
   const renderAuthModal =
-    is401 &&
     !isAuthed &&
+    !isAuthError &&
     !isFetchingAuth &&
     !isOnTosPage &&
     config.data?.APP_MODE === "saas";
