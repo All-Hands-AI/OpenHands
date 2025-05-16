@@ -227,8 +227,11 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
+        env_vars['CONVERSATION_ID'] = sid
 
+        # This eventstream is never used - I only add it because it is required in order to create a docker runtime
         event_stream = EventStream(sid, self.file_store, user_id)
+
         runtime = DockerRuntime(
             config=self.config,
             event_stream=event_stream,
@@ -260,9 +263,7 @@ class DockerNestedConversationManager(ConversationManager):
                 #"git_provider": ,
                 "selected_branch": settings.selected_repository,
                 "initial_user_msg": initial_user_msg,
-            })
-
-        return session
+            })              
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         logger.info('DockerNestedConversationManager:send_to_event_stream', extra={

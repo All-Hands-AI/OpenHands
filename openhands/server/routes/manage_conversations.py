@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -125,7 +126,8 @@ async def _create_new_conversation(
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('Conversation store loaded')
 
-    conversation_id = uuid.uuid4().hex
+    # For nested runtimes, we allow a single conversation id, passed in on container creation
+    conversation_id = os.environ.get('CONVERSATION_ID') or uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
