@@ -269,6 +269,23 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
+
+    def override_provider_tokens_with_custom_secret(
+        self,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        custom_secrets: CUSTOM_SECRETS_TYPE | None
+    ):
+        if git_provider_tokens and custom_secrets:
+            tokens = dict(git_provider_tokens)
+            for provider, _ in tokens.items():
+                token_name = ProviderHandler.get_provider_env_key(provider)
+                if token_name in custom_secrets or token_name.upper() in custom_secrets:
+                    del tokens[provider]
+        
+            return MappingProxyType(tokens)
+        return git_provider_tokens
+
+
     async def _create_runtime(
         self,
         runtime_name: str,
@@ -298,13 +315,10 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        if runtime_cls == RemoteRuntime:
-            if git_provider_tokens and ProviderType.GITLAB in git_provider_tokens:
-                tokens = dict(git_provider_tokens)
-                del tokens[ProviderType.GITLAB]
-                # The gitlab token contains `api` scope, which the agent should not have access to
-                # Users should set a lower permissions gitlab token via custom secrets
-                provider_tokens_without_gitlab = MappingProxyType(tokens)
+        if runtime_cls == RemoteRuntime:    
+            # If provider tokens is passed in custom secrets, then remove provider from provider tokens
+            # We prioritize provider tokens set in custom secrets
+            provider_tokens_without_gitlab = self.override_provider_tokens_with_custom_secret(git_provider_tokens, custom_secrets)
 
             self.runtime = runtime_cls(
                 config=config,
