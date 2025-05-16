@@ -15,15 +15,15 @@ Hopefully, this will be fixed soon and we can remove this abomination.
 """
 
 import contextlib
-from typing import Callable, Iterator
+from typing import Callable
 
 import httpx
 
 
 @contextlib.contextmanager
-def ensure_httpx_close() -> Iterator[None]:
+def ensure_httpx_close():
     wrapped_class = httpx.Client
-    proxys: list['ClientProxy'] = []
+    proxys = []
 
     class ClientProxy:
         """
@@ -32,41 +32,41 @@ def ensure_httpx_close() -> Iterator[None]:
         where a client is reused, we need to be able to reuse the client even after closing it.
         """
 
-        client_constructor: Callable[..., httpx.Client]
-        args: tuple[object, ...]
-        kwargs: dict[str, object]
-        client: httpx.Client | None
+        client_constructor: Callable
+        args: tuple
+        kwargs: dict
+        client: httpx.Client
 
-        def __init__(self, *args: object, **kwargs: object) -> None:
+        def __init__(self, *args, **kwargs):
             self.args = args
             self.kwargs = kwargs
             self.client = wrapped_class(*self.args, **self.kwargs)
             proxys.append(self)
 
-        def __getattr__(self, name: str) -> object:
+        def __getattr__(self, name):
             # Invoke a method on the proxied client - create one if required
             if self.client is None:
                 self.client = wrapped_class(*self.args, **self.kwargs)
             return getattr(self.client, name)
 
-        def close(self) -> None:
+        def close(self):
             # Close the client if it is open
             if self.client:
                 self.client.close()
                 self.client = None
 
-        def __iter__(self, *args: object, **kwargs: object) -> object:
+        def __iter__(self, *args, **kwargs):
             # We have to override this as debuggers invoke it causing the client to reopen
             if self.client:
                 return self.client.iter(*args, **kwargs)
             return object.__getattribute__(self, 'iter')(*args, **kwargs)
 
         @property
-        def is_closed(self) -> bool:
+        def is_closed(self):
             # Check if closed
             if self.client is None:
                 return True
-            return bool(self.client.is_closed)
+            return self.client.is_closed
 
     httpx.Client = ClientProxy
     try:
