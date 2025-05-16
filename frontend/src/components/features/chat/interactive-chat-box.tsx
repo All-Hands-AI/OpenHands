@@ -65,7 +65,6 @@ export function InteractiveChatBox({
         )}
       >
         <UploadImageInput onUpload={handleUpload} />
-
         <ChatInput
           disabled={isDisabled}
           button={mode}

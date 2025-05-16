@@ -27,43 +27,8 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import i18n from "#/i18n";
-import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsEventType } from "#/types/core/base";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
-import { OpenHandsObservation } from "#/types/core/observations";
-
-const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
-  "system",
-  "agent_state_changed",
-  "change_agent_state",
-];
-
-const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall"];
-
-const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
-  if (isOpenHandsAction(event)) {
-    const noRenderList = COMMON_NO_RENDER_LIST.concat(ACTION_NO_RENDER_LIST);
-    return !noRenderList.includes(event.action);
-  }
-
-  if (isOpenHandsObservation(event)) {
-    return !COMMON_NO_RENDER_LIST.includes(event.observation);
-  }
-
-  return true;
-};
-
-interface ErrorMessageBannerProps {
-  message: string;
-}
-
-function ErrorMessageBanner({ message }: ErrorMessageBannerProps) {
-  return (
-    <div className="w-full rounded-lg p-2 text-black border border-red-800 bg-red-500">
-      {message}
-    </div>
-  );
-}
+import { ErrorMessageBanner } from "./error-message-banner";
+import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 
 function getEntryPoint(
   hasRepository: boolean | null,
