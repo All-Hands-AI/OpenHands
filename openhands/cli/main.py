@@ -98,13 +98,6 @@ async def cleanup_session(
 
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
-        # Even if we get an error, try to force close everything
-        try:
-            runtime.close()
-            await controller.close()
-        except Exception:
-            pass
-
 
 async def run_session(
     loop: asyncio.AbstractEventLoop,
