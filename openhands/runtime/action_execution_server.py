@@ -421,9 +421,11 @@ class ActionExecutor:
                     command_id, content, {**metadata, 'command_id': command_id}
                 )
 
-            # Execute the command with streaming enabled
+            # Execute the command with streaming enabled if not in Windows
             obs = await call_sync_from_async(
-                self.bash_session.execute, action, stream_callback
+                self.bash_session.execute,
+                action,
+                stream_callback if not sys.platform == 'win32' else None,
             )
             return obs
         except Exception as e:
