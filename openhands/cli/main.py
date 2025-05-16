@@ -72,33 +72,28 @@ async def cleanup_session(
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
+
+    event_stream = runtime.event_stream
+    end_state = controller.get_state()
+    end_state.save_to_session(
+        event_stream.sid,
+        event_stream.file_store,
+        event_stream.user_id,
+    )
+
     try:
-        # Cancel all running tasks except the current one
+        await controller.close()
+        agent.reset()
+        runtime.close()
+
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
 
-        # First try to cancel tasks gracefully
         for task in pending:
             task.cancel()
 
-        # Wait for tasks with a short timeout first
         if pending:
             done, pending = await asyncio.wait(pending, timeout=2.0)
-
-        event_stream = runtime.event_stream
-
-        # Save the final state
-        end_state = controller.get_state()
-        end_state.save_to_session(
-            event_stream.sid,
-            event_stream.file_store,
-            event_stream.user_id,
-        )
-
-        # Reset agent, close runtime and controller
-        agent.reset()
-        runtime.close()
-        await controller.close()
 
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
