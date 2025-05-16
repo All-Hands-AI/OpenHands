@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
@@ -68,7 +69,8 @@ export default function MainApp() {
   const {
     data: isAuthed,
     isFetching: isFetchingAuth,
-    isError: authError,
+    isError: isAuthError,
+    error: authError,
   } = useIsAuthed();
 
   // Always call the hook, but we'll only use the result when not on TOS page
@@ -125,8 +127,11 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
-  console.log("isAuthed", isAuthed, "authError", authError);
-  const is401 = authError?.status === 401 || authError?.response?.status === 401;
+  // Check if the error is a 401 Unauthorized error
+  const is401 =
+    isAuthError &&
+    ((authError as AxiosError)?.status === 401 ||
+      (authError as AxiosError)?.response?.status === 401);
 
   const renderAuthModal =
     is401 &&
