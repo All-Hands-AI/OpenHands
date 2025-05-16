@@ -443,7 +443,6 @@ class ActionExecutor:
 
         # Notify listeners
         self.terminal_output_event.set()
-        self.terminal_output_event.clear()
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
@@ -1115,11 +1114,13 @@ if __name__ == '__main__':
             while True:
                 # Wait for new output
                 await client.terminal_output_event.wait()
+                # Clear the event AFTER we've been notified
+                client.terminal_output_event.clear()
 
-                # Get the latest chunk (should be the last one in the queue)
-                if client.terminal_output_queue:
-                    latest_chunk = client.terminal_output_queue[-1]
-                    yield format_sse_event(latest_chunk)
+                # Process all accumulated chunks since last check
+                while client.terminal_output_queue:
+                    chunk = client.terminal_output_queue.popleft()
+                    yield format_sse_event(chunk)
 
                 # Check if client disconnected
                 if await request.is_disconnected():
