@@ -3,7 +3,7 @@ import os
 __package_name__ = 'openhands_ai'
 
 
-def get_version() -> str:
+def get_version():
     # Try getting the version from pyproject.toml
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +21,13 @@ def get_version() -> str:
     except (ImportError, PackageNotFoundError):
         pass
 
-    # Skip pkg_resources to avoid mypy issues
+    try:
+        from pkg_resources import DistributionNotFound, get_distribution
+
+        return get_distribution(__package_name__).version
+    except (ImportError, DistributionNotFound):
+        pass
+
     return 'unknown'
 
 
