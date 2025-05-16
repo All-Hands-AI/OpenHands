@@ -724,9 +724,6 @@ class AgentController:
         # update iteration that is shared across agents
         self.state.iteration = self.delegate.state.iteration
 
-        # close the delegate controller before adding new events
-        asyncio.get_event_loop().run_until_complete(self.delegate.close())
-
         if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             # retrieve delegate result
             delegate_outputs = (
@@ -753,6 +750,11 @@ class AgentController:
 
         content = f'Delegated agent finished with result:\n\n{content}'
 
+        # close the delegate controller
+        delegate = self.delegate
+        self.delegate = None  # unset delegate so parent can resume normal handling
+        asyncio.get_event_loop().run_until_complete(delegate.close())
+
         # emit the delegate result observation
         obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
 
@@ -764,9 +766,6 @@ class AgentController:
                 break
 
         self.event_stream.add_event(obs, EventSource.AGENT)
-
-        # unset delegate so parent can resume normal handling
-        self.delegate = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""

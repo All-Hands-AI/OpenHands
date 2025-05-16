@@ -15,6 +15,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     MessageAction,
 )
 from openhands.events.action.agent import RecallAction
@@ -28,11 +29,17 @@ from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture
-def mock_event_stream():
+def mock_event_stream(request):
     """Creates an event stream in memory."""
     sid = f'test-{uuid4()}'
     file_store = InMemoryFileStore({})
-    return EventStream(sid=sid, file_store=file_store)
+    stream = EventStream(sid=sid, file_store=file_store)
+
+    def cleanup():
+        stream.close()
+
+    request.addfinalizer(cleanup)
+    return stream
 
 
 @pytest.fixture
@@ -48,10 +55,13 @@ def mock_parent_agent():
     # Add a proper system message mock
     from openhands.events.action.message import SystemMessageAction
 
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    def get_system_message():
+        system_message = SystemMessageAction(content='Test system message')
+        system_message._source = EventSource.AGENT
+        system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
+        return system_message
+
+    agent.get_system_message.side_effect = get_system_message
 
     return agent
 
@@ -69,10 +79,13 @@ def mock_child_agent():
     # Add a proper system message mock
     from openhands.events.action.message import SystemMessageAction
 
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
-    agent.get_system_message.return_value = system_message
+    def get_system_message():
+        system_message = SystemMessageAction(content='Test system message')
+        system_message._source = EventSource.AGENT
+        system_message._id = Event.INVALID_ID  # Set invalid ID to avoid the ID check
+        return system_message
+
+    agent.get_system_message.side_effect = get_system_message
 
     return agent
 
@@ -207,24 +220,18 @@ async def test_delegate_step_different_states(
     mock_delegate._step = AsyncMock()
     mock_delegate.close = AsyncMock()
 
-    def call_on_event_with_new_loop():
-        """
-        In this thread, create and set a fresh event loop, so that the run_until_complete()
-        calls inside controller.on_event(...) find a valid loop.
-        """
-        loop_in_thread = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop_in_thread)
-            msg_action = MessageAction(content='Test message')
-            msg_action._source = EventSource.USER
-            controller.on_event(msg_action)
-        finally:
-            loop_in_thread.close()
+    # First send a message to trigger the delegate state check
+    msg_action = MessageAction(content='Test message')
+    msg_action._source = EventSource.USER
+    await controller._on_event(msg_action)
 
-    loop = asyncio.get_running_loop()
-    with ThreadPoolExecutor() as executor:
-        future = loop.run_in_executor(executor, call_on_event_with_new_loop)
-        await future
+    # Then send a reject action to trigger delegate cleanup
+    reject_action = AgentRejectAction()
+    reject_action._source = EventSource.USER
+    await controller._on_event(reject_action)
+
+    # Give a little time for async operations to complete
+    await asyncio.sleep(0.1)
 
     if delegate_state == AgentState.RUNNING:
         assert controller.delegate is not None
