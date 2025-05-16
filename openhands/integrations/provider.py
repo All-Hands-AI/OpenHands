@@ -14,6 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
+from openhands.integrations.forgejo.forgejo_service import ForgejoServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -108,6 +109,7 @@ class ProviderHandler:
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
+            ProviderType.FORGEJO: ForgejoServiceImpl,
         }
 
         self.external_auth_id = external_auth_id
@@ -130,6 +132,7 @@ class ProviderHandler:
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
+            host=token.host,
         )
 
     async def get_user(self) -> User:
