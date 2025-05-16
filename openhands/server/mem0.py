@@ -1,18 +1,88 @@
+import asyncio
 import json
 import os
 import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+import asyncpg
 from mem0 import MemoryClient
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.modules import conversation_module
 
 
 class Mem0MetadataType(Enum):
     FINISH_CONCLUSION = 'finish_conclusion'
     REPORT_FILE = 'report_file'
+
+
+class DBConnectionPool:
+    """
+    Singleton class for managing database connections.
+    Uses connection pooling to efficiently handle database operations.
+    """
+
+    _instance = None
+    _pool = None
+    _initializing = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(DBConnectionPool, cls).__new__(cls)
+        return cls._instance
+
+    async def init_pool(self):
+        """Initialize the connection pool asynchronously if not already initialized."""
+        if self._pool is None and not self._initializing:
+            try:
+                self._initializing = True
+
+                # Get database connection info from environment
+                user = os.getenv('POSTGRES_USER')
+                password = os.getenv('POSTGRES_PASSWORD')
+                database = os.getenv('POSTGRES_DB')
+                host = os.getenv('POSTGRES_HOST', 'localhost')
+                port = os.getenv('POSTGRES_PORT', '5432')
+
+                # Create a connection pool
+                self._pool = await asyncpg.create_pool(
+                    user=user,
+                    password=password,
+                    database=database,
+                    host=host,
+                    port=port,
+                    min_size=2,
+                    max_size=10,
+                )
+                logger.info('Database connection pool initialized successfully')
+            except Exception as e:
+                logger.error(f'Failed to initialize connection pool: {str(e)}')
+                self._pool = None
+            finally:
+                self._initializing = False
+
+        return self._pool
+
+    async def get_connection(self):
+        """Get a connection from the pool."""
+        pool = await self.init_pool()
+        if pool:
+            return await pool.acquire()
+        return None
+
+    async def release_connection(self, conn):
+        """Return a connection to the pool."""
+        if self._pool and conn:
+            await self._pool.release(conn)
+
+    async def close_pool(self):
+        """Close the connection pool."""
+        if self._pool:
+            await self._pool.close()
+            self._pool = None
+
+
+_db_pool_instance = DBConnectionPool()
 
 
 class Mem0Client:
@@ -100,6 +170,44 @@ def _extract_file_text_from_tool_call(tool_calls: list) -> Optional[str]:
     return None
 
 
+async def _add_mem0_conversation_job_direct_db(
+    conversation_id: str, events: List[Dict[str, Any]], metadata: Dict[str, Any]
+) -> bool:
+    """
+    Add mem0 conversation job directly to the database using the connection pool.
+    This avoids event loop conflicts by using a dedicated connection.
+    """
+    conn = None
+
+    try:
+        # Get connection from pool
+        conn = await _db_pool_instance.get_connection()
+        if not conn:
+            logger.error('Failed to get database connection from pool')
+            return False
+
+        # Insert directly with asyncpg
+        await conn.execute(
+            """
+            INSERT INTO mem0_conversation_jobs
+            (conversation_id, events, metadata, status)
+            VALUES ($1, $2, $3, $4)
+            """,
+            conversation_id,
+            json.dumps(events),
+            json.dumps(metadata),
+            'pending',
+        )
+        return True
+    except Exception as e:
+        logger.error(f'Error adding mem0 conversation job directly: {str(e)}')
+        return False
+    finally:
+        # Always release the connection back to the pool
+        if conn:
+            await _db_pool_instance.release_connection(conn)
+
+
 async def process_single_event_for_mem0(
     conversation_id: str, event: dict
 ) -> List[Dict[str, Any]]:
@@ -166,14 +274,16 @@ async def process_single_event_for_mem0(
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
         try:
-            # Ensure we're using the current event loop
             print('vap day vao day 2 metadata', metadata)
-            await conversation_module._add_mem0_conversation_job(
-                conversation_id=conversation_id,
-                events=parsed_events,
-                metadata=metadata,
+            # Use a separate task to write to the database to avoid event loop conflicts
+            # This creates a fire-and-forget task that won't block the main execution
+            asyncio.create_task(
+                _add_mem0_conversation_job_direct_db(
+                    conversation_id=conversation_id,
+                    events=parsed_events,
+                    metadata=metadata,
+                )
             )
-
         except Exception as e:
             logger.error(f'Failed to add mem0 conversation job: {e}')
             return parsed_events
@@ -222,6 +332,10 @@ async def search_knowledge_mem0(
                 f'Unexpected error while searching knowledge for type {meta_type}'
             )
     return None
+
+
+# Initialize DB connection pool on module import
+# This will ensure the pool is created at startup
 
 
 # async def retrieve_conversation_and_embedding_mem0(
