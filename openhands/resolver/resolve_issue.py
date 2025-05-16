@@ -220,8 +220,6 @@ class IssueResolver:
             user_id = os.getuid() if hasattr(os, 'getuid') else 1000
             if user_id == 0:
                 sandbox_config.user_id = get_unique_uid()
-            else:
-                sandbox_config.user_id = user_id
 
         return sandbox_config
 
