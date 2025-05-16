@@ -55,12 +55,12 @@ class TestSandboxContainerConfig:
         with pytest.raises(ValueError, match="Cannot provide both runtime and base container images."):
             SandboxContainerConfig("base-image", "runtime-image")
 
-    @mock.patch("openhands.__version__", "mock")
+    @mock.patch("openhands.__version__", "sample")
     def test_build_default_config(self):
         """Test build_for_issue_resolver with default settings"""
         config = SandboxContainerConfig.build_for_issue_resolver(None, None, False)
         assert config.container_base is None
-        assert config.container_runtime == "ghcr.io/all-hands-ai/runtime:mock-nikolaik"
+        assert config.container_runtime == "ghcr.io/all-hands-ai/runtime:sample-nikolaik"
 
     def test_build_experimental_config(self):
         """Test build_for_issue_resolver in experimental mode"""
