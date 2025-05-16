@@ -121,3 +121,20 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
                 config,
                 local_runtime_url="http://localhost"
             )
+
+@mock.patch("openhands.events.observation.CmdOutputObservation")
+@mock.patch("openhands.runtime.base.Runtime")
+def test_initialize_runtime_runs_setup_script(mock_runtime, mock_cmd_output):
+    """Test that initialize_runtime calls maybe_run_setup_script"""
+    # Setup
+    resolver = IssueResolver(mock.MagicMock())
+    
+    # Mock the runtime's run_action method to return a successful CmdOutputObservation
+    mock_cmd_output.return_value.exit_code = 0
+    mock_runtime.run_action.return_value = mock_cmd_output.return_value
+    
+    # Call the method
+    resolver.initialize_runtime(mock_runtime)
+    
+    # Verify that maybe_run_setup_script was called
+    mock_runtime.maybe_run_setup_script.assert_called_once()
