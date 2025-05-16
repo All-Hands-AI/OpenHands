@@ -177,6 +177,9 @@ class Memory:
                 microagent_knowledge=microagent_knowledge,
                 content='Added workspace context',
                 date=self.runtime_info.date if self.runtime_info is not None else '',
+                custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
+                if self.runtime_info is not None
+                else {},
             )
             return obs
         return None
@@ -286,7 +289,9 @@ class Memory:
         else:
             self.repository_info = None
 
-    def set_runtime_info(self, runtime: Runtime) -> None:
+    def set_runtime_info(
+        self, runtime: Runtime, custom_secrets_descriptions: dict[str, str]
+    ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
         utc_now = datetime.now(timezone.utc)
@@ -297,9 +302,12 @@ class Memory:
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
+                custom_secrets_descriptions=custom_secrets_descriptions,
             )
         else:
-            self.runtime_info = RuntimeInfo(date=date)
+            self.runtime_info = RuntimeInfo(
+                date=date, custom_secrets_descriptions=custom_secrets_descriptions
+            )
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""
