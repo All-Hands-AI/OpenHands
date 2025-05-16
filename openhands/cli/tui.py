@@ -145,14 +145,20 @@ def display_banner(session_id: str) -> None:
     print_formatted_text('')
 
 
-def display_welcome_message() -> None:
+def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
-    print_formatted_text(
-        HTML('What do you want to build? <grey>Type /help for help</grey>'),
-        style=DEFAULT_STYLE,
-    )
+    if message:
+        print_formatted_text(
+            HTML(f'{message} <grey>Type /help for help</grey>'),
+            style=DEFAULT_STYLE,
+        )
+    else:
+        print_formatted_text(
+            HTML('What do you want to build? <grey>Type /help for help</grey>'),
+            style=DEFAULT_STYLE,
+        )
 
 
 def display_initial_user_prompt(prompt: str) -> None:
