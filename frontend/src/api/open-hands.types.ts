@@ -81,6 +81,7 @@ export interface Conversation {
   status: ProjectStatus;
   trigger?: ConversationTrigger;
   url: string | null;
+  api_key: string | null;
 }
 
 export interface ResultSet<T> {

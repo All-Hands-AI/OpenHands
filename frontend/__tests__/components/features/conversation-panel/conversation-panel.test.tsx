@@ -45,6 +45,8 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "STOPPED" as const,
+      url: null,
+      api_key: null,
     },
     {
       conversation_id: "2",
@@ -53,6 +55,8 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-02T12:00:00Z",
       created_at: "2021-10-02T12:00:00Z",
       status: "STOPPED" as const,
+      url: null,
+      api_key: null,
     },
     {
       conversation_id: "3",
@@ -61,6 +65,8 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-03T12:00:00Z",
       created_at: "2021-10-03T12:00:00Z",
       status: "STOPPED" as const,
+      url: null,
+      api_key: null,
     },
   ];
 
@@ -143,6 +149,8 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
+        url: null,
+        api_key: null,
       },
       {
         conversation_id: "2",
@@ -151,6 +159,8 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-02T12:00:00Z",
         created_at: "2021-10-02T12:00:00Z",
         status: "STOPPED" as const,
+        url: null,
+        api_key: null,
       },
       {
         conversation_id: "3",
@@ -159,6 +169,8 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-03T12:00:00Z",
         created_at: "2021-10-03T12:00:00Z",
         status: "STOPPED" as const,
+        url: null,
+        api_key: null,
       },
     ];
 
