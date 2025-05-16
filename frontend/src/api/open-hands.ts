@@ -165,8 +165,7 @@ class OpenHands {
   }
 
   static async deleteUserConversation(conversationId: string): Promise<void> {
-    const url = this.conversationUrl || `/api/conversations/${conversationId}`;
-    await openHands.delete(url);
+    await openHands.delete(`/api/conversations/${conversationId}`);
   }
 
   static async createConversation(
