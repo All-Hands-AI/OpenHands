@@ -253,7 +253,7 @@ class DockerNestedConversationManager(ConversationManager):
         # TODO: After we start the nested server, we need to initialize the conversation
         async with httpx.AsyncClient() as client:
             #setup the settings...
-            settings_json = settings.model_dump()
+            settings_json = settings.model_dump(context={'expose_secrets': True})
             settings_json.pop('git_provider_tokens', None)
             settings_json.pop('custom_secrets', None)
             response = await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
