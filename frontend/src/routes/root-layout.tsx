@@ -125,10 +125,12 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
+  const is401 = authError?.status === 401;
+
   const renderAuthModal =
-    !isFetchingAuth &&
-    !authError &&
+    is401 &&
     !isAuthed &&
+    !isFetchingAuth &&
     !isOnTosPage &&
     config.data?.APP_MODE === "saas";
 
