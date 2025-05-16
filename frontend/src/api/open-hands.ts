@@ -198,8 +198,9 @@ class OpenHands {
   static async getConversation(
     conversationId: string,
   ): Promise<Conversation | null> {
-    const url = this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<Conversation | null>(url);
+    const { data } = await openHands.get<Conversation | null>(
+      `/api/conversations/${conversationId}`,
+    );
 
     return data;
   }
