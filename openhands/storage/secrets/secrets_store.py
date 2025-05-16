@@ -7,7 +7,18 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class SecretsStore(ABC):
-    """Storage for secrets. May or may not support multiple users depending on the environment."""
+    """Abstract base class for storing user secrets.
+
+    This is an extension point in OpenHands that allows applications to customize how
+    user secrets are stored. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from SecretsStore
+    2. Implementing all required methods
+    3. Setting server_config.secret_store_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+
+    The implementation may or may not support multiple users depending on the environment.
+    """
 
     @abstractmethod
     async def load(self) -> UserSecrets | None:
