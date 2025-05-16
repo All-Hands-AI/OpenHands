@@ -75,7 +75,12 @@ async def test_search_conversations():
 
                             # Mock the visibility check with an async function
                             async def mock_get_visibility(*args, **kwargs):
-                                return [{'conversation_id': 'some_conversation_id'}]
+                                return {
+                                    'items': [
+                                        {'conversation_id': 'some_conversation_id'}
+                                    ],
+                                    'total': 1,
+                                }
 
                             mock_conversation_module._get_conversation_visibility_by_user_id = mock_get_visibility
 
@@ -101,6 +106,7 @@ async def test_search_conversations():
                                     ),
                                     page_id=None,
                                     limit=20,
+                                    page=1,
                                 )
                                 expected = ConversationInfoResultSet(
                                     results=[
@@ -118,6 +124,7 @@ async def test_search_conversations():
                                         )
                                     ],
                                     next_page_id=None,
+                                    total=1,
                                 )
                                 assert result_set == expected
 

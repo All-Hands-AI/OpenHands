@@ -339,6 +339,7 @@ async def search_conversations(
     request: Request,
     page_id: str | None = None,
     limit: int = 20,
+    page: int = 1,
 ) -> ConversationInfoResultSet:
     user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
@@ -348,13 +349,14 @@ async def search_conversations(
     # get conversation visibility by user id
     visible_conversations = (
         await conversation_module._get_conversation_visibility_by_user_id(
-            user_id, 1, limit
+            user_id, page, limit
         )
     )
     if len(visible_conversations) == 0:
         return ConversationInfoResultSet(results=[], next_page_id=None)
     visible_conversation_ids = [
-        conversation['conversation_id'] for conversation in visible_conversations
+        conversation['conversation_id']
+        for conversation in visible_conversations['items']
     ]
 
     conversation_metadata_result_set = await conversation_store.search(
@@ -386,6 +388,7 @@ async def search_conversations(
             for conversation in filtered_results
         ),
         next_page_id=conversation_metadata_result_set.next_page_id,
+        total=visible_conversations['total'],
     )
     return result
 
