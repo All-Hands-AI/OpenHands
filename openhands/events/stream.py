@@ -104,7 +104,9 @@ class EventStream(EventStore):
         ):
             loop = self._thread_loops[subscriber_id][callback_id]
             current_task = asyncio.current_task(loop)
-            pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
+            pending = [
+                task for task in asyncio.all_tasks(loop) if task is not current_task
+            ]
             for task in pending:
                 task.cancel()
             try:
