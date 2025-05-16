@@ -90,7 +90,8 @@ async def cleanup_session(
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
 
         if pending:
-            done, pending = await asyncio.wait(pending, timeout=2.0)
+            done, pending_set = await asyncio.wait(set(pending), timeout=2.0)
+            pending = list(pending_set)
 
         for task in pending:
             task.cancel()
