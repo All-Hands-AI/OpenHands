@@ -245,6 +245,7 @@ def test_microagent_observation_serialization():
             'runtime_hosts': {'host1': 8080, 'host2': 8081},
             'repo_instructions': 'complex_repo_instructions',
             'additional_agent_instructions': 'You know it all about this runtime',
+            'custom_secrets_descriptions': {'SECRET': 'CUSTOM'},
             'date': '04/12/1023',
             'microagent_knowledge': [],
         },
@@ -264,6 +265,7 @@ def test_microagent_observation_microagent_knowledge_serialization():
             'repo_instructions': '',
             'runtime_hosts': {},
             'additional_agent_instructions': '',
+            'custom_secrets_descriptions': {},
             'date': '',
             'microagent_knowledge': [
                 {
