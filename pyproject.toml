@@ -92,6 +92,7 @@ ruff = "0.11.10"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
+types-setuptools = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
