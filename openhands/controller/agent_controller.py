@@ -93,7 +93,6 @@ class AgentController:
     delegate: 'AgentController | None' = None
     _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
-    _shutting_down: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -200,9 +199,6 @@ class AgentController:
 
         Note that it's fairly important that this closes properly, otherwise the state is incomplete.
         """
-        # Set shutting down flag first to prevent new event processing
-        self._shutting_down = True
-
         if set_stop_state:
             await self.set_agent_state_to(AgentState.STOPPED)
 
@@ -380,10 +376,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        # Skip event processing if we're shutting down
-        if self._shutting_down:
-            return
-
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
             delegate_state = self.delegate.get_agent_state()
@@ -393,13 +385,9 @@ class AgentController:
                 AgentState.REJECTED,
             ):
                 # Forward the event to delegate and skip parent processing
-                try:
-                    loop = asyncio.get_event_loop()
-                    if not loop.is_closed():
-                        asyncio.create_task(self.delegate._on_event(event))
-                except RuntimeError:
-                    # Event loop is closed, we're probably shutting down
-                    return
+                asyncio.get_event_loop().run_until_complete(
+                    self.delegate._on_event(event)
+                )
                 return
             else:
                 # delegate is done or errored, so end it
@@ -407,13 +395,7 @@ class AgentController:
                 return
 
         # continue parent processing only if there's no active delegate
-        try:
-            loop = asyncio.get_event_loop()
-            if not loop.is_closed():
-                asyncio.create_task(self._on_event(event))
-        except RuntimeError:
-            # Event loop is closed, we're probably shutting down
-            return
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
