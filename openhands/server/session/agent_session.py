@@ -302,7 +302,9 @@ class AgentSession:
             if git_provider_tokens and ProviderType.GITLAB in git_provider_tokens:
                 tokens = dict(git_provider_tokens)
                 del tokens[ProviderType.GITLAB]
-                git_provider_tokens = MappingProxyType(tokens)
+                # The gitlab token contains `api` scope, which the agent should not have access to
+                # Users should set a lower permissions gitlab token via custom secrets
+                provider_tokens_without_gitlab = MappingProxyType(tokens)
 
             self.runtime = runtime_cls(
                 config=config,
@@ -312,7 +314,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=git_provider_tokens,
+                git_provider_tokens=provider_tokens_without_gitlab,
                 env_vars=env_vars,
                 user_id=self.user_id,
             )
