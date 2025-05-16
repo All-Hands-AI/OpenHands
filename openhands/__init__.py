@@ -22,7 +22,7 @@ def get_version():
         pass
 
     try:
-        from pkg_resources import DistributionNotFound, get_distribution
+        from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 
         return get_distribution(__package_name__).version
     except (ImportError, DistributionNotFound):
