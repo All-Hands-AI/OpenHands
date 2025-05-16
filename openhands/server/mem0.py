@@ -274,7 +274,6 @@ async def process_single_event_for_mem0(
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
         try:
-            print('vap day vao day 2 metadata', metadata)
             # Use a separate task to write to the database to avoid event loop conflicts
             # This creates a fire-and-forget task that won't block the main execution
             asyncio.create_task(

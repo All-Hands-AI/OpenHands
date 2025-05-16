@@ -69,5 +69,6 @@ Mem0ConversationJob = Table(
     Column('events', JSON, nullable=False),
     Column('metadata', JSON, nullable=False),
     Column('status', String, nullable=False, default='pending'),
+    Column('error', String, nullable=True),
     Column('created_at', DateTime, default=func.now(), nullable=False),
 )
