@@ -1,6 +1,6 @@
-import urllib
 from dataclasses import dataclass
 from typing import Iterable
+from urllib.parse import urlencode
 
 import httpx  # type: ignore
 
@@ -29,14 +29,14 @@ class NestedEventStore(EventStoreABC):
         limit: int | None = None,
     ) -> Iterable[Event]:
         while True:
-            search_params = urllib.urlencode(
-                {
-                    'start_id': start_id,
-                    'reverse': reverse,
-                    'limit': min(100, limit),
-                }
-            )
-            url = f'{self.base_url}/events{search_params}'
+            search_params = {
+                'start_id': start_id,
+                'reverse': reverse,
+            }
+            if limit is not None:
+                search_params['limit'] = min(100, limit)
+            search_str = urlencode(search_params)
+            url = f'{self.base_url}/events{search_str}'
             response = httpx.get(url)
             result_set = response.json()
             for result in result_set['results']:
@@ -49,9 +49,10 @@ class NestedEventStore(EventStoreABC):
                 if filter and filter.exclude(event):
                     continue
                 yield event
-                limit -= 1
-                if limit <= 0:
-                    return
+                if limit is not None:
+                    limit -= 1
+                    if limit <= 0:
+                        return
             if not result_set['has_more']:
                 return
 
@@ -69,4 +70,4 @@ class NestedEventStore(EventStoreABC):
 
     def get_latest_event_id(self) -> int:
         event = self.get_latest_event()
-        return event.id if event else None
+        return event.id

@@ -233,6 +233,7 @@ async def test_delegate_step_different_states(
     else:
         assert controller.delegate is None
         assert controller.state.iteration == 5
-        mock_delegate.close.assert_called_once()
+        # The close method is called once in end_delegate
+        assert mock_delegate.close.call_count == 1
 
     await controller.close()

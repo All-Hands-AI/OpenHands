@@ -241,7 +241,7 @@ class DockerNestedConversationManager(ConversationManager):
         )
 
         # Hack - disable setting initial env.
-        runtime.setup_initial_env = lambda: None
+        runtime.setup_initial_env = lambda: None  # type:ignore
         
         await runtime.connect()
 
