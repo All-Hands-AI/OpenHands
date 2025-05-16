@@ -51,10 +51,6 @@ jobs:
         run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
         run: TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   # Run specific Windows python tests
   test-on-windows:
