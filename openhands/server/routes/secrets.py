@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import CustomSecret
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, CustomSecret
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.server.settings import (
@@ -110,6 +109,10 @@ async def store_provider_tokens(
 ) -> JSONResponse:
     provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
+        # We don't have direct access to user_id here, but we can log the provider info
+        logger.info(
+            f'Returning 401 Unauthorized - Provider token error: {provider_err_msg}'
+        )
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': provider_err_msg},
@@ -203,6 +206,7 @@ async def load_custom_secrets_names(
 
     except Exception as e:
         logger.warning(f'Failed to load secret names: {e}')
+        logger.info('Returning 401 Unauthorized - Failed to get secret names')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Failed to get secret names'},
