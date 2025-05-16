@@ -366,10 +366,20 @@ class ActionExecutionClient(Runtime):
                 'POST',
                 f'{self.action_execution_server_url}/update_mcp_server',
                 json=stdio_tools,
-                timeout=10,
+                timeout=15,  # Increased timeout to account for log collection
             )
             if response.status_code != 200:
                 self.log('warning', f'Failed to update MCP server: {response.text}')
+            else:
+                # Process and log the captured logs from the response
+                try:
+                    response_data = response.json()
+                    if 'logs' in response_data and response_data['logs']:
+                        self.log('info', 'MCP server logs:')
+                        for log_entry in response_data['logs']:
+                            self.log('info', f'MCP: {log_entry}')
+                except Exception as e:
+                    self.log('warning', f'Failed to process MCP server logs: {str(e)}')
 
             # No API key by default. Child runtime can override this when appropriate
             updated_mcp_config.sse_servers.append(

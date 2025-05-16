@@ -19,6 +19,7 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
+from queue import Queue
 from zipfile import ZipFile
 
 from binaryornot.check import is_binary
@@ -75,6 +76,21 @@ from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 # Set MCP router logger to the same level as the main logger
 mcp_router_logger.setLevel(logger.getEffectiveLevel())
+
+
+class QueueHandler(logging.Handler):
+    """A logging handler that puts logs into a queue."""
+
+    def __init__(self, log_queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.log_queue.put(msg)
+        except Exception:
+            self.handleError(record)
 
 
 if sys.platform == 'win32':
@@ -846,6 +862,14 @@ if __name__ == '__main__':
 
         write_profile(current_profile)
 
+        # Set up log capture
+        log_queue: Queue = Queue()
+        queue_handler = QueueHandler(log_queue)
+        queue_handler.setFormatter(
+            logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+        )
+        mcp_router_logger.addHandler(queue_handler)
+
         # Manually reload the profile and update the servers
         mcp_router.profile_manager.reload()
         servers_wait_for_update = mcp_router.get_unique_servers()
@@ -854,9 +878,23 @@ if __name__ == '__main__':
             f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
         )
 
-        return JSONResponse(
-            status_code=200, content={'detail': 'MCP server updated successfully'}
-        )
+        # Wait for a short time to capture logs
+        await asyncio.sleep(2)
+
+        # Collect logs
+        captured_logs = []
+        while not log_queue.empty():
+            captured_logs.append(log_queue.get())
+
+        # Remove the handler
+        mcp_router_logger.removeHandler(queue_handler)
+
+        # Return the result with captured logs
+        return {
+            'status': 'success',
+            'servers_updated': servers_wait_for_update,
+            'logs': captured_logs,
+        }
 
     @app.post('/upload_file')
     async def upload_file(
