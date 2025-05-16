@@ -17,10 +17,7 @@ microagents in that directory.
 General microagent file example for organization `Great-Co` located inside the `.openhands` repository:
 `microagents/org-microagent.md`:
 ```
-The following repositories are available in the `Great-Co` org:
-* Frontend: Repository contains frontend logic for our application.
-* Backend: This repository has all the logic for the backend of our application. This will have all the APIs needed to
-interact with the backend.
-* Deploy: This repository has all the logic for deploying our application. All the helm charts for deploying are located
-here.
+* Use type hints and error boundaries; validate inputs at system boundaries and fail with meaningful error messages.
+* Document interfaces and public APIs; use implementation comments only for non-obvious logic.
+* Follow the same naming convention for variables, classes, constants, etc. already used in each repository.
 ```
