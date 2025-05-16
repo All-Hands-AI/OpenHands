@@ -215,7 +215,7 @@ async def new_conversation(
         agent_loop_info = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
-            custom_secrets=user_secrets.custom_secrets,
+            custom_secrets=user_secrets.custom_secrets if user_secrets else None,
             selected_repository=repository,
             selected_branch=selected_branch,
             initial_user_msg=initial_user_msg,
