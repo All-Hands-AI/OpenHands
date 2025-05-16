@@ -5,6 +5,7 @@ from types import MappingProxyType
 from typing import cast
 
 import docker
+from docker.models.containers import Container
 import httpx
 import socketio
 
@@ -13,6 +14,7 @@ from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.event_store import EventStore
+from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
@@ -127,15 +129,18 @@ class DockerNestedConversationManager(ConversationManager):
             await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
-        nested_url = ""
+        
+        nested_url = self._get_nested_url(sid)
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
             api_key=None,
-            event_store=NestedEventStore(),
+            event_store=NestedEventStore(
+                base_url=nested_url,
+                sid=sid,
+                user_id=user_id,
+            ),
         )
-        event_store = EventStore(sid, self.file_store, user_id)
-        return event_store
 
     async def _start_agent_loop(self, sid, settings, user_id, initial_user_msg = None, replay_json = None):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
@@ -245,10 +250,11 @@ class DockerNestedConversationManager(ConversationManager):
             #setup the settings...
             settings_json = settings.model_dump()
             settings_json.pop('git_provider_tokens', None)
+            settings_json.pop('custom_secrets', None)
             response = await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
 
             response = await client.post(f"{runtime.api_url}/api/conversations", json={
-                "initial_user_msg": "Flip a coin!",
+                "initial_user_msg": initial_user_msg,
                 "image_urls": [],
                 "repository": settings.selected_repository,
                 #"git_provider": ,
@@ -280,6 +286,29 @@ class DockerNestedConversationManager(ConversationManager):
             "sid": sid,
         })
         stop_all_containers(f'openhands-runtime-{sid}')
+
+    async def get_agent_loop_info(self, user_id = None, filter_to_sids = None):
+        results = []
+        for container in self.docker_client.containers.list():
+            if not container.name.startswith('openhands-runtime-'):
+                continue
+            conversation_id = container.name[len('openhands-runtime-'):]
+            if filter_to_sids is not None and conversation_id not in filter_to_sids:
+                continue
+            nested_url = self.get_nested_url_for_container(container)
+            agent_loop_info = AgentLoopInfo(
+                conversation_id=conversation_id,
+                url=nested_url,
+                api_key=None,
+                event_store=NestedEventStore(
+                    base_url=nested_url,
+                    sid=conversation_id,
+                    user_id=user_id,
+                ),
+            )
+            results.append(agent_loop_info)
+        return results        
+
 
     @classmethod
     def get_instance(
@@ -313,6 +342,16 @@ class DockerNestedConversationManager(ConversationManager):
             )
         store = await conversation_store_class.get_instance(self.config, user_id)
         return store
+    
+    def _get_nested_url(self, sid: str) -> str:
+        container = self.docker_client.containers.get(f"openhands-runtime-{sid}")
+        return self.get_nested_url_for_container(container)
+
+    def get_nested_url_for_container(self, container: Container) -> str:
+        env = container.attrs['Config']['Env']
+        container_port = int(next(e[5:] for e in env if e.startswith('port=')))
+        nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
+        return nested_url
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
