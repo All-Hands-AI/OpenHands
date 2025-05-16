@@ -7,7 +7,7 @@ from openhands.utils.shutdown_listener import should_continue
 app = FastAPI()
 
 
-@app.websocket('/ws')
+@app.websocket('/ws')  # type: ignore
 async def websocket_endpoint(websocket: WebSocket) -> None:
     await websocket.accept()
 
@@ -25,12 +25,12 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         logger.debug(f'WebSocket Error: {e}')
 
 
-@app.get('/')
+@app.get('/')  # type: ignore
 def read_root() -> dict[str, str]:
     return {'message': 'This is a mock server'}
 
 
-@app.get('/api/options/models')
+@app.get('/api/options/models')  # type: ignore
 def read_llm_models() -> list[str]:
     return [
         'gpt-4',
@@ -40,24 +40,24 @@ def read_llm_models() -> list[str]:
     ]
 
 
-@app.get('/api/options/agents')
+@app.get('/api/options/agents')  # type: ignore
 def read_llm_agents() -> list[str]:
     return [
         'CodeActAgent',
     ]
 
 
-@app.get('/api/list-files')
+@app.get('/api/list-files')  # type: ignore
 def refresh_files() -> list[str]:
     return ['hello_world.py']
 
 
-@app.get('/api/options/config')
+@app.get('/api/options/config')  # type: ignore
 def get_config() -> dict[str, str]:
     return {'APP_MODE': 'oss'}
 
 
-@app.get('/api/options/security-analyzers')
+@app.get('/api/options/security-analyzers')  # type: ignore
 def get_analyzers() -> list[str]:
     return []
 

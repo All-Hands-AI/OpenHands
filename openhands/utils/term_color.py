@@ -22,4 +22,5 @@ def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:
     Returns:
         str: Colored text
     """
-    return colored(text, color.value)
+    result: str = colored(text, color.value)
+    return result

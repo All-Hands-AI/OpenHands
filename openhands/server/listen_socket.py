@@ -62,7 +62,7 @@ async def connect(connection_id: str, environ: dict) -> None:
             latest_event_id = -1
         conversation_id = query_params.get('conversation_id', [None])[0]
         raw_list = query_params.get('providers_set', [])
-        providers_list = []
+        providers_list: list[str] = []
         for item in raw_list:
             providers_list.extend(item.split(',') if isinstance(item, str) else [])
         providers_list = [p for p in providers_list if p]
@@ -91,7 +91,7 @@ async def connect(connection_id: str, environ: dict) -> None:
             raise ConnectionRefusedError(
                 'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
             )
-        session_init_args: dict = {}
+        session_init_args: dict[str, Any] = {}
         if settings:
             session_init_args = {**settings.__dict__, **session_init_args}
 

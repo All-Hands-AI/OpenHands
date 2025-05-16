@@ -9,7 +9,7 @@ from fastapi import (
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
-@app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])  # type: ignore
 async def security_api(request: Request) -> Response:
     """Catch-all route for security analyzer API requests.
 
