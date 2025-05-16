@@ -79,7 +79,7 @@ describe("TerminalStreamService", () => {
             command: "echo Hello, world!",
             is_complete: false,
             timestamp: Date.now(),
-            command_id: "123",
+            command_id: 123,
           },
         }),
       });
@@ -112,7 +112,7 @@ describe("TerminalStreamService", () => {
                         command: "echo Hello, world!",
                         is_complete: true,
                         timestamp: Date.now(),
-                        command_id: "123",
+                        command_id: 123,
                     },
                 }),
             });

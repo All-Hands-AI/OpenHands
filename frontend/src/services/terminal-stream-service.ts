@@ -10,7 +10,7 @@ interface TerminalStreamChunk {
     exit_code?: number;
     is_timeout?: boolean;
     timeout_type?: string;
-    command_id?: string;
+    command_id?: number;
   };
 }
 
@@ -28,7 +28,7 @@ export class TerminalStreamService {
 
   private reconnectDelay: number = 1000; // Start with 1 second delay
 
-  private currentCommandId: string | null = null;
+  private currentCommandId: number | null = null;
 
   private accumulatedOutput: string = "";
 

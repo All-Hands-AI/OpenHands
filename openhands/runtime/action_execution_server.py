@@ -206,7 +206,7 @@ class ActionExecutor:
             maxlen=1000  # Limit queue size to prevent memory issues
         )
         self.terminal_output_event = asyncio.Event()
-        self.current_command_id: str | None = None
+        self.current_command_id: int | None = None
 
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
@@ -398,7 +398,7 @@ class ActionExecutor:
     ) -> CmdOutputObservation | ErrorObservation:
         try:
             # Generate a unique ID for this command execution
-            command_id = str(time.time())
+            command_id = action.id
             self.current_command_id = command_id
 
             # Clear the queue for the new command
@@ -432,7 +432,7 @@ class ActionExecutor:
             logger.error(f'Error running command: {e}')
             return ErrorObservation(str(e))
 
-    def _add_to_output_queue(self, command_id: str, content: str, metadata: dict):
+    def _add_to_output_queue(self, command_id: int, content: str, metadata: dict):
         """Add output chunk to the queue and set the event to notify listeners."""
         if self.current_command_id != command_id:
             # This is from an old command, ignore it
