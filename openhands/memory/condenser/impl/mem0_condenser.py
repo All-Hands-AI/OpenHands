@@ -26,16 +26,15 @@ class Mem0Condenser(RollingCondenser):
     all important knowledge is preserved in the Mem0 knowledge base.
     """
 
-    def __init__(self, keep_first: int = 1, max_events: int = 100):
+    def __init__(self, keep_first: int = 1):
         """Initialize the Mem0Condenser.
 
         Args:
             keep_first: Number of initial events to always keep (typically the user's task)
-            max_events: Maximum number of events before triggering condensation
         """
         self.keep_first = keep_first
-        self.max_events = max_events
         self._last_sync_timestamp: Optional[float] = None
+        self._last_task_completion_index: Optional[int] = None
 
         super().__init__()
 
@@ -46,7 +45,13 @@ class Mem0Condenser(RollingCondenser):
             The timestamp of the last synchronization or None if not available
         """
         try:
-            return await get_last_sync_timestamp()
+            last_sync_timestamp = await get_last_sync_timestamp()
+
+            logger.info(f'Last sync timestamp: {last_sync_timestamp}')
+
+            if last_sync_timestamp is not None:
+                self._last_sync_timestamp = last_sync_timestamp
+            return last_sync_timestamp
         except Exception as e:
             logger.warning(f'Failed to get last sync timestamp from Mem0: {e}')
             return None
@@ -55,9 +60,9 @@ class Mem0Condenser(RollingCondenser):
         """Determine if the view should be condensed.
 
         The view should be condensed if:
-        1. It has more than max_events
-        2. We have a valid last sync timestamp
-        3. There have been no AgentFinishAction events in the view (to avoid condensing during task completion)
+        1. We have a valid last sync timestamp
+        2. There is an AgentFinishAction in the view (indicating task completion)
+        3. The task completion is after our last known task completion
 
         Args:
             view: The view to check
@@ -66,7 +71,6 @@ class Mem0Condenser(RollingCondenser):
             True if the view should be condensed, False otherwise
         """
         # Run the async function to get the timestamp in a synchronous context
-        # Note: This is a workaround as condenser methods are not async
         if self._last_sync_timestamp is None:
             try:
                 self._last_sync_timestamp = asyncio.get_event_loop().run_until_complete(
@@ -78,18 +82,30 @@ class Mem0Condenser(RollingCondenser):
 
         # Don't condense if we don't have a valid last sync timestamp
         if self._last_sync_timestamp is None:
+            logger.warning(
+                'Mem0Condenser: Last sync timestamp is None, using fallback strategy'
+            )
             return False
 
-        # Only condense if we have more than max_events
-        if len(view) <= self.max_events:
-            return False
-
-        # Don't condense if there's an AgentFinishAction in the view
-        # This is to avoid condensing during task completion
-        for event in view:
+        # Find the latest task completion in the view
+        latest_task_completion = None
+        for i, event in enumerate(view):
             if isinstance(event, AgentFinishAction):
-                return False
+                latest_task_completion = i
 
+        # Don't condense if there's no task completion
+        if latest_task_completion is None:
+            return False
+
+        # Don't condense if we've already condensed up to this task completion
+        if (
+            self._last_task_completion_index is not None
+            and latest_task_completion <= self._last_task_completion_index
+        ):
+            return False
+
+        # Update the last task completion index
+        self._last_task_completion_index = latest_task_completion
         return True
 
     def _get_event_timestamp(self, event: Any) -> Optional[float]:
@@ -163,6 +179,9 @@ class Mem0Condenser(RollingCondenser):
                     'forgotten_events_count', last_forgotten - first_forgotten + 1
                 )
                 self.add_metadata('kept_events_count', len(head) + len(tail))
+                self.add_metadata(
+                    'task_completion_index', self._last_task_completion_index
+                )
 
                 logger.info(
                     f'Mem0Condenser: Removing {last_forgotten - first_forgotten + 1} events '
@@ -183,19 +202,18 @@ class Mem0Condenser(RollingCondenser):
             'Using recent events fallback strategy.'
         )
 
-        # Fallback to a simple recent-events strategy
-        tail_length = max(0, self.max_events - len(head))
-        tail = view[-tail_length:]
-
-        if len(view) > len(head) + len(tail):
+        # Fallback to keeping only the head and events after the last task completion
+        if self._last_task_completion_index is not None:
+            tail = view[self._last_task_completion_index + 1 :]
             first_forgotten = len(head)
-            last_forgotten = len(view) - len(tail) - 1
+            last_forgotten = self._last_task_completion_index
 
-            self.add_metadata('fallback_strategy', 'recent_events')
+            self.add_metadata('fallback_strategy', 'task_completion')
             self.add_metadata(
                 'forgotten_events_count', last_forgotten - first_forgotten + 1
             )
             self.add_metadata('kept_events_count', len(head) + len(tail))
+            self.add_metadata('task_completion_index', self._last_task_completion_index)
 
             return Condensation(
                 action=view.condensation_action(
@@ -205,8 +223,6 @@ class Mem0Condenser(RollingCondenser):
             )
 
         # If we can't condense, just return the current view
-        # This is handled by the RollingCondenser parent class
-        # but we'd never reach here due to should_condense check
         return Condensation(
             action=view.condensation_action(
                 forgotten_events_start_id=0,
