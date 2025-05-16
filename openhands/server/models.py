@@ -59,3 +59,15 @@ ResearchTrending = Table(
     Column('total_view_30d', Integer, nullable=False),
     Column('created_at', DateTime, default=func.now(), nullable=False),
 )
+
+
+Mem0ConversationJob = Table(
+    'mem0_conversation_jobs',
+    metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('conversation_id', String, nullable=False),
+    Column('events', JSON, nullable=False),
+    Column('metadata', JSON, nullable=False),
+    Column('status', String, nullable=False, default='pending'),
+    Column('created_at', DateTime, default=func.now(), nullable=False),
+)

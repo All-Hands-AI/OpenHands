@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import uuid
@@ -8,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from mem0 import MemoryClient
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.modules import conversation_module
 
 
 class Mem0MetadataType(Enum):
@@ -158,22 +158,26 @@ async def process_single_event_for_mem0(
         # else:  # If you want to handle other agent cases, add here
         #     parsed_events.append({'role': 'assistant', 'content': content})
 
-    mem0_client = Mem0Client()
-    if not mem0_client.is_available:
-        logger.warning('MemoryClient is not available. Skipping mem0 add.')
-        return parsed_events
+    # mem0_client = Mem0Client()
+    # if not mem0_client.is_available:
+    #     logger.warning('MemoryClient is not available. Skipping mem0 add.')
+    #     return parsed_events
 
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
-        # add to db mem0_conversation_events
-        add_result = await asyncio.to_thread(
-            mem0_client.add,
-            agent_id=conversation_id,
-            messages=parsed_events,
-            metadata=metadata,
-            infer=True,
-        )
-        logger.info(f'duongtd_add_mem0_result: {add_result}')
+        try:
+            # Ensure we're using the current event loop
+            print('vap day vao day 2 metadata', metadata)
+            await conversation_module._add_mem0_conversation_job(
+                conversation_id=conversation_id,
+                events=parsed_events,
+                metadata=metadata,
+            )
+
+        except Exception as e:
+            logger.error(f'Failed to add mem0 conversation job: {e}')
+            return parsed_events
+
     return parsed_events
 
 

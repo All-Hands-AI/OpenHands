@@ -27,7 +27,8 @@ Create Table IF NOT EXISTS mem0_conversation_jobs (
     conversation_id VARCHAR NOT NULL,
     events JSONB NOT NULL,
     metadata JSONB NOT NULL,
-    status VARCHAR NOT NULL DEFAULT 'pending'
+    status VARCHAR NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 
