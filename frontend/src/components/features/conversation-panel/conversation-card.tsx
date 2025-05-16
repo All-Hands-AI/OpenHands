@@ -60,7 +60,7 @@ export function ConversationCard({
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const systemMessage = parsedEvents.find((event) => isSystemMessage(event));
+  const systemMessage = parsedEvents.find(isSystemMessage);
 
   // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);
