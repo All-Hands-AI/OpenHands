@@ -134,7 +134,7 @@ class DockerNestedConversationManager(ConversationManager):
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            api_key=None,
+            api_key='notsecure',
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
@@ -230,6 +230,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['CONVERSATION_ID'] = sid
         #env_vars['SANDBOX_USER_ID'] = 1000
         env_vars['USER'] = 'CURRENT_USER'
+        env_vars['SESSION_API_KEY'] = 'notsecure'
 
         # This eventstream is never used - I only add it because it is required in order to create a docker runtime
         event_stream = EventStream(sid, self.file_store, user_id)
@@ -251,7 +252,7 @@ class DockerNestedConversationManager(ConversationManager):
         await runtime.connect()
 
         # TODO: After we start the nested server, we need to initialize the conversation
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(headers={'X-Session-API-Key': 'notsecure'}) as client:
             #setup the settings...
             settings_json = settings.model_dump(context={'expose_secrets': True})
             settings_json.pop('git_provider_tokens', None)
@@ -302,7 +303,7 @@ class DockerNestedConversationManager(ConversationManager):
             agent_loop_info = AgentLoopInfo(
                 conversation_id=conversation_id,
                 url=nested_url,
-                api_key=None,
+                api_key='notsecure',
                 event_store=NestedEventStore(
                     base_url=nested_url,
                     sid=conversation_id,
