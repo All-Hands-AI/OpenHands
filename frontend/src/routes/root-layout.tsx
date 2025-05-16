@@ -17,7 +17,6 @@ import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
-import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
@@ -60,7 +59,6 @@ export default function MainApp() {
   const { pathname } = useLocation();
   const tosPageStatus = useIsOnTosPage();
   const { data: settings } = useSettings();
-  const { error } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
 
@@ -68,7 +66,8 @@ export default function MainApp() {
   const {
     data: isAuthed,
     isFetching: isFetchingAuth,
-    isError: authError,
+    isError: isAuthError,
+    error: authError,
   } = useIsAuthed();
 
   // Always call the hook, but we'll only use the result when not on TOS page
@@ -120,13 +119,13 @@ export default function MainApp() {
   React.useEffect(() => {
     // Don't do any redirects when on TOS page
     // Don't allow users to use the app if it 402s
-    if (!tosPageStatus && error?.status === 402 && pathname !== "/") {
+    if (!tosPageStatus && authError?.status === 402 && pathname !== "/") {
       navigate("/");
     }
-  }, [error?.status, pathname, tosPageStatus]);
+  }, [authError?.status, pathname, tosPageStatus]);
 
   // When on TOS page, we don't make any API calls, so we need to handle this case
-  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
+  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !isAuthError;
 
   // Only show the auth modal if:
   // 1. User is not authenticated
