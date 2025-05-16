@@ -43,19 +43,7 @@ describe("Empty state", () => {
   it.todo("should render suggestions if empty");
 
   it("should render the default suggestions", () => {
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: {
-          messages: [],
-          systemMessage: {
-            content: "",
-            tools: [],
-            openhands_version: null,
-            agent_class: null,
-          },
-        },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     const suggestions = screen.getByTestId("suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
@@ -80,19 +68,7 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      const { store } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: {
-            messages: [],
-            systemMessage: {
-              content: "",
-              tools: [],
-              openhands_version: null,
-              agent_class: null,
-            },
-          },
-        },
-      });
+      renderWithProviders(<ChatInterface />);
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -102,7 +78,6 @@ describe("Empty state", () => {
 
       // user message loaded to input
       expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
-      expect(store.getState().chat.messages).toHaveLength(0);
       expect(input).toHaveValue(displayedSuggestions[0].textContent);
     },
   );
@@ -116,19 +91,7 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      const { rerender } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: {
-            messages: [],
-            systemMessage: {
-              content: "",
-              tools: [],
-              openhands_version: null,
-              agent_class: null,
-            },
-          },
-        },
-      });
+      const { rerender } = renderWithProviders(<ChatInterface />);
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");

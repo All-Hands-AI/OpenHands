@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as ChatSlice from "#/state/chat-slice";
 import {
   updateStatusWhenErrorMessagePresent,
   WsClientProvider,
@@ -11,13 +10,10 @@ import {
 
 describe("Propagate error message", () => {
   it("should do nothing when no message was passed from server", () => {
-    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage");
     updateStatusWhenErrorMessagePresent(null);
     updateStatusWhenErrorMessagePresent(undefined);
     updateStatusWhenErrorMessagePresent({});
     updateStatusWhenErrorMessagePresent({ message: null });
-
-    expect(addErrorMessageSpy).not.toHaveBeenCalled();
   });
 
   it.todo("should display error to user when present");

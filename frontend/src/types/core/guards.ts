@@ -3,6 +3,7 @@ import {
   UserMessageAction,
   AssistantMessageAction,
   OpenHandsAction,
+  SystemMessageAction,
 } from "./actions";
 import {
   CommandObservation,
@@ -46,3 +47,8 @@ export const isFinishAction = (
   event: OpenHandsParsedEvent,
 ): event is AssistantMessageAction =>
   isOpenHandsAction(event) && event.action === "finish";
+
+export const isSystemMessage = (
+  event: OpenHandsParsedEvent,
+): event is SystemMessageAction =>
+  isOpenHandsAction(event) && event.action === "system";
