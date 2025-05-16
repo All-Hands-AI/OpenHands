@@ -82,10 +82,6 @@ async def cleanup_session(
     )
 
     try:
-        await controller.close()
-        agent.reset()
-        runtime.close()
-
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
 
@@ -94,6 +90,10 @@ async def cleanup_session(
 
         for task in pending:
             task.cancel()
+
+        agent.reset()
+        runtime.close()
+        await controller.close()
 
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
