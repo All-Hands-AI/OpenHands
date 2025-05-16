@@ -94,6 +94,18 @@ const getRecallObservationContent = (event: RecallObservation): string => {
     }
   }
 
+  if (
+    event.extras.custom_secrets_descriptions &&
+    Object.keys(event.extras.custom_secrets_descriptions).length > 0
+  ) {
+    content += `\n\n**Custom Secrets**`;
+    for (const [name, description] of Object.entries(
+      event.extras.custom_secrets_descriptions,
+    )) {
+      content += `\n\n- $${name}: ${description}`;
+    }
+  }
+
   return content;
 };
 
