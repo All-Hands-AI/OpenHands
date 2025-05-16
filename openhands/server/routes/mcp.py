@@ -20,7 +20,7 @@ async def save_pr_metadata(user_id: str, conversation_id: str, tool_result: str)
     conversation: ConversationMetadata = await conversation_store.get_metadata(conversation_id)
 
 
-    pull_pattern = r"pulls/(\d+)"
+    pull_pattern = r"pull/(\d+)"
     merge_request_pattern = r"merge_requests/(\d+)"
 
     # Check if the tool_result contains the PR number
