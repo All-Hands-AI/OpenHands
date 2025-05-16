@@ -118,8 +118,10 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
 
 @mock.patch('openhands.events.observation.CmdOutputObservation')
 @mock.patch('openhands.runtime.base.Runtime')
-def test_initialize_runtime_runs_setup_script(mock_runtime, mock_cmd_output):
-    """Test that initialize_runtime calls maybe_run_setup_script"""
+def test_initialize_runtime_runs_setup_script_and_git_hooks(
+    mock_runtime, mock_cmd_output
+):
+    """Test that initialize_runtime calls maybe_run_setup_script and maybe_setup_git_hooks"""
 
     # Create a minimal resolver instance with just the methods we need
     class MinimalResolver:
@@ -131,6 +133,9 @@ def test_initialize_runtime_runs_setup_script(mock_runtime, mock_cmd_output):
             # Run setup script if it exists
             runtime.maybe_run_setup_script()
 
+            # Setup git hooks if they exist
+            runtime.maybe_setup_git_hooks()
+
     resolver = MinimalResolver()
 
     # Mock the runtime's run_action method to return a successful CmdOutputObservation
@@ -140,5 +145,6 @@ def test_initialize_runtime_runs_setup_script(mock_runtime, mock_cmd_output):
     # Call the method
     resolver.initialize_runtime(mock_runtime)
 
-    # Verify that maybe_run_setup_script was called
+    # Verify that both methods were called
     mock_runtime.maybe_run_setup_script.assert_called_once()
+    mock_runtime.maybe_setup_git_hooks.assert_called_once()

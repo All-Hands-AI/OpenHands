@@ -261,6 +261,10 @@ class IssueResolver:
         logger.info('Checking for .openhands/setup.sh script...')
         runtime.maybe_run_setup_script()
 
+        # Setup git hooks if they exist
+        logger.info('Checking for .openhands/pre-commit.sh script...')
+        runtime.maybe_setup_git_hooks()
+
     async def complete_runtime(
         self,
         runtime: Runtime,
