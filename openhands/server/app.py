@@ -2,6 +2,8 @@ import warnings
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
+from fastapi.routing import Mount
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
@@ -18,6 +20,7 @@ from openhands.server.routes.git import app as git_api_router
 from openhands.server.routes.manage_conversations import (
     app as manage_conversation_api_router,
 )
+from openhands.server.routes.mcp import mcp_server
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
@@ -37,6 +40,7 @@ app = FastAPI(
     description='OpenHands: Code Less, Make More',
     version=__version__,
     lifespan=_lifespan,
+    routes=[Mount(path='/mcp', app=mcp_server.sse_app())],
 )
 
 

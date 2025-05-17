@@ -356,6 +356,7 @@ class ActionExecutionClient(Runtime):
     ) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
+
         # Send a request to the action execution server to updated MCP config
         stdio_tools = [
             server.model_dump(mode='json')
@@ -408,7 +409,7 @@ class ActionExecutionClient(Runtime):
         )
 
         # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
+        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, self.sid)
 
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state

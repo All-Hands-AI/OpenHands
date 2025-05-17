@@ -31,5 +31,4 @@ base_app.add_middleware(
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
-
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
