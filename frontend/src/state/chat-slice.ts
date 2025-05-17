@@ -288,6 +288,11 @@ export const chatSlice = createSlice({
         causeMessage.success = !ipythonObs.content
           .toLowerCase()
           .includes("error:");
+        
+        // Add image URLs if available
+        if (ipythonObs.extras.image_urls && ipythonObs.extras.image_urls.length > 0) {
+          causeMessage.imageUrls = ipythonObs.extras.image_urls;
+        }
       } else if (observationID === "read" || observationID === "edit") {
         // For read/edit operations, we consider it successful if there's content and no error
 

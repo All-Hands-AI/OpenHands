@@ -18,6 +18,7 @@ import { ol, ul } from "../markdown/list";
 import { paragraph } from "../markdown/paragraph";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
+import { ImageCarousel } from "../images/image-carousel";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -31,6 +32,7 @@ interface ExpandableMessageProps {
   success?: boolean;
   observation?: PayloadAction<OpenHandsObservation>;
   action?: PayloadAction<OpenHandsAction>;
+  imageUrls?: string[];
 }
 
 export function ExpandableMessage({
@@ -40,6 +42,7 @@ export function ExpandableMessage({
   success,
   observation,
   action,
+  imageUrls,
 }: ExpandableMessageProps) {
   const { data: config } = useConfig();
   const { t, i18n } = useTranslation();
@@ -203,6 +206,11 @@ export function ExpandableMessage({
             >
               {details}
             </Markdown>
+            {imageUrls && imageUrls.length > 0 && (
+              <div className="mt-4">
+                <ImageCarousel size="small" images={imageUrls} />
+              </div>
+            )}
           </div>
         )}
       </div>
