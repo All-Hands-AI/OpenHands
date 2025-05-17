@@ -24,7 +24,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -54,6 +54,7 @@ class RemoteRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        main_module: str = DEFAULT_MAIN_MODULE,
     ) -> None:
         super().__init__(
             config,
@@ -85,6 +86,7 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+        self.main_module = main_module
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
@@ -93,9 +95,9 @@ class RemoteRuntime(ActionExecutionClient):
         )
         self.available_hosts: dict[str, int] = {}
 
-    def log(self, level: str, message: str) -> None:
+    def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
-        getattr(logger, level)(message, stacklevel=2)
+        getattr(logger, level)(message, stacklevel=2, exc_info=exc_info)
 
     @property
     def action_execution_server_url(self) -> str:
@@ -108,7 +110,7 @@ class RemoteRuntime(ActionExecutionClient):
             await call_sync_from_async(self._start_or_attach_to_runtime)
         except Exception:
             self.close()
-            self.log('error', 'Runtime failed to start')
+            self.log('error', 'Runtime failed to start', exc_info=True)
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
@@ -231,11 +233,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_runtime(self) -> None:
         # Prepare the request body for the /start endpoint
-        command = get_action_execution_server_startup_command(
-            server_port=self.port,
-            plugins=self.plugins,
-            app_config=self.config,
-        )
+        command = self.get_action_execution_server_startup_command()
         environment: dict[str, str] = {}
         if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
             environment['DEBUG'] = 'true'
@@ -492,3 +490,11 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: RetryCallState) -> bool:
         return self._runtime_closed
+
+    def get_action_execution_server_startup_command(self):
+        return get_action_execution_server_startup_command(
+            server_port=self.port,
+            plugins=self.plugins,
+            app_config=self.config,
+            main_module=self.main_module,
+        )

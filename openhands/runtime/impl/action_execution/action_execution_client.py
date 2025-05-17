@@ -10,7 +10,7 @@ import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig, MCPSSEServerConfig
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )
@@ -357,7 +357,9 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def get_updated_mcp_config(self) -> MCPConfig:
+    def get_updated_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
         # Send a request to the action execution server to updated MCP config
@@ -365,6 +367,10 @@ class ActionExecutionClient(Runtime):
             server.model_dump(mode='json')
             for server in updated_mcp_config.stdio_servers
         ]
+        if extra_stdio_servers:
+            stdio_tools.extend(
+                [server.model_dump(mode='json') for server in extra_stdio_servers]
+            )
 
         if len(stdio_tools) > 0:
             self.log('debug', f'Updating MCP server to: {stdio_tools}')

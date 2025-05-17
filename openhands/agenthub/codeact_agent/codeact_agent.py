@@ -22,7 +22,6 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
 )
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.agenthub.codeact_agent.tools.view_file import ViewFileTool
-from openhands.agenthub.codeact_agent.tools.web_read import WebReadTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -126,7 +125,6 @@ class CodeActAgent(Agent):
             if sys.platform == 'win32':
                 logger.warning('Windows runtime does not support browsing yet')
             else:
-                tools.append(WebReadTool)
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)

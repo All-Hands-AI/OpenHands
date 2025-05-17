@@ -8,7 +8,6 @@ from .str_replace_editor import create_str_replace_editor_tool
 from .think import ThinkTool
 from .undo_edit import UndoEditTool
 from .view_file import ViewFileTool
-from .web_read import WebReadTool
 
 __all__ = [
     'BrowserTool',
@@ -20,6 +19,5 @@ __all__ = [
     'create_str_replace_editor_tool',
     'UndoEditTool',
     'ViewFileTool',
-    'WebReadTool',
     'ThinkTool',
 ]

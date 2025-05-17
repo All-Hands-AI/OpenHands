@@ -10,7 +10,6 @@ import {
   GetTrajectoryResponse,
   GitChangeDiff,
   GitChange,
-  ConversationTrigger,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -77,9 +76,9 @@ class OpenHands {
   ): Promise<boolean> {
     if (appMode === "oss") return true;
 
-    const response =
-      await openHands.post<AuthenticateResponse>("/api/authenticate");
-    return response.status === 200;
+    // Just make the request, if it succeeds (no exception thrown), return true
+    await openHands.post<AuthenticateResponse>("/api/authenticate");
+    return true;
   }
 
   /**
@@ -144,7 +143,6 @@ class OpenHands {
   }
 
   static async createConversation(
-    conversation_trigger: ConversationTrigger = "gui",
     selectedRepository?: string,
     git_provider?: Provider,
     initialUserMsg?: string,
@@ -154,7 +152,6 @@ class OpenHands {
     selected_branch?: string,
   ): Promise<Conversation> {
     const body = {
-      conversation_trigger,
       repository: selectedRepository,
       git_provider,
       selected_branch,
