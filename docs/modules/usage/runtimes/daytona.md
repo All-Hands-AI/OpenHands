@@ -10,16 +10,30 @@ You can use [Daytona](https://www.daytona.io/) as a runtime provider:
 
 ## Step 2: Set Your API Key as an Environment Variable
 Run the following command in your terminal, replacing `<your-api-key>` with the actual key you copied:
+
+### Mac/Linux:
 ```bash
 export DAYTONA_API_KEY="<your-api-key>"
+```
+
+### Windows PowerShell:
+```powershell
+$env:DAYTONA_API_KEY="<your-api-key>"
 ```
 
 This step ensures that OpenHands can authenticate with the Daytona platform when it runs.
 
 ## Step 3: Run OpenHands Locally Using Docker
 To start the latest version of OpenHands on your machine, execute the following command in your terminal:
+
+### Mac/Linux:
 ```bash
 bash -i <(curl -sL https://get.daytona.io/openhands)
+```
+
+### Windows:
+```powershell
+powershell -Command "irm https://get.daytona.io/openhands-windows | iex"
 ```
 
 ### What This Command Does:

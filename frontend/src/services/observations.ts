@@ -53,6 +53,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.NULL:
     case ObservationType.RECALL:
     case ObservationType.ERROR:
+    case ObservationType.MCP:
       break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
@@ -157,6 +158,13 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       case "browse":
+        if (message.extras?.screenshot) {
+          store.dispatch(setScreenshotSrc(message.extras.screenshot));
+        }
+        if (message.extras?.url) {
+          store.dispatch(setUrl(message.extras.url));
+        }
+
         store.dispatch(
           addAssistantObservation({
             ...baseObservation,
@@ -197,6 +205,13 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       case "browse_interactive":
+        if (message.extras?.screenshot) {
+          store.dispatch(setScreenshotSrc(message.extras.screenshot));
+        }
+        if (message.extras?.url) {
+          store.dispatch(setUrl(message.extras.url));
+        }
+
         store.dispatch(
           addAssistantObservation({
             ...baseObservation,
@@ -245,6 +260,14 @@ export function handleObservationMessage(message: ObservationMessage) {
             extras: {
               error_id: message.extras.error_id,
             },
+          }),
+        );
+        break;
+      case "mcp":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation: "mcp" as const,
           }),
         );
         break;

@@ -44,6 +44,9 @@ enum ActionType {
 
   // User feedback on messages or the entire trajectory
   USER_FEEDBACK = "user_feedback",
+
+  // Interact with the MCP server.
+  MCP = "call_tool_mcp",
 }
 
 export default ActionType;

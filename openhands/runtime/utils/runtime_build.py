@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 
 import docker
-from dirhash import dirhash  # type: ignore
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -283,8 +283,9 @@ def prep_build_folder(
         build_from=build_from,
         extra_deps=extra_deps,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
-        file.write(dockerfile_content)  # type: ignore
+    dockerfile_path = Path(build_folder, 'Dockerfile')
+    with open(str(dockerfile_path), 'w') as f:
+        f.write(dockerfile_content)
 
 
 _ALPHABET = string.digits + string.ascii_lowercase
@@ -384,9 +385,9 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(
-            build_folder
-        ), f'Build folder {build_folder} does not exist'
+        assert os.path.exists(build_folder), (
+            f'Build folder {build_folder} does not exist'
+        )
         logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )

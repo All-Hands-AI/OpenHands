@@ -7,6 +7,7 @@ import { ul, ol } from "../markdown/list";
 import { anchor } from "../markdown/anchor";
 import { MessageActions } from "./message-actions";
 import { useHover } from "#/hooks/use-hover";
+import { paragraph } from "../markdown/paragraph";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -74,6 +75,7 @@ export function ChatMessage({
             ul,
             ol,
             a: anchor,
+            p: paragraph,
           }}
           remarkPlugins={[remarkGfm]}
         >

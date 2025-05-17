@@ -103,6 +103,8 @@ def mock_memory() -> Memory:
         spec=Memory,
         event_stream=test_event_stream,
     )
+    # Add the get_microagent_mcp_tools method to the mock
+    memory.get_microagent_mcp_tools.return_value = []
     return memory
 
 
@@ -717,9 +719,9 @@ async def test_run_controller_max_iterations_has_metrics(
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    assert (
-        state.metrics.accumulated_cost == 10.0 * 3
-    ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    assert state.metrics.accumulated_cost == 10.0 * 3, (
+        f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+    )
 
 
 @pytest.mark.asyncio
@@ -740,7 +742,7 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 
 @pytest.mark.asyncio
 async def test_context_window_exceeded_error_handling(
-    mock_agent, mock_runtime, test_event_stream
+    mock_agent, mock_runtime, test_event_stream, mock_memory
 ):
     """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
     max_iterations = 5
@@ -1434,14 +1436,14 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
         # Verify the NullObservation has a cause that points to the RecallAction
         assert null_observation.cause is not None, 'NullObservation cause is None'
-        assert (
-            null_observation.cause == recall_action.id
-        ), f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        assert null_observation.cause == recall_action.id, (
+            f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        )
 
         # Verify the controller's should_step method returns True for this observation
-        assert controller.should_step(
-            null_observation
-        ), 'should_step should return True for this NullObservation'
+        assert controller.should_step(null_observation), (
+            'should_step should return True for this NullObservation'
+        )
 
         # Verify the controller's step method was called
         # This means the controller processed the NullObservation
@@ -1453,9 +1455,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
         null_observation_zero._cause = 0  # type: ignore[attr-defined]
 
         # Verify the controller's should_step method would return False for this observation
-        assert not controller.should_step(
-            null_observation_zero
-        ), 'should_step should return False for NullObservation with cause=0'
+        assert not controller.should_step(null_observation_zero), (
+            'should_step should return False for NullObservation with cause=0'
+        )
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agent):
@@ -1481,9 +1483,9 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     result = controller.should_step(null_observation)
 
     # It should return False since we only want to step on NullObservation with cause > 0
-    assert (
-        result is False
-    ), 'should_step should return False for NullObservation with cause = 0'
+    assert result is False, (
+        'should_step should return False for NullObservation with cause = 0'
+    )
 
 
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
@@ -1563,8 +1565,8 @@ async def test_openrouter_context_window_exceeded_error(
     condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
 
     # There should be at least one CondensationAction if the error was handled correctly
-    assert (
-        len(condensation_actions) > 0
-    ), 'OpenRouter context window exceeded error was not handled correctly'
+    assert len(condensation_actions) > 0, (
+        'OpenRouter context window exceeded error was not handled correctly'
+    )
 
     await controller.close()

@@ -14,9 +14,7 @@ from openhands.microagent import (
     load_microagents_from_dir,
 )
 
-CONTENT = (
-    '# dummy header\n' 'dummy content\n' '## dummy subheader\n' 'dummy subcontent\n'
-)
+CONTENT = '# dummy header\ndummy content\n## dummy subheader\ndummy subcontent\n'
 
 
 def test_legacy_micro_agent_load(tmp_path):
@@ -168,3 +166,37 @@ Testing loading with trailing slashes.
     assert isinstance(agent_t, KnowledgeMicroagent)
     assert agent_t.type == MicroagentType.KNOWLEDGE  # Check inferred type
     assert 'trailing' in agent_t.triggers
+
+
+def test_invalid_microagent_type(temp_microagents_dir):
+    """Test loading a microagent with an invalid type."""
+    # Create a microagent with an invalid type
+    invalid_agent = """---
+name: invalid_type_agent
+type: task
+version: 1.0.0
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Invalid Type Test
+
+This microagent has an invalid type.
+"""
+    invalid_file = temp_microagents_dir / 'invalid_type.md'
+    invalid_file.write_text(invalid_agent)
+
+    # Attempt to load the microagent should raise a MicroagentValidationError
+    from openhands.core.exceptions import MicroagentValidationError
+
+    with pytest.raises(MicroagentValidationError) as excinfo:
+        load_microagents_from_dir(temp_microagents_dir)
+
+    # Check that the error message contains helpful information
+    error_msg = str(excinfo.value)
+    assert 'invalid_type.md' in error_msg
+    assert 'Invalid "type" value: "task"' in error_msg
+    assert 'Valid types are:' in error_msg
+    assert '"knowledge"' in error_msg
+    assert '"repo"' in error_msg

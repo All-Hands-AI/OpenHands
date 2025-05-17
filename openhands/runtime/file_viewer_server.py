@@ -21,12 +21,12 @@ def create_app() -> FastAPI:
     )
 
     @app.get('/')
-    async def root():
+    async def root() -> dict[str, str]:
         """Root endpoint to check if the server is running."""
         return {'status': 'File viewer server is running'}
 
     @app.get('/view')
-    async def view_file(path: str, request: Request):
+    async def view_file(path: str, request: Request) -> HTMLResponse:
         """View a file using an embedded viewer.
 
         Args:

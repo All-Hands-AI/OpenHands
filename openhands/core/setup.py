@@ -101,15 +101,11 @@ def initialize_repository_for_runtime(
     provider_tokens = {}
     if 'GITHUB_TOKEN' in os.environ:
         github_token = SecretStr(os.environ['GITHUB_TOKEN'])
-        provider_tokens[ProviderType.GITHUB] = ProviderToken(
-            token=SecretStr(github_token)
-        )
+        provider_tokens[ProviderType.GITHUB] = ProviderToken(token=github_token)
 
     if 'GITLAB_TOKEN' in os.environ:
         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
-        provider_tokens[ProviderType.GITLAB] = ProviderToken(
-            token=SecretStr(gitlab_token)
-        )
+        provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
 
     secret_store = (
         UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
@@ -158,7 +154,7 @@ def create_memory(
 
     if runtime:
         # sets available hosts
-        memory.set_runtime_info(runtime)
+        memory.set_runtime_info(runtime, {})
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(

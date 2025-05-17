@@ -57,7 +57,7 @@ describe("UserActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("onLogout should not be called when the user is not logged in", async () => {
+  test("logout button is always enabled", async () => {
     render(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
@@ -66,6 +66,6 @@ describe("UserActions", () => {
     const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
-    expect(onLogoutMock).not.toHaveBeenCalled();
+    expect(onLogoutMock).toHaveBeenCalledOnce();
   });
 });
