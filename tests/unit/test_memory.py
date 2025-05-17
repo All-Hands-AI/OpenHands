@@ -26,7 +26,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.storage.memory import InMemoryFileStore
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import PromptManager, RepositoryInfo, ContextualInfo
 
 
 @pytest.fixture
@@ -431,7 +431,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         'DATABASE_URL': 'Connection string for the database',
         'SECRET_TOKEN': 'Authentication token for secure operations',
     }
-    runtime_info = RuntimeInfo(
+    runtime_info = ContextualInfo(
         date='2025-05-15',
         available_hosts={'test-host.example.com': 8080},
         additional_agent_instructions='Test instructions',

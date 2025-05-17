@@ -22,7 +22,7 @@ from openhands.microagent import (
     load_microagents_from_dir,
 )
 from openhands.runtime.base import Runtime
-from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import RepositoryInfo, ContextualInfo
 
 GLOBAL_MICROAGENTS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(openhands.__file__)),
@@ -64,7 +64,7 @@ class Memory:
 
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
-        self.runtime_info: RuntimeInfo | None = None
+        self.runtime_info: ContextualInfo | None = None
 
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
@@ -304,7 +304,7 @@ class Memory:
         date = str(utc_now.date())
 
         if runtime.web_hosts or runtime.additional_agent_instructions:
-            self.runtime_info = RuntimeInfo(
+            self.runtime_info = ContextualInfo(
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
@@ -312,7 +312,7 @@ class Memory:
                 context_message=context_message,
             )
         else:
-            self.runtime_info = RuntimeInfo(
+            self.runtime_info = ContextualInfo(
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
                 context_message=context_message,

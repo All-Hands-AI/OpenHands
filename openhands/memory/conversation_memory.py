@@ -41,7 +41,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import PromptManager, RepositoryInfo, ContextualInfo
 
 
 class ConversationMemory:
@@ -447,14 +447,14 @@ class ConversationMemory:
                 date = obs.date
 
                 if obs.runtime_hosts or obs.additional_agent_instructions:
-                    runtime_info = RuntimeInfo(
+                    runtime_info = ContextualInfo(
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(
+                    runtime_info = ContextualInfo(
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )

@@ -10,7 +10,7 @@ from openhands.events.observation.agent import MicroagentKnowledge
 
 
 @dataclass
-class RuntimeInfo:
+class ContextualInfo:
     date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
@@ -74,7 +74,7 @@ class PromptManager:
     def build_workspace_context(
         self,
         repository_info: RepositoryInfo | None,
-        runtime_info: RuntimeInfo | None,
+        runtime_info: ContextualInfo | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""

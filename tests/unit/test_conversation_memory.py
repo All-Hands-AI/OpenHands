@@ -37,7 +37,7 @@ from openhands.events.observation.files import FileEditObservation, FileReadObse
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import PromptManager, RepositoryInfo, ContextualInfo
 
 
 @pytest.fixture
@@ -701,7 +701,7 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
     assert isinstance(call_args['repository_info'], RepositoryInfo)
     assert call_args['repository_info'].repo_name == 'test-repo'
     assert call_args['repository_info'].repo_directory == '/path/to/repo'
-    assert isinstance(call_args['runtime_info'], RuntimeInfo)
+    assert isinstance(call_args['runtime_info'], ContextualInfo)
     assert call_args['runtime_info'].available_hosts == {'localhost': 8080}
     assert (
         call_args['repo_instructions']

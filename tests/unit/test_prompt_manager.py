@@ -7,7 +7,7 @@ from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
 from openhands.microagent import BaseMicroagent
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import PromptManager, RepositoryInfo, ContextualInfo
 
 
 @pytest.fixture
@@ -214,7 +214,7 @@ each of which has a corresponding port:
 
     # Create repository and runtime information
     repo_info = RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo')
-    runtime_info = RuntimeInfo(
+    runtime_info = ContextualInfo(
         date='02/12/1232',
         available_hosts={'example.com': 8080},
         additional_agent_instructions='You know everything about this runtime.',
