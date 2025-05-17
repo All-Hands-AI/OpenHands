@@ -27,9 +27,7 @@ function SecretsSettingsScreen() {
   const isSaas = config?.APP_MODE === "saas";
   const hasProviderSet = providers.length > 0;
 
-  const [view, setView] = React.useState<
-    "list" | "add-secret-form" | "edit-secret-form"
-  >("list");
+  const [view, setView] = React.useState<"list" | "add" | "edit">("list");
   const [selectedSecret, setSelectedSecret] = React.useState<string | null>(
     null,
   );
@@ -104,7 +102,7 @@ function SecretsSettingsScreen() {
                 title={secret.name}
                 description={secret.description}
                 onEdit={() => {
-                  setView("edit-secret-form");
+                  setView("edit");
                   setSelectedSecret(secret.name);
                 }}
                 onDelete={() => {
@@ -122,16 +120,16 @@ function SecretsSettingsScreen() {
           testId="add-secret-button"
           type="button"
           variant="primary"
-          onClick={() => setView("add-secret-form")}
+          onClick={() => setView("add")}
           isDisabled={isLoadingSecrets}
         >
           {t("SECRETS$ADD_NEW_SECRET")}
         </BrandButton>
       )}
 
-      {(view === "add-secret-form" || view === "edit-secret-form") && (
+      {(view === "add" || view === "edit") && (
         <SecretForm
-          mode={view === "add-secret-form" ? "add" : "edit"}
+          mode={view === "add" ? "add" : "edit"}
           selectedSecret={selectedSecret}
           onCancel={() => setView("list")}
         />

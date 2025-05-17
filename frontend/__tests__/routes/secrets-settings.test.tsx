@@ -142,7 +142,7 @@ describe("Secret actions", () => {
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     const secrets = screen.queryAllByTestId("secret-item");
 
     expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
@@ -192,7 +192,7 @@ describe("Secret actions", () => {
     await userEvent.click(editButton);
 
     // render edit form
-    const editForm = screen.getByTestId("edit-secret-form");
+    const editForm = screen.getByTestId("SECRETS$EDIT_SECRET_FORM_ID");
 
     expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
     expect(editForm).toBeInTheDocument();
@@ -243,7 +243,7 @@ describe("Secret actions", () => {
     expect(screen.queryByTestId("add-secret-form")).not.toBeInTheDocument();
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     expect(secretForm).toBeInTheDocument();
 
     // cancel button
@@ -259,7 +259,7 @@ describe("Secret actions", () => {
     await userEvent.click(editButton);
 
     // render edit form
-    const editForm = screen.getByTestId("edit-secret-form");
+    const editForm = screen.getByTestId("SECRETS$EDIT_SECRET_FORM_ID");
     expect(editForm).toBeInTheDocument();
     expect(screen.queryAllByTestId("secret-item")).toHaveLength(0);
 
@@ -285,7 +285,7 @@ describe("Secret actions", () => {
     await userEvent.click(editButton);
 
     // render edit form
-    const editForm = screen.getByTestId("edit-secret-form");
+    const editForm = screen.getByTestId("SECRETS$EDIT_SECRET_FORM_ID");
 
     expect(editForm).toBeInTheDocument();
     expect(screen.queryAllByTestId("secret-item")).toHaveLength(0);
@@ -408,7 +408,7 @@ describe("Secret actions", () => {
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     expect(secretForm).toBeInTheDocument();
     expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
   });
@@ -422,7 +422,7 @@ describe("Secret actions", () => {
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     expect(secretForm).toBeInTheDocument();
 
     // enter details
@@ -459,7 +459,7 @@ describe("Secret actions", () => {
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     expect(secretForm).toBeInTheDocument();
 
     // enter details
@@ -502,7 +502,7 @@ describe("Secret actions", () => {
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     expect(secretForm).toBeInTheDocument();
 
     // enter details
@@ -543,7 +543,7 @@ describe("Secret actions", () => {
     const button = await screen.findByTestId("add-secret-button");
     await userEvent.click(button);
 
-    const secretForm = screen.getByTestId("add-secret-form");
+    const secretForm = screen.getByTestId("SECRETS$ADD_SECRET_FORM_ID");
     expect(secretForm).toBeInTheDocument();
 
     // enter details

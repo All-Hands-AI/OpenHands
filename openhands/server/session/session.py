@@ -21,6 +21,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     NullObservation,
+    RecallObservation,
 )
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation

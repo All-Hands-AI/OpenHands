@@ -3,18 +3,21 @@ import { I18nKey } from "#/i18n/declaration";
 import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
 import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 import ExportIcon from "#/icons/export.svg?react";
+import SummarizeIcon from "#/icons/summarize.svg?react";
 import { TrajectoryActionButton } from "#/components/shared/buttons/trajectory-action-button";
 
 interface TrajectoryActionsProps {
   onPositiveFeedback: () => void;
   onNegativeFeedback: () => void;
   onExportTrajectory: () => void;
+  onSummarizeConversation: () => void;
 }
 
 export function TrajectoryActions({
   onPositiveFeedback,
   onNegativeFeedback,
   onExportTrajectory,
+  onSummarizeConversation,
 }: TrajectoryActionsProps) {
   const { t } = useTranslation();
 
@@ -37,6 +40,12 @@ export function TrajectoryActions({
         onClick={onExportTrajectory}
         icon={<ExportIcon width={15} height={15} />}
         tooltip={t(I18nKey.BUTTON$EXPORT_CONVERSATION)}
+      />
+      <TrajectoryActionButton
+        testId="summarize-conversation"
+        onClick={onSummarizeConversation}
+        icon={<SummarizeIcon width={15} height={15} />}
+        tooltip={t(I18nKey.BUTTON$SUMMARIZE_CONVERSATION)}
       />
     </div>
   );
