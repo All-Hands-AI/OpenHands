@@ -75,6 +75,7 @@ class RecallObservation(Observation):
     additional_agent_instructions: str = ''
     date: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
+    context_message: str | None = None
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)

@@ -91,6 +91,7 @@ class Session:
         settings: Settings,
         initial_message: MessageAction | None,
         replay_json: str | None,
+        context_message: str | None = None,
     ) -> None:
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -160,6 +161,7 @@ class Session:
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
             custom_secrets = settings.custom_secrets
+            context_message = settings.context_message
 
         try:
             await self.agent_session.start(
@@ -176,6 +178,7 @@ class Session:
                 selected_branch=selected_branch,
                 initial_message=initial_message,
                 replay_json=replay_json,
+                context_message=context_message,
             )
         except MicroagentValidationError as e:
             self.logger.exception(f'Error creating agent_session: {e}')

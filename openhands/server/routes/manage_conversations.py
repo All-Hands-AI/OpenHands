@@ -61,6 +61,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    context_message: str | None = None
 
     model_config = {'extra': 'forbid'}
 
@@ -84,6 +85,7 @@ async def _create_new_conversation(
     replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
+    context_message: str | None = None,
 ) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
@@ -120,6 +122,7 @@ async def _create_new_conversation(
     session_init_args['selected_repository'] = selected_repository
     session_init_args['custom_secrets'] = custom_secrets
     session_init_args['selected_branch'] = selected_branch
+    session_init_args['context_message'] = context_message
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -169,6 +172,7 @@ async def _create_new_conversation(
         user_id,
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
+        context_message=context_message,
     )
     logger.info(f'Finished initializing conversation {agent_loop_info.conversation_id}')
     return agent_loop_info
@@ -195,6 +199,7 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     git_provider = data.git_provider
+    context_message = data.context_message
 
     conversation_trigger = ConversationTrigger.GUI
 
@@ -222,6 +227,7 @@ async def new_conversation(
             image_urls=image_urls,
             replay_json=replay_json,
             conversation_trigger=conversation_trigger,
+            context_message=context_message,
         )
 
         return InitSessionResponse(
@@ -287,16 +293,23 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         user_id, conversation_ids
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
-    agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
-    urls_by_conversation_id = {info.conversation_id: info.url for info in agent_loop_info}
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info = await conversation_manager.get_agent_loop_info(
+        filter_to_sids=conversation_ids
+    )
+    urls_by_conversation_id = {
+        info.conversation_id: info.url for info in agent_loop_info
+    }
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
                 num_connections=sum(
-                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
                 url=urls_by_conversation_id.get(conversation.conversation_id),
@@ -316,10 +329,16 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        num_connections = len(
+            await conversation_manager.get_connections(filter_to_sids={conversation_id})
+        )
+        agent_loop_info = await conversation_manager.get_agent_loop_info(
+            filter_to_sids={conversation_id}
+        )
         url = agent_loop_info[0].url if agent_loop_info else None
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, url)
+        conversation_info = await _get_conversation_info(
+            metadata, is_running, num_connections, url
+        )
         return conversation_info
     except FileNotFoundError:
         return None

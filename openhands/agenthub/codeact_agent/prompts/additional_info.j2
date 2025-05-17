@@ -37,3 +37,8 @@ Today's date is {{ runtime_info.date }} (UTC).
 {% endif %}
 </RUNTIME_INFORMATION>
 {% endif %}
+{% if runtime_info and runtime_info.context_message -%}
+<CONTEXT_MESSAGE>
+{{ runtime_info.context_message }}
+</CONTEXT_MESSAGE>
+{% endif %}

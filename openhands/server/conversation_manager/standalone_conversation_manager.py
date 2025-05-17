@@ -245,12 +245,13 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
+        context_message: str | None = None,
     ) -> AgentLoopInfo:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if not session:
             session = await self._start_agent_loop(
-                sid, settings, user_id, initial_user_msg, replay_json
+                sid, settings, user_id, initial_user_msg, replay_json, context_message
             )
         return self._agent_loop_info_from_session(session)
 
@@ -261,6 +262,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
+        context_message: str | None = None,
     ) -> Session:
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
 
@@ -304,7 +306,9 @@ class StandaloneConversationManager(ConversationManager):
         )
         self._local_agent_loops_by_sid[sid] = session
         asyncio.create_task(
-            session.initialize_agent(settings, initial_user_msg, replay_json)
+            session.initialize_agent(
+                settings, initial_user_msg, replay_json, context_message
+            )
         )
         # This does not get added when resuming an existing conversation
         try:
@@ -475,7 +479,7 @@ class StandaloneConversationManager(ConversationManager):
                 continue
             results.append(self._agent_loop_info_from_session(session))
         return results
-    
+
     def _agent_loop_info_from_session(self, session: Session):
         return AgentLoopInfo(
             conversation_id=session.sid,
@@ -485,7 +489,7 @@ class StandaloneConversationManager(ConversationManager):
         )
 
     def _get_conversation_url(self, conversation_id: str):
-        return f"/conversations/{conversation_id}"
+        return f'/conversations/{conversation_id}'
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

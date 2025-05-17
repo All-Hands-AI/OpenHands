@@ -180,6 +180,9 @@ class Memory:
                 custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
                 if self.runtime_info is not None
                 else {},
+                context_message=self.runtime_info.context_message
+                if self.runtime_info and self.runtime_info.context_message is not None
+                else None,
             )
             return obs
         return None
@@ -290,7 +293,10 @@ class Memory:
             self.repository_info = None
 
     def set_runtime_info(
-        self, runtime: Runtime, custom_secrets_descriptions: dict[str, str]
+        self,
+        runtime: Runtime,
+        custom_secrets_descriptions: dict[str, str],
+        context_message: str | None = None,
     ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
@@ -303,10 +309,13 @@ class Memory:
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                context_message=context_message,
             )
         else:
             self.runtime_info = RuntimeInfo(
-                date=date, custom_secrets_descriptions=custom_secrets_descriptions
+                date=date,
+                custom_secrets_descriptions=custom_secrets_descriptions,
+                context_message=context_message,
             )
 
     def send_error_message(self, message_id: str, message: str):
