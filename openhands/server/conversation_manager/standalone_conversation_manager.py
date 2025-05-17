@@ -475,8 +475,8 @@ class StandaloneConversationManager(ConversationManager):
                 continue
             results.append(self._agent_loop_info_from_session(session))
         return results
-    
-    def _agent_loop_info_from_session(self, session: Session):
+
+    def _agent_loop_info_from_session(self, session: Session) -> AgentLoopInfo:
         return AgentLoopInfo(
             conversation_id=session.sid,
             url=self._get_conversation_url(session.sid),
@@ -484,8 +484,8 @@ class StandaloneConversationManager(ConversationManager):
             event_store=session.agent_session.event_stream,
         )
 
-    def _get_conversation_url(self, conversation_id: str):
-        return f"/conversations/{conversation_id}"
+    def _get_conversation_url(self, conversation_id: str) -> str:
+        return f'/conversations/{conversation_id}'
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

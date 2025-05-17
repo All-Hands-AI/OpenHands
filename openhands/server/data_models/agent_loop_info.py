@@ -8,6 +8,7 @@ class AgentLoopInfo:
     """
     Information about an agent loop - the URL on which to locate it and the event store
     """
+
     conversation_id: str
     url: str | None
     api_key: str | None
