@@ -22,6 +22,11 @@ from openhands.events.observation import CmdOutputObservation, MCPObservation
 # Bash-specific tests
 # ============================================================================================================================
 
+pytestmark = pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support MCP actions',
+)
+
 
 @pytest.fixture
 def sse_mcp_docker_server():
