@@ -397,7 +397,7 @@ class CLIRuntime(Runtime):
             actual_filename = os.path.join(
                 self._workspace_path, filename[len('/workspace/') :]
             )
-        if filename.startswith('/'):
+        elif filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
                 raise LLMMalformedActionError(
                     f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
@@ -412,7 +412,7 @@ class CLIRuntime(Runtime):
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
             raise LLMMalformedActionError(
-                f'Invalid path traversal: {filename}. Path resolves outside the workspace.'
+                f'Invalid path traversal: {filename}. Path resolves outside the workspace. Resolved: {resolved_path}, Workspace: {self._workspace_path}'
             )
 
         return resolved_path
