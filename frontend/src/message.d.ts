@@ -6,7 +6,7 @@ export type Message = {
   sender: "user" | "assistant";
   content: string;
   timestamp: string;
-  imageUrls?: string[];
+  imageUrls?: string[]; // Keep this for user messages with images
   type?: "thought" | "error" | "action";
   success?: boolean;
   pending?: boolean;

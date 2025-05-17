@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { JupyterLine } from "#/utils/parse-cell-content";
 import { paragraph } from "../markdown/paragraph";
+import { ImageCarousel } from "../images/image-carousel";
 
 interface JupyterCellOutputProps {
   lines: JupyterLine[];
@@ -24,6 +25,15 @@ export function JupyterCellOutput({ lines }: JupyterCellOutputProps) {
         {/* display the lines as plaintext or image */}
         {lines.map((line, index) => {
           if (line.type === "image") {
+            // If we have a direct URL to the image, use ImageCarousel
+            if (line.url) {
+              return (
+                <div key={index} className="my-2">
+                  <ImageCarousel size="medium" images={[line.url]} />
+                </div>
+              );
+            }
+            // Otherwise fall back to the markdown rendering of base64 image
             return (
               <div key={index}>
                 <Markdown
