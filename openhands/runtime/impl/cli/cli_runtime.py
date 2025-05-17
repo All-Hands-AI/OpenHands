@@ -263,7 +263,7 @@ class CLIRuntime(Runtime):
                         self._shell_stream_callback
                         and not timed_out
                         and not any(
-                            remaining_output in l for l in full_output_lines[:-1]
+                            remaining_output in line for line in full_output_lines[:-1]
                         )
                     ):
                         self._shell_stream_callback(remaining_output)
@@ -303,7 +303,6 @@ class CLIRuntime(Runtime):
         complete_output = ''.join(full_output_lines)
         obs_metadata = {'working_dir': self._workspace_path}
         if timed_out:
-            obs_metadata['timed_out'] = True
             obs_metadata['suffix'] = (
                 f'[The command timed out after {timeout:.1f} seconds. '
             )
