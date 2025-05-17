@@ -123,6 +123,7 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
     repo_directory?: string;
     repo_instructions?: string;
     runtime_hosts?: Record<string, number>;
+    custom_secrets_descriptions?: Record<string, string>;
     additional_agent_instructions?: string;
     date?: string;
     microagent_knowledge?: MicroagentKnowledge[];
