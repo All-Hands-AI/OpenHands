@@ -5,7 +5,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import Event, EventSource
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict

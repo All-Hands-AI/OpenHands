@@ -1,13 +1,19 @@
 """Tests for microagent loading in runtime."""
 
+import os
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from conftest import (
     _close_test_runtime,
     _load_runtime,
 )
 
-from openhands.microagent import KnowledgeMicroagent, RepoMicroagent, TaskMicroagent
+from openhands.core.config import MCPConfig
+from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands.mcp.utils import add_mcp_tools_to_agent
+from openhands.microagent import KnowledgeMicroagent, RepoMicroagent
 
 
 def _create_test_microagents(test_dir: str):
@@ -48,22 +54,6 @@ Repository-specific test instructions.
 """
     (microagents_dir / 'repo.md').write_text(repo_agent)
 
-    # Create test task agent in a nested directory
-    task_dir = microagents_dir / 'tasks' / 'nested'
-    task_dir.mkdir(parents=True, exist_ok=True)
-    task_agent = """---
-name: test_task
-type: task
-version: 1.0.0
-agent: CodeActAgent
----
-
-# Test Task
-
-Test task content
-"""
-    (task_dir / 'task.md').write_text(task_agent)
-
     # Create legacy repo instructions
     legacy_instructions = """# Legacy Instructions
 
@@ -88,25 +78,19 @@ def test_load_microagents_with_trailing_slashes(
             a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'test_knowledge_agent'
+        assert agent.name == 'knowledge/knowledge'
         assert 'test' in agent.triggers
         assert 'pytest' in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'test_repo_agent' in repo_names
+        assert 'repo' in repo_names
         assert 'repo_legacy' in repo_names
-
-        # Check task agents
-        assert len(task_agents) == 1
-        agent = task_agents[0]
-        assert agent.name == 'test_task'
 
     finally:
         _close_test_runtime(runtime)
@@ -131,25 +115,19 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
             a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'test_knowledge_agent'
+        assert agent.name == 'knowledge/knowledge'
         assert 'test' in agent.triggers
         assert 'pytest' in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'test_repo_agent' in repo_names
+        assert 'repo' in repo_names
         assert 'repo_legacy' in repo_names
-
-        # Check task agents
-        assert len(task_agents) == 1
-        agent = task_agents[0]
-        assert agent.name == 'test_task'
 
     finally:
         _close_test_runtime(runtime)
@@ -184,14 +162,100 @@ Repository-specific test instructions.
             a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
         ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
-        task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroagent)]
 
         assert len(knowledge_agents) == 0
         assert len(repo_agents) == 1
-        assert len(task_agents) == 0
 
         agent = repo_agents[0]
-        assert agent.name == 'test_repo_agent'
+        assert agent.name == 'repo'
 
     finally:
         _close_test_runtime(runtime)
+
+
+def test_default_tools_microagent_exists():
+    """Test that the default-tools microagent exists in the global microagents directory."""
+    # Get the path to the global microagents directory
+    import openhands
+
+    project_root = os.path.dirname(openhands.__file__)
+    parent_dir = os.path.dirname(project_root)
+    microagents_dir = os.path.join(parent_dir, 'microagents')
+
+    # Check that the default-tools.md file exists
+    default_tools_path = os.path.join(microagents_dir, 'default-tools.md')
+    assert os.path.exists(default_tools_path), (
+        f'default-tools.md not found at {default_tools_path}'
+    )
+
+    # Read the file and check its content
+    with open(default_tools_path, 'r') as f:
+        content = f.read()
+
+    # Verify it's a repo microagent (always activated)
+    assert 'type: repo' in content, 'default-tools.md should be a repo microagent'
+
+    # Verify it has the fetch tool configured
+    assert 'name: "fetch"' in content, 'default-tools.md should have a fetch tool'
+    assert 'command: "uvx"' in content, 'default-tools.md should use uvx command'
+    assert 'args: ["mcp-server-fetch"]' in content, (
+        'default-tools.md should use mcp-server-fetch'
+    )
+
+
+@pytest.mark.asyncio
+async def test_add_mcp_tools_from_microagents():
+    """Test that add_mcp_tools_to_agent adds tools from microagents."""
+    # Import ActionExecutionClient for mocking
+    from openhands.runtime.impl.action_execution.action_execution_client import (
+        ActionExecutionClient,
+    )
+
+    # Create mock objects
+    mock_agent = MagicMock()
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
+    mock_memory = MagicMock()
+    mock_mcp_config = MCPConfig()
+
+    # Configure the mock memory to return a microagent MCP config
+    mock_stdio_server = MCPStdioServerConfig(
+        name='test-tool', command='test-command', args=['test-arg1', 'test-arg2']
+    )
+    mock_microagent_mcp_config = MCPConfig(stdio_servers=[mock_stdio_server])
+    mock_memory.get_microagent_mcp_tools.return_value = [mock_microagent_mcp_config]
+
+    # Configure the mock runtime
+    mock_runtime.runtime_initialized = True
+    mock_runtime.get_updated_mcp_config.return_value = mock_microagent_mcp_config
+
+    # Mock the fetch_mcp_tools_from_config function to return a mock tool
+    mock_tool = {
+        'type': 'function',
+        'function': {
+            'name': 'test-tool',
+            'description': 'Test tool description',
+            'parameters': {},
+        },
+    }
+
+    with patch(
+        'openhands.mcp.utils.fetch_mcp_tools_from_config',
+        new=AsyncMock(return_value=[mock_tool]),
+    ):
+        # Call the function
+        await add_mcp_tools_to_agent(
+            mock_agent, mock_runtime, mock_memory, mock_mcp_config
+        )
+
+        # Verify that the memory's get_microagent_mcp_tools was called
+        mock_memory.get_microagent_mcp_tools.assert_called_once()
+
+        # Verify that the runtime's get_updated_mcp_config was called with the extra stdio servers
+        mock_runtime.get_updated_mcp_config.assert_called_once()
+        args, kwargs = mock_runtime.get_updated_mcp_config.call_args
+        assert len(args) == 1
+        assert len(args[0]) == 1
+        assert args[0][0].name == 'test-tool'
+
+        # Verify that the agent's set_mcp_tools was called with the mock tool
+        mock_agent.set_mcp_tools.assert_called_once_with([mock_tool])

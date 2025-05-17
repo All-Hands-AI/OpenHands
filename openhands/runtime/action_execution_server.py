@@ -8,9 +8,12 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
+import json
+import logging
 import mimetypes
 import os
 import shutil
+import sys
 import tempfile
 import time
 import traceback
@@ -23,6 +26,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from mcpm import MCPRouter, RouterConfig
+from mcpm.router.router import logger as mcp_router_logger
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -68,6 +73,13 @@ from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
+# Set MCP router logger to the same level as the main logger
+mcp_router_logger.setLevel(logger.getEffectiveLevel())
+
+
+if sys.platform == 'win32':
+    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+
 
 class ActionRequest(BaseModel):
     action: dict
@@ -93,7 +105,7 @@ def _execute_file_editor(
     view_range: list[int] | None = None,
     old_str: str | None = None,
     new_str: str | None = None,
-    insert_line: int | None = None,
+    insert_line: int | str | None = None,
     enable_linting: bool = False,
 ) -> tuple[str, tuple[str | None, str | None]]:
     """Execute file editor command and handle exceptions.
@@ -106,13 +118,24 @@ def _execute_file_editor(
         view_range: Optional view range tuple (start, end)
         old_str: Optional string to replace
         new_str: Optional replacement string
-        insert_line: Optional line number for insertion
+        insert_line: Optional line number for insertion (can be int or str)
         enable_linting: Whether to enable linting
 
     Returns:
         tuple: A tuple containing the output string and a tuple of old and new file content
     """
     result: ToolResult | None = None
+
+    # Convert insert_line from string to int if needed
+    if insert_line is not None and isinstance(insert_line, str):
+        try:
+            insert_line = int(insert_line)
+        except ValueError:
+            return (
+                f"ERROR:\nInvalid insert_line value: '{insert_line}'. Expected an integer.",
+                (None, None),
+            )
+
     try:
         result = editor(
             command=command,
@@ -126,6 +149,9 @@ def _execute_file_editor(
         )
     except ToolError as e:
         result = ToolResult(error=e.message)
+    except TypeError as e:
+        # Handle unexpected arguments or type errors
+        return f'ERROR:\n{str(e)}', (None, None)
 
     if result.error:
         return f'ERROR:\n{result.error}', (None, None)
@@ -160,13 +186,14 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session: BashSession | None = None
+        self.bash_session: BashSession | 'WindowsPowershellSession' | None = None  # type: ignore[name-defined]
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
+
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
@@ -192,6 +219,10 @@ class ActionExecutor:
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
+        if sys.platform == 'win32':
+            logger.warning('Browser environment not supported on windows')
+            return
+
         logger.debug('Initializing browser asynchronously')
         try:
             self.browser = BrowserEnv(self.browsergym_eval_env)
@@ -225,15 +256,25 @@ class ActionExecutor:
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
-        self.bash_session = BashSession(
-            work_dir=self._initial_cwd,
-            username=self.username,
-            no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
-            ),
-            max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
-        )
-        self.bash_session.initialize()
+        if sys.platform == 'win32':
+            self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
+                work_dir=self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+        else:
+            self.bash_session = BashSession(
+                work_dir=self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+            self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
         # Start browser initialization in the background
@@ -275,19 +316,55 @@ class ActionExecutor:
         logger.debug(f'Initializing plugin: {plugin.name}')
 
         if isinstance(plugin, JupyterPlugin):
+            # Escape backslashes in Windows path
+            cwd = self.bash_session.cwd.replace('\\', '/')
             await self.run_ipython(
-                IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
+                IPythonRunCellAction(code=f'import os; os.chdir(r"{cwd}")')
             )
 
     async def _init_bash_commands(self):
-        INIT_COMMANDS = [
-            'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG=$(pwd)/.git_config'
-            if os.environ.get('LOCAL_RUNTIME_MODE') == '1'
-            else 'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"'
-        ]
-        logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        INIT_COMMANDS = []
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+        is_windows = sys.platform == 'win32'
+
+        # Determine git config commands based on platform and runtime mode
+        if is_local_runtime:
+            if is_windows:
+                # Windows, local - split into separate commands
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.name "openhands"'
+                )
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
+                )
+                INIT_COMMANDS.append(
+                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
+                )
+            else:
+                # Linux/macOS, local
+                base_git_config = (
+                    'git config --file ./.git_config user.name "openhands" && '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
+                    'export GIT_CONFIG=$(pwd)/.git_config'
+                )
+                INIT_COMMANDS.append(base_git_config)
+        else:
+            # Non-local (implies Linux/macOS)
+            base_git_config = (
+                'git config --global user.name "openhands" && '
+                'git config --global user.email "openhands@all-hands.dev"'
+            )
+            INIT_COMMANDS.append(base_git_config)
+
+        # Determine no-pager command
+        if is_windows:
+            no_pager_cmd = 'function git { git.exe --no-pager $args }'
+        else:
+            no_pager_cmd = 'alias git="git --no-pager"'
+
+        INIT_COMMANDS.append(no_pager_cmd)
+
+        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.set_hard_timeout(300)
@@ -309,19 +386,23 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        if action.is_static:
-            path = action.cwd or self._initial_cwd
-            result = await AsyncBashSession.execute(action.command, path)
-            obs = CmdOutputObservation(
-                content=result.content,
-                exit_code=result.exit_code,
-                command=action.command,
-            )
-            return obs
+        try:
+            if action.is_static:
+                path = action.cwd or self._initial_cwd
+                result = await AsyncBashSession.execute(action.command, path)
+                obs = CmdOutputObservation(
+                    content=result.content,
+                    exit_code=result.exit_code,
+                    command=action.command,
+                )
+                return obs
 
-        assert self.bash_session is not None
-        obs = await call_sync_from_async(self.bash_session.execute, action)
-        return obs
+            assert self.bash_session is not None
+            obs = await call_sync_from_async(self.bash_session.execute, action)
+            return obs
+        except Exception as e:
+            logger.error(f'Error running command: {e}')
+            return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
@@ -334,9 +415,9 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
-                reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
+                # escape windows paths
+                cwd = self.bash_session.cwd.replace('\\', '/')
+                reset_jupyter_cwd_code = f'import os; os.chdir("{cwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
                     _aux_action
@@ -516,12 +597,20 @@ class ActionExecutor:
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
+        if self.browser is None:
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
         await self._ensure_browser_ready()
-        return await browse(action, self.browser)
+        return await browse(action, self.browser, self.initial_cwd)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        if self.browser is None:
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
         await self._ensure_browser_ready()
-        return await browse(action, self.browser)
+        return await browse(action, self.browser, self.initial_cwd)
 
     def close(self):
         self.memory_monitor.stop_monitoring()
@@ -568,10 +657,15 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
+    mcp_router: MCPRouter | None = None
+    MCP_ROUTER_PROFILE_PATH = os.path.join(
+        os.path.dirname(__file__), 'mcp', 'config.json'
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        global client
+        global client, mcp_router
+        logger.info('Initializing ActionExecutor...')
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -580,9 +674,70 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        logger.info('ActionExecutor initialized.')
+
+        # Initialize and mount MCP Router
+        logger.info('Initializing MCP Router...')
+        mcp_router = MCPRouter(
+            profile_path=MCP_ROUTER_PROFILE_PATH,
+            router_config=RouterConfig(
+                api_key=SESSION_API_KEY,
+                auth_enabled=bool(SESSION_API_KEY),
+            ),
+        )
+        allowed_origins = ['*']
+        sse_app = await mcp_router.get_sse_server_app(
+            allow_origins=allowed_origins, include_lifespan=False
+        )
+
+        # Check for route conflicts before mounting
+        main_app_routes = {route.path for route in app.routes}
+        sse_app_routes = {route.path for route in sse_app.routes}
+        conflicting_routes = main_app_routes.intersection(sse_app_routes)
+
+        if conflicting_routes:
+            logger.error(f'Route conflicts detected: {conflicting_routes}')
+            raise RuntimeError(
+                f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+            )
+
+        app.mount('/', sse_app)
+        logger.info(
+            f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
+        )
+
+        # Additional debug logging
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Main app routes:')
+            for route in main_app_routes:
+                logger.debug(f'  {route}')
+            logger.debug('MCP SSE server app routes:')
+            for route in sse_app_routes:
+                logger.debug(f'  {route}')
+
         yield
+
         # Clean up & release the resources
-        client.close()
+        logger.info('Shutting down MCP Router...')
+        if mcp_router:
+            try:
+                await mcp_router.shutdown()
+                logger.info('MCP Router shutdown successfully.')
+            except Exception as e:
+                logger.error(f'Error shutting down MCP Router: {e}', exc_info=True)
+        else:
+            logger.info('MCP Router instance not found for shutdown.')
+
+        logger.info('Closing ActionExecutor...')
+        if client:
+            try:
+                client.close()
+                logger.info('ActionExecutor closed successfully.')
+            except Exception as e:
+                logger.error(f'Error closing ActionExecutor: {e}', exc_info=True)
+        else:
+            logger.info('ActionExecutor instance not found for closing.')
+        logger.info('Shutdown complete.')
 
     app = FastAPI(lifespan=lifespan)
 
@@ -649,7 +804,6 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
@@ -658,6 +812,51 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
+
+    @app.post('/update_mcp_server')
+    async def update_mcp_server(request: Request):
+        assert mcp_router is not None
+        assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
+
+        # Use synchronous file operations outside of async function
+        def read_profile():
+            with open(MCP_ROUTER_PROFILE_PATH, 'r') as f:
+                return json.load(f)
+
+        current_profile = read_profile()
+        assert 'default' in current_profile
+        assert isinstance(current_profile['default'], list)
+
+        # Get the request body
+        mcp_tools_to_sync = await request.json()
+        if not isinstance(mcp_tools_to_sync, list):
+            raise HTTPException(
+                status_code=400, detail='Request must be a list of MCP tools to sync'
+            )
+
+        logger.info(
+            f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious profile: {json.dumps(current_profile, indent=2)}'
+        )
+        current_profile['default'] = mcp_tools_to_sync
+
+        # Use synchronous file operations outside of async function
+        def write_profile(profile):
+            with open(MCP_ROUTER_PROFILE_PATH, 'w') as f:
+                json.dump(profile, f)
+
+        write_profile(current_profile)
+
+        # Manually reload the profile and update the servers
+        mcp_router.profile_manager.reload()
+        servers_wait_for_update = mcp_router.get_unique_servers()
+        await mcp_router.update_servers(servers_wait_for_update)
+        logger.info(
+            f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
+        )
+
+        return JSONResponse(
+            status_code=200, content={'detail': 'MCP server updated successfully'}
+        )
 
     @app.post('/upload_file')
     async def upload_file(
@@ -775,7 +974,7 @@ if __name__ == '__main__':
 
         To list files:
         ```sh
-        curl http://localhost:3000/api/list-files
+        curl -X POST -d '{"path": "/"}' http://localhost:3000/list_files
         ```
 
         Args:

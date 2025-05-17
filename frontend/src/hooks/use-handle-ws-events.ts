@@ -28,7 +28,6 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 
 export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
-  const endSession = useEndSession();
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
@@ -41,7 +40,6 @@ export const useHandleWSEvents = () => {
     if (isServerError(event)) {
       if (event.error_code === 401) {
         displayErrorToast("Session expired.");
-        endSession();
         return;
       }
 
@@ -107,5 +105,5 @@ export const useHandleWSEvents = () => {
       // Show notification
       displaySuccessToast(t(I18nKey.AGENT$MODE_EXECUTE));
     }
-  }, [events.length, dispatch, endSession, send, t]);
+  }, [events.length, dispatch, send, t]);
 };

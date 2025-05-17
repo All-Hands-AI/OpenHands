@@ -2,16 +2,16 @@
 
 このガイドでは、独自の評価ベンチマークをOpenHandsフレームワークに統合する方法の概要を説明します。
 
-## 環境のセットアップとLLMの設定
+## 環境のセットアップとLLM設定
 
-ローカル開発環境のセットアップ方法については、[こちら](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)の手順に従ってください。
-開発モードのOpenHandsは、ほとんどの設定を追跡するために`config.toml`を使用します。
+ローカル開発環境のセットアップについては、[こちら](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)の手順に従ってください。
+開発モードのOpenHandsでは、ほとんどの設定を追跡するために`config.toml`を使用します。
 
-複数のLLMを定義して使用するために使用できる設定ファイルの例を以下に示します。
+以下は、複数のLLMを定義して使用するための設定ファイルの例です：
 
 ```toml
 [llm]
-# 重要: ここにAPIキーを追加し、モデルを評価したいものに設定してください
+# 重要: ここにAPIキーを追加し、評価したいモデルを設定してください
 model = "claude-3-5-sonnet-20241022"
 api_key = "sk-XXX"
 
@@ -30,7 +30,7 @@ temperature = 0.0
 
 ## コマンドラインでOpenHandsを使用する方法
 
-OpenHandsは、以下の形式でコマンドラインから実行できます。
+OpenHandsは以下の形式でコマンドラインから実行できます：
 
 ```bash
 poetry run python ./openhands/core/main.py \
@@ -40,7 +40,7 @@ poetry run python ./openhands/core/main.py \
         -l <llm_config>
 ```
 
-例:
+例えば：
 
 ```bash
 poetry run python ./openhands/core/main.py \
@@ -50,38 +50,39 @@ poetry run python ./openhands/core/main.py \
         -l llm
 ```
 
-このコマンドは、以下の設定でOpenHandsを実行します:
+このコマンドは以下の設定でOpenHandsを実行します：
 - 最大10回の反復
-- 指定されたタスクの説明
+- 指定されたタスク説明
 - CodeActAgentを使用
-- `config.toml`ファイルの`llm`セクションで定義されたLLM設定
+- `config.toml`ファイルの`llm`セクションで定義されたLLM設定を使用
 
-## OpenHandsの動作原理
+## OpenHandsの仕組み
 
-OpenHandsのメインエントリーポイントは`openhands/core/main.py`にあります。簡略化された動作の流れは次のとおりです。
+OpenHandsのメインエントリーポイントは`openhands/core/main.py`にあります。以下は動作の簡略化されたフローです：
 
 1. コマンドライン引数を解析し、設定を読み込む
-2. `create_runtime()`を使用して実行時環境を作成する
+2. `create_runtime()`を使用してランタイム環境を作成する
 3. 指定されたエージェントを初期化する
-4. `run_controller()`を使用してコントローラーを実行する
-   - 実行時環境をエージェントにアタッチする
+4. `run_controller()`を使用してコントローラーを実行する：
+   - ランタイムをエージェントに接続する
    - エージェントのタスクを実行する
    - 完了時に最終状態を返す
 
-`run_controller()`関数は、OpenHandsの実行の中核です。エージェント、実行時環境、およびタスク間の相互作用を管理し、ユーザー入力シミュレーションやイベント処理などを処理します。
+`run_controller()`関数はOpenHandsの実行の中核です。エージェント、ランタイム、タスク間の相互作用を管理し、ユーザー入力シミュレーションやイベント処理などを処理します。
 
 
-## 最も簡単な開始方法: 既存のベンチマークの探索
+## 最も簡単な始め方：既存のベンチマークを探索する
 
-リポジトリの[`evaluation/benchmarks/`ディレクトリ](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks)にある様々な評価ベンチマークを確認することをお勧めします。
+リポジトリの[`evaluation/benchmarks/`ディレクトリ](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks)で利用可能な様々な評価ベンチマークを確認することをお勧めします。
 
-独自のベンチマークを統合するには、ニーズに最も近いものから始めることをお勧めします。このアプローチは、既存の構造を基にして特定の要件に適応させることで、統合プロセスを大幅に合理化できます。
+独自のベンチマークを統合するには、あなたのニーズに最も近いものから始めることをお勧めします。このアプローチにより、既存の構造を基に構築し、特定の要件に適応させることができるため、統合プロセスが大幅に効率化されます。
 
 ## 評価ワークフローの作成方法
 
-ベンチマークの評価ワークフローを作成するには、次の手順に従います。
 
-1. 関連するOpenHandsユーティリティをインポートします:
+ベンチマークの評価ワークフローを作成するには、以下の手順に従ってください：
+
+1. 関連するOpenHandsユーティリティをインポートする：
    ```python
     import openhands.agenthub
     from evaluation.utils.shared import (
@@ -106,7 +107,7 @@ OpenHandsのメインエントリーポイントは`openhands/core/main.py`に�
     from openhands.runtime.runtime import Runtime
    ```
 
-2. 設定を作成します:
+2. 設定を作成する：
    ```python
    def get_config(instance: pd.Series, metadata: EvalMetadata) -> AppConfig:
        config = AppConfig(
@@ -123,15 +124,15 @@ OpenHandsのメインエントリーポイントは`openhands/core/main.py`に�
        return config
    ```
 
-3. 実行時環境を初期化し、評価環境をセットアップします:
+3. ランタイムを初期化し、評価環境をセットアップする：
    ```python
    def initialize_runtime(runtime: Runtime, instance: pd.Series):
-       # ここで評価環境をセットアップします
+       # ここで評価環境をセットアップする
        # 例えば、環境変数の設定、ファイルの準備など
        pass
    ```
 
-4. 各インスタンスを処理する関数を作成します:
+4. 各インスタンスを処理する関数を作成する：
    ```python
    from openhands.utils.async_utils import call_async_from_sync
    def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
@@ -163,7 +164,7 @@ OpenHandsのメインエントリーポイントは`openhands/core/main.py`に�
        )
    ```
 
-5. 評価を実行します:
+5. 評価を実行する：
    ```python
    metadata = make_metadata(llm_config, dataset_name, agent_class, max_iterations, eval_note, eval_output_dir)
    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
@@ -178,71 +179,71 @@ OpenHandsのメインエントリーポイントは`openhands/core/main.py`に�
    )
    ```
 
-このワークフローでは、設定をセットアップし、実行時環境を初期化し、エージェントを実行して各インスタンスのアクションを評価し、結果を`EvalOutput`オブジェクトに収集します。`run_evaluation`関数は、並列化と進捗状況の追跡を処理します。
+このワークフローでは、設定をセットアップし、ランタイム環境を初期化し、エージェントを実行してそのアクションを評価することで各インスタンスを処理し、結果を`EvalOutput`オブジェクトに収集します。`run_evaluation`関数は並列化と進捗追跡を処理します。
 
-`get_instruction`、`your_user_response_function`、および`evaluate_agent_actions`関数は、特定のベンチマークの要件に応じてカスタマイズすることを忘れないでください。
+`get_instruction`、`your_user_response_function`、`evaluate_agent_actions`関数を特定のベンチマーク要件に合わせてカスタマイズすることを忘れないでください。
 
-この構造に従うことで、OpenHandsフレームワーク内で独自のベンチマークの堅牢な評価ワークフローを作成できます。
+この構造に従うことで、OpenHandsフレームワーク内でベンチマーク用の堅牢な評価ワークフローを作成できます。
 
 
 ## `user_response_fn`の理解
 
-`user_response_fn`は、OpenHandsの評価ワークフローにおいて重要な役割を果たします。これは、評価プロセス中にエージェントとのユーザー対話をシミュレートし、自動化された応答を可能にします。この関数は、エージェントのクエリやアクションに対して一貫性のある事前定義された応答を提供したい場合に特に役立ちます。
+`user_response_fn`はOpenHandsの評価ワークフローにおける重要なコンポーネントです。エージェントとのユーザー対話をシミュレートし、評価プロセス中に自動応答を可能にします。この関数は、エージェントの問い合わせやアクションに対して一貫した、事前定義された応答を提供したい場合に特に役立ちます。
 
 
 ### ワークフローと相互作用
 
-アクションと`user_response_fn`を処理するための正しいワークフローは次のとおりです。
+アクションと`user_response_fn`を処理する正しいワークフローは次のとおりです：
 
 1. エージェントがタスクを受け取り、処理を開始する
 2. エージェントがアクションを発行する
-3. アクションが実行可能な場合(CmdRunAction、IPythonRunCellActionなど):
-   - 実行時環境がアクションを処理する
-   - 実行時環境が観測結果を返す
-4. アクションが実行不可能な場合(通常はMessageAction):
+3. アクションが実行可能な場合（例：CmdRunAction、IPythonRunCellAction）：
+   - ランタイムがアクションを処理する
+   - ランタイムが観察結果を返す
+4. アクションが実行不可能な場合（通常はMessageAction）：
    - `user_response_fn`が呼び出される
    - シミュレートされたユーザー応答を返す
-5. エージェントは、観測結果またはシミュレートされた応答のいずれかを受け取る
-6. ステップ2〜5が、タスクが完了するか最大反復回数に達するまで繰り返される
+5. エージェントが観察結果またはシミュレートされた応答を受け取る
+6. タスクが完了するか最大反復回数に達するまで、ステップ2〜5を繰り返す
 
-より正確な視覚的表現は次のとおりです。
+より正確な視覚的表現は次のとおりです：
 
 ```
-                 [Agent]
+                 [エージェント]
                     |
                     v
-               [Emit Action]
+               [アクション発行]
                     |
                     v
-            [Is Action Executable?]
+            [アクションは実行可能か？]
            /                       \
-         Yes                        No
+        はい                       いいえ
           |                          |
           v                          v
-     [Runtime]               [user_response_fn]
+     [ランタイム]             [user_response_fn]
           |                          |
           v                          v
-  [Return Observation]    [Simulated Response]
+  [観察結果を返す]      [シミュレートされた応答]
            \                        /
             \                      /
              v                    v
-           [Agent receives feedback]
+           [エージェントがフィードバックを受け取る]
                     |
                     v
-         [Continue or Complete Task]
+         [タスクを継続または完了]
 ```
 
-このワークフローでは:
+このワークフローでは：
 
-- 実行可能なアクション(コマンドの実行やコードの実行など)は、実行時環境によって直接処理される
-- 実行不可能なアクション(通常、エージェントがコミュニケーションを取ったり、明確化を求めたりする場合)は、`user_response_fn`によって処理される
-- エージェントは、実行時環境からの観測結果または`user_response_fn`からのシミュレートされた応答のいずれかのフィードバックを処理する
+- 実行可能なアクション（コマンドの実行やコードの実行など）はランタイムによって直接処理される
+- 実行不可能なアクション（通常、エージェントが通信や説明を求める場合）は`user_response_fn`によって処理される
+- エージェントは、ランタイムからの観察結果か`user_response_fn`からのシミュレートされた応答かにかかわらず、フィードバックを処理する
 
-このアプローチにより、具体的なアクションとシミュレートされたユーザー対話の両方を自動的に処理できるため、人的介入を最小限に抑えてエージェントのタスク完了能力をテストしたい評価シナリオに適しています。
+このアプローチにより、具体的なアクションとシミュレートされたユーザー対話の両方を自動的に処理できるため、最小限の人間の介入でタスクを完了するエージェントの能力をテストしたい評価シナリオに適しています。
 
 ### 実装例
 
-SWE-Benchの評価で使用される`user_response_fn`の例を以下に示します。
+以下はSWE-Bench評価で使用される`user_response_fn`の例です：
 
 ```python
 def codeact_user_response(state: State | None) -> str:
@@ -268,10 +269,10 @@ def codeact_user_response(state: State | None) -> str:
     return msg
 ```
 
-この関数は次のことを行います。
+この関数は以下を行います：
 
 1. エージェントに作業を続けるよう促す標準メッセージを提供する
-2. エージェントがユーザーとのコミュニケーションを試みた回数をチェックする
-3. エージェントが複数回試行した場合、諦めるオプションを提供する
+2. エージェントがユーザーとコミュニケーションを取ろうとした回数を確認する
+3. エージェントが複数回試みた場合、諦めるオプションを提供する
 
-この関数を使用することで、複数の評価実行全体で一貫した動作を確保し、エージェントが人間の入力を待って停止するのを防ぐことができます。
+この関数を使用することで、複数の評価実行にわたって一貫した動作を確保し、エージェントが人間の入力を待って立ち往生することを防ぐことができます。

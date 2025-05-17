@@ -107,6 +107,12 @@ function isRawTranslationKey(str) {
 const EXCLUDED_TECHNICAL_STRINGS = [
   "openid email profile", // OAuth scope string - not user-facing
   "OPEN_ISSUE", // Task type identifier, not a UI string
+  "Merge Request", // Git provider specific terminology
+  "GitLab API", // Git provider specific terminology
+  "Pull Request", // Git provider specific terminology
+  "GitHub API", // Git provider specific terminology
+  "add-secret-form", // Test ID for secret form
+  "edit-secret-form", // Test ID for secret form
 ];
 
 function isExcludedTechnicalString(str) {

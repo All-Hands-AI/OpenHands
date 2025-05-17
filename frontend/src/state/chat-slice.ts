@@ -34,6 +34,8 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "recall",
   "think",
   "system",
+  "call_tool_mcp",
+  "mcp",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -140,6 +142,16 @@ export const chatSlice = createSlice({
       } else if (actionID === "recall") {
         // skip recall actions
         return;
+      } else if (actionID === "call_tool_mcp") {
+        // Format MCP action with name and arguments
+        const name = action.payload.args.name || "";
+        const args = action.payload.args.arguments || {};
+        text = `**MCP Tool Call:** ${name}\n\n`;
+        // Include thought if available
+        if (action.payload.args.thought) {
+          text += `\n\n**Thought:**\n${action.payload.args.thought}`;
+        }
+        text += `\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -198,6 +210,17 @@ export const chatSlice = createSlice({
               recallObs.extras.runtime_hosts,
             )) {
               content += `\n\n- ${host} (port ${port})`;
+            }
+          }
+          if (
+            recallObs.extras.custom_secrets_descriptions &&
+            Object.keys(recallObs.extras.custom_secrets_descriptions).length > 0
+          ) {
+            content += `\n\n**Custom Secrets**`;
+            for (const [name, description] of Object.entries(
+              recallObs.extras.custom_secrets_descriptions,
+            )) {
+              content += `\n\n- $${name}: ${description}`;
             }
           }
           if (recallObs.extras.repo_instructions) {
@@ -304,6 +327,19 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
+      } else if (observationID === "mcp") {
+        // For MCP observations, we want to show the content as formatted output
+        // similar to how run/run_ipython actions are handled
+        let { content } = observation.payload;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        content = `${causeMessage.content}\n\n**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+        causeMessage.content = content; // Observation content includes the action
+        // Set success based on whether there's an error message
+        causeMessage.success = !observation.payload.content
+          .toLowerCase()
+          .includes("error:");
       }
     },
 

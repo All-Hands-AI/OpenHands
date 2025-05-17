@@ -35,8 +35,8 @@ def generate_file_viewer_html(file_path: str) -> str:
     # Check if the file extension is supported
     if file_extension not in supported_extensions:
         raise ValueError(
-            f"Unsupported file extension: {file_extension}. "
-            f"Supported extensions are: {', '.join(supported_extensions)}"
+            f'Unsupported file extension: {file_extension}. '
+            f'Supported extensions are: {", ".join(supported_extensions)}'
         )
 
     # Check if the file exists

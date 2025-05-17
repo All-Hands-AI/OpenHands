@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, Protocol
 
 from httpx import AsyncClient, HTTPError, HTTPStatusError
+from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -29,6 +30,57 @@ class SuggestedTask(BaseModel):
     issue_number: int
     title: str
 
+    def get_provider_terms(self) -> dict:
+        if self.git_provider == ProviderType.GITLAB:
+            return {
+                'requestType': 'Merge Request',
+                'requestTypeShort': 'MR',
+                'apiName': 'GitLab API',
+                'tokenEnvVar': 'GITLAB_TOKEN',
+                'ciSystem': 'CI pipelines',
+                'ciProvider': 'GitLab',
+                'requestVerb': 'merge request',
+            }
+        elif self.git_provider == ProviderType.GITHUB:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'GitHub API',
+                'tokenEnvVar': 'GITHUB_TOKEN',
+                'ciSystem': 'GitHub Actions',
+                'ciProvider': 'GitHub',
+                'requestVerb': 'pull request',
+            }
+
+        raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
+
+    def get_prompt_for_task(
+        self,
+    ) -> str:
+        task_type = self.task_type
+        issue_number = self.issue_number
+        repo = self.repo
+
+        env = Environment(
+            loader=FileSystemLoader('openhands/integrations/templates/suggested_task')
+        )
+
+        template = None
+        if task_type == TaskType.MERGE_CONFLICTS:
+            template = env.get_template('merge_conflict_prompt.j2')
+        elif task_type == TaskType.FAILING_CHECKS:
+            template = env.get_template('failing_checks_prompt.j2')
+        elif task_type == TaskType.UNRESOLVED_COMMENTS:
+            template = env.get_template('unresolved_comments_prompt.j2')
+        elif task_type == TaskType.OPEN_ISSUE:
+            template = env.get_template('open_issue_prompt.j2')
+        else:
+            raise ValueError(f'Unsupported task type: {task_type}')
+
+        terms = self.get_provider_terms()
+
+        return template.render(issue_number=issue_number, repo=repo, **terms)
+
 
 class User(BaseModel):
     id: int
@@ -37,6 +89,13 @@ class User(BaseModel):
     company: str | None = None
     name: str | None = None
     email: str | None = None
+
+
+class Branch(BaseModel):
+    name: str
+    commit_sha: str
+    protected: bool
+    last_push_date: str | None = None  # ISO 8601 format date string
 
 
 class Repository(BaseModel):
@@ -112,7 +171,7 @@ class BaseGitService(ABC):
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
         logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
-        return UnknownException('Unknown error')
+        return UnknownException(f'HTTP error {type(e).__name__}')
 
 
 class GitService(Protocol):
@@ -154,3 +213,11 @@ class GitService(Protocol):
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories"""
         ...
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        """Gets all repository details from repository name"""
+
+    async def get_branches(self, repository: str) -> list[Branch]:
+        """Get branches for a repository"""
