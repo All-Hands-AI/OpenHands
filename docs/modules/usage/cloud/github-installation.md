@@ -44,24 +44,12 @@ You can modify repository access at any time:
 
 ## Using OpenHands with GitHub
 
-Once you've granted repository access, you can use OpenHands with your GitHub repositories in several ways:
+Once you've granted repository access, you can use OpenHands with your GitHub repositories.
 
-### With Issues
-
-Label an issue with `openhands` and OpenHands will:
-1. Comment on the issue to let you know it's working on it
-2. Open a pull request if it determines that the issue has been successfully resolved
-3. Comment on the issue with a summary of the performed tasks and a link to the pull request
-
-### With Pull Requests
-
-Use `@openhands` in top-level or inline comments to:
-- Ask questions
-- Request updates
-- Get code explanations
+For details on how to use OpenHands with GitHub issues and pull requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
 
 ## Next Steps
 
-- [Access the OpenHands Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the OpenHands Cloud API](./cloud-api.md) to programmatically interact with OpenHands
-- [Set up the GitHub Resolver](./cloud-github-resolver.md) for more details on automating code fixes
+- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
+- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
+- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands

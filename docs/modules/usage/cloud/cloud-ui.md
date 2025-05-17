@@ -1,6 +1,6 @@
-# OpenHands Cloud UI
+# Cloud UI
 
-The OpenHands Cloud UI provides a web interface for interacting with OpenHands AI. This page explains how to access and use the OpenHands Cloud UI.
+The Cloud UI provides a web interface for interacting with OpenHands AI. This page explains how to access and use the OpenHands Cloud UI.
 
 ## Accessing the UI
 
@@ -47,6 +47,6 @@ The settings page allows you to:
 
 ## Next Steps
 
-- [Learn about the OpenHands Cloud API](./cloud-api.md)
-- [Set up the GitHub Resolver](./cloud-github-resolver.md)
+- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
+- [Learn about the Cloud API](./cloud-api.md) for programmatic access
 - [Return to Getting Started](./openhands-cloud.md)

@@ -39,23 +39,12 @@ You can modify repository access at any time:
 
 ## Using OpenHands with GitLab
 
-Once you've granted repository access, you can use OpenHands with your GitLab repositories in several ways:
+Once you've granted repository access, you can use OpenHands with your GitLab repositories.
 
-### With Issues
-
-Label an issue with `openhands` and OpenHands will:
-1. Comment on the issue to let you know it's working on it
-2. Open a merge request if it determines that the issue has been successfully resolved
-3. Comment on the issue with a summary of the performed tasks and a link to the merge request
-
-### With Merge Requests
-
-Use `@openhands` in comments to:
-- Ask questions
-- Request updates
-- Get code explanations
+For details on how to use OpenHands with GitLab issues and merge requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
 
 ## Next Steps
 
-- [Access the OpenHands Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the OpenHands Cloud API](./cloud-api.md) to programmatically interact with OpenHands
+- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
+- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
+- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands

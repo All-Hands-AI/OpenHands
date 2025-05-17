@@ -45,18 +45,18 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
-          label: 'OpenHands Cloud UI',
+          label: 'Cloud UI',
           id: 'usage/cloud/cloud-ui',
+        },
+        {
+          type: 'doc',
+          label: 'Cloud Issue Resolver',
+          id: 'usage/cloud/cloud-issue-resolver',
         },
         {
           type: 'doc',
           label: 'Cloud API',
           id: 'usage/cloud/cloud-api',
-        },
-        {
-          type: 'doc',
-          label: 'Cloud GitHub Resolver',
-          id: 'usage/cloud/cloud-github-resolver',
         },
       ],
     },
