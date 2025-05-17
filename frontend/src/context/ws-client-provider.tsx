@@ -15,6 +15,7 @@ import {
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -131,6 +132,7 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
+  const { data: conversation } = useUserConversation(conversationId);
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -217,6 +219,9 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
+    if (!conversation) {
+      return () => undefined; // conversation not yet loaded
+    }
 
     let sio = sioRef.current;
 
@@ -225,10 +230,15 @@ export function WsClientProvider({
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
       providers_set: providers,
+      api_key: conversation.api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
 
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+    let baseUrl = null;
+    if (conversation.url && !conversation.url.startsWith("/")) {
+      baseUrl = new URL(conversation.url).host;
+    } else {
+      baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+    }
 
     sio = io(baseUrl, {
       transports: ["websocket"],
@@ -249,7 +259,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [conversationId]);
+  }, [conversationId, conversation?.url]);
 
   React.useEffect(
     () => () => {

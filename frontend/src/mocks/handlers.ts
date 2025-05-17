@@ -54,6 +54,8 @@ const conversations: Conversation[] = [
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
+    url: null,
+    api_key: null,
   },
   {
     conversation_id: "2",
@@ -65,6 +67,8 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    url: null,
+    api_key: null,
   },
   {
     conversation_id: "3",
@@ -76,6 +80,8 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    url: null,
+    api_key: null,
   },
 ];
 
@@ -267,6 +273,8 @@ export const handlers = [
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",
+      url: null,
+      api_key: null,
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);

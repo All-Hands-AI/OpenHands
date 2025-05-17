@@ -17,6 +17,7 @@ import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { selectSystemMessage } from "#/state/chat-slice";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -112,9 +113,10 @@ export function ConversationCard({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const response = await fetch(
-          `/api/conversations/${conversationId}/vscode-url`,
-        );
+        const baseUrl =
+          OpenHands.getConversationUrl() ||
+          `/api/conversations/${conversationId}`;
+        const response = await fetch(`${baseUrl}/vscode-url`);
         const data = await response.json();
 
         if (data.vscode_url) {
