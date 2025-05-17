@@ -123,6 +123,8 @@ export function WsClientProvider({
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
+  const reconnectAttempts = React.useRef(0);
+  const reconnectTimeout = React.useRef<NodeJS.Timeout>();
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -140,8 +142,16 @@ export function WsClientProvider({
     sioRef.current.emit("oh_user_action", event);
   }
 
+  /**
+   * @author vbs_0
+   * Handles successful WebSocket connection and resets reconnection state
+   */
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    reconnectAttempts.current = 0;
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+    }
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -193,32 +203,59 @@ export function WsClientProvider({
     handleAssistantMessage(event);
   }
 
-  function handleDisconnect(data: unknown) {
+  /**
+   * @author vbs_0
+   * Handles WebSocket disconnection with exponential backoff retry
+   * Ensures only one socket is managed at a time and prevents duplicate connections
+   */
+  const handleDisconnect = React.useCallback(() => {
     setStatus(WsClientProviderStatus.DISCONNECTED);
-    const sio = sioRef.current;
-    if (!sio) {
+
+    if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
+      console.error("Max reconnection attempts reached");
       return;
     }
-    sio.io.opts.query = sio.io.opts.query || {};
-    sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
-    updateStatusWhenErrorMessagePresent(data);
-  }
+
+    if (sioRef.current) {
+      sioRef.current.close();
+      sioRef.current = null;
+    }
+
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+    }
+
+    const backoffDelay = Math.min(
+      INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current) * (0.5 + Math.random()),
+      MAX_RECONNECT_DELAY
+    );
+
+    reconnectTimeout.current = setTimeout(() => {
+      reconnectAttempts.current++;
+      console.log(
+        `Attempting to reconnect (${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})`
+      );
+      connectToWs();
+    }, backoffDelay);
+  }, [connectToWs]);
 
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
   }
 
-  React.useEffect(() => {
-    lastEventRef.current = null;
-  }, [conversationId]);
-
-  React.useEffect(() => {
-    if (!conversationId) {
-      throw new Error("No conversation ID provided");
+  /**
+   * @author vbs_0
+   * Establishes WebSocket connection with improved error handling and state management
+   * Uses the same URL logic as the rest of the file for consistency
+   */
+  const connectToWs = React.useCallback(() => {
+    if (sioRef.current) {
+      sioRef.current.close();
+      sioRef.current = null;
     }
 
-    let sio = sioRef.current;
+    setStatus(WsClientProviderStatus.CONNECTING);
 
     const lastEvent = lastEventRef.current;
     const query = {
@@ -226,41 +263,51 @@ export function WsClientProvider({
       conversation_id: conversationId,
       providers_set: providers,
     };
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
 
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+    try {
+      const socket = io(baseUrl, {
+        transports: ["websocket"],
+        query,
+      });
 
-    sio = io(baseUrl, {
-      transports: ["websocket"],
-      query,
-    });
-    sio.on("connect", handleConnect);
-    sio.on("oh_event", handleMessage);
-    sio.on("connect_error", handleError);
-    sio.on("connect_failed", handleError);
-    sio.on("disconnect", handleDisconnect);
+      socket.on("connect", handleConnect);
+      socket.on("oh_event", handleMessage);
+      socket.on("connect_error", handleError);
+      socket.on("connect_failed", handleError);
+      socket.on("disconnect", handleDisconnect);
 
-    sioRef.current = sio;
+      sioRef.current = socket;
+    } catch (error) {
+      console.error("Failed to establish WebSocket connection:", error);
+      handleDisconnect();
+    }
+  }, [conversationId, providers, handleConnect, handleDisconnect, handleError, handleMessage]);
 
+  /**
+   * @author vbs_0
+   * Effect to manage WebSocket connection lifecycle and cleanup
+   * Only one socket is created and managed at a time
+   */
+  React.useEffect(() => {
+    connectToWs();
     return () => {
-      sio.off("connect", handleConnect);
-      sio.off("oh_event", handleMessage);
-      sio.off("connect_error", handleError);
-      sio.off("connect_failed", handleError);
-      sio.off("disconnect", handleDisconnect);
+      if (sioRef.current) {
+        sioRef.current.close();
+        sioRef.current = null;
+      }
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
+      reconnectAttempts.current = 0;
     };
+  }, [connectToWs]);
+
+  React.useEffect(() => {
+    lastEventRef.current = null;
   }, [conversationId]);
 
-  React.useEffect(
-    () => () => {
-      const sio = sioRef.current;
-      if (sio) {
-        sio.off("disconnect", handleDisconnect);
-        sio.disconnect();
-      }
-    },
-    [],
-  );
+  // (Removed duplicate disconnect cleanup effect)
 
   const value = React.useMemo<UseWsClient>(
     () => ({
@@ -279,3 +326,12 @@ export function useWsClient() {
   const context = React.useContext(WsClientContext);
   return context;
 }
+
+/**
+ * WebSocket reconnection constants and state management
+ * @author vbs_0
+ * Implements exponential backoff for reconnection attempts to fix terminal update issues
+ */
+const MAX_RECONNECT_ATTEMPTS = 5;
+const INITIAL_RECONNECT_DELAY = 1000;
+const MAX_RECONNECT_DELAY = 30000;
