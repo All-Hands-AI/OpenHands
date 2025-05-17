@@ -23,7 +23,6 @@ from openhands.llm.tool_names import (
     EXECUTE_BASH_TOOL_NAME,
     FINISH_TOOL_NAME,
     STR_REPLACE_EDITOR_TOOL_NAME,
-    WEB_READ_TOOL_NAME,
 )
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
@@ -234,17 +233,6 @@ Review the changes and make sure they are as expected. Edit the file again if ne
 
 """,
     },
-    'web_read': {
-        'read_docs': """
-ASSISTANT: Let me check the Flask documentation for table formatting:
-<function=web_read>
-<parameter=url>https://flask.palletsprojects.com/en/3.0.x/quickstart/</parameter>
-</function>
-
-USER: EXECUTION RESULT of [web_read]:
-[Documentation content about Flask HTML templates and responses]
-"""
-    },
     'browser': {
         'view_page': """
 ASSISTANT: Let me check how the page looks in the browser:
@@ -282,8 +270,6 @@ def get_example_for_tools(tools: list[dict]) -> str:
                 available_tools.add('execute_bash')
             elif name == STR_REPLACE_EDITOR_TOOL_NAME:
                 available_tools.add('str_replace_editor')
-            elif name == WEB_READ_TOOL_NAME:
-                available_tools.add('web_read')
             elif name == BROWSER_TOOL_NAME:
                 available_tools.add('browser')
             elif name == FINISH_TOOL_NAME:
@@ -309,9 +295,6 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
 
     if 'execute_bash' in available_tools:
         example += TOOL_EXAMPLES['execute_bash']['run_server']
-
-    if 'web_read' in available_tools:
-        example += TOOL_EXAMPLES['web_read']['read_docs']
 
     if 'browser' in available_tools:
         example += TOOL_EXAMPLES['browser']['view_page']
