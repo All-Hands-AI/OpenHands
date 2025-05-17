@@ -2,45 +2,47 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
 * State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
+* If `path` is a file, `view` displays the result of applying `cat -n`. Remember, `cat -n` outputs line numbers too, which are **not** actually in the file. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
 * The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
 
+### **CRITICAL NOTES FOR USING `str_replace`**
+1. **IGNORE LINE NUMBERS**:
+   - The `view` command includes line numbers for reference, but these numbers **are not part of the actual file**.
+   - **Do not include line numbers in `old_str` or `new_str` when using `str_replace`**, as this will cause the edit to fail.
 
-Before using this tool:
-1. Use the view tool to understand the file's contents and context
-2. Verify the directory path is correct (only applicable when creating new files):
-   - Use the view tool to verify the parent directory exists and is the correct location
+2. **EXACT MATCHING REQUIRED**:
+   - The `old_str` parameter must match **exactly** one or more consecutive lines from the actual file (excluding line numbers), including all whitespace and indentation.
+   - If `old_str` is not unique in the file, the replacement will not be performed.
 
-When making edits:
-   - Ensure the edit results in idiomatic, correct code
-   - Do not leave the code in a broken state
-   - Always use absolute file paths (starting with /)
+3. **REPLACEMENT RULES**:
+   - The `new_str` parameter should contain only the edited lines that replace the `old_str`.
+   - Both `old_str` and `new_str` must be different.
 
-CRITICAL REQUIREMENTS FOR USING THIS TOOL:
+### **Workflow to Ensure Correct Edits**
+1. **Use `view` to inspect the file**, but remember that line numbers are only for reference.
+2. **When extracting `old_str`, remove the line numbers**, and ensure it matches the actual file content.
+3. **Submit edits in a single message** when making multiple replacements in the same file.
 
-1. EXACT MATCHING: The `old_str` parameter must match EXACTLY one or more consecutive lines from the file, including all whitespace and indentation. The tool will fail if `old_str` matches multiple locations or doesn't match exactly with the file content.
-
-2. UNIQUENESS: The `old_str` must uniquely identify a single instance in the file:
-   - Include sufficient context before and after the change point (3-5 lines recommended)
-   - If not unique, the replacement will not be performed
-
-3. REPLACEMENT: The `new_str` parameter should contain the edited lines that replace the `old_str`. Both strings must be different.
-
-Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
+Failing to remove line numbers from `old_str` will cause the edit to be rejected.
 """
+
 
 _SIMPLIFIED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
 * State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
+* If `path` is a file, `view` displays the result of applying `cat -n`. **These line numbers are not part of the actual file** and should be ignored when using `str_replace`.
+* If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
 * The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
-Notes for using the `str_replace` command:
-* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
-* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
-* The `new_str` parameter should contain the edited lines that should replace the `old_str`
+
+### **Important for `str_replace`**
+- **IGNORE LINE NUMBERS**: The `view` output includes line numbers, but they should **not** be included in `old_str` or `new_str` as they are not in the actual file.
+- **MATCH EXACTLY**: `old_str` must match **one or more consecutive lines exactly** (excluding line numbers) for the replacement to work.
+- **ENSURE UNIQUENESS**: If `old_str` appears multiple times in the file, the replacement will fail.
+
+Failing to remove line numbers from `old_str` will cause the edit to be rejected.
 """
 
 

@@ -179,7 +179,7 @@ def build_runtime_image_in_folder(
     source_tag = f'{lock_tag}_{get_hash_for_source_files()}'
     hash_image_name = f'{runtime_image_repo}:{source_tag}'
 
-    logger.info(f'Building image: {hash_image_name}')
+    logger.info(f'Building image: {hash_image_name}, base image: {base_image}')
     if force_rebuild:
         logger.debug(
             f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'

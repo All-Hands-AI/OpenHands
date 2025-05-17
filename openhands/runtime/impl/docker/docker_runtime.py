@@ -251,14 +251,23 @@ class DockerRuntime(ActionExecutionClient):
                 self.config.workspace_mount_path: {
                     'bind': self.config.workspace_mount_path_in_sandbox,
                     'mode': 'rw',
-                }
+                },
+                '/var/run/docker.sock': {
+                    'bind': '/var/run/docker.sock',
+                    'mode': 'rw',
+                },
             }
             logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
-            volumes = None
+            volumes = {
+                '/var/run/docker.sock': {
+                    'bind': '/var/run/docker.sock',
+                    'mode': 'rw',
+                },
+            }
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
