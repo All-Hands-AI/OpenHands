@@ -1,4 +1,5 @@
 import asyncio
+import os
 from types import MappingProxyType
 from typing import Any
 from urllib.parse import parse_qs
@@ -71,6 +72,9 @@ async def connect(connection_id: str, environ: dict) -> None:
         if not conversation_id:
             logger.error('No conversation_id in query params')
             raise ConnectionRefusedError('No conversation_id in query params')
+
+        if _invalid_api_key(query_params):
+            raise ConnectionRefusedError('invalid_api_key')
 
         cookies_str = environ.get('HTTP_COOKIE', '')
         # Get Authorization header from the environment
@@ -160,3 +164,13 @@ async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
 async def disconnect(connection_id: str) -> None:
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)
+
+
+def _invalid_api_key(query_params: dict[str, list[Any]]):
+    session_api_key = os.getenv('SESSION_API_KEY')
+    if not session_api_key:
+        return False
+    query_api_keys = query_params['api_key']
+    if not query_api_keys:
+        return True
+    return query_api_keys[0] != session_api_key
