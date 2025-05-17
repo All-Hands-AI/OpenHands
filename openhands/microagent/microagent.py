@@ -1,6 +1,7 @@
 import io
+import re
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 import frontmatter
 from pydantic import BaseModel
@@ -9,7 +10,7 @@ from openhands.core.exceptions import (
     MicroagentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroagentMetadata, MicroagentType
+from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
 
 
 class BaseMicroagent(BaseModel):
@@ -91,13 +92,24 @@ class BaseMicroagent(BaseModel):
         subclass_map = {
             MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
             MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
+            MicroagentType.TASK: TaskMicroagent,
         }
 
         # Infer the agent type:
-        # 1. If triggers exist -> KNOWLEDGE (optional)
-        # 2. Else (no triggers) -> REPO (always active)
+        # 1. If inputs exist -> TASK
+        # 2. If triggers exist -> KNOWLEDGE
+        # 3. Else (no triggers) -> REPO (always active)
         inferred_type: MicroagentType
-        if metadata.triggers:
+        if metadata.inputs:
+            inferred_type = MicroagentType.TASK
+            # Add a trigger for the agent name if not already present
+            trigger = f'/{metadata.name}'
+            if not metadata.triggers or trigger not in metadata.triggers:
+                if not metadata.triggers:
+                    metadata.triggers = [trigger]
+                else:
+                    metadata.triggers.append(trigger)
+        elif metadata.triggers:
             inferred_type = MicroagentType.KNOWLEDGE
         else:
             # No triggers, default to REPO
@@ -131,8 +143,8 @@ class KnowledgeMicroagent(BaseMicroagent):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroagentType.KNOWLEDGE:
-            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE')
+        if self.type not in [MicroagentType.KNOWLEDGE, MicroagentType.TASK]:
+            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE or TASK')
 
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
@@ -171,6 +183,57 @@ class RepoMicroagent(BaseMicroagent):
             )
 
 
+class TaskMicroagent(KnowledgeMicroagent):
+    """TaskMicroagent is a special type of KnowledgeMicroagent that requires user input.
+
+    These microagents are triggered by a special format: "/{agent_name}"
+    and will prompt the user for any required inputs before proceeding.
+    """
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.type != MicroagentType.TASK:
+            raise ValueError(
+                f'TaskMicroagent initialized with incorrect type: {self.type}'
+            )
+
+        # Append a prompt to ask for missing variables
+        self._append_missing_variables_prompt()
+
+    def _append_missing_variables_prompt(self) -> None:
+        """Append a prompt to ask for missing variables."""
+        # Check if the content contains any variables or has inputs defined
+        if not self.requires_user_input() and not self.metadata.inputs:
+            return
+
+        prompt = "\n\nIf the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task."
+        self.content += prompt
+
+    def extract_variables(self, content: str) -> List[str]:
+        """Extract variables from the content.
+
+        Variables are in the format ${variable_name}.
+        """
+        pattern = r'\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}'
+        matches = re.findall(pattern, content)
+        return matches
+
+    def requires_user_input(self) -> bool:
+        """Check if this microagent requires user input.
+
+        Returns True if the content contains variables in the format ${variable_name}.
+        """
+        # Check if the content contains any variables
+        variables = self.extract_variables(self.content)
+        logger.debug(f'This microagent requires user input: {variables}')
+        return len(variables) > 0
+
+    @property
+    def inputs(self) -> List[InputMetadata]:
+        """Get the inputs for this microagent."""
+        return self.metadata.inputs
+
+
 def load_microagents_from_dir(
     microagent_dir: Union[str, Path],
 ) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
@@ -182,7 +245,7 @@ def load_microagents_from_dir(
         microagent_dir: Path to the microagents directory (e.g. .openhands/microagents)
 
     Returns:
-        Tuple of (repo_agents, knowledge_agents, task_agents) dictionaries
+        Tuple of (repo_agents, knowledge_agents) dictionaries
     """
     if isinstance(microagent_dir, str):
         microagent_dir = Path(microagent_dir)
@@ -203,6 +266,7 @@ def load_microagents_from_dir(
                 if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
+                    # Both KnowledgeMicroagent and TaskMicroagent go into knowledge_agents
                     knowledge_agents[agent.name] = agent
                 logger.debug(
                     f'Loaded agent {agent.name} from {file}. Type: {type(agent)}'
