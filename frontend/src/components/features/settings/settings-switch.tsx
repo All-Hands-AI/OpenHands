@@ -26,9 +26,6 @@ export function SettingsSwitch({
     onToggle?.(value);
   };
 
-  // Determine if this is a controlled or uncontrolled component
-  const isControlled = controlledIsToggled !== undefined;
-
   return (
     <label className="flex items-center gap-2 w-fit cursor-pointer">
       <input
@@ -37,8 +34,7 @@ export function SettingsSwitch({
         name={name}
         type="checkbox"
         onChange={(e) => handleToggle(e.target.checked)}
-        checked={isControlled ? controlledIsToggled : undefined}
-        defaultChecked={!isControlled ? defaultIsToggled : undefined}
+        checked={controlledIsToggled ?? isToggled}
       />
 
       <StyledSwitchComponent isToggled={controlledIsToggled ?? isToggled} />

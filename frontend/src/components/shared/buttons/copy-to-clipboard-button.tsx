@@ -4,12 +4,14 @@ import CopyIcon from "#/icons/copy.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 
 interface CopyToClipboardButtonProps {
+  isHidden: boolean;
   isDisabled: boolean;
   onClick: () => void;
   mode: "copy" | "copied";
 }
 
 export function CopyToClipboardButton({
+  isHidden,
   isDisabled,
   onClick,
   mode,
@@ -17,6 +19,7 @@ export function CopyToClipboardButton({
   const { t } = useTranslation();
   return (
     <button
+      hidden={isHidden}
       disabled={isDisabled}
       data-testid="copy-to-clipboard"
       type="button"
@@ -24,7 +27,7 @@ export function CopyToClipboardButton({
       aria-label={t(
         mode === "copy" ? I18nKey.BUTTON$COPY : I18nKey.BUTTON$COPIED,
       )}
-      className="button-base p-1"
+      className="button-base p-1 absolute top-1 right-1"
     >
       {mode === "copy" && <CopyIcon width={15} height={15} />}
       {mode === "copied" && <CheckmarkIcon width={15} height={15} />}

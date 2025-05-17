@@ -29,6 +29,7 @@ export function MessageActions({
         <MessageFeedback messageId={messageId} feedback={feedback} isCompact />
       )}
       <CopyToClipboardButton
+        isHidden={!isHovering}
         isDisabled={isCopy}
         onClick={onCopy}
         mode={isCopy ? "copied" : "copy"}
