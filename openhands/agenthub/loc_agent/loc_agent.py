@@ -1,7 +1,4 @@
-from functools import partial
-
 from openhands.agenthub.codeact_agent import CodeActAgent
-from openhands.agenthub.codeact_agent.function_calling import response_to_actions
 from openhands.agenthub.loc_agent.function_calling import (
     convert_tool_call_to_action,
 )
@@ -31,9 +28,6 @@ class LocAgent(CodeActAgent):
 
         self.tools = get_loc_agent_tools()
         logger.debug(
-            f"TOOLS loaded for LocAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
+            f'TOOLS loaded for LocAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
         )
-        self.response_to_actions = partial(
-            response_to_actions,
-            convert_tool_call_to_action=convert_tool_call_to_action,
-        )
+        self.convert_tool_call_to_action = convert_tool_call_to_action

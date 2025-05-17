@@ -229,11 +229,12 @@ def test_ctrl_c():
     # Send Ctrl+C
     obs = session.execute(CmdRunAction('C-c', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.metadata.exit_code == 130  # Standard exit code for Ctrl+C
-    assert (
-        obs.metadata.suffix
-        == '\n[The command completed with exit code 130. CTRL+C was sent.]'
-    )
+    # Check that the process was interrupted (exit code can be 1 or 130 depending on the shell/OS)
+    assert obs.metadata.exit_code in (
+        1,
+        130,
+    )  # Accept both common exit codes for interrupted processes
+    assert 'CTRL+C was sent' in obs.metadata.suffix
     assert obs.metadata.prefix == ''
     assert session.prev_status == BashCommandStatus.COMPLETED
 

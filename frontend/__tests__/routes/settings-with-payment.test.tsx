@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRoutesStub } from "react-router";
@@ -6,11 +6,33 @@ import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import * as FeatureFlags from "#/utils/feature-flags";
+
+// Mock the i18next hook
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => {
+        const translations: Record<string, string> = {
+          "SETTINGS$NAV_GIT": "Git",
+          "SETTINGS$NAV_APPLICATION": "Application",
+          "SETTINGS$NAV_CREDITS": "Credits",
+          "SETTINGS$NAV_API_KEYS": "API Keys",
+          "SETTINGS$NAV_LLM": "LLM",
+          "SETTINGS$TITLE": "Settings"
+        };
+        return translations[key] || key;
+      },
+      i18n: {
+        changeLanguage: vi.fn(),
+      },
+    }),
+  };
+});
 
 describe("Settings Billing", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  vi.spyOn(FeatureFlags, "BILLING_SETTINGS").mockReturnValue(true);
 
   const RoutesStub = createRoutesStub([
     {
@@ -21,46 +43,54 @@ describe("Settings Billing", () => {
           Component: () => <PaymentForm />,
           path: "/settings/billing",
         },
+        {
+          Component: () => <div data-testid="git-settings-screen" />,
+          path: "/settings/git",
+        },
       ],
     },
   ]);
 
   const renderSettingsScreen = () =>
-    renderWithProviders(<RoutesStub initialEntries={["/settings"]} />);
+    renderWithProviders(<RoutesStub initialEntries={["/settings/billing"]} />);
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should not render the navbar if OSS mode", async () => {
+  it("should not render the credits tab if OSS mode", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
 
-    await waitFor(() => {
-      const navbar = screen.queryByTestId("settings-navbar");
-      expect(navbar).not.toBeInTheDocument();
-    });
+    const navbar = await screen.findByTestId("settings-navbar");
+    const credits = within(navbar).queryByText("Credits");
+    expect(credits).not.toBeInTheDocument();
   });
 
-  it("should render the navbar if SaaS mode", async () => {
+  it("should render the credits tab if SaaS mode and billing is enabled", async () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
 
-    await waitFor(() => {
-      const navbar = screen.getByTestId("settings-navbar");
-      within(navbar).getByText("Account");
-      within(navbar).getByText("Credits");
-    });
+    const navbar = await screen.findByTestId("settings-navbar");
+    within(navbar).getByText("Credits");
   });
 
   it("should render the billing settings if clicking the credits item", async () => {
@@ -69,6 +99,10 @@ describe("Settings Billing", () => {
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+      },
     });
 
     renderSettingsScreen();
@@ -78,6 +112,6 @@ describe("Settings Billing", () => {
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
-    within(billingSection).getByText("Manage Credits");
+    expect(billingSection).toBeInTheDocument();
   });
 });

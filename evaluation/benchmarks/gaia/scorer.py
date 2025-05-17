@@ -21,7 +21,7 @@ def split_string(
 ) -> list[str]:
     if char_list is None:
         char_list = [',', ';']
-    pattern = f"[{''.join(char_list)}]"
+    pattern = f'[{"".join(char_list)}]'
     return re.split(pattern, s)
 
 

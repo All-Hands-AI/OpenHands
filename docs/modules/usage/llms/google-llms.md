@@ -7,16 +7,17 @@ OpenHands uses LiteLLM to make calls to Google's chat models. You can find their
 
 ## Gemini - Google AI Studio Configs
 
-When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
+When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
 - `LLM Provider` to `Gemini`
 - `LLM Model` to the model you will be using.
-If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. gemini/&lt;model-name&gt; like `gemini/gemini-1.5-pro`).
+If the model is not in the list, enable `Advanced` options, and enter it in `Custom Model` 
+(e.g. gemini/&lt;model-name&gt; like `gemini/gemini-2.0-flash`).
 - `API Key` to your Gemini API key
 
 ## VertexAI - Google Cloud Platform Configs
 
 To use Vertex AI through Google Cloud Platform when running OpenHands, you'll need to set the following environment
-variables using `-e` in the [docker run command](/modules/usage/installation#start-the-app):
+variables using `-e` in the [docker run command](../installation#running-openhands):
 
 ```
 GOOGLE_APPLICATION_CREDENTIALS="<json-dump-of-gcp-service-account-json>"
@@ -24,7 +25,8 @@ VERTEXAI_PROJECT="<your-gcp-project-id>"
 VERTEXAI_LOCATION="<your-gcp-location>"
 ```
 
-Then set the following in the OpenHands UI through the Settings:
+Then set the following in the OpenHands UI through the Settings under the `LLM` tab:
 - `LLM Provider` to `VertexAI`
 - `LLM Model` to the model you will be using.
-If the model is not in the list, toggle `Advanced` options, and enter it in `Custom Model` (e.g. vertex_ai/&lt;model-name&gt;).
+If the model is not in the list, enable `Advanced` options, and enter it in `Custom Model` 
+(e.g. vertex_ai/&lt;model-name&gt;).

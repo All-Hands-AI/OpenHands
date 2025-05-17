@@ -36,7 +36,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.rolling_logger = RollingLogger(max_lines=10)
 
     @staticmethod
-    def check_buildx(is_podman: bool = False):
+    def check_buildx(is_podman: bool = False) -> bool:
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
@@ -157,6 +157,14 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         self.rolling_logger.start(
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
+        )
+
+        builder_cmd = ['docker', 'buildx', 'use', 'default']
+        subprocess.Popen(
+            builder_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
         )
 
         try:

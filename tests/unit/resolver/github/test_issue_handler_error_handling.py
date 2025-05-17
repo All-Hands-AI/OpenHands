@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
-import requests
 from litellm.exceptions import RateLimitError
 
 from openhands.core.config import LLMConfig
@@ -43,11 +43,11 @@ def test_handle_nonexistent_issue_reference():
 
     # Mock the requests.get to simulate a 404 error
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+    mock_response.raise_for_status.side_effect = httpx.HTTPError(
         '404 Client Error: Not Found'
     )
 
-    with patch('requests.get', return_value=mock_response):
+    with patch('httpx.get', return_value=mock_response):
         # Call the method with a non-existent issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
@@ -70,11 +70,11 @@ def test_handle_rate_limit_error():
 
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+    mock_response.raise_for_status.side_effect = httpx.HTTPError(
         '403 Client Error: Rate Limit Exceeded'
     )
 
-    with patch('requests.get', return_value=mock_response):
+    with patch('httpx.get', return_value=mock_response):
         # Call the method with an issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
@@ -96,9 +96,7 @@ def test_handle_network_error():
     )
 
     # Mock the requests.get to simulate a network error
-    with patch(
-        'requests.get', side_effect=requests.exceptions.ConnectionError('Network Error')
-    ):
+    with patch('httpx.get', side_effect=httpx.NetworkError('Network Error')):
         # Call the method with an issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
@@ -124,7 +122,7 @@ def test_successful_issue_reference():
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {'body': 'This is the referenced issue body'}
 
-    with patch('requests.get', return_value=mock_response):
+    with patch('httpx.get', return_value=mock_response):
         # Call the method with an issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
@@ -242,7 +240,9 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
         wait_time = mock_sleep.call_args[0][0]
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        ), (
+            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+        )
 
 
 @patch('openhands.llm.llm.litellm_completion')

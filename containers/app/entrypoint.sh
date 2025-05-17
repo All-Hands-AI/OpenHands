@@ -26,10 +26,6 @@ fi
 if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
   echo "Running OpenHands as root"
   export RUN_AS_OPENHANDS=false
-  mkdir -p /root/.cache/ms-playwright/
-  if [ -d "/home/openhands/.cache/ms-playwright/" ]; then
-    mv /home/openhands/.cache/ms-playwright/ /root/.cache/
-  fi
   "$@"
 else
   echo "Setting up enduser with id $SANDBOX_USER_ID"
@@ -58,10 +54,6 @@ else
   fi
 
   mkdir -p /home/enduser/.cache/huggingface/hub/
-  mkdir -p /home/enduser/.cache/ms-playwright/
-  if [ -d "/home/openhands/.cache/ms-playwright/" ]; then
-    mv /home/openhands/.cache/ms-playwright/ /home/enduser/.cache/
-  fi
 
   usermod -aG $DOCKER_SOCKET_GID enduser
   echo "Running as enduser"

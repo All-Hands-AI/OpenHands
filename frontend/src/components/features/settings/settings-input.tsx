@@ -7,12 +7,18 @@ interface SettingsInputProps {
   label: string;
   type: React.HTMLInputTypeAttribute;
   defaultValue?: string;
+  value?: string;
   placeholder?: string;
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   startContent?: React.ReactNode;
   className?: string;
   onChange?: (value: string) => void;
+  required?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
+  pattern?: string;
 }
 
 export function SettingsInput({
@@ -21,12 +27,18 @@ export function SettingsInput({
   label,
   type,
   defaultValue,
+  value,
   placeholder,
   showOptionalTag,
   isDisabled,
   startContent,
   className,
   onChange,
+  required,
+  min,
+  max,
+  step,
+  pattern,
 }: SettingsInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
@@ -37,12 +49,18 @@ export function SettingsInput({
       </div>
       <input
         data-testid={testId}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={(e) => onChange && onChange(e.target.value)}
         name={name}
         disabled={isDisabled}
         type={type}
         defaultValue={defaultValue}
+        value={value}
         placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+        required={required}
+        pattern={pattern}
         className={cn(
           "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",

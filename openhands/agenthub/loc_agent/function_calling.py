@@ -29,6 +29,7 @@ from openhands.events.action import (
 
 def convert_tool_call_to_action(
     tool_call: ChatCompletionMessageToolCall,
+    mcp_tool_names: list[str] | None = None,
 ) -> Action:
     action: Action
     try:

@@ -1,6 +1,8 @@
 from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.llm.tool_names import BROWSER_TOOL_NAME
+
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
     subsets=['bid', 'nav'],
@@ -18,6 +20,11 @@ More than 2-3 actions usually leads to failure or unexpected behavior. Example:
 fill('a12', 'example with "quotes"')
 click('a51')
 click('48', button='middle', modifiers=['Shift'])
+
+You can also use the browser to view pdf, png, jpg files.
+You should first check the content of /tmp/oh-server-url to get the server url, and then use it to view the file by `goto("{server_url}/view?path={absolute_file_path}")`.
+For example: `goto("http://localhost:8000/view?path=/workspace/test_document.pdf")`
+Note: The file should be downloaded to the local machine first before using the browser to view it.
 """
 
 _BROWSER_TOOL_DESCRIPTION = """
@@ -126,17 +133,17 @@ upload_file(bid: str, file: str | list[str])
 
 
 for _, action in _browser_action_space.action_set.items():
-    assert (
-        action.signature in _BROWSER_TOOL_DESCRIPTION
-    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
-    assert (
-        action.description in _BROWSER_TOOL_DESCRIPTION
-    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+    assert action.signature in _BROWSER_TOOL_DESCRIPTION, (
+        f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
+    )
+    assert action.description in _BROWSER_TOOL_DESCRIPTION, (
+        f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+    )
 
 BrowserTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='browser',
+        name=BROWSER_TOOL_NAME,
         description=_BROWSER_DESCRIPTION,
         parameters={
             'type': 'object',

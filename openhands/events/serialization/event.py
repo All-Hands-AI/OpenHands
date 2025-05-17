@@ -1,11 +1,11 @@
 from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel
 
 from openhands.events import Event, EventSource
-from openhands.events.observation.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
@@ -34,7 +34,6 @@ UNDERSCORE_KEYS = [
 ]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
-    'screenshot',
     'dom_object',
     'axtree_object',
     'active_page_index',
@@ -44,17 +43,20 @@ DELETE_FROM_TRAJECTORY_EXTRAS = {
     'extra_element_properties',
 }
 
-DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
+DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | {
+    'screenshot',
+    'set_of_marks',
+}
 
 
-def event_from_dict(data) -> 'Event':
+def event_from_dict(data: dict[str, Any]) -> 'Event':
     evt: Event
     if 'action' in data:
         evt = action_from_dict(data)
     elif 'observation' in data:
         evt = observation_from_dict(data)
     else:
-        raise ValueError('Unknown event type: ' + data)
+        raise ValueError(f'Unknown event type: {data}')
     for key in UNDERSCORE_KEYS:
         if key in data:
             value = data[key]
@@ -77,6 +79,11 @@ def event_from_dict(data) -> 'Event':
                     metrics.token_usages = [
                         TokenUsage(**usage) for usage in value.get('token_usages', [])
                     ]
+                    # Set accumulated token usage if available
+                    if 'accumulated_token_usage' in value:
+                        metrics._accumulated_token_usage = TokenUsage(
+                            **value.get('accumulated_token_usage', {})
+                        )
                 value = metrics
             setattr(evt, '_' + key, value)
     return evt
@@ -131,34 +138,19 @@ def event_to_dict(event: 'Event') -> dict:
         if hasattr(event, 'success'):
             d['success'] = event.success
     else:
-        raise ValueError('Event must be either action or observation')
+        raise ValueError(f'Event must be either action or observation. has: {event}')
     return d
 
 
-def event_to_trajectory(event: 'Event') -> dict:
+def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> dict:
     d = event_to_dict(event)
     if 'extras' in d:
-        remove_fields(d['extras'], DELETE_FROM_TRAJECTORY_EXTRAS)
-    return d
-
-
-def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
-    d = event_to_dict(event)
-    d.pop('id', None)
-    d.pop('cause', None)
-    d.pop('timestamp', None)
-    d.pop('message', None)
-    d.pop('image_urls', None)
-
-    # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
-    if 'args' in d:
-        d['args'].pop('blocking', None)
-        d['args'].pop('confirmation_state', None)
-
-    if 'extras' in d:
-        remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
-    if isinstance(event, Observation) and 'content' in d:
-        d['content'] = truncate_content(d['content'], max_message_chars)
+        remove_fields(
+            d['extras'],
+            DELETE_FROM_TRAJECTORY_EXTRAS
+            if include_screenshots
+            else DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS,
+        )
     return d
 
 

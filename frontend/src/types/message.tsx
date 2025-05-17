@@ -15,6 +15,30 @@ export interface ActionMessage {
 
   // The timestamp of the message
   timestamp: string;
+
+  // LLM metrics information
+  llm_metrics?: {
+    accumulated_cost: number;
+    accumulated_token_usage: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      cache_read_tokens: number;
+      cache_write_tokens: number;
+      context_window: number;
+      per_turn_token: number;
+    };
+  };
+
+  // Tool call metadata
+  tool_call_metadata?: {
+    model_response?: {
+      usage: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+      };
+    };
+  };
 }
 
 export interface ObservationMessage {
@@ -45,4 +69,5 @@ export interface StatusMessage {
   type: string;
   id?: string;
   message: string;
+  conversation_title?: string;
 }

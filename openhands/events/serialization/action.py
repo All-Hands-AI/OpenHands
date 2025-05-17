@@ -1,4 +1,4 @@
-import re
+from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events.action.action import Action
@@ -8,6 +8,7 @@ from openhands.events.action.agent import (
     AgentRejectAction,
     AgentThinkAction,
     ChangeAgentStateAction,
+    CondensationAction,
     RecallAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -21,7 +22,8 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
-from openhands.events.action.message import MessageAction
+from openhands.events.action.mcp import MCPAction
+from openhands.events.action.message import MessageAction, SystemMessageAction
 
 actions = (
     NullAction,
@@ -39,12 +41,15 @@ actions = (
     RecallAction,
     ChangeAgentStateAction,
     MessageAction,
+    SystemMessageAction,
+    CondensationAction,
+    MCPAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
 
 
-def handle_action_deprecated_args(args: dict) -> dict:
+def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
     # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
@@ -53,14 +58,20 @@ def handle_action_deprecated_args(args: dict) -> dict:
     if 'translated_ipython_code' in args:
         code = args.pop('translated_ipython_code')
 
-        # Check if it's a file_editor call
-        file_editor_pattern = r'print\(file_editor\(\*\*(.*?)\)\)'
-        if code is not None and (match := re.match(file_editor_pattern, code)):
+        # Check if it's a file_editor call using a prefix check for efficiency
+        file_editor_prefix = 'print(file_editor(**'
+        if (
+            code is not None
+            and code.startswith(file_editor_prefix)
+            and code.endswith('))')
+        ):
             try:
                 # Extract and evaluate the dictionary string
                 import ast
 
-                file_args = ast.literal_eval(match.group(1))
+                # Extract the dictionary string between the prefix and the closing parentheses
+                dict_str = code[len(file_editor_prefix) : -2]  # Remove prefix and '))'
+                file_args = ast.literal_eval(dict_str)
 
                 # Update args with the extracted file editor arguments
                 args.update(file_args)
@@ -122,4 +133,5 @@ def action_from_dict(action: dict) -> Action:
         raise LLMMalformedActionError(
             f'action={action} has the wrong arguments: {str(e)}'
         )
+    assert isinstance(decoded_action, Action)
     return decoded_action

@@ -1,6 +1,7 @@
 import json
 from typing import Callable
 
+import httpx
 import tenacity
 from daytona_sdk import (
     CreateWorkspaceParams,
@@ -17,6 +18,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.plugins.requirement import PluginRequirement
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.utils.request import RequestHTTPError
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -111,41 +113,26 @@ class DaytonaRuntime(ActionExecutionClient):
         workspace = self.daytona.create(workspace_params)
         return workspace
 
-    def _get_workspace_status(self) -> str:
-        assert self.workspace is not None, 'Workspace is not initialized'
-        assert (
-            self.workspace.instance.info is not None
-        ), 'Workspace info is not available'
-        assert (
-            self.workspace.instance.info.provider_metadata is not None
-        ), 'Provider metadata is not available'
-
-        provider_metadata = json.loads(self.workspace.instance.info.provider_metadata)
-        return provider_metadata.get('status', 'unknown')
-
     def _construct_api_url(self, port: int) -> str:
         assert self.workspace is not None, 'Workspace is not initialized'
-        assert (
-            self.workspace.instance.info is not None
-        ), 'Workspace info is not available'
-        assert (
-            self.workspace.instance.info.provider_metadata is not None
-        ), 'Provider metadata is not available'
+        assert self.workspace.instance.info is not None, (
+            'Workspace info is not available'
+        )
+        assert self.workspace.instance.info.provider_metadata is not None, (
+            'Provider metadata is not available'
+        )
 
         node_domain = json.loads(self.workspace.instance.info.provider_metadata)[
             'nodeDomain'
         ]
         return f'https://{port}-{self.workspace.id}.{node_domain}'
 
-    def _get_action_execution_server_host(self) -> str:
+    @property
+    def action_execution_server_url(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:
         assert self.workspace is not None, 'Workspace is not initialized'
-
-        self.workspace.process.exec(
-            f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'
-        )
 
         start_command: list[str] = get_action_execution_server_startup_command(
             server_port=self._sandbox_port,
@@ -154,7 +141,10 @@ class DaytonaRuntime(ActionExecutionClient):
             override_user_id=1000,
             override_username='openhands',
         )
-        start_command_str: str = ' '.join(start_command)
+        start_command_str: str = (
+            f'mkdir -p {self.config.workspace_mount_path_in_sandbox} && cd /openhands/code && '
+            + ' '.join(start_command)
+        )
 
         self.log(
             'debug',
@@ -163,10 +153,6 @@ class DaytonaRuntime(ActionExecutionClient):
 
         exec_session_id = 'action-execution-server'
         self.workspace.process.create_session(exec_session_id)
-        self.workspace.process.execute_session_command(
-            exec_session_id,
-            SessionExecuteRequest(command='cd /openhands/code', var_async=True),
-        )
 
         exec_command = self.workspace.process.execute_session_command(
             exec_session_id,
@@ -185,24 +171,33 @@ class DaytonaRuntime(ActionExecutionClient):
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
+        should_start_action_execution_server = False
 
         if self.attach_to_existing:
             self.workspace = await call_sync_from_async(self._get_workspace)
+        else:
+            should_start_action_execution_server = True
 
         if self.workspace is None:
             self.send_status_message('STATUS$PREPARING_CONTAINER')
             self.workspace = await call_sync_from_async(self._create_workspace)
             self.log('info', f'Created new workspace with id: {self.workspace_id}')
 
-        if self._get_workspace_status() == 'stopped':
+        self.api_url = self._construct_api_url(self._sandbox_port)
+
+        state = self.workspace.instance.state
+
+        if state == 'stopping':
+            self.log('info', 'Waiting for Daytona workspace to stop...')
+            await call_sync_from_async(self.workspace.wait_for_workspace_stop)
+            state = 'stopped'
+
+        if state == 'stopped':
             self.log('info', 'Starting Daytona workspace...')
             await call_sync_from_async(self.workspace.start)
+            should_start_action_execution_server = True
 
-        self.api_url = await call_sync_from_async(
-            self._construct_api_url, self._sandbox_port
-        )
-
-        if not self.attach_to_existing:
+        if should_start_action_execution_server:
             await call_sync_from_async(self._start_action_execution_server)
             self.log(
                 'info',
@@ -213,7 +208,7 @@ class DaytonaRuntime(ActionExecutionClient):
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         await call_sync_from_async(self._wait_until_alive)
 
-        if not self.attach_to_existing:
+        if should_start_action_execution_server:
             await call_sync_from_async(self.setup_initial_env)
 
         self.log(
@@ -221,9 +216,24 @@ class DaytonaRuntime(ActionExecutionClient):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
 
-        if not self.attach_to_existing:
+        if should_start_action_execution_server:
             self.send_status_message(' ')
         self._runtime_initialized = True
+
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception(
+            lambda e: (
+                isinstance(e, httpx.HTTPError) or isinstance(e, RequestHTTPError)
+            )
+            and hasattr(e, 'response')
+            and e.response.status_code == 502
+        ),
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        wait=tenacity.wait_fixed(1),
+        reraise=True,
+    )
+    def _send_action_server_request(self, method, url, **kwargs):
+        return super()._send_action_server_request(method, url, **kwargs)
 
     def close(self):
         super().close()

@@ -7,13 +7,11 @@ import { I18nKey } from "#/i18n/declaration";
 interface AccountSettingsContextMenuProps {
   onLogout: () => void;
   onClose: () => void;
-  isLoggedIn: boolean;
 }
 
 export function AccountSettingsContextMenu({
   onLogout,
   onClose,
-  isLoggedIn,
 }: AccountSettingsContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
   const { t } = useTranslation();
@@ -22,9 +20,9 @@ export function AccountSettingsContextMenu({
     <ContextMenu
       testId="account-settings-context-menu"
       ref={ref}
-      className="absolute right-full md:left-full -top-1 z-10"
+      className="absolute right-full md:left-full -top-1 z-10 w-fit"
     >
-      <ContextMenuListItem onClick={onLogout} isDisabled={!isLoggedIn}>
+      <ContextMenuListItem onClick={onLogout}>
         {t(I18nKey.ACCOUNT_SETTINGS$LOGOUT)}
       </ContextMenuListItem>
     </ContextMenu>

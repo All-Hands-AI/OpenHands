@@ -14,17 +14,16 @@ class Conversation:
     file_store: FileStore
     event_stream: EventStream
     runtime: Runtime
+    user_id: str | None
 
     def __init__(
-        self,
-        sid: str,
-        file_store: FileStore,
-        config: AppConfig,
+        self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
     ):
         self.sid = sid
         self.config = config
         self.file_store = file_store
-        self.event_stream = EventStream(sid, file_store)
+        self.user_id = user_id
+        self.event_stream = EventStream(sid, file_store, user_id)
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
@@ -39,10 +38,10 @@ class Conversation:
             headless_mode=False,
         )
 
-    async def connect(self):
+    async def connect(self) -> None:
         await self.runtime.connect()
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         if self.event_stream:
             self.event_stream.close()
         asyncio.create_task(call_sync_from_async(self.runtime.close))

@@ -56,7 +56,8 @@ class RunloopRuntime(ActionExecutionClient):
         # Buffer for container logs
         self._vscode_url: str | None = None
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     @tenacity.retry(
@@ -87,13 +88,14 @@ class RunloopRuntime(ActionExecutionClient):
         # Add some additional commands based on our image
         # NB: start off as root, action_execution_server will ultimately choose user but expects all context
         # (ie browser) to be installed as root
-        start_command = (
+        # Convert start_command list to a single command string with additional setup
+        start_command_str = (
             'export MAMBA_ROOT_PREFIX=/openhands/micromamba && '
             'cd /openhands/code && '
-            + '/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && '
+            '/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && '
             + ' '.join(start_command)
         )
-        entrypoint = f"sudo bash -c '{start_command}'"
+        entrypoint = f"sudo bash -c '{start_command_str}'"
 
         devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,

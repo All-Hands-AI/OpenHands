@@ -15,7 +15,7 @@ describe("useSaveSettings", () => {
       ),
     });
 
-    result.current.mutate({ LLM_API_KEY: "" });
+    result.current.mutate({ llm_api_key: "" });
     await waitFor(() => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -24,7 +24,7 @@ describe("useSaveSettings", () => {
       );
     });
 
-    result.current.mutate({ LLM_API_KEY: null });
+    result.current.mutate({ llm_api_key: null });
     await waitFor(() => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
