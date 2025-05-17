@@ -1,50 +1,50 @@
-# GitLab Installation
+# Instalação do GitLab
 
-This guide walks you through the process of installing and configuring OpenHands Cloud for your GitLab repositories.
+Este guia orienta você pelo processo de instalação e configuração do OpenHands Cloud para seus repositórios GitLab.
 
-## Prerequisites
+## Pré-requisitos
 
-- A GitLab account
-- Access to OpenHands Cloud
+- Uma conta GitLab
+- Acesso ao OpenHands Cloud
 
-## Installation Steps
+## Passos de Instalação
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. If you haven't connected your GitLab account yet:
-   - Click on `Connect to GitLab`
-   - Review and accept the terms of service
-   - Authorize the OpenHands AI application
+1. Faça login no [OpenHands Cloud](https://app.all-hands.dev)
+2. Se você ainda não conectou sua conta GitLab:
+   - Clique em `Conectar ao GitLab`
+   - Revise e aceite os termos de serviço
+   - Autorize a aplicação OpenHands AI
 
-## Adding Repository Access
+## Adicionando Acesso ao Repositório
 
-You can grant OpenHands access to specific repositories:
+Você pode conceder ao OpenHands acesso a repositórios específicos:
 
-1. Click on the `Select a GitLab project` dropdown, then select `Add more repositories...`
-2. Select your organization and choose the specific repositories to grant OpenHands access to.
-   - OpenHands requests permissions with these scopes:
-     - api: Full API access
-     - read_user: Read user information
-     - read_repository: Read repository information
-     - write_repository: Write to repository
-   - Repository access for a user is granted based on:
-     - Permission granted for the repository
-     - User's GitLab permissions (owner/maintainer/developer)
-3. Click `Install & Authorize`
+1. Clique no menu suspenso `Selecionar um projeto GitLab`, depois selecione `Adicionar mais repositórios...`
+2. Selecione sua organização e escolha os repositórios específicos para conceder acesso ao OpenHands.
+   - OpenHands solicita permissões com estes escopos:
+     - api: Acesso completo à API
+     - read_user: Ler informações do usuário
+     - read_repository: Ler informações do repositório
+     - write_repository: Escrever no repositório
+   - O acesso ao repositório para um usuário é concedido com base em:
+     - Permissão concedida para o repositório
+     - Permissões do GitLab do usuário (proprietário/mantenedor/desenvolvedor)
+3. Clique em `Instalar e Autorizar`
 
-## Modifying Repository Access
+## Modificando o Acesso ao Repositório
 
-You can modify repository access at any time:
-* Using the same `Select a GitLab project > Add more repositories` workflow, or
-* By visiting the Settings page and selecting `Configure GitLab Repositories` in the `GitLab Settings` section.
+Você pode modificar o acesso ao repositório a qualquer momento:
+* Usando o mesmo fluxo de trabalho `Selecionar um projeto GitLab > Adicionar mais repositórios`, ou
+* Visitando a página de Configurações e selecionando `Configurar Repositórios GitLab` na seção `Configurações do GitLab`.
 
-## Using OpenHands with GitLab
+## Usando OpenHands com GitLab
 
-Once you've granted repository access, you can use OpenHands with your GitLab repositories.
+Depois de conceder acesso ao repositório, você pode usar o OpenHands com seus repositórios GitLab.
 
-For details on how to use OpenHands with GitLab issues and merge requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
+Para detalhes sobre como usar o OpenHands com issues e merge requests do GitLab, consulte a documentação do [Resolvedor de Problemas na Nuvem](./cloud-issue-resolver.md).
 
-## Next Steps
+## Próximos Passos
 
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
+- [Acesse a Interface da Nuvem](./cloud-ui.md) para interagir com a interface web
+- [Use o Resolvedor de Problemas na Nuvem](./cloud-issue-resolver.md) para automatizar correções de código e obter assistência
+- [Use a API da Nuvem](./cloud-api.md) para interagir programaticamente com o OpenHands

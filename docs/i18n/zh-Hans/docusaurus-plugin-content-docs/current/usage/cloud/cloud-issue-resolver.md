@@ -1,32 +1,32 @@
-# Cloud Issue Resolver
+# 云问题解决器
 
-The Cloud Issue Resolver automates code fixes and provides intelligent assistance for your repositories on GitHub and GitLab.
+云问题解决器可以自动修复代码并为您的GitHub和GitLab仓库提供智能辅助。
 
-## Setup
+## 设置
 
-The Cloud Issue Resolver is available automatically when you grant OpenHands Cloud repository access:
-- [GitHub repository access](./github-installation#adding-repository-access)
-- [GitLab repository access](./gitlab-installation#adding-repository-access)
+当您授予OpenHands Cloud仓库访问权限时，云问题解决器会自动可用：
+- [GitHub仓库访问](./github-installation#adding-repository-access)
+- [GitLab仓库访问](./gitlab-installation#adding-repository-access)
 
-## Usage
+## 使用方法
 
-After granting OpenHands Cloud repository access, you can use the Cloud Issue Resolver on issues and pull/merge requests in your repositories.
+授予OpenHands Cloud仓库访问权限后，您可以在仓库的问题和拉取/合并请求中使用云问题解决器。
 
-### Working with Issues
+### 处理问题
 
-On your repository, label an issue with `openhands`. OpenHands will:
-1. Comment on the issue to let you know it is working on it
-   - You can click on the link to track the progress on OpenHands Cloud
-2. Open a pull request (GitHub) or merge request (GitLab) if it determines that the issue has been successfully resolved
-3. Comment on the issue with a summary of the performed tasks and a link to the PR/MR
+在您的仓库中，给问题添加`openhands`标签。OpenHands将会：
+1. 在问题上发表评论，让您知道它正在处理
+   - 您可以点击链接在OpenHands Cloud上跟踪进度
+2. 如果确定问题已成功解决，则打开拉取请求（GitHub）或合并请求（GitLab）
+3. 在问题上发表评论，总结已执行的任务并提供PR/MR的链接
 
-### Working with Pull/Merge Requests
+### 处理拉取/合并请求
 
-To get OpenHands to work on pull requests (GitHub) or merge requests (GitLab), mention `@openhands` in comments to:
-- Ask questions
-- Request updates
-- Get code explanations
+要让OpenHands处理拉取请求（GitHub）或合并请求（GitLab），在评论中提及`@openhands`以：
+- 提问
+- 请求更新
+- 获取代码解释
 
-OpenHands will:
-1. Comment to let you know it is working on it
-2. Perform the requested task
+OpenHands将会：
+1. 发表评论让您知道它正在处理
+2. 执行请求的任务

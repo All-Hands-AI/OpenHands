@@ -1,32 +1,32 @@
-# Cloud Issue Resolver
+# クラウド課題リゾルバー
 
-The Cloud Issue Resolver automates code fixes and provides intelligent assistance for your repositories on GitHub and GitLab.
+クラウド課題リゾルバーは、GitHubとGitLabのリポジトリに対してコード修正を自動化し、インテリジェントな支援を提供します。
 
-## Setup
+## セットアップ
 
-The Cloud Issue Resolver is available automatically when you grant OpenHands Cloud repository access:
-- [GitHub repository access](./github-installation#adding-repository-access)
-- [GitLab repository access](./gitlab-installation#adding-repository-access)
+クラウド課題リゾルバーは、OpenHands Cloudリポジトリアクセスを許可すると自動的に利用可能になります：
+- [GitHubリポジトリアクセス](./github-installation#adding-repository-access)
+- [GitLabリポジトリアクセス](./gitlab-installation#adding-repository-access)
 
-## Usage
+## 使用方法
 
-After granting OpenHands Cloud repository access, you can use the Cloud Issue Resolver on issues and pull/merge requests in your repositories.
+OpenHands Cloudリポジトリアクセスを許可した後、リポジトリの課題やプルリクエスト/マージリクエストでクラウド課題リゾルバーを使用できます。
 
-### Working with Issues
+### 課題の操作
 
-On your repository, label an issue with `openhands`. OpenHands will:
-1. Comment on the issue to let you know it is working on it
-   - You can click on the link to track the progress on OpenHands Cloud
-2. Open a pull request (GitHub) or merge request (GitLab) if it determines that the issue has been successfully resolved
-3. Comment on the issue with a summary of the performed tasks and a link to the PR/MR
+リポジトリで、課題に`openhands`というラベルを付けます。OpenHandsは以下を行います：
+1. 課題にコメントして、作業中であることを知らせます
+   - リンクをクリックすると、OpenHands Cloudで進捗状況を追跡できます
+2. 課題が正常に解決されたと判断した場合、プルリクエスト（GitHub）またはマージリクエスト（GitLab）を開きます
+3. 実行されたタスクの概要とPR/MRへのリンクを含むコメントを課題に残します
 
-### Working with Pull/Merge Requests
+### プルリクエスト/マージリクエストの操作
 
-To get OpenHands to work on pull requests (GitHub) or merge requests (GitLab), mention `@openhands` in comments to:
-- Ask questions
-- Request updates
-- Get code explanations
+プルリクエスト（GitHub）またはマージリクエスト（GitLab）でOpenHandsを動作させるには、コメントで`@openhands`を言及して以下を行います：
+- 質問する
+- 更新をリクエストする
+- コードの説明を取得する
 
-OpenHands will:
-1. Comment to let you know it is working on it
-2. Perform the requested task
+OpenHandsは以下を行います：
+1. 作業中であることを知らせるコメントをします
+2. リクエストされたタスクを実行します

@@ -1,29 +1,29 @@
-# Cloud UI
+# クラウドUI
 
-The Cloud UI provides a web interface for interacting with OpenHands AI. This page explains how to access and use the OpenHands Cloud UI.
+クラウドUIは、OpenHands AIと対話するためのウェブインターフェースを提供します。このページでは、OpenHands クラウドUIへのアクセス方法と使用方法について説明します。
 
-## Accessing the UI
+## UIへのアクセス
 
-The OpenHands Cloud UI can be accessed at [app.all-hands.dev](https://app.all-hands.dev). You'll need to sign in with your GitHub or GitLab account to access the interface.
+OpenHands クラウドUIは[app.all-hands.dev](https://app.all-hands.dev)でアクセスできます。インターフェースにアクセスするには、GitHubまたはGitLabアカウントでサインインする必要があります。
 
-<!-- Image will be added in a future update -->
-<!-- ![OpenHands Cloud UI](/img/docs/openhands-cloud-ui.png) -->
+<!-- 画像は将来のアップデートで追加されます -->
+<!-- ![OpenHands クラウドUI](/img/docs/openhands-cloud-ui.png) -->
 
-## Key Features
+## 主な機能
 
-For detailed information about the features available in the OpenHands Cloud UI, please refer to the [Key Features](../key-features.md) section of the documentation.
+OpenHands クラウドUIで利用可能な機能の詳細については、ドキュメントの[主な機能](../key-features.md)セクションを参照してください。
 
-## Settings
+## 設定
 
-The settings page allows you to:
+設定ページでは以下のことができます：
 
-1. Configure your account preferences
-2. Manage repository access
-3. Generate API keys for programmatic access
-4. Customize your OpenHands experience
+1. アカウント設定の構成
+2. リポジトリアクセスの管理
+3. プログラムによるアクセスのためのAPIキーの生成
+4. OpenHandsエクスペリエンスのカスタマイズ
 
-## Next Steps
+## 次のステップ
 
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Learn about the Cloud API](./cloud-api.md) for programmatic access
-- [Return to Getting Started](./openhands-cloud.md)
+- [クラウド課題リゾルバーを使用する](./cloud-issue-resolver.md)でコード修正を自動化し、支援を受ける
+- [クラウドAPIについて学ぶ](./cloud-api.md)でプログラムによるアクセスを行う
+- [はじめにに戻る](./openhands-cloud.md)

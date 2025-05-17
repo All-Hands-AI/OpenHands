@@ -1,29 +1,29 @@
-# Cloud UI
+# 云界面
 
-The Cloud UI provides a web interface for interacting with OpenHands AI. This page explains how to access and use the OpenHands Cloud UI.
+云界面为与OpenHands AI交互提供了网页界面。本页面说明如何访问和使用OpenHands云界面。
 
-## Accessing the UI
+## 访问界面
 
-The OpenHands Cloud UI can be accessed at [app.all-hands.dev](https://app.all-hands.dev). You'll need to sign in with your GitHub or GitLab account to access the interface.
+OpenHands云界面可以在[app.all-hands.dev](https://app.all-hands.dev)访问。您需要使用GitHub或GitLab账户登录才能访问界面。
 
-<!-- Image will be added in a future update -->
-<!-- ![OpenHands Cloud UI](/img/docs/openhands-cloud-ui.png) -->
+<!-- 图片将在未来更新中添加 -->
+<!-- ![OpenHands云界面](/img/docs/openhands-cloud-ui.png) -->
 
-## Key Features
+## 主要功能
 
-For detailed information about the features available in the OpenHands Cloud UI, please refer to the [Key Features](../key-features.md) section of the documentation.
+有关OpenHands云界面中可用功能的详细信息，请参阅文档的[主要功能](../key-features.md)部分。
 
-## Settings
+## 设置
 
-The settings page allows you to:
+设置页面允许您：
 
-1. Configure your account preferences
-2. Manage repository access
-3. Generate API keys for programmatic access
-4. Customize your OpenHands experience
+1. 配置您的账户偏好
+2. 管理仓库访问权限
+3. 生成用于程序化访问的API密钥
+4. 自定义您的OpenHands体验
 
-## Next Steps
+## 下一步
 
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Learn about the Cloud API](./cloud-api.md) for programmatic access
-- [Return to Getting Started](./openhands-cloud.md)
+- [使用云问题解决器](./cloud-issue-resolver.md)自动修复代码并获取帮助
+- [了解云API](./cloud-api.md)进行程序化访问
+- [返回入门指南](./openhands-cloud.md)

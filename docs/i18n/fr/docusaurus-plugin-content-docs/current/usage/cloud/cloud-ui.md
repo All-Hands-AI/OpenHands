@@ -1,29 +1,29 @@
-# Cloud UI
+# Interface Cloud
 
-The Cloud UI provides a web interface for interacting with OpenHands AI. This page explains how to access and use the OpenHands Cloud UI.
+L'interface Cloud fournit une interface web pour interagir avec OpenHands AI. Cette page explique comment accéder et utiliser l'interface Cloud d'OpenHands.
 
-## Accessing the UI
+## Accès à l'Interface
 
-The OpenHands Cloud UI can be accessed at [app.all-hands.dev](https://app.all-hands.dev). You'll need to sign in with your GitHub or GitLab account to access the interface.
+L'interface Cloud d'OpenHands est accessible à [app.all-hands.dev](https://app.all-hands.dev). Vous devrez vous connecter avec votre compte GitHub ou GitLab pour accéder à l'interface.
 
 <!-- Image will be added in a future update -->
-<!-- ![OpenHands Cloud UI](/img/docs/openhands-cloud-ui.png) -->
+<!-- ![Interface Cloud OpenHands](/img/docs/openhands-cloud-ui.png) -->
 
-## Key Features
+## Fonctionnalités Clés
 
-For detailed information about the features available in the OpenHands Cloud UI, please refer to the [Key Features](../key-features.md) section of the documentation.
+Pour des informations détaillées sur les fonctionnalités disponibles dans l'interface Cloud d'OpenHands, veuillez consulter la section [Fonctionnalités Clés](../key-features.md) de la documentation.
 
-## Settings
+## Paramètres
 
-The settings page allows you to:
+La page des paramètres vous permet de :
 
-1. Configure your account preferences
-2. Manage repository access
-3. Generate API keys for programmatic access
-4. Customize your OpenHands experience
+1. Configurer les préférences de votre compte
+2. Gérer l'accès aux dépôts
+3. Générer des clés API pour un accès programmatique
+4. Personnaliser votre expérience OpenHands
 
-## Next Steps
+## Prochaines Étapes
 
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Learn about the Cloud API](./cloud-api.md) for programmatic access
-- [Return to Getting Started](./openhands-cloud.md)
+- [Utiliser le Résolveur de Problèmes Cloud](./cloud-issue-resolver.md) pour automatiser les corrections de code et obtenir de l'aide
+- [En savoir plus sur l'API Cloud](./cloud-api.md) pour un accès programmatique
+- [Retourner à la Mise en Route](./openhands-cloud.md)

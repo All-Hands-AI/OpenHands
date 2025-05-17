@@ -1,24 +1,24 @@
 # OpenHands Cloud
 
-OpenHands Cloud is the hosted cloud version of All Hands AI's OpenHands.
+OpenHands Cloud é a versão hospedada na nuvem do OpenHands da All Hands AI.
 
-## Accessing OpenHands Cloud
+## Acessando o OpenHands Cloud
 
-To get started with OpenHands Cloud, visit [app.all-hands.dev](https://app.all-hands.dev).
+Para começar com o OpenHands Cloud, visite [app.all-hands.dev](https://app.all-hands.dev).
 
-You'll be prompted to connect with your GitHub or GitLab account:
+Você será solicitado a se conectar com sua conta GitHub ou GitLab:
 
-1. After reading and accepting the terms of service, click `Connect to GitHub` or `Connect to GitLab`.
-2. Review the permissions requested by OpenHands and authorize the application.
-   - OpenHands will require certain permissions from your account. To read more about these permissions,
-     you can click the `Learn more` link on the authorization page.
+1. Após ler e aceitar os termos de serviço, clique em `Conectar ao GitHub` ou `Conectar ao GitLab`.
+2. Revise as permissões solicitadas pelo OpenHands e autorize a aplicação.
+   - OpenHands exigirá certas permissões da sua conta. Para ler mais sobre essas permissões,
+     você pode clicar no link `Saiba mais` na página de autorização.
 
-## Next Steps
+## Próximos Passos
 
-Once you've connected your account, you can:
+Depois de conectar sua conta, você pode:
 
-- [Install GitHub Integration](./github-installation.md) to use OpenHands with your GitHub repositories
-- [Install GitLab Integration](./gitlab-installation.md) to use OpenHands with your GitLab repositories
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
-- [Set up the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and provide intelligent assistance
+- [Instalar a Integração com GitHub](./github-installation.md) para usar o OpenHands com seus repositórios GitHub
+- [Instalar a Integração com GitLab](./gitlab-installation.md) para usar o OpenHands com seus repositórios GitLab
+- [Acessar a Interface da Nuvem](./cloud-ui.md) para interagir com a interface web
+- [Usar a API da Nuvem](./cloud-api.md) para interagir programaticamente com o OpenHands
+- [Configurar o Resolvedor de Problemas na Nuvem](./cloud-issue-resolver.md) para automatizar correções de código e fornecer assistência inteligente

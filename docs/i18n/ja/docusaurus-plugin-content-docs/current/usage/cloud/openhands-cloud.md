@@ -1,24 +1,24 @@
-# OpenHands Cloud
+# OpenHands クラウド
 
-OpenHands Cloud is the hosted cloud version of All Hands AI's OpenHands.
+OpenHands クラウドは、All Hands AIのOpenHandsのホスト型クラウドバージョンです。
 
-## Accessing OpenHands Cloud
+## OpenHands クラウドへのアクセス
 
-To get started with OpenHands Cloud, visit [app.all-hands.dev](https://app.all-hands.dev).
+OpenHands クラウドを始めるには、[app.all-hands.dev](https://app.all-hands.dev)にアクセスしてください。
 
-You'll be prompted to connect with your GitHub or GitLab account:
+GitHubまたはGitLabアカウントで接続するよう求められます：
 
-1. After reading and accepting the terms of service, click `Connect to GitHub` or `Connect to GitLab`.
-2. Review the permissions requested by OpenHands and authorize the application.
-   - OpenHands will require certain permissions from your account. To read more about these permissions,
-     you can click the `Learn more` link on the authorization page.
+1. 利用規約を読んで同意した後、`GitHubに接続する`または`GitLabに接続する`をクリックします。
+2. OpenHandsがリクエストする権限を確認し、アプリケーションを承認します。
+   - OpenHandsはあなたのアカウントから特定の権限を必要とします。これらの権限について詳しく知るには、
+     承認ページの`詳細を見る`リンクをクリックしてください。
 
-## Next Steps
+## 次のステップ
 
-Once you've connected your account, you can:
+アカウントを接続したら、以下のことができます：
 
-- [Install GitHub Integration](./github-installation.md) to use OpenHands with your GitHub repositories
-- [Install GitLab Integration](./gitlab-installation.md) to use OpenHands with your GitLab repositories
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
-- [Set up the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and provide intelligent assistance
+- [GitHub統合をインストールする](./github-installation.md)でGitHubリポジトリでOpenHandsを使用する
+- [GitLab統合をインストールする](./gitlab-installation.md)でGitLabリポジトリでOpenHandsを使用する
+- [クラウドUIにアクセスする](./cloud-ui.md)でウェブインターフェースと対話する
+- [クラウドAPIを使用する](./cloud-api.md)でプログラムによりOpenHandsと対話する
+- [クラウド課題リゾルバーを設定する](./cloud-issue-resolver.md)でコード修正を自動化し、インテリジェントな支援を提供する

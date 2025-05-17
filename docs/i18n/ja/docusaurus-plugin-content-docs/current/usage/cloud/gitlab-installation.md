@@ -1,50 +1,50 @@
-# GitLab Installation
+# GitLab インストール
 
-This guide walks you through the process of installing and configuring OpenHands Cloud for your GitLab repositories.
+このガイドでは、GitLabリポジトリ用にOpenHands Cloudをインストールおよび設定するプロセスについて説明します。
 
-## Prerequisites
+## 前提条件
 
-- A GitLab account
-- Access to OpenHands Cloud
+- GitLabアカウント
+- OpenHands Cloudへのアクセス
 
-## Installation Steps
+## インストール手順
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. If you haven't connected your GitLab account yet:
-   - Click on `Connect to GitLab`
-   - Review and accept the terms of service
-   - Authorize the OpenHands AI application
+1. [OpenHands Cloud](https://app.all-hands.dev)にログインします
+2. まだGitLabアカウントを接続していない場合：
+   - `GitLabに接続する`をクリックします
+   - 利用規約を確認して同意します
+   - OpenHands AIアプリケーションを承認します
 
-## Adding Repository Access
+## リポジトリアクセスの追加
 
-You can grant OpenHands access to specific repositories:
+特定のリポジトリへのアクセスをOpenHandsに許可できます：
 
-1. Click on the `Select a GitLab project` dropdown, then select `Add more repositories...`
-2. Select your organization and choose the specific repositories to grant OpenHands access to.
-   - OpenHands requests permissions with these scopes:
-     - api: Full API access
-     - read_user: Read user information
-     - read_repository: Read repository information
-     - write_repository: Write to repository
-   - Repository access for a user is granted based on:
-     - Permission granted for the repository
-     - User's GitLab permissions (owner/maintainer/developer)
-3. Click `Install & Authorize`
+1. `GitLabプロジェクトを選択`ドロップダウンをクリックし、`リポジトリを追加...`を選択します
+2. 組織を選択し、OpenHandsにアクセスを許可する特定のリポジトリを選択します。
+   - OpenHandsは以下のスコープで権限をリクエストします：
+     - api：完全なAPIアクセス
+     - read_user：ユーザー情報の読み取り
+     - read_repository：リポジトリ情報の読み取り
+     - write_repository：リポジトリへの書き込み
+   - ユーザーのリポジトリアクセスは以下に基づいて付与されます：
+     - リポジトリに付与された権限
+     - ユーザーのGitLab権限（所有者/メンテナー/開発者）
+3. `インストール＆承認`をクリックします
 
-## Modifying Repository Access
+## リポジトリアクセスの変更
 
-You can modify repository access at any time:
-* Using the same `Select a GitLab project > Add more repositories` workflow, or
-* By visiting the Settings page and selecting `Configure GitLab Repositories` in the `GitLab Settings` section.
+リポジトリアクセスはいつでも変更できます：
+* 同じ`GitLabプロジェクトを選択 > リポジトリを追加`ワークフローを使用する、または
+* 設定ページにアクセスし、`GitLab設定`セクションで`GitLabリポジトリを設定する`を選択します。
 
-## Using OpenHands with GitLab
+## GitLabでのOpenHandsの使用
 
-Once you've granted repository access, you can use OpenHands with your GitLab repositories.
+リポジトリアクセスを許可すると、GitLabリポジトリでOpenHandsを使用できます。
 
-For details on how to use OpenHands with GitLab issues and merge requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
+GitLab課題とマージリクエストでOpenHandsを使用する方法の詳細については、[クラウド課題リゾルバー](./cloud-issue-resolver.md)のドキュメントを参照してください。
 
-## Next Steps
+## 次のステップ
 
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
+- [クラウドUIにアクセスする](./cloud-ui.md)でウェブインターフェースと対話する
+- [クラウド課題リゾルバーを使用する](./cloud-issue-resolver.md)でコード修正を自動化し、支援を受ける
+- [クラウドAPIを使用する](./cloud-api.md)でプログラムによりOpenHandsと対話する

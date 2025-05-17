@@ -1,55 +1,55 @@
-# GitHub Installation
+# GitHub 安装
 
-This guide walks you through the process of installing and configuring OpenHands Cloud for your GitHub repositories.
+本指南将引导您完成为GitHub仓库安装和配置OpenHands Cloud的过程。
 
-## Prerequisites
+## 前提条件
 
-- A GitHub account
-- Access to OpenHands Cloud
+- GitHub账户
+- 访问OpenHands Cloud
 
-## Installation Steps
+## 安装步骤
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. If you haven't connected your GitHub account yet:
-   - Click on `Connect to GitHub`
-   - Review and accept the terms of service
-   - Authorize the OpenHands AI application
+1. 登录[OpenHands Cloud](https://app.all-hands.dev)
+2. 如果您尚未连接GitHub账户：
+   - 点击`连接到GitHub`
+   - 查看并接受服务条款
+   - 授权OpenHands AI应用程序
 
-## Adding Repository Access
+## 添加仓库访问权限
 
-You can grant OpenHands access to specific repositories:
+您可以授予OpenHands访问特定仓库的权限：
 
-1. Click on the `Select a GitHub project` dropdown, then select `Add more repositories...`
-2. Select your organization and choose the specific repositories to grant OpenHands access to.
-   - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
-     - Actions: Read and write
-     - Administration: Read-only
-     - Commit statuses: Read and write
-     - Contents: Read and write
-     - Issues: Read and write
-     - Metadata: Read-only
-     - Pull requests: Read and write
-     - Webhooks: Read and write
-     - Workflows: Read and write
-   - Repository access for a user is granted based on:
-     - Permission granted for the repository
-     - User's GitHub permissions (owner/collaborator)
-3. Click `Install & Authorize`
+1. 点击`选择GitHub项目`下拉菜单，然后选择`添加更多仓库...`
+2. 选择您的组织并选择要授予OpenHands访问权限的特定仓库。
+   - OpenHands请求短期令牌（8小时过期）并具有以下权限：
+     - 操作：读取和写入
+     - 管理：只读
+     - 提交状态：读取和写入
+     - 内容：读取和写入
+     - 问题：读取和写入
+     - 元数据：只读
+     - 拉取请求：读取和写入
+     - Webhooks：读取和写入
+     - 工作流程：读取和写入
+   - 用户的仓库访问权限基于：
+     - 为仓库授予的权限
+     - 用户的GitHub权限（所有者/协作者）
+3. 点击`安装并授权`
 
-## Modifying Repository Access
+## 修改仓库访问权限
 
-You can modify repository access at any time:
-* Using the same `Select a GitHub project > Add more repositories` workflow, or
-* By visiting the Settings page and selecting `Configure GitHub Repositories` in the `GitHub Settings` section.
+您可以随时修改仓库访问权限：
+* 使用相同的`选择GitHub项目 > 添加更多仓库`工作流程，或
+* 访问设置页面并在`GitHub设置`部分选择`配置GitHub仓库`。
 
-## Using OpenHands with GitHub
+## 使用OpenHands与GitHub
 
-Once you've granted repository access, you can use OpenHands with your GitHub repositories.
+一旦您授予了仓库访问权限，您就可以将OpenHands与您的GitHub仓库一起使用。
 
-For details on how to use OpenHands with GitHub issues and pull requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
+有关如何将OpenHands与GitHub问题和拉取请求一起使用的详细信息，请参阅[云问题解决器](./cloud-issue-resolver.md)文档。
 
-## Next Steps
+## 下一步
 
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
+- [访问云界面](./cloud-ui.md)与网页界面交互
+- [使用云问题解决器](./cloud-issue-resolver.md)自动修复代码并获取帮助
+- [使用云API](./cloud-api.md)以编程方式与OpenHands交互

@@ -1,55 +1,55 @@
-# GitHub Installation
+# GitHub インストール
 
-This guide walks you through the process of installing and configuring OpenHands Cloud for your GitHub repositories.
+このガイドでは、GitHubリポジトリ用にOpenHands Cloudをインストールおよび設定するプロセスについて説明します。
 
-## Prerequisites
+## 前提条件
 
-- A GitHub account
-- Access to OpenHands Cloud
+- GitHubアカウント
+- OpenHands Cloudへのアクセス
 
-## Installation Steps
+## インストール手順
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. If you haven't connected your GitHub account yet:
-   - Click on `Connect to GitHub`
-   - Review and accept the terms of service
-   - Authorize the OpenHands AI application
+1. [OpenHands Cloud](https://app.all-hands.dev)にログインします
+2. まだGitHubアカウントを接続していない場合：
+   - `GitHubに接続する`をクリックします
+   - 利用規約を確認して同意します
+   - OpenHands AIアプリケーションを承認します
 
-## Adding Repository Access
+## リポジトリアクセスの追加
 
-You can grant OpenHands access to specific repositories:
+特定のリポジトリへのアクセスをOpenHandsに許可できます：
 
-1. Click on the `Select a GitHub project` dropdown, then select `Add more repositories...`
-2. Select your organization and choose the specific repositories to grant OpenHands access to.
-   - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
-     - Actions: Read and write
-     - Administration: Read-only
-     - Commit statuses: Read and write
-     - Contents: Read and write
-     - Issues: Read and write
-     - Metadata: Read-only
-     - Pull requests: Read and write
-     - Webhooks: Read and write
-     - Workflows: Read and write
-   - Repository access for a user is granted based on:
-     - Permission granted for the repository
-     - User's GitHub permissions (owner/collaborator)
-3. Click `Install & Authorize`
+1. `GitHubプロジェクトを選択`ドロップダウンをクリックし、`リポジトリを追加...`を選択します
+2. 組織を選択し、OpenHandsにアクセスを許可する特定のリポジトリを選択します。
+   - OpenHandsは以下の権限を持つ短期間のトークン（8時間の有効期限）をリクエストします：
+     - アクション：読み取りと書き込み
+     - 管理：読み取り専用
+     - コミットステータス：読み取りと書き込み
+     - コンテンツ：読み取りと書き込み
+     - 課題：読み取りと書き込み
+     - メタデータ：読み取り専用
+     - プルリクエスト：読み取りと書き込み
+     - Webhook：読み取りと書き込み
+     - ワークフロー：読み取りと書き込み
+   - ユーザーのリポジトリアクセスは以下に基づいて付与されます：
+     - リポジトリに付与された権限
+     - ユーザーのGitHub権限（所有者/コラボレーター）
+3. `インストール＆承認`をクリックします
 
-## Modifying Repository Access
+## リポジトリアクセスの変更
 
-You can modify repository access at any time:
-* Using the same `Select a GitHub project > Add more repositories` workflow, or
-* By visiting the Settings page and selecting `Configure GitHub Repositories` in the `GitHub Settings` section.
+リポジトリアクセスはいつでも変更できます：
+* 同じ`GitHubプロジェクトを選択 > リポジトリを追加`ワークフローを使用する、または
+* 設定ページにアクセスし、`GitHub設定`セクションで`GitHubリポジトリを設定する`を選択します。
 
-## Using OpenHands with GitHub
+## GitHubでのOpenHandsの使用
 
-Once you've granted repository access, you can use OpenHands with your GitHub repositories.
+リポジトリアクセスを許可すると、GitHubリポジトリでOpenHandsを使用できます。
 
-For details on how to use OpenHands with GitHub issues and pull requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
+GitHub課題とプルリクエストでOpenHandsを使用する方法の詳細については、[クラウド課題リゾルバー](./cloud-issue-resolver.md)のドキュメントを参照してください。
 
-## Next Steps
+## 次のステップ
 
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
+- [クラウドUIにアクセスする](./cloud-ui.md)でウェブインターフェースと対話する
+- [クラウド課題リゾルバーを使用する](./cloud-issue-resolver.md)でコード修正を自動化し、支援を受ける
+- [クラウドAPIを使用する](./cloud-api.md)でプログラムによりOpenHandsと対話する

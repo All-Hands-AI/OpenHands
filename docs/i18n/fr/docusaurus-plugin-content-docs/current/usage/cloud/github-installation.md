@@ -1,55 +1,55 @@
-# GitHub Installation
+# Installation GitHub
 
-This guide walks you through the process of installing and configuring OpenHands Cloud for your GitHub repositories.
+Ce guide vous accompagne dans le processus d'installation et de configuration d'OpenHands Cloud pour vos dépôts GitHub.
 
-## Prerequisites
+## Prérequis
 
-- A GitHub account
-- Access to OpenHands Cloud
+- Un compte GitHub
+- Accès à OpenHands Cloud
 
-## Installation Steps
+## Étapes d'Installation
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. If you haven't connected your GitHub account yet:
-   - Click on `Connect to GitHub`
-   - Review and accept the terms of service
-   - Authorize the OpenHands AI application
+1. Connectez-vous à [OpenHands Cloud](https://app.all-hands.dev)
+2. Si vous n'avez pas encore connecté votre compte GitHub :
+   - Cliquez sur `Se connecter à GitHub`
+   - Examinez et acceptez les conditions d'utilisation
+   - Autorisez l'application OpenHands AI
 
-## Adding Repository Access
+## Ajout d'Accès au Dépôt
 
-You can grant OpenHands access to specific repositories:
+Vous pouvez accorder à OpenHands l'accès à des dépôts spécifiques :
 
-1. Click on the `Select a GitHub project` dropdown, then select `Add more repositories...`
-2. Select your organization and choose the specific repositories to grant OpenHands access to.
-   - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
-     - Actions: Read and write
-     - Administration: Read-only
-     - Commit statuses: Read and write
-     - Contents: Read and write
-     - Issues: Read and write
-     - Metadata: Read-only
-     - Pull requests: Read and write
-     - Webhooks: Read and write
-     - Workflows: Read and write
-   - Repository access for a user is granted based on:
-     - Permission granted for the repository
-     - User's GitHub permissions (owner/collaborator)
-3. Click `Install & Authorize`
+1. Cliquez sur le menu déroulant `Sélectionner un projet GitHub`, puis sélectionnez `Ajouter plus de dépôts...`
+2. Sélectionnez votre organisation et choisissez les dépôts spécifiques auxquels vous souhaitez accorder l'accès à OpenHands.
+   - OpenHands demande des jetons à courte durée de vie (expiration de 8 heures) avec ces permissions :
+     - Actions : Lecture et écriture
+     - Administration : Lecture seule
+     - Statuts de commit : Lecture et écriture
+     - Contenus : Lecture et écriture
+     - Problèmes : Lecture et écriture
+     - Métadonnées : Lecture seule
+     - Pull requests : Lecture et écriture
+     - Webhooks : Lecture et écriture
+     - Workflows : Lecture et écriture
+   - L'accès au dépôt pour un utilisateur est accordé en fonction de :
+     - Permission accordée pour le dépôt
+     - Permissions GitHub de l'utilisateur (propriétaire/collaborateur)
+3. Cliquez sur `Installer & Autoriser`
 
-## Modifying Repository Access
+## Modification de l'Accès au Dépôt
 
-You can modify repository access at any time:
-* Using the same `Select a GitHub project > Add more repositories` workflow, or
-* By visiting the Settings page and selecting `Configure GitHub Repositories` in the `GitHub Settings` section.
+Vous pouvez modifier l'accès au dépôt à tout moment :
+* En utilisant le même workflow `Sélectionner un projet GitHub > Ajouter plus de dépôts`, ou
+* En visitant la page Paramètres et en sélectionnant `Configurer les Dépôts GitHub` dans la section `Paramètres GitHub`.
 
-## Using OpenHands with GitHub
+## Utilisation d'OpenHands avec GitHub
 
-Once you've granted repository access, you can use OpenHands with your GitHub repositories.
+Une fois que vous avez accordé l'accès au dépôt, vous pouvez utiliser OpenHands avec vos dépôts GitHub.
 
-For details on how to use OpenHands with GitHub issues and pull requests, see the [Cloud Issue Resolver](./cloud-issue-resolver.md) documentation.
+Pour plus de détails sur l'utilisation d'OpenHands avec les problèmes et les pull requests GitHub, consultez la documentation du [Résolveur de Problèmes Cloud](./cloud-issue-resolver.md).
 
-## Next Steps
+## Prochaines Étapes
 
-- [Access the Cloud UI](./cloud-ui.md) to interact with the web interface
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Use the Cloud API](./cloud-api.md) to programmatically interact with OpenHands
+- [Accéder à l'Interface Cloud](./cloud-ui.md) pour interagir avec l'interface web
+- [Utiliser le Résolveur de Problèmes Cloud](./cloud-issue-resolver.md) pour automatiser les corrections de code et obtenir de l'aide
+- [Utiliser l'API Cloud](./cloud-api.md) pour interagir programmatiquement avec OpenHands
