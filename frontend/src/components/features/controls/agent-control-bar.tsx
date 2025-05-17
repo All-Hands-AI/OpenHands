@@ -9,6 +9,7 @@ import { AgentState } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { IGNORE_TASK_STATE_MAP } from "#/ignore-task-state-map.constant";
 import { ActionButton } from "#/components/shared/buttons/action-button";
+import { AgentModeToggle } from "./agent-mode-toggle";
 
 export function AgentControlBar() {
   const { t } = useTranslation();
@@ -23,25 +24,29 @@ export function AgentControlBar() {
 
   return (
     <div className="flex justify-between items-center gap-20">
-      <ActionButton
-        isDisabled={
-          curAgentState !== AgentState.RUNNING &&
-          curAgentState !== AgentState.PAUSED
-        }
-        content={
-          curAgentState === AgentState.PAUSED
-            ? t(I18nKey.AGENT$RESUME_TASK)
-            : t(I18nKey.AGENT$PAUSE_TASK)
-        }
-        action={
-          curAgentState === AgentState.PAUSED
-            ? AgentState.RUNNING
-            : AgentState.PAUSED
-        }
-        handleAction={handleAction}
-      >
-        {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
-      </ActionButton>
+      <div className="flex items-center gap-4">
+        <ActionButton
+          isDisabled={
+            curAgentState !== AgentState.RUNNING &&
+            curAgentState !== AgentState.PAUSED
+          }
+          content={
+            curAgentState === AgentState.PAUSED
+              ? t(I18nKey.AGENT$RESUME_TASK)
+              : t(I18nKey.AGENT$PAUSE_TASK)
+          }
+          action={
+            curAgentState === AgentState.PAUSED
+              ? AgentState.RUNNING
+              : AgentState.PAUSED
+          }
+          handleAction={handleAction}
+        >
+          {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
+        </ActionButton>
+
+        <AgentModeToggle />
+      </div>
     </div>
   );
 }
