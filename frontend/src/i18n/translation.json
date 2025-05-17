@@ -7807,65 +7807,37 @@
         "de": "Wir schätzen Ihr Feedback. Bitte teilen Sie uns Ihre Gedanken mit.",
         "uk": "Ми цінуємо ваш відгук. Будь ласка, поділіться з нами своїми думками."
     },
-    "FEEDBACK$ENHANCED_DESCRIPTION": {
-        "en": "Please select the categories that apply and provide any additional feedback."
-    },
-    "FEEDBACK$CATEGORIES_LABEL": {
-        "en": "Select applicable categories:"
-    },
-    "FEEDBACK$ADDITIONAL_FEEDBACK_LABEL": {
-        "en": "Additional feedback (optional):"
-    },
-    "FEEDBACK$ADDITIONAL_FEEDBACK_PLACEHOLDER": {
-        "en": "Please provide any additional details about your experience..."
-    },
-    "FEEDBACK$SUBMIT_LABEL": {
-        "en": "Submit Feedback"
-    },
     "FEEDBACK$POSITIVE_SENT": {
-        "en": "Positive feedback sent"
+        "en": "Positive feedback sent",
+        "ja": "ポジティブなフィードバックが送信されました",
+        "zh-CN": "已发送积极反馈",
+        "zh-TW": "已發送積極反饋",
+        "ko-KR": "긍정적인 피드백이 전송되었습니다",
+        "no": "Positiv tilbakemelding sendt",
+        "ar": "تم إرسال تعليق إيجابي",
+        "de": "Positives Feedback gesendet",
+        "fr": "Commentaire positif envoyé",
+        "it": "Feedback positivo inviato",
+        "pt": "Feedback positivo enviado",
+        "es": "Comentario positivo enviado",
+        "tr": "Olumlu geri bildirim gönderildi",
+        "uk": "Позитивний відгук надіслано"
     },
     "FEEDBACK$NEGATIVE_SENT": {
-        "en": "Negative feedback sent"
-    },
-    "FEEDBACK$POSITIVE_TITLE": {
-        "en": "Positive Feedback"
-    },
-    "FEEDBACK$NEGATIVE_TITLE": {
-        "en": "Negative Feedback"
-    },
-    "FEEDBACK$CATEGORY_SOLVED_COMPLETELY": {
-        "en": "Solved my problem completely"
-    },
-    "FEEDBACK$CATEGORY_GOOD_CODE": {
-        "en": "Good code quality"
-    },
-    "FEEDBACK$CATEGORY_CLEAR_EXPLANATIONS": {
-        "en": "Clear explanations"
-    },
-    "FEEDBACK$CATEGORY_EFFICIENT_SOLUTION": {
-        "en": "Efficient solution"
-    },
-    "FEEDBACK$CATEGORY_GOOD_CONTEXT": {
-        "en": "Good understanding of context"
-    },
-    "FEEDBACK$CATEGORY_STUCK_LOOP": {
-        "en": "Agent stuck in loop"
-    },
-    "FEEDBACK$CATEGORY_POOR_CONTEXT": {
-        "en": "Didn't understand context well"
-    },
-    "FEEDBACK$CATEGORY_WRONG_EDITS": {
-        "en": "Made wrong edits"
-    },
-    "FEEDBACK$CATEGORY_INCOMPLETE": {
-        "en": "Incomplete solution"
-    },
-    "FEEDBACK$CATEGORY_POOR_CODE": {
-        "en": "Poor code quality"
-    },
-    "FEEDBACK$CATEGORY_SLOW": {
-        "en": "Slow performance"
+        "en": "Negative feedback sent",
+        "ja": "ネガティブなフィードバックが送信されました",
+        "zh-CN": "已发送消极反馈",
+        "zh-TW": "已發送消極反饋",
+        "ko-KR": "부정적인 피드백이 전송되었습니다",
+        "no": "Negativ tilbakemelding sendt",
+        "ar": "تم إرسال تعليق سلبي",
+        "de": "Negatives Feedback gesendet",
+        "fr": "Commentaire négatif envoyé",
+        "it": "Feedback negativo inviato",
+        "pt": "Feedback negativo enviado",
+        "es": "Comentario negativo enviado",
+        "tr": "Olumsuz geri bildirim gönderildi",
+        "uk": "Негативний відгук надіслано"
     },
     "EXIT_PROJECT$WARNING": {
         "en": "Are you sure you want to exit this project? Any unsaved changes will be lost.",

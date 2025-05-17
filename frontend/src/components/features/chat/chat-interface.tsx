@@ -107,15 +107,7 @@ export function ChatInterface() {
     additionalFeedback: string,
   ) => {
     // Send the feedback action with categories and additional feedback
-    send(
-      createUserFeedback(
-        feedbackPolarity,
-        "trajectory",
-        undefined,
-        categories,
-        additionalFeedback,
-      ),
-    );
+    send(createUserFeedback(feedbackPolarity, "trajectory"));
 
     // Show a toast notification to confirm feedback was sent
     hotToast.success(

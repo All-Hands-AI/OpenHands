@@ -1,5 +1,4 @@
 import React from "react";
-import { cn } from "#/utils/utils";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { MessageFeedback } from "./message-feedback";
 
@@ -20,13 +19,10 @@ export function MessageActions({
 }: MessageActionsProps) {
   return (
     <div
-      className={cn(
-        "absolute top-1 right-1 flex items-center gap-1",
-        !isHovering && "hidden",
-      )}
+      className={`absolute top-1 right-1 flex items-center gap-1 ${!isHovering ? "hidden" : ""}`}
     >
       {messageId && (
-        <MessageFeedback messageId={messageId} feedback={feedback} isCompact />
+        <MessageFeedback messageId={messageId} feedback={feedback} />
       )}
       <CopyToClipboardButton
         isHidden={!isHovering}

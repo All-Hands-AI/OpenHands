@@ -150,8 +150,6 @@ export interface UserFeedbackAction
     feedback_type: "positive" | "negative";
     target_type: "message" | "trajectory";
     target_id?: number; // Event ID for message feedback, null for trajectory feedback
-    categories?: string[]; // Categories of feedback
-    content?: string; // Optional additional feedback
   };
 }
 
