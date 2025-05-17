@@ -1,16 +1,15 @@
 from litellm import (
     ChatCompletionToolParam,
     ChatCompletionToolParamFunctionChunk,
-    ModelResponse,
 )
 
-_STRUCTURE_EXPLORER_DESCRIPTION_simple = """
-A unified tool that traverses a pre-built code graph to retrieve dependency structure around specified entities, 
+_SIMPLIFIED_STRUCTURE_EXPLORER_DESCRIPTION = """
+A unified tool that traverses a pre-built code graph to retrieve dependency structure around specified entities,
 with options to explore upstream or downstream, and control traversal depth and filters for entity and dependency types.
 """
 
 
-_TREE_EXAMPLE_simple = """
+_SIMPLIFIED_TREE_EXAMPLE = """
 Example Usage:
 1. Exploring Downstream Dependencies:
     ```
@@ -41,7 +40,7 @@ Example Usage:
 """
 
 
-_STRUCTURE_EXPLORER_DESCRIPTION = """
+_DETAILED_STRUCTURE_EXPLORER_DESCRIPTION = """
 Unified repository exploring tool that traverses a pre-built code graph to retrieve dependency structure around specified entities.
 The search can be controlled to traverse upstream (exploring dependencies that entities rely on) or downstream (exploring how entities impact others), with optional limits on traversal depth and filters for entity and dependency types.
 
@@ -68,7 +67,7 @@ Notes:
 """
 
 
-_TREE_EXAMPLE = """
+_DETAILED_TREE_EXAMPLE = """
 Example Usage:
 1. Exploring Outward Dependencies:
     ```
@@ -163,21 +162,24 @@ _STRUCTURE_EXPLORER_PARAMETERS = {
 }
 
 
-ExploreTreeStructureTool = ChatCompletionToolParam(
-    type='function',
-    function=ChatCompletionToolParamFunctionChunk(
-        name='explore_tree_structure',
-        description=_STRUCTURE_EXPLORER_DESCRIPTION + _TREE_EXAMPLE,
-        parameters=_STRUCTURE_EXPLORER_PARAMETERS
-    ),
-)
-
-
-ExploreTreeStructureTool_simple = ChatCompletionToolParam(
-    type='function',
-    function=ChatCompletionToolParamFunctionChunk(
-        name='explore_tree_structure',
-        description=_STRUCTURE_EXPLORER_DESCRIPTION_simple + _TREE_EXAMPLE_simple,
-        parameters=_STRUCTURE_EXPLORER_PARAMETERS
-    ),
-)
+def create_explore_tree_structure_tool(
+    use_simplified_description: bool = False,
+) -> ChatCompletionToolParam:
+    description = (
+        _SIMPLIFIED_STRUCTURE_EXPLORER_DESCRIPTION
+        if use_simplified_description
+        else _DETAILED_STRUCTURE_EXPLORER_DESCRIPTION
+    )
+    example = (
+        _SIMPLIFIED_TREE_EXAMPLE
+        if use_simplified_description
+        else _DETAILED_TREE_EXAMPLE
+    )
+    return ChatCompletionToolParam(
+        type='function',
+        function=ChatCompletionToolParamFunctionChunk(
+            name='explore_tree_structure',
+            description=description + example,
+            parameters=_STRUCTURE_EXPLORER_PARAMETERS,
+        ),
+    )

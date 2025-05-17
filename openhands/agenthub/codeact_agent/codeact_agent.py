@@ -1,5 +1,6 @@
 import os
 from collections import deque
+from functools import partial
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
@@ -72,6 +73,10 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             llm=self.llm,
         )
+        self.response_to_actions = partial(
+            codeact_function_calling.response_to_actions,
+            convert_tool_call_to_action=codeact_function_calling.convert_tool_call_to_action,
+        )
         logger.debug(
             f"TOOLS loaded for CodeActAgent: {', '.join([tool.get('function').get('name') for tool in self.tools])}"
         )
@@ -120,7 +125,7 @@ class CodeActAgent(Agent):
         }
         params['tools'] = self.tools
         response = self.llm.completion(**params)
-        actions = codeact_function_calling.response_to_actions(response)
+        actions = self.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
