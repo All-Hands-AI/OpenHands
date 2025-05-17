@@ -52,7 +52,7 @@ class MCPClient(BaseModel):
 
                 streams_context = sse_client(
                     url=server_url,
-                    headers=headers,
+                    headers=headers if headers else None,
                     timeout=timeout,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
