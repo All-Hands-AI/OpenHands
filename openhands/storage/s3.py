@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, TypedDict
+from typing import Any, TypedDict
 
 import boto3
 import botocore
@@ -16,7 +16,7 @@ class GetObjectOutputDict(TypedDict):
 
 
 class ListObjectsV2OutputDict(TypedDict):
-    Contents: List[S3ObjectDict] | None
+    Contents: list[S3ObjectDict] | None
 
 
 class S3FileStore(FileStore):
@@ -60,7 +60,7 @@ class S3FileStore(FileStore):
             response: GetObjectOutputDict = self.client.get_object(
                 Bucket=self.bucket, Key=path
             )
-            with response['Body'] as stream:  # type: ignore
+            with response['Body'] as stream:
                 return str(stream.read().decode('utf-8'))
         except botocore.exceptions.ClientError as e:
             # Catch all S3-related errors

@@ -3,9 +3,9 @@ import subprocess
 import tempfile
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.send_pull_request import make_commit
-from openhands.resolver.utils import Platform
+from openhands.resolver.send_pull_request import make_commit, send_pull_request
 
 
 def test_commit_message_with_quotes():
@@ -72,9 +72,9 @@ def test_pr_title_with_quotes(monkeypatch):
         data = kwargs.get('json', {})
         title = data.get('title', '')
         expected = "Fix issue #123: Issue with 'quotes' and \"double quotes\" and <class 'ValueError'>"
-        assert (
-            title == expected
-        ), f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
+        assert title == expected, (
+            f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
+        )
         return MockResponse()
 
     class MockGetResponse:
@@ -99,7 +99,7 @@ def test_pr_title_with_quotes(monkeypatch):
     original_run = subprocess.run
 
     def mock_run(*args, **kwargs):
-        logger.info(f"Running command: {args[0] if args else kwargs.get('args', [])}")
+        logger.info(f'Running command: {args[0] if args else kwargs.get("args", [])}')
         if isinstance(args[0], list) and args[0][0] == 'git':
             if 'push' in args[0]:
                 return subprocess.CompletedProcess(
@@ -155,13 +155,12 @@ def test_pr_title_with_quotes(monkeypatch):
 
         # Try to send a PR - this will fail if the title is incorrectly escaped
         logger.info('Sending PR...')
-        from openhands.resolver.send_pull_request import send_pull_request
 
         send_pull_request(
             issue=issue,
             token='dummy-token',
             username='test-user',
-            platform=Platform.GITHUB,
+            platform=ProviderType.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )

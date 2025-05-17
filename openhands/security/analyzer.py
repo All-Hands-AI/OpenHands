@@ -13,7 +13,7 @@ from openhands.events.stream import EventStream, EventStreamSubscriber
 class SecurityAnalyzer:
     """Security analyzer that receives all events and analyzes agent actions for security risks."""
 
-    def __init__(self, event_stream: EventStream):
+    def __init__(self, event_stream: EventStream) -> None:
         """Initializes a new instance of the SecurityAnalyzer class.
 
         Args:
@@ -36,6 +36,7 @@ class SecurityAnalyzer:
             return
 
         try:
+            # Set the security_risk attribute on the event
             event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
             await self.act(event)
         except Exception as e:

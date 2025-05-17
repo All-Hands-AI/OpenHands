@@ -44,7 +44,7 @@ def remove_code(target_filepath: str, line_start: int, line_end: int, language: 
         lines = (
             lines[:line_start]
             + [
-                f"{' '*comment_indent_size+comment_prefix[language.lower()]}TODO: replace with your code here"
+                f'{" " * comment_indent_size + comment_prefix[language.lower()]}TODO: replace with your code here'
             ]
             + ([''] * 2)
             + lines[line_end:]

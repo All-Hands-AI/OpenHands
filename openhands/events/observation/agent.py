@@ -10,6 +10,7 @@ class AgentStateChangedObservation(Observation):
     """This data class represents the result from delegating to another agent"""
 
     agent_state: str
+    reason: str = ''
     observation: str = ObservationType.AGENT_STATE_CHANGED
 
     @property
@@ -73,6 +74,7 @@ class RecallObservation(Observation):
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
     date: str = ''
+    custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
@@ -114,6 +116,7 @@ class RecallObservation(Observation):
                     f'runtime_hosts={self.runtime_hosts}',
                     f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
                     f'date={self.date}'
+                    f'custom_secrets_descriptions={self.custom_secrets_descriptions}',
                 ]
             )
         else:

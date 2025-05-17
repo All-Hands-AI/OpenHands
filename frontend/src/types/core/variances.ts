@@ -17,7 +17,7 @@ export interface InitConfig {
     AGENT: string;
     CONFIRMATION_MODE: boolean;
     LANGUAGE: string;
-    LLM_API_KEY: string;
+    LLM_API_KEY_SET: boolean;
     LLM_MODEL: string;
   };
   token?: string;

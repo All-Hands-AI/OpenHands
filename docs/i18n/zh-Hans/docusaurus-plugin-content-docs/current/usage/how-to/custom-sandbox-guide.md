@@ -1,48 +1,65 @@
-# 自定义沙箱
+# 自定义沙盒
 
-沙箱是代理执行任务的地方。代理不是直接在你的计算机上运行命令（这可能有风险），而是在 Docker 容器内运行。
+:::note
+本指南适用于希望为运行时使用自己的自定义Docker镜像的用户。例如，预装了特定工具或编程语言的镜像。
+:::
 
-默认的 OpenHands 沙箱（`python-nodejs:python3.12-nodejs22`，来自 [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)）预装了一些软件包，如 Python 和 Node.js，但可能需要默认安装其他软件。
+沙盒是代理执行任务的地方。代理不会直接在您的计算机上运行命令（这可能有风险），而是在Docker容器内运行它们。
 
-你有两个自定义选项：
+默认的OpenHands沙盒（来自[nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)的`python-nodejs:python3.12-nodejs22`）预装了一些软件包，如Python和Node.js，但可能需要默认安装其他软件。
 
-1. 使用已有的镜像，其中包含所需的软件。
-2. 创建你自己的自定义 Docker 镜像。
+您有两种自定义选项：
 
-如果你选择第一个选项，可以跳过"创建你的 Docker 镜像"部分。
+- 使用已有的、包含所需软件的镜像。
+- 创建您自己的自定义Docker镜像。
 
-## 创建你的 Docker 镜像
+如果您选择第一个选项，可以跳过`创建您的Docker镜像`部分。
 
-要创建自定义 Docker 镜像，它必须基于 Debian。
+## 创建您的Docker镜像
 
-例如，如果你想让 OpenHands 安装 `ruby`，创建一个包含以下内容的 `Dockerfile`：
+要创建自定义Docker镜像，它必须基于Debian。
+
+例如，如果您希望OpenHands预装`ruby`，您可以创建一个包含以下内容的`Dockerfile`：
 
 ```dockerfile
-FROM debian:latest
+FROM nikolaik/python-nodejs:python3.12-nodejs22
 
 # Install required packages
 RUN apt-get update && apt-get install -y ruby
 ```
 
-将此文件保存在一个文件夹中。然后，通过在终端中导航到该文件夹并运行以下命令来构建你的 Docker 镜像（例如，名为 custom-image）：
+或者您可以使用特定于Ruby的基础镜像：
 
+```dockerfile
+FROM ruby:latest
+```
+
+将此文件保存在一个文件夹中。然后，通过在终端中导航到该文件夹并运行以下命令来构建您的Docker镜像（例如，命名为custom-image）：
 ```bash
 docker build -t custom-image .
 ```
 
-这将生成一个名为 `custom-image` 的新镜像，该镜像将在 Docker 中可用。
+这将生成一个名为`custom-image`的新镜像，该镜像将在Docker中可用。
 
-> 请注意，在本文档描述的配置中，OpenHands 将以用户 "openhands" 的身份在沙箱内运行，因此通过 docker 文件安装的所有软件包应该对系统上的所有用户可用，而不仅仅是 root。
+## 使用Docker命令
 
-## 使用开发工作流
+使用[docker命令](/modules/usage/installation#start-the-app)运行OpenHands时，将`-e SANDBOX_RUNTIME_CONTAINER_IMAGE=...`替换为`-e SANDBOX_BASE_CONTAINER_IMAGE=<自定义镜像名称>`：
+
+```commandline
+docker run -it --rm --pull=always \
+    -e SANDBOX_BASE_CONTAINER_IMAGE=custom-image \
+    ...
+```
+
+## 使用开发工作流程
 
 ### 设置
 
-首先，按照 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 中的说明，确保你可以运行 OpenHands。
+首先，确保您可以按照[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)中的说明运行OpenHands。
 
-### 指定基础沙箱镜像
+### 指定基础沙盒镜像
 
-在 OpenHands 目录中的 `config.toml` 文件中，将 `base_container_image` 设置为你要使用的镜像。这可以是你已经拉取的镜像或你构建的镜像：
+在OpenHands目录中的`config.toml`文件中，将`base_container_image`设置为您想要使用的镜像。这可以是您已经拉取的镜像或您构建的镜像：
 
 ```bash
 [core]
@@ -51,10 +68,28 @@ docker build -t custom-image .
 base_container_image="custom-image"
 ```
 
+### 其他配置选项
+
+`config.toml`文件支持多种其他选项来自定义您的沙盒：
+
+```toml
+[core]
+# 在构建运行时安装额外的依赖项
+# 可以包含任何有效的shell命令
+# 如果您在这些命令中需要Python解释器的路径，可以使用$OH_INTERPRETER_PATH变量
+runtime_extra_deps = """
+pip install numpy pandas
+apt-get update && apt-get install -y ffmpeg
+"""
+
+# 为运行时设置环境变量
+# 对于需要在运行时可用的配置很有用
+runtime_startup_env_vars = { DATABASE_URL = "postgresql://user:pass@localhost/db" }
+
+# 为多架构构建指定平台（例如，"linux/amd64"或"linux/arm64"）
+platform = "linux/amd64"
+```
+
 ### 运行
 
-通过在顶层目录中运行 ```make run``` 来运行 OpenHands。
-
-## 技术解释
-
-请参阅[运行时文档的自定义 docker 镜像部分](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images)以获取更多详细信息。
+通过在顶级目录中运行```make run```来运行OpenHands。

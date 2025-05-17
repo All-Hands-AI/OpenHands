@@ -56,7 +56,8 @@ class RunloopRuntime(ActionExecutionClient):
         # Buffer for container logs
         self._vscode_url: str | None = None
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     @tenacity.retry(

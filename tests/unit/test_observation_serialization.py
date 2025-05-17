@@ -21,20 +21,20 @@ def serialization_deserialization(
     original_observation_dict, cls, max_message_chars: int = 10000
 ):
     observation_instance = event_from_dict(original_observation_dict)
-    assert isinstance(
-        observation_instance, Observation
-    ), 'The observation instance should be an instance of Observation.'
-    assert isinstance(
-        observation_instance, cls
-    ), f'The observation instance should be an instance of {cls}.'
+    assert isinstance(observation_instance, Observation), (
+        'The observation instance should be an instance of Observation.'
+    )
+    assert isinstance(observation_instance, cls), (
+        f'The observation instance should be an instance of {cls}.'
+    )
     serialized_observation_dict = event_to_dict(observation_instance)
     serialized_observation_trajectory = event_to_trajectory(observation_instance)
-    assert (
-        serialized_observation_dict == original_observation_dict
-    ), 'The serialized observation should match the original observation dict.'
-    assert (
-        serialized_observation_trajectory == original_observation_dict
-    ), 'The serialized observation trajectory should match the original observation dict.'
+    assert serialized_observation_dict == original_observation_dict, (
+        'The serialized observation should match the original observation dict.'
+    )
+    assert serialized_observation_trajectory == original_observation_dict, (
+        'The serialized observation trajectory should match the original observation dict.'
+    )
 
 
 # Additional tests for various observation subclasses can be included here
@@ -245,6 +245,7 @@ def test_microagent_observation_serialization():
             'runtime_hosts': {'host1': 8080, 'host2': 8081},
             'repo_instructions': 'complex_repo_instructions',
             'additional_agent_instructions': 'You know it all about this runtime',
+            'custom_secrets_descriptions': {'SECRET': 'CUSTOM'},
             'date': '04/12/1023',
             'microagent_knowledge': [],
         },
@@ -264,6 +265,7 @@ def test_microagent_observation_microagent_knowledge_serialization():
             'repo_instructions': '',
             'runtime_hosts': {},
             'additional_agent_instructions': '',
+            'custom_secrets_descriptions': {},
             'date': '',
             'microagent_knowledge': [
                 {

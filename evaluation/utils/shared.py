@@ -221,9 +221,9 @@ def prepare_dataset(
     eval_ids: list[str] | None = None,
     skip_num: int | None = None,
 ):
-    assert (
-        'instance_id' in dataset.columns
-    ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    assert 'instance_id' in dataset.columns, (
+        "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    )
     id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
     finished_ids: set[str] = set()
@@ -521,6 +521,11 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
+    """
+    The AgentController class overrides last error for certain exceptions
+    We want to ensure those exeption do not overlap with fatal exceptions defined here
+    This is because we do a comparisino against the stringified error
+    """
     if not error:
         return False
 

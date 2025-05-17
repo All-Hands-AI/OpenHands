@@ -131,7 +131,10 @@ function SecurityInvariant() {
             {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
-        <div className="flex-1 p-4 max-h-screen overflow-y-auto" ref={logsRef}>
+        <div
+          className="flex-1 p-4 max-h-screen overflow-y-auto fast-smooth-scroll"
+          ref={logsRef}
+        >
           {logs.map((log: SecurityAnalyzerLog, index: number) => (
             <div
               key={index}

@@ -1,9 +1,11 @@
 import posthog from "posthog-js";
 import React from "react";
-import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
-import type { RootState } from "#/store";
-import { useAuth } from "#/context/auth-context";
+import { I18nKey } from "#/i18n/declaration";
+import { useUserProviders } from "#/hooks/use-user-providers";
+import { useConversation } from "#/context/conversation-context";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -12,24 +14,41 @@ interface ActionSuggestionsProps {
 export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
-  const { githubTokenIsSet } = useAuth();
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { t } = useTranslation();
+  const { providers } = useUserProviders();
+  const { conversationId } = useConversation();
+  const { data: conversation } = useUserConversation(conversationId);
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
+  const providersAreSet = providers.length > 0;
+  const isGitLab = providers.includes("gitlab");
+
+  const pr = isGitLab ? "merge request" : "pull request";
+  const prShort = isGitLab ? "MR" : "PR";
+
+  const terms = {
+    pr,
+    prShort,
+    pushToBranch: `Please push the changes to a remote branch on ${
+      isGitLab ? "GitLab" : "GitHub"
+    }, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
+    createPR: `Please push the changes to ${
+      isGitLab ? "GitLab" : "GitHub"
+    } and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
+    pushToPR: `Please push the latest changes to the existing ${pr}.`,
+  };
+
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {githubTokenIsSet && selectedRepository && (
+      {providersAreSet && conversation?.selected_repository && (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
               <SuggestionItem
                 suggestion={{
-                  label: "Push to Branch",
-                  value:
-                    "Please push the changes to a remote branch on GitHub, but do NOT create a pull request. Please use the exact SAME branch name as the one you are currently on.",
+                  label: t(I18nKey.ACTION$PUSH_TO_BRANCH),
+                  value: terms.pushToBranch,
                 }}
                 onClick={(value) => {
                   posthog.capture("push_to_branch_button_clicked");
@@ -38,9 +57,8 @@ export function ActionSuggestions({
               />
               <SuggestionItem
                 suggestion={{
-                  label: "Push & Create PR",
-                  value:
-                    "Please push the changes to GitHub and open a pull request. Please create a meaningful branch name that describes the changes.",
+                  label: t(I18nKey.ACTION$PUSH_CREATE_PR),
+                  value: terms.createPR,
                 }}
                 onClick={(value) => {
                   posthog.capture("create_pr_button_clicked");
@@ -52,9 +70,8 @@ export function ActionSuggestions({
           ) : (
             <SuggestionItem
               suggestion={{
-                label: "Push changes to PR",
-                value:
-                  "Please push the latest changes to the existing pull request.",
+                label: t(I18nKey.ACTION$PUSH_CHANGES_TO_PR),
+                value: terms.pushToPR,
               }}
               onClick={(value) => {
                 posthog.capture("push_to_pr_button_clicked");

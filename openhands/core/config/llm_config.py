@@ -28,6 +28,7 @@ class LLMConfig(BaseModel):
         max_message_chars: The approximate max number of characters in the content of an event included in the prompt to the LLM. Larger observations are truncated.
         temperature: The temperature for the API.
         top_p: The top p for the API.
+        top_k: The top k for the API.
         custom_llm_provider: The custom LLM provider to use. This is undocumented in openhands, and normally not used. It is documented on the litellm side.
         max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4).
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
@@ -66,6 +67,7 @@ class LLMConfig(BaseModel):
     )  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = Field(default=0.0)
     top_p: float = Field(default=1.0)
+    top_k: float | None = Field(default=None)
     custom_llm_provider: str | None = Field(default=None)
     max_input_tokens: int | None = Field(default=None)
     max_output_tokens: int | None = Field(default=None)
@@ -151,7 +153,7 @@ class LLMConfig(BaseModel):
 
         return llm_mapping
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
 
         This ensures that these values are accessible to litellm at runtime.
@@ -164,8 +166,8 @@ class LLMConfig(BaseModel):
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
-        # Assign an API version for Azure models
-        # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        # Set an API version by default for Azure models
+        # Required for newer models.
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
-            self.api_version = '2024-08-01-preview'
+            self.api_version = '2024-12-01-preview'
