@@ -239,7 +239,6 @@ async def run_session(
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
 
     await runtime.connect()
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None
@@ -257,6 +256,9 @@ async def run_session(
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
     )
+
+    # Add MCP tools to the agent
+    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     # Clear loading animation
     is_loaded.set()

@@ -16,7 +16,7 @@ from zipfile import ZipFile
 import httpx
 
 from openhands.core.config import AppConfig, SandboxConfig
-from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -795,7 +795,9 @@ fi
         pass
 
     @abstractmethod
-    def get_mcp_config(self) -> MCPConfig:
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ) -> MCPConfig:
         pass
 
     # ====================================================================

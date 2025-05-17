@@ -5,7 +5,7 @@ import pytest
 from pydantic import SecretStr
 
 from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation
@@ -69,7 +69,9 @@ class TestRuntime(Runtime):
     def edit(self, action):
         return NullObservation(content='')
 
-    def get_mcp_config(self):
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ):
         return MCPConfig()
 
 

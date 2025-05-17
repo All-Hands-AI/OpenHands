@@ -10,18 +10,19 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any, Callable
 
 from binaryornot.check import is_binary
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
+from pydantic import SecretStr
 
 from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.logger import openhands_logger as logger
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import LLMMalformedActionError
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -45,7 +46,6 @@ from openhands.events.observation import (
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
-from pydantic import SecretStr
 
 
 class CLIRuntime(Runtime):
@@ -543,7 +543,9 @@ class CLIRuntime(Runtime):
             ]
         )
 
-    def get_mcp_config(self) -> MCPConfig:
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ) -> MCPConfig:
         # TODO: Load MCP config from a local file
         return MCPConfig()
 
