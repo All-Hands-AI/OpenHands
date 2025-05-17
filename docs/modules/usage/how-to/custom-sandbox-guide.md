@@ -1,5 +1,10 @@
 # Custom Sandbox
 
+:::note
+This guide is for users that would like to use their own custom Docker image for the runtime. For example
+with certain tools or programming languages pre-installed.
+:::
+
 The sandbox is where the agent performs its tasks. Instead of running commands directly on your computer
 (which could be risky), the agent runs them inside a Docker container.
 

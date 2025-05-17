@@ -1,5 +1,6 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
+import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
@@ -7,8 +8,13 @@ import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
+  CommandAction,
+  FileEditAction,
+  FileWriteAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { Conversation } from "#/api/open-hands.types";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -17,6 +23,17 @@ const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   "source" in event &&
   "message" in event &&
   "timestamp" in event;
+
+const isFileWriteAction = (
+  event: OpenHandsParsedEvent,
+): event is FileWriteAction => "action" in event && event.action === "write";
+
+const isFileEditAction = (
+  event: OpenHandsParsedEvent,
+): event is FileEditAction => "action" in event && event.action === "edit";
+
+const isCommandAction = (event: OpenHandsParsedEvent): event is CommandAction =>
+  "action" in event && event.action === "run";
 
 const isUserMessage = (
   event: OpenHandsParsedEvent,
@@ -78,7 +95,7 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
-    if (data.message === "websocket error") {
+    if (data.message === "websocket error" || data.message === "timeout") {
       return;
     }
     let msgId: string | undefined;
@@ -104,12 +121,14 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
+  const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
 
@@ -126,9 +145,46 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsEvent(event) && isMessageAction(event)) {
-      messageRateHandler.record(new Date().getTime());
+    if (isOpenHandsEvent(event)) {
+      if (isMessageAction(event)) {
+        messageRateHandler.record(new Date().getTime());
+      }
+
+      // Invalidate diffs cache when a file is edited or written
+      if (
+        isFileEditAction(event) ||
+        isFileWriteAction(event) ||
+        isCommandAction(event)
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ["file_changes", conversationId],
+        });
+
+        // Invalidate file diff cache when a file is edited or written
+        if (!isCommandAction(event)) {
+          const cachedConversaton = queryClient.getQueryData<Conversation>([
+            "user",
+            "conversation",
+            conversationId,
+          ]);
+          const clonedRepositoryDirectory =
+            cachedConversaton?.selected_repository?.split("/").pop();
+
+          let fileToInvalidate = event.args.path.replace("/workspace/", "");
+          if (clonedRepositoryDirectory) {
+            fileToInvalidate = fileToInvalidate.replace(
+              `${clonedRepositoryDirectory}/`,
+              "",
+            );
+          }
+
+          queryClient.invalidateQueries({
+            queryKey: ["file_diff", conversationId, fileToInvalidate],
+          });
+        }
+      }
     }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
@@ -168,6 +224,7 @@ export function WsClientProvider({
     const query = {
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
+      providers_set: providers,
     };
 
     const baseUrl =

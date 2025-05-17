@@ -1,9 +1,11 @@
 import asyncio
 import os
 import uuid
+from datetime import datetime, timezone
 from typing import Callable
 
 import openhands
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, EventSource, RecallType
@@ -14,9 +16,9 @@ from openhands.events.observation.agent import (
 from openhands.events.observation.empty import NullObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.microagent import (
-    BaseMicroAgent,
-    KnowledgeMicroAgent,
-    RepoMicroAgent,
+    BaseMicroagent,
+    KnowledgeMicroagent,
+    RepoMicroagent,
     load_microagents_from_dir,
 )
 from openhands.runtime.base import Runtime
@@ -57,8 +59,8 @@ class Memory:
         )
 
         # Additional placeholders to store user workspace microagents
-        self.repo_microagents: dict[str, RepoMicroAgent] = {}
-        self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
+        self.repo_microagents: dict[str, RepoMicroagent] = {}
+        self.knowledge_microagents: dict[str, KnowledgeMicroagent] = {}
 
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
@@ -97,11 +99,14 @@ class Memory:
                     return
 
                 # Handle knowledge recall (triggered microagents)
+                # Allow triggering from both user and agent messages
                 elif (
                     event.source == EventSource.USER
-                    and event.recall_type == RecallType.KNOWLEDGE
-                ):
-                    logger.debug('Microagent knowledge recall')
+                    or event.source == EventSource.AGENT
+                ) and event.recall_type == RecallType.KNOWLEDGE:
+                    logger.debug(
+                        f'Microagent knowledge recall from {event.source} message'
+                    )
                     microagent_obs: RecallObservation | NullObservation | None = None
                     microagent_obs = self._on_microagent_recall(event)
                     if microagent_obs is None:
@@ -121,7 +126,11 @@ class Memory:
     def _on_workspace_context_recall(
         self, event: RecallAction
     ) -> RecallObservation | None:
-        """Add repository and runtime information to the stream as a RecallObservation."""
+        """Add repository and runtime information to the stream as a RecallObservation.
+
+        This method collects information from all available repo microagents and concatenates their contents.
+        Multiple repo microagents are supported, and their contents will be concatenated with newlines between them.
+        """
 
         # Create WORKSPACE_CONTEXT info:
         # - repository_info
@@ -131,11 +140,8 @@ class Memory:
 
         # Collect raw repository instructions
         repo_instructions = ''
-        assert (
-            len(self.repo_microagents) <= 1
-        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
 
-        # Retrieve the context of repo instructions
+        # Retrieve the context of repo instructions from all repo microagents
         for microagent in self.repo_microagents.values():
             if repo_instructions:
                 repo_instructions += '\n\n'
@@ -170,6 +176,10 @@ class Memory:
                 else '',
                 microagent_knowledge=microagent_knowledge,
                 content='Added workspace context',
+                date=self.runtime_info.date if self.runtime_info is not None else '',
+                custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
+                if self.runtime_info is not None
+                else {},
             )
             return obs
         return None
@@ -223,7 +233,7 @@ class Memory:
         return recalled_content
 
     def load_user_workspace_microagents(
-        self, user_microagents: list[BaseMicroAgent]
+        self, user_microagents: list[BaseMicroagent]
     ) -> None:
         """
         This method loads microagents from a user's cloned repo or workspace directory.
@@ -234,24 +244,43 @@ class Memory:
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
         )
         for user_microagent in user_microagents:
-            if isinstance(user_microagent, KnowledgeMicroAgent):
+            if isinstance(user_microagent, KnowledgeMicroagent):
                 self.knowledge_microagents[user_microagent.name] = user_microagent
-            elif isinstance(user_microagent, RepoMicroAgent):
+            elif isinstance(user_microagent, RepoMicroagent):
                 self.repo_microagents[user_microagent.name] = user_microagent
 
     def _load_global_microagents(self) -> None:
         """
         Loads microagents from the global microagents_dir
         """
-        repo_agents, knowledge_agents, _ = load_microagents_from_dir(
+        repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
         for name, agent in knowledge_agents.items():
-            if isinstance(agent, KnowledgeMicroAgent):
+            if isinstance(agent, KnowledgeMicroagent):
                 self.knowledge_microagents[name] = agent
         for name, agent in repo_agents.items():
-            if isinstance(agent, RepoMicroAgent):
+            if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
+
+    def get_microagent_mcp_tools(self) -> list[MCPConfig]:
+        """
+        Get MCP tools from all repo microagents (always active)
+
+        Returns:
+            A list of MCP tools configurations from microagents
+        """
+        mcp_configs: list[MCPConfig] = []
+
+        # Check all repo microagents for MCP tools (always active)
+        for agent in self.repo_microagents.values():
+            if agent.metadata.mcp_tools:
+                mcp_configs.append(agent.metadata.mcp_tools)
+                logger.debug(
+                    f'Found MCP tools in repo microagent {agent.name}: {agent.metadata.mcp_tools}'
+                )
+
+        return mcp_configs
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
@@ -260,16 +289,25 @@ class Memory:
         else:
             self.repository_info = None
 
-    def set_runtime_info(self, runtime: Runtime) -> None:
+    def set_runtime_info(
+        self, runtime: Runtime, custom_secrets_descriptions: dict[str, str]
+    ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
+        utc_now = datetime.now(timezone.utc)
+        date = str(utc_now.date())
+
         if runtime.web_hosts or runtime.additional_agent_instructions:
             self.runtime_info = RuntimeInfo(
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
+                date=date,
+                custom_secrets_descriptions=custom_secrets_descriptions,
             )
         else:
-            self.runtime_info = None
+            self.runtime_info = RuntimeInfo(
+                date=date, custom_secrets_descriptions=custom_secrets_descriptions
+            )
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""

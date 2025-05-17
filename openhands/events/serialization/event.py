@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -48,14 +49,14 @@ DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | 
 }
 
 
-def event_from_dict(data) -> 'Event':
+def event_from_dict(data: dict[str, Any]) -> 'Event':
     evt: Event
     if 'action' in data:
         evt = action_from_dict(data)
     elif 'observation' in data:
         evt = observation_from_dict(data)
     else:
-        raise ValueError('Unknown event type: ' + data)
+        raise ValueError(f'Unknown event type: {data}')
     for key in UNDERSCORE_KEYS:
         if key in data:
             value = data[key]
@@ -78,6 +79,11 @@ def event_from_dict(data) -> 'Event':
                     metrics.token_usages = [
                         TokenUsage(**usage) for usage in value.get('token_usages', [])
                     ]
+                    # Set accumulated token usage if available
+                    if 'accumulated_token_usage' in value:
+                        metrics._accumulated_token_usage = TokenUsage(
+                            **value.get('accumulated_token_usage', {})
+                        )
                 value = metrics
             setattr(evt, '_' + key, value)
     return evt
@@ -132,7 +138,7 @@ def event_to_dict(event: 'Event') -> dict:
         if hasattr(event, 'success'):
             d['success'] = event.success
     else:
-        raise ValueError('Event must be either action or observation')
+        raise ValueError(f'Event must be either action or observation. has: {event}')
     return d
 
 

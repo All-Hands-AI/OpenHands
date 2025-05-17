@@ -11,8 +11,10 @@ from openhands.events.observation.agent import MicroagentKnowledge
 
 @dataclass
 class RuntimeInfo:
+    date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+    custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -56,10 +58,10 @@ class PromptManager:
         return self.system_template.render().strip()
 
     def get_example_user_message(self) -> str:
-        """This is the initial user message provided to the agent
+        """This is an initial user message that can be provided to the agent
         before *actual* user instructions are provided.
 
-        It is used to provide a demonstration of how the agent
+        It can be used to provide a demonstration of how the agent
         should behave in order to solve the user's task. And it may
         optionally contain some additional context about the user's task.
         These additional context will convert the current generic agent
@@ -67,14 +69,6 @@ class PromptManager:
         """
 
         return self.user_template.render().strip()
-
-    def add_examples_to_initial_message(self, message: Message) -> None:
-        """Add example_message to the first user message."""
-        example_message = self.get_example_user_message() or None
-
-        # Insert it at the start of the TextContent list
-        if example_message:
-            message.content.insert(0, TextContent(text=example_message))
 
     def build_workspace_context(
         self,

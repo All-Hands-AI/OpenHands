@@ -109,6 +109,34 @@ export interface AgentThinkObservation
   };
 }
 
+export interface MicroagentKnowledge {
+  name: string;
+  trigger: string;
+  content: string;
+}
+
+export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
+  source: "agent";
+  extras: {
+    recall_type?: "workspace_context" | "knowledge";
+    repo_name?: string;
+    repo_directory?: string;
+    repo_instructions?: string;
+    runtime_hosts?: Record<string, number>;
+    custom_secrets_descriptions?: Record<string, string>;
+    additional_agent_instructions?: string;
+    date?: string;
+    microagent_knowledge?: MicroagentKnowledge[];
+  };
+}
+
+export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
+  source: "agent";
+  extras: {
+    // Add any specific fields for MCP observations
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -120,4 +148,6 @@ export type OpenHandsObservation =
   | WriteObservation
   | ReadObservation
   | EditObservation
-  | ErrorObservation;
+  | ErrorObservation
+  | RecallObservation
+  | MCPObservation;

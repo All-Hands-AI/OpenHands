@@ -4,7 +4,7 @@ from openhands.core.config.condenser_config import BrowserOutputCondenserConfig
 from openhands.events.event import Event
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
-from openhands.memory.condenser.condenser import Condenser
+from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
 class BrowserOutputCondenser(Condenser):
@@ -17,18 +17,18 @@ class BrowserOutputCondenser(Condenser):
         self.attention_window = attention_window
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, view: View) -> View | Condensation:
         """Replace the content of browser observations outside of the attention window with a placeholder."""
         results: list[Event] = []
         cnt: int = 0
-        for event in reversed(events):
+        for event in reversed(view):
             if (
                 isinstance(event, BrowserOutputObservation)
                 and cnt >= self.attention_window
             ):
                 results.append(
                     AgentCondensationObservation(
-                        f'Current URL: {event.url}\nContent Omitted'
+                        f'Visited URL {event.url}\nContent omitted'
                     )
                 )
             else:
@@ -36,7 +36,7 @@ class BrowserOutputCondenser(Condenser):
                 if isinstance(event, BrowserOutputObservation):
                     cnt += 1
 
-        return list(reversed(results))
+        return View(events=list(reversed(results)))
 
     @classmethod
     def from_config(

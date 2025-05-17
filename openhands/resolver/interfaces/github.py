@@ -1,6 +1,6 @@
 from typing import Any
 
-import requests
+import httpx
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
@@ -12,11 +12,28 @@ from openhands.resolver.utils import extract_issue_references
 
 
 class GithubIssueHandler(IssueHandlerInterface):
-    def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str | None = None,
+        base_domain: str = 'github.com',
+    ):
+        """Initialize a GitHub issue handler.
+
+        Args:
+            owner: The owner of the repository
+            repo: The name of the repository
+            token: The GitHub personal access token
+            username: Optional GitHub username
+            base_domain: The domain for GitHub Enterprise (default: "github.com")
+        """
         self.owner = owner
         self.repo = repo
         self.token = token
         self.username = username
+        self.base_domain = base_domain
         self.base_url = self.get_base_url()
         self.download_url = self.get_download_url()
         self.clone_url = self.get_clone_url()
@@ -32,10 +49,13 @@ class GithubIssueHandler(IssueHandlerInterface):
         }
 
     def get_base_url(self) -> str:
-        return f'https://api.github.com/repos/{self.owner}/{self.repo}'
+        if self.base_domain == 'github.com':
+            return f'https://api.github.com/repos/{self.owner}/{self.repo}'
+        else:
+            return f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}'
 
     def get_authorize_url(self) -> str:
-        return f'https://{self.username}:{self.token}@github.com/'
+        return f'https://{self.username}:{self.token}@{self.base_domain}/'
 
     def get_branch_url(self, branch_name: str) -> str:
         return self.get_base_url() + f'/branches/{branch_name}'
@@ -49,13 +69,16 @@ class GithubIssueHandler(IssueHandlerInterface):
             if self.username
             else f'x-auth-token:{self.token}'
         )
-        return f'https://{username_and_token}@github.com/{self.owner}/{self.repo}.git'
+        return f'https://{username_and_token}@{self.base_domain}/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self) -> str:
-        return 'https://api.github.com/graphql'
+        if self.base_domain == 'github.com':
+            return 'https://api.github.com/graphql'
+        else:
+            return f'https://{self.base_domain}/api/graphql'
 
     def get_compare_url(self, branch_name: str) -> str:
-        return f'https://github.com/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
+        return f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
@@ -121,9 +144,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         all_issues = []
 
         while True:
-            response = requests.get(
-                self.download_url, headers=self.headers, params=params
-            )
+            response = httpx.get(self.download_url, headers=self.headers, params=params)
             response.raise_for_status()
             issues = response.json()
 
@@ -152,7 +173,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         all_comments = []
 
         while True:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = httpx.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             comments = response.json()
 
@@ -179,7 +200,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def branch_exists(self, branch_name: str) -> bool:
         logger.info(f'Checking if branch {branch_name} exists...')
-        response = requests.get(
+        response = httpx.get(
             f'{self.base_url}/branches/{branch_name}', headers=self.headers
         )
         exists = response.status_code == 200
@@ -216,16 +237,16 @@ class GithubIssueHandler(IssueHandlerInterface):
             'Content-Type': 'application/json',
         }
 
-        response = requests.post(
+        response = httpx.post(
             url, json={'query': query, 'variables': variables}, headers=headers
         )
         response.raise_for_status()
 
     def get_pull_url(self, pr_number: int) -> str:
-        return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
+        return f'https://{self.base_domain}/{self.owner}/{self.repo}/pull/{pr_number}'
 
     def get_default_branch_name(self) -> str:
-        response = requests.get(f'{self.base_url}', headers=self.headers)
+        response = httpx.get(f'{self.base_url}', headers=self.headers)
         response.raise_for_status()
         data = response.json()
         return str(data['default_branch'])
@@ -233,9 +254,7 @@ class GithubIssueHandler(IssueHandlerInterface):
     def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
         if data is None:
             data = {}
-        response = requests.post(
-            f'{self.base_url}/pulls', headers=self.headers, json=data
-        )
+        response = httpx.post(f'{self.base_url}/pulls', headers=self.headers, json=data)
         if response.status_code == 403:
             raise RuntimeError(
                 'Failed to create pull request due to missing permissions. '
@@ -247,7 +266,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         review_data = {'reviewers': [reviewer]}
-        review_response = requests.post(
+        review_response = httpx.post(
             f'{self.base_url}/pulls/{pr_number}/requested_reviewers',
             headers=self.headers,
             json=review_data,
@@ -267,7 +286,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         # Post a comment on the PR
         comment_url = f'{self.base_url}/issues/{issue_number}/comments'
         comment_data = {'body': msg}
-        comment_response = requests.post(
+        comment_response = httpx.post(
             comment_url, headers=self.headers, json=comment_data
         )
         if comment_response.status_code != 201:
@@ -290,11 +309,30 @@ class GithubIssueHandler(IssueHandlerInterface):
 
 
 class GithubPRHandler(GithubIssueHandler):
-    def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
-        super().__init__(owner, repo, token, username)
-        self.download_url = (
-            f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
-        )
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str | None = None,
+        base_domain: str = 'github.com',
+    ):
+        """Initialize a GitHub PR handler.
+
+        Args:
+            owner: The owner of the repository
+            repo: The name of the repository
+            token: The GitHub personal access token
+            username: Optional GitHub username
+            base_domain: The domain for GitHub Enterprise (default: "github.com")
+        """
+        super().__init__(owner, repo, token, username, base_domain)
+        if self.base_domain == 'github.com':
+            self.download_url = (
+                f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
+            )
+        else:
+            self.download_url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/pulls'
 
     def download_pr_metadata(
         self, pull_number: int, comment_id: int | None = None
@@ -360,13 +398,13 @@ class GithubPRHandler(GithubIssueHandler):
 
         variables = {'owner': self.owner, 'repo': self.repo, 'pr': pull_number}
 
-        url = 'https://api.github.com/graphql'
+        url = self.get_graphql_url()
         headers = {
             'Authorization': f'Bearer {self.token}',
             'Content-Type': 'application/json',
         }
 
-        response = requests.post(
+        response = httpx.post(
             url, json={'query': query, 'variables': variables}, headers=headers
         )
         response.raise_for_status()
@@ -448,7 +486,10 @@ class GithubPRHandler(GithubIssueHandler):
         self, pr_number: int, comment_id: int | None = None
     ) -> list[str] | None:
         """Download comments for a specific pull request from Github."""
-        url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
+        if self.base_domain == 'github.com':
+            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
+        else:
+            url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
         headers = {
             'Authorization': f'token {self.token}',
             'Accept': 'application/vnd.github.v3+json',
@@ -457,7 +498,7 @@ class GithubPRHandler(GithubIssueHandler):
         all_comments = []
 
         while True:
-            response = requests.get(url, headers=headers, params=params)
+            response = httpx.get(url, headers=headers, params=params)
             response.raise_for_status()
             comments = response.json()
 
@@ -517,18 +558,21 @@ class GithubPRHandler(GithubIssueHandler):
 
         for issue_number in unique_issue_references:
             try:
-                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                if self.base_domain == 'github.com':
+                    url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                else:
+                    url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/issues/{issue_number}'
                 headers = {
                     'Authorization': f'Bearer {self.token}',
                     'Accept': 'application/vnd.github.v3+json',
                 }
-                response = requests.get(url, headers=headers)
+                response = httpx.get(url, headers=headers)
                 response.raise_for_status()
                 issue_data = response.json()
                 issue_body = issue_data.get('body', '')
                 if issue_body:
                     closing_issues.append(issue_body)
-            except requests.exceptions.RequestException as e:
+            except httpx.HTTPError as e:
                 logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues

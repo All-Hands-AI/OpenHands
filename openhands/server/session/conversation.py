@@ -38,10 +38,10 @@ class Conversation:
             headless_mode=False,
         )
 
-    async def connect(self):
+    async def connect(self) -> None:
         await self.runtime.connect()
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         if self.event_stream:
             self.event_stream.close()
         asyncio.create_task(call_sync_from_async(self.runtime.close))

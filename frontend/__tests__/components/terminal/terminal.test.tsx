@@ -5,7 +5,7 @@ import { Command, appendInput, appendOutput } from "#/state/command-slice";
 import Terminal from "#/components/features/terminal/terminal";
 
 const renderTerminal = (commands: Command[] = []) =>
-  renderWithProviders(<Terminal secrets={[]} />, {
+  renderWithProviders(<Terminal />, {
     preloadedState: {
       cmd: {
         commands,
@@ -121,7 +121,7 @@ describe.skip("Terminal", () => {
 
   // This test fails because it expects `disposeMock` to have been called before the component is unmounted.
   it.skip("should dispose the terminal on unmount", () => {
-    const { unmount } = renderWithProviders(<Terminal secrets={[]} />);
+    const { unmount } = renderWithProviders(<Terminal />);
 
     expect(mockTerminal.dispose).not.toHaveBeenCalled();
 

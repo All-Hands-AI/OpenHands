@@ -3,34 +3,42 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationError
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 
 
 class AgentConfig(BaseModel):
-    """Configuration for the agent.
-
-    Attributes:
-        function_calling: Whether function calling is enabled. Default is True.
-        codeact_enable_browsing: Whether browsing delegate is enabled in the action space. Default is False. Only works with function calling.
-        codeact_enable_llm_editor: Whether LLM editor is enabled in the action space. Default is False. Only works with function calling.
-        codeact_enable_jupyter: Whether Jupyter is enabled in the action space. Default is False.
-        llm_config: The name of the llm config to use. If specified, this will override global llm config.
-        enable_prompt_extensions: Whether to use prompt extensions (e.g., microagents, inject runtime info). Default is True.
-        disabled_microagents: A list of microagents to disable (by name, without .py extension, e.g. ["github", "lint"]). Default is None.
-        condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
-        enable_history_truncation: Whether history should be truncated to continue the session when hitting LLM context length limit.
-        enable_som_visual_browsing: Whether to enable SoM (Set of Marks) visual browsing. Default is False.
-    """
-
     llm_config: str | None = Field(default=None)
-    codeact_enable_browsing: bool = Field(default=True)
-    codeact_enable_llm_editor: bool = Field(default=False)
-    codeact_enable_jupyter: bool = Field(default=True)
+    """The name of the llm config to use. If specified, this will override global llm config."""
+    classpath: str | None = Field(default=None)
+    """The classpath of the agent to use. To be used for custom agents that are not defined in the openhands.agenthub package."""
+    enable_browsing: bool = Field(default=True)
+    """Whether to enable browsing tool"""
+    enable_llm_editor: bool = Field(default=False)
+    """Whether to enable LLM editor tool"""
+    enable_editor: bool = Field(default=True)
+    """Whether to enable the standard editor tool (str_replace_editor), only has an effect if enable_llm_editor is False."""
+    enable_jupyter: bool = Field(default=True)
+    """Whether to enable Jupyter tool"""
+    enable_cmd: bool = Field(default=True)
+    """Whether to enable bash tool"""
+    enable_think: bool = Field(default=True)
+    """Whether to enable think tool"""
+    enable_finish: bool = Field(default=True)
+    """Whether to enable finish tool"""
     enable_prompt_extensions: bool = Field(default=True)
+    """Whether to enable prompt extensions"""
     disabled_microagents: list[str] = Field(default_factory=list)
+    """A list of microagents to disable (by name, without .py extension, e.g. ["github", "lint"]). Default is None."""
     enable_history_truncation: bool = Field(default=True)
-    enable_som_visual_browsing: bool = Field(default=False)
-    condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
+    """Whether history should be truncated to continue the session when hitting LLM context length limit."""
+    enable_som_visual_browsing: bool = Field(default=True)
+    """Whether to enable SoM (Set of Marks) visual browsing."""
+    condenser: CondenserConfig = Field(
+        default_factory=lambda: NoOpCondenserConfig(type='noop')
+    )
+    extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
+    """Extended configuration for the agent."""
 
     model_config = {'extra': 'forbid'}
 

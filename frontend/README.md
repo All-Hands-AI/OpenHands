@@ -61,7 +61,7 @@ make build
 # Start the application
 make run
 ```
-Or to run backend and frontend seperately.
+Or to run backend and frontend separately.
 
 ```sh
 # Start the backend from the root directory
@@ -79,7 +79,20 @@ npm run dev:mock or npm run dev:mock:saas
 
 ### Environment Variables
 
-TODO
+The frontend application uses the following environment variables:
+
+| Variable                    | Description                                                            | Default Value    |
+| --------------------------- | ---------------------------------------------------------------------- | ---------------- |
+| `VITE_BACKEND_BASE_URL`     | The backend hostname without protocol (used for WebSocket connections) | `localhost:3000` |
+| `VITE_BACKEND_HOST`         | The backend host with port for API connections                         | `127.0.0.1:3000` |
+| `VITE_MOCK_API`             | Enable/disable API mocking with MSW                                    | `false`          |
+| `VITE_MOCK_SAAS`            | Simulate SaaS mode in development                                      | `false`          |
+| `VITE_USE_TLS`              | Use HTTPS/WSS for backend connections                                  | `false`          |
+| `VITE_FRONTEND_PORT`        | Port to run the frontend application                                   | `3001`           |
+| `VITE_INSECURE_SKIP_VERIFY` | Skip TLS certificate verification                                      | `false`          |
+| `VITE_GITHUB_TOKEN`         | GitHub token for repository access (used in some tests)                | -                |
+
+You can create a `.env` file in the frontend directory with these variables based on the `.env.sample` file.
 
 ### Project Structure
 

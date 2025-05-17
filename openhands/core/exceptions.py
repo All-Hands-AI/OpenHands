@@ -88,6 +88,16 @@ class LLMResponseError(Exception):
         super().__init__(message)
 
 
+# This exception should be retried
+# Typically, after retry with a non-zero temperature, the LLM will return a response
+class LLMNoResponseError(Exception):
+    def __init__(
+        self,
+        message: str = 'LLM did not return a response. This is only seen in Gemini models so far.',
+    ) -> None:
+        super().__init__(message)
+
+
 class UserCancelledError(Exception):
     def __init__(self, message: str = 'User cancelled the request') -> None:
         super().__init__(message)
@@ -212,14 +222,14 @@ class BrowserUnavailableException(Exception):
 # ============================================
 
 
-class MicroAgentError(Exception):
+class MicroagentError(Exception):
     """Base exception for all microagent errors."""
 
     pass
 
 
-class MicroAgentValidationError(MicroAgentError):
+class MicroagentValidationError(MicroagentError):
     """Raised when there's a validation error in microagent metadata."""
 
-    def __init__(self, message: str = 'Micro agent validation failed') -> None:
+    def __init__(self, message: str = 'Microagent validation failed') -> None:
         super().__init__(message)

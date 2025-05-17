@@ -14,12 +14,14 @@ interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   currentModel?: string;
+  onChange?: (model: string | null) => void;
 }
 
 export function ModelSelector({
   isDisabled,
   models,
   currentModel,
+  onChange,
 }: ModelSelectorProps) {
   const [, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
@@ -55,6 +57,7 @@ export function ModelSelector({
     }
     setLitellmId(fullModel);
     setSelectedModel(model);
+    onChange?.(fullModel);
   };
 
   const clear = () => {
@@ -93,7 +96,7 @@ export function ModelSelector({
             },
           }}
         >
-          <AutocompleteSection title="Verified">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
             {Object.keys(models)
               .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
@@ -105,7 +108,7 @@ export function ModelSelector({
                 </AutocompleteItem>
               ))}
           </AutocompleteSection>
-          <AutocompleteSection title="Others">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
             {Object.keys(models)
               .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
@@ -143,14 +146,14 @@ export function ModelSelector({
             },
           }}
         >
-          <AutocompleteSection title="Verified">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
             {models[selectedProvider || ""]?.models
               .filter((model) => VERIFIED_MODELS.includes(model))
               .map((model) => (
                 <AutocompleteItem key={model}>{model}</AutocompleteItem>
               ))}
           </AutocompleteSection>
-          <AutocompleteSection title="Others">
+          <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
             {models[selectedProvider || ""]?.models
               .filter((model) => !VERIFIED_MODELS.includes(model))
               .map((model) => (

@@ -4,6 +4,7 @@ import time
 import traceback
 import uuid
 from enum import Enum
+from typing import Any
 
 import bashlex
 import libtmux
@@ -19,12 +20,18 @@ from openhands.events.observation.commands import (
 from openhands.utils.shutdown_listener import should_continue
 
 
-def split_bash_commands(commands):
+def split_bash_commands(commands: str) -> list[str]:
     if not commands.strip():
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except (bashlex.errors.ParsingError, NotImplementedError):
+    except (
+        bashlex.errors.ParsingError,
+        NotImplementedError,
+        TypeError,
+        AttributeError,
+    ):
+        # Added AttributeError to catch 'str' object has no attribute 'kind' error (issue #8369)
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
@@ -82,7 +89,7 @@ def escape_bash_special_chars(command: str) -> str:
         parts = []
         last_pos = 0
 
-        def visit_node(node):
+        def visit_node(node: Any) -> None:
             nonlocal last_pos
             if (
                 node.kind == 'redirect'
@@ -144,7 +151,7 @@ def escape_bash_special_chars(command: str) -> str:
         remaining = command[last_pos:]
         parts.append(remaining)
         return ''.join(parts)
-    except (bashlex.errors.ParsingError, NotImplementedError):
+    except (bashlex.errors.ParsingError, NotImplementedError, TypeError):
         logger.debug(
             f'Failed to parse bash commands for special characters escape\n'
             f'[input]: {command}\n'
@@ -183,7 +190,7 @@ class BashSession:
         self._initialized = False
         self.max_memory_mb = max_memory_mb
 
-    def initialize(self):
+    def initialize(self) -> None:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
         if self.username in ['root', 'openhands']:
@@ -203,7 +210,7 @@ class BashSession:
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
-            start_directory=self.work_dir,
+            start_directory=self.work_dir,  # This parameter is supported by libtmux
             kill_session=True,
             x=1000,
             y=1000,
@@ -214,13 +221,13 @@ class BashSession:
         self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
         self.session.history_limit = self.HISTORY_LIMIT
         # We need to create a new pane because the initial pane's history limit is (default) 2000
-        _initial_window = self.session.attached_window
+        _initial_window = self.session.active_window
         self.window = self.session.new_window(
             window_name='bash',
             window_shell=window_command,
-            start_directory=self.work_dir,
+            start_directory=self.work_dir,  # This parameter is supported by libtmux
         )
-        self.pane = self.window.attached_pane
+        self.pane = self.window.active_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
         _initial_window.kill_window()
 
@@ -241,7 +248,7 @@ class BashSession:
         self._cwd = os.path.abspath(self.work_dir)
         self._initialized = True
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Ensure the session is closed when the object is destroyed."""
         self.close()
 
@@ -256,7 +263,7 @@ class BashSession:
         )
         return content
 
-    def close(self):
+    def close(self) -> None:
         """Clean up the session."""
         if self._closed:
             return
@@ -264,7 +271,7 @@ class BashSession:
         self._closed = True
 
     @property
-    def cwd(self):
+    def cwd(self) -> str:
         return self._cwd
 
     def _is_special_key(self, command: str) -> bool:
@@ -273,7 +280,7 @@ class BashSession:
         _command = command.strip()
         return _command.startswith('C-') and len(_command) == 3
 
-    def _clear_screen(self):
+    def _clear_screen(self) -> None:
         """Clear the tmux pane screen and history."""
         self.pane.send_keys('C-l', enter=False)
         time.sleep(0.1)
@@ -424,7 +431,7 @@ class BashSession:
             metadata=metadata,
         )
 
-    def _ready_for_next_command(self):
+    def _ready_for_next_command(self) -> None:
         """Reset the content buffer for a new command."""
         # Clear the current content
         self._clear_screen()
@@ -461,6 +468,8 @@ class BashSession:
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
             combined_output += output_segment + '\n'
+        # Add the content after the last PS1 prompt
+        combined_output += pane_content[ps1_matches[-1].end() + 1 :]
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
@@ -500,13 +509,23 @@ class BashSession:
                 content=(
                     f'ERROR: Cannot execute multiple commands at once.\n'
                     f'Please run each command separately OR chain them into a single command via && or ;\n'
-                    f'Provided commands:\n{"\n".join(f"({i+1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+                    f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
                 )
             )
 
+        # Get initial state before sending command
+        initial_pane_output = self._get_pane_content()
+        initial_ps1_matches = CmdOutputMetadata.matches_ps1_metadata(
+            initial_pane_output
+        )
+        initial_ps1_count = len(initial_ps1_matches)
+        logger.debug(f'Initial PS1 count: {initial_ps1_count}')
+
         start_time = time.time()
         last_change_time = start_time
-        last_pane_output = self._get_pane_content()
+        last_pane_output = (
+            initial_pane_output  # Use initial output as the starting point
+        )
 
         # When prev command is still running, and we are trying to send a new command
         if (
@@ -515,15 +534,20 @@ class BashSession:
                 BashCommandStatus.HARD_TIMEOUT,
                 BashCommandStatus.NO_CHANGE_TIMEOUT,
             }
-            and not last_pane_output.endswith(
-                CMD_OUTPUT_PS1_END
+            and not last_pane_output.rstrip().endswith(
+                CMD_OUTPUT_PS1_END.rstrip()
             )  # prev command is not completed
             and not is_input
             and command != ''  # not input and not empty command
         ):
             _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+            # Use initial_ps1_matches if _ps1_matches is empty, otherwise use _ps1_matches
+            # This handles the case where the prompt might be scrolled off screen but existed before
+            current_matches_for_output = (
+                _ps1_matches if _ps1_matches else initial_ps1_matches
+            )
             raw_command_output = self._combine_outputs_between_matches(
-                last_pane_output, _ps1_matches
+                last_pane_output, current_matches_for_output
             )
             metadata = CmdOutputMetadata()  # No metadata available
             metadata.suffix = (
@@ -576,23 +600,32 @@ class BashSession:
             logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
             logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
+            current_ps1_count = len(ps1_matches)
+
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
                 last_change_time = time.time()
                 logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
 
-            # 1) Execution completed
-            # if the last command output contains the end marker
-            if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
+            # 1) Execution completed:
+            # Condition 1: A new prompt has appeared since the command started.
+            # Condition 2: The prompt count hasn't increased (potentially because the initial one scrolled off),
+            # BUT the *current* visible pane ends with a prompt, indicating completion.
+            if (
+                current_ps1_count > initial_ps1_count
+                or cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
+            ):
                 return self._handle_completed_command(
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                 )
 
+            # Timeout checks should only trigger if a new prompt hasn't appeared yet.
+
             # 2) Execution timed out since there's no change in output
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
-            # We ignore this if the command is *blocking
+            # We ignore this if the command is *blocking*
             time_since_last_change = time.time() - last_change_time
             logger.debug(
                 f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
@@ -608,10 +641,12 @@ class BashSession:
                 )
 
             # 3) Execution timed out due to hard timeout
+            elapsed_time = time.time() - start_time
             logger.debug(
-                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {time.time() - start_time}'
+                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {elapsed_time:.2f}'
             )
-            if action.timeout and time.time() - start_time >= action.timeout:
+            if action.timeout and elapsed_time >= action.timeout:
+                logger.debug('Hard timeout triggered.')
                 return self._handle_hard_timeout_command(
                     command,
                     pane_content=cur_pane_output,

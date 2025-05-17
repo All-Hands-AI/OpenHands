@@ -22,5 +22,5 @@ export const retrieveAxiosErrorMessage = (error: AxiosError) => {
     errorMessage = error.message;
   }
 
-  return errorMessage || "An error occurred";
+  return errorMessage;
 };
