@@ -19,7 +19,8 @@ export default [
       route("api-keys", "routes/api-keys.tsx"),
     ]),
     route("conversations/:conversationId", "routes/conversation.tsx", [
-      index("routes/changes-tab.tsx"),
+      index("routes/status-tab.tsx"),
+      route("changes", "routes/changes-tab.tsx"),
       route("browser", "routes/browser-tab.tsx"),
       route("jupyter", "routes/jupyter-tab.tsx"),
       route("served", "routes/served-tab.tsx"),

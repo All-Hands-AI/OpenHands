@@ -2,7 +2,7 @@ import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
+import { FaServer, FaExternalLinkAlt, FaClipboardList } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
 import { VscCode } from "react-icons/vsc";
@@ -134,8 +134,13 @@ function AppContent() {
             className="h-full w-full"
             labels={[
               {
+                label: t(I18nKey.STATUS$TAB_LABEL),
+                to: "status",
+                icon: <FaClipboardList className="w-5 h-5" />,
+              },
+              {
                 label: "Changes",
-                to: "",
+                to: "changes",
                 icon: <DiGit className="w-6 h-6" />,
               },
               {

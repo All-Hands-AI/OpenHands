@@ -22,6 +22,7 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
+from openhands.server.routes.status import app as status_api_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
 
@@ -54,4 +55,5 @@ app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
+app.include_router(status_api_router)
 app.include_router(trajectory_router)
