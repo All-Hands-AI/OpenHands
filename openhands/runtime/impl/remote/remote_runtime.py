@@ -32,7 +32,11 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(ActionExecutionClient):
-    """This runtime will connect to a remote oh-runtime-client."""
+    """
+    This runtime will connect to a remote oh-runtime-client.
+
+    The attach_to_existing option is ignored, `connect` will always resume if possible.
+    """
 
     port: int = 60000  # default port for the remote runtime client
     runtime_id: str | None = None
@@ -116,28 +120,20 @@ class RemoteRuntime(ActionExecutionClient):
         self._runtime_initialized = True
 
     def _start_or_attach_to_runtime(self) -> None:
-        existing_runtime = self._check_existing_runtime()
-        if existing_runtime:
-            self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
-        elif self.attach_to_existing:
-            raise AgentRuntimeNotFoundError(
-                f'Could not find existing runtime for SID: {self.sid}'
+        self.send_status_message('STATUS$STARTING_CONTAINER')
+        if self.config.sandbox.runtime_container_image is None:
+            self.log(
+                'info',
+                f'Building remote runtime with base image: {self.config.sandbox.base_container_image}',
             )
+            self._build_runtime()
         else:
-            self.send_status_message('STATUS$STARTING_CONTAINER')
-            if self.config.sandbox.runtime_container_image is None:
-                self.log(
-                    'info',
-                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}',
-                )
-                self._build_runtime()
-            else:
-                self.log(
-                    'info',
-                    f'Starting remote runtime with image: {self.config.sandbox.runtime_container_image}',
-                )
-                self.container_image = self.config.sandbox.runtime_container_image
-            self._start_runtime()
+            self.log(
+                'info',
+                f'Starting remote runtime with image: {self.config.sandbox.runtime_container_image}',
+            )
+            self.container_image = self.config.sandbox.runtime_container_image
+        self._start_runtime()
         assert self.runtime_id is not None, (
             'Runtime ID is not set. This should never happen.'
         )
@@ -145,11 +141,9 @@ class RemoteRuntime(ActionExecutionClient):
             'Runtime URL is not set. This should never happen.'
         )
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-        if not self.attach_to_existing:
-            self.log('info', 'Waiting for runtime to be alive...')
+        self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
-        if not self.attach_to_existing:
-            self.log('info', 'Runtime is ready.')
+        self.log('info', 'Runtime is ready.')
         self.send_status_message(' ')
 
     def _check_existing_runtime(self) -> bool:
