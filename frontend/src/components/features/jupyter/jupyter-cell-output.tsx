@@ -29,7 +29,7 @@ export function JupyterCellOutput({ lines }: JupyterCellOutputProps) {
             if (line.url) {
               return (
                 <div key={index} className="my-2">
-                  <ImageCarousel size="medium" images={[line.url]} />
+                  <ImageCarousel size="small" images={[line.url]} />
                 </div>
               );
             }
