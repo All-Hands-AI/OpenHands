@@ -99,6 +99,7 @@ async def cleanup_session(
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
 
+
 async def run_session(
     loop: asyncio.AbstractEventLoop,
     config: AppConfig,
