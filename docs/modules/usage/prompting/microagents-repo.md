@@ -1,4 +1,4 @@
-# General Repository Microagents
+# General Microagents
 
 ## Purpose
 
@@ -20,7 +20,7 @@ Frontmatter should be enclosed in triple dashes (---) and may include the follow
 
 ## Example
 
-General repository microagent file example located at `.openhands/microagents/repo.md`:
+General microagent file example located at `.openhands/microagents/repo.md`:
 ```
 This project is a TODO application that allows users to track TODO items.
 
@@ -28,4 +28,4 @@ To set it up, you can run `npm run build`.
 Always make sure the tests are passing before committing changes. You can run the tests by running `npm run test`.
 ```
 
-[See more examples of general repository microagents here.](https://github.com/All-Hands-AI/OpenHands/tree/main/.openhands/microagents)
+[See more examples of general microagents here.](https://github.com/All-Hands-AI/OpenHands/tree/main/.openhands/microagents)

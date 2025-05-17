@@ -3,12 +3,16 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+)
+
 
 class MicroagentType(str, Enum):
     """Type of microagent."""
 
-    KNOWLEDGE = 'knowledge'
-    REPO_KNOWLEDGE = 'repo'
+    KNOWLEDGE = 'knowledge'  # Optional microagent, triggered by keywords
+    REPO_KNOWLEDGE = 'repo'  # Always active microagent
     TASK = 'task'  # Special type for task microagents that require user input
 
 
@@ -28,3 +32,6 @@ class MicroagentMetadata(BaseModel):
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents
     inputs: List[InputMetadata] = []  # optional, only exists for task microagents
+    mcp_tools: MCPConfig | None = (
+        None  # optional, for microagents that provide additional MCP tools
+    )

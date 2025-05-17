@@ -65,8 +65,28 @@ class BaseMicroagent(BaseModel):
 
         try:
             metadata = MicroagentMetadata(**metadata_dict)
+
+            # Validate MCP tools configuration if present
+            if metadata.mcp_tools:
+                if metadata.mcp_tools.sse_servers:
+                    logger.warning(
+                        f'Microagent {metadata.name} has SSE servers. Only stdio servers are currently supported.'
+                    )
+
+                if not metadata.mcp_tools.stdio_servers:
+                    raise MicroagentValidationError(
+                        f'Microagent {metadata.name} has MCP tools configuration but no stdio servers. '
+                        'Only stdio servers are currently supported.'
+                    )
         except Exception as e:
-            raise MicroagentValidationError(f'Error loading metadata: {e}') from e
+            # Provide more detailed error message for validation errors
+            error_msg = f'Error validating microagent metadata in {path.name}: {str(e)}'
+            if 'type' in metadata_dict and metadata_dict['type'] not in [
+                t.value for t in MicroagentType
+            ]:
+                valid_types = ', '.join([f'"{t.value}"' for t in MicroagentType])
+                error_msg += f'. Invalid "type" value: "{metadata_dict["type"]}". Valid types are: {valid_types}'
+            raise MicroagentValidationError(error_msg) from e
 
         # Create appropriate subclass based on type
         subclass_map = {
@@ -78,7 +98,7 @@ class BaseMicroagent(BaseModel):
         # Infer the agent type:
         # 1. If inputs exist -> TASK
         # 2. If triggers exist -> KNOWLEDGE
-        # 3. Else (no triggers) -> REPO
+        # 3. Else (no triggers) -> REPO (always active)
         inferred_type: MicroagentType
         if metadata.inputs:
             inferred_type = MicroagentType.TASK
@@ -92,7 +112,7 @@ class BaseMicroagent(BaseModel):
         elif metadata.triggers:
             inferred_type = MicroagentType.KNOWLEDGE
         else:
-            # No triggers, default to REPO unless metadata explicitly says otherwise (which it shouldn't for REPO)
+            # No triggers, default to REPO
             # This handles cases where 'type' might be missing or defaulted by Pydantic
             inferred_type = MicroagentType.REPO_KNOWLEDGE
 
@@ -135,6 +155,7 @@ class KnowledgeMicroagent(BaseMicroagent):
         for trigger in self.triggers:
             if trigger.lower() in message:
                 return trigger
+
         return None
 
     @property
@@ -247,8 +268,16 @@ def load_microagents_from_dir(
                 elif isinstance(agent, KnowledgeMicroagent):
                     # Both KnowledgeMicroagent and TaskMicroagent go into knowledge_agents
                     knowledge_agents[agent.name] = agent
-                logger.debug(f'Loaded agent {agent.name} from {file}')
+                logger.debug(
+                    f'Loaded agent {agent.name} from {file}. Type: {type(agent)}'
+                )
+            except MicroagentValidationError as e:
+                # For validation errors, include the original exception
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
+                raise MicroagentValidationError(error_msg) from e
             except Exception as e:
-                raise ValueError(f'Error loading agent from {file}: {e}')
+                # For other errors, wrap in a ValueError with detailed message
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
+                raise ValueError(error_msg) from e
 
     return repo_agents, knowledge_agents

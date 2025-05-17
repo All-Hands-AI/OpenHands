@@ -7,12 +7,8 @@ from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    SerializationInfo,
     WithJsonSchema,
-    field_serializer,
-    model_validator,
 )
-from pydantic.json import pydantic_encoder
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
@@ -22,6 +18,7 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
+    Branch,
     GitService,
     ProviderType,
     Repository,
@@ -34,6 +31,7 @@ from openhands.server.types import AppMode
 class ProviderToken(BaseModel):
     token: SecretStr | None = Field(default=None)
     user_id: str | None = Field(default=None)
+    host: str | None = Field(default=None)
 
     model_config = {
         'frozen': True,  # Makes the entire model immutable
@@ -43,19 +41,47 @@ class ProviderToken(BaseModel):
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
         """Factory method to create a ProviderToken from various input types"""
-        if isinstance(token_value, ProviderToken):
+        if isinstance(token_value, cls):
             return token_value
         elif isinstance(token_value, dict):
-            token_str = token_value.get('token')
+            token_str = token_value.get('token', '')
+            # Override with emtpy string if it was set to None
+            # Cannot pass None to SecretStr
+            if token_str is None:
+                token_str = ''
             user_id = token_value.get('user_id')
-            return cls(token=SecretStr(token_str), user_id=user_id)
+            host = token_value.get('host')
+            return cls(token=SecretStr(token_str), user_id=user_id, host=host)
+
+        else:
+            raise ValueError('Unsupported Provider token type')
+
+
+class CustomSecret(BaseModel):
+    secret: SecretStr = Field(default_factory=lambda: SecretStr(''))
+    description: str = Field(default='')
+
+    model_config = {
+        'frozen': True,  # Makes the entire model immutable
+        'validate_assignment': True,
+    }
+
+    @classmethod
+    def from_value(cls, secret_value: CustomSecret | dict[str, str]) -> CustomSecret:
+        """Factory method to create a ProviderToken from various input types"""
+        if isinstance(secret_value, CustomSecret):
+            return secret_value
+        elif isinstance(secret_value, dict):
+            secret = secret_value.get('secret')
+            description = secret_value.get('description')
+            return cls(secret=SecretStr(secret), description=description)
 
         else:
             raise ValueError('Unsupport Provider token type')
 
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = MappingProxyType[str, SecretStr]
+CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
 PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
@@ -64,113 +90,6 @@ CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
     CUSTOM_SECRETS_TYPE,
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
-
-
-class SecretStore(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
-        default_factory=lambda: MappingProxyType({})
-    )
-
-    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
-        default_factory=lambda: MappingProxyType({}),
-    )
-
-    model_config = {
-        'frozen': True,
-        'validate_assignment': True,
-        'arbitrary_types_allowed': True,
-    }
-
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(
-        self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
-    ) -> dict[str, dict[str, str | Any]]:
-        tokens = {}
-        expose_secrets = info.context and info.context.get('expose_secrets', False)
-
-        for token_type, provider_token in provider_tokens.items():
-            if not provider_token or not provider_token.token:
-                continue
-
-            token_type_str = (
-                token_type.value
-                if isinstance(token_type, ProviderType)
-                else str(token_type)
-            )
-            tokens[token_type_str] = {
-                'token': provider_token.token.get_secret_value()
-                if expose_secrets
-                else pydantic_encoder(provider_token.token),
-                'user_id': provider_token.user_id,
-            }
-
-        return tokens
-
-    @field_serializer('custom_secrets')
-    def custom_secrets_serializer(
-        self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
-    ):
-        secrets = {}
-        expose_secrets = info.context and info.context.get('expose_secrets', False)
-
-        if custom_secrets:
-            for secret_name, secret_key in custom_secrets.items():
-                secrets[secret_name] = (
-                    secret_key.get_secret_value()
-                    if expose_secrets
-                    else pydantic_encoder(secret_key)
-                )
-        return secrets
-
-    @model_validator(mode='before')
-    @classmethod
-    def convert_dict_to_mappingproxy(
-        cls, data: dict[str, dict[str, Any] | MappingProxyType] | PROVIDER_TOKEN_TYPE
-    ) -> dict[str, MappingProxyType | None]:
-        """Custom deserializer to convert dictionary into MappingProxyType"""
-        if not isinstance(data, dict):
-            raise ValueError('SecretStore must be initialized with a dictionary')
-
-        new_data: dict[str, MappingProxyType | None] = {}
-
-        if 'provider_tokens' in data:
-            tokens = data['provider_tokens']
-            if isinstance(
-                tokens, dict
-            ):  # Ensure conversion happens only for dict inputs
-                converted_tokens = {}
-                for key, value in tokens.items():
-                    try:
-                        provider_type = (
-                            ProviderType(key) if isinstance(key, str) else key
-                        )
-                        converted_tokens[provider_type] = ProviderToken.from_value(
-                            value
-                        )
-                    except ValueError:
-                        # Skip invalid provider types or tokens
-                        continue
-
-                # Convert to MappingProxyType
-                new_data['provider_tokens'] = MappingProxyType(converted_tokens)
-            elif isinstance(tokens, MappingProxyType):
-                new_data['provider_tokens'] = tokens
-
-        if 'custom_secrets' in data:
-            secrets = data['custom_secrets']
-            if isinstance(secrets, dict):
-                converted_secrets = {}
-                for key, value in secrets.items():
-                    if isinstance(value, str):
-                        converted_secrets[key] = SecretStr(value)
-                    elif isinstance(value, SecretStr):
-                        converted_secrets[key] = value
-
-                new_data['custom_secrets'] = MappingProxyType(converted_secrets)
-            elif isinstance(secrets, MappingProxyType):
-                new_data['custom_secrets'] = secrets
-
-        return new_data
 
 
 class ProviderHandler:
@@ -276,7 +195,8 @@ class ProviderHandler:
                     query, per_page, sort, order
                 )
                 all_repos.extend(service_repos)
-            except Exception:
+            except Exception as e:
+                logger.warning(f'Error searching repos from {provider}: {e}')
                 continue
 
         return all_repos
@@ -416,3 +336,56 @@ class ProviderHandler:
                 pass
 
         raise AuthenticationError(f'Unable to access repo {repository}')
+
+    async def get_branches(
+        self, repository: str, specified_provider: ProviderType | None = None
+    ) -> list[Branch]:
+        """
+        Get branches for a repository
+
+        Args:
+            repository: The repository name
+            specified_provider: Optional provider type to use
+
+        Returns:
+            A list of branches for the repository
+        """
+        all_branches: list[Branch] = []
+
+        if specified_provider:
+            try:
+                service = self._get_service(specified_provider)
+                branches = await service.get_branches(repository)
+                return branches
+            except Exception as e:
+                logger.warning(
+                    f'Error fetching branches from {specified_provider}: {e}'
+                )
+
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                branches = await service.get_branches(repository)
+                all_branches.extend(branches)
+                # If we found branches, no need to check other providers
+                if all_branches:
+                    break
+            except Exception as e:
+                logger.warning(f'Error fetching branches from {provider}: {e}')
+
+        # Sort branches by last push date (newest first)
+        all_branches.sort(
+            key=lambda b: b.last_push_date if b.last_push_date else '', reverse=True
+        )
+
+        # Move main/master branch to the top if it exists
+        main_branches = []
+        other_branches = []
+
+        for branch in all_branches:
+            if branch.name.lower() in ['main', 'master']:
+                main_branches.append(branch)
+            else:
+                other_branches.append(branch)
+
+        return main_branches + other_branches

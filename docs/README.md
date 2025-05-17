@@ -4,37 +4,32 @@ This website is built using [Docusaurus](https://docusaurus.io/).
 
 When published, the content will be published at https://docs.all-hands.dev/.
 
-### Installation
+### Local Development
 
 ```bash
 $ cd docs
-$ yarn
+$ npm install
+$ npm run start
 ```
 
-### Local Development
-
-```
-$ yarn start # for the default English version
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+This command starts a local development server and opens up a browser window.
+Most changes are reflected live without having to restart the server.
 
 Alternatively, you can pass a `--locale` argument to render a specific language in dev mode as in:
 
 ```
-$ yarn start --locale pt-BR # for the Brazilian Portuguese version
-$ yarn start --locale fr # for the French version
-$ yarn start --locale zh-Hans # for the Chinese Han (simplified variant) version
+$ npm run start --locale pt-BR # for the Brazilian Portuguese version
+$ npm run start --locale fr # for the French version
+$ npm run start --locale zh-Hans # for the Chinese Han (simplified variant) version
 ```
 
 ### Build
 
 ```
-$ yarn build
+$ npm run build
 ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
-
 It compiles all languages.
 
 ### Deployment

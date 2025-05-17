@@ -5,25 +5,27 @@ from pydantic import (
     SecretStr,
 )
 
-from openhands.integrations.provider import ProviderToken
+from openhands.core.config.mcp_config import MCPConfig
+from openhands.integrations.provider import CustomSecret, ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.storage.data_models.settings import Settings
 
 
-class POSTSettingsModel(Settings):
+class POSTProviderModel(BaseModel):
     """
     Settings for POST requests
     """
 
+    mcp_config: MCPConfig | None = None
     provider_tokens: dict[ProviderType, ProviderToken] = {}
 
 
-class POSTSettingsCustomSecrets(BaseModel):
+class POSTCustomSecrets(BaseModel):
     """
     Adding new custom secret
     """
 
-    custom_secrets: dict[str, str | SecretStr] = {}
+    custom_secrets: dict[str, CustomSecret] = {}
 
 
 class GETSettingsModel(Settings):
@@ -36,10 +38,29 @@ class GETSettingsModel(Settings):
     )
     llm_api_key_set: bool
 
+    model_config = {'use_enum_values': True}
 
-class GETSettingsCustomSecrets(BaseModel):
+
+class CustomSecretWithoutValueModel(BaseModel):
+    """
+    Custom secret model without value
+    """
+
+    name: str
+    description: str | None = None
+
+
+class CustomSecretModel(CustomSecretWithoutValueModel):
+    """
+    Custom secret model with value
+    """
+
+    value: SecretStr
+
+
+class GETCustomSecrets(BaseModel):
     """
     Custom secrets names
     """
 
-    custom_secrets: list[str] | None = None
+    custom_secrets: list[CustomSecretWithoutValueModel] | None = None

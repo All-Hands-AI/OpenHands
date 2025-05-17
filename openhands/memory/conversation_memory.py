@@ -412,7 +412,7 @@ class ConversationMemory:
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                obs.outputs.get('content', obs.content),
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
@@ -451,9 +451,13 @@ class ConversationMemory:
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(date=date)
+                    runtime_info = RuntimeInfo(
+                        date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                    )
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''

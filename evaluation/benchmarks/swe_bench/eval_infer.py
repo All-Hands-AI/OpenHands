@@ -129,15 +129,15 @@ def process_instance(
 
         AssertionError: if `conditional_imports` is not provided.
     """
-    assert (
-        conditional_imports is not None
-    ), 'conditional_imports must be provided to run process_instance using multiprocessing'
+    assert conditional_imports is not None, (
+        'conditional_imports must be provided to run process_instance using multiprocessing'
+    )
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        assert (
-            log_dir is not None
-        ), "Can't reset logger without a provided log directory."
+        assert log_dir is not None, (
+            "Can't reset logger without a provided log directory."
+        )
         os.makedirs(log_dir, exist_ok=True)
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
@@ -319,7 +319,7 @@ def process_instance(
                             )
                             report = _report[instance_id]
                             logger.info(
-                                f"[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report['resolved']}"
+                                f'[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report["resolved"]}'
                             )
                             instance['test_result']['report']['resolved'] = report[
                                 'resolved'
@@ -418,9 +418,9 @@ if __name__ == '__main__':
                 for line in tqdm(f, desc='Loading predictions')
             ]
         )
-    assert (
-        'instance_id' in predictions.columns
-    ), 'Input file must contain instance_id column.'
+    assert 'instance_id' in predictions.columns, (
+        'Input file must contain instance_id column.'
+    )
 
     if 'model_patch' not in predictions.columns and (
         'test_result' in predictions.columns
@@ -429,17 +429,17 @@ if __name__ == '__main__':
         raise ValueError(
             'Input file must contain model_patch column OR test_result column with model_patch field.'
         )
-    assert len(predictions['instance_id'].unique()) == len(
-        predictions
-    ), 'instance_id column must be unique.'
+    assert len(predictions['instance_id'].unique()) == len(predictions), (
+        'instance_id column must be unique.'
+    )
 
     if 'model_patch' not in predictions.columns:
         predictions['model_patch'] = predictions['test_result'].apply(
             lambda x: x.get('git_patch', '')
         )
-    assert {'instance_id', 'model_patch'}.issubset(
-        set(predictions.columns)
-    ), 'Input file must contain instance_id and model_patch columns.'
+    assert {'instance_id', 'model_patch'}.issubset(set(predictions.columns)), (
+        'Input file must contain instance_id and model_patch columns.'
+    )
 
     # Process model_patch
     predictions['model_patch'] = predictions['model_patch'].apply(process_git_patch)

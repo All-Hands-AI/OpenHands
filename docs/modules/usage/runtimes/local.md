@@ -27,7 +27,10 @@ Via environment variables:
 export RUNTIME=local
 
 # Optional but recommended
-export WORKSPACE_BASE=/path/to/your/workspace
+# The agent works in /workspace by default, so mount your project directory there
+export SANDBOX_VOLUMES=/path/to/your/workspace:/workspace:rw
+# For read-only data, use a different mount path
+# export SANDBOX_VOLUMES=/path/to/your/workspace:/workspace:rw,/path/to/large/dataset:/data:ro
 ```
 
 Via `config.toml`:
@@ -35,23 +38,24 @@ Via `config.toml`:
 ```toml
 [core]
 runtime = "local"
-workspace_base = "/path/to/your/workspace"
+
+[sandbox]
+# The agent works in /workspace by default, so mount your project directory there
+volumes = "/path/to/your/workspace:/workspace:rw"
+# For read-only data, use a different mount path
+# volumes = "/path/to/your/workspace:/workspace:rw,/path/to/large/dataset:/data:ro"
 ```
 
-If `WORKSPACE_BASE` is not set, the runtime will create a temporary directory for the agent to work in.
+If `SANDBOX_VOLUMES` is not set, the runtime will create a temporary directory for the agent to work in.
 
 ## Example Usage
 
 Here's an example of how to start OpenHands with the Local Runtime in Headless Mode:
 
 ```bash
-# Set the runtime type to local
 export RUNTIME=local
+export SANDBOX_VOLUMES=/my_folder/myproject:/workspace:rw
 
-# Optionally set a workspace directory
-export WORKSPACE_BASE=/path/to/your/project
-
-# Start OpenHands
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 

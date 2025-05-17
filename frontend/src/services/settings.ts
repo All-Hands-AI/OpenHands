@@ -3,7 +3,7 @@ import { Settings } from "#/types/settings";
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
+  LLM_MODEL: "anthropic/claude-3-7-sonnet-20250219",
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
@@ -15,11 +15,12 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_DEFAULT_CONDENSER: true,
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
-  PROVIDER_TOKENS: {
-    github: { token: "" },
-    gitlab: { token: "" },
-  },
+  ENABLE_PROACTIVE_CONVERSATION_STARTERS: false,
   IS_NEW_USER: true,
+  MCP_CONFIG: {
+    sse_servers: [],
+    stdio_servers: [],
+  },
 };
 
 /**

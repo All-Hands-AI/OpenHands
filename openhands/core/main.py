@@ -116,8 +116,6 @@ async def run_controller(
                 selected_repository=config.sandbox.selected_repo,
             )
 
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
-
     event_stream = runtime.event_stream
 
     # when memory is created, it will load the microagents from the selected repository
@@ -129,6 +127,9 @@ async def run_controller(
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
         )
+
+    # Add MCP tools to the agent
+    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -142,9 +143,9 @@ async def run_controller(
         agent, runtime, config, replay_events=replay_events
     )
 
-    assert isinstance(
-        initial_user_action, Action
-    ), f'initial user actions must be an Action, got {type(initial_user_action)}'
+    assert isinstance(initial_user_action, Action), (
+        f'initial user actions must be an Action, got {type(initial_user_action)}'
+    )
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'

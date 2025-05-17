@@ -10,6 +10,7 @@ from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
+from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 
 
@@ -149,7 +150,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
 
 async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, mcp_config: MCPConfig
+    agent: 'Agent', runtime: Runtime, memory: 'Memory', mcp_config: MCPConfig
 ):
     """
     Add MCP tools to an agent.
@@ -158,20 +159,37 @@ async def add_mcp_tools_to_agent(
         ActionExecutionClient,  # inline import to avoid circular import
     )
 
-    assert isinstance(
-        runtime, ActionExecutionClient
-    ), 'Runtime must be an instance of ActionExecutionClient'
-    assert (
-        runtime.runtime_initialized
-    ), 'Runtime must be initialized before adding MCP tools'
+    assert isinstance(runtime, ActionExecutionClient), (
+        'Runtime must be an instance of ActionExecutionClient'
+    )
+    assert runtime.runtime_initialized, (
+        'Runtime must be initialized before adding MCP tools'
+    )
+
+    # Add microagent MCP tools if available
+    microagent_mcp_configs = memory.get_microagent_mcp_tools()
+    extra_stdio_servers = []
+    for mcp_config in microagent_mcp_configs:
+        if mcp_config.sse_servers:
+            logger.warning(
+                'Microagent MCP config contains SSE servers, it is not yet supported.'
+            )
+
+        if mcp_config.stdio_servers:
+            for stdio_server in mcp_config.stdio_servers:
+                # Check if this stdio server is already in the config
+                if stdio_server not in extra_stdio_servers:
+                    extra_stdio_servers.append(stdio_server)
+                    logger.info(f'Added microagent stdio server: {stdio_server.name}')
 
     # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config()
+    updated_mcp_config = runtime.get_updated_mcp_config(extra_stdio_servers)
+
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
     logger.info(
-        f"Loaded {len(mcp_tools)} MCP tools: {[tool['function']['name'] for tool in mcp_tools]}"
+        f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'
     )
 
     # Set the MCP tools on the agent
