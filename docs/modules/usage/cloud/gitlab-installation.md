@@ -5,7 +5,7 @@ This guide walks you through the process of installing and configuring OpenHands
 ## Prerequisites
 
 - A GitLab account
-- Access to OpenHands Cloud (if you don't have access yet, [join the waitlist](https://www.all-hands.dev/join-waitlist))
+- Access to OpenHands Cloud
 
 ## Installation Steps
 
