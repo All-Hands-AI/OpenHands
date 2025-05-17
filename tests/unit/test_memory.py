@@ -191,11 +191,23 @@ async def test_memory_with_microagents():
     assert isinstance(observation, RecallObservation)
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
+
+    # We should have at least one microagent: flarglebargle (triggered by keyword)
+    # Note: The default-tools microagent might not be loaded in tests
     assert len(observation.microagent_knowledge) == 1
+
+    # Find the flarglebargle microagent in the list
+    flarglebargle_knowledge = None
+    for knowledge in observation.microagent_knowledge:
+        if knowledge.name == derived_name:
+            flarglebargle_knowledge = knowledge
+            break
+
     # Check against the derived name
-    assert observation.microagent_knowledge[0].name == derived_name
-    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
-    assert 'magic word' in observation.microagent_knowledge[0].content
+    assert flarglebargle_knowledge is not None
+    assert flarglebargle_knowledge.name == derived_name
+    assert flarglebargle_knowledge.trigger == 'flarglebargle'
+    assert 'magic word' in flarglebargle_knowledge.content
 
 
 def test_memory_repository_info(prompt_dir, file_store):
@@ -321,11 +333,23 @@ async def test_memory_with_agent_microagents():
     assert isinstance(observation, RecallObservation)
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
+
+    # We should have at least one microagent: flarglebargle (triggered by keyword)
+    # Note: The default-tools microagent might not be loaded in tests
     assert len(observation.microagent_knowledge) == 1
+
+    # Find the flarglebargle microagent in the list
+    flarglebargle_knowledge = None
+    for knowledge in observation.microagent_knowledge:
+        if knowledge.name == derived_name:
+            flarglebargle_knowledge = knowledge
+            break
+
     # Check against the derived name
-    assert observation.microagent_knowledge[0].name == derived_name
-    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
-    assert 'magic word' in observation.microagent_knowledge[0].content
+    assert flarglebargle_knowledge is not None
+    assert flarglebargle_knowledge.name == derived_name
+    assert flarglebargle_knowledge.trigger == 'flarglebargle'
+    assert 'magic word' in flarglebargle_knowledge.content
 
 
 @pytest.mark.asyncio
