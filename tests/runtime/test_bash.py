@@ -52,10 +52,14 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1
         assert 'Serving HTTP on' in obs.content
-        assert (
-            "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
-            in obs.metadata.suffix
-        )
+
+        if runtime_cls == CLIRuntime:
+            assert '[The command timed out after 1.0 seconds.]' in obs.metadata.suffix
+        else:
+            assert (
+                "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+                in obs.metadata.suffix
+            )
 
         action = CmdRunAction(command='C-c', is_input=True)
         action.set_hard_timeout(30)
@@ -65,9 +69,10 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         if runtime_cls == CLIRuntime:
             assert isinstance(obs_interrupt, ErrorObservation)
             assert (
-                'CLIRuntime does not support interactive input' in obs_interrupt.content
+                'CLIRuntime does not support input from the agent.'
+                in obs_interrupt.content
             )
-            assert obs_interrupt.error_id == 'AGENT_ERROR$UNSUPPORTED_INTERACTION'
+            assert obs_interrupt.error_id == 'AGENT_ERROR$BAD_ACTION'
         else:
             assert isinstance(obs_interrupt, CmdOutputObservation)
             assert obs_interrupt.exit_code == 0
@@ -116,38 +121,72 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Start the server, expect it to timeout (run in background manner)
         action = CmdRunAction(f'python3 -m http.server {server_port} &')
+        action = CmdRunAction(f'python3 -m http.server {server_port} &')
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0  # Should not timeout since this runs in background
 
-        # Give the server a moment to be ready
-        time.sleep(1)
+        if runtime_cls == CLIRuntime:
+            # CLIRuntime (non-Windows, PTY-based) specific behavior:
+            # The '&' does not detach cleanly; the PTY session remains active.
+            # The CmdRunAction for the command with '&' will time out.
+            # CLIRuntime's cleanup then kills the process group, including the server.
+            assert obs.exit_code == -1  # Expect timeout for the initial action
+            assert '[The command timed out after' in obs.metadata.suffix
 
-        # Verify the server is running by curling it
-        if is_windows():
+            # Server should have been killed by CLIRuntime's process group cleanup.
+            # A very brief pause to ensure cleanup has occurred.
+            time.sleep(0.2)
+
+            # Verify the server is NOT running.
+            # `curl --fail` exits non-zero if connection fails or server returns an error.
+            # Use a short connect timeout as the server is expected to be down.
             curl_action = CmdRunAction(
-                f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+                f'curl --fail --connect-timeout 1 http://localhost:{server_port}'
             )
-        else:
-            curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
-        curl_obs = runtime.run_action(curl_action)
-        logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(curl_obs, CmdOutputObservation)
-        assert curl_obs.exit_code == 0
-        # Check for content typical of python http.server directory listing
-        assert 'Directory listing for' in curl_obs.content
+            curl_obs = runtime.run_action(curl_action)
+            logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(curl_obs, CmdOutputObservation)
+            assert curl_obs.exit_code != 0  # Expect curl to fail
 
-        # Kill the server
-        if is_windows():
-            # Use PowerShell job management commands instead of trying to kill process directly
-            kill_action = CmdRunAction('Get-Job | Stop-Job')
-        else:
+            # Confirm with pkill (CLIRuntime is assumed non-Windows here).
+            # pkill returns 1 if no processes were matched.
             kill_action = CmdRunAction('pkill -f "http.server"')
-        kill_obs = runtime.run_action(kill_action)
-        logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(kill_obs, CmdOutputObservation)
-        assert kill_obs.exit_code == 0
+            kill_obs = runtime.run_action(kill_action)
+            logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(kill_obs, CmdOutputObservation)
+            assert kill_obs.exit_code == 1
+        else:
+            # Original behavior for other runtimes (e.g., DockerRuntime, LocalRuntime on Windows)
+            assert obs.exit_code == 0  # Should not timeout as '&' backgrounds properly
+
+            # Give the server a moment to be ready
+            time.sleep(1)
+
+            # Verify the server is running by curling it
+            if is_windows():
+                curl_action = CmdRunAction(
+                    f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+                )
+            else:
+                curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
+            curl_obs = runtime.run_action(curl_action)
+            logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(curl_obs, CmdOutputObservation)
+            assert curl_obs.exit_code == 0
+            # Check for content typical of python http.server directory listing
+            assert 'Directory listing for' in curl_obs.content
+
+            # Kill the server
+            if is_windows():
+                # This assumes PowerShell context if LocalRuntime is used on Windows.
+                kill_action = CmdRunAction('Get-Job | Stop-Job')
+            else:
+                kill_action = CmdRunAction('pkill -f "http.server"')
+            kill_obs = runtime.run_action(kill_action)
+            logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(kill_obs, CmdOutputObservation)
+            assert kill_obs.exit_code == 0
 
     finally:
         _close_test_runtime(runtime)

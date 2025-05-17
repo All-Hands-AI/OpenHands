@@ -165,6 +165,54 @@ class CLIRuntime(Runtime):
         # We don't use self.run() here because this method is called
         # during initialization before self._runtime_initialized is True.
 
+    def _safe_terminate_process(self, process_obj, signal_to_send=signal.SIGTERM):
+        """
+        Safely attempts to terminate/kill a process group or a single process.
+
+        Args:
+            process_obj: the subprocess.Popen object started with start_new_session=True
+            signal_to_send: the signal to send to the process group or process.
+        """
+        pid = getattr(process_obj, 'pid', None)
+        if pid is None:
+            return
+
+        group_desc = (
+            'kill process group'
+            if signal_to_send == signal.SIGKILL
+            else 'terminate process group'
+        )
+        process_desc = (
+            'kill process' if signal_to_send == signal.SIGKILL else 'terminate process'
+        )
+
+        try:
+            # Try to terminate/kill the entire process group
+            pgid_to_kill = os.getpgid(pid)
+            logger.debug(
+                f'Attempting to {group_desc} for PID {pid} (PGID: {pgid_to_kill}) with {signal_to_send}.'
+            )
+            os.killpg(pgid_to_kill, signal_to_send)
+            logger.debug(
+                f'Terminated {group_desc} (PGID: {pgid_to_kill}, original PID: {pid}).'
+            )
+        except (ProcessLookupError, AttributeError, OSError):
+            # Fallback: try to terminate/kill the main process directly.
+            try:
+                if signal_to_send == signal.SIGKILL:
+                    process_obj.kill()
+                else:
+                    process_obj.terminate()
+                logger.debug(f'Terminated {process_desc} (PID: {pid}).')
+            except Exception as e_fallback:
+                logger.error(
+                    f'Error during fallback {process_desc} (PID: {pid}): {e_fallback}'
+                )
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            logger.error(f'Error: {e}')
+
     def _execute_shell_command(
         self, command: str, timeout: float | None = None
     ) -> CmdOutputObservation:
@@ -176,7 +224,7 @@ class CLIRuntime(Runtime):
         Returns:
             CmdOutputObservation containing the complete output and exit code
         """
-        full_output_lines = []
+        output_lines = []
         timed_out = False
         start_time = time.monotonic()
 
@@ -188,37 +236,25 @@ class CLIRuntime(Runtime):
             text=True,
             bufsize=1,  # Explicitly line-buffered for text mode
             universal_newlines=True,
+            start_new_session=True,
         )
 
         exit_code = None
 
         try:
-            # Line-by-line reading loop
             if process.stdout:
                 while process.poll() is None:
-                    # Check for main command timeout first
                     if (
                         timeout is not None
                         and (time.monotonic() - start_time) > timeout
                     ):
-                        logger.warning(
+                        logger.debug(
                             f'Command "{command}" timed out after {timeout:.1f} seconds. Terminating.'
                         )
-                        if (
-                            hasattr(os, 'killpg')
-                            and hasattr(os, 'getpgid')
-                            and process.pid is not None
-                        ):
-                            try:
-                                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-                            except ProcessLookupError:
-                                logger.warning(
-                                    f'Process group for pid {process.pid} not found, process might have already exited.'
-                                )
-                            except AttributeError:
-                                process.terminate()
-                        else:
-                            process.terminate()  # Fallback for non-POSIX or if killpg is not available/pid is None
+                        # Attempt to terminate the process group (SIGTERM)
+                        self._safe_terminate_process(
+                            process, signal_to_send=signal.SIGTERM
+                        )
                         timed_out = True
                         break
 
@@ -229,59 +265,32 @@ class CLIRuntime(Runtime):
                     if ready_to_read:
                         line = process.stdout.readline()
                         if line:
-                            full_output_lines.append(line)
+                            output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
-                        elif (
-                            process.poll() is not None
-                        ):  # Process exited and readline returned empty (EOF)
-                            break
-                    # If not ready_to_read, loop continues, allowing timeout check and process.poll()
 
-            # Final communication to get any remaining output and ensure process termination
-            remaining_comm_timeout = (
-                1.0
-                if timed_out
-                else (
-                    (timeout - (time.monotonic() - start_time))
-                    if timeout is not None
-                    else None
-                )
-            )
-            if remaining_comm_timeout is not None and remaining_comm_timeout < 0:
-                remaining_comm_timeout = 0.01
+            final_communicate_timeout: float | None = None
+            if timed_out or timeout is not None:
+                # give it a little time to finish cleanly
+                final_communicate_timeout = 0.2
 
             try:
-                # Wait for the process to terminate or the timeout to expire.
                 remaining_output, _ = process.communicate(
-                    timeout=remaining_comm_timeout
+                    timeout=final_communicate_timeout
                 )
                 if remaining_output:
-                    full_output_lines.append(remaining_output)
-                    # Try to avoid double-streaming
-                    if (
-                        self._shell_stream_callback
-                        and not timed_out
-                        and not any(
-                            remaining_output in line for line in full_output_lines[:-1]
-                        )
-                    ):
-                        self._shell_stream_callback(remaining_output)
+                    output_lines.append(remaining_output)
             except subprocess.TimeoutExpired:
                 logger.warning(
-                    f'Command "{command}" did not exit gracefully after initial termination signal or during final communicate. Forcing kill.'
+                    f'Command "{command}" did not exit gracefully during final communicate(timeout={final_communicate_timeout}s). Forcing kill.'
                 )
-                process.kill()
-                timed_out = True
-            except ValueError:
-                logger.debug(
-                    f"ValueError during communicate for command '{command}', streams likely closed."
-                )
+                # Attempt to kill the process group (SIGKILL)
+                self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
+                timed_out = True  # Ensure timed_out is true if communicate() was the one timing out
             except Exception as e:
                 logger.error(
                     f"Unexpected error during communicate() for command '{command}': {e}"
                 )
-
             exit_code = process.returncode
 
             # If timeout occurred, ensure exit_code reflects this for the observation.
@@ -293,18 +302,18 @@ class CLIRuntime(Runtime):
                 f'Outer exception in _execute_shell_command for "{command}": {e}'
             )
             if process and process.poll() is None:
-                process.kill()
+                self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
             return CmdOutputObservation(
                 command=command,
-                content=''.join(full_output_lines) + f'\nError during execution: {e}',
+                content=''.join(output_lines) + f'\nError during execution: {e}',
                 exit_code=-1,
             )
 
-        complete_output = ''.join(full_output_lines)
+        complete_output = ''.join(output_lines)
         obs_metadata = {'working_dir': self._workspace_path}
         if timed_out:
             obs_metadata['suffix'] = (
-                f'[The command timed out after {timeout:.1f} seconds. '
+                f'[The command timed out after {timeout:.1f} seconds.]'
             )
             exit_code = -1
 
@@ -330,7 +339,7 @@ class CLIRuntime(Runtime):
             )
             return ErrorObservation(
                 content=f"CLIRuntime does not support interactive input or signals (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
-                error_id='AGENT_ERROR$UNSUPPORTED_INTERACTION',
+                error_id='AGENT_ERROR$BAD_ACTION',
             )
 
         try:
