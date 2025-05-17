@@ -272,6 +272,16 @@ def _load_runtime(
         sid=sid,
         plugins=plugins,
     )
+
+    # For CLIRuntime, the tests' assertions should be based on the physical workspace path,
+    # not the logical "/workspace". So, we adjust config.workspace_mount_path_in_sandbox
+    # to reflect the actual physical path used by CLIRuntime's OHEditor.
+    if isinstance(runtime, CLIRuntime):
+        config.workspace_mount_path_in_sandbox = str(runtime.workspace_root)
+        logger.info(
+            f'Adjusted workspace_mount_path_in_sandbox for CLIRuntime to: {config.workspace_mount_path_in_sandbox}'
+        )
+
     call_async_from_sync(runtime.connect)
     time.sleep(2)
     return runtime, config

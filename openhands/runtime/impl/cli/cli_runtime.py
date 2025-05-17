@@ -391,7 +391,9 @@ class CLIRuntime(Runtime):
 
     def _sanitize_filename(self, filename: str) -> str:
         # if path is absolute, ensure it starts with _workspace_path
-        if filename.startswith('/workspace/'):
+        if filename == '/workspace':
+            actual_filename = self._workspace_path
+        elif filename.startswith('/workspace/'):
             # Map /workspace/ to the actual workspace path
             # Note: /workspace is widely used, so we map it to allow using it with CLIRuntime
             actual_filename = os.path.join(
