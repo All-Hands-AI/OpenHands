@@ -116,8 +116,6 @@ async def run_controller(
                 selected_repository=config.sandbox.selected_repo,
             )
 
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
-
     event_stream = runtime.event_stream
 
     # when memory is created, it will load the microagents from the selected repository
@@ -129,6 +127,9 @@ async def run_controller(
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
         )
+
+    # Add MCP tools to the agent
+    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
