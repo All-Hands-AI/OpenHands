@@ -18,7 +18,7 @@ from openhands.resolver.utils import extract_image_urls
 
 class ServiceContext:
     issue_type: ClassVar[str]
-    default_git_patch: ClassVar[str] = 'No changes made yet'
+    default_git_patch: ClassVar[str] = 'No code changes were made or needed'
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
@@ -362,7 +362,7 @@ class ServiceContextIssue(ServiceContext):
         Args:
             issue: The issue to check
             history: The agent's history
-            git_patch: Optional git patch showing the changes made
+            git_patch: Optional git patch showing the changes made. If None, indicates no code changes were needed.
         """
         last_message = history[-1].message
         # Include thread comments in the prompt if they exist
