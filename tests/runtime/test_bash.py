@@ -14,6 +14,7 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 
 # ============================================================================================================================
@@ -58,18 +59,25 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
 
         action = CmdRunAction(command='C-c', is_input=True)
         action.set_hard_timeout(30)
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        if not is_windows():
-            # Linux/macOS behavior
-            assert 'Keyboard interrupt received, exiting.' in obs.content
-            assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
+        obs_interrupt = runtime.run_action(action)
+        logger.info(obs_interrupt, extra={'msg_type': 'OBSERVATION'})
+
+        if runtime_cls == CLIRuntime:
+            assert isinstance(obs_interrupt, ErrorObservation)
+            assert (
+                'CLIRuntime does not support interactive input' in obs_interrupt.content
+            )
+            assert obs_interrupt.error_id == 'AGENT_ERROR$UNSUPPORTED_INTERACTION'
         else:
-            # Windows behavior: Stop-Job might not produce output, but exit code should be 0
-            # The working directory check might also be less relevant/predictable here
-            pass
+            assert isinstance(obs_interrupt, CmdOutputObservation)
+            assert obs_interrupt.exit_code == 0
+            if not is_windows():
+                # Linux/macOS behavior
+                assert 'Keyboard interrupt received, exiting.' in obs_interrupt.content
+                assert (
+                    config.workspace_mount_path_in_sandbox
+                    in obs_interrupt.metadata.working_dir
+                )
 
         # Verify the server is actually stopped by trying to start another one
         # on the same port (regardless of OS)
@@ -82,7 +90,12 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         # Check that the interrupt message is NOT present in subsequent output
         assert 'Keyboard interrupt received, exiting.' not in obs.content
         # Check working directory remains correct after interrupt handling
-        assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
+        if runtime_cls == CLIRuntime:
+            # For CLIRuntime, working_dir is the absolute host path
+            assert obs.metadata.working_dir == config.workspace_base
+        else:
+            # For other runtimes (e.g., Docker), it's relative to or contains the sandbox path
+            assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         # run it again!
         action = CmdRunAction(command='python -u -m http.server 8081')

@@ -5,9 +5,12 @@ It does not implement browser functionality.
 
 import asyncio
 import os
+import select
 import shutil
+import signal
 import subprocess
 import tempfile
+import time
 import zipfile
 from pathlib import Path
 from typing import Any, Callable
@@ -162,65 +165,198 @@ class CLIRuntime(Runtime):
         # We don't use self.run() here because this method is called
         # during initialization before self._runtime_initialized is True.
 
-    def _execute_shell_command(self, command: str) -> CmdOutputObservation:
+    def _execute_shell_command(
+        self, command: str, timeout: float | None = None
+    ) -> CmdOutputObservation:
         """
         Execute a shell command and stream its output to a callback function.
         Args:
             command: The shell command to execute
+            timeout_seconds: Optional timeout in seconds for the command
         Returns:
             CmdOutputObservation containing the complete output and exit code
         """
-        full_output = []
+        full_output_lines = []
+        timed_out = False
+        start_time = time.monotonic()
 
         # Use shell=True to run complex bash commands
         process = subprocess.Popen(
             ['bash', '-c', command],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # Merge stderr into stdout for interleaved output
+            stderr=subprocess.STDOUT,
             text=True,
-            bufsize=0,  # Unbuffered output
+            bufsize=1,  # Explicitly line-buffered for text mode
             universal_newlines=True,
         )
 
-        while process.poll() is None:
-            if not process.stdout:
-                continue
-            output = process.stdout.readline()
-            if output:
-                full_output.append(output)
-                if self._shell_stream_callback:
-                    self._shell_stream_callback(output)
+        exit_code = None
 
-        # Make sure we get any remaining output after process exits
-        remaining_output, _ = process.communicate()
-        if remaining_output:
-            full_output.append(remaining_output)
-            if self._shell_stream_callback:
-                self._shell_stream_callback(remaining_output)
+        try:
+            # Line-by-line reading loop
+            if process.stdout:
+                while process.poll() is None:
+                    # Check for main command timeout first
+                    if (
+                        timeout is not None
+                        and (time.monotonic() - start_time) > timeout
+                    ):
+                        logger.warning(
+                            f'Command "{command}" timed out after {timeout:.1f} seconds. Terminating.'
+                        )
+                        if (
+                            hasattr(os, 'killpg')
+                            and hasattr(os, 'getpgid')
+                            and process.pid is not None
+                        ):
+                            try:
+                                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                            except ProcessLookupError:
+                                logger.warning(
+                                    f'Process group for pid {process.pid} not found, process might have already exited.'
+                                )
+                            except AttributeError:
+                                process.terminate()
+                        else:
+                            process.terminate()  # Fallback for non-POSIX or if killpg is not available/pid is None
+                        timed_out = True
+                        break
 
-        exit_code = process.returncode
+                    # Use select for non-blocking read from stdout
+                    # Wait up to 0.1 seconds for data to become available
+                    ready_to_read, _, _ = select.select([process.stdout], [], [], 0.1)
 
-        complete_output = ''.join(full_output)
+                    if ready_to_read:
+                        line = process.stdout.readline()
+                        if line:
+                            full_output_lines.append(line)
+                            if self._shell_stream_callback:
+                                self._shell_stream_callback(line)
+                        elif (
+                            process.poll() is not None
+                        ):  # Process exited and readline returned empty (EOF)
+                            break
+                    # If not ready_to_read, loop continues, allowing timeout check and process.poll()
+
+            # Final communication to get any remaining output and ensure process termination
+            remaining_comm_timeout = (
+                1.0
+                if timed_out
+                else (
+                    (timeout - (time.monotonic() - start_time))
+                    if timeout is not None
+                    else None
+                )
+            )
+            if remaining_comm_timeout is not None and remaining_comm_timeout < 0:
+                remaining_comm_timeout = 0.01
+
+            try:
+                # Wait for the process to terminate or the timeout to expire.
+                remaining_output, _ = process.communicate(
+                    timeout=remaining_comm_timeout
+                )
+                if remaining_output:
+                    full_output_lines.append(remaining_output)
+                    # Try to avoid double-streaming
+                    if (
+                        self._shell_stream_callback
+                        and not timed_out
+                        and not any(
+                            remaining_output in l for l in full_output_lines[:-1]
+                        )
+                    ):
+                        self._shell_stream_callback(remaining_output)
+            except subprocess.TimeoutExpired:
+                logger.warning(
+                    f'Command "{command}" did not exit gracefully after initial termination signal or during final communicate. Forcing kill.'
+                )
+                process.kill()
+                timed_out = True
+            except ValueError:
+                logger.debug(
+                    f"ValueError during communicate for command '{command}', streams likely closed."
+                )
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error during communicate() for command '{command}': {e}"
+                )
+
+            exit_code = process.returncode
+
+            # If timeout occurred, ensure exit_code reflects this for the observation.
+            if timed_out:
+                exit_code = -1
+
+        except Exception as e:
+            logger.error(
+                f'Outer exception in _execute_shell_command for "{command}": {e}'
+            )
+            if process and process.poll() is None:
+                process.kill()
+            return CmdOutputObservation(
+                command=command,
+                content=''.join(full_output_lines) + f'\nError during execution: {e}',
+                exit_code=-1,
+            )
+
+        complete_output = ''.join(full_output_lines)
+        obs_metadata = {'working_dir': self._workspace_path}
+        if timed_out:
+            obs_metadata['timed_out'] = True
+            obs_metadata['suffix'] = (
+                f'[The command timed out after {timeout:.1f} seconds. '
+            )
+            exit_code = -1
 
         return CmdOutputObservation(
             command=command,
             content=complete_output,
             exit_code=exit_code,
+            metadata=obs_metadata,
         )
 
     def run(self, action: CmdRunAction) -> Observation:
         """Run a command using subprocess."""
         if not self._runtime_initialized:
-            return ErrorObservation(f'Runtime not initialized: {action.command}')
+            return ErrorObservation(
+                f'Runtime not initialized for command: {action.command}'
+            )
+
+        if action.is_input:
+            logger.warning(
+                f"CLIRuntime received an action with `is_input=True` (command: '{action.command}'). "
+                'CLIRuntime currently does not support sending input or signals to active processes. '
+                'This action will be ignored and an error observation will be returned.'
+            )
+            return ErrorObservation(
+                content=f"CLIRuntime does not support interactive input or signals (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
+                error_id='AGENT_ERROR$UNSUPPORTED_INTERACTION',
+            )
 
         try:
-            logger.debug(f'Running command: {action.command}')
+            effective_timeout = action.timeout
 
-            # Execute the command and return the CmdOutputObservation
-            return self._execute_shell_command(action.command)
+            if effective_timeout is None:
+                logger.debug(
+                    f'Command "{action.command}" has no explicit timeout set by action.set_hard_timeout(). '
+                    f'Applying default timeout: {self.config.sandbox.timeout}s.'
+                )
+                effective_timeout = self.config.sandbox.timeout
+
+            logger.debug(
+                f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
+            )
+            return self._execute_shell_command(
+                action.command, timeout=effective_timeout
+            )
         except Exception as e:
-            logger.error(f'Error running command: {str(e)}')
-            return ErrorObservation(f'Error running command: {str(e)}')
+            logger.error(
+                f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
+            )
+            return ErrorObservation(
+                f'Error running command "{action.command}": {str(e)}'
+            )
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         """Run a Python code cell."""
@@ -247,16 +383,23 @@ class CLIRuntime(Runtime):
 
     def _sanitize_filename(self, filename: str) -> str:
         # if path is absolute, ensure it starts with _workspace_path
+        if filename.startswith('/workspace/'):
+            # Map /workspace/ to the actual workspace path
+            # Note: /workspace is widely used, so we map it to allow using it with CLIRuntime
+            actual_filename = os.path.join(
+                self._workspace_path, filename[len('/workspace/') :]
+            )
         if filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
                 raise LLMMalformedActionError(
                     f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
                 )
+            actual_filename = filename
         else:
-            filename = os.path.join(self._workspace_path, filename.lstrip('/'))
+            actual_filename = os.path.join(self._workspace_path, filename.lstrip('/'))
 
         # Resolve the path to handle any '..' or '.' components
-        resolved_path = os.path.realpath(filename)
+        resolved_path = os.path.realpath(actual_filename)
 
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
