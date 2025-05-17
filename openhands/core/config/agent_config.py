@@ -15,6 +15,7 @@ class AgentConfig(BaseModel):
     enable_browsing: bool = Field(default=True)
     """Whether to enable browsing tool"""
     enable_llm_editor: bool = Field(default=False)
+    enable_llm_diff: bool = Field(default=False)
     """Whether to enable LLM editor tool"""
     enable_editor: bool = Field(default=True)
     """Whether to enable the standard editor tool (str_replace_editor), only has an effect if enable_llm_editor is False."""

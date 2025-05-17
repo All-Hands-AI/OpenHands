@@ -21,7 +21,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
-from openhands.events.event import Event, RecallType
+from openhands.events.event import Event, FileEditSource, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
@@ -199,8 +199,32 @@ class ConversationMemory:
             rather than being returned immediately. They will be processed later when all corresponding
             tool call results are available.
         """
-        # create a regular message from an event
-        if isinstance(
+        # Handle LLM_DIFF FileEditAction specifically FIRST: create an assistant message
+        # containing the thought (if any) and the formatted diff block.
+        # This bypasses the tool_metadata check for this action type.
+        if (
+            isinstance(action, FileEditAction)
+            and action.impl_source == FileEditSource.LLM_DIFF
+        ):
+            # TODO: Determine language hint from path extension if possible
+            lang_hint = 'diff'
+            # Ensure newline separation, handle None for search/replace
+            search_block = action.search or ''
+            replace_block = action.replace or ''
+            block = (
+                f'\n```{lang_hint}\n'
+                f'{action.path}\n'
+                f'<<<<<<< SEARCH\n{search_block}\n'
+                f'=======\n{replace_block}\n'
+                f'>>>>>>> REPLACE\n```'
+            )
+            # Combine thought and block
+            content_str = (action.thought + block) if action.thought else block.lstrip()
+            # Return the message directly, DO NOT add tool_calls structure
+            return [Message(role='assistant', content=[TextContent(text=content_str)])]
+
+        # Now handle other actions that might have tool metadata
+        elif isinstance(
             action,
             (
                 AgentDelegateAction,
@@ -235,7 +259,6 @@ class ConversationMemory:
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
-            return []
         elif isinstance(action, AgentFinishAction):
             role = 'user' if action.source == 'user' else 'assistant'
 
@@ -555,7 +578,7 @@ class ConversationMemory:
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        # Update the message as tool response properly
+        # Update the message as tool response properly (for non-LLM_DIFF observations with metadata)
         if (tool_call_metadata := getattr(obs, 'tool_call_metadata', None)) is not None:
             tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
                 role='tool',

@@ -6093,7 +6093,7 @@ name = "openhands-aci"
 version = "0.2.13"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "<4.0,>=3.12"
+python-versions = "^3.12"
 groups = ["main"]
 files = [
     {file = "openhands_aci-0.2.13-py3-none-any.whl", hash = "sha256:f95447b23b5b66dd8f6be6c112f25c4fbe8d916d4b178864fa2ffbc8522e4367"},
@@ -6101,9 +6101,9 @@ files = [
 ]
 
 [package.dependencies]
-binaryornot = ">=0.4.4,<0.5.0"
-cachetools = ">=5.5.2,<6.0.0"
-charset-normalizer = ">=3.4.1,<4.0.0"
+binaryornot = "^0.4.4"
+cachetools = "^5.5.2"
+charset-normalizer = "^3.4.1"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"

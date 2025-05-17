@@ -15,11 +15,13 @@ from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
+from openhands.agenthub.codeact_agent.tools.list_directory import ListDirectoryTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
+from openhands.agenthub.codeact_agent.tools.view_file import ViewFileTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -95,6 +97,7 @@ class CodeActAgent(Agent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+                config=self.config
             )
 
         return self._prompt_manager
@@ -125,14 +128,30 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
-        if self.config.enable_llm_editor:
+
+        # Determine which editor tool(s) and utility tools to add based on config
+        if self.config.enable_llm_diff:
+            # Use LLM Diff mode:
+            #  - LLM generates diffs in text, only non-edit tools available
+            #  - No UndoEditTool
+            tools.append(ViewFileTool)
+            tools.append(ListDirectoryTool)
+        # NO EDITING TOOLS (LLMBasedFileEditTool, str_replace_editor)
+        # NO UndoEditTool
+        elif self.config.enable_llm_editor:
+            # Use LLM-based editor tool + separate utils (NO Undo)
             tools.append(LLMBasedFileEditTool)
+            tools.append(ViewFileTool)
+            tools.append(ListDirectoryTool)
+            # No UndoEditTool here
         elif self.config.enable_editor:
+            # Fallback to the complete str_replace_editor (includes view, list, undo)
             tools.append(
                 create_str_replace_editor_tool(
                     use_short_description=use_short_tool_desc
                 )
             )
+
         return tools
 
     def reset(self) -> None:
@@ -285,5 +304,5 @@ class CodeActAgent(Agent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys())
+            response, mcp_tool_names=list(self.mcp_tools.keys()), is_llm_diff_enabled=self.config.enable_llm_diff
         )
