@@ -83,6 +83,9 @@ class CodeActAgent(Agent):
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
+        self.convert_tool_call_to_action = (
+            codeact_function_calling.convert_tool_call_to_action
+        )
 
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
@@ -285,5 +288,7 @@ class CodeActAgent(Agent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys())
+            response,
+            convert_tool_call_to_action=self.convert_tool_call_to_action,
+            mcp_tool_names=list(self.mcp_tools.keys()),
         )
