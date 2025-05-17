@@ -30,6 +30,8 @@ export function RepositorySelectionForm({
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
     null,
   );
+  // Add a ref to track if the branch was manually cleared by the user
+  const branchManuallyClearedRef = React.useRef<boolean>(false);
   const {
     data: repositories,
     isLoading: isLoadingRepositories,
@@ -52,13 +54,14 @@ export function RepositorySelectionForm({
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { data: searchedRepos } = useSearchRepositories(debouncedSearchQuery);
 
-  // Auto-select main or master branch if it exists
+  // Auto-select main or master branch if it exists, but only if the branch wasn't manually cleared
   React.useEffect(() => {
     if (
       branches &&
       branches.length > 0 &&
       !selectedBranch &&
-      !isLoadingBranches
+      !isLoadingBranches &&
+      !branchManuallyClearedRef.current // Only auto-select if not manually cleared
     ) {
       // Look for main or master branch
       const mainBranch = branches.find((branch) => branch.name === "main");
@@ -71,7 +74,7 @@ export function RepositorySelectionForm({
         setSelectedBranch(masterBranch);
       }
     }
-  }, [branches, selectedBranch, isLoadingBranches]);
+  }, [branches, isLoadingBranches, selectedBranch]);
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
@@ -97,11 +100,14 @@ export function RepositorySelectionForm({
     if (selectedRepo) onRepoSelection(selectedRepo.full_name);
     setSelectedRepository(selectedRepo || null);
     setSelectedBranch(null); // Reset branch selection when repo changes
+    branchManuallyClearedRef.current = false; // Reset the flag when repo changes
   };
 
   const handleBranchSelection = (key: React.Key | null) => {
     const selectedBranchObj = branches?.find((branch) => branch.name === key);
     setSelectedBranch(selectedBranchObj || null);
+    // Reset the manually cleared flag when a branch is explicitly selected
+    branchManuallyClearedRef.current = false;
   };
 
   const handleRepoInputChange = (value: string) => {
@@ -116,8 +122,15 @@ export function RepositorySelectionForm({
   };
 
   const handleBranchInputChange = (value: string) => {
-    if (value === "") {
+    // Clear the selected branch if the input is empty or contains only whitespace
+    // This fixes the issue where users can't delete the entire default branch name
+    if (value === "" || value.trim() === "") {
       setSelectedBranch(null);
+      // Set the flag to indicate that the branch was manually cleared
+      branchManuallyClearedRef.current = true;
+    } else {
+      // Reset the flag when the user starts typing again
+      branchManuallyClearedRef.current = false;
     }
   };
 

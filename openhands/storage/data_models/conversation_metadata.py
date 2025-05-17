@@ -14,7 +14,6 @@ class ConversationTrigger(Enum):
 @dataclass
 class ConversationMetadata:
     conversation_id: str
-    github_user_id: str | None
     selected_repository: str | None
     user_id: str | None = None
     selected_branch: str | None = None

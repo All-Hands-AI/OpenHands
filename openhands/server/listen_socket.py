@@ -77,7 +77,7 @@ async def connect(connection_id: str, environ: dict) -> None:
         # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
         authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
-        user_id, github_user_id = await conversation_validator.validate(
+        user_id = await conversation_validator.validate(
             conversation_id, cookies_str, authorization_header
         )
 
@@ -100,23 +100,26 @@ async def connect(connection_id: str, environ: dict) -> None:
             git_provider_tokens = user_secrets.provider_tokens
 
         session_init_args['git_provider_tokens'] = git_provider_tokens
+        if user_secrets:
+            session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
         conversation_init_data = ConversationInitData(**session_init_args)
 
-        event_stream = await conversation_manager.join_conversation(
+        agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
             conversation_init_data,
             user_id,
-            github_user_id,
         )
         logger.info(
             f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
         )
         agent_state_changed = None
-        if event_stream is None:
+        if agent_loop_info is None:
             raise ConnectionRefusedError('Failed to join conversation')
-        async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+        async_store = AsyncEventStoreWrapper(
+            agent_loop_info.event_store, latest_event_id + 1
+        )
         async for event in async_store:
             logger.debug(f'oh_event: {event.__class__.__name__}')
             if isinstance(

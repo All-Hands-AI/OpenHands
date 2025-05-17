@@ -302,25 +302,33 @@ def finalize_config(cfg: AppConfig) -> None:
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
 
-        # Use the first volume for backward compatibility
-        if mounts:
-            primary_mount = mounts[0]
-            parts = primary_mount.split(':')
-            if len(parts) < 2 or len(parts) > 3:
-                raise ValueError(
-                    f'Invalid sandbox.volumes format: {primary_mount}. '
-                    f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
-                )
+        # Check if any mount explicitly targets /workspace
+        workspace_mount_found = False
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2 and parts[1] == '/workspace':
+                workspace_mount_found = True
+                host_path = os.path.abspath(parts[0])
 
-            host_path = os.path.abspath(parts[0])
-            container_path = parts[1]
+                # Set the workspace_mount_path and workspace_mount_path_in_sandbox
+                cfg.workspace_mount_path = host_path
+                cfg.workspace_mount_path_in_sandbox = '/workspace'
 
-            # Set the workspace_mount_path and workspace_mount_path_in_sandbox for backward compatibility
-            cfg.workspace_mount_path = host_path
-            cfg.workspace_mount_path_in_sandbox = container_path
+                # Also set workspace_base
+                cfg.workspace_base = host_path
+                break
 
-            # Also set workspace_base for backward compatibility
-            cfg.workspace_base = host_path
+        # If no explicit /workspace mount was found, don't set any workspace mount
+        # This allows users to mount volumes without affecting the workspace
+        if not workspace_mount_found:
+            logger.openhands_logger.debug(
+                'No explicit /workspace mount found in SANDBOX_VOLUMES. '
+                'Using default workspace path in sandbox.'
+            )
+            # Ensure workspace_mount_path and workspace_base are None to avoid
+            # unintended mounting behavior
+            cfg.workspace_mount_path = None
+            cfg.workspace_base = None
 
         # Validate all mounts
         for mount in mounts:
@@ -619,7 +627,6 @@ def register_custom_agents(config: AppConfig) -> None:
     This function is called after configuration is loaded to ensure all custom agents
     specified in the config are properly imported and registered.
     """
-
     # Import here to avoid circular dependency
     from openhands.controller.agent import Agent
 
