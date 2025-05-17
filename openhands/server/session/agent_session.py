@@ -439,7 +439,7 @@ class AgentSession:
 
         if self.runtime:
             # sets available hosts and other runtime info
-            memory.set_runtime_info(
+            memory.set_contextual_info(
                 self.runtime, custom_secrets_descriptions, context_message
             )
 

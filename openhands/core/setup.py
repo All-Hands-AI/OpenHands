@@ -154,7 +154,7 @@ def create_memory(
 
     if runtime:
         # sets available hosts
-        memory.set_runtime_info(runtime, {})
+        memory.set_contextual_info(runtime, {})
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(

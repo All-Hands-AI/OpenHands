@@ -292,7 +292,7 @@ class Memory:
         else:
             self.repository_info = None
 
-    def set_runtime_info(
+    def set_contextual_info(
         self,
         runtime: Runtime,
         custom_secrets_descriptions: dict[str, str],

@@ -377,7 +377,7 @@ async def test_custom_secrets_descriptions():
     }
 
     # Set runtime info with custom secrets
-    memory.set_runtime_info(mock_runtime, custom_secrets)
+    memory.set_contextual_info(mock_runtime, custom_secrets)
 
     # Set repository info
     memory.set_repository_info('test-owner/test-repo', '/workspace/test-repo')
