@@ -6,8 +6,13 @@ from logging import LoggerAdapter
 import socketio
 
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.config import AppConfig, MCPConfig
+from openhands.core.config.condenser_config import (
+    BrowserOutputCondenserConfig,
+    CondenserPipelineConfig,
+    LLMSummarizingCondenserConfig,
+)
+from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -18,14 +23,14 @@ from openhands.events.observation import (
     NullObservation,
     RecallObservation,
 )
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.settings import Settings
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -70,7 +75,7 @@ class Session:
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
-    async def close(self):
+    async def close(self) -> None:
         if self.sio:
             await self.sio.emit(
                 'oh_event',
@@ -87,7 +92,7 @@ class Session:
         settings: Settings,
         initial_message: MessageAction | None,
         replay_json: str | None,
-    ):
+    ) -> None:
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -111,6 +116,7 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+        self.config.mcp = settings.mcp_config or MCPConfig()
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will
@@ -127,24 +133,34 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=80
+            # Default condenser chains a condenser that limits browser the total
+            # size of browser observations with a condenser that limits the size
+            # of the view given to the LLM. The order matters: with the browser
+            # output first, the summarizer will only see the most recent browser
+            # output, which should keep the summarization cost down.
+            default_condenser_config = CondenserPipelineConfig(
+                condensers=[
+                    BrowserOutputCondenserConfig(attention_window=2),
+                    LLMSummarizingCondenserConfig(
+                        llm_config=llm.config, keep_first=4, max_size=80
+                    ),
+                ]
             )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
-        mcp_tools = await fetch_mcp_tools_from_config(self.config.mcp)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
-        agent.set_mcp_tools(mcp_tools)
 
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
+        custom_secrets = None
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
+            custom_secrets = settings.custom_secrets
 
         try:
             await self.agent_session.start(
@@ -156,21 +172,39 @@ class Session:
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 git_provider_tokens=git_provider_tokens,
+                custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
                 replay_json=replay_json,
             )
+        except MicroagentValidationError as e:
+            self.logger.exception(f'Error creating agent_session: {e}')
+            # For microagent validation errors, provide more helpful information
+            await self.send_error(f'Failed to create agent session: {str(e)}')
+            return
+        except ValueError as e:
+            self.logger.exception(f'Error creating agent_session: {e}')
+            error_message = str(e)
+            # For ValueError related to microagents, provide more helpful information
+            if 'microagent' in error_message.lower():
+                await self.send_error(
+                    f'Failed to create agent session: {error_message}'
+                )
+            else:
+                # For other ValueErrors, just show the error class
+                await self.send_error('Failed to create agent session: ValueError')
+            return
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            err_class = e.__class__.__name__
-            await self.send_error(f'Failed to create agent session: {err_class}')
+            # For other errors, just show the error class to avoid exposing sensitive information
+            await self.send_error(
+                f'Failed to create agent session: {e.__class__.__name__}'
+            )
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
-        """
-        Initialize LLM, extracted for testing.
-        """
+        """Initialize LLM, extracted for testing."""
         agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
             config=self.config.get_llm_config_from_agent(agent_name),
@@ -183,10 +217,10 @@ class Session:
             'info', msg_id, f'Retrying LLM request, {retries} / {max}'
         )
 
-    def on_event(self, event: Event):
+    def on_event(self, event: Event) -> None:
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
-    async def _on_event(self, event: Event):
+    async def _on_event(self, event: Event) -> None:
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 
@@ -224,7 +258,7 @@ class Session:
             event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
 
-    async def dispatch(self, data: dict):
+    async def dispatch(self, data: dict) -> None:
         event = event_from_dict(data.copy())
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.image_urls:
@@ -242,7 +276,7 @@ class Session:
                     return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
-    async def send(self, data: dict[str, object]):
+    async def send(self, data: dict[str, object]) -> None:
         if asyncio.get_running_loop() != self.loop:
             self.loop.create_task(self._send(data))
             return
@@ -262,11 +296,11 @@ class Session:
             self.is_alive = False
             return False
 
-    async def send_error(self, message: str):
+    async def send_error(self, message: str) -> None:
         """Sends an error message to the client."""
         await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str):
+    async def _send_status_message(self, msg_type: str, id: str, message: str) -> None:
         """Sends a status message to the client."""
         if msg_type == 'error':
             agent_session = self.agent_session
@@ -281,7 +315,7 @@ class Session:
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
 
-    def queue_status_message(self, msg_type: str, id: str, message: str):
+    def queue_status_message(self, msg_type: str, id: str, message: str) -> None:
         """Queues a status message to be sent asynchronously."""
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, id, message), self.loop

@@ -1,7 +1,9 @@
 import asyncio
 import os
+import shutil
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 from openhands.core.logger import openhands_logger as logger
@@ -32,6 +34,9 @@ class VSCodePlugin(Plugin):
                 'It is not yet supported for other users (i.e., when running LocalRuntime).'
             )
             return
+
+        # Set up VSCode settings.json
+        self._setup_vscode_settings()
 
         self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
@@ -66,6 +71,28 @@ class VSCodePlugin(Plugin):
         logger.debug(
             f'VSCode server started at port {self.vscode_port}. Output: {output}'
         )
+
+    def _setup_vscode_settings(self) -> None:
+        """
+        Set up VSCode settings by creating the .vscode directory in the workspace
+        and copying the settings.json file there.
+        """
+        # Get the path to the settings.json file in the plugin directory
+        current_dir = Path(__file__).parent
+        settings_path = current_dir / 'settings.json'
+
+        # Create the .vscode directory in the workspace if it doesn't exist
+        vscode_dir = Path('/workspace/.vscode')
+        vscode_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy the settings.json file to the .vscode directory
+        target_path = vscode_dir / 'settings.json'
+        shutil.copy(settings_path, target_path)
+
+        # Make sure the settings file is readable and writable by all users
+        os.chmod(target_path, 0o666)
+
+        logger.debug(f'VSCode settings copied to {target_path}')
 
     async def run(self, action: Action) -> Observation:
         """Run the plugin for a given action."""

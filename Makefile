@@ -39,6 +39,7 @@ ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
 	@$(MAKE) -s check-poetry
+	@$(MAKE) -s check-tmux
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
 check-system:
@@ -99,6 +100,18 @@ check-docker:
 	else \
 		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
 		exit 1; \
+	fi
+
+check-tmux:
+	@echo "$(YELLOW)Checking tmux installation...$(RESET)"
+	@if command -v tmux > /dev/null; then \
+		echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)╔════════════════════════════════════════════════════════════════════════════╗$(RESET)"; \
+		echo "$(YELLOW)║ OPTIONAL: tmux is not installed.                                          ║$(RESET)"; \
+		echo "$(YELLOW)║ Some advanced terminal features may not work without tmux.                ║$(RESET)"; \
+		echo "$(YELLOW)║ You can install it if needed, but it's not required for development.      ║$(RESET)"; \
+		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
 	fi
 
 check-poetry:
@@ -175,7 +188,7 @@ install-pre-commit-hooks:
 
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files openhands/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"

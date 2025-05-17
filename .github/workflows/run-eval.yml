@@ -9,7 +9,7 @@ on:
 jobs:
   trigger-job:
     name: Trigger remote eval job
-    if: ${{ github.event.label.name == 'run-eval-xs' || github.event.label.name == 'run-eval-s' || github.event.label.name == 'run-eval-m' }}
+    if: ${{ github.event.label.name == 'run-eval-1' || github.event.label.name == 'run-eval-2' || github.event.label.name == 'run-eval-50' || github.event.label.name == 'run-eval-100' }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
 
     steps:
@@ -26,12 +26,14 @@ jobs:
           echo "Repository URL: $REPO_URL"
           echo "PR Branch: $PR_BRANCH"
 
-          if [[ "${{ github.event.label.name }}" == "run-eval-xs" ]]; then
+          if [[ "${{ github.event.label.name }}" == "run-eval-1" ]]; then
             EVAL_INSTANCES="1"
-          elif [[ "${{ github.event.label.name }}" == "run-eval-s" ]]; then
-            EVAL_INSTANCES="5"
-          elif [[ "${{ github.event.label.name }}" == "run-eval-m" ]]; then
-            EVAL_INSTANCES="30"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-2" ]]; then
+            EVAL_INSTANCES="2"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-50" ]]; then
+            EVAL_INSTANCES="50"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-100" ]]; then
+            EVAL_INSTANCES="100"
           fi
 
           curl -X POST \

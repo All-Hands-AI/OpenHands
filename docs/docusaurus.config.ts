@@ -36,6 +36,14 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
+  plugins: [
+    [
+      require.resolve('docusaurus-lunr-search'),
+      {
+        languages: ['en', 'zh', 'fr', 'ja', 'pt']
+      }
+    ]
+  ],
   presets: [
     [
       'classic',
@@ -76,7 +84,16 @@ const config: Config = {
           label: 'User Guides',
         },
         {
+          href: 'https://docs.all-hands.dev/swagger-ui/', // FIXME: this should be a relative path, but docusarus steals the click
+          label: 'API',
+          position: 'left',
+        },
+        {
           type: 'localeDropdown',
+          position: 'left',
+        },
+        {
+          type: 'search',
           position: 'left',
         },
         {

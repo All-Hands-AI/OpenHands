@@ -1,11 +1,11 @@
 import posthog from "posthog-js";
 import React from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
-import type { RootState } from "#/store";
-import { useAuth } from "#/context/auth-context";
 import { I18nKey } from "#/i18n/declaration";
+import { useUserProviders } from "#/hooks/use-user-providers";
+import { useConversation } from "#/context/conversation-context";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -15,17 +15,14 @@ export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
-  const { providersAreSet } = useAuth();
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { providers } = useUserProviders();
+  const { conversationId } = useConversation();
+  const { data: conversation } = useUserConversation(conversationId);
 
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
-  const isGitLab =
-    selectedRepository !== null &&
-    selectedRepository.git_provider &&
-    selectedRepository.git_provider.toLowerCase() === "gitlab";
+  const providersAreSet = providers.length > 0;
+  const isGitLab = providers.includes("gitlab");
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
@@ -44,7 +41,7 @@ export function ActionSuggestions({
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {providersAreSet && selectedRepository && (
+      {providersAreSet && conversation?.selected_repository && (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>

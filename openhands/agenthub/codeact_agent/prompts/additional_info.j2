@@ -8,7 +8,7 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 {{ repository_instructions }}
 </REPOSITORY_INSTRUCTIONS>
 {% endif %}
-{% if runtime_info and (runtime_info.available_hosts or runtime_info.additional_agent_instructions) -%}
+{% if runtime_info -%}
 <RUNTIME_INFORMATION>
 {% if runtime_info.available_hosts %}
 The user has access to the following hosts for accessing a web application,
@@ -23,6 +23,14 @@ For example, if you are using vite.config.js, you should set server.host and ser
 {% endif %}
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
+{% endif %}
+{% if runtime_info.custom_secrets_descriptions %}
+<CUSTOM_SECRETS>
+You are have access to the following environment variables
+{% for secret_name, secret_description in runtime_info.custom_secrets_descriptions.items() %}
+* $**{{ secret_name }}**: {{ secret_description }}
+{% endfor %}
+</CUSTOM_SECRETS>
 {% endif %}
 {% if runtime_info.date %}
 Today's date is {{ runtime_info.date }} (UTC).

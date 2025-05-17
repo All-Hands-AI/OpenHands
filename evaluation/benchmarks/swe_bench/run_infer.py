@@ -3,7 +3,7 @@ import copy
 import json
 import os
 import tempfile
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 import toml
@@ -16,6 +16,11 @@ from evaluation.benchmarks.swe_bench.binary_patch_utils import (
 )
 from evaluation.benchmarks.swe_bench.resource.mapping import (
     get_instance_resource_factor,
+)
+from evaluation.benchmarks.swe_bench.resource.swt_bench_constants import (
+    MAP_REPO_TO_INSTALL,
+    MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE,
+    MAP_VERSION_TO_INSTALL,
 )
 from evaluation.utils.shared import (
     EvalException,
@@ -55,6 +60,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -68,7 +74,36 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    instruction = f"""
+    mode = metadata.details['mode']
+    if mode.startswith('swt'):
+        test_instructions = (
+            f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
+            if mode.endswith('ci')
+            else ''
+        )
+        instruction = f"""\
+<uploaded_files>
+/workspace/{workspace_dir_name}
+</uploaded_files>
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
+
+<issue_description>
+{instance.problem_statement}
+</issue_description>
+
+
+Can you help me implement the necessary changes to the repository to test whether the issue in <issue_description> was resolved?
+I will take care of all changes to any of the non-test files. This means you DON'T have to modify the actual logic and ONLY have to update test logic and tests!
+Your task is to make the minimal changes to tests files in the /workspace directory to reproduce the issue in the <issue_description>, i.e., such that the generated tests fail in the current state (where the issue is unresolved) and pass when the issue will be resolved.
+Follow these steps to reproduce the issue:
+1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.
+2. Create a script `reproduction.py` to reproduce the error and execute it with `python reproduction.py` using the BashTool, to confirm the error
+3. Edit the sourcecode of the repo to integrate your reproduction script into the test framework
+4. Run the test framework and make sure your tests fail! Only submit FAILING tests! Never submit passing tests.
+{test_instructions}Your thinking should be thorough and so it's fine if it's very long.
+"""
+    else:
+        instruction = f"""
 <uploaded_files>
 /workspace/{workspace_dir_name}
 </uploaded_files>
@@ -125,7 +160,7 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
    7.2 Add edge cases to your test script to ensure comprehensive coverage.
    7.3 Run existing tests related to the modified code to ensure you haven't broken anything.
 
-8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
+8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance['base_commit']}.
    8.1 Ensure you've fully addressed all requirements.
    8.2 Run any tests in the repository related to:
      8.2.1 The issue you are fixing
@@ -138,16 +173,14 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
 
     if 'image_assets' in instance:
         assets = json.loads(instance['image_assets'])
-        assert (
-            'problem_statement' in assets
-        ), 'problem_statement is required in image_assets'
+        assert 'problem_statement' in assets, (
+            'problem_statement is required in image_assets'
+        )
         image_urls = assets['problem_statement']
         return MessageAction(content=instruction, image_urls=image_urls)
     return MessageAction(content=instruction)
@@ -225,9 +258,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -355,6 +388,30 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
+
+    if metadata.details['mode'] == 'swt-ci':
+        # set up repo
+        setup_commands = []
+        if instance['repo'] in MAP_REPO_TO_INSTALL:
+            setup_commands.append(MAP_REPO_TO_INSTALL[instance['repo']])
+
+        # Run pre-install set up if provided
+        install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(
+            instance['version'], []
+        )
+        if 'pre_install' in install:
+            for pre_install in install['pre_install']:
+                setup_commands.append(pre_install)
+
+        if 'install' in install:
+            setup_commands.append(install['install'])
+
+        for command in setup_commands:
+            action = CmdRunAction(command=command)
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     if 'multimodal' not in metadata.dataset.lower():
         # Only for non-multimodal datasets, we need to activate the testbed environment for Python
@@ -657,6 +714,19 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
+            if 'selected_repos' in data:
+                # repos for the swe-bench instances:
+                # ['astropy/astropy', 'django/django', 'matplotlib/matplotlib', 'mwaskom/seaborn', 'pallets/flask', 'psf/requests', 'pydata/xarray', 'pylint-dev/pylint', 'pytest-dev/pytest', 'scikit-learn/scikit-learn', 'sphinx-doc/sphinx', 'sympy/sympy']
+                selected_repos = data['selected_repos']
+                if isinstance(selected_repos, str): selected_repos = [selected_repos]
+                assert isinstance(selected_repos, list)
+                logger.info(
+                    f'Filtering {selected_repos} tasks from "selected_repos"...'
+                )
+                subset = dataset[dataset["repo"].isin(selected_repos)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+                
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
@@ -677,6 +747,13 @@ if __name__ == '__main__':
         type=str,
         default='test',
         help='split to evaluate on',
+    )
+    parser.add_argument(
+        '--mode',
+        type=str,
+        default='swe',
+        choices=['swe', 'swt', 'swt-ci'],
+        help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
     args, _ = parser.parse_known_args()
 
@@ -714,7 +791,7 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    details = {}
+    details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
     dataset_descrption = (
@@ -864,7 +941,7 @@ if __name__ == '__main__':
                     # Also make sure git_patch is not empty - otherwise we fall back to previous attempt (empty patch is worse than anything else)
                     if (
                         instance['instance_id'] not in added_instance_ids
-                        and instance['test_result']['git_patch'].strip()
+                        and instance['test_result'].get('git_patch', '').strip()
                     ):
                         fout.write(line)
                         added_instance_ids.add(instance['instance_id'])

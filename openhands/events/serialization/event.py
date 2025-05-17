@@ -5,7 +5,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import Event, EventSource
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
@@ -135,7 +134,6 @@ def event_to_dict(event: 'Event') -> dict:
             k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
             for k, v in props.items()
         }
-        logger.debug(f'extras data in event_to_dict: {d["extras"]}')
         # Include success field for CmdOutputObservation
         if hasattr(event, 'success'):
             d['success'] = event.success

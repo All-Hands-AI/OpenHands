@@ -19,7 +19,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -53,7 +54,7 @@ class ConversationMemory:
     def process_events(
         self,
         condensed_history: list[Event],
-        initial_messages: list[Message],
+        initial_user_action: MessageAction,
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -63,19 +64,23 @@ class ConversationMemory:
 
         Args:
             condensed_history: The condensed history of events to convert
-            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
+            initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
 
         events = condensed_history
 
+        # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
+        self._ensure_system_message(events)
+        self._ensure_initial_user_message(events, initial_user_action)
+
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
-        # Process special events first (system prompts, etc.)
-        messages = initial_messages
+        # Initialize empty messages list
+        messages = []
 
         # Process regular events
         pending_tool_call_action_messages: dict[str, Message] = {}
@@ -129,22 +134,32 @@ class ConversationMemory:
                 pending_tool_call_action_messages.pop(response_id)
 
             messages += messages_to_add
+
+        # Apply final filtering so that the messages in context don't have unmatched tool calls
+        # and tool responses, for example
         messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
+
+        # Apply final formatting
+        messages = self._apply_user_message_formatting(messages)
+
         return messages
 
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
-        """Create the initial messages for the conversation."""
-        return [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=with_caching,
-                    )
-                ],
-            )
-        ]
+    def _apply_user_message_formatting(self, messages: list[Message]) -> list[Message]:
+        """Applies formatting rules, such as adding newlines between consecutive user messages."""
+        formatted_messages = []
+        prev_role = None
+        for msg in messages:
+            # Add double newline between consecutive user messages
+            if msg.role == 'user' and prev_role == 'user' and len(msg.content) > 0:
+                # Find the first TextContent in the message to add newlines
+                for content_item in msg.content:
+                    if isinstance(content_item, TextContent):
+                        # Prepend two newlines to ensure visual separation
+                        content_item.text = '\n\n' + content_item.text
+                        break
+            formatted_messages.append(msg)
+            prev_role = msg.role  # Update prev_role after processing each message
+        return formatted_messages
 
     def _process_action(
         self,
@@ -169,7 +184,7 @@ class ConversationMemory:
                 - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
-                - McpAction: For interacting with the MCP server
+                - MCPAction: For interacting with the MCP server
             pending_tool_call_action_messages: Dictionary mapping response IDs to their corresponding messages.
                 Used in function calling mode to track tool calls that are waiting for their results.
 
@@ -195,7 +210,7 @@ class ConversationMemory:
                 FileReadAction,
                 BrowseInteractiveAction,
                 BrowseURLAction,
-                McpAction,
+                MCPAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -215,8 +230,8 @@ class ConversationMemory:
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
-                content=[TextContent(text=assistant_msg.content or '')]
-                if assistant_msg.content is not None
+                content=[TextContent(text=assistant_msg.content)]
+                if assistant_msg.content and assistant_msg.content.strip()
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
@@ -273,6 +288,16 @@ class ConversationMemory:
                 Message(
                     role='user',  # Always user for CmdRunAction
                     content=content,
+                )
+            ]
+        elif isinstance(action, SystemMessageAction):
+            # Convert SystemMessageAction to a system message
+            return [
+                Message(
+                    role='system',
+                    content=[TextContent(text=action.content)],
+                    # Include tools if function calling is enabled
+                    tool_calls=None,
                 )
             ]
         return []
@@ -387,7 +412,7 @@ class ConversationMemory:
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                obs.outputs.get('content', obs.content),
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
@@ -426,9 +451,13 @@ class ConversationMemory:
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(date=date)
+                    runtime_info = RuntimeInfo(
+                        date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                    )
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
@@ -546,6 +575,8 @@ class ConversationMemory:
 
         For new Anthropic API, we only need to mark the last user or tool message as cacheable.
         """
+        if len(messages) > 0 and messages[0].role == 'system':
+            messages[0].content[-1].cache_prompt = True
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
             if message.role in ('user', 'tool'):
@@ -656,3 +687,62 @@ class ConversationMemory:
             else:
                 # Any other case is kept
                 yield message
+
+    def _ensure_system_message(self, events: list[Event]) -> None:
+        """Checks if a SystemMessageAction exists and adds one if not (for legacy compatibility)."""
+        # Check if there's a SystemMessageAction in the events
+        has_system_message = any(
+            isinstance(event, SystemMessageAction) for event in events
+        )
+
+        # Legacy behavior: If no SystemMessageAction is found, add one
+        if not has_system_message:
+            logger.debug(
+                '[ConversationMemory] No SystemMessageAction found in events. '
+                'Adding one for backward compatibility. '
+            )
+            system_prompt = self.prompt_manager.get_system_message()
+            if system_prompt:
+                system_message = SystemMessageAction(content=system_prompt)
+                # Insert the system message directly at the beginning of the events list
+                events.insert(0, system_message)
+                logger.info(
+                    '[ConversationMemory] Added SystemMessageAction for backward compatibility'
+                )
+
+    def _ensure_initial_user_message(
+        self, events: list[Event], initial_user_action: MessageAction
+    ) -> None:
+        """Checks if the second event is a user MessageAction and inserts the provided one if needed."""
+        if (
+            not events
+        ):  # Should have system message from previous step, but safety check
+            logger.error('Cannot ensure initial user message: event list is empty.')
+            # Or raise? Let's log for now, _ensure_system_message should handle this.
+            return
+
+        # We expect events[0] to be SystemMessageAction after _ensure_system_message
+        if len(events) == 1:
+            # Only system message exists
+            logger.info(
+                'Initial user message action was missing. Inserting the initial user message.'
+            )
+            events.insert(1, initial_user_action)
+        elif not isinstance(events[1], MessageAction) or events[1].source != 'user':
+            # The second event exists but is not the correct initial user message action.
+            # We will insert the correct one provided.
+            logger.info(
+                'Second event was not the initial user message action. Inserting correct one at index 1.'
+            )
+
+            # Insert the user message event at index 1. This will be the second message as LLM APIs expect
+            # but something was wrong with the history, so log all we can.
+            events.insert(1, initial_user_action)
+
+        # Else: events[1] is already a user MessageAction.
+        # Check if it matches the one provided (if any discrepancy, log warning but proceed).
+        elif events[1] != initial_user_action:
+            logger.debug(
+                'The user MessageAction at index 1 does not match the provided initial_user_action. '
+                'Proceeding with the one found in condensed history.'
+            )

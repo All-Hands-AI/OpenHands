@@ -9,10 +9,13 @@ import {
   ResultSet,
   GetTrajectoryResponse,
   SummarizeConversationResponse,
+  GitChangeDiff,
+  GitChange,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
-import { GitUser, GitRepository } from "#/types/git";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { GitUser, GitRepository, Branch } from "#/types/git";
+import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
   /**
@@ -74,9 +77,9 @@ class OpenHands {
   ): Promise<boolean> {
     if (appMode === "oss") return true;
 
-    const response =
-      await openHands.post<AuthenticateResponse>("/api/authenticate");
-    return response.status === 200;
+    // Just make the request, if it succeeds (no exception thrown), return true
+    await openHands.post<AuthenticateResponse>("/api/authenticate");
+    return true;
   }
 
   /**
@@ -131,7 +134,7 @@ class OpenHands {
 
   static async getUserConversations(): Promise<Conversation[]> {
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=9",
+      "/api/conversations?limit=20",
     );
     return data.results;
   }
@@ -140,25 +143,23 @@ class OpenHands {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
 
-  static async updateUserConversation(
-    conversationId: string,
-    conversation: Partial<Omit<Conversation, "conversation_id">>,
-  ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
-  }
-
   static async createConversation(
-    selectedRepository?: GitRepository,
+    selectedRepository?: string,
+    git_provider?: Provider,
     initialUserMsg?: string,
     imageUrls?: string[],
     replayJson?: string,
+    suggested_task?: SuggestedTask,
+    selected_branch?: string,
   ): Promise<Conversation> {
     const body = {
-      selected_repository: selectedRepository,
-      selected_branch: undefined,
+      repository: selectedRepository,
+      git_provider,
+      selected_branch,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
       replay_json: replayJson,
+      suggested_task,
     };
 
     const { data } = await openHands.post<Conversation>(
@@ -196,14 +197,6 @@ class OpenHands {
   ): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
-  }
-
-  /**
-   * Reset user settings in server
-   */
-  static async resetSettings(): Promise<boolean> {
-    const response = await openHands.post("/api/reset-settings");
-    return response.status === 200;
   }
 
   static async createCheckoutSession(amount: number): Promise<string> {
@@ -284,8 +277,53 @@ class OpenHands {
 
   static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
     const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-settings-tokens";
+      appMode === "saas" ? "/api/logout" : "/api/unset-provider-tokens";
     await openHands.post(endpoint);
+  }
+
+  static async getGitChanges(conversationId: string): Promise<GitChange[]> {
+    const { data } = await openHands.get<GitChange[]>(
+      `/api/conversations/${conversationId}/git/changes`,
+    );
+    return data;
+  }
+
+  static async getGitChangeDiff(
+    conversationId: string,
+    path: string,
+  ): Promise<GitChangeDiff> {
+    const { data } = await openHands.get<GitChangeDiff>(
+      `/api/conversations/${conversationId}/git/diff`,
+      {
+        params: { path },
+      },
+    );
+    return data;
+  }
+
+  /**
+   * Given a PAT, retrieves the repositories of the user
+   * @returns A list of repositories
+   */
+  static async retrieveUserGitRepositories() {
+    const { data } = await openHands.get<GitRepository[]>(
+      "/api/user/repositories",
+      {
+        params: {
+          sort: "pushed",
+        },
+      },
+    );
+
+    return data;
+  }
+
+  static async getRepositoryBranches(repository: string): Promise<Branch[]> {
+    const { data } = await openHands.get<Branch[]>(
+      `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`,
+    );
+
+    return data;
   }
 }
 

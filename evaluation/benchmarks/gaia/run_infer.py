@@ -78,7 +78,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     action = CmdRunAction(command='mkdir -p /workspace')
@@ -110,7 +110,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def process_instance(
@@ -134,10 +134,10 @@ def process_instance(
         dest_file = None
 
     # Prepare instruction
-    instruction = f"{instance['Question']}\n"
+    instruction = f'{instance["Question"]}\n'
     logger.info(f'Instruction: {instruction}')
     if dest_file:
-        instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
+        instruction += f'\n\nThe mentioned file is provided in the workspace at: {dest_file.split("/")[-1]}'
 
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'

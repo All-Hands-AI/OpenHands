@@ -3,6 +3,7 @@
 
 # Production
 /build
+/static/swagger-ui
 
 # Generated files
 .docusaurus

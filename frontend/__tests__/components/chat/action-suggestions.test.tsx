@@ -1,8 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
-import { useAuth } from "#/context/auth-context";
-import { useSelector } from "react-redux";
+import OpenHands from "#/api/open-hands";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { ConversationProvider } from "#/context/conversation-context";
 
 // Mock dependencies
 vi.mock("posthog-js", () => ({
@@ -11,8 +13,12 @@ vi.mock("posthog-js", () => ({
   },
 }));
 
+const { useSelectorMock } = vi.hoisted(() => ({
+  useSelectorMock: vi.fn(),
+}));
+
 vi.mock("react-redux", () => ({
-  useSelector: vi.fn(),
+  useSelector: useSelectorMock,
 }));
 
 vi.mock("#/context/auth-context", () => ({
@@ -24,34 +30,59 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        "ACTION$PUSH_TO_BRANCH": "Push to Branch",
-        "ACTION$PUSH_CREATE_PR": "Push & Create PR",
-        "ACTION$PUSH_CHANGES_TO_PR": "Push Changes to PR"
+        ACTION$PUSH_TO_BRANCH: "Push to Branch",
+        ACTION$PUSH_CREATE_PR: "Push & Create PR",
+        ACTION$PUSH_CHANGES_TO_PR: "Push Changes to PR",
       };
       return translations[key] || key;
     },
   }),
 }));
 
+vi.mock("react-router", () => ({
+  useParams: () => ({
+    conversationId: "test-conversation-id",
+  }),
+}));
+
+const renderActionSuggestions = () =>
+  render(<ActionSuggestions onSuggestionsClick={() => {}} />, {
+    wrapper: ({ children }) => (
+      <ConversationProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      </ConversationProvider>
+    ),
+  });
+
 describe("ActionSuggestions", () => {
   // Setup mocks for each test
   beforeEach(() => {
     vi.clearAllMocks();
-
-    (useAuth as any).mockReturnValue({
-      providersAreSet: true,
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "some-token",
+      },
     });
 
-    (useSelector as any).mockReturnValue({
+    useSelectorMock.mockReturnValue({
       selectedRepository: "test-repo",
     });
   });
 
-  it("should render both GitHub buttons when GitHub token is set and repository is selected", () => {
-    render(<ActionSuggestions onSuggestionsClick={() => {}} />);
+  it("should render both GitHub buttons when GitHub token is set and repository is selected", async () => {
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    // @ts-expect-error - only required for testing
+    getConversationSpy.mockResolvedValue({
+      selected_repository: "test-repo",
+    });
+    renderActionSuggestions();
 
     // Find all buttons with data-testid="suggestion"
-    const buttons = screen.getAllByTestId("suggestion");
+    const buttons = await screen.findAllByTestId("suggestion");
 
     // Check if we have at least 2 buttons
     expect(buttons.length).toBeGreaterThanOrEqual(2);
@@ -69,30 +100,24 @@ describe("ActionSuggestions", () => {
   });
 
   it("should not render buttons when GitHub token is not set", () => {
-    (useAuth as any).mockReturnValue({
-      providersAreSet: false,
-    });
-
-    render(<ActionSuggestions onSuggestionsClick={() => {}} />);
+    renderActionSuggestions();
 
     expect(screen.queryByTestId("suggestion")).not.toBeInTheDocument();
   });
 
   it("should not render buttons when no repository is selected", () => {
-    (useSelector as any).mockReturnValue({
+    useSelectorMock.mockReturnValue({
       selectedRepository: null,
     });
 
-    render(<ActionSuggestions onSuggestionsClick={() => {}} />);
+    renderActionSuggestions();
 
     expect(screen.queryByTestId("suggestion")).not.toBeInTheDocument();
   });
 
   it("should have different prompts for 'Push to Branch' and 'Push & Create PR' buttons", () => {
     // This test verifies that the prompts are different in the component
-    const component = render(
-      <ActionSuggestions onSuggestionsClick={() => {}} />,
-    );
+    renderActionSuggestions();
 
     // Get the component instance to access the internal values
     const pushBranchPrompt =

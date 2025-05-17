@@ -115,19 +115,20 @@ class DaytonaRuntime(ActionExecutionClient):
 
     def _construct_api_url(self, port: int) -> str:
         assert self.workspace is not None, 'Workspace is not initialized'
-        assert (
-            self.workspace.instance.info is not None
-        ), 'Workspace info is not available'
-        assert (
-            self.workspace.instance.info.provider_metadata is not None
-        ), 'Provider metadata is not available'
+        assert self.workspace.instance.info is not None, (
+            'Workspace info is not available'
+        )
+        assert self.workspace.instance.info.provider_metadata is not None, (
+            'Provider metadata is not available'
+        )
 
         node_domain = json.loads(self.workspace.instance.info.provider_metadata)[
             'nodeDomain'
         ]
         return f'https://{port}-{self.workspace.id}.{node_domain}'
 
-    def _get_action_execution_server_host(self) -> str:
+    @property
+    def action_execution_server_url(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:

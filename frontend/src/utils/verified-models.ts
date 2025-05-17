@@ -2,6 +2,8 @@
 export const VERIFIED_PROVIDERS = ["openai", "azure", "anthropic", "deepseek"];
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",
+  "o3-2025-04-16",
+  "o4-mini-2025-04-16",
   "claude-3-5-sonnet-20241022",
   "claude-3-7-sonnet-20250219",
   "deepseek-chat",
@@ -17,8 +19,12 @@ export const VERIFIED_OPENAI_MODELS = [
   "gpt-4-32k",
   "o1-mini",
   "o1",
+  "o3",
+  "o3-2025-04-16",
   "o3-mini",
   "o3-mini-2025-01-31",
+  "o4-mini",
+  "o4-mini-2025-04-16",
 ];
 
 // LiteLLM does not return the compatible Anthropic models with the provider, so we list them here to set them ourselves

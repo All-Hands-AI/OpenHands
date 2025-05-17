@@ -1,6 +1,7 @@
 """Test function calling module."""
 
 import json
+from unittest.mock import patch
 
 import pytest
 from litellm import ModelResponse
@@ -9,7 +10,6 @@ from openhands.agenthub.codeact_agent.function_calling import response_to_action
 from openhands.core.exceptions import FunctionCallValidationError
 from openhands.events.action import (
     BrowseInteractiveAction,
-    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     FileReadAction,
@@ -55,6 +55,21 @@ def test_execute_bash_valid():
     assert isinstance(actions[0], CmdRunAction)
     assert actions[0].command == 'ls'
     assert actions[0].is_input is False
+
+    # Test with timeout parameter
+    with patch.object(CmdRunAction, 'set_hard_timeout') as mock_set_hard_timeout:
+        response_with_timeout = create_mock_response(
+            'execute_bash', {'command': 'ls', 'is_input': 'false', 'timeout': 30}
+        )
+        actions_with_timeout = response_to_actions(response_with_timeout)
+
+        # Verify set_hard_timeout was called with the correct value
+        mock_set_hard_timeout.assert_called_once_with(30.0)
+
+        assert len(actions_with_timeout) == 1
+        assert isinstance(actions_with_timeout[0], CmdRunAction)
+        assert actions_with_timeout[0].command == 'ls'
+        assert actions_with_timeout[0].is_input is False
 
 
 def test_execute_bash_missing_command():
@@ -173,23 +188,6 @@ def test_browser_missing_code():
     assert 'Missing required argument "code"' in str(exc_info.value)
 
 
-def test_web_read_valid():
-    """Test web_read with valid arguments."""
-    response = create_mock_response('web_read', {'url': 'https://example.com'})
-    actions = response_to_actions(response)
-    assert len(actions) == 1
-    assert isinstance(actions[0], BrowseURLAction)
-    assert actions[0].url == 'https://example.com'
-
-
-def test_web_read_missing_url():
-    """Test web_read with missing url argument."""
-    response = create_mock_response('web_read', {})
-    with pytest.raises(FunctionCallValidationError) as exc_info:
-        response_to_actions(response)
-    assert 'Missing required argument "url"' in str(exc_info.value)
-
-
 def test_invalid_json_arguments():
     """Test handling of invalid JSON in arguments."""
     response = ModelResponse(
@@ -215,6 +213,32 @@ def test_invalid_json_arguments():
             }
         ],
     )
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Failed to parse tool call arguments' in str(exc_info.value)
+
+
+def test_unexpected_argument_handling():
+    """Test that unexpected arguments in function calls are properly handled.
+
+    This test reproduces issue #8369 Example 4 where an unexpected argument
+    (old_str_prefix) causes a TypeError.
+    """
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'str_replace',
+            'path': '/test/file.py',
+            'old_str': 'def test():\n    pass',
+            'new_str': 'def test():\n    return True',
+            'old_str_prefix': 'some prefix',  # Unexpected argument
+        },
+    )
+
+    # Test that the function raises a FunctionCallValidationError
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    # Verify the error message mentions the unexpected argument
+    assert 'old_str_prefix' in str(exc_info.value)
+    assert 'Unexpected argument' in str(exc_info.value)
