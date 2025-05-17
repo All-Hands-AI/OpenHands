@@ -1,29 +1,29 @@
-# Visão Geral dos Recursos do OpenHands
+# OpenHands Feature Overview
 
-![visão geral](/img/oh-features.png)
+![overview](/img/oh-features.png)
 
-### Painel de Chat
-- Exibe a conversa entre o usuário e o OpenHands.
-- O OpenHands explica suas ações neste painel.
+### Chat Panel
+- Displays the conversation between the user and OpenHands.
+- OpenHands explains its actions in this panel.
 
-### Mudanças
-- Mostra as alterações de arquivos realizadas pelo OpenHands.
+### Changes
+- Shows the file changes performed by OpenHands.
 
 ### VS Code
-- VS Code incorporado para navegar e modificar arquivos.
-- Também pode ser usado para fazer upload e download de arquivos.
+- Embedded VS Code for browsing and modifying files.
+- Can also be used to upload and download files.
 
 ### Terminal
-- Um espaço para o OpenHands e os usuários executarem comandos de terminal.
+- A space for OpenHands and users to run terminal commands.
 
 ### Jupyter
-- Mostra todos os comandos Python que foram executados pelo OpenHands.
-- Particularmente útil ao usar o OpenHands para realizar tarefas de visualização de dados.
+- Shows all Python commands that were executed by OpenHands.
+- Particularly handy when using OpenHands to perform data visualization tasks.
 
 ### App
-- Exibe o servidor web quando o OpenHands executa uma aplicação.
-- Os usuários podem interagir com a aplicação em execução.
+- Displays the web server when OpenHands runs an application.
+- Users can interact with the running application.
 
-### Navegador
-- Usado pelo OpenHands para navegar em sites.
-- O navegador não é interativo.
+### Browser
+- Used by OpenHands to browse websites.
+- The browser is non-interactive.

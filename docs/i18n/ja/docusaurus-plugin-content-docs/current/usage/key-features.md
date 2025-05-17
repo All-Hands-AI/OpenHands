@@ -1,29 +1,29 @@
-# OpenHands 機能概要
+# OpenHands Feature Overview
 
-![概要](/img/oh-features.png)
+![overview](/img/oh-features.png)
 
-### チャットパネル
-- ユーザーとOpenHandsの会話を表示します。
-- OpenHandsはこのパネルで自身の行動を説明します。
+### Chat Panel
+- Displays the conversation between the user and OpenHands.
+- OpenHands explains its actions in this panel.
 
-### 変更点
-- OpenHandsによって実行されたファイルの変更を表示します。
+### Changes
+- Shows the file changes performed by OpenHands.
 
 ### VS Code
-- ファイルの閲覧や修正のための組み込みVS Code。
-- ファイルのアップロードやダウンロードにも使用できます。
+- Embedded VS Code for browsing and modifying files.
+- Can also be used to upload and download files.
 
-### ターミナル
-- OpenHandsとユーザーがターミナルコマンドを実行するためのスペース。
+### Terminal
+- A space for OpenHands and users to run terminal commands.
 
 ### Jupyter
-- OpenHandsによって実行されたすべてのPythonコマンドを表示します。
-- OpenHandsを使用してデータ可視化タスクを実行する際に特に便利です。
+- Shows all Python commands that were executed by OpenHands.
+- Particularly handy when using OpenHands to perform data visualization tasks.
 
-### アプリ
-- OpenHandsがアプリケーションを実行する際にウェブサーバーを表示します。
-- ユーザーは実行中のアプリケーションと対話できます。
+### App
+- Displays the web server when OpenHands runs an application.
+- Users can interact with the running application.
 
-### ブラウザ
-- OpenHandsがウェブサイトを閲覧するために使用します。
-- このブラウザは非対話型です。
+### Browser
+- Used by OpenHands to browse websites.
+- The browser is non-interactive.
