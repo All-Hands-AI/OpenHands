@@ -10,46 +10,23 @@ The Cloud Issue Resolver is available automatically when you grant OpenHands Clo
 
 ## Usage
 
-After granting OpenHands Cloud repository access, you can use the Cloud Issue Resolver on issues, pull requests, and merge requests in your repositories.
+After granting OpenHands Cloud repository access, you can use the Cloud Issue Resolver on issues and pull/merge requests in your repositories.
 
-### GitHub Usage
+### Working with Issues
 
-#### Issues
+On your repository, label an issue with `openhands`. OpenHands will:
+1. Comment on the issue to let you know it is working on it
+   - You can click on the link to track the progress on OpenHands Cloud
+2. Open a pull request (GitHub) or merge request (GitLab) if it determines that the issue has been successfully resolved
+3. Comment on the issue with a summary of the performed tasks and a link to the PR/MR
 
-On your GitHub repository, label an issue with `openhands`. OpenHands will:
-1. Comment on the issue to let you know it is working on it.
-    - You can click on the link to track the progress on OpenHands Cloud.
-2. Open a pull request if it determines that the issue has been successfully resolved.
-3. Comment on the issue with a summary of the performed tasks and a link to the pull request.
+### Working with Pull/Merge Requests
 
-#### Pull Requests
-
-To get OpenHands to work on pull requests, use `@openhands` in top level or inline comments to:
+To get OpenHands to work on pull requests (GitHub) or merge requests (GitLab), mention `@openhands` in comments to:
 - Ask questions
 - Request updates
 - Get code explanations
 
 OpenHands will:
-1. Comment on the PR to let you know it is working on it.
-2. Perform the task.
-
-### GitLab Usage
-
-#### Issues
-
-On your GitLab repository, label an issue with `openhands`. OpenHands will:
-1. Comment on the issue to let you know it is working on it.
-    - You can click on the link to track the progress on OpenHands Cloud.
-2. Open a merge request if it determines that the issue has been successfully resolved.
-3. Comment on the issue with a summary of the performed tasks and a link to the merge request.
-
-#### Merge Requests
-
-To get OpenHands to work on merge requests, use `@openhands` in comments to:
-- Ask questions
-- Request updates
-- Get code explanations
-
-OpenHands will:
-1. Comment on the merge request to let you know it is working on it.
-2. Perform the task.
+1. Comment to let you know it is working on it
+2. Perform the requested task
