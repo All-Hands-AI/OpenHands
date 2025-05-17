@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 export type Cell = {
   content: string;
   type: "input" | "output";
+  imageUrls?: string[];
 };
 
 const initialCells: Cell[] = [];
@@ -17,7 +18,15 @@ export const jupyterSlice = createSlice({
       state.cells.push({ content: action.payload, type: "input" });
     },
     appendJupyterOutput: (state, action) => {
-      state.cells.push({ content: action.payload, type: "output" });
+      if (typeof action.payload === "string") {
+        state.cells.push({ content: action.payload, type: "output" });
+      } else {
+        state.cells.push({
+          content: action.payload.content,
+          type: "output",
+          imageUrls: action.payload.imageUrls,
+        });
+      }
     },
     clearJupyter: (state) => {
       state.cells = [];

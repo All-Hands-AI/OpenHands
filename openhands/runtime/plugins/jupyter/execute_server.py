@@ -139,7 +139,9 @@ class JupyterKernel:
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
     )  # type: ignore
-    async def execute(self, code: str, timeout: int = 120) -> str:
+    async def execute(
+        self, code: str, timeout: int = 120
+    ) -> dict[str, list[str] | str]:
         if not self.ws or self.ws.stream.closed():
             await self._connect()
 
@@ -171,7 +173,7 @@ class JupyterKernel:
         )
         logging.info(f'Executed code in jupyter kernel:\n{res}')
 
-        outputs: list[str] = []
+        outputs: list[dict] = []
 
         async def wait_for_messages() -> bool:
             execution_done = False
@@ -194,17 +196,23 @@ class JupyterKernel:
 
                 if msg_type == 'error':
                     traceback = '\n'.join(msg_dict['content']['traceback'])
-                    outputs.append(traceback)
+                    outputs.append({'type': 'text', 'content': traceback})
                     execution_done = True
                 elif msg_type == 'stream':
-                    outputs.append(msg_dict['content']['text'])
+                    outputs.append(
+                        {'type': 'text', 'content': msg_dict['content']['text']}
+                    )
                 elif msg_type in ['execute_result', 'display_data']:
-                    outputs.append(msg_dict['content']['data']['text/plain'])
+                    outputs.append(
+                        {
+                            'type': 'text',
+                            'content': msg_dict['content']['data']['text/plain'],
+                        }
+                    )
                     if 'image/png' in msg_dict['content']['data']:
-                        # use markdone to display image (in case of large image)
-                        outputs.append(
-                            f'\n![image](data:image/png;base64,{msg_dict["content"]["data"]["image/png"]})\n'
-                        )
+                        # Store image data in structured format
+                        image_url = f'data:image/png;base64,{msg_dict["content"]["data"]["image/png"]}'
+                        outputs.append({'type': 'image', 'content': image_url})
 
                 elif msg_type == 'execute_reply':
                     execution_done = True
@@ -225,19 +233,32 @@ class JupyterKernel:
             execution_done = await asyncio.wait_for(wait_for_messages(), timeout)
         except asyncio.TimeoutError:
             await interrupt_kernel()
-            return f'[Execution timed out ({timeout} seconds).]'
+            return {'text': f'[Execution timed out ({timeout} seconds).]', 'images': []}
 
-        if not outputs and execution_done:
-            ret = '[Code executed successfully with no output]'
+        # Process structured outputs
+        text_outputs = []
+        image_outputs = []
+
+        for output in outputs:
+            if output['type'] == 'text':
+                text_outputs.append(output['content'])
+            elif output['type'] == 'image':
+                image_outputs.append(output['content'])
+
+        if not text_outputs and execution_done:
+            text_content = '[Code executed successfully with no output]'
         else:
-            ret = ''.join(outputs)
+            text_content = ''.join(text_outputs)
 
-        # Remove ANSI
-        ret = strip_ansi(ret)
+        # Remove ANSI from text content
+        text_content = strip_ansi(text_content)
 
         if os.environ.get('DEBUG'):
-            logging.info(f'OUTPUT:\n{ret}')
-        return ret
+            logging.info(f'TEXT OUTPUT:\n{text_content}')
+            logging.info(f'IMAGE OUTPUTS: {len(image_outputs)}')
+
+        # Return a dictionary with text content and image URLs
+        return {'text': text_content, 'images': image_outputs}
 
     async def shutdown_async(self) -> None:
         if self.kernel_id:
@@ -267,7 +288,9 @@ class ExecuteHandler(tornado.web.RequestHandler):
 
         output = await self.jupyter_kernel.execute(code)
 
-        self.write(output)
+        # Set content type to JSON and return the structured output
+        self.set_header('Content-Type', 'application/json')
+        self.write(json_encode(output))
 
 
 def make_app() -> tornado.web.Application:
