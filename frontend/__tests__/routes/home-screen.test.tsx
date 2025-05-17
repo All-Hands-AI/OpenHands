@@ -11,6 +11,11 @@ import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
+// Mock the useIsCreatingConversation hook
+vi.mock("#/hooks/use-is-creating-conversation", () => ({
+  useIsCreatingConversation: vi.fn().mockReturnValue(false),
+}));
+
 const RouterStub = createRoutesStub([
   {
     Component: MainApp,
@@ -212,6 +217,13 @@ describe("HomeScreen", () => {
     });
 
     it("should disable the other launch buttons when the header launch button is clicked", async () => {
+      // Import the hook directly to update its mock implementation
+      const { useIsCreatingConversation } = await import("#/hooks/use-is-creating-conversation");
+      
+      // Mock the hook to return true when the header button is clicked
+      const mockUseIsCreatingConversation = useIsCreatingConversation as unknown as ReturnType<typeof vi.fn>;
+      mockUseIsCreatingConversation.mockReturnValue(false);
+      
       renderHomeScreen();
       const { headerLaunchButton, repoLaunchButton } =
         await setupLaunchButtons();
@@ -219,6 +231,9 @@ describe("HomeScreen", () => {
       const tasksLaunchButtonsAfter =
         await screen.findAllByTestId("task-launch-button");
 
+      // Update the mock to return true to simulate a conversation being created
+      mockUseIsCreatingConversation.mockReturnValue(true);
+      
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
 
@@ -230,6 +245,13 @@ describe("HomeScreen", () => {
     });
 
     it("should disable the other launch buttons when the repo launch button is clicked", async () => {
+      // Import the hook directly to update its mock implementation
+      const { useIsCreatingConversation } = await import("#/hooks/use-is-creating-conversation");
+      
+      // Mock the hook to return true when the repo button is clicked
+      const mockUseIsCreatingConversation = useIsCreatingConversation as unknown as ReturnType<typeof vi.fn>;
+      mockUseIsCreatingConversation.mockReturnValue(false);
+      
       renderHomeScreen();
       const { headerLaunchButton, repoLaunchButton } =
         await setupLaunchButtons();
@@ -237,6 +259,9 @@ describe("HomeScreen", () => {
       const tasksLaunchButtonsAfter =
         await screen.findAllByTestId("task-launch-button");
 
+      // Update the mock to return true to simulate a conversation being created
+      mockUseIsCreatingConversation.mockReturnValue(true);
+      
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
 
@@ -248,6 +273,13 @@ describe("HomeScreen", () => {
     });
 
     it("should disable the other launch buttons when any task launch button is clicked", async () => {
+      // Import the hook directly to update its mock implementation
+      const { useIsCreatingConversation } = await import("#/hooks/use-is-creating-conversation");
+      
+      // Mock the hook to return true when the task button is clicked
+      const mockUseIsCreatingConversation = useIsCreatingConversation as unknown as ReturnType<typeof vi.fn>;
+      mockUseIsCreatingConversation.mockReturnValue(false);
+      
       renderHomeScreen();
       const { headerLaunchButton, repoLaunchButton, tasksLaunchButtons } =
         await setupLaunchButtons();
@@ -255,6 +287,9 @@ describe("HomeScreen", () => {
       const tasksLaunchButtonsAfter =
         await screen.findAllByTestId("task-launch-button");
 
+      // Update the mock to return true to simulate a conversation being created
+      mockUseIsCreatingConversation.mockReturnValue(true);
+      
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
 
