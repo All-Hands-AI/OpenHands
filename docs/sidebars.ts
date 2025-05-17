@@ -24,8 +24,29 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'doc',
-          label: 'Openhands Cloud',
+          label: 'Getting Started',
           id: 'usage/cloud/openhands-cloud',
+        },
+        {
+          type: 'category',
+          label: 'Installation',
+          items: [
+            {
+              type: 'doc',
+              label: 'GitHub Installation',
+              id: 'usage/cloud/github-installation',
+            },
+            {
+              type: 'doc',
+              label: 'GitLab Installation',
+              id: 'usage/cloud/gitlab-installation',
+            },
+          ],
+        },
+        {
+          type: 'doc',
+          label: 'OpenHands Cloud UI',
+          id: 'usage/cloud/cloud-ui',
         },
         {
           type: 'doc',
