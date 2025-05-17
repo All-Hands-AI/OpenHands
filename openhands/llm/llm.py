@@ -159,6 +159,11 @@ class LLM(RetryMixin, DebugMixin):
             'temperature': self.config.temperature,
             'max_completion_tokens': self.config.max_output_tokens,
         }
+        if self.config.top_k is not None:
+            # openai doesn't expose top_k
+            # litellm will handle it a bit differently than the openai-compatible params
+            kwargs['top_k'] = self.config.top_k
+
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
@@ -491,13 +496,8 @@ class LLM(RetryMixin, DebugMixin):
         # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
             self._function_calling_active = model_name_supported
-        elif self.config.native_tool_calling is False:
-            self._function_calling_active = False
         else:
-            # try to enable native tool calling if supported by the model
-            self._function_calling_active = litellm.supports_function_calling(
-                model=self.config.model
-            )
+            self._function_calling_active = self.config.native_tool_calling
 
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():

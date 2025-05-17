@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Callable
 
 import openhands
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, EventSource, RecallType
@@ -176,6 +177,9 @@ class Memory:
                 microagent_knowledge=microagent_knowledge,
                 content='Added workspace context',
                 date=self.runtime_info.date if self.runtime_info is not None else '',
+                custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
+                if self.runtime_info is not None
+                else {},
             )
             return obs
         return None
@@ -259,6 +263,25 @@ class Memory:
             if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
 
+    def get_microagent_mcp_tools(self) -> list[MCPConfig]:
+        """
+        Get MCP tools from all repo microagents (always active)
+
+        Returns:
+            A list of MCP tools configurations from microagents
+        """
+        mcp_configs: list[MCPConfig] = []
+
+        # Check all repo microagents for MCP tools (always active)
+        for agent in self.repo_microagents.values():
+            if agent.metadata.mcp_tools:
+                mcp_configs.append(agent.metadata.mcp_tools)
+                logger.debug(
+                    f'Found MCP tools in repo microagent {agent.name}: {agent.metadata.mcp_tools}'
+                )
+
+        return mcp_configs
+
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
         if repo_name or repo_directory:
@@ -266,7 +289,9 @@ class Memory:
         else:
             self.repository_info = None
 
-    def set_runtime_info(self, runtime: Runtime) -> None:
+    def set_runtime_info(
+        self, runtime: Runtime, custom_secrets_descriptions: dict[str, str]
+    ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
         utc_now = datetime.now(timezone.utc)
@@ -277,9 +302,12 @@ class Memory:
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
+                custom_secrets_descriptions=custom_secrets_descriptions,
             )
         else:
-            self.runtime_info = RuntimeInfo(date=date)
+            self.runtime_info = RuntimeInfo(
+                date=date, custom_secrets_descriptions=custom_secrets_descriptions
+            )
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""

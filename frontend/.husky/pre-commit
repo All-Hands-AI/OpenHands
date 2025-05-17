@@ -2,6 +2,7 @@
 echo "Running frontend checks..."
 cd frontend
 npm run check-unlocalized-strings
+npm run check-translation-completeness
 npx lint-staged
 
 # Run backend pre-commit

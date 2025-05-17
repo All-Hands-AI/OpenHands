@@ -173,7 +173,6 @@ describe("RepoConnector", () => {
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
-      "gui",
       "rbren/polaris",
       "github",
       undefined,
