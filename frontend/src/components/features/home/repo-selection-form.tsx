@@ -207,6 +207,7 @@ export function RepositorySelectionForm({
         isDisabled={
           !selectedRepository ||
           isCreatingConversation ||
+          isCreatingConversationElsewhere ||
           isLoadingRepositories ||
           isRepositoriesError
         }

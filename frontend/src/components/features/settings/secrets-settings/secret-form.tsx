@@ -128,7 +128,10 @@ export function SecretForm({
     }
   };
 
-  const formTestId = mode === "add" ? "add-secret-form" : "edit-secret-form";
+  const formTestId =
+    mode === "add"
+      ? t("SECRETS$ADD_SECRET_FORM_ID")
+      : t("SECRETS$EDIT_SECRET_FORM_ID");
 
   return (
     <form
