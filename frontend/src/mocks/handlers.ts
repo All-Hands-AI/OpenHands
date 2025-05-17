@@ -105,26 +105,6 @@ const openHandsHandlers = [
     HttpResponse.json(["mock-invariant"]),
   ),
 
-  http.get("/api/options/microagents", async () =>
-    HttpResponse.json([
-      {
-        name: "PR Update",
-        trigger: "/pr_update",
-        description: "Update a pull request",
-      },
-      {
-        name: "PR Comment",
-        trigger: "/pr_comment",
-        description: "Comment on a pull request",
-      },
-      {
-        name: "Test Update",
-        trigger: "/update_test",
-        description: "Update tests",
-      },
-    ]),
-  ),
-
   http.post("http://localhost:3001/api/submit-feedback", async () => {
     await delay(1200);
 

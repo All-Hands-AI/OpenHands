@@ -1,10 +1,10 @@
 import React from "react";
+import TextareaAutosize from "react-textarea-autosize";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { SubmitButton } from "#/components/shared/buttons/submit-button";
 import { StopButton } from "#/components/shared/buttons/stop-button";
-import { TipTapEditor } from "./tiptap-editor";
 
 interface ChatInputProps {
   name?: string;
@@ -28,7 +28,7 @@ export function ChatInput({
   button = "submit",
   disabled,
   showButton = true,
-  value = "",
+  value,
   maxRows = 16,
   onSubmit,
   onStop,
@@ -40,35 +40,105 @@ export function ChatInput({
   buttonClassName,
 }: ChatInputProps) {
   const { t } = useTranslation();
-  const [inputValue, setInputValue] = React.useState(value);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
 
-  const handleChange = (newValue: string) => {
-    setInputValue(newValue);
-    onChange?.(newValue);
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    // Only handle paste if we have an image paste handler and there are files
+    if (onImagePaste && event.clipboardData.files.length > 0) {
+      const files = Array.from(event.clipboardData.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      // Only prevent default if we found image files to handle
+      if (files.length > 0) {
+        event.preventDefault();
+        onImagePaste(files);
+      }
+    }
+    // For text paste, let the default behavior handle it
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer.types.includes("Files")) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    if (onImagePaste && event.dataTransfer.files.length > 0) {
+      const files = Array.from(event.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      if (files.length > 0) {
+        onImagePaste(files);
+      }
+    }
   };
 
   const handleSubmitMessage = () => {
-    if (inputValue.trim()) {
-      onSubmit(inputValue);
-      setInputValue("");
+    const message = value || textareaRef.current?.value || "";
+    if (message.trim()) {
+      onSubmit(message);
       onChange?.("");
+      if (textareaRef.current) {
+        textareaRef.current.value = "";
+      }
     }
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !disabled &&
+      !event.nativeEvent.isComposing
+    ) {
+      event.preventDefault();
+      handleSubmitMessage();
+    }
+  };
+
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange?.(event.target.value);
   };
 
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-6 w-full relative"
+      className="flex items-end justify-end grow gap-1 min-h-6 w-full"
     >
-      <TipTapEditor
-        value={inputValue}
+      <TextareaAutosize
+        ref={textareaRef}
+        name={name}
+        placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
+        onKeyDown={handleKeyPress}
         onChange={handleChange}
-        onSubmit={handleSubmitMessage}
         onFocus={onFocus}
         onBlur={onBlur}
-        placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
-        disabled={disabled}
-        className={className}
+        onPaste={handlePaste}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        value={value}
+        minRows={1}
+        maxRows={maxRows}
+        data-dragging-over={isDraggingOver}
+        className={cn(
+          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-none ring-0",
+          "transition-all duration-200 ease-in-out",
+          isDraggingOver
+            ? "bg-neutral-600/50 rounded-lg px-2"
+            : "bg-transparent",
+          className,
+        )}
       />
       {showButton && (
         <div className={buttonClassName}>

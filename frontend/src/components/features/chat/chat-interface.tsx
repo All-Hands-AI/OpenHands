@@ -113,6 +113,10 @@ export function ChatInterface() {
       },
     });
   };
+  
+  const handleInsertMicroagent = (content: string) => {
+    setMessageToSend(content);
+  };
 
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
@@ -161,6 +165,7 @@ export function ChatInterface() {
               onClickShareFeedbackActionButton("negative")
             }
             onExportTrajectory={() => onClickExportTrajectoryButton()}
+            onInsertMicroagent={handleInsertMicroagent}
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
