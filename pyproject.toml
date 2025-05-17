@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.38.0"
+version = "0.39.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
