@@ -4,36 +4,28 @@ export type JupyterLine = {
   url?: string;
 };
 
-const IMAGE_PREFIX = "![image](data:image/png;base64,";
-
 export const parseCellContent = (content: string, imageUrls?: string[]) => {
   const lines: JupyterLine[] = [];
   let currentText = "";
-  let imageUrlIndex = 0;
 
+  // First, process the text content
   for (const line of content.split("\n")) {
-    if (line.startsWith(IMAGE_PREFIX)) {
-      if (currentText) {
-        lines.push({ type: "plaintext", content: currentText });
-        currentText = ""; // Reset after pushing plaintext
-      }
-
-      // If we have image URLs available, use them
-      const url =
-        imageUrls && imageUrls.length > imageUrlIndex
-          ? imageUrls[imageUrlIndex]
-          : undefined;
-      if (imageUrls && imageUrls.length > imageUrlIndex) {
-        imageUrlIndex += 1;
-      }
-      lines.push({ type: "image", content: line, url });
-    } else {
-      currentText += `${line}\n`;
-    }
+    currentText += `${line}\n`;
   }
 
   if (currentText) {
     lines.push({ type: "plaintext", content: currentText });
+  }
+
+  // Then, add image lines if we have image URLs
+  if (imageUrls && imageUrls.length > 0) {
+    imageUrls.forEach((url) => {
+      lines.push({
+        type: "image",
+        content: `![image](${url})`,
+        url,
+      });
+    });
   }
 
   return lines;
