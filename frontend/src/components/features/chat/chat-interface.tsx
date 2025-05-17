@@ -102,28 +102,6 @@ export function ChatInterface() {
     });
   };
 
-  const handleFeedbackSubmit = (
-    categories: string[],
-    additionalFeedback: string,
-  ) => {
-    // Send the feedback action with categories and additional feedback
-    send(createUserFeedback(feedbackPolarity, "trajectory"));
-
-    // Show a toast notification to confirm feedback was sent
-    hotToast.success(
-      feedbackPolarity === "positive"
-        ? t(I18nKey.FEEDBACK$POSITIVE_SENT)
-        : t(I18nKey.FEEDBACK$NEGATIVE_SENT),
-    );
-
-    // Track the feedback submission
-    posthog.capture("feedback_submitted", {
-      polarity: feedbackPolarity,
-      categories,
-      has_additional_feedback: additionalFeedback.length > 0,
-    });
-  };
-
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
       displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
@@ -214,9 +192,25 @@ export function ChatInterface() {
 
       <FeedbackModal
         isOpen={feedbackModalIsOpen}
-        onClose={() => setFeedbackModalIsOpen(false)}
+        onClose={() => {
+          // Send the feedback action
+          send(createUserFeedback(feedbackPolarity, "trajectory"));
+
+          // Show a toast notification to confirm feedback was sent
+          hotToast.success(
+            feedbackPolarity === "positive"
+              ? t(I18nKey.FEEDBACK$POSITIVE_SENT)
+              : t(I18nKey.FEEDBACK$NEGATIVE_SENT),
+          );
+
+          // Track the feedback submission
+          posthog.capture("feedback_submitted", {
+            polarity: feedbackPolarity,
+          });
+
+          setFeedbackModalIsOpen(false);
+        }}
         polarity={feedbackPolarity}
-        onSubmit={handleFeedbackSubmit}
       />
     </div>
   );
