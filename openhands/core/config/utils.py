@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pathlib
 import platform
@@ -91,9 +92,17 @@ def load_from_env(
                         cast_value = str(value).lower() in ['true', '1']
                     # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS                                                                                                                                     │
                     elif (
-                        get_origin(field_type) is dict or get_origin(field_type) is list
+                        get_origin(field_type) is dict
+                        or get_origin(field_type) is list
+                        or field_type is dict
+                        or field_type is list
                     ):
-                        cast_value = literal_eval(value)
+                        try:
+                            # First try json.loads for proper JSON formatting
+                            cast_value = json.loads(value)
+                        except json.JSONDecodeError:
+                            # Fall back to literal_eval for Python literal syntax
+                            cast_value = literal_eval(value)
                     else:
                         if field_type is not None:
                             cast_value = field_type(value)
