@@ -19,7 +19,7 @@ interface MessageFeedbackProps {
 export function MessageFeedback({
   messageId,
   feedback,
-  isCompact = false
+  isCompact = false,
 }: MessageFeedbackProps) {
   const { t } = useTranslation();
   const { send } = useWsClient();
@@ -37,10 +37,12 @@ export function MessageFeedback({
   };
 
   return (
-    <div className={cn(
-      "flex gap-1",
-      !isCompact && "mt-2" // Only add margin-top when not in compact mode
-    )}>
+    <div
+      className={cn(
+        "flex gap-1",
+        !isCompact && "mt-2", // Only add margin-top when not in compact mode
+      )}
+    >
       <TrajectoryActionButton
         testId={`positive-${messageId}`}
         onClick={() => handleFeedback("positive")}

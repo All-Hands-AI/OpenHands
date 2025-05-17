@@ -13,7 +13,6 @@ describe("CopyToClipboardButton", () => {
   test("should have localized aria-label", () => {
     render(
       <CopyToClipboardButton
-        isHidden={false}
         isDisabled={false}
         onClick={() => {}}
         mode="copy"
@@ -27,7 +26,6 @@ describe("CopyToClipboardButton", () => {
   test("should have localized aria-label when copied", () => {
     render(
       <CopyToClipboardButton
-        isHidden={false}
         isDisabled={false}
         onClick={() => {}}
         mode="copied"
