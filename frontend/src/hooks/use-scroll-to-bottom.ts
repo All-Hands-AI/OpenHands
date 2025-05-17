@@ -9,7 +9,13 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
 
   // Check if the scroll position is at the bottom
   const isAtBottom = useCallback((element: HTMLElement): boolean => {
-    const bottomThreshold = 10; // Pixels from bottom to consider "at bottom"
+    // Use a percentage of the container height as threshold (10%)
+    // This makes it "fuzzier" - user needs to scroll up more to break auto-scroll
+    const bottomThresholdPercentage = 0.1; // 10% of container height
+    const bottomThreshold = Math.max(
+      element.clientHeight * bottomThresholdPercentage,
+      20, // Minimum threshold of 20px
+    );
     const bottomPosition = element.scrollTop + element.clientHeight;
     return bottomPosition >= element.scrollHeight - bottomThreshold;
   }, []);
