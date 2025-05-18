@@ -96,7 +96,7 @@ class IssueResolver:
         """Initialize the runtime for the agent.
 
         This function is called before the runtime is used to run the agent.
-        Currently it does nothing.
+        It sets up git configuration and runs the setup script if it exists.
         """
         logger.info('-' * 30)
         logger.info('BEGIN Runtime Completion Fn')
@@ -122,6 +122,14 @@ class IssueResolver:
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config.\n{obs}')
+
+        # Run setup script if it exists
+        logger.info('Checking for .openhands/setup.sh script...')
+        runtime.maybe_run_setup_script()
+
+        # Setup git hooks if they exist
+        logger.info('Checking for .openhands/pre-commit.sh script...')
+        runtime.maybe_setup_git_hooks()
 
     async def complete_runtime(
         self,
