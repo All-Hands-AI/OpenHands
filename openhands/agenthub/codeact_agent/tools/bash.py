@@ -2,6 +2,8 @@ import sys
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
+
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
 
 ### Command Execution
@@ -45,7 +47,7 @@ def create_cmd_run_tool(
     return ChatCompletionToolParam(
         type='function',
         function=ChatCompletionToolParamFunctionChunk(
-            name=refine_prompt('execute_bash'),
+            name=EXECUTE_BASH_TOOL_NAME,
             description=refine_prompt(description),
             parameters={
                 'type': 'object',
