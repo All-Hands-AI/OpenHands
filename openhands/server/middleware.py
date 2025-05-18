@@ -207,7 +207,7 @@ class SessionApiKeyMiddleware:
         if request.url.path != '/alive' and request.url.path != '/server_info':
             if self.session_api_key != request.headers.get('X-Session-API-Key'):
                 return JSONResponse(
-                    {'code': 'invalid_api_key'},
+                    {'code': 'invalid_session_api_key'},
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 )
         response = await call_next(request)
