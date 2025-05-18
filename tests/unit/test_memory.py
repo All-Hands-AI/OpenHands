@@ -12,7 +12,7 @@ from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
     RecallType,
@@ -73,7 +73,7 @@ def mock_agent():
     # Add a proper system message mock
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
-    system_message._id = -1  # Set invalid ID to avoid the ID check
+    system_message._id = Event.INVALID_ID  # Use the proper invalid ID constant
     agent.get_system_message.return_value = system_message
 
 
