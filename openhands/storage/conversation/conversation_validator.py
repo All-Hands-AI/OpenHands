@@ -11,8 +11,8 @@ class ConversationValidator:
         conversation_id: str,
         cookies_str: str,
         authorization_header: str | None = None,
-    ) -> tuple[None, None]:
-        return None, None
+    ) -> str | None:
+        return None
 
 
 def create_conversation_validator() -> ConversationValidator:

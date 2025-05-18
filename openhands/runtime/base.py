@@ -135,6 +135,10 @@ class Runtime(FileEditRuntimeMixin):
         atexit.register(self.close)
 
         self.initial_env_vars = _default_env_vars(config.sandbox)
+
+        # also update with runtime_startup_env_vars
+        self.initial_env_vars.update(self.config.sandbox.runtime_startup_env_vars)
+
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
