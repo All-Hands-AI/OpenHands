@@ -49,7 +49,9 @@ RUN poetry config virtualenvs.create false \
 ENV SANDBOX_LOCAL_RUNTIME_URL=http://host.docker.internal
 ENV USE_HOST_NETWORK=false
 ENV WORKSPACE_BASE=/tmp/workspace
-ENV SANDBOX_USER_ID=0
+# Use a non-root UID for the sandbox user inside the runtime container to avoid conflicts
+# UID 1000 is the conventional first non-root user ID in Linux distributions
+ENV SANDBOX_USER_ID=1000
 ENV FILE_STORE=local
 ENV FILE_STORE_PATH=/.openhands-state
 
