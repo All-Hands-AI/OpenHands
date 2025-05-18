@@ -10,6 +10,9 @@ services:
     privileged: true
     environment:
       - AWS_SDK_LOAD_CONFIG=1
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.38-nikolaik}
       - WORKSPACE_MOUNT_PATH=/tmp/workspace
       - WORKSPACE_BASE=/tmp/workspace

@@ -72,5 +72,6 @@ jobs:
             --restart unless-stopped \
             -p 3000:3000 \
             --env-file .env \
-            -v /opt/tradejoy/workspace:/app/workspace \
+            -v /opt/tradejoy/workspace:/tmp/workspace \
+            -v /var/run/docker.sock:/var/run/docker.sock \
             ${{ steps.login-ecr.outputs.registry }}/tradejoy-backend:latest 
