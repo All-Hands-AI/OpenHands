@@ -1,6 +1,8 @@
 from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.llm.tool_names import BROWSER_TOOL_NAME
+
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
     subsets=['bid', 'nav'],
@@ -141,7 +143,7 @@ for _, action in _browser_action_space.action_set.items():
 BrowserTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='browser',
+        name=BROWSER_TOOL_NAME,
         description=_BROWSER_DESCRIPTION,
         parameters={
             'type': 'object',
