@@ -557,7 +557,7 @@ class BashSession:
                 "You may wait longer to see additional output of the previous command by sending empty command '', "
                 'send other commands to interact with the current process, '
                 'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.] '
-                ' PREVIOUS COMMAND OUTPUT: {raw_command_output}'
+                f' PREVIOUS COMMAND OUTPUT: {raw_command_output}'
             )
             logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             command_output = self._get_command_output(
