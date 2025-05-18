@@ -45,7 +45,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-
+INDEX_BASE_DIR = os.environ.get('INDEX_BASE_DIR', '')
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -60,11 +60,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     instruction = f"""
-<uploaded_files>
-/workspace/{workspace_dir_name}
-</uploaded_files>
-
-I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
+Consider the following issue description:
 
 <issue_description>
 {instance.problem_statement}
@@ -131,10 +127,10 @@ Return just the location(s)
 Note: Your thinking should be thorough and so it's fine if it's very long.
 """
     instruction += (
-            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-            'Don\'t include any lambda functions!\n'
-            'You should NOT modify any files!\n'
-        )
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+        "Don't include any lambda functions!\n"
+        'You should NOT modify any files!\n'
+    )
     if RUN_WITH_BROWSING:
         instruction += """
 <IMPORTANT!>
@@ -345,6 +341,35 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
+
+    # copy processed indexes
+    action = CmdRunAction(command='mkdir _index_data/graph_index_v2.3')
+    obs = runtime.run_action(action)
+
+    graph_index_file_path = os.path.join(
+        INDEX_BASE_DIR, 'graph_index_v2.3', f"{instance['instance_id']}.pkl"
+    )
+    runtime.copy_to(
+        graph_index_file_path,
+        f'/workspace/{workspace_dir_name}/_index_data/graph_index_v2.3',
+    )
+    action = CmdRunAction(
+        command=f'mv _index_data/graph_index_v2.3/{instance["instance_id"]}.pkl _index_data/graph_index_v2.3/code_graph.pkl'
+    )
+    obs = runtime.run_action(action)
+
+    bm25_index_dir = os.path.join(INDEX_BASE_DIR, 'BM25_index', instance['instance_id'])
+    runtime.copy_to(
+        bm25_index_dir, f'/workspace/{workspace_dir_name}/_index_data', recursive=True
+    )
+    action = CmdRunAction(
+        command=f'mv _index_data/{instance["instance_id"]} _index_data/bm25_index'
+    )
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(obs.exit_code == 0, f'Failed to mv file: {str(obs)}')
 
     action = CmdRunAction(command='which python')
     action.set_hard_timeout(600)
