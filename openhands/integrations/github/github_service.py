@@ -47,7 +47,7 @@ class GitHubService(BaseGitService, GitService):
         if token:
             self.token = token
 
-        if base_domain:
+        if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
 
         self.external_auth_id = external_auth_id
@@ -254,6 +254,7 @@ class GitHubService(BaseGitService, GitService):
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
+                is_public=True,
             )
             for repo in repo_items
         ]

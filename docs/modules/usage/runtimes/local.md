@@ -53,15 +53,9 @@ If `SANDBOX_VOLUMES` is not set, the runtime will create a temporary directory f
 Here's an example of how to start OpenHands with the Local Runtime in Headless Mode:
 
 ```bash
-# Set the runtime type to local
 export RUNTIME=local
+export SANDBOX_VOLUMES=/my_folder/myproject:/workspace:rw
 
-# Set a workspace directory (the agent works in /workspace by default)
-export SANDBOX_VOLUMES=/path/to/your/project:/workspace:rw
-# For read-only data that you don't want the agent to modify, use a different path
-# export SANDBOX_VOLUMES=/path/to/your/project:/workspace:rw,/path/to/reference/data:/data:ro
-
-# Start OpenHands
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
