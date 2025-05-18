@@ -26,6 +26,7 @@ google-generativeai = "*"                            # To use litellm with Gemin
 google-api-python-client = "^2.164.0"                # For Google Sheets API
 google-auth-httplib2 = "*"                           # For Google Sheets authentication
 google-auth-oauthlib = "*"                           # For Google Sheets OAuth
+azure-devops = "^7.1.0"                              # For Azure DevOps integration
 termcolor = "*"
 docker = "*"
 fastapi = "*"
