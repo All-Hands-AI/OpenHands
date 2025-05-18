@@ -73,8 +73,8 @@ async def connect(connection_id: str, environ: dict) -> None:
             logger.error('No conversation_id in query params')
             raise ConnectionRefusedError('No conversation_id in query params')
 
-        if _invalid_api_key(query_params):
-            raise ConnectionRefusedError('invalid_api_key')
+        if _invalid_session_api_key(query_params):
+            raise ConnectionRefusedError('invalid_session_api_key')
 
         cookies_str = environ.get('HTTP_COOKIE', '')
         # Get Authorization header from the environment
@@ -166,11 +166,11 @@ async def disconnect(connection_id: str) -> None:
     await conversation_manager.disconnect_from_session(connection_id)
 
 
-def _invalid_api_key(query_params: dict[str, list[Any]]):
+def _invalid_session_api_key(query_params: dict[str, list[Any]]):
     session_api_key = os.getenv('SESSION_API_KEY')
     if not session_api_key:
         return False
-    query_api_keys = query_params['api_key']
+    query_api_keys = query_params['session_api_key']
     if not query_api_keys:
         return True
     return query_api_keys[0] != session_api_key

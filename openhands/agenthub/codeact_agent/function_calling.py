@@ -15,7 +15,6 @@ from openhands.agenthub.codeact_agent.tools import (
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
-    WebReadTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
@@ -211,16 +210,6 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
-
-            # ================================================
-            # WebReadTool (simplified browsing)
-            # ================================================
-            elif tool_call.function.name == WebReadTool['function']['name']:
-                if 'url' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "url" in tool call {tool_call.function.name}'
-                    )
-                action = BrowseURLAction(url=arguments['url'])
 
             # ================================================
             # MCPAction (MCP)

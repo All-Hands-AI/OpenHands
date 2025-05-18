@@ -103,6 +103,8 @@ def mock_memory() -> Memory:
         spec=Memory,
         event_stream=test_event_stream,
     )
+    # Add the get_microagent_mcp_tools method to the mock
+    memory.get_microagent_mcp_tools.return_value = []
     return memory
 
 
@@ -740,7 +742,7 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 
 @pytest.mark.asyncio
 async def test_context_window_exceeded_error_handling(
-    mock_agent, mock_runtime, test_event_stream
+    mock_agent, mock_runtime, test_event_stream, mock_memory
 ):
     """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
     max_iterations = 5
