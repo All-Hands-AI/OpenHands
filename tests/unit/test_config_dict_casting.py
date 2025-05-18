@@ -7,7 +7,7 @@ from openhands.core.config import AppConfig, load_from_env
 
 def test_load_from_env_with_dict(monkeypatch, default_config):
     """Test loading dict values from environment variables, particularly DOCKER_RUNTIME_KWARGS."""
-    # Set the environment variable with a dict-formatted string
+    # Set the environment variable with a dict-formatted string using Python literal syntax
     monkeypatch.setenv(
         'SANDBOX_DOCKER_RUNTIME_KWARGS',
         '{'
