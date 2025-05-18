@@ -1,0 +1,23 @@
+services:
+  tradejoy-backend:
+    build:
+      context: ..
+      dockerfile: ./tradejoy/containers/Dockerfile
+    image: tradejoy-backend:latest
+    container_name: tradejoy-backend
+    environment:
+      - WORKSPACE_BASE=${WORKSPACE_BASE:-/app/workspace}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_SDK_LOAD_CONFIG=1
+      - AWS_CONFIG_FILE=/root/.aws/config
+      - AWS_SHARED_CREDENTIALS_FILE=/root/.aws/credentials
+      - BEDROCK_MODEL=${BEDROCK_MODEL:-bedrock/us.anthropic.claude-3-5-haiku-20241022-v1:0}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ${WORKSPACE_BASE:-./workspace}:/app/workspace
+      - ./config.toml:/app/config.toml
+    restart: unless-stopped 

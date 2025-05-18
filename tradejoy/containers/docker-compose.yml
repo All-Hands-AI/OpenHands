@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  tradejoy-backend:
+    build:
+      context: ../../
+      dockerfile: tradejoy/containers/Dockerfile
+    image: tradejoy-backend:latest
+    container_name: tradejoy-backend
+    privileged: true
+    environment:
+      - AWS_SDK_LOAD_CONFIG=1
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.38-nikolaik}
+      - WORKSPACE_MOUNT_PATH=/tmp/workspace
+      - WORKSPACE_BASE=/tmp/workspace
+      - PYTHONUNBUFFERED=1
+      - SERVE_FRONTEND=false
+      - RUN_AS_OPENHANDS=true
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.openhands-state:/.openhands-state
+      - ${WORKSPACE_BASE:-./workspace}:/tmp/workspace
+    stdin_open: true
+    tty: true 
