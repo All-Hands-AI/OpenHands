@@ -20,23 +20,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: tradejoy-backend
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        # Build a docker container and push it to ECR
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest -f tradejoy/containers/Dockerfile .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
     - name: Deploy to EC2
       uses: appleboy/ssh-action@master
       with:
@@ -44,11 +27,11 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Login to ECR
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          # Create project directory if it doesn't exist
+          mkdir -p /opt/tradejoy
           
           # Create/update env file
-          cat > .env << EOF
+          cat > /opt/tradejoy/.env << EOF
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION=${{ secrets.AWS_REGION }}
@@ -56,11 +39,22 @@ jobs:
           WORKSPACE_BASE=/opt/tradejoy/workspace
           EOF
           
-          # Pull latest image
-          docker pull ${{ steps.login-ecr.outputs.registry }}/tradejoy-backend:latest
+          # Clone or update repository
+          if [ -d "/opt/tradejoy/CMS-Builder" ]; then
+            cd /opt/tradejoy/CMS-Builder
+            git fetch --all
+            git reset --hard origin/main
+          else
+            cd /opt/tradejoy
+            git clone https://github.com/${{ github.repository_owner }}/CMS-Builder.git
+            cd CMS-Builder
+          fi
           
           # Create workspace directory if it doesn't exist
           mkdir -p /opt/tradejoy/workspace
+          
+          # Build the Docker image locally
+          docker build -t tradejoy-backend:latest -f tradejoy/containers/Dockerfile .
           
           # Stop and remove old container if exists
           docker stop tradejoy-backend || true
@@ -71,7 +65,7 @@ jobs:
             --name tradejoy-backend \
             --restart unless-stopped \
             -p 3000:3000 \
-            --env-file .env \
+            --env-file /opt/tradejoy/.env \
             -v /opt/tradejoy/workspace:/tmp/workspace \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            ${{ steps.login-ecr.outputs.registry }}/tradejoy-backend:latest 
+            tradejoy-backend:latest 
