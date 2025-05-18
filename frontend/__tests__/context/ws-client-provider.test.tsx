@@ -94,7 +94,7 @@ describe("WsClientProvider", () => {
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
         url: null,
-        api_key: null,
+        session_api_key: null,
       }}},
     }));
   });
