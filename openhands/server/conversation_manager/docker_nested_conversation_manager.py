@@ -134,7 +134,7 @@ class DockerNestedConversationManager(ConversationManager):
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            api_key='notsecure',
+            session_api_key='notsecure',
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
@@ -303,7 +303,7 @@ class DockerNestedConversationManager(ConversationManager):
             agent_loop_info = AgentLoopInfo(
                 conversation_id=conversation_id,
                 url=nested_url,
-                api_key='notsecure',
+                session_api_key='notsecure',
                 event_store=NestedEventStore(
                     base_url=nested_url,
                     sid=conversation_id,
