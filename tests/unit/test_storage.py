@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import tempfile
 from abc import ABC
@@ -117,8 +118,6 @@ class TestLocalFileStore(TestCase, _StorageTest):
             # Use ignore_errors=True to avoid failures if directory is not empty
             shutil.rmtree(self.temp_dir, ignore_errors=True)
         except Exception as e:
-            import logging
-
             logging.warning(
                 f'Failed to remove temporary directory {self.temp_dir}: {e}'
             )
