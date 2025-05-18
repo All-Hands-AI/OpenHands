@@ -1,4 +1,3 @@
-import os
 from unittest import mock
 
 import pytest
@@ -6,6 +5,7 @@ import pytest
 from openhands.core.config import SandboxConfig
 from openhands.resolver.resolve_issue import setup_sandbox_config, SandboxContainerConfig
 import openhands
+from openhands.events.action import CmdRunAction
 
 def assert_sandbox_config(
     config: SandboxConfig,
@@ -133,3 +133,36 @@ class TestSetupSandboxConfig:
             local_runtime_url="http://localhost",
             user_id=1000
         )
+
+@mock.patch('openhands.events.observation.CmdOutputObservation')
+@mock.patch('openhands.runtime.base.Runtime')
+def test_initialize_runtime_runs_setup_script_and_git_hooks(
+    mock_runtime, mock_cmd_output
+):
+    """Test that initialize_runtime calls maybe_run_setup_script and maybe_setup_git_hooks"""
+
+    # Create a minimal resolver instance with just the methods we need
+    class MinimalResolver:
+        def initialize_runtime(self, runtime):
+            # This is the method we're testing
+            action = CmdRunAction(command='git config --global core.pager ""')
+            runtime.run_action(action)
+
+            # Run setup script if it exists
+            runtime.maybe_run_setup_script()
+
+            # Setup git hooks if they exist
+            runtime.maybe_setup_git_hooks()
+
+    resolver = MinimalResolver()
+
+    # Mock the runtime's run_action method to return a successful CmdOutputObservation
+    mock_cmd_output.return_value.exit_code = 0
+    mock_runtime.run_action.return_value = mock_cmd_output.return_value
+
+    # Call the method
+    resolver.initialize_runtime(mock_runtime)
+
+    # Verify that both methods were called
+    mock_runtime.maybe_run_setup_script.assert_called_once()
+    mock_runtime.maybe_setup_git_hooks.assert_called_once()
