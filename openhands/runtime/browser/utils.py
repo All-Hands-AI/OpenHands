@@ -91,6 +91,7 @@ async def browse(
             active_page_index=obs.get(
                 'active_page_index', -1
             ),  # index of the active page
+            dom_object=obs.get('dom_object', {}),  # DOM object
             axtree_object=obs.get('axtree_object', {}),  # accessibility tree object
             extra_element_properties=obs.get('extra_element_properties', {}),
             focused_element_bid=obs.get(
