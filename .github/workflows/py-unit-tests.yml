@@ -22,6 +22,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
+      LOG_JSON_LEVEL_KEY: 'severity' # Set to match the expected value in tests
     strategy:
       matrix:
         python-version: ['3.12']
