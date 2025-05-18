@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import tempfile
 from abc import ABC
 from dataclasses import dataclass, field
 from io import BytesIO, StringIO
@@ -108,8 +109,6 @@ class _StorageTest(ABC):
 class TestLocalFileStore(TestCase, _StorageTest):
     def setUp(self):
         # Create a unique temporary directory for each test instance
-        import tempfile
-
         self.temp_dir = tempfile.mkdtemp(prefix='openhands_test_')
         self.store = LocalFileStore(self.temp_dir)
 
