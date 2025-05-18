@@ -20,7 +20,7 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 class OpenHands {
   private static conversationUrl: string | null = null;
 
-  private static apiKey: string | null = null;
+  private static sessionApiKey: string | null = null;
 
   /**
    * Set a custom conversation URL to use instead of the default
@@ -42,16 +42,16 @@ class OpenHands {
    * Set an API Key to be included in endpoint requests
    * @param key Custom API Key for conversation endpoints
    */
-  static setApiKey(key: string | null): void {
-    this.apiKey = key;
+  static setSessionApiKey(key: string | null): void {
+    this.sessionApiKey = key;
   }
 
   /**
    * Get the API Key to be included in endpoint requests
    * @return Custom API Key for conversation endpoints
    */
-  static getApiKey(): string | null {
-    return this.apiKey;
+  static getSessionApiKey(): string | null {
+    return this.sessionApiKey;
   }
 
   /**
@@ -92,8 +92,8 @@ class OpenHands {
 
   static getHeaders(): AxiosHeaders {
     const headers = new AxiosHeaders();
-    if (this.apiKey) {
-      headers.set("A-API-Key", this.apiKey);
+    if (this.sessionApiKey) {
+      headers.set("A-API-Key", this.sessionApiKey);
     }
     return headers;
   }

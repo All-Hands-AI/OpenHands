@@ -230,7 +230,7 @@ export function WsClientProvider({
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
       providers_set: providers,
-      api_key: conversation.api_key, // Have to set here because socketio doesn't support custom headers. :(
+      session_api_key: conversation.session_api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
 
     let baseUrl = null;

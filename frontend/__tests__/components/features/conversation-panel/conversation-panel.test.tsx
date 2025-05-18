@@ -46,7 +46,7 @@ describe("ConversationPanel", () => {
       created_at: "2021-10-01T12:00:00Z",
       status: "STOPPED" as const,
       url: null,
-      api_key: null,
+      session_api_key: null,
     },
     {
       conversation_id: "2",
@@ -56,7 +56,7 @@ describe("ConversationPanel", () => {
       created_at: "2021-10-02T12:00:00Z",
       status: "STOPPED" as const,
       url: null,
-      api_key: null,
+      session_api_key: null,
     },
     {
       conversation_id: "3",
@@ -66,7 +66,7 @@ describe("ConversationPanel", () => {
       created_at: "2021-10-03T12:00:00Z",
       status: "STOPPED" as const,
       url: null,
-      api_key: null,
+      session_api_key: null,
     },
   ];
 
@@ -150,7 +150,7 @@ describe("ConversationPanel", () => {
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
         url: null,
-        api_key: null,
+        session_api_key: null,
       },
       {
         conversation_id: "2",
@@ -160,7 +160,7 @@ describe("ConversationPanel", () => {
         created_at: "2021-10-02T12:00:00Z",
         status: "STOPPED" as const,
         url: null,
-        api_key: null,
+        session_api_key: null,
       },
       {
         conversation_id: "3",
@@ -170,7 +170,7 @@ describe("ConversationPanel", () => {
         created_at: "2021-10-03T12:00:00Z",
         status: "STOPPED" as const,
         url: null,
-        api_key: null,
+        session_api_key: null,
       },
     ];
 
