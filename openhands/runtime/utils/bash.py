@@ -558,7 +558,7 @@ class BashSession:
                 'send other commands to interact with the current process, '
                 'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
             )
-            logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
+            logger.warning(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             command_output = self._get_command_output(
                 command,
                 raw_command_output,
