@@ -96,7 +96,6 @@ def load_from_env(
                         or field_type is dict
                         or field_type is list
                     ):
-                        # Use literal_eval for Python literal syntax
                         cast_value = literal_eval(value)
                     else:
                         if field_type is not None:
