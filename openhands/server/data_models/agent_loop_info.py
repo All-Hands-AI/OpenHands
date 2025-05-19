@@ -10,5 +10,5 @@ class AgentLoopInfo:
     """
     conversation_id: str
     url: str | None
-    api_key: str | None
+    session_api_key: str | None
     event_store: EventStoreABC

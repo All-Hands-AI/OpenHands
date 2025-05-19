@@ -250,7 +250,7 @@ async def test_new_conversation_success(provider_handler_mock):
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
-                api_key=None,
+                session_api_key=None,
             )
 
             test_request = InitSessionRequest(
@@ -292,7 +292,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
-                api_key=None,
+                session_api_key=None,
             )
 
             # Mock SuggestedTask.get_prompt_for_task
@@ -375,7 +375,7 @@ async def test_new_conversation_missing_settings(provider_handler_mock):
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_invalid_api_key(provider_handler_mock):
+async def test_new_conversation_invalid_session_api_key(provider_handler_mock):
     """Test creating a new conversation with an invalid API key."""
     with _patch_store():
         # Mock the _create_new_conversation function to raise LLMAuthenticationError
@@ -477,7 +477,7 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
-                api_key=None,
+                session_api_key=None,
             )
 
             # Create the request object
@@ -514,7 +514,7 @@ async def test_new_conversation_with_null_repository():
             mock_create_conversation.return_value = MagicMock(
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
-                api_key=None,
+                session_api_key=None,
             )
 
             # Create the request object with null repository
