@@ -129,7 +129,9 @@ export function MicroagentDropdown({
                     onClick={toggleExpand}
                     className="text-sm text-blue-400 mt-1"
                   >
-                    {isExpanded ? "Show less" : "Show more"}
+                    {isExpanded
+                      ? t(I18nKey.BUTTON$SHOW_LESS)
+                      : t(I18nKey.BUTTON$SHOW_MORE)}
                   </button>
                 )}
               </div>
