@@ -157,11 +157,8 @@ function AppContent() {
                       e.stopPropagation();
                       if (conversationId) {
                         try {
-                          const baseUrl =
-                            OpenHands.getConversationUrl() ||
-                            `/api/conversations/${conversationId}`;
-                          const response = await fetch(`${baseUrl}/vscode-url`);
-                          const data = await response.json();
+                          const data =
+                            await OpenHands.getVSCodeUrl(conversationId);
                           if (data.vscode_url) {
                             const transformedUrl = transformVSCodeUrl(
                               data.vscode_url,
