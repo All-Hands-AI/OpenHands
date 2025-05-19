@@ -35,7 +35,6 @@ export function SettingsSwitch({
         type="checkbox"
         onChange={(e) => handleToggle(e.target.checked)}
         checked={controlledIsToggled ?? isToggled}
-        defaultChecked={defaultIsToggled}
       />
 
       <StyledSwitchComponent isToggled={controlledIsToggled ?? isToggled} />

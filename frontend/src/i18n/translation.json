@@ -7807,6 +7807,38 @@
         "de": "Wir schätzen Ihr Feedback. Bitte teilen Sie uns Ihre Gedanken mit.",
         "uk": "Ми цінуємо ваш відгук. Будь ласка, поділіться з нами своїми думками."
     },
+    "FEEDBACK$POSITIVE_SENT": {
+        "en": "Positive feedback sent",
+        "ja": "ポジティブなフィードバックが送信されました",
+        "zh-CN": "已发送积极反馈",
+        "zh-TW": "已發送積極反饋",
+        "ko-KR": "긍정적인 피드백이 전송되었습니다",
+        "no": "Positiv tilbakemelding sendt",
+        "ar": "تم إرسال تعليق إيجابي",
+        "de": "Positives Feedback gesendet",
+        "fr": "Commentaire positif envoyé",
+        "it": "Feedback positivo inviato",
+        "pt": "Feedback positivo enviado",
+        "es": "Comentario positivo enviado",
+        "tr": "Olumlu geri bildirim gönderildi",
+        "uk": "Позитивний відгук надіслано"
+    },
+    "FEEDBACK$NEGATIVE_SENT": {
+        "en": "Negative feedback sent",
+        "ja": "ネガティブなフィードバックが送信されました",
+        "zh-CN": "已发送消极反馈",
+        "zh-TW": "已發送消極反饋",
+        "ko-KR": "부정적인 피드백이 전송되었습니다",
+        "no": "Negativ tilbakemelding sendt",
+        "ar": "تم إرسال تعليق سلبي",
+        "de": "Negatives Feedback gesendet",
+        "fr": "Commentaire négatif envoyé",
+        "it": "Feedback negativo inviato",
+        "pt": "Feedback negativo enviado",
+        "es": "Comentario negativo enviado",
+        "tr": "Olumsuz geri bildirim gönderildi",
+        "uk": "Негативний відгук надіслано"
+    },
     "EXIT_PROJECT$WARNING": {
         "en": "Are you sure you want to exit this project? Any unsaved changes will be lost.",
         "ja": "このプロジェクトを終了してもよろしいですか？保存されていない変更は失われます。",
