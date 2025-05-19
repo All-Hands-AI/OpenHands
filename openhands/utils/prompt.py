@@ -27,6 +27,12 @@ class RepositoryInfo:
 
 @dataclass
 class ConversationContext:
+    """
+    Instructions that are important for the agent to perform its task, but the user doesn't need to know
+
+    This can be considered as system instructions on a per conversation basis
+    """
+
     context: str = ''
 
 
