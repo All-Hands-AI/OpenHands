@@ -23,6 +23,7 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useTrackLastPage } from "#/hooks/use-track-last-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
+import { getLoginMethod } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -133,12 +134,27 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
+  // Check if a login method exists in local storage
+  const loginMethod = getLoginMethod();
+  const hasStoredLoginMethod = !!loginMethod;
+
+  // Show auth modal only if not authed and no login method is stored
   const renderAuthModal =
     !isAuthed &&
     !isAuthError &&
     !isFetchingAuth &&
     !isOnTosPage &&
-    config.data?.APP_MODE === "saas";
+    config.data?.APP_MODE === "saas" &&
+    !hasStoredLoginMethod;
+
+  // Show login message if not authed but a login method is stored
+  const renderLoginMessage =
+    !isAuthed &&
+    !isAuthError &&
+    !isFetchingAuth &&
+    !isOnTosPage &&
+    config.data?.APP_MODE === "saas" &&
+    hasStoredLoginMethod;
 
   return (
     <div
@@ -159,6 +175,14 @@ export default function MainApp() {
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
         />
+      )}
+      {renderLoginMessage && (
+        <ModalBackdrop>
+          <ModalBody className="border border-tertiary text-center">
+            <h2 className="text-xl font-bold">{t(I18nKey.AUTH$LOGGING_BACK_IN)}</h2>
+            <p className="text-gray-500">{t(I18nKey.CHAT_INTERFACE$AGENT_RUNNING_MESSAGE)}</p>
+          </ModalBody>
+        </ModalBackdrop>
       )}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal

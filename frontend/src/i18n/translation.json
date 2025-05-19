@@ -7711,6 +7711,22 @@
         "de": "Melden Sie sich mit Ihrem Identitätsanbieter an",
         "uk": "Увійти до OpenHands"
     },
+    "AUTH$LOGGING_BACK_IN": {
+        "en": "Logging back into OpenHands...",
+        "ja": "OpenHandsに再ログイン中...",
+        "zh-CN": "正在重新登录OpenHands...",
+        "zh-TW": "正在重新登入OpenHands...",
+        "ko-KR": "OpenHands에 다시 로그인 중...",
+        "no": "Logger inn igjen på OpenHands...",
+        "it": "Accesso di nuovo a OpenHands...",
+        "pt": "Voltando a entrar no OpenHands...",
+        "es": "Volviendo a iniciar sesión en OpenHands...",
+        "ar": "جاري إعادة تسجيل الدخول إلى OpenHands...",
+        "fr": "Reconnexion à OpenHands...",
+        "tr": "OpenHands'e yeniden giriş yapılıyor...",
+        "de": "Erneute Anmeldung bei OpenHands...",
+        "uk": "Повторний вхід до OpenHands..."
+    },
     "WAITLIST$JOIN_WAITLIST": {
         "en": "Join Waitlist",
         "ja": "ウェイトリストに参加",
