@@ -120,6 +120,9 @@ function isExcludedTechnicalString(str) {
 }
 
 function isLikelyCode(str) {
+  if (str.includes("CHAT_INTERFACE$AGENT_ERROR_MESSAGE")) {
+    return true
+  }
   // A string with no spaces and at least one underscore or colon is likely a code.
   // (e.g.: "browser_interactive" or "error:")
   if (str.includes(" ")) {
@@ -397,6 +400,11 @@ function isLikelyUserFacingText(str) {
     return false;
   }
 
+  // Check if it looks like a code rather than a key
+  if (isLikelyCode(str)) {
+    return false
+  }
+
   // Check if it's a raw translation key that should be wrapped in t()
   if (isRawTranslationKey(str)) {
     return true;
@@ -411,10 +419,6 @@ function isLikelyUserFacingText(str) {
   // First, check if it's a common development string (not user-facing)
   if (isCommonDevelopmentString(str)) {
     return false;
-  }
-
-  if (isLikelyCode(str)) {
-    return false
   }
 
   // Multi-word phrases are likely UI text
