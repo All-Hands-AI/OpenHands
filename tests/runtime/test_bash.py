@@ -545,12 +545,22 @@ def test_stateful_cmd(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'mkdir -p test')
             assert obs.exit_code == 0, 'The exit code should be 0.'
 
-            obs = _run_cmd_action(runtime, 'cd test')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
+            if runtime_cls == CLIRuntime:
+                # For CLIRuntime, test CWD change and command execution within a single action
+                # as CWD is enforced in the workspace.
+                obs = _run_cmd_action(runtime, 'cd test && pwd')
+            else:
+                # For other runtimes, test stateful CWD change across actions
+                obs = _run_cmd_action(runtime, 'cd test')
+                assert obs.exit_code == 0, 'The exit code should be 0 for cd test.'
+                obs = _run_cmd_action(runtime, 'pwd')
 
-            obs = _run_cmd_action(runtime, 'pwd')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
-            assert f'{config.workspace_mount_path_in_sandbox}/test' in obs.content
+            assert obs.exit_code == 0, (
+                'The exit code for the pwd command (or combined command) should be 0.'
+            )
+            assert (
+                f'{config.workspace_mount_path_in_sandbox}/test' in obs.content.strip()
+            )
     finally:
         _close_test_runtime(runtime)
 

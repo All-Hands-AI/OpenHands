@@ -673,9 +673,12 @@ class CLIRuntime(Runtime):
             else:
                 # Copy file
                 shutil.copy2(host_src, dest_path)
+        except FileNotFoundError as e:
+            logger.error(f'File not found during copy: {str(e)}')
+            raise  # Re-raise FileNotFoundError as is
         except Exception as e:
-            logger.error(f'Error copying file: {str(e)}')
-            raise RuntimeError(f'Error copying file: {str(e)}')
+            logger.error(f'Unexpected error copying file: {str(e)}')
+            raise RuntimeError(f'Unexpected error copying file: {str(e)}')
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox."""
