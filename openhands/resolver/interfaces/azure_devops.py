@@ -9,16 +9,23 @@ try:
     from azure.devops.v5_1.work_item_tracking.models import Wiql
 except ImportError:
     # For testing purposes, create mock classes
-    class GitPullRequest:
-        def __init__(self, source_ref_name=None, target_ref_name=None, title=None, description=None):
+    class GitPullRequest:  # type: ignore
+        def __init__(
+            self,
+            source_ref_name=None,
+            target_ref_name=None,
+            title=None,
+            description=None,
+        ):
             self.source_ref_name = source_ref_name
             self.target_ref_name = target_ref_name
             self.title = title
             self.description = description
-    
-    class Wiql:
+
+    class Wiql:  # type: ignore
         def __init__(self, query=None):
             self.query = query
+
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
@@ -447,6 +454,104 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
             base_domain: The domain for Azure DevOps (default: "dev.azure.com")
         """
         super().__init__(owner, repo, token, username, base_domain)
+
+    def download_issues(self) -> list[Any]:
+        """Download pull requests from Azure DevOps.
+
+        Returns:
+            List of Azure DevOps pull requests as issues.
+        """
+        # Use the Git client to get pull requests
+        git_client = self.connection.clients.get_git_client()
+
+        try:
+            # Get the repository ID
+            repos = git_client.get_repositories(self.project_name)
+            repo = next(
+                (r for r in repos if r.name.lower() == self.repo_name.lower()), None
+            )
+
+            if not repo:
+                logger.warning(f'Repository not found: {self.repo_name}')
+                return []
+
+            # Get all active pull requests for the repository
+            pull_requests = git_client.get_pull_requests(
+                repo.id, status='active', project=self.project_name
+            )
+
+            # Convert pull requests to the issue format
+            all_issues = []
+            for pr in pull_requests:
+                # Convert the PR to a dictionary format similar to issues
+                issue = {
+                    'id': pr.pull_request_id,
+                    'fields': {
+                        'System.Id': pr.pull_request_id,
+                        'System.Title': pr.title,
+                        'System.Description': pr.description or '',
+                    },
+                    'source_branch': pr.source_ref_name,
+                    'repository': pr.repository,
+                }
+                all_issues.append(issue)
+
+            return all_issues
+
+        except Exception as e:
+            logger.warning(f'Error downloading pull requests: {e}')
+            return []
+
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[Issue]:
+        """Download pull requests from Azure DevOps.
+
+        Args:
+            issue_numbers: The numbers of the pull requests to download
+            comment_id: The ID of a single comment, if provided, otherwise all comments
+
+        Returns:
+            List of Azure DevOps pull requests as Issue objects.
+        """
+        if not issue_numbers:
+            raise ValueError('Unspecified issue number')
+
+        all_issues = self.download_issues()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [issue for issue in all_issues if issue['id'] in issue_numbers]
+
+        if len(issue_numbers) == 1 and not all_issues:
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
+
+        converted_issues = []
+        for issue in all_issues:
+            # Get PR metadata
+            (
+                closing_issues,
+                closing_issue_numbers,
+                review_bodies,
+                review_threads,
+                thread_ids,
+            ) = self.download_pr_metadata(issue['id'], comment_id)
+
+            # Create the Issue object
+            converted_issue = Issue(
+                number=issue['id'],
+                title=issue['fields']['System.Title'],
+                body=issue['fields']['System.Description'],
+                owner=self.owner,
+                repo=f'{self.project_name}/{self.repo_name}',
+                head_branch=issue['source_branch'].replace('refs/heads/', ''),
+                closing_issues=closing_issues,
+                closing_issue_numbers=closing_issue_numbers,
+                review_bodies=review_bodies,
+                review_threads=review_threads,
+                thread_ids=thread_ids,
+            )
+            converted_issues.append(converted_issue)
+
+        return converted_issues
 
     def download_pr_metadata(
         self, pull_number: int, comment_id: int | None = None

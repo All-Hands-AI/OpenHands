@@ -14,9 +14,11 @@ try:
     from azure.devops.v5_1.work_item_tracking.models import Wiql
 except ImportError:
     # For testing purposes, create a mock class
-    class Wiql:
+    class Wiql:  # type: ignore
         def __init__(self, query=None):
             self.query = query
+
+
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -230,10 +232,17 @@ class AzureDevOpsServiceImpl(BaseGitService):
         """Get suggested tasks for the authenticated user.
 
         Returns:
-            A list of suggested tasks
+            A list of suggested tasks including:
+            - Open issues assigned to the user
+            - Pull requests authored by the user with:
+              - Merge conflicts
+              - Failing checks
+              - Unresolved comments
         """
         if not self.connection:
             return []
+
+        tasks = []
 
         try:
             # Get the Work Item Tracking client
@@ -258,7 +267,6 @@ class AzureDevOpsServiceImpl(BaseGitService):
             wiql_results = wit_client.query_by_wiql(wiql, top=10).work_items
 
             # Get the full work items
-            tasks = []
             if wiql_results:
                 work_items = [
                     wit_client.get_work_item(int(res.id)) for res in wiql_results
@@ -276,6 +284,78 @@ class AzureDevOpsServiceImpl(BaseGitService):
                             title=work_item.fields.get('System.Title', ''),
                         )
                     )
+
+            # Get the Git client
+            git_client = self.connection.clients.get_git_client()
+
+            # Get all repositories
+            repositories = git_client.get_repositories()
+
+            # For each repository, get pull requests
+            for repo in repositories:
+                project_name = repo.project.name
+                repo_name = repo.name
+                full_repo_name = f'{project_name}/{repo_name}'
+
+                # Get pull requests created by the current user
+                pull_requests = git_client.get_pull_requests(
+                    repo.id,
+                    search_criteria={
+                        'status': 'active',  # Only active PRs
+                    },
+                    project=project_name,
+                )
+
+                for pr in pull_requests:
+                    # Default task type
+                    task_type = None
+
+                    # Check for merge conflicts
+                    if pr.merge_status == 'conflicts':
+                        task_type = TaskType.MERGE_CONFLICTS
+                    else:
+                        # Check for failing builds/checks
+                        policy_evaluations = (
+                            git_client.get_pull_request_policy_evaluations(
+                                project=project_name,
+                                repository_id=repo.id,
+                                pull_request_id=pr.pull_request_id,
+                            )
+                        )
+
+                        has_failing_checks = any(
+                            eval.status == 'rejected' for eval in policy_evaluations
+                        )
+
+                        if has_failing_checks:
+                            task_type = TaskType.FAILING_CHECKS
+                        else:
+                            # Check for unresolved comments
+                            threads = git_client.get_threads(
+                                repository_id=repo.id,
+                                pull_request_id=pr.pull_request_id,
+                                project=project_name,
+                            )
+
+                            has_unresolved_comments = any(
+                                thread.status == 'active' and not thread.is_deleted
+                                for thread in threads
+                            )
+
+                            if has_unresolved_comments:
+                                task_type = TaskType.UNRESOLVED_COMMENTS
+
+                    # Add the task if we identified a specific issue
+                    if task_type:
+                        tasks.append(
+                            SuggestedTask(
+                                git_provider=ProviderType.AZURE_DEVOPS,
+                                task_type=task_type,
+                                repo=full_repo_name,
+                                issue_number=pr.pull_request_id,
+                                title=pr.title,
+                            )
+                        )
 
             return tasks
         except Exception as e:
