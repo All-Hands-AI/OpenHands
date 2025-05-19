@@ -120,9 +120,6 @@ function isExcludedTechnicalString(str) {
 }
 
 function isLikelyCode(str) {
-  if (str.includes("CHAT_INTERFACE$AGENT_ERROR_MESSAGE")) {
-    return true
-  }
   // A string with no spaces and at least one underscore or colon is likely a code.
   // (e.g.: "browser_interactive" or "error:")
   if (str.includes(" ")) {
