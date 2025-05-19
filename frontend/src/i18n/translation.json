@@ -191,22 +191,6 @@
         "de": "Aufgabe wird bearbeitet...",
         "uk": "Вирішення завдання..."
     },
-    "CHAT_INTERFACE$AGENT_ERROR_MESSAGE": {
-        "en": "An error occurred",
-        "ja": "エラーが発生しました",
-        "zh-CN": "发生错误",
-        "zh-TW": "發生錯誤",
-        "ko-KR": "오류가 발생했습니다",
-        "no": "Det oppstod en feil",
-        "it": "Si è verificato un errore",
-        "pt": "Ocorreu um erro",
-        "es": "Se ha producido un error",
-        "ar": "حدث خطأ",
-        "fr": "Une erreur s'est produite",
-        "tr": "Bir hata oluştu",
-        "de": "Ein Fehler ist aufgetreten",
-        "uk": "Сталася помилка"
-    },
     "SECRETS$SECRET_VALUE_REQUIRED": {
         "en": "Secret value is required",
         "ja": "シークレット値は必須です",
