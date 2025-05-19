@@ -368,6 +368,11 @@ class CLIRuntime(Runtime):
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         """Run a Python code cell."""
+        # TODO: This currently executes as a plain Python script.
+        # For full IPython/Jupyter functionality (magics, kernel state, etc.),
+        # this would need to connect to a running Jupyter kernel if available
+        # on the user's machine, or provide a more sophisticated wrapper.
+        # This would also involve returning IPythonRunCellObservation.
         if not self._runtime_initialized:
             return ErrorObservation('Runtime not initialized')
 
