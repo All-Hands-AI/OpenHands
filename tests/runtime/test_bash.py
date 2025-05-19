@@ -794,7 +794,8 @@ def test_git_operation(temp_dir, runtime_cls):
     # this will happen if permission of runtime is not properly configured
     # fatal: detected dubious ownership in repository at config.workspace_mount_path_in_sandbox
     try:
-        if runtime_cls != LocalRuntime:
+        if runtime_cls != LocalRuntime and runtime_cls != CLIRuntime:
+            # on local machine, permissionless sudo will probably not be available
             obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
             assert obs.exit_code == 0
 
@@ -804,7 +805,7 @@ def test_git_operation(temp_dir, runtime_cls):
         # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
         # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
         for line in obs.content.split('\n'):
-            if runtime_cls == LocalRuntime:
+            if runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
                 continue  # skip these checks
 
             if ' ..' in line:
@@ -825,7 +826,7 @@ def test_git_operation(temp_dir, runtime_cls):
         obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
 
-        if runtime_cls == LocalRuntime:
+        if runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
             # set git config author in CI only, not on local machine
             logger.info('Setting git config author')
             obs = _run_cmd_action(
@@ -1332,6 +1333,10 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
 @pytest.mark.skipif(
     is_windows(), reason='Powershell does not support interactive commands'
 )
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
+)
 def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -1363,6 +1368,10 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
 
 @pytest.mark.skipif(
     is_windows(), reason='Powershell does not support interactive commands'
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
 )
 def test_python_interactive_input_without_set_input(
     temp_dir, runtime_cls, run_as_openhands
