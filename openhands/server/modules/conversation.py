@@ -7,7 +7,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
 from openhands.server.models import (
     Conversation,
-    Mem0ConversationJob,
     ResearchTrending,
     ResearchView,
 )
@@ -438,28 +437,6 @@ class ConversationModule:
         except Exception as e:
             logger.error(f'Error getting conversation by user id: {str(e)}')
             return {'total': 0, 'items': []}
-
-    async def _add_mem0_conversation_job(
-        self, conversation_id: str, events: list, metadata: dict
-    ):
-        try:
-            # Ensure database is connected
-            if not database.is_connected:
-                await database.connect()
-
-            # Execute database operation
-            await database.execute(
-                Mem0ConversationJob.insert().values(
-                    conversation_id=conversation_id,
-                    events=events,
-                    metadata=metadata,
-                    status='pending',
-                )
-            )
-            return True
-        except Exception as e:
-            logger.error(f'Error adding mem0 conversation job: {str(e)}')
-            return False
 
 
 conversation_module = ConversationModule()
