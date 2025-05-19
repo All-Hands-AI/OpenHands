@@ -105,6 +105,7 @@ async def run_session(
     settings_store: FileSettingsStore,
     current_dir: str,
     task_content: str | None = None,
+    context_msg: str | None = None,
     session_name: str | None = None,
 ) -> bool:
     reload_microagents = False
@@ -248,6 +249,7 @@ async def run_session(
         sid=sid,
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
+        context_msg=context_msg,
     )
 
     # Add MCP tools to the agent
