@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
-    from openhands.core.config import AgentConfig
     from openhands.events.action import Action
     from openhands.events.action.message import SystemMessageAction
     from openhands.utils.prompt import PromptManager
 from litellm import ChatCompletionToolParam
 
+from openhands.core.config import AgentConfig
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
@@ -33,10 +33,13 @@ class Agent(ABC):
     _registry: dict[str, type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
 
+    config_model: type[AgentConfig] = AgentConfig
+    """Class field that specifies the config model to use for the agent. Subclasses may override with a derived config model if needed."""
+
     def __init__(
         self,
         llm: LLM,
-        config: 'AgentConfig',
+        config: AgentConfig,
     ):
         self.llm = llm
         self.config = config
