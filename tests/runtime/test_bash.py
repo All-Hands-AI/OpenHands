@@ -402,7 +402,7 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
             assert obs.exit_code == 0
             if run_as_openhands:
                 assert 'openhands' in obs.content
-            elif runtime_cls == LocalRuntime:
+            elif runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
                 assert 'root' not in obs.content and 'openhands' not in obs.content
             else:
                 assert 'root' in obs.content
@@ -424,6 +424,10 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    sys.platform != 'win32' and os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime runs as the host user, so ~ is the host home. This test assumes a sandboxed user.',
+)
 def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:

@@ -264,10 +264,12 @@ class CLIRuntime(Runtime):
 
                     if ready_to_read:
                         line = process.stdout.readline()
-                        if line:
+                        if line:  # If readline returns data (not empty string)
                             output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
+                        else:  # readline returned empty string, meaning EOF on stdout
+                            break  # Exit the reading loop
 
             final_communicate_timeout: float | None = None
             if timed_out or timeout is not None:
