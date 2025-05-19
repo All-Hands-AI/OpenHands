@@ -248,7 +248,7 @@ class AzureDevOpsServiceImpl(BaseGitService):
             # Get the Work Item Tracking client
             wit_client = self.connection.clients.get_work_item_tracking_client()
 
-            # Get open issues (work items of type 'Issue')
+            # Get open issues (work items of type 'Bug')
             wiql = Wiql(
                 query="""
                 select [System.Id],
@@ -257,7 +257,7 @@ class AzureDevOpsServiceImpl(BaseGitService):
                     [System.State],
                     [System.TeamProject]
                 from WorkItems
-                where [System.WorkItemType] = 'Issue'
+                where [System.WorkItemType] = 'Bug'
                 and [System.State] <> 'Closed'
                 and [System.State] <> 'Resolved'
                 order by [System.ChangedDate] desc
