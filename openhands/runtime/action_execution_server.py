@@ -399,15 +399,11 @@ class ActionExecutor:
 
             assert self.bash_session is not None, 'bash_session must not be None'
 
-            # Use a local variable with the assertion to help mypy understand the type
-            bash_session = self.bash_session
-            assert bash_session is not None
-
             # The execute method returns CmdOutputObservation | ErrorObservation
             cmd_result: (
                 CmdOutputObservation | ErrorObservation
             ) = await call_sync_from_async(
-                bash_session.execute,
+                self.bash_session.execute,
                 action,
             )
             return cmd_result

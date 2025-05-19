@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -8,7 +8,6 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
@@ -25,6 +24,11 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import i18n from "#/i18n";
+import { ErrorMessageBanner } from "./error-message-banner";
+import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -36,14 +40,15 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
-  const dispatch = useDispatch();
+  const { getErrorMessage } = useWSErrorMessage();
+  const { send, isLoadingMessages, parsedEvents } = useWsClient();
+  const { setOptimisticUserMessage, getOptimisticUserMessage } =
+    useOptimisticUserMessage();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
@@ -57,8 +62,13 @@ export function ChatInterface() {
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
 
+  const optimisticUserMessage = getOptimisticUserMessage();
+  const errorMessage = getErrorMessage();
+
+  const events = parsedEvents.filter(shouldRenderEvent);
+
   const handleSendMessage = async (content: string, files: File[]) => {
-    if (messages.length === 0) {
+    if (events.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
@@ -69,7 +79,7 @@ export function ChatInterface() {
       });
     } else {
       posthog.capture("user_message_sent", {
-        session_message_count: messages.length,
+        session_message_count: events.length,
         current_message_length: content.length,
       });
     }
@@ -77,9 +87,8 @@ export function ChatInterface() {
     const imageUrls = await Promise.all(promises);
 
     const timestamp = new Date().toISOString();
-    const pending = true;
-    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
     send(createChatMessage(content, imageUrls, timestamp));
+    setOptimisticUserMessage(content);
     setMessageToSend(null);
   };
 
@@ -120,14 +129,14 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
-      {messages.length === 0 && (
+      {events.length === 0 && !optimisticUserMessage && (
         <ChatSuggestions onSuggestionsClick={setMessageToSend} />
       )}
 
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-        className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
+        className="scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded-full scrollbar-track-gray-800 hover:scrollbar-thumb-gray-300 flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
       >
         {isLoadingMessages && (
           <div className="flex justify-center">
@@ -137,7 +146,7 @@ export function ChatInterface() {
 
         {!isLoadingMessages && (
           <Messages
-            messages={messages}
+            messages={events}
             isAwaitingUserConfirmation={
               curAgentState === AgentState.AWAITING_USER_CONFIRMATION
             }
@@ -169,6 +178,12 @@ export function ChatInterface() {
 
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
+
+        {errorMessage && (
+          <ErrorMessageBanner
+            message={i18n.exists(errorMessage) ? t(errorMessage) : errorMessage}
+          />
+        )}
 
         <InteractiveChatBox
           onSubmit={handleSendMessage}

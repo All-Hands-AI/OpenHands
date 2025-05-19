@@ -23,6 +23,4 @@ def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:
     Returns:
         str: Colored text
     """
-    # The colored function returns Any in mypy's view, so we need to cast it
-    result: Any = colored(text, color.value)
-    return cast(str, result)
+    return colored(text, color.value)

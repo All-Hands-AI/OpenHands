@@ -21,4 +21,4 @@ def get_impl(cls: type[T], impl_name: str | None) -> type[T]:
         return cls
     impl_class = import_from(impl_name)
     assert cls == impl_class or issubclass(impl_class, cls)
-    return cast(type[T], impl_class)
+    return impl_class

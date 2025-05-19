@@ -6,7 +6,9 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 
 
 async def get_conversation_store(request: Request) -> ConversationStore | None:
-    conversation_store = getattr(request.state, 'conversation_store', None)
+    conversation_store: ConversationStore | None = getattr(
+        request.state, 'conversation_store', None
+    )
     if conversation_store:
         return conversation_store
     user_auth = await get_user_auth(request)

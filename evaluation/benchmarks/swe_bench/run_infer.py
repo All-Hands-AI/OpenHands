@@ -261,6 +261,7 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=False,
+        enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -714,6 +715,19 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
+            if 'selected_repos' in data:
+                # repos for the swe-bench instances:
+                # ['astropy/astropy', 'django/django', 'matplotlib/matplotlib', 'mwaskom/seaborn', 'pallets/flask', 'psf/requests', 'pydata/xarray', 'pylint-dev/pylint', 'pytest-dev/pytest', 'scikit-learn/scikit-learn', 'sphinx-doc/sphinx', 'sympy/sympy']
+                selected_repos = data['selected_repos']
+                if isinstance(selected_repos, str): selected_repos = [selected_repos]
+                assert isinstance(selected_repos, list)
+                logger.info(
+                    f'Filtering {selected_repos} tasks from "selected_repos"...'
+                )
+                subset = dataset[dataset["repo"].isin(selected_repos)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+                
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')

@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from uuid import uuid4
 
 from prompt_toolkit.shortcuts import clear
 
@@ -42,6 +41,7 @@ from openhands.core.setup import (
     create_controller,
     create_memory,
     create_runtime,
+    generate_sid,
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
@@ -81,6 +81,16 @@ async def cleanup_session(
         if pending:
             await asyncio.wait(pending, timeout=5.0)
 
+        event_stream = runtime.event_stream
+
+        # Save the final state
+        end_state = controller.get_state()
+        end_state.save_to_session(
+            event_stream.sid,
+            event_stream.file_store,
+            event_stream.user_id,
+        )
+
         # Reset agent, close runtime and controller
         agent.reset()
         runtime.close()
@@ -94,12 +104,13 @@ async def run_session(
     config: AppConfig,
     settings_store: FileSettingsStore,
     current_dir: str,
-    initial_user_action: str | None = None,
+    task_content: str | None = None,
+    session_name: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
 
-    sid = str(uuid4())
+    sid = generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
@@ -120,7 +131,7 @@ async def run_session(
         agent=agent,
     )
 
-    controller, _ = create_controller(agent, runtime, config)
+    controller, initial_state = create_controller(agent, runtime, config)
 
     event_stream = runtime.event_stream
 
@@ -218,10 +229,9 @@ async def run_session(
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
 
     await runtime.connect()
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None
@@ -240,6 +250,10 @@ async def run_session(
         repo_directory=repo_directory,
     )
 
+    # Add MCP tools to the agent
+    if agent.config.enable_mcp:
+        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+
     # Clear loading animation
     is_loaded.set()
 
@@ -249,17 +263,38 @@ async def run_session(
     # Show OpenHands banner and session ID
     display_banner(session_id=sid)
 
-    # Show OpenHands welcome
-    display_welcome_message()
+    welcome_message = 'What do you want to build?'  # from the application
+    initial_message = ''  # from the user
 
-    if initial_user_action:
-        # If there's an initial user action, enqueue it and do not prompt again
-        display_initial_user_prompt(initial_user_action)
-        event_stream.add_event(
-            MessageAction(content=initial_user_action), EventSource.USER
-        )
+    if task_content:
+        initial_message = task_content
+
+    # If we loaded a state, we are resuming a previous session
+    if initial_state is not None:
+        logger.info(f'Resuming session: {sid}')
+
+        if initial_state.last_error:
+            # If the last session ended in an error, provide a message.
+            initial_message = (
+                'NOTE: the last session ended with an error.'
+                "Let's get back on track. Do NOT resume your task. Ask me about it."
+            )
+        else:
+            # If we are resuming, we already have a task
+            initial_message = ''
+            welcome_message += '\nLoading previous conversation.'
+
+    # Show OpenHands welcome
+    display_welcome_message(welcome_message)
+
+    # The prompt_for_next_task will be triggered if the agent enters AWAITING_USER_INPUT.
+    # If the restored state is already AWAITING_USER_INPUT, on_event_async will handle it.
+
+    if initial_message:
+        display_initial_user_prompt(initial_message)
+        event_stream.add_event(MessageAction(content=initial_message), EventSource.USER)
     else:
-        # Otherwise prompt for the user's first message right away
+        # No session restored, no initial action: prompt for the user's first message
         asyncio.create_task(prompt_for_next_task(''))
 
     await run_agent_until_done(
@@ -273,7 +308,6 @@ async def run_session(
 
 async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
-
     args = parse_arguments()
 
     logger.setLevel(logging.WARNING)
@@ -335,7 +369,12 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
 
     # Run the first session
     new_session_requested = await run_session(
-        loop, config, settings_store, current_dir, task_str
+        loop,
+        config,
+        settings_store,
+        current_dir,
+        task_str,
+        session_name=args.name,
     )
 
     # If a new session was requested, run it

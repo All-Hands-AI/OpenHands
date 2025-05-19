@@ -14,7 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 class Chunk(BaseModel):
     text: str
     line_range: tuple[int, int]  # (start_line, end_line), 1-index, inclusive
-    normalized_lcs: float | None = None
+    normalized_lcs: float = 0.0
 
     def visualize(self) -> str:
         lines = self.text.split('\n')
@@ -93,7 +93,7 @@ def get_top_k_chunk_matches(
     ]
     sorted_chunks = sorted(
         chunks_with_lcs,
-        key=lambda x: 0.0 if x.normalized_lcs is None else x.normalized_lcs,
+        key=lambda x: x.normalized_lcs,
         reverse=True,
     )
     return sorted_chunks[:k]
