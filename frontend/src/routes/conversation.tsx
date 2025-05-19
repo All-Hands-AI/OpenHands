@@ -37,6 +37,7 @@ import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
@@ -138,10 +139,8 @@ function AppContent() {
                       e.stopPropagation();
                       if (conversationId) {
                         try {
-                          const response = await fetch(
-                            `/api/conversations/${conversationId}/vscode-url`,
-                          );
-                          const data = await response.json();
+                          const data =
+                            await OpenHands.getVSCodeUrl(conversationId);
                           if (data.vscode_url) {
                             const transformedUrl = transformVSCodeUrl(
                               data.vscode_url,
