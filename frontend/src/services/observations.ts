@@ -26,7 +26,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.RUN_IPYTHON:
-      // FIXME: render this as markdown
       store.dispatch(
         appendJupyterOutput({
           content: message.content,
