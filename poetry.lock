@@ -5223,20 +5223,20 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mcpm"
-version = "1.9.0"
+version = "1.12.0"
 description = "MCPM - Model Context Protocol Manager"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcpm-1.9.0-py3-none-any.whl", hash = "sha256:fc9efe355329bef6a30d201668f9752d6fbc46f9d3a2affda8d45b9c5240475e"},
-    {file = "mcpm-1.9.0.tar.gz", hash = "sha256:97c112cb6d40e9bbcb4091c1db79da4eeda256bfa48083fa1f3abb260b814686"},
+    {file = "mcpm-1.12.0-py3-none-any.whl", hash = "sha256:ed3a87300420bcdb9cd12ef290179fda5bd51eb2f4cd3e793084d83eed91b249"},
+    {file = "mcpm-1.12.0.tar.gz", hash = "sha256:e9d2b852b90d7fd62dede584f035dd6b2b3d068d233e96b82aead835f81a911a"},
 ]
 
 [package.dependencies]
 click = ">=8.1.3"
 duckdb = ">=1.2.2"
-mcp = ">=1.6.0"
+mcp = ">=1.8.0"
 prompt-toolkit = ">=3.0.0"
 psutil = ">=7.0.0"
 pydantic = ">=2.5.1"
@@ -11471,4 +11471,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "f4d734dca48af21c4b146e21670e22fc140f1c4bd0da1c1fc9f9b028f5a319cd"
+content-hash = "162bf0bb90271af7025025c15b5f52d56f65676dfeb7939a7fb5c873f4609ba7"
