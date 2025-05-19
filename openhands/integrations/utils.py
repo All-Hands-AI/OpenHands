@@ -23,7 +23,7 @@ async def validate_provider_token(
     # Try GitHub first
     try:
         github_service = GitHubService(token=token, base_domain=base_domain)
-        await github_service.get_user()
+        await github_service.verify_access()
         return ProviderType.GITHUB
     except Exception:
         pass

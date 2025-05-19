@@ -6,7 +6,6 @@ import OpenHands from "#/api/open-hands";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { GitRepository } from "#/types/git";
-import { ConversationTrigger } from "#/api/open-hands.types";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 export const useCreateConversation = () => {
@@ -21,20 +20,25 @@ export const useCreateConversation = () => {
   return useMutation({
     mutationKey: ["create-conversation"],
     mutationFn: async (variables: {
-      conversation_trigger: ConversationTrigger;
       q?: string;
       selectedRepository?: GitRepository | null;
+      selected_branch?: string;
       suggested_task?: SuggestedTask;
     }) => {
       if (variables.q) dispatch(setInitialPrompt(variables.q));
 
       return OpenHands.createConversation(
-        variables.conversation_trigger,
-        variables.selectedRepository || undefined,
+        variables.selectedRepository
+          ? variables.selectedRepository.full_name
+          : undefined,
+        variables.selectedRepository
+          ? variables.selectedRepository.git_provider
+          : undefined,
         variables.q,
         files,
         replayJson || undefined,
         variables.suggested_task || undefined,
+        variables.selected_branch,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {

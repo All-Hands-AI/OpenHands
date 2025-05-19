@@ -19,7 +19,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
@@ -184,7 +184,7 @@ class ConversationMemory:
                 - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
-                - McpAction: For interacting with the MCP server
+                - MCPAction: For interacting with the MCP server
             pending_tool_call_action_messages: Dictionary mapping response IDs to their corresponding messages.
                 Used in function calling mode to track tool calls that are waiting for their results.
 
@@ -210,7 +210,7 @@ class ConversationMemory:
                 FileReadAction,
                 BrowseInteractiveAction,
                 BrowseURLAction,
-                McpAction,
+                MCPAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -230,8 +230,8 @@ class ConversationMemory:
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
-                content=[TextContent(text=assistant_msg.content or '')]
-                if assistant_msg.content is not None
+                content=[TextContent(text=assistant_msg.content)]
+                if assistant_msg.content and assistant_msg.content.strip()
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
@@ -412,7 +412,7 @@ class ConversationMemory:
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                obs.outputs.get('content', obs.content),
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
@@ -451,9 +451,13 @@ class ConversationMemory:
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(date=date)
+                    runtime_info = RuntimeInfo(
+                        date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                    )
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''

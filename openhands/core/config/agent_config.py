@@ -3,12 +3,15 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationError
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 
 
 class AgentConfig(BaseModel):
     llm_config: str | None = Field(default=None)
     """The name of the llm config to use. If specified, this will override global llm config."""
+    classpath: str | None = Field(default=None)
+    """The classpath of the agent to use. To be used for custom agents that are not defined in the openhands.agenthub package."""
     enable_browsing: bool = Field(default=True)
     """Whether to enable browsing tool"""
     enable_llm_editor: bool = Field(default=False)
@@ -25,6 +28,8 @@ class AgentConfig(BaseModel):
     """Whether to enable finish tool"""
     enable_prompt_extensions: bool = Field(default=True)
     """Whether to enable prompt extensions"""
+    enable_mcp: bool = Field(default=True)
+    """Whether to enable MCP tools"""
     disabled_microagents: list[str] = Field(default_factory=list)
     """A list of microagents to disable (by name, without .py extension, e.g. ["github", "lint"]). Default is None."""
     enable_history_truncation: bool = Field(default=True)
@@ -34,6 +39,8 @@ class AgentConfig(BaseModel):
     condenser: CondenserConfig = Field(
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
+    extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
+    """Extended configuration for the agent."""
 
     model_config = {'extra': 'forbid'}
 

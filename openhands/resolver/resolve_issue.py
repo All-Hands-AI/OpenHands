@@ -28,13 +28,12 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
-from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
+from openhands.resolver.issue_handler_factory import IssueHandlerFactory
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     codeact_user_response,
@@ -72,20 +71,12 @@ class IssueResolver:
             base_domain: The base domain for the git server.
         """
 
-        base_container_image = args.base_container_image
-        runtime_container_image = args.runtime_container_image
-
-        if runtime_container_image is not None and base_container_image is not None:
-            raise ValueError('Cannot provide both runtime and base container images.')
-
-        if (
-            runtime_container_image is None
-            and base_container_image is None
-            and not args.is_experimental
-        ):
-            runtime_container_image = (
-                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
-            )
+        # Setup and validate container images
+        self.sandbox_config = self._setup_sandbox_config(
+            args.base_container_image,
+            args.runtime_container_image,
+            args.is_experimental,
+        )
 
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
@@ -111,12 +102,22 @@ class IssueResolver:
         model = args.llm_model or os.environ['LLM_MODEL']
         base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
         api_version = os.environ.get('LLM_API_VERSION', None)
+        llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
+        llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT', '5'))
+        llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT', '30'))
+        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER', 2))
+        llm_timeout = int(os.environ.get('LLM_TIMEOUT', 0))
 
         # Create LLMConfig instance
         llm_config = LLMConfig(
             model=model,
             api_key=SecretStr(api_key) if api_key else None,
             base_url=base_url,
+            num_retries=llm_num_retries,
+            retry_min_wait=llm_retry_min_wait,
+            retry_max_wait=llm_retry_max_wait,
+            retry_multiplier=llm_retry_multiplier,
+            timeout=llm_timeout,
         )
 
         # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
@@ -152,11 +153,7 @@ class IssueResolver:
 
         self.owner = owner
         self.repo = repo
-        self.token = token
-        self.username = username
         self.platform = platform
-        self.runtime_container_image = runtime_container_image
-        self.base_container_image = base_container_image
         self.max_iterations = args.max_iterations
         self.output_dir = args.output_dir
         self.llm_config = llm_config
@@ -165,8 +162,66 @@ class IssueResolver:
         self.repo_instruction = repo_instruction
         self.issue_number = args.issue_number
         self.comment_id = args.comment_id
-        self.base_domain = base_domain
-        self.platform = platform
+
+        factory = IssueHandlerFactory(
+            owner=self.owner,
+            repo=self.repo,
+            token=token,
+            username=username,
+            platform=self.platform,
+            base_domain=base_domain,
+            issue_type=self.issue_type,
+            llm_config=self.llm_config,
+        )
+        self.issue_handler = factory.create()
+
+    @classmethod
+    def _setup_sandbox_config(
+        cls,
+        base_container_image: str | None,
+        runtime_container_image: str | None,
+        is_experimental: bool,
+    ) -> SandboxConfig:
+        if runtime_container_image is not None and base_container_image is not None:
+            raise ValueError('Cannot provide both runtime and base container images.')
+
+        if (
+            runtime_container_image is None
+            and base_container_image is None
+            and not is_experimental
+        ):
+            runtime_container_image = (
+                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+            )
+
+        # Convert container image values to string or None
+        container_base = (
+            str(base_container_image) if base_container_image is not None else None
+        )
+        container_runtime = (
+            str(runtime_container_image)
+            if runtime_container_image is not None
+            else None
+        )
+
+        sandbox_config = SandboxConfig(
+            base_container_image=container_base,
+            runtime_container_image=container_runtime,
+            enable_auto_lint=False,
+            use_host_network=False,
+            timeout=300,
+        )
+
+        # Configure sandbox for GitLab CI environment
+        if cls.GITLAB_CI:
+            sandbox_config.local_runtime_url = os.getenv(
+                'LOCAL_RUNTIME_URL', 'http://localhost'
+            )
+            user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+            if user_id == 0:
+                sandbox_config.user_id = get_unique_uid()
+
+        return sandbox_config
 
     def initialize_runtime(
         self,
@@ -175,7 +230,7 @@ class IssueResolver:
         """Initialize the runtime for the agent.
 
         This function is called before the runtime is used to run the agent.
-        Currently it does nothing.
+        It sets up git configuration and runs the setup script if it exists.
         """
         logger.info('-' * 30)
         logger.info('BEGIN Runtime Completion Fn')
@@ -201,6 +256,14 @@ class IssueResolver:
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config.\n{obs}')
+
+        # Run setup script if it exists
+        logger.info('Checking for .openhands/setup.sh script...')
+        runtime.maybe_run_setup_script()
+
+        # Setup git hooks if they exist
+        logger.info('Checking for .openhands/pre-commit.sh script...')
+        runtime.maybe_setup_git_hooks()
 
     async def complete_runtime(
         self,
@@ -306,32 +369,12 @@ class IssueResolver:
             shutil.rmtree(workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
 
-        # This code looks unnecessary because these are default values in the config class
-        # they're set by default if nothing else overrides them
-        # FIXME we should remove them here
-        sandbox_config = SandboxConfig(
-            base_container_image=self.base_container_image,
-            runtime_container_image=self.runtime_container_image,
-            enable_auto_lint=False,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=300,
-        )
-
-        if os.getenv('GITLAB_CI') == 'true':
-            sandbox_config.local_runtime_url = os.getenv(
-                'LOCAL_RUNTIME_URL', 'http://localhost'
-            )
-            user_id = os.getuid() if hasattr(os, 'getuid') else 1000
-            if user_id == 0:
-                sandbox_config.user_id = get_unique_uid()
-
         config = AppConfig(
             default_agent='CodeActAgent',
             runtime='docker',
             max_budget_per_task=4,
             max_iterations=self.max_iterations,
-            sandbox=sandbox_config,
+            sandbox=self.sandbox_config,
             # do not mount workspace
             workspace_base=workspace_base,
             workspace_mount_path=workspace_base,
@@ -435,58 +478,6 @@ class IssueResolver:
         )
         return output
 
-    def issue_handler_factory(self) -> ServiceContextIssue | ServiceContextPR:
-        # Determine default base_domain based on platform
-
-        if self.issue_type == 'issue':
-            if self.platform == ProviderType.GITHUB:
-                return ServiceContextIssue(
-                    GithubIssueHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-            else:  # platform == Platform.GITLAB
-                return ServiceContextIssue(
-                    GitlabIssueHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-        elif self.issue_type == 'pr':
-            if self.platform == ProviderType.GITHUB:
-                return ServiceContextPR(
-                    GithubPRHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-            else:  # platform == Platform.GITLAB
-                return ServiceContextPR(
-                    GitlabPRHandler(
-                        self.owner,
-                        self.repo,
-                        self.token,
-                        self.username,
-                        self.base_domain,
-                    ),
-                    self.llm_config,
-                )
-        else:
-            raise ValueError(f'Invalid issue type: {self.issue_type}')
-
     async def resolve_issue(
         self,
         reset_logger: bool = False,
@@ -497,10 +488,8 @@ class IssueResolver:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
 
-        issue_handler = self.issue_handler_factory()
-
         # Load dataset
-        issues: list[Issue] = issue_handler.get_converted_issues(
+        issues: list[Issue] = self.issue_handler.get_converted_issues(
             issue_numbers=[self.issue_number], comment_id=self.comment_id
         )
 
@@ -546,7 +535,7 @@ class IssueResolver:
                 [
                     'git',
                     'clone',
-                    issue_handler.get_clone_url(),
+                    self.issue_handler.get_clone_url(),
                     f'{self.output_dir}/repo',
                 ]
             ).decode('utf-8')
@@ -625,7 +614,7 @@ class IssueResolver:
             output = await self.process_issue(
                 issue,
                 base_commit,
-                issue_handler,
+                self.issue_handler,
                 reset_logger,
             )
             output_fp.write(output.model_dump_json() + '\n')

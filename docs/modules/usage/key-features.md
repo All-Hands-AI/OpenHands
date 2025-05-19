@@ -9,11 +9,9 @@
 ### Changes
 - Shows the file changes performed by OpenHands.
 
-### Workspace
-- Browse project files and directories.
-- Use the `Open in VS Code` option to:
-  * Modify files
-  * Upload and download files
+### VS Code
+- Embedded VS Code for browsing and modifying files.
+- Can also be used to upload and download files.
 
 ### Terminal
 - A space for OpenHands and users to run terminal commands.

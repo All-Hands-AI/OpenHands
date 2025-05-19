@@ -61,7 +61,7 @@ make build
 # Start the application
 make run
 ```
-Or to run backend and frontend seperately.
+Or to run backend and frontend separately.
 
 ```sh
 # Start the backend from the root directory

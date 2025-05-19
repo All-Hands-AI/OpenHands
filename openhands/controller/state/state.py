@@ -8,7 +8,6 @@ from enum import Enum
 from typing import Any
 
 import openhands
-from openhands.controller.state.task import RootTask
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events.action import (
@@ -75,7 +74,6 @@ class State:
       - additional task-specific data
     """
 
-    root_task: RootTask = field(default_factory=RootTask)
     session_id: str = ''
     # global iteration for the current task
     iteration: int = 0
@@ -220,7 +218,7 @@ class State:
             'trace_version': openhands.__version__,
             'tags': [
                 f'agent:{agent_name}',
-                f"web_host:{os.environ.get('WEB_HOST', 'unspecified')}",
+                f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
                 f'openhands_version:{openhands.__version__}',
             ],
         }

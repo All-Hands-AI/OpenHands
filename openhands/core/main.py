@@ -30,7 +30,7 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
-from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -96,8 +96,6 @@ async def run_controller(
 
     if agent is None:
         agent = create_agent(config)
-        mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-        agent.set_mcp_tools(mcp_tools)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -130,6 +128,10 @@ async def run_controller(
             repo_directory=repo_directory,
         )
 
+    # Add MCP tools to the agent
+    if agent.config.enable_mcp:
+        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
         logger.info('Trajectory replay is enabled')
@@ -142,9 +144,9 @@ async def run_controller(
         agent, runtime, config, replay_events=replay_events
     )
 
-    assert isinstance(
-        initial_user_action, Action
-    ), f'initial user actions must be an Action, got {type(initial_user_action)}'
+    assert isinstance(initial_user_action, Action), (
+        f'initial user actions must be an Action, got {type(initial_user_action)}'
+    )
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'

@@ -1,9 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RepositorySelectionForm } from "./repo-selection-form";
 
 // Create mock functions
 const mockUseUserRepositories = vi.fn();
+const mockUseRepositoryBranches = vi.fn();
 const mockUseCreateConversation = vi.fn();
 const mockUseIsCreatingConversation = vi.fn();
 const mockUseTranslation = vi.fn();
@@ -11,7 +13,13 @@ const mockUseAuth = vi.fn();
 
 // Setup default mock returns
 mockUseUserRepositories.mockReturnValue({
-  data: { pages: [{ data: [] }] },
+  data: [],
+  isLoading: false,
+  isError: false,
+});
+
+mockUseRepositoryBranches.mockReturnValue({
+  data: [],
   isLoading: false,
   isError: false,
 });
@@ -47,6 +55,10 @@ vi.mock("#/hooks/query/use-user-repositories", () => ({
   useUserRepositories: () => mockUseUserRepositories(),
 }));
 
+vi.mock("#/hooks/query/use-repository-branches", () => ({
+  useRepositoryBranches: () => mockUseRepositoryBranches(),
+}));
+
 vi.mock("#/hooks/mutation/use-create-conversation", () => ({
   useCreateConversation: () => mockUseCreateConversation(),
 }));
@@ -63,9 +75,16 @@ vi.mock("#/context/auth-context", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-describe("RepositorySelectionForm", () => {
-  const mockOnRepoSelection = vi.fn();
+const renderRepositorySelectionForm = () =>
+  render(<RepositorySelectionForm onRepoSelection={vi.fn()} />, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
+    ),
+  });
 
+describe("RepositorySelectionForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -78,7 +97,7 @@ describe("RepositorySelectionForm", () => {
       isError: false,
     });
 
-    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    renderRepositorySelectionForm();
 
     // Check if loading indicator is displayed
     expect(screen.getByTestId("repo-dropdown-loading")).toBeInTheDocument();
@@ -88,31 +107,25 @@ describe("RepositorySelectionForm", () => {
   test("shows dropdown when repositories are loaded", () => {
     // Setup loaded repositories
     mockUseUserRepositories.mockReturnValue({
-      data: {
-        pages: [
-          {
-            data: [
-              {
-                id: 1,
-                full_name: "user/repo1",
-                git_provider: "github",
-                is_public: true,
-              },
-              {
-                id: 2,
-                full_name: "user/repo2",
-                git_provider: "github",
-                is_public: true,
-              },
-            ],
-          },
-        ],
-      },
+      data: [
+        {
+          id: 1,
+          full_name: "user/repo1",
+          git_provider: "github",
+          is_public: true,
+        },
+        {
+          id: 2,
+          full_name: "user/repo2",
+          git_provider: "github",
+          is_public: true,
+        },
+      ],
       isLoading: false,
       isError: false,
     });
 
-    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    renderRepositorySelectionForm();
 
     // Check if dropdown is displayed
     expect(screen.getByTestId("repo-dropdown")).toBeInTheDocument();
@@ -127,7 +140,7 @@ describe("RepositorySelectionForm", () => {
       error: new Error("Failed to fetch repositories"),
     });
 
-    render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />);
+    renderRepositorySelectionForm();
 
     // Check if error message is displayed
     expect(screen.getByTestId("repo-dropdown-error")).toBeInTheDocument();

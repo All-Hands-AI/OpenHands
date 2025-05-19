@@ -160,7 +160,7 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
    7.2 Add edge cases to your test script to ensure comprehensive coverage.
    7.3 Run existing tests related to the modified code to ensure you haven't broken anything.
 
-8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
+8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance['base_commit']}.
    8.1 Ensure you've fully addressed all requirements.
    8.2 Run any tests in the repository related to:
      8.2.1 The issue you are fixing
@@ -173,16 +173,14 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
 
     if 'image_assets' in instance:
         assets = json.loads(instance['image_assets'])
-        assert (
-            'problem_statement' in assets
-        ), 'problem_statement is required in image_assets'
+        assert 'problem_statement' in assets, (
+            'problem_statement is required in image_assets'
+        )
         image_urls = assets['problem_statement']
         return MessageAction(content=instruction, image_urls=image_urls)
     return MessageAction(content=instruction)
@@ -263,6 +261,7 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=False,
+        enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -716,6 +715,19 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
+            if 'selected_repos' in data:
+                # repos for the swe-bench instances:
+                # ['astropy/astropy', 'django/django', 'matplotlib/matplotlib', 'mwaskom/seaborn', 'pallets/flask', 'psf/requests', 'pydata/xarray', 'pylint-dev/pylint', 'pytest-dev/pytest', 'scikit-learn/scikit-learn', 'sphinx-doc/sphinx', 'sympy/sympy']
+                selected_repos = data['selected_repos']
+                if isinstance(selected_repos, str): selected_repos = [selected_repos]
+                assert isinstance(selected_repos, list)
+                logger.info(
+                    f'Filtering {selected_repos} tasks from "selected_repos"...'
+                )
+                subset = dataset[dataset["repo"].isin(selected_repos)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+                
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')

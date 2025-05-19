@@ -7,12 +7,13 @@ class ConversationTrigger(Enum):
     RESOLVER = 'resolver'
     GUI = 'gui'
     SUGGESTED_TASK = 'suggested_task'
+    REMOTE_API_KEY = 'openhands_api'
+    SLACK = 'slack'
 
 
 @dataclass
 class ConversationMetadata:
     conversation_id: str
-    github_user_id: str | None
     selected_repository: str | None
     user_id: str | None = None
     selected_branch: str | None = None

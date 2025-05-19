@@ -73,7 +73,7 @@ def run_eval(
     runtime: Runtime,
 ):
     """Run the evaluation and create report"""
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     lca_path = bench_config['LCA_PATH']
@@ -146,7 +146,7 @@ def run_eval(
     obs = runtime.run_action(action)
     report_str = obs.content
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
     return report_str
 
 

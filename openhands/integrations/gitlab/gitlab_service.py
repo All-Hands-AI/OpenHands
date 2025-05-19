@@ -6,6 +6,7 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     BaseGitService,
+    Branch,
     GitService,
     ProviderType,
     Repository,
@@ -131,7 +132,7 @@ class GitLabService(BaseGitService, GitService):
 
                 payload = {
                     'query': query,
-                    'variables': variables,
+                    'variables': variables if variables is not None else {},
                 }
 
                 response = await client.post(
@@ -195,6 +196,7 @@ class GitLabService(BaseGitService, GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
+                is_public=True
             )
             for repo in response
         ]
@@ -381,6 +383,60 @@ class GitLabService(BaseGitService, GitService):
             return tasks
         except Exception:
             return []
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        encoded_name = repository.replace('/', '%2F')
+
+        url = f'{self.BASE_URL}/projects/{encoded_name}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('path_with_namespace'),
+            stargazers_count=repo.get('star_count'),
+            git_provider=ProviderType.GITLAB,
+            is_public=repo.get('visibility') == 'public',
+        )
+
+    async def get_branches(self, repository: str) -> list[Branch]:
+        """Get branches for a repository"""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        # Set maximum branches to fetch (10 pages with 100 per page)
+        MAX_BRANCHES = 1000
+        PER_PAGE = 100
+
+        all_branches: list[Branch] = []
+        page = 1
+
+        # Fetch up to 10 pages of branches
+        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+            params = {'per_page': str(PER_PAGE), 'page': str(page)}
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more branches
+                break
+
+            for branch_data in response:
+                branch = Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('id', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=branch_data.get('commit', {}).get('committed_date'),
+                )
+                all_branches.append(branch)
+
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        return all_branches
 
 
 gitlab_service_cls = os.environ.get(

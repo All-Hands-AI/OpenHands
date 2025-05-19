@@ -1,65 +1,47 @@
 import { render, screen } from "@testing-library/react";
-import { it, describe, expect, vi, beforeAll, afterAll } from "vitest";
+import { it, describe, expect, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
-import * as CaptureConsent from "#/utils/handle-capture-consent";
-import * as AuthHook from "#/context/auth-context";
+
+// Mock the useAuthUrl hook
+vi.mock("#/hooks/use-auth-url", () => ({
+  useAuthUrl: () => "https://gitlab.com/oauth/authorize",
+}));
 
 describe("AuthModal", () => {
-  beforeAll(() => {
+  beforeEach(() => {
     vi.stubGlobal("location", { href: "" });
-    vi.spyOn(AuthHook, "useAuth").mockReturnValue({
-      providersAreSet: false,
-      setProvidersAreSet: vi.fn(),
-      providerTokensSet: [],
-      setProviderTokensSet: vi.fn()
-    });
   });
 
-  afterAll(() => {
+  afterEach(() => {
     vi.unstubAllGlobals();
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
   });
 
-  it("should render a tos checkbox that is unchecked by default", () => {
-    render(<AuthModal githubAuthUrl={null} appMode="saas" />);
-    const checkbox = screen.getByRole("checkbox");
-
-    expect(checkbox).not.toBeChecked();
-  });
-
-  it("should only enable the identity provider buttons if the tos checkbox is checked", async () => {
-    const user = userEvent.setup();
-    render(<AuthModal githubAuthUrl={null} appMode="saas" />);
-
-    const checkbox = screen.getByRole("checkbox");
-    const githubButton = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
-    const gitlabButton = screen.getByRole("button", { name: "GITLAB$CONNECT_TO_GITLAB" });
-
-    expect(githubButton).toBeDisabled();
-    expect(gitlabButton).toBeDisabled();
-
-    await user.click(checkbox);
-
-    expect(githubButton).not.toBeDisabled();
-    expect(gitlabButton).not.toBeDisabled();
-  });
-
-  it("should set user analytics consent to true when the user checks the tos checkbox", async () => {
-    const handleCaptureConsentSpy = vi.spyOn(
-      CaptureConsent,
-      "handleCaptureConsent",
-    );
-
-    const user = userEvent.setup();
+  it("should render the GitHub and GitLab buttons", () => {
     render(<AuthModal githubAuthUrl="mock-url" appMode="saas" />);
 
-    const checkbox = screen.getByRole("checkbox");
-    await user.click(checkbox);
+    const githubButton = screen.getByRole("button", {
+      name: "GITHUB$CONNECT_TO_GITHUB",
+    });
+    const gitlabButton = screen.getByRole("button", {
+      name: "GITLAB$CONNECT_TO_GITLAB",
+    });
 
-    const button = screen.getByRole("button", { name: "GITHUB$CONNECT_TO_GITHUB" });
-    await user.click(button);
+    expect(githubButton).toBeInTheDocument();
+    expect(gitlabButton).toBeInTheDocument();
+  });
 
-    expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
+  it("should redirect to GitHub auth URL when GitHub button is clicked", async () => {
+    const user = userEvent.setup();
+    const mockUrl = "https://github.com/login/oauth/authorize";
+    render(<AuthModal githubAuthUrl={mockUrl} appMode="saas" />);
+
+    const githubButton = screen.getByRole("button", {
+      name: "GITHUB$CONNECT_TO_GITHUB",
+    });
+    await user.click(githubButton);
+
+    expect(window.location.href).toBe(mockUrl);
   });
 });

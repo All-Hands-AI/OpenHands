@@ -8,10 +8,12 @@ from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
 from openhands.events.event_store import EventStore
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.data_models.agent_loop_info import AgentLoopInfo
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
-from openhands.storage.data_models.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
@@ -53,8 +55,7 @@ class ConversationManager(ABC):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
-    ) -> EventStore | None:
+    ) -> AgentLoopInfo | None:
         """Join a conversation and return its event stream."""
 
     async def is_agent_loop_running(self, sid: str) -> bool:
@@ -82,8 +83,7 @@ class ConversationManager(ABC):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
-    ) -> EventStore:
+    ) -> AgentLoopInfo:
         """Start an event loop if one is not already running"""
 
     @abstractmethod
@@ -97,6 +97,12 @@ class ConversationManager(ABC):
     @abstractmethod
     async def close_session(self, sid: str):
         """Close a session."""
+
+    @abstractmethod
+    async def get_agent_loop_info(
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+    ) -> list[AgentLoopInfo]:
+        """Get the AgentLoopInfo for conversations."""
 
     @classmethod
     @abstractmethod

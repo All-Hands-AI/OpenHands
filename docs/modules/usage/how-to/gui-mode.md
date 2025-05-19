@@ -39,8 +39,9 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
      - Minimal Permissions ( Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
+   - Navigate to the `Git` tab.
    - Paste your token in the `GitHub Token` field.
-   - Click `Save` to apply the changes.
+   - Click `Save Changes` to apply the changes.
 </details>
 
 <details>
@@ -98,9 +99,9 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
    - Set an expiration date or leave it blank for a non-expiring token.
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
+   - Navigate to the `Git` tab.
    - Paste your token in the `GitLab Token` field.
-   - Enter your GitLab instance URL if using self-hosted GitLab.
-   - Click `Save` to apply the changes.
+   - Click `Save Changes` to apply the changes.
 </details>
 
 <details>
@@ -112,7 +113,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - Ensure the token is properly saved in settings.
      - Check that the token hasn't expired.
      - Verify the token has the required scopes.
-     - For self-hosted instances, verify the correct instance URL.
 
   - **Access Denied**:
      - Verify project access permissions.
@@ -122,7 +122,7 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 
 ### Advanced Settings
 
-1. Inside the Settings page, toggle `Advanced` options to access additional settings.
+1. Inside the Settings page, under the `LLM` tab, toggle `Advanced` options to access additional settings.
 2. Use the `Custom Model` text box to manually enter a model if it's not in the list.
 3. Specify a `Base URL` if required by your LLM provider.
 
@@ -136,7 +136,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use the workspace panel to explore your project structure.
 - Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive

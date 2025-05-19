@@ -5,7 +5,7 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable, ClassVar, Tuple, Type
+from typing import Callable, ClassVar
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -78,6 +78,8 @@ from openhands.llm.metrics import Metrics, TokenUsage
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
+ERROR_ACTION_NOT_EXECUTED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED'
+ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
 class AgentController:
@@ -91,7 +93,7 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    _pending_action_info: Tuple[Action, float] | None = None  # (action, timestamp)
+    _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
@@ -606,7 +608,10 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
-                obs = ErrorObservation(content='The action has not been executed.')
+                obs = ErrorObservation(
+                    content=ERROR_ACTION_NOT_EXECUTED,
+                    error_id=ERROR_ACTION_NOT_EXECUTED_ID,
+                )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
@@ -710,7 +715,7 @@ class AgentController:
         Args:
             action (AgentDelegateAction): The action containing information about the delegate agent to start.
         """
-        agent_cls: Type[Agent] = Agent.get_cls(action.agent)
+        agent_cls: type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
@@ -776,10 +781,6 @@ class AgentController:
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
             )
-
-            # emit the delegate result observation
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
             # emit AgentDelegateObservation with error content
@@ -790,19 +791,28 @@ class AgentController:
                 f'{self.delegate.agent.name} encountered an error during execution.'
             )
 
-            # emit the delegate result observation
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
+        content = f'Delegated agent finished with result:\n\n{content}'
+
+        # emit the delegate result observation
+        obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+
+        # associate the delegate action with the initiating tool call
+        for event in reversed(self.state.history):
+            if isinstance(event, AgentDelegateAction):
+                delegate_action = event
+                obs.tool_call_metadata = delegate_action.tool_call_metadata
+                break
+
+        self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
-        self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             self.log(
-                'info',
+                'debug',
                 f'Agent not stepping because state is {self.get_agent_state()} (not RUNNING)',
                 extra={'msg_type': 'STEP_BLOCKED_STATE'},
             )
@@ -812,7 +822,7 @@ class AgentController:
             action_id = getattr(self._pending_action, 'id', 'unknown')
             action_type = type(self._pending_action).__name__
             self.log(
-                'info',
+                'debug',
                 f'Agent not stepping because of pending action: {action_type} (id={action_id})',
                 extra={'msg_type': 'STEP_BLOCKED_PENDING_ACTION'},
             )
@@ -890,6 +900,8 @@ class AgentController:
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
                     or 'input length and `max_tokens` exceed context limit' in error_str
+                    or 'please reduce the length of either one'
+                    in error_str  # For OpenRouter context window errors
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
