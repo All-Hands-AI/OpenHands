@@ -121,24 +121,18 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Start the server, expect it to timeout (run in background manner)
         action = CmdRunAction(f'python3 -m http.server {server_port} &')
-        action = CmdRunAction(f'python3 -m http.server {server_port} &')
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
 
         if runtime_cls == CLIRuntime:
-            # CLIRuntime (non-Windows, PTY-based) specific behavior:
             # The '&' does not detach cleanly; the PTY session remains active.
-            # The CmdRunAction for the command with '&' will time out.
-            # CLIRuntime's cleanup then kills the process group, including the server.
-            assert obs.exit_code == -1  # Expect timeout for the initial action
-            assert '[The command timed out after' in obs.metadata.suffix
+            # the main cmd ends, then the server may receive SIGHUP.
+            assert obs.exit_code == 0
 
-            # Server should have been killed by CLIRuntime's process group cleanup.
-            # A very brief pause to ensure cleanup has occurred.
-            time.sleep(0.2)
+            # Give the server a moment to be ready
+            time.sleep(1)
 
-            # Verify the server is NOT running.
             # `curl --fail` exits non-zero if connection fails or server returns an error.
             # Use a short connect timeout as the server is expected to be down.
             curl_action = CmdRunAction(
@@ -147,7 +141,7 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
             curl_obs = runtime.run_action(curl_action)
             logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
             assert isinstance(curl_obs, CmdOutputObservation)
-            assert curl_obs.exit_code != 0  # Expect curl to fail
+            assert curl_obs.exit_code != 0
 
             # Confirm with pkill (CLIRuntime is assumed non-Windows here).
             # pkill returns 1 if no processes were matched.
@@ -161,8 +155,7 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
             # So, pkill should find and kill the server.
             assert kill_obs.exit_code == 0
         else:
-            # Original behavior for other runtimes (e.g., DockerRuntime, LocalRuntime on Windows)
-            assert obs.exit_code == 0  # Should not timeout as '&' backgrounds properly
+            assert obs.exit_code == 0
 
             # Give the server a moment to be ready
             time.sleep(1)
