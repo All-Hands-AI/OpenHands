@@ -9,12 +9,14 @@ from litellm import ChatCompletionToolParam
 from openhands.llm.fn_call_converter import (
     IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
+    TOOL_EXAMPLES,
     FunctionCallConversionError,
     convert_fncall_messages_to_non_fncall_messages,
     convert_from_multiple_tool_calls_to_single_tool_call_messages,
     convert_non_fncall_messages_to_fncall_messages,
     convert_tool_call_to_string,
     convert_tools_to_description,
+    get_example_for_tools,
 )
 
 FNCALL_TOOLS: list[ChatCompletionToolParam] = [
@@ -138,6 +140,264 @@ Allowed values: [`view`, `create`, `str_replace`, `insert`, `undo_edit`]
   (7) view_range (array, optional): Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.
 ---- END FUNCTION #3 ----""".strip()
     )
+
+
+def test_get_example_for_tools_no_tools():
+    """Test that get_example_for_tools returns empty string when no tools are available."""
+    tools = []
+    example = get_example_for_tools(tools)
+    assert example == ''
+
+
+def test_get_example_for_tools_single_tool():
+    """Test that get_example_for_tools generates correct example with a single tool."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'description': 'Execute a bash command in the terminal.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The bash command to execute.',
+                        }
+                    },
+                    'required': ['command'],
+                },
+            },
+        }
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+
+
+def test_get_example_for_tools_single_tool_is_finish():
+    """Test get_example_for_tools with only the finish tool."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'finish',
+                'description': 'Finish the interaction when the task is complete.',
+            },
+        }
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] not in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+
+
+def test_get_example_for_tools_multiple_tools():
+    """Test that get_example_for_tools generates correct example with multiple tools."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'description': 'Execute a bash command in the terminal.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The bash command to execute.',
+                        }
+                    },
+                    'required': ['command'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'str_replace_editor',
+                'description': 'Custom editing tool for viewing, creating and editing files.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The commands to run.',
+                            'enum': [
+                                'view',
+                                'create',
+                                'str_replace',
+                                'insert',
+                                'undo_edit',
+                            ],
+                        },
+                        'path': {
+                            'type': 'string',
+                            'description': 'Absolute path to file or directory.',
+                        },
+                    },
+                    'required': ['command', 'path'],
+                },
+            },
+        },
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+
+
+def test_get_example_for_tools_multiple_tools_with_finish():
+    """Test get_example_for_tools with multiple tools including finish."""
+    # Uses execute_bash and finish tools
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'description': 'Execute a bash command in the terminal.',
+                'parameters': {  # Params added for completeness, not strictly needed by get_example_for_tools
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The bash command to execute.',
+                        }
+                    },
+                    'required': ['command'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'str_replace_editor',
+                'description': 'Custom editing tool for viewing, creating and editing files.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The commands to run.',
+                            'enum': [
+                                'view',
+                                'create',
+                                'str_replace',
+                                'insert',
+                                'undo_edit',
+                            ],
+                        },
+                        'path': {
+                            'type': 'string',
+                            'description': 'Absolute path to file or directory.',
+                        },
+                    },
+                    'required': ['command', 'path'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'browser',
+                'description': 'Interact with the browser.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'code': {
+                            'type': 'string',
+                            'description': 'The Python code that interacts with the browser.',
+                        }
+                    },
+                    'required': ['code'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'finish',
+                'description': 'Finish the interaction.',
+            },
+        },
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+
+    # Check for execute_bash parts (order matters for get_example_for_tools)
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'].strip() in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'].strip() in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'].strip() in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server_again'].strip() in example
+
+    # Check for str_replace_editor parts
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+
+    # Check for browser part
+    assert TOOL_EXAMPLES['browser']['view_page'] in example
+
+    # Check for finish part
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+
+
+def test_get_example_for_tools_all_tools():
+    """Test that get_example_for_tools generates correct example with all tools."""
+    tools = FNCALL_TOOLS  # FNCALL_TOOLS already includes 'finish'
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+
+    # These are not in global FNCALL_TOOLS
+    # assert TOOL_EXAMPLES['web_read']['read_docs'] not in example # web_read is removed
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
 
 
 FNCALL_MESSAGES = [
@@ -270,7 +530,7 @@ NON_FNCALL_MESSAGES = [
         'content': [
             {
                 'type': 'text',
-                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(FNCALL_TOOLS)
                 + "<uploaded_files>\n/workspace/astropy__astropy__5.1\n</uploaded_files>\nI've uploaded a python code repository in the directory astropy__astropy__5.1. LONG DESCRIPTION:\n\n"
                 + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
             }

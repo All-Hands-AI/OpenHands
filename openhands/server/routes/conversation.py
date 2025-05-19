@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.event_filter import EventFilter
+from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
+from openhands.server.shared import conversation_manager
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
@@ -91,6 +94,70 @@ async def get_hosts(request: Request) -> JSONResponse:
                 'error': f'Error getting runtime hosts: {e}',
             },
         )
+
+
+@app.get('/events')
+async def search_events(
+    request: Request,
+    start_id: int = 0,
+    end_id: int | None = None,
+    reverse: bool = False,
+    filter: EventFilter | None = None,
+    limit: int = 20
+):
+    """Search through the event stream with filtering and pagination.
+    Args:
+        request: The incoming request object
+        start_id: Starting ID in the event stream. Defaults to 0
+        end_id: Ending ID in the event stream
+        reverse: Whether to retrieve events in reverse order. Defaults to False.
+        filter: Filter for events
+        limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
+    Returns:
+        dict: Dictionary containing:
+            - events: List of matching events
+            - has_more: Whether there are more matching events after this batch
+    Raises:
+        HTTPException: If conversation is not found
+        ValueError: If limit is less than 1 or greater than 100
+    """
+    if not request.state.conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
+        )
+    if limit < 0 or limit > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
+        )
+    
+    # Get matching events from the stream
+    event_stream = request.state.conversation.event_stream
+    events = list(event_stream.search_events(
+        start_id=start_id,
+        end_id=end_id,
+        reverse=reverse,
+        filter=filter,
+        limit=limit + 1,
+    ))
+
+    # Check if there are more events
+    has_more = len(events) > limit
+    if has_more:
+        events = events[:limit]  # Remove the extra event
+
+    events = [event_to_dict(event) for event in events]
+    return {
+        'events': events,
+        'has_more': has_more,
+    }
+
+
+@app.post('/events')
+async def add_event(request: Request):
+    data = request.json()
+    conversation_manager.send_to_event_stream(request.state.sid, data)
+    return JSONResponse({"success": True})
+
 
 @app.get('/action-execution-server-url')
 async def get_action_execution_server_url(request: Request):

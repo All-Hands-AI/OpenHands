@@ -78,6 +78,7 @@ class EventStore(EventStoreABC):
         end_id: int | None = None,
         reverse: bool = False,
         filter: EventFilter | None = None,
+        limit: int | None = None,
     ) -> Iterable[Event]:
         """
         Retrieve events from the event stream, optionally filtering out events of a given type
@@ -107,6 +108,7 @@ class EventStore(EventStoreABC):
             step = 1
 
         cache_page = _DUMMY_PAGE
+        num_results = 0
         for index in range(start_id, end_id, step):
             if not should_continue():
                 return
@@ -121,6 +123,9 @@ class EventStore(EventStoreABC):
             if event:
                 if not filter or filter.include(event):
                     yield event
+                    num_results += 1
+                    if limit and limit <= num_results:
+                        return
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id, self.user_id)
