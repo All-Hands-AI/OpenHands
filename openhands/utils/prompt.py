@@ -14,7 +14,6 @@ class RuntimeInfo:
     date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
-    contextual_info: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
 
 
@@ -24,6 +23,11 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+
+
+@dataclass
+class ConversationContext:
+    context: str = ''
 
 
 class PromptManager:
@@ -75,6 +79,7 @@ class PromptManager:
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
+        conversation_context: ConversationContext | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -82,6 +87,7 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            conversation_context=conversation_context,
         ).strip()
 
     def build_microagent_info(

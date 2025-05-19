@@ -41,7 +41,12 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationContext,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 class ConversationMemory:
@@ -460,13 +465,18 @@ class ConversationMemory:
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
-                        contextual_info=obs.contextual_info,
                     )
                 else:
                     runtime_info = RuntimeInfo(
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
-                        contextual_info=obs.contextual_info,
+                    )
+
+                conversation_context = None
+
+                if obs.contextual_info:
+                    conversation_context = ConversationContext(
+                        context=obs.contextual_info
                     )
 
                 repo_instructions = (
@@ -477,11 +487,9 @@ class ConversationMemory:
                 has_repo_info = repo_info is not None and (
                     repo_info.repo_name or repo_info.repo_directory
                 )
-                has_runtime_info = runtime_info is not None and (
-                    runtime_info.available_hosts
-                    or runtime_info.additional_agent_instructions
-                )
+                has_runtime_info = runtime_info is not None
                 has_repo_instructions = bool(repo_instructions.strip())
+                has_conversation_context = conversation_context is not None
 
                 # Filter and process microagent knowledge
                 filtered_agents = []
@@ -499,11 +507,17 @@ class ConversationMemory:
                 message_content = []
 
                 # Build the workspace context information
-                if has_repo_info or has_runtime_info or has_repo_instructions:
+                if (
+                    has_repo_info
+                    or has_runtime_info
+                    or has_repo_instructions
+                    or has_conversation_context
+                ):
                     formatted_workspace_text = (
                         self.prompt_manager.build_workspace_context(
                             repository_info=repo_info,
                             runtime_info=runtime_info,
+                            conversation_context=conversation_context,
                             repo_instructions=repo_instructions,
                         )
                     )

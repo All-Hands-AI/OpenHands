@@ -431,7 +431,8 @@ class AgentSession:
 
         if self.runtime:
             # sets available hosts and other runtime info
-            memory.set_runtime_info(self.runtime, contextual_info or '', custom_secrets_descriptions)
+            memory.set_runtime_info(self.runtime, custom_secrets_descriptions)
+            memory.set_contextual_info(contextual_info)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
