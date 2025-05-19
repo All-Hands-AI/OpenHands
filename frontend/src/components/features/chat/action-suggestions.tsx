@@ -37,7 +37,12 @@ export function ActionSuggestions({
 
     if (!conversationProp && conversationId) {
       // Use the fetched conversation data
-      conversation = fetchedConversation;
+      // Type-safe assignment from Conversation to the expected type
+      conversation = fetchedConversation
+        ? {
+            selected_repository: fetchedConversation.selected_repository,
+          }
+        : undefined;
     } else {
       conversation = conversationProp;
     }

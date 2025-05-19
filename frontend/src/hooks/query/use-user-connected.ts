@@ -5,8 +5,8 @@ import OpenHands from "#/api/open-hands";
  * Hook to check if a user is connected to any provider (including local git provider)
  * This is determined by whether the /api/user/info endpoint returns a 200 status code
  */
-export const useUserConnected = () => {
-  return useQuery({
+export const useUserConnected = () =>
+  useQuery({
     queryKey: ["user-connected"],
     queryFn: async () => {
       try {
@@ -19,4 +19,3 @@ export const useUserConnected = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
-};
