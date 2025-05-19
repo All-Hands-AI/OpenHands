@@ -120,8 +120,15 @@ function isExcludedTechnicalString(str) {
 }
 
 function isLikelyCode(str) {
-  // Check that the string contains an underscore but not a space - it is likely a code.
-  return /^_?[^\s]*_?[^\s]*$/.test.str(str)
+  // A string with no spaces and at least one underscore or colon is likely a code.
+  // (e.g.: "browser_interactive" or "error:")
+  if (str.includes(" ")) {
+    return false
+  }
+  if (str.includes(":") || str.includes("_")){
+    return true
+  }
+  return false
 }
 
 function isCommonDevelopmentString(str) {
