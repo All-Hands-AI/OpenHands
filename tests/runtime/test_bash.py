@@ -69,7 +69,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         if runtime_cls == CLIRuntime:
             assert isinstance(obs_interrupt, ErrorObservation)
             assert (
-                "CLIRuntime does not support interactive input or signals (e.g., 'C-c'). The command 'C-c' was not sent to any process."
+                "CLIRuntime does not support interactive input from the agent (e.g., 'C-c'). The command 'C-c' was not sent to any process."
                 in obs_interrupt.content
             )
             assert obs_interrupt.error_id == 'AGENT_ERROR$BAD_ACTION'
@@ -440,7 +440,11 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
 
             obs = _run_cmd_action(runtime, 'ls -l')
             assert obs.exit_code == 0
-            if run_as_openhands:
+            if (
+                run_as_openhands
+                and runtime_cls != CLIRuntime
+                and runtime_cls != LocalRuntime
+            ):
                 assert 'openhands' in obs.content
             elif runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
                 assert 'root' not in obs.content and 'openhands' not in obs.content
@@ -943,6 +947,10 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
 @pytest.mark.skipif(
     is_windows(), reason='Powershell does not support interactive commands'
 )
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
+)
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(
         temp_dir,
@@ -1000,6 +1008,10 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
 @pytest.mark.skipif(
     is_windows(),
     reason='Test relies on Linux-specific commands like seq and bash for loops',
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not truncate command output.',
 )
 def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -1078,6 +1090,10 @@ def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
 
 @pytest.mark.skipif(
     is_windows(), reason='Test uses Linux-specific ps aux, awk, and grep commands'
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
 )
 def test_stress_long_output_with_soft_and_hard_timeout(
     temp_dir, runtime_cls, run_as_openhands
