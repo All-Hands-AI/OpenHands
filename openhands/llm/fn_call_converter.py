@@ -67,7 +67,6 @@ def refine_prompt(prompt: str) -> str:
 TOOL_EXAMPLES = {
     'execute_bash': {
         'check_dir': """
-
 ASSISTANT: Sure! Let me first check the current directory:
 <function=execute_bash>
 <parameter=command>
@@ -80,8 +79,8 @@ USER: EXECUTION RESULT of [execute_bash]:
 openhands@runtime:~/workspace$
 """,
         'run_server': """
-ASSISTANT: Let me run the Python file for you:
-
+ASSISTANT:
+Let me run the Python file for you:
 <function=execute_bash>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
@@ -92,7 +91,8 @@ USER: EXECUTION RESULT of [execute_bash]:
 [1] 121
 [1]+  Exit 1                  python3 app.py > server.log 2>&1
 
-ASSISTANT: Looks like the server was running with PID 121 then crashed. Let me check the server log:
+ASSISTANT:
+Looks like the server was running with PID 121 then crashed. Let me check the server log:
 <function=execute_bash>
 <parameter=command>
 cat server.log
@@ -105,7 +105,8 @@ Traceback (most recent call last):
     from flask import Flask
 ModuleNotFoundError: No module named 'flask'
 
-ASSISTANT: Looks like the server crashed because the `flask` module is not installed. Let me install the `flask` module for you:
+ASSISTANT:
+Looks like the server crashed because the `flask` module is not installed. Let me install the `flask` module for you:
 <function=execute_bash>
 <parameter=command>
 pip3 install flask
@@ -129,7 +130,8 @@ Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/pyt
 Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
 Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
 
-ASSISTANT: The `flask` module is installed successfully. Let me run the Python file again:
+ASSISTANT:
+The `flask` module is installed successfully. Let me run the Python file again:
 <function=execute_bash>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
@@ -183,12 +185,14 @@ python3 app.py > server.log 2>&1 &
 USER: EXECUTION RESULT of [execute_bash]:
 [1] 126
 
-ASSISTANT: The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000.
+ASSISTANT:
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000.
 """,
     },
     'str_replace_editor': {
         'create_file': """
-ASSISTANT: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
+ASSISTANT:
+There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
 <function=str_replace_editor>
 <parameter=command>create</parameter>
 <parameter=path>/workspace/app.py</parameter>
@@ -235,7 +239,8 @@ Review the changes and make sure they are as expected. Edit the file again if ne
     },
     'browser': {
         'view_page': """
-ASSISTANT: Let me check how the page looks in the browser:
+ASSISTANT:
+Let me check how the page looks in the browser:
 <function=browser>
 <parameter=code>
 goto('http://127.0.0.1:5000')
