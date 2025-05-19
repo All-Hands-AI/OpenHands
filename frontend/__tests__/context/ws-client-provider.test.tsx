@@ -8,7 +8,6 @@ import {
   WsClientProvider,
   useWsClient,
 } from "#/context/ws-client-provider";
-import { AuthProvider } from "#/context/auth-context";
 
 describe("Propagate error message", () => {
   it("should do nothing when no message was passed from server", () => {
@@ -91,11 +90,9 @@ describe("WsClientProvider", () => {
     const { getByText } = render(<TestComponent />, {
       wrapper: ({ children }) => (
         <QueryClientProvider client={new QueryClient()}>
-          <AuthProvider initialProviderTokens={[]}>
-            <WsClientProvider conversationId="test-conversation-id">
-              {children}
-            </WsClientProvider>
-          </AuthProvider>
+          <WsClientProvider conversationId="test-conversation-id">
+            {children}
+          </WsClientProvider>
         </QueryClientProvider>
       ),
     });

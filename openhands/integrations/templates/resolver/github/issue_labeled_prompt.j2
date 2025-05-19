@@ -1,0 +1,12 @@
+Please fix a issue number #{{ issue_number }} in your repository. Do the following
+
+1. Read the issue body and comments using the Github API
+2. For all changes to actual application code (e.g. in Python or Javascript), add an appropriate test to the testing directory to make sure that the issue has been fixed
+3. Run the tests, and if they pass you are done!
+4. You do NOT need to write new tests if there are only changes to documentation or configuration files.
+
+When you're done, make sure to
+
+1. Use the `GITHUB_TOKEN` environment variable and GitHub API to open a new PR
+2. The PR description should mention that it "fixes" or "closes" the issue number
+3. Make sure to leave the following sentence at the end of the PR description: `@{{ username }} can click here to [continue refining the PR]({{ conversation_url }})`

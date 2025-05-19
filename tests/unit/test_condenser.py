@@ -8,6 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     BrowserOutputCondenserConfig,
+    CondenserPipelineConfig,
     LLMAttentionCondenserConfig,
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
@@ -17,6 +18,7 @@ from openhands.core.config.condenser_config import (
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.message import Message, TextContent
+from openhands.core.schema.action import ActionType
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -35,6 +37,7 @@ from openhands.memory.condenser.impl import (
     RecentEventsCondenser,
     StructuredSummaryCondenser,
 )
+from openhands.memory.condenser.impl.pipeline import CondenserPipeline
 
 
 def create_test_event(
@@ -117,6 +120,11 @@ class RollingCondenserTestHarness:
         state = State()
 
         for event in events:
+            # Set the event's ID -- this is normally done by the event stream,
+            # but this harness is intended to act as a testing stand-in.
+            if not hasattr(event, '_id'):
+                event._id = len(state.history)
+
             state.history.append(event)
             for callback in self.callbacks:
                 callback(state.history)
@@ -253,9 +261,9 @@ def test_browser_output_condenser_respects_attention_window():
     assert len(result) == len(events)
     cnt = 4
     for event, condensed_event in zip(events, result):
-        if isinstance(event, BrowserOutputObservation):
+        if isinstance(event, (BrowserOutputObservation, AgentCondensationObservation)):
             if cnt > attention_window:
-                assert 'Content Omitted' in str(condensed_event)
+                assert 'Content omitted' in str(condensed_event)
             else:
                 assert event == condensed_event
             cnt -= 1
@@ -331,10 +339,7 @@ def test_llm_summarizing_condenser_from_config():
     config = LLMSummarizingCondenserConfig(
         max_size=50,
         keep_first=10,
-        llm_config=LLMConfig(
-            model='gpt-4o',
-            api_key='test_key',
-        ),
+        llm_config=LLMConfig(model='gpt-4o', api_key='test_key', caching_prompt=True),
     )
     condenser = Condenser.from_config(config)
 
@@ -343,6 +348,10 @@ def test_llm_summarizing_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 
 
 def test_llm_summarizing_condenser_invalid_config():
@@ -474,6 +483,7 @@ def test_llm_attention_condenser_from_config():
         llm_config=LLMConfig(
             model='gpt-4o',
             api_key='test_key',
+            caching_prompt=True,
         ),
     )
     condenser = Condenser.from_config(config)
@@ -483,6 +493,10 @@ def test_llm_attention_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 
 
 def test_llm_attention_condenser_invalid_config():
@@ -614,6 +628,7 @@ def test_structured_summary_condenser_from_config():
         llm_config=LLMConfig(
             model='gpt-4o',
             api_key='test_key',
+            caching_prompt=True,
         ),
     )
     condenser = Condenser.from_config(config)
@@ -623,6 +638,10 @@ def test_structured_summary_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 
 
 def test_structured_summary_condenser_invalid_config():
@@ -694,3 +713,70 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(mock_llm):
         # If we've condensed, ensure that the summary event is present
         if i > max_size:
             assert isinstance(view[keep_first], AgentCondensationObservation)
+
+
+def test_condenser_pipeline_from_config():
+    """Test that CondenserPipeline condensers can be created from configuration objects."""
+    config = CondenserPipelineConfig(
+        condensers=[
+            NoOpCondenserConfig(),
+            BrowserOutputCondenserConfig(attention_window=2),
+            LLMSummarizingCondenserConfig(
+                max_size=50,
+                keep_first=10,
+                llm_config=LLMConfig(model='gpt-4o', api_key='test_key'),
+            ),
+        ]
+    )
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, CondenserPipeline)
+    assert len(condenser.condensers) == 3
+    assert isinstance(condenser.condensers[0], NoOpCondenser)
+    assert isinstance(condenser.condensers[1], BrowserOutputCondenser)
+    assert isinstance(condenser.condensers[2], LLMSummarizingCondenser)
+
+
+def test_condenser_pipeline_chains_sub_condensers():
+    """Test that the CondenserPipeline chains sub-condensers and combines their behavior."""
+    MAX_SIZE = 10
+    ATTENTION_WINDOW = 2
+    NUMBER_OF_CONDENSATIONS = 3
+
+    condenser = CondenserPipeline(
+        AmortizedForgettingCondenser(max_size=MAX_SIZE),
+        BrowserOutputCondenser(attention_window=ATTENTION_WINDOW),
+    )
+
+    harness = RollingCondenserTestHarness(condenser)
+    events = [
+        BrowserOutputObservation(
+            f'Observation {i}', url='', trigger_by_action=ActionType.BROWSE
+        )
+        if i % 3 == 0
+        else create_test_event(f'Event {i}')
+        for i in range(0, MAX_SIZE * NUMBER_OF_CONDENSATIONS)
+    ]
+
+    for index, view in enumerate(harness.views(events)):
+        # The amortized forgetting condenser is responsible for keeping the size
+        # bounded despite the large number of events.
+        assert len(view) == harness.expected_size(index, MAX_SIZE)
+
+        # The browser output condenser should mask out the content of all the
+        # browser observations outside the attention window (which is relative
+        # to the number of browser outputs in the view, not the whole view or
+        # the event stream).
+        browser_outputs = [
+            event
+            for event in view
+            if isinstance(
+                event, (BrowserOutputObservation, AgentCondensationObservation)
+            )
+        ]
+
+        for event in browser_outputs[:-ATTENTION_WINDOW]:
+            assert 'Content omitted' in str(event)
+
+        for event in browser_outputs[-ATTENTION_WINDOW:]:
+            assert 'Content omitted' not in str(event)

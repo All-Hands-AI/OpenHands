@@ -39,6 +39,7 @@ ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
 	@$(MAKE) -s check-poetry
+	@$(MAKE) -s check-tmux
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
 check-system:
@@ -101,6 +102,18 @@ check-docker:
 		exit 1; \
 	fi
 
+check-tmux:
+	@echo "$(YELLOW)Checking tmux installation...$(RESET)"
+	@if command -v tmux > /dev/null; then \
+		echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)╔════════════════════════════════════════════════════════════════════════════╗$(RESET)"; \
+		echo "$(YELLOW)║ OPTIONAL: tmux is not installed.                                          ║$(RESET)"; \
+		echo "$(YELLOW)║ Some advanced terminal features may not work without tmux.                ║$(RESET)"; \
+		echo "$(YELLOW)║ You can install it if needed, but it's not required for development.      ║$(RESET)"; \
+		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
+	fi
+
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
@@ -133,20 +146,29 @@ install-python-dependencies:
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
-	@poetry install
-	@if [ -f "/etc/manjaro-release" ]; then \
-		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-		poetry run pip install playwright; \
-		poetry run playwright install chromium; \
+	@if [ -n "${POETRY_GROUP}" ]; then \
+		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		poetry install --only $${POETRY_GROUP}; \
 	else \
-		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
-			echo "Running playwright install --with-deps chromium..."; \
-			poetry run playwright install --with-deps chromium; \
-			mkdir -p cache; \
-			touch cache/playwright_chromium_is_installed.txt; \
+		poetry install; \
+	fi
+	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			poetry run pip install playwright; \
+			poetry run playwright install chromium; \
 		else \
-			echo "Setup already done. Skipping playwright installation."; \
+			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+				echo "Running playwright install --with-deps chromium..."; \
+				poetry run playwright install --with-deps chromium; \
+				mkdir -p cache; \
+				touch cache/playwright_chromium_is_installed.txt; \
+			else \
+				echo "Setup already done. Skipping playwright installation."; \
+			fi \
 		fi \
+	else \
+		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -166,7 +188,7 @@ install-pre-commit-hooks:
 
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files openhands/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -185,7 +207,7 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@cd frontend && npm run build
+	@cd frontend && npm run prepare && npm run build
 
 # Start backend
 start-backend:

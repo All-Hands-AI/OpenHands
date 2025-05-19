@@ -15,6 +15,7 @@ import { OpenHandsObservation } from "#/types/core/observations";
 import { cn } from "#/utils/utils";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
+import { paragraph } from "../markdown/paragraph";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
 
@@ -53,6 +54,7 @@ export function ExpandableMessage({
   });
 
   useEffect(() => {
+    // If we have a translation ID, process it
     if (id && i18n.exists(id)) {
       let processedObservation = observation;
       let processedAction = action;
@@ -189,12 +191,13 @@ export function ExpandableMessage({
           )}
         </div>
         {showDetails && (
-          <div className="text-sm overflow-auto">
+          <div className="text-sm">
             <Markdown
               components={{
                 code,
                 ul,
                 ol,
+                p: paragraph,
               }}
               remarkPlugins={[remarkGfm]}
             >

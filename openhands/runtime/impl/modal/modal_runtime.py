@@ -146,7 +146,8 @@ class ModalRuntime(ActionExecutionClient):
             self.send_status_message(' ')
         self._runtime_initialized = True
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     @tenacity.retry(

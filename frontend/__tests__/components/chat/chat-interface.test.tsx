@@ -1,8 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import type { Message } from "#/message";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
+import type { Message } from "#/message";
 import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chat-slice";
@@ -45,7 +45,15 @@ describe("Empty state", () => {
   it("should render suggestions if empty", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { messages: [] },
+        chat: {
+          messages: [],
+          systemMessage: {
+            content: "",
+            tools: [],
+            openhands_version: null,
+            agent_class: null
+          }
+        },
       },
     });
 
@@ -68,7 +76,15 @@ describe("Empty state", () => {
   it("should render the default suggestions", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: { messages: [] },
+        chat: {
+          messages: [],
+          systemMessage: {
+            content: "",
+            tools: [],
+            openhands_version: null,
+            agent_class: null
+          }
+        },
       },
     });
 
@@ -98,7 +114,15 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { messages: [] },
+          chat: {
+            messages: [],
+            systemMessage: {
+              content: "",
+              tools: [],
+              openhands_version: null,
+              agent_class: null
+            }
+          },
         },
       });
 
@@ -127,7 +151,15 @@ describe("Empty state", () => {
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
-          chat: { messages: [] },
+          chat: {
+            messages: [],
+            systemMessage: {
+              content: "",
+              tools: [],
+              openhands_version: null,
+              agent_class: null
+            }
+          },
         },
       });
 

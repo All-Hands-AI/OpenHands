@@ -15,6 +15,7 @@ from openhands.memory.condenser.impl.no_op_condenser import NoOpCondenser
 from openhands.memory.condenser.impl.observation_masking_condenser import (
     ObservationMaskingCondenser,
 )
+from openhands.memory.condenser.impl.pipeline import CondenserPipeline
 from openhands.memory.condenser.impl.recent_events_condenser import (
     RecentEventsCondenser,
 )
@@ -32,4 +33,5 @@ __all__ = [
     'BrowserOutputCondenser',
     'RecentEventsCondenser',
     'StructuredSummaryCondenser',
+    'CondenserPipeline',
 ]

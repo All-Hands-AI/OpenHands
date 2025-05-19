@@ -11,7 +11,15 @@ import {
   RecallObservation,
 } from "#/types/core/observations";
 
-type SliceState = { messages: Message[] };
+type SliceState = {
+  messages: Message[];
+  systemMessage: {
+    content: string;
+    tools: Array<Record<string, unknown>> | null;
+    openhands_version: string | null;
+    agent_class: string | null;
+  } | null;
+};
 
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -24,6 +32,10 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "browse_interactive",
   "edit",
   "recall",
+  "think",
+  "system",
+  "call_tool_mcp",
+  "mcp",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -42,6 +54,7 @@ function getRiskText(risk: ActionSecurityRisk) {
 
 const initialState: SliceState = {
   messages: [],
+  systemMessage: null,
 };
 
 export const chatSlice = createSlice({
@@ -99,6 +112,18 @@ export const chatSlice = createSlice({
       }
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
+
+      if (actionID === "system") {
+        // Store the system message in the state
+        state.systemMessage = {
+          content: action.payload.args.content,
+          tools: action.payload.args.tools,
+          openhands_version: action.payload.args.openhands_version,
+          agent_class: action.payload.args.agent_class,
+        };
+        // Don't add a message for system actions
+        return;
+      }
       if (actionID === "run") {
         text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
@@ -117,6 +142,16 @@ export const chatSlice = createSlice({
       } else if (actionID === "recall") {
         // skip recall actions
         return;
+      } else if (actionID === "call_tool_mcp") {
+        // Format MCP action with name and arguments
+        const name = action.payload.args.name || "";
+        const args = action.payload.args.arguments || {};
+        text = `**MCP Tool Call:** ${name}\n\n`;
+        // Include thought if available
+        if (action.payload.args.thought) {
+          text += `\n\n**Thought:**\n${action.payload.args.thought}`;
+        }
+        text += `\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -177,6 +212,17 @@ export const chatSlice = createSlice({
               content += `\n\n- ${host} (port ${port})`;
             }
           }
+          if (
+            recallObs.extras.custom_secrets_descriptions &&
+            Object.keys(recallObs.extras.custom_secrets_descriptions).length > 0
+          ) {
+            content += `\n\n**Custom Secrets**`;
+            for (const [name, description] of Object.entries(
+              recallObs.extras.custom_secrets_descriptions,
+            )) {
+              content += `\n\n- $${name}: ${description}`;
+            }
+          }
           if (recallObs.extras.repo_instructions) {
             content += `\n\n**Repository Instructions:**\n\n${recallObs.extras.repo_instructions}`;
           }
@@ -229,7 +275,13 @@ export const chatSlice = createSlice({
       // Set success property based on observation type
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
-        causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        // If exit_code is -1, it means the command timed out, so we set success to undefined
+        // to not show any status indicator
+        if (commandObs.extras.metadata.exit_code === -1) {
+          causeMessage.success = undefined;
+        } else {
+          causeMessage.success = commandObs.extras.metadata.exit_code === 0;
+        }
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
@@ -275,6 +327,19 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
         }
         causeMessage.content = content;
+      } else if (observationID === "mcp") {
+        // For MCP observations, we want to show the content as formatted output
+        // similar to how run/run_ipython actions are handled
+        let { content } = observation.payload;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        content = `${causeMessage.content}\n\n**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+        causeMessage.content = content; // Observation content includes the action
+        // Set success based on whether there's an error message
+        causeMessage.success = !observation.payload.content
+          .toLowerCase()
+          .includes("error:");
       }
     },
 
@@ -294,6 +359,7 @@ export const chatSlice = createSlice({
 
     clearMessages(state: SliceState) {
       state.messages = [];
+      state.systemMessage = null;
     },
   },
 });
@@ -306,4 +372,9 @@ export const {
   addErrorMessage,
   clearMessages,
 } = chatSlice.actions;
+
+// Selectors
+export const selectSystemMessage = (state: { chat: SliceState }) =>
+  state.chat.systemMessage;
+
 export default chatSlice.reducer;
