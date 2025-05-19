@@ -188,7 +188,7 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                 [System.Description]
             from WorkItems
             where [System.TeamProject] = '{self.project_name}'
-            and [System.WorkItemType] = 'Issue'
+            and [System.WorkItemType] = 'Bug'
             and [System.State] <> 'Closed'
             and [System.State] <> 'Resolved'
             order by [System.ChangedDate] desc
