@@ -5,8 +5,8 @@ from msrest.authentication import BasicAuthentication
 
 # Import models conditionally to handle different versions of the azure-devops package
 try:
-    from azure.devops.v5_1.git.models import GitPullRequest
-    from azure.devops.v5_1.work_item_tracking.models import Wiql
+    from azure.devops.v7_1.git.models import GitPullRequest
+    from azure.devops.v7_1.work_item_tracking.models import Wiql
 except ImportError:
     # For testing purposes, create mock classes
     class GitPullRequest:  # type: ignore
