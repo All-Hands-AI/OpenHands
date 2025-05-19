@@ -22,6 +22,17 @@ Create Table IF NOT EXISTS research_trendings (
     total_view_30d INT NOT NULL DEFAULT 0
 );
 
+Create Table IF NOT EXISTS mem0_conversation_jobs (
+    id SERIAL PRIMARY KEY,
+    conversation_id VARCHAR NOT NULL,
+    events JSONB NOT NULL,
+    metadata JSONB NOT NULL,
+    status VARCHAR NOT NULL DEFAULT 'pending',
+    error VARCHAR,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Check if configs column exists, if not add it
 DO $$
 BEGIN

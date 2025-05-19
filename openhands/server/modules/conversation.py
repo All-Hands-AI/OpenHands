@@ -5,7 +5,11 @@ from sqlalchemy import desc, func, or_, select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
-from openhands.server.models import Conversation, ResearchTrending, ResearchView
+from openhands.server.models import (
+    Conversation,
+    ResearchTrending,
+    ResearchView,
+)
 from openhands.server.static import SortBy
 
 
