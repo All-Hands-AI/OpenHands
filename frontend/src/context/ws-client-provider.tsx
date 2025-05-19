@@ -156,7 +156,7 @@ export function WsClientProvider({
         isFileWriteAction(event) ||
         isCommandAction(event)
       ) {
-        queryClient.invalidateQueries({
+        queryClient.removeQueries({
           queryKey: ["file_changes", conversationId],
         });
 
