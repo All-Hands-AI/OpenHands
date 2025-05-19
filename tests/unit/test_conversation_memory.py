@@ -85,6 +85,11 @@ def mock_state():
     return state
 
 
+@pytest.fixture
+def mock_prompt_manager():
+    return MagicMock()
+
+
 def test_process_events_with_message_action(conversation_memory):
     """Test that MessageAction is processed correctly."""
     # Create a system message action
@@ -1514,3 +1519,63 @@ def test_process_events_partial_history(conversation_memory):
         messages_partial_obs_only[1].role == 'user'
     )  # Added by _ensure_initial_user_message
     assert messages_partial_obs_only[1].content[0].text == 'Initial user query'
+
+
+def test_process_ipython_observation_with_vision_enabled(
+    agent_config, mock_prompt_manager
+):
+    """Test that _process_observation correctly handles IPythonRunCellObservation with image_urls when vision is enabled."""
+    # Create a ConversationMemory instance
+    memory = ConversationMemory(agent_config, mock_prompt_manager)
+
+    # Create an observation with image URLs
+    obs = IPythonRunCellObservation(
+        content='Test output',
+        code="print('test')",
+        image_urls=['data:image/png;base64,abc123'],
+    )
+
+    # Process the observation with vision enabled
+    messages = memory._process_observation(
+        obs=obs,
+        tool_call_id_to_message={},
+        max_message_chars=None,
+        vision_is_active=True,
+    )
+
+    # Check that the message contains both text and image content
+    assert len(messages) == 1
+    message = messages[0]
+    assert len(message.content) == 2
+    assert isinstance(message.content[0], TextContent)
+    assert isinstance(message.content[1], ImageContent)
+    assert message.content[1].image_urls == ['data:image/png;base64,abc123']
+
+
+def test_process_ipython_observation_with_vision_disabled(
+    agent_config, mock_prompt_manager
+):
+    """Test that _process_observation correctly handles IPythonRunCellObservation with image_urls when vision is disabled."""
+    # Create a ConversationMemory instance
+    memory = ConversationMemory(agent_config, mock_prompt_manager)
+
+    # Create an observation with image URLs
+    obs = IPythonRunCellObservation(
+        content='Test output',
+        code="print('test')",
+        image_urls=['data:image/png;base64,abc123'],
+    )
+
+    # Process the observation with vision disabled
+    messages = memory._process_observation(
+        obs=obs,
+        tool_call_id_to_message={},
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Check that the message contains only text content
+    assert len(messages) == 1
+    message = messages[0]
+    assert len(message.content) == 1
+    assert isinstance(message.content[0], TextContent)
