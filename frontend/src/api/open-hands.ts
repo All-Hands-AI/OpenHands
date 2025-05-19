@@ -93,7 +93,7 @@ class OpenHands {
   static getHeaders(): AxiosHeaders {
     const headers = new AxiosHeaders();
     if (this.sessionApiKey) {
-      headers.set("A-API-Key", this.sessionApiKey);
+      headers.set("X-Session-API-Key", this.sessionApiKey);
     }
     return headers;
   }
