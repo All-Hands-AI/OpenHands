@@ -61,6 +61,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    context_msg: str | None = None
 
     model_config = {'extra': 'forbid'}
 
@@ -82,6 +83,7 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
+    context_msg: str | None = None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ) -> AgentLoopInfo:
@@ -120,6 +122,7 @@ async def _create_new_conversation(
     session_init_args['selected_repository'] = selected_repository
     session_init_args['custom_secrets'] = custom_secrets
     session_init_args['selected_branch'] = selected_branch
+    session_init_args['context_msg'] = context_msg
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -195,6 +198,7 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     git_provider = data.git_provider
+    context_msg = data.context_msg
 
     conversation_trigger = ConversationTrigger.GUI
 
@@ -222,6 +226,7 @@ async def new_conversation(
             image_urls=image_urls,
             replay_json=replay_json,
             conversation_trigger=conversation_trigger,
+            context_msg=context_msg
         )
 
         return InitSessionResponse(

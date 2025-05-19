@@ -290,7 +290,10 @@ class Memory:
             self.repository_info = None
 
     def set_runtime_info(
-        self, runtime: Runtime, custom_secrets_descriptions: dict[str, str]
+        self,
+        runtime: Runtime,
+        contextual_info: str,
+        custom_secrets_descriptions: dict[str, str],
     ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
@@ -302,11 +305,14 @@ class Memory:
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
+                contextual_info=contextual_info,
                 custom_secrets_descriptions=custom_secrets_descriptions,
             )
         else:
             self.runtime_info = RuntimeInfo(
-                date=date, custom_secrets_descriptions=custom_secrets_descriptions
+                date=date,
+                contextual_info=contextual_info,
+                custom_secrets_descriptions=custom_secrets_descriptions,
             )
 
     def send_error_message(self, message_id: str, message: str):
