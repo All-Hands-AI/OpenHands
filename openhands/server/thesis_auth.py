@@ -29,7 +29,7 @@ class ThesisUser(BaseModel):
 
 thesis_auth_client = httpx.AsyncClient(
     timeout=30.0,
-    base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
+    base_url=os.getenv('THESIS_AUTH_SERVER_URL', ''),
     headers={'Content-Type': 'application/json'},
 )
 
