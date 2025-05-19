@@ -27,8 +27,7 @@ class RepositoryInfo:
 
 
 class PromptManager:
-    """
-    Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
+    """Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
 
     This class is dedicated to loading and rendering prompts (system prompt, user prompt).
 
@@ -59,8 +58,9 @@ class PromptManager:
         return self.system_template.render().strip()
 
     def get_example_user_message(self) -> str:
-        """This is an initial user message that can be provided to the agent
-        before *actual* user instructions are provided.
+        """This is an initial user message that can be provided to the agent.
+        
+        Before *actual* user instructions are provided.
 
         It can be used to provide a demonstration of how the agent
         should behave in order to solve the user's task. And it may
@@ -68,7 +68,6 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
-
         return self.user_template.render().strip()
 
     def build_workspace_context(
