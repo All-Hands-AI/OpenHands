@@ -83,8 +83,8 @@ prompt-toolkit = "^3.0.50"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 pythonnet = "*"
-mcp = "1.7.1"
-mcpm = "1.9.0"
+mcp = "1.9.0"
+mcpm = "1.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.10"
