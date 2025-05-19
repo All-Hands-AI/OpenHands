@@ -61,6 +61,9 @@ class SuggestedTask(BaseModel):
                 'ciSystem': 'Azure Pipelines',
                 'ciProvider': 'Azure DevOps',
                 'requestVerb': 'pull request',
+                'work item': 'work item',
+                'repository': 'repository',
+                'pull request': 'pull request',
             }
 
         raise ValueError(f'Provider {self.git_provider} for suggested task prompts')

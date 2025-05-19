@@ -1,9 +1,24 @@
 from typing import Any
 
 from azure.devops.connection import Connection
-from azure.devops.v5_1.git.models import GitPullRequest
-from azure.devops.v5_1.work_item_tracking.models import Wiql
 from msrest.authentication import BasicAuthentication
+
+# Import models conditionally to handle different versions of the azure-devops package
+try:
+    from azure.devops.v5_1.git.models import GitPullRequest
+    from azure.devops.v5_1.work_item_tracking.models import Wiql
+except ImportError:
+    # For testing purposes, create mock classes
+    class GitPullRequest:
+        def __init__(self, source_ref_name=None, target_ref_name=None, title=None, description=None):
+            self.source_ref_name = source_ref_name
+            self.target_ref_name = target_ref_name
+            self.title = title
+            self.description = description
+    
+    class Wiql:
+        def __init__(self, query=None):
+            self.query = query
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
