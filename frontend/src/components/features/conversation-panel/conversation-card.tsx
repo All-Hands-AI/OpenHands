@@ -116,7 +116,7 @@ export function ConversationCard({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const data = await OpenHands.getVSCodeUrl(conversationId)
+        const data = await OpenHands.getVSCodeUrl(conversationId);
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {
