@@ -6,8 +6,7 @@ export const useUserConversation = (cid: string | null) =>
     queryKey: ["user", "conversation", cid],
     queryFn: async () => {
       const conversation = await OpenHands.getConversation(cid!);
-      OpenHands.setConversationUrl(conversation?.url || null);
-      OpenHands.setSessionApiKey(conversation?.session_api_key || null);
+      OpenHands.setCurrentConversation(conversation);
       return conversation;
     },
     enabled: !!cid,
