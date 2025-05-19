@@ -18,15 +18,11 @@ export const jupyterSlice = createSlice({
       state.cells.push({ content: action.payload, type: "input" });
     },
     appendJupyterOutput: (state, action) => {
-      if (typeof action.payload === "string") {
-        state.cells.push({ content: action.payload, type: "output" });
-      } else {
-        state.cells.push({
-          content: action.payload.content,
-          type: "output",
-          imageUrls: action.payload.imageUrls,
-        });
-      }
+      state.cells.push({
+        content: action.payload.content,
+        type: "output",
+        imageUrls: action.payload.imageUrls,
+      });
     },
     clearJupyter: (state) => {
       state.cells = [];
