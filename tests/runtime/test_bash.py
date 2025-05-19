@@ -69,7 +69,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         if runtime_cls == CLIRuntime:
             assert isinstance(obs_interrupt, ErrorObservation)
             assert (
-                'CLIRuntime does not support input from the agent.'
+                "CLIRuntime does not support interactive input or signals (e.g., 'C-c'). The command 'C-c' was not sent to any process."
                 in obs_interrupt.content
             )
             assert obs_interrupt.error_id == 'AGENT_ERROR$BAD_ACTION'
@@ -155,7 +155,11 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
             kill_obs = runtime.run_action(kill_action)
             logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
             assert isinstance(kill_obs, CmdOutputObservation)
-            assert kill_obs.exit_code == 1
+            # For CLIRuntime, bash -c "cmd &" exits quickly, orphaning "cmd".
+            # CLIRuntime's timeout tries to kill the already-exited bash -c.
+            # The orphaned http.server continues running.
+            # So, pkill should find and kill the server.
+            assert kill_obs.exit_code == 0
         else:
             # Original behavior for other runtimes (e.g., DockerRuntime, LocalRuntime on Windows)
             assert obs.exit_code == 0  # Should not timeout as '&' backgrounds properly
@@ -293,6 +297,10 @@ done && echo "success"
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime uses bash -c which handles newline-separated commands. This test expects rejection. See test_cliruntime_multiple_newline_commands.',
+)
 def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     if is_windows():
         cmds = [
@@ -350,6 +358,45 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
             'hello\nworld\nare\nyou\n\nthere?' in results[5]
         )  # echo -e with literal newlines
         assert 'hello\nworld "' in results[6]  # echo -e with quote
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
+    # This test is specific to CLIRuntime
+    runtime_cls = CLIRuntime
+    if is_windows():
+        # Minimal check for Windows if CLIRuntime were to support it robustly with PowerShell for this.
+        # For now, this test primarily targets the bash -c behavior on non-Windows.
+        pytest.skip(
+            'CLIRuntime newline command test primarily for non-Windows bash behavior'
+        )
+        # cmds = [
+        #     'Get-ChildItem -Name .git_config', # Simpler command
+        #     'Write-Output "hello`nworld"'
+        # ]
+        # expected_outputs = ['.git_config', 'hello\nworld']
+    else:
+        cmds = [
+            'ls -l .bashrc',  # A command that will likely produce some output
+            'echo -e "hello\nworld"',
+            """echo -e "hello it's me\"""",
+        ]
+        expected_outputs = [
+            '.bashrc',
+            'hello\nworld',
+            "hello it's me",
+        ]  # Simplified expectations
+    joined_cmds = '\n'.join(cmds)
+
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        obs = _run_cmd_action(runtime, joined_cmds)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        # Check that parts of each command's expected output are present
+        for expected_part in expected_outputs:
+            assert expected_part in obs.content
     finally:
         _close_test_runtime(runtime)
 

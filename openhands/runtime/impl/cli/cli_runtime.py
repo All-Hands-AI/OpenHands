@@ -188,25 +188,49 @@ class CLIRuntime(Runtime):
 
         try:
             # Try to terminate/kill the entire process group
-            pgid_to_kill = os.getpgid(pid)
+            logger.debug(f'[_safe_terminate_process] Original PID to act on: {pid}')
+            pgid_to_kill = os.getpgid(
+                pid
+            )  # This might raise ProcessLookupError if pid is already gone
             logger.debug(
-                f'Attempting to {group_desc} for PID {pid} (PGID: {pgid_to_kill}) with {signal_to_send}.'
+                f'[_safe_terminate_process] Attempting to {group_desc} for PID {pid} (PGID: {pgid_to_kill}) with {signal_to_send}.'
             )
             os.killpg(pgid_to_kill, signal_to_send)
             logger.debug(
-                f'Terminated {group_desc} (PGID: {pgid_to_kill}, original PID: {pid}).'
+                f'[_safe_terminate_process] Successfully sent signal {signal_to_send} to PGID {pgid_to_kill} (original PID: {pid}).'
             )
-        except (ProcessLookupError, AttributeError, OSError):
+        except ProcessLookupError as e_pgid:
+            logger.warning(
+                f'[_safe_terminate_process] ProcessLookupError getting PGID for PID {pid} (it might have already exited): {e_pgid}. Falling back to direct kill/terminate.'
+            )
+            try:
+                if signal_to_send == signal.SIGKILL:
+                    process_obj.kill()
+                else:
+                    process_obj.terminate()
+                logger.debug(
+                    f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).'
+                )
+            except Exception as e_fallback:
+                logger.error(
+                    f'[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}'
+                )
+        except (AttributeError, OSError) as e_os:
+            logger.error(
+                f'[_safe_terminate_process] OSError/AttributeError during {group_desc} for PID {pid}: {e_os}. Falling back.'
+            )
             # Fallback: try to terminate/kill the main process directly.
             try:
                 if signal_to_send == signal.SIGKILL:
                     process_obj.kill()
                 else:
                     process_obj.terminate()
-                logger.debug(f'Terminated {process_desc} (PID: {pid}).')
+                logger.debug(
+                    f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).'
+                )
             except Exception as e_fallback:
                 logger.error(
-                    f'Error during fallback {process_desc} (PID: {pid}): {e_fallback}'
+                    f'[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}'
                 )
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -340,7 +364,7 @@ class CLIRuntime(Runtime):
                 'This action will be ignored and an error observation will be returned.'
             )
             return ErrorObservation(
-                content=f"CLIRuntime does not support interactive input or signals (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
+                content=f"CLIRuntime does not support interactive input from the agent (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
                 error_id='AGENT_ERROR$BAD_ACTION',
             )
 
