@@ -1,4 +1,5 @@
 enum TabOption {
+  STATUS = "status",
   PLANNER = "planner",
   BROWSER = "browser",
   JUPYTER = "jupyter",
@@ -6,12 +7,14 @@ enum TabOption {
 }
 
 type TabType =
+  | TabOption.STATUS
   | TabOption.PLANNER
   | TabOption.BROWSER
   | TabOption.JUPYTER
   | TabOption.VSCODE;
 
 const AllTabs = [
+  TabOption.STATUS,
   TabOption.VSCODE,
   TabOption.BROWSER,
   TabOption.PLANNER,
