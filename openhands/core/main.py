@@ -129,7 +129,8 @@ async def run_controller(
         )
 
     # Add MCP tools to the agent
-    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+    if agent.config.enable_mcp:
+        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
