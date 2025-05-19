@@ -23,6 +23,7 @@ export interface IPythonObservation
   source: "agent";
   extras: {
     code: string;
+    image_urls?: string[];
   };
 }
 
