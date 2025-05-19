@@ -119,6 +119,11 @@ function isExcludedTechnicalString(str) {
   return EXCLUDED_TECHNICAL_STRINGS.includes(str);
 }
 
+function isLikelyCode(str) {
+  // Check that the string contains an underscore but not a space - it is likely a code.
+  return /^_?[^\s]*_?[^\s]*$/.test.str(str)
+}
+
 function isCommonDevelopmentString(str) {
   // Technical patterns that are definitely not UI strings
   const technicalPatterns = [
@@ -399,6 +404,10 @@ function isLikelyUserFacingText(str) {
   // First, check if it's a common development string (not user-facing)
   if (isCommonDevelopmentString(str)) {
     return false;
+  }
+
+  if (isLikelyCode(str)) {
+    return false
   }
 
   // Multi-word phrases are likely UI text

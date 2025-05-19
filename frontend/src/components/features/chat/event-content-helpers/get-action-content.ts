@@ -111,7 +111,7 @@ export const getActionContent = (event: OpenHandsAction): string => {
       return getIPythonActionContent(event);
     case "browse":
       return getBrowseActionContent(event);
-    case i18n.t("ACTION$BROWSE_INTERACTIVE"):
+    case "browse_interactive":
       return getBrowseInteractiveActionContent(event);
     case "call_tool_mcp":
       return getMcpActionContent(event);

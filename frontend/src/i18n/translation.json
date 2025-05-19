@@ -207,22 +207,6 @@
         "de": "Ein Fehler ist aufgetreten",
         "uk": "Сталася помилка"
     },
-    "ACTION$BROWSE_INTERACTIVE": {
-        "en": "browse_interactive",
-        "ja": "browse_interactive",
-        "zh-CN": "browse_interactive",
-        "zh-TW": "browse_interactive",
-        "ko-KR": "browse_interactive",
-        "no": "browse_interactive",
-        "it": "browse_interactive",
-        "pt": "browse_interactive",
-        "es": "browse_interactive",
-        "ar": "browse_interactive",
-        "fr": "browse_interactive",
-        "tr": "browse_interactive",
-        "de": "browse_interactive",
-        "uk": "browse_interactive"
-    },
     "SECRETS$SECRET_VALUE_REQUIRED": {
         "en": "Secret value is required",
         "ja": "シークレット値は必須です",
