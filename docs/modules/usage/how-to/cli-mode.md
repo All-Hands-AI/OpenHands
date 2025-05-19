@@ -1,17 +1,17 @@
 # CLI Mode
 
-CLI mode provides a powerful interactive Command-Line Interface (CLI) that lets you engage with OpenHands directly from your terminal.
+CLI mode provides a powerful interactive Command-Line Interface (CLI) that lets you engage with OpenHands directly
+from your terminal.
 
 This mode is different from the [headless mode](headless-mode), which is non-interactive and better for scripting.
 
 ## Getting Started
 
-### Prerequisites
-- Ensure you have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-- You will need your LLM model name and API key.
-
 ### Running with Python
-To launch an interactive OpenHands conversation from the command line:
+
+1. Ensure you have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+2. Set your model, API key, and other preferences using environment variables or with the [`config.toml`](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) file.
+3. Launch an interactive OpenHands conversation from the command line:
 
 ```bash
 poetry run python -m openhands.cli.main
@@ -19,24 +19,19 @@ poetry run python -m openhands.cli.main
 
 This command opens an interactive prompt where you can type tasks or commands and get responses from OpenHands.
 
-You can set your model, API key, and other preferences using environment variables or with the [`config.toml`](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) file.
-
 ### Running with Docker
-To use OpenHands CLI mode with Docker:
 
 1. Set the following environment variables in your terminal:
-   - `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access (Ex: `export SANDBOX_VOLUMES=$(pwd)/workspace:/workspace:rw`).
-      - The agent works in `/workspace` by default, so mount your project directory there if you want the agent to modify files.
-      - For read-only data, use a different mount path (Ex: `export SANDBOX_VOLUMES=$(pwd)/workspace:/workspace:rw,/path/to/large/dataset:/data:ro`).
-   - `LLM_MODEL` — the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`)
-   - `LLM_API_KEY` — your API key (e.g. `export LLM_API_KEY="sk_test_12345"`)
+   - `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access ([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes))
+   - `LLM_MODEL` - the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-3-7-sonnet-20250219"`)
+   - `LLM_API_KEY` - your API key (e.g. `export LLM_API_KEY="sk_test_12345"`)
 
 2. Run the following command:
 
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.37-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -45,7 +40,7 @@ docker run -it \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.37 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.38 \
     python -m openhands.cli.main
 ```
 
@@ -53,22 +48,19 @@ This launches the CLI in Docker, allowing you to interact with OpenHands as desc
 
 The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
 
----
-
 ## Interactive CLI Overview
 
 ### What is CLI Mode?
-CLI mode enables real-time interaction with OpenHands agents. You can type natural language tasks, use interactive commands, and receive instant feedback—all inside your terminal.
+
+CLI mode enables real-time interaction with OpenHands agents. You can type natural language tasks, use interactive
+commands, and receive instant feedback—all inside your terminal.
 
 ### Starting a Conversation
-When you start the CLI, you'll see a welcome message and a prompt (`>`). Enter your first task or type a command to begin your conversation.
 
-### Entering Tasks
-Type your request (for example, "Refactor the utils.py file to improve readability") and press Enter. The agent will process your input and reply.
+When you start the CLI, you'll see a welcome message and a prompt (`>`). Enter your first task or type a command to
+begin your conversation.
 
----
-
-## Available Commands
+### Available Commands
 
 You can use the following commands whenever the prompt (`>`) is displayed:
 
@@ -82,30 +74,25 @@ You can use the following commands whenever the prompt (`>`) is displayed:
 | `/settings`  | View and modify current LLM/agent settings                     |
 | `/resume`    | Resume the agent if paused                                     |
 
----
+#### Settings and Configuration
 
-## Settings and Configuration
-
-You can update your model, API key, agent, and other preferences interactively using the `/settings` command. Just follow the prompts:
+You can update your model, API key, agent, and other preferences interactively using the `/settings` command. Just
+follow the prompts:
 
 - **Basic settings**: Choose a model/provider and enter your API key.
 - **Advanced settings**: Set custom endpoints, enable or disable confirmation mode, and configure memory condensation.
 
 Settings can also be managed via the `config.toml` file.
 
----
+#### Repository Initialization
 
-## Repository Initialization
+The `/init` command helps the agent understand your project by creating a `.openhands/microagents/repo.md` file with
+project details and structure. Use this when onboarding the agent to a new codebase.
 
-The `/init` command helps the agent understand your project by creating a `.openhands/microagents/repo.md` file with project details and structure. Use this when onboarding the agent to a new codebase.
+#### Agent Pause/Resume Feature
 
----
-
-## Agent Pause/Resume Feature
-
-You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply type `/resume` at the prompt.
-
----
+You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
+type `/resume` at the prompt.
 
 ## Tips and Troubleshooting
 

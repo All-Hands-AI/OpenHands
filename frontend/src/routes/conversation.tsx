@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,6 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -34,7 +33,6 @@ import Security from "#/components/shared/modals/security/security";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
@@ -49,9 +47,7 @@ function AppContent() {
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -71,25 +67,11 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
-    }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
@@ -200,11 +182,6 @@ function AppContent() {
           >
             {/* Use both Outlet and TabContent */}
             <div className="h-full w-full">
-              {/* Keep the Outlet for React Router to work properly */}
-              <div className="hidden">
-                <Outlet />
-              </div>
-              {/* Use TabContent to keep all tabs loaded but only show the active one */}
               <TabContent conversationPath={basePath} />
             </div>
           </Container>

@@ -15,9 +15,11 @@ A useful feature is the ability to connect to your local filesystem. To mount yo
 The simplest way to mount your local filesystem is to use the `SANDBOX_VOLUMES` environment variable:
 
 ```bash
+export SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw
+
 docker run # ...
     -e SANDBOX_USER_ID=$(id -u) \
-    -e SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw \
+    -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     # ...
 ```
 
@@ -32,23 +34,23 @@ The `SANDBOX_VOLUMES` format is `host_path:container_path[:mode]` where:
 You can also specify multiple mounts by separating them with commas (`,`):
 
 ```bash
--e SANDBOX_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
+export SANDBOX_VOLUMES=/path1:/workspace/path1,/path2:/workspace/path2:ro
 ```
 
 Examples:
 
 ```bash
 # Linux and Mac Example - Writable workspace
--e SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
+export SANDBOX_VOLUMES=$HOME/OpenHands:/workspace:rw
 
 # WSL on Windows Example - Writable workspace
--e SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
+export SANDBOX_VOLUMES=/mnt/c/dev/OpenHands:/workspace:rw
 
 # Read-only reference code example
--e SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
+export SANDBOX_VOLUMES=/path/to/reference/code:/data:ro
 
 # Multiple mounts example - Writable workspace with read-only reference data
--e SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
+export SANDBOX_VOLUMES=$HOME/projects:/workspace:rw,/path/to/large/dataset:/data:ro
 ```
 
 ### Using WORKSPACE_* variables (Deprecated)

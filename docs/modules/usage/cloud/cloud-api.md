@@ -1,6 +1,6 @@
 # OpenHands Cloud API
 
-OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This is useful if 
+OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This is useful if
 you want to kick off your own jobs from your programs in a flexible way.
 
 This guide explains how to obtain an API key and use the API to start conversations.
@@ -70,7 +70,7 @@ data = {
 response = requests.post(url, headers=headers, json=data)
 conversation = response.json()
 
-print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['id']}")
+print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['conversation_id']}")
 print(f"Status: {conversation['status']}")
 ```
 </details>

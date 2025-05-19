@@ -6,6 +6,7 @@ import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { TaskIssueNumber } from "./task-issue-number";
 import { Provider } from "#/types/settings";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -21,6 +22,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
+  const { setOptimisticUserMessage } = useOptimisticUserMessage();
   const { data: repositories } = useUserRepositories();
   const { mutate: createConversation, isPending } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
@@ -38,9 +40,9 @@ export function TaskCard({ task }: TaskCardProps) {
 
   const handleLaunchConversation = () => {
     const repo = getRepo(task.repo, task.git_provider);
+    setOptimisticUserMessage("Addressing task...");
 
     return createConversation({
-      conversation_trigger: "suggested_task",
       selectedRepository: repo,
       suggested_task: task,
     });

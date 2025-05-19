@@ -360,7 +360,7 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
-            # replace base64 images with a placeholder
+            # Clean up any remaining base64 images in text content
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
@@ -369,7 +369,15 @@ class ConversationMemory:
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+
+            # Create message content with text
+            content = [TextContent(text=text)]
+
+            # Add image URLs if available and vision is active
+            if vision_is_active and obs.image_urls:
+                content.append(ImageContent(image_urls=obs.image_urls))
+
+            message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
@@ -451,9 +459,13 @@ class ConversationMemory:
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(date=date)
+                    runtime_info = RuntimeInfo(
+                        date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                    )
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
