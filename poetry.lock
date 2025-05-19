@@ -10268,6 +10268,39 @@ docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.2,!=7.3)", "s
 test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8) ; platform_python_implementation == \"PyPy\" or platform_python_implementation == \"CPython\" and sys_platform == \"win32\" and python_version >= \"3.13\"", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10) ; platform_python_implementation == \"CPython\""]
 
 [[package]]
+name = "visualswebench"
+version = "0.0.0"
+description = ""
+optional = false
+python-versions = ">=3.8"
+groups = ["evaluation"]
+files = []
+develop = false
+
+[package.dependencies]
+beautifulsoup4 = "*"
+chardet = "*"
+datasets = "*"
+docker = "*"
+ghapi = "*"
+GitPython = "*"
+pre-commit = "*"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+tqdm = "*"
+unidiff = "*"
+
+[package.extras]
+inference = ["anthropic", "flash_attn", "jedi", "peft", "protobuf", "sentencepiece", "tenacity", "tiktoken", "torch", "transformers", "triton"]
+
+[package.source]
+type = "git"
+url = "https://github.com/luolin101/Visual-SWE-bench.git"
+reference = "HEAD"
+resolved_reference = "e12d06686202a778956bf4faa65330be23feb23e"
+
+[[package]]
 name = "watchdog"
 version = "6.0.0"
 description = "Filesystem events monitoring"
@@ -11265,4 +11298,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "998d731b9d5cfa2239ef2019e95b681c44c70294f467cf9fdadbf2d551422ebe"
+content-hash = "ec27b6dd2c921943bfb18a4162f12b25fe54a13ceb816252e440d7212256f40b"
