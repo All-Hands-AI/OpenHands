@@ -142,6 +142,20 @@ class OpenHands {
   }
 
   /**
+   * Get the web hosts
+   * @returns Array of web hosts
+   */
+  static async getWebHosts(conversationId: string): Promise<string[]> {
+    const baseUrl =
+      this.conversationUrl || `/api/conversations/${conversationId}`;
+    const url = `${baseUrl}/web-hosts`;
+    const response = await openHands.get(url, {
+      headers: this.getHeaders(),
+    });
+    return Object.keys(response.data.hosts);
+  }
+
+  /**
    * @param code Code provided by GitHub
    * @returns GitHub access token
    */
