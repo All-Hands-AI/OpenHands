@@ -15,9 +15,10 @@ import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
-import { selectSystemMessage } from "#/state/chat-slice";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
+import { useWsClient } from "#/context/ws-client-provider";
+import { isSystemMessage } from "#/types/core/guards";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -53,15 +54,17 @@ export function ConversationCard({
   conversationId,
 }: ConversationCardProps) {
   const { t } = useTranslation();
+  const { parsedEvents } = useWsClient();
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const systemMessage = parsedEvents.find(isSystemMessage);
+
   // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);
-  const systemMessage = useSelector(selectSystemMessage);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -113,12 +116,7 @@ export function ConversationCard({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const baseUrl =
-          OpenHands.getConversationUrl() ||
-          `/api/conversations/${conversationId}`;
-        const response = await fetch(`${baseUrl}/vscode-url`);
-        const data = await response.json();
-
+        const data = await OpenHands.getVSCodeUrl(conversationId)
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {
@@ -367,7 +365,7 @@ export function ConversationCard({
       <SystemMessageModal
         isOpen={systemModalVisible}
         onClose={() => setSystemModalVisible(false)}
-        systemMessage={systemMessage}
+        systemMessage={systemMessage ? systemMessage.args : null}
       />
     </>
   );

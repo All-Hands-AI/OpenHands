@@ -11,7 +11,7 @@ import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
 const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
     {
-      Component: TaskSuggestions,
+      Component: () => <TaskSuggestions />,
       path: "/",
     },
     {
