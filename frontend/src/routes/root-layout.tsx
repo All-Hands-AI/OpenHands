@@ -83,10 +83,10 @@ export default function MainApp() {
   const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
-  
+
   // Track the last visited page
   useTrackLastPage();
-  
+
   // Auto-login if login method is stored in local storage
   useAutoLogin();
 

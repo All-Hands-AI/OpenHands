@@ -1,13 +1,13 @@
 // Local storage keys
 export const LOCAL_STORAGE_KEYS = {
-  LOGIN_METHOD: 'openhands_login_method',
-  LAST_PAGE: 'openhands_last_page',
+  LOGIN_METHOD: "openhands_login_method",
+  LAST_PAGE: "openhands_last_page",
 };
 
 // Login methods
 export enum LoginMethod {
-  GITHUB = 'github',
-  GITLAB = 'gitlab',
+  GITHUB = "github",
+  GITLAB = "gitlab",
 }
 
 /**
@@ -39,9 +39,8 @@ export const setLastPage = (path: string): void => {
  * Get the last visited page from local storage
  * @returns The last visited page or null if not set
  */
-export const getLastPage = (): string | null => {
-  return localStorage.getItem(LOCAL_STORAGE_KEYS.LAST_PAGE);
-};
+export const getLastPage = (): string | null =>
+  localStorage.getItem(LOCAL_STORAGE_KEYS.LAST_PAGE);
 
 /**
  * Clear login method and last page from local storage
@@ -56,7 +55,5 @@ export const clearLoginData = (): void => {
  * @param path The path to check
  * @returns True if the path should be excluded, false otherwise
  */
-export const shouldExcludePath = (path: string): boolean => {
-  // Exclude settings pages and root app URL
-  return path.startsWith('/settings') || path === '/';
-};
+export const shouldExcludePath = (path: string): boolean =>
+  path.startsWith("/settings") || path === "/";
