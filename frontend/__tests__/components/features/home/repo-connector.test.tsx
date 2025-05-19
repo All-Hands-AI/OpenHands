@@ -22,7 +22,7 @@ const renderRepoConnector = () => {
       path: "/conversations/:conversationId",
     },
     {
-      Component: Outlet,
+      Component: () => <Outlet />,
       path: "/settings",
       children: [
         {

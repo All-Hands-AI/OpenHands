@@ -24,6 +24,10 @@ export function JupyterCellOutput({ lines }: JupyterCellOutputProps) {
         {/* display the lines as plaintext or image */}
         {lines.map((line, index) => {
           if (line.type === "image") {
+            // Use markdown to display the image
+            const imageMarkdown = line.url
+              ? `![image](${line.url})`
+              : line.content;
             return (
               <div key={index}>
                 <Markdown
@@ -32,7 +36,7 @@ export function JupyterCellOutput({ lines }: JupyterCellOutputProps) {
                   }}
                   urlTransform={(value: string) => value}
                 >
-                  {line.content}
+                  {imageMarkdown}
                 </Markdown>
               </div>
             );
