@@ -38,8 +38,6 @@ from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.import_utils import get_impl
 
 
-#TODO: This works so fundamentally differently than the previous impl it should not extend it.
-# Extend ConversationManager as soon as we have all methods
 @dataclass
 class DockerNestedConversationManager(ConversationManager):
     """Conversation manager where the agent loops exist inside the docker containers."""
@@ -51,11 +49,11 @@ class DockerNestedConversationManager(ConversationManager):
     _conversation_store_class: type[ConversationStore] | None = None
 
     async def __aenter__(self):
-        #return await super().__aenter__()
+        # No action is required on startup for this implementation
         pass
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        #return await super().__aexit__(exc_type, exc_value, traceback)
+        # No action is required on shutdown for this implementation
         pass
 
     async def attach_to_conversation(
@@ -134,7 +132,7 @@ class DockerNestedConversationManager(ConversationManager):
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            session_api_key='notsecure',
+            session_api_key=self.get_session_api_key_for_conversation(sid),
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
@@ -176,28 +174,8 @@ class DockerNestedConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-        # Maybe we just create a runtime here.
-        # We also attach runtimes
-        """
-        if self.runtime_container_image is None:
-            config = self.config
-            builder = DockerRuntimeBuilder(self.docker_client)
-            base_container_image = self.config.sandbox.base_container_image
-            if base_container_image is None:
-                raise ValueError(
-                    'Neither runtime container image nor base container image is set'
-                )
-            self.runtime_container_image = build_runtime_image(
-                base_container_image,
-                builder,
-                platform=config.sandbox.platform,
-                extra_deps=config.sandbox.runtime_extra_deps,
-                force_rebuild=config.sandbox.force_rebuild_runtime,
-                extra_build_args=config.sandbox.runtime_extra_build_args,
-            )
-        """
-
-        # I think we need to change the API here. The manager should not need a session
+        # This session is created here only because it is the easiest way to get a runtime, which
+        # is the easiest way to create the needed docker container
         session = Session(
             sid=sid,
             file_store=self.file_store,
@@ -228,11 +206,11 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
         env_vars['CONVERSATION_ID'] = sid
-        #env_vars['SANDBOX_USER_ID'] = 1000
         env_vars['USER'] = 'CURRENT_USER'
-        env_vars['SESSION_API_KEY'] = 'notsecure'
+        env_vars['SESSION_API_KEY'] = self.get_session_api_key_for_conversation(sid)
 
-        # This eventstream is never used - I only add it because it is required in order to create a docker runtime
+        # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
+        # In the long term we should use a mounted volume
         event_stream = EventStream(sid, self.file_store, user_id)
 
         runtime = DockerRuntime(
@@ -251,15 +229,15 @@ class DockerNestedConversationManager(ConversationManager):
         
         await runtime.connect()
 
-        # TODO: After we start the nested server, we need to initialize the conversation
-        async with httpx.AsyncClient(headers={'X-Session-API-Key': 'notsecure'}) as client:
-            #setup the settings...
+        async with httpx.AsyncClient(headers={'X-Session-API-Key': self.get_session_api_key_for_conversation(sid)}) as client:
+            # setup the settings...
             settings_json = settings.model_dump(context={'expose_secrets': True})
             settings_json.pop('git_provider_tokens', None)
             settings_json.pop('custom_secrets', None)
-            response = await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
+            await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
 
-            response = await client.post(f"{runtime.api_url}/api/conversations", json={
+            # Create conversation
+            await client.post(f"{runtime.api_url}/api/conversations", json={
                 "initial_user_msg": initial_user_msg,
                 "image_urls": [],
                 "repository": settings.selected_repository,
@@ -269,26 +247,12 @@ class DockerNestedConversationManager(ConversationManager):
             })              
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
-        logger.info('DockerNestedConversationManager:send_to_event_stream', extra={
-            "connection_id": connection_id,
-            "data": data,
-        })
-        # TODO:
-        # Connect to sandbox and send event
         raise ValueError('unsupported_operation')
 
     async def disconnect_from_session(self, connection_id: str):
-        logger.info('DockerNestedConversationManager:disconnect_from_session', extra={
-            "connection_id": connection_id,
-        })
-        # TODO:
-        # Disconnect from session
         raise ValueError('unsupported_operation')
 
     async def close_session(self, sid: str):
-        logger.info('DockerNestedConversationManager:close_session', extra={
-            "sid": sid,
-        })
         stop_all_containers(f'openhands-runtime-{sid}')
 
     async def get_agent_loop_info(self, user_id = None, filter_to_sids = None):
@@ -303,7 +267,7 @@ class DockerNestedConversationManager(ConversationManager):
             agent_loop_info = AgentLoopInfo(
                 conversation_id=conversation_id,
                 url=nested_url,
-                session_api_key='notsecure',
+                session_api_key=self.get_session_api_key_for_conversation(conversation_id),
                 event_store=NestedEventStore(
                     base_url=nested_url,
                     sid=conversation_id,
@@ -323,13 +287,6 @@ class DockerNestedConversationManager(ConversationManager):
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener,
     ) -> ConversationManager:
-        #return DockerNestedConversationManager(
-        #    sio,
-        #    config,
-        #    file_store,
-        #    server_config,
-        #    monitoring_listener or MonitoringListener(),
-        #)
         return DockerNestedConversationManager(
             sio=sio,
             config=config,
@@ -357,6 +314,9 @@ class DockerNestedConversationManager(ConversationManager):
         conversation_id = container.name[len("openhands-runtime-"):]
         nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}/api/conversations/{conversation_id}'
         return nested_url
+    
+    def get_session_api_key_for_conversation(self, conversation_id: str):
+        return conversation_id
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
