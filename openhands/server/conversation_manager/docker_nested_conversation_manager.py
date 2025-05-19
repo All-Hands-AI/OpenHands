@@ -193,12 +193,12 @@ class DockerNestedConversationManager(ConversationManager):
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        git_provider_tokens = None
+        provider_tokens = None
         if isinstance(settings, ConversationInitData):
-            git_provider_tokens = settings.git_provider_tokens
+            provider_tokens = settings.git_provider_tokens
 
         provider_handler = ProviderHandler(
-            provider_tokens=git_provider_tokens
+            provider_tokens=provider_tokens
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
         )
         env_vars = await provider_handler.get_env_vars(expose_secrets=True)
@@ -232,18 +232,29 @@ class DockerNestedConversationManager(ConversationManager):
         async with httpx.AsyncClient(headers={'X-Session-API-Key': self.get_session_api_key_for_conversation(sid)}) as client:
             # setup the settings...
             settings_json = settings.model_dump(context={'expose_secrets': True})
-            settings_json.pop('git_provider_tokens', None)
             settings_json.pop('custom_secrets', None)
+            settings_json.pop('git_provider_tokens', None)
+            secrets_store = settings_json.pop('secrets_store', None)
             await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
+
+            # Setup provider tokens
+            provider_tokens_json = None
+            if provider_tokens:
+                provider_tokens_json = {
+                    k.value: v.token.get_secret_value()
+                    for k, v in provider_tokens.items()
+                    if v and v.token
+                }
 
             # Create conversation
             await client.post(f"{runtime.api_url}/api/conversations", json={
                 "initial_user_msg": initial_user_msg,
                 "image_urls": [],
                 "repository": settings.selected_repository,
-                #"git_provider": ,
+                "provider_tokens": provider_tokens_json,
                 "selected_branch": settings.selected_repository,
                 "initial_user_msg": initial_user_msg,
+                "user_secrets": secrets_store,
             })              
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
