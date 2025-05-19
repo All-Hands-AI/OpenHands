@@ -14,7 +14,7 @@ the GitLab API.
 You can use `curl` with the `GITLAB_TOKEN` to interact with GitLab's API.
 ALWAYS use the GitLab API for operations instead of a web browser.
 
-To open a pull request, always use the `create_pr` tool
+To open a merge request, always use the `create_pr` tool
 
 If you encounter authentication issues when pushing to GitLab (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://oauth2:${GITLAB_TOKEN}@gitlab.com/username/repo.git`
 
