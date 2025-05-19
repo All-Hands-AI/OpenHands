@@ -26,7 +26,12 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.storage.memory import InMemoryFileStore
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationContext,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 @pytest.fixture
@@ -443,11 +448,16 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
     )
 
+    conversation_context = ConversationContext(
+        context='additional agent context for the task'
+    )
+
     # Build the workspace context message
     workspace_context = prompt_manager.build_workspace_context(
         repository_info=repository_info,
         runtime_info=runtime_info,
         repo_instructions='Test repository instructions',
+        conversation_context=conversation_context,
     )
 
     # Verify that the workspace context includes the custom_secrets_descriptions
@@ -455,6 +465,9 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
     for secret_name, secret_description in custom_secrets.items():
         assert f'$**{secret_name}**' in workspace_context
         assert secret_description in workspace_context
+
+    assert '<CONTEXT_MESSAGE>' in workspace_context
+    assert 'additional agent context for the task' in workspace_context
 
 
 def test_serialization_deserialization_with_custom_secrets():
