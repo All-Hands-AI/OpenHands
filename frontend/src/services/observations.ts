@@ -21,8 +21,14 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.RUN_IPYTHON:
-      // FIXME: render this as markdown
-      store.dispatch(appendJupyterOutput(message.content));
+      store.dispatch(
+        appendJupyterOutput({
+          content: message.content,
+          imageUrls: Array.isArray(message.extras?.image_urls)
+            ? message.extras.image_urls
+            : undefined,
+        }),
+      );
       break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
