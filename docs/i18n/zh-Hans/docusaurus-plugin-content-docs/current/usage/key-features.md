@@ -1,29 +1,29 @@
-# OpenHands Feature Overview
+# OpenHands 功能概览
 
-![overview](/img/oh-features.png)
+![概览](/img/oh-features.png)
 
-### Chat Panel
-- Displays the conversation between the user and OpenHands.
-- OpenHands explains its actions in this panel.
+### 聊天面板
+- 显示用户与 OpenHands 之间的对话。
+- OpenHands 在此面板中解释其操作。
 
-### Changes
-- Shows the file changes performed by OpenHands.
+### 变更
+- 显示 OpenHands 执行的文件变更。
 
 ### VS Code
-- Embedded VS Code for browsing and modifying files.
-- Can also be used to upload and download files.
+- 嵌入式 VS Code，用于浏览和修改文件。
+- 也可用于上传和下载文件。
 
-### Terminal
-- A space for OpenHands and users to run terminal commands.
+### 终端
+- 供 OpenHands 和用户运行终端命令的空间。
 
 ### Jupyter
-- Shows all Python commands that were executed by OpenHands.
-- Particularly handy when using OpenHands to perform data visualization tasks.
+- 显示 OpenHands 执行的所有 Python 命令。
+- 在使用 OpenHands 执行数据可视化任务时特别有用。
 
-### App
-- Displays the web server when OpenHands runs an application.
-- Users can interact with the running application.
+### 应用
+- 当 OpenHands 运行应用程序时显示网络服务器。
+- 用户可以与正在运行的应用程序交互。
 
-### Browser
-- Used by OpenHands to browse websites.
-- The browser is non-interactive.
+### 浏览器
+- 由 OpenHands 用于浏览网站。
+- 浏览器是非交互式的。
