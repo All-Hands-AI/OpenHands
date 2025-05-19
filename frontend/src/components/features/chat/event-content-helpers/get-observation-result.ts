@@ -1,10 +1,13 @@
 import { OpenHandsObservation } from "#/types/core/observations";
+import i18n from "#/i18n";
 
 export type ObservationResultStatus = "success" | "error" | "timeout";
 
 export const getObservationResult = (event: OpenHandsObservation) => {
   const hasContent = event.content.length > 0;
-  const contentIncludesError = event.content.toLowerCase().includes("error:");
+  const contentIncludesError = event.content
+    .toLowerCase()
+    .includes(i18n.t("OBSERVATION$ERROR_PREFIX").toLowerCase());
 
   switch (event.observation) {
     case "run": {

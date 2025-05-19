@@ -11,18 +11,19 @@ import {
   FinishAction,
 } from "#/types/core/actions";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
+import i18n from "#/i18n";
 
 const getRiskText = (risk: ActionSecurityRisk) => {
   switch (risk) {
     case ActionSecurityRisk.LOW:
-      return "Low Risk";
+      return i18n.t("SECURITY$LOW_RISK");
     case ActionSecurityRisk.MEDIUM:
-      return "Medium Risk";
+      return i18n.t("SECURITY$MEDIUM_RISK");
     case ActionSecurityRisk.HIGH:
-      return "High Risk";
+      return i18n.t("SECURITY$HIGH_RISK");
     case ActionSecurityRisk.UNKNOWN:
     default:
-      return "Unknown Risk";
+      return i18n.t("SECURITY$UNKNOWN_RISK");
   }
 };
 
@@ -81,15 +82,14 @@ const getFinishActionContent = (event: FinishAction): string => {
 
   switch (event.args.task_completed) {
     case "success":
-      content +=
-        "\n\n\nI believe that the task was **completed successfully**.";
+      content += `\n\n\n${i18n.t("FINISH$TASK_COMPLETED_SUCCESSFULLY")}`;
       break;
     case "failure":
-      content += "\n\n\nI believe that the task was **not completed**.";
+      content += `\n\n\n${i18n.t("FINISH$TASK_NOT_COMPLETED")}`;
       break;
     case "partial":
     default:
-      content += "\n\n\nI believe that the task was **completed partially**.";
+      content += `\n\n\n${i18n.t("FINISH$TASK_COMPLETED_PARTIALLY")}`;
       break;
   }
 
@@ -111,7 +111,7 @@ export const getActionContent = (event: OpenHandsAction): string => {
       return getIPythonActionContent(event);
     case "browse":
       return getBrowseActionContent(event);
-    case "browse_interactive":
+    case i18n.t("ACTION$BROWSE_INTERACTIVE"):
       return getBrowseInteractiveActionContent(event);
     case "call_tool_mcp":
       return getMcpActionContent(event);
