@@ -1,7 +1,7 @@
 import io
 import re
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 import frontmatter
 from pydantic import BaseModel
@@ -134,7 +134,9 @@ class BaseMicroagent(BaseModel):
 
 
 class KnowledgeMicroagent(BaseMicroagent):
-    """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations. They help with:
+    """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations.
+
+    They help with:
     - Language best practices
     - Framework guidelines
     - Common patterns
@@ -209,7 +211,7 @@ class TaskMicroagent(KnowledgeMicroagent):
         prompt = "\n\nIf the user didn't provide any of these variables, ask the user to provide them first before the agent can proceed with the task."
         self.content += prompt
 
-    def extract_variables(self, content: str) -> List[str]:
+    def extract_variables(self, content: str) -> list[str]:
         """Extract variables from the content.
 
         Variables are in the format ${variable_name}.
@@ -229,7 +231,7 @@ class TaskMicroagent(KnowledgeMicroagent):
         return len(variables) > 0
 
     @property
-    def inputs(self) -> List[InputMetadata]:
+    def inputs(self) -> list[InputMetadata]:
         """Get the inputs for this microagent."""
         return self.metadata.inputs
 
