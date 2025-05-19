@@ -211,10 +211,7 @@ describe("HomeScreen", () => {
       retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
     });
 
-    it.skip("should disable the other launch buttons when the header launch button is clicked", async () => {
-      // This test is skipped because the current implementation doesn't disable all buttons
-      // when one is clicked. Each button has its own disabled state based on the isCreatingConversation
-      // hook, which is not easily mockable in this test environment.
+    it("should disable the other launch buttons when the header launch button is clicked", async () => {
       renderHomeScreen();
       const { headerLaunchButton, repoLaunchButton } =
         await setupLaunchButtons();
@@ -225,14 +222,14 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
 
-      // The header button should be disabled after clicking
       expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
     });
 
-    it.skip("should disable the other launch buttons when the repo launch button is clicked", async () => {
-      // This test is skipped because the current implementation doesn't disable all buttons
-      // when one is clicked. Each button has its own disabled state based on the isCreatingConversation
-      // hook, which is not easily mockable in this test environment.
+    it("should disable the other launch buttons when the repo launch button is clicked", async () => {
       renderHomeScreen();
       const { headerLaunchButton, repoLaunchButton } =
         await setupLaunchButtons();
@@ -243,14 +240,14 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
 
-      // The repo button should be disabled after clicking
+      expect(headerLaunchButton).toBeDisabled();
       expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
     });
 
-    it.skip("should disable the other launch buttons when any task launch button is clicked", async () => {
-      // This test is skipped because the current implementation doesn't disable all buttons
-      // when one is clicked. Each button has its own disabled state based on the isCreatingConversation
-      // hook, which is not easily mockable in this test environment.
+    it("should disable the other launch buttons when any task launch button is clicked", async () => {
       renderHomeScreen();
       const { headerLaunchButton, repoLaunchButton, tasksLaunchButtons } =
         await setupLaunchButtons();
@@ -261,8 +258,11 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
 
-      // The clicked task button should be disabled
-      expect(tasksLaunchButtons[0]).toBeDisabled();
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
     });
   });
 

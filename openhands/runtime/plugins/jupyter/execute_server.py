@@ -253,10 +253,6 @@ class JupyterKernel:
         # Remove ANSI from text content
         text_content = strip_ansi(text_content)
 
-        if os.environ.get('DEBUG'):
-            logging.info(f'TEXT OUTPUT:\n{text_content}')
-            logging.info(f'IMAGE OUTPUTS: {len(image_outputs)}')
-
         # Return a dictionary with text content and image URLs
         return {'text': text_content, 'images': image_outputs}
 
