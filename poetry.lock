@@ -5194,14 +5194,14 @@ files = [
 
 [[package]]
 name = "mcp"
-version = "1.8.0"
+version = "1.9.0"
 description = "Model Context Protocol SDK"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcp-1.8.0-py3-none-any.whl", hash = "sha256:889d9d3b4f12b7da59e7a3933a0acadae1fce498bfcd220defb590aa291a1334"},
-    {file = "mcp-1.8.0.tar.gz", hash = "sha256:263dfb700540b726c093f0c3e043f66aded0730d0b51f04eb0a3eb90055fe49b"},
+    {file = "mcp-1.9.0-py3-none-any.whl", hash = "sha256:9dfb89c8c56f742da10a5910a1f64b0d2ac2c3ed2bd572ddb1cfab7f35957178"},
+    {file = "mcp-1.9.0.tar.gz", hash = "sha256:905d8d208baf7e3e71d70c82803b89112e321581bcd2530f9de0fe4103d28749"},
 ]
 
 [package.dependencies]
@@ -11425,4 +11425,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "48edb331db04909eceec1bc874a16e5baedcedd0a92fabf01af7d13ebc85ff8d"
+content-hash = "12cc55a76bbe0bcff936b26ab32be5a1c641ca636ab363115f8ba7b80489fedf"
