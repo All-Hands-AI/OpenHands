@@ -68,11 +68,12 @@ export const chatSlice = createSlice({
         imageUrls: string[];
         timestamp: string;
         pending?: boolean;
+        isSystemMessage?: boolean;
       }>,
     ) {
       const message: Message = {
         type: "thought",
-        sender: "user",
+        sender: action.payload.isSystemMessage ? "system" : "user",
         content: action.payload.content,
         imageUrls: action.payload.imageUrls,
         timestamp: action.payload.timestamp || new Date().toISOString(),

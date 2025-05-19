@@ -42,6 +42,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 

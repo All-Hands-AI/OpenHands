@@ -9,13 +9,15 @@ import { anchor } from "../markdown/anchor";
 import { paragraph } from "../markdown/paragraph";
 
 interface ChatMessageProps {
-  type: "user" | "assistant";
+  type: "user" | "assistant" | "system";
   message: string;
+  className?: string;
 }
 
 export function ChatMessage({
   type,
   message,
+  className,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
@@ -50,6 +52,8 @@ export function ChatMessage({
         "flex flex-col gap-2",
         type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
         type === "assistant" && "mt-6 max-w-full bg-transparent",
+        type === "system" && "mt-6 max-w-full p-4",
+        className,
       )}
     >
       <CopyToClipboardButton

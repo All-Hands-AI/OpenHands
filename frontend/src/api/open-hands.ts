@@ -8,6 +8,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  SummarizeConversationResponse,
   GitChangeDiff,
   GitChange,
 } from "./open-hands.types";
@@ -261,6 +262,15 @@ class OpenHands {
   ): Promise<GetTrajectoryResponse> {
     const { data } = await openHands.get<GetTrajectoryResponse>(
       `/api/conversations/${conversationId}/trajectory`,
+    );
+    return data;
+  }
+
+  static async summarizeConversation(
+    conversationId: string,
+  ): Promise<SummarizeConversationResponse> {
+    const { data } = await openHands.get<SummarizeConversationResponse>(
+      `/api/conversations/${conversationId}/summarize`,
     );
     return data;
   }
