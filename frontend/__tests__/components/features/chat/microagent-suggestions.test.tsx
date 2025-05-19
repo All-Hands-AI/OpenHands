@@ -33,7 +33,7 @@ describe("MicroagentSuggestions", () => {
 
   it("should render microagent suggestions when visible", async () => {
     const onSelect = vi.fn();
-    
+
     render(
       <MicroagentSuggestions
         query="/"
@@ -53,7 +53,7 @@ describe("MicroagentSuggestions", () => {
 
   it("should filter microagents based on query", async () => {
     const onSelect = vi.fn();
-    
+
     const { rerender } = render(
       <MicroagentSuggestions
         query="/"
@@ -83,7 +83,7 @@ describe("MicroagentSuggestions", () => {
 
   it("should call onSelect when a microagent is clicked", async () => {
     const onSelect = vi.fn();
-    
+
     render(
       <MicroagentSuggestions
         query="/"
@@ -99,13 +99,13 @@ describe("MicroagentSuggestions", () => {
 
     // Click on a microagent
     fireEvent.click(screen.getByText("/pr_update"));
-    
+
     expect(onSelect).toHaveBeenCalledWith("/pr_update");
   });
 
   it("should not render when isVisible is false", () => {
     const onSelect = vi.fn();
-    
+
     render(
       <MicroagentSuggestions
         query="/"

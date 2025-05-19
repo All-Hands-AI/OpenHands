@@ -113,7 +113,7 @@ export function ChatInterface() {
       },
     });
   };
-  
+
   const handleInsertMicroagent = (content: string) => {
     setMessageToSend(content);
   };

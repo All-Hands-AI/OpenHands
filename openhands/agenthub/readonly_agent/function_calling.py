@@ -32,7 +32,6 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
     AgentThinkAction,
-    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     MCPAction,

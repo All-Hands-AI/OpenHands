@@ -10,7 +10,11 @@ import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )

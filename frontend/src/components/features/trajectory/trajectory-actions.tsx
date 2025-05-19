@@ -22,7 +22,8 @@ export function TrajectoryActions({
   onInsertMicroagent,
 }: TrajectoryActionsProps) {
   const { t } = useTranslation();
-  const [isMicroagentDropdownOpen, setIsMicroagentDropdownOpen] = useState(false);
+  const [isMicroagentDropdownOpen, setIsMicroagentDropdownOpen] =
+    useState(false);
 
   const handleMicroagentButtonClick = () => {
     setIsMicroagentDropdownOpen(!isMicroagentDropdownOpen);
@@ -67,7 +68,7 @@ export function TrajectoryActions({
           tooltip={t(I18nKey.BUTTON$SHOW_MICROAGENTS)}
         />
       )}
-      
+
       {isMicroagentDropdownOpen && onInsertMicroagent && (
         <MicroagentDropdown
           isOpen={isMicroagentDropdownOpen}

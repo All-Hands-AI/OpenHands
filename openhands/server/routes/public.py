@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
@@ -76,10 +76,10 @@ class MicroagentInfo(BaseModel):
     description: str
 
 
-@app.get('/microagents', response_model=List[Dict[str, str]])
+@app.get('/microagents', response_model=list[dict[str, str]])
 async def get_microagents(
     request: Request,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     """Get all available microagents for the current session.
 
     To get the microagents:
