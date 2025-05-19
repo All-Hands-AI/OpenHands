@@ -287,24 +287,34 @@ async def search_conversations(
     running_conversations = await conversation_manager.get_running_agent_loops(
         user_id, conversation_ids
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
-    agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
-    agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info = await conversation_manager.get_agent_loop_info(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info_by_conversation_id = {
+        info.conversation_id: info for info in agent_loop_info
+    }
 
     # Create a list of ConversationInfo objects using wait_all for parallel processing
-    conversation_infos = await wait_all([
-        _get_conversation_info(
-            conversation=conversation,
-            is_running=conversation.conversation_id in running_conversations,
-            num_connections=sum(
-                1
-                for conversation_id in connection_ids_to_conversation_ids.values()
-                if conversation_id == conversation.conversation_id
-            ),
-            agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),
-        )
-        for conversation in filtered_results
-    ])
+    conversation_infos = await wait_all(
+        [
+            _get_conversation_info(
+                conversation=conversation,
+                is_running=conversation.conversation_id in running_conversations,
+                num_connections=sum(
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
+                    if conversation_id == conversation.conversation_id
+                ),
+                agent_loop_info=agent_loop_info_by_conversation_id.get(
+                    conversation.conversation_id
+                ),
+            )
+            for conversation in filtered_results
+        ]
+    )
 
     # Filter out None values that might result from errors
     conversation_infos = [info for info in conversation_infos if info is not None]
@@ -326,10 +336,16 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        num_connections = len(
+            await conversation_manager.get_connections(filter_to_sids={conversation_id})
+        )
+        agent_loop_infos = await conversation_manager.get_agent_loop_info(
+            filter_to_sids={conversation_id}
+        )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, agent_loop_info)
+        conversation_info = await _get_conversation_info(
+            metadata, is_running, num_connections, agent_loop_info
+        )
         return conversation_info
     except FileNotFoundError:
         return None
@@ -382,7 +398,9 @@ async def _get_conversation_info(
             ),
             num_connections=num_connections,
             url=agent_loop_info.url if agent_loop_info else None,
-            session_api_key=agent_loop_info.session_api_key if agent_loop_info else None,
+            session_api_key=agent_loop_info.session_api_key
+            if agent_loop_info
+            else None,
         )
     except Exception as e:
         logger.error(
