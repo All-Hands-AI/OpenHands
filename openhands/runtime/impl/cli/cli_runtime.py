@@ -661,11 +661,15 @@ class CLIRuntime(Runtime):
         if not self._runtime_initialized:
             raise RuntimeError('Runtime not initialized')
 
-        dest_path = os.path.join(self._workspace_path, sandbox_dest.lstrip('/'))
+        dest_path = self._sanitize_filename(sandbox_dest)
 
         try:
-            # Create parent directories if they don't exist
-            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            # For files, ensure parent directory of the final_dest_path exists.
+            # For directories being copied with copytree, copytree handles creation of final_dest_path itself.
+            if not (os.path.isdir(host_src) and recursive):
+                parent_dir = os.path.dirname(dest_path)
+                if not os.path.exists(parent_dir):
+                    os.makedirs(parent_dir, exist_ok=True)
 
             if recursive and os.path.isdir(host_src):
                 # Copy directory recursively
@@ -675,7 +679,7 @@ class CLIRuntime(Runtime):
                 shutil.copy2(host_src, dest_path)
         except FileNotFoundError as e:
             logger.error(f'File not found during copy: {str(e)}')
-            raise  # Re-raise FileNotFoundError as is
+            raise
         except Exception as e:
             logger.error(f'Unexpected error copying file: {str(e)}')
             raise RuntimeError(f'Unexpected error copying file: {str(e)}')

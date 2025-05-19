@@ -845,8 +845,8 @@ def test_git_operation(temp_dir, runtime_cls):
             )
             assert obs.exit_code == 0
 
-            # Set up git config
-            obs = _run_cmd_action(runtime, 'git config --file ./.git_config')
+            # Set up git config - list current settings (should be empty or just what was set)
+            obs = _run_cmd_action(runtime, 'git config --file ./.git_config --list')
             assert obs.exit_code == 0
 
         # git add
