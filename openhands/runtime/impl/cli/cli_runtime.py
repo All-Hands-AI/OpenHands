@@ -267,10 +267,11 @@ class CLIRuntime(Runtime):
         )
 
         exit_code = None
+        first_line = True
 
         try:
             if process.stdout:
-                while process.poll() is None:
+                while process.poll() is None and first_line:
                     if (
                         timeout is not None
                         and (time.monotonic() - start_time) > timeout
@@ -283,74 +284,38 @@ class CLIRuntime(Runtime):
                             process, signal_to_send=signal.SIGTERM
                         )
                         timed_out = True
-                        logger.debug(
-                            f'[_execute_shell_command] timed_out set to True for "{command}" due to timeout.'
-                        )
                         break
 
-                    # Use select for non-blocking read from stdout
-                    # Wait up to 0.1 seconds for data to become available
                     ready_to_read, _, _ = select.select([process.stdout], [], [], 0.1)
 
                     if ready_to_read:
                         line = process.stdout.readline()
-                        if line:  # If readline returns data (not empty string)
+                        first_line = False
+                        if line:
+                            logger.debug(f'LINE: {line}')
                             output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
-                        else:  # readline returned empty string, meaning EOF on stdout
-                            break  # Exit the reading loop
 
-            # Determine the timeout for the final process.communicate() call.
-            # 'timeout' here is the original overall timeout for _execute_shell_command and is guaranteed to be an int.
-            communicate_timeout: float = 0.2
-            remaining_overall_timeout = timeout - (time.monotonic() - start_time)
-
-            if timed_out or (process.poll() is not None):
-                # Case 1: Our read loop timed out the process (SIGTERM sent).
-                # Case 2: The process (e.g., bash -c for "cmd &") exited on its own.
-                # In both cases, use a short, fixed timeout for communicate() to grab final output.
-                communicate_timeout = 0.2
-                logger.info(
-                    f'[_execute_shell_command] Process timed out in loop OR exited. Using communicate_timeout={communicate_timeout}s for "{command}" (timed_out_flag={timed_out}, polled_rc={process.poll()})'
-                )
-            else:
-                # Case 3: Process is still running (poll() is None), and our loop did NOT time it out.
-                communicate_timeout = max(0.1, remaining_overall_timeout)
-                logger.debug(
-                    f'[_execute_shell_command] Process still running. Setting communicate_timeout={communicate_timeout:.2f}s for "{command}")'
-                )
-
-            try:
-                logger.debug(
-                    f'[_execute_shell_command] Calling process.communicate(timeout={communicate_timeout}) for "{command}"'
-                )
-                remaining_output, _ = process.communicate(timeout=communicate_timeout)
-                if remaining_output:
-                    logger.debug(
-                        f'[_execute_shell_command] Got remaining_output from communicate() for "{command}": {len(remaining_output)} chars'
+            # Attempt to read any remaining data from stdout
+            if process.stdout and not process.stdout.closed:
+                try:
+                    while line:
+                        line = process.stdout.readline()
+                        if line:
+                            logger.debug(f'LINE: {line}')
+                            output_lines.append(line)
+                            if self._shell_stream_callback:
+                                self._shell_stream_callback(line)
+                except Exception as e:
+                    logger.warning(
+                        f'Error reading directly from stdout after loop for "{command}": {e}'
                     )
-                    output_lines.append(remaining_output)
-            except subprocess.TimeoutExpired:
-                logger.warning(
-                    f'Command "{command}" did not exit gracefully during final communicate(timeout={communicate_timeout}s). Forcing kill.'
-                )
-                # Attempt to kill the process group (SIGKILL)
-                self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
-            except Exception as e:
-                logger.error(
-                    f"Unexpected error during communicate() for command '{command}': {e}"
-                )
+
             exit_code = process.returncode
-            logger.debug(
-                f'[_execute_shell_command] process.returncode is {exit_code} for "{command}" after communicate().'
-            )
 
             # If timeout occurred, ensure exit_code reflects this for the observation.
             if timed_out:
-                logger.debug(
-                    f'[_execute_shell_command] timed_out is True, setting exit_code to -1 for "{command}". Original rc: {exit_code}'
-                )
                 exit_code = -1
 
         except Exception as e:
@@ -366,6 +331,9 @@ class CLIRuntime(Runtime):
             )
 
         complete_output = ''.join(output_lines)
+        logger.debug(
+            f'[_execute_shell_command] Complete output for "{command}" (len: {len(complete_output)}): {complete_output!r}'
+        )
         obs_metadata = {'working_dir': self._workspace_path}
         if timed_out:
             obs_metadata['suffix'] = (
@@ -373,9 +341,6 @@ class CLIRuntime(Runtime):
             )
             # exit_code = -1 # This is already set if timed_out is True
 
-        logger.info(
-            f'[_execute_shell_command] Returning observation for "{command}" with exit_code={exit_code}, timed_out={timed_out}, output_len={len(complete_output)}'
-        )
         return CmdOutputObservation(
             command=command,
             content=complete_output,
