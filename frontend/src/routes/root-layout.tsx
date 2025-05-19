@@ -26,7 +26,6 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useTrackLastPage } from "#/hooks/use-track-last-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
-import { getLoginMethod } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -182,8 +181,12 @@ export default function MainApp() {
       {renderLoginMessage && (
         <ModalBackdrop>
           <ModalBody className="border border-tertiary text-center">
-            <h2 className="text-xl font-bold">{t(I18nKey.AUTH$LOGGING_BACK_IN)}</h2>
-            <p className="text-gray-500">{t(I18nKey.CHAT_INTERFACE$AGENT_RUNNING_MESSAGE)}</p>
+            <h2 className="text-xl font-bold">
+              {t(I18nKey.AUTH$LOGGING_BACK_IN)}
+            </h2>
+            <p className="text-gray-500">
+              {t(I18nKey.CHAT_INTERFACE$AGENT_RUNNING_MESSAGE)}
+            </p>
           </ModalBody>
         </ModalBackdrop>
       )}
