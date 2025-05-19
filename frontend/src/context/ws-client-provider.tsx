@@ -131,6 +131,7 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
+  const [messagesHaveLoaded, setMessagesHaveLoaded] = React.useState(false);
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -152,9 +153,10 @@ export function WsClientProvider({
 
       // Invalidate diffs cache when a file is edited or written
       if (
-        isFileEditAction(event) ||
-        isFileWriteAction(event) ||
-        isCommandAction(event)
+        messagesHaveLoaded &&
+        (isFileEditAction(event) ||
+          isFileWriteAction(event) ||
+          isCommandAction(event))
       ) {
         queryClient.invalidateQueries({
           queryKey: ["file_changes", conversationId],
@@ -250,6 +252,15 @@ export function WsClientProvider({
       sio.off("disconnect", handleDisconnect);
     };
   }, [conversationId]);
+
+  React.useEffect(() => {
+    if (
+      status === WsClientProviderStatus.CONNECTED &&
+      !messageRateHandler.isUnderThreshold
+    ) {
+      setMessagesHaveLoaded(true);
+    }
+  }, [messageRateHandler.isUnderThreshold, status]);
 
   React.useEffect(
     () => () => {
