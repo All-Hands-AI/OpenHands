@@ -680,6 +680,9 @@ class CLIRuntime(Runtime):
         except FileNotFoundError as e:
             logger.error(f'File not found during copy: {str(e)}')
             raise
+        except shutil.SameFileError as e:
+            # Be lenient here, just ignore this error.
+            logger.debug(f'File not copied because it is the same file: {str(e)}')
         except Exception as e:
             logger.error(f'Unexpected error copying file: {str(e)}')
             raise RuntimeError(f'Unexpected error copying file: {str(e)}')

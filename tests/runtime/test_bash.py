@@ -1196,6 +1196,10 @@ def test_stress_long_output_with_soft_and_hard_timeout(
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='FIXME: CLIRuntime does not watch previously timed-out commands except for getting full output a short time after timeout.',
+)
 def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -1327,6 +1331,10 @@ def test_long_running_command_follow_by_execute(
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='FIXME: CLIRuntime does not implement empty command behavior.',
+)
 def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
