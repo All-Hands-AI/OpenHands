@@ -18,40 +18,36 @@ import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
-  private static conversationUrl: string | null = null;
-
-  private static sessionApiKey: string | null = null;
+  private static currentConversation: Conversation | null = null;
 
   /**
-   * Set a custom conversation URL to use instead of the default
+   * Get a current conversation
+   * @return the current conversation
+   */
+  static getCurrentConversation(): Conversation | null {
+    return this.currentConversation;
+  }
+
+  /**
+   * Set a current conversation
    * @param url Custom URL to use for conversation endpoints
    */
-  static setConversationUrl(url: string | null): void {
-    this.conversationUrl = url;
+  static setCurrentConversation(
+    currentConversation: Conversation | null,
+  ): void {
+    this.currentConversation = currentConversation;
   }
 
   /**
-   * Get the current custom conversation URL if set
-   * @returns The custom conversation URL or null if not set
+   * Get the url for the conversation. If
    */
-  static getConversationUrl(): string | null {
-    return this.conversationUrl;
-  }
-
-  /**
-   * Set an API Key to be included in endpoint requests
-   * @param key Custom API Key for conversation endpoints
-   */
-  static setSessionApiKey(key: string | null): void {
-    this.sessionApiKey = key;
-  }
-
-  /**
-   * Get the API Key to be included in endpoint requests
-   * @return Custom API Key for conversation endpoints
-   */
-  static getSessionApiKey(): string | null {
-    return this.sessionApiKey;
+  static getConversationUrl(conversationId: string): string {
+    if (this.currentConversation?.conversation_id === conversationId) {
+      if (this.currentConversation.url) {
+        return this.currentConversation.url;
+      }
+    }
+    return `/api/conversations/${conversationId}`;
   }
 
   /**
@@ -90,10 +86,11 @@ class OpenHands {
     return data;
   }
 
-  static getHeaders(): AxiosHeaders {
+  static getConversationHeaders(): AxiosHeaders {
     const headers = new AxiosHeaders();
-    if (this.sessionApiKey) {
-      headers.set("X-Session-API-Key", this.sessionApiKey);
+    const sessionApiKey = this.currentConversation?.session_api_key;
+    if (sessionApiKey) {
+      headers.set("X-Session-API-Key", sessionApiKey);
     }
     return headers;
   }
@@ -131,12 +128,10 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(conversationId: string): Promise<Blob> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const url = `${baseUrl}/zip-directory`;
+    const url = `${this.getConversationUrl(conversationId)}/zip-directory`;
     const response = await openHands.get(url, {
       responseType: "blob",
-      headers: this.getHeaders(),
+      headers: this.getConversationHeaders(),
     });
     return response.data;
   }
@@ -146,11 +141,9 @@ class OpenHands {
    * @returns Array of web hosts
    */
   static async getWebHosts(conversationId: string): Promise<string[]> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const url = `${baseUrl}/web-hosts`;
+    const url = `${this.getConversationUrl(conversationId)}/web-hosts`;
     const response = await openHands.get(url, {
-      headers: this.getHeaders(),
+      headers: this.getConversationHeaders(),
     });
     return Object.keys(response.data.hosts);
   }
@@ -178,28 +171,20 @@ class OpenHands {
   static async getVSCodeUrl(
     conversationId: string,
   ): Promise<GetVSCodeUrlResponse> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<GetVSCodeUrlResponse>(
-      `${baseUrl}/vscode-url`,
-      {
-        headers: this.getHeaders(),
-      },
-    );
+    const url = `${this.getConversationUrl(conversationId)}/vscode-url`;
+    const { data } = await openHands.get<GetVSCodeUrlResponse>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
   static async getRuntimeId(
     conversationId: string,
   ): Promise<{ runtime_id: string }> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<{ runtime_id: string }>(
-      `${baseUrl}/config`,
-      {
-        headers: this.getHeaders(),
-      },
-    );
+    const url = `${this.getConversationUrl(conversationId)}/config`;
+    const { data } = await openHands.get<{ runtime_id: string }>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
@@ -331,14 +316,10 @@ class OpenHands {
   static async getTrajectory(
     conversationId: string,
   ): Promise<GetTrajectoryResponse> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<GetTrajectoryResponse>(
-      `${baseUrl}/trajectory`,
-      {
-        headers: this.getHeaders(),
-      },
-    );
+    const url = `${this.getConversationUrl(conversationId)}/trajectory`;
+    const { data } = await openHands.get<GetTrajectoryResponse>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
@@ -349,14 +330,10 @@ class OpenHands {
   }
 
   static async getGitChanges(conversationId: string): Promise<GitChange[]> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<GitChange[]>(
-      `${baseUrl}/git/changes`,
-      {
-        headers: this.getHeaders(),
-      },
-    );
+    const url = `${this.getConversationUrl(conversationId)}/git/changes`;
+    const { data } = await openHands.get<GitChange[]>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
@@ -364,11 +341,10 @@ class OpenHands {
     conversationId: string,
     path: string,
   ): Promise<GitChangeDiff> {
-    const baseUrl =
-      this.conversationUrl || `/api/conversations/${conversationId}`;
-    const { data } = await openHands.get<GitChangeDiff>(`${baseUrl}/git/diff`, {
+    const url = `${this.getConversationUrl(conversationId)}/git/diff`;
+    const { data } = await openHands.get<GitChangeDiff>(url, {
       params: { path },
-      headers: this.getHeaders(),
+      headers: this.getConversationHeaders(),
     });
     return data;
   }

@@ -6,4 +6,4 @@ import OpenHands from "#/api/open-hands";
  * @returns URL of the conversation
  */
 export const getConversationUrl = (conversationId: string) =>
-  OpenHands.getConversationUrl() || `/api/conversations/${conversationId}`;
+  OpenHands.getConversationUrl(conversationId);
