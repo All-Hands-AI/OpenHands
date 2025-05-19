@@ -180,6 +180,9 @@ class Memory:
                 custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
                 if self.runtime_info is not None
                 else {},
+                contextual_info=self.runtime_info.contextual_info
+                if self.runtime_info is not None
+                else '',
             )
             return obs
         return None

@@ -460,11 +460,13 @@ class ConversationMemory:
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                        contextual_info=obs.contextual_info,
                     )
                 else:
                     runtime_info = RuntimeInfo(
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                        contextual_info=obs.contextual_info,
                     )
 
                 repo_instructions = (
