@@ -40,7 +40,13 @@ export function AgentControlBar() {
         }
         handleAction={handleAction}
       >
-        {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
+        {curAgentState === AgentState.PAUSED ? (
+          <PlayIcon />
+        ) : (
+          <div className="bg-gray-200 p-2 rounded-full">
+            <PauseIcon />
+          </div>
+        )}
       </ActionButton>
     </div>
   );
