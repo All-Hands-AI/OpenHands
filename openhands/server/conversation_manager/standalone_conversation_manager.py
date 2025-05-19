@@ -11,9 +11,9 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.event_store import EventStore
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
@@ -129,21 +129,15 @@ class StandaloneConversationManager(ConversationManager):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-    ) -> EventStore:
+    ) -> AgentLoopInfo:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self.maybe_start_agent_loop(sid, settings, user_id)
-        if not event_stream:
-            logger.error(
-                f'No event stream after joining conversation: {sid}',
-                extra={'session_id': sid},
-            )
-            raise RuntimeError(f'no_event_stream:{sid}')
-        return event_stream
+        agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
+        return agent_loop_info
 
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
@@ -261,21 +255,14 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-    ) -> EventStore:
+    ) -> AgentLoopInfo:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
-        if not await self.is_agent_loop_running(sid):
-            await self._start_agent_loop(
+        session = self._local_agent_loops_by_sid.get(sid)
+        if not session:
+            session = await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
-
-        event_store = await self._get_event_store(sid, user_id)
-        if not event_store:
-            logger.error(
-                f'No event stream after starting agent loop: {sid}',
-                extra={'session_id': sid},
-            )
-            raise RuntimeError(f'no_event_stream:{sid}')
-        return event_store
+        return self._agent_loop_info_from_session(session)
 
     async def _start_agent_loop(
         self,
@@ -339,22 +326,6 @@ class StandaloneConversationManager(ConversationManager):
         except ValueError:
             pass  # Already subscribed - take no action
         return session
-
-    async def _get_event_store(
-        self, sid: str, user_id: str | None
-    ) -> EventStore | None:
-        logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
-        session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
-            event_stream = session.agent_session.event_stream
-            return EventStore(
-                event_stream.sid,
-                event_stream.file_store,
-                event_stream.user_id,
-                event_stream.cur_id,
-            )
-        return None
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # If there is a local session running, send to that
@@ -502,6 +473,29 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.title = default_title
 
         await conversation_store.save_metadata(conversation)
+
+    async def get_agent_loop_info(
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+    ):
+        results = []
+        for session in self._local_agent_loops_by_sid.values():
+            if user_id and session.user_id != user_id:
+                continue
+            if filter_to_sids and session.sid not in filter_to_sids:
+                continue
+            results.append(self._agent_loop_info_from_session(session))
+        return results
+    
+    def _agent_loop_info_from_session(self, session: Session):
+        return AgentLoopInfo(
+            conversation_id=session.sid,
+            url=self._get_conversation_url(session.sid),
+            session_api_key=None,
+            event_store=session.agent_session.event_stream,
+        )
+
+    def _get_conversation_url(self, conversation_id: str):
+        return f"/conversations/{conversation_id}"
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

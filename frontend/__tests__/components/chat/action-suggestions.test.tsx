@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { ConversationProvider } from "#/context/conversation-context";
 
 // Mock dependencies
 vi.mock("posthog-js", () => ({
@@ -38,6 +39,12 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+vi.mock("react-router", () => ({
+  useParams: () => ({
+    conversationId: "test-conversation-id",
+  }),
+}));
+
 const renderActionSuggestions = () =>
   render(
     <ActionSuggestions 
@@ -46,9 +53,11 @@ const renderActionSuggestions = () =>
     />, 
     {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
+        <ConversationProvider>
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        </ConversationProvider>
       ),
     }
   );
@@ -71,6 +80,11 @@ describe("ActionSuggestions", () => {
   });
 
   it("should render both GitHub buttons when GitHub token is set and repository is selected", async () => {
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    // @ts-expect-error - only required for testing
+    getConversationSpy.mockResolvedValue({
+      selected_repository: "test-repo",
+    });
     renderActionSuggestions();
 
     // Find all buttons with data-testid="suggestion"
