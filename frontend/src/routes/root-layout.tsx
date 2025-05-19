@@ -18,6 +18,9 @@ import { AnalyticsConsentFormModal } from "#/components/features/analytics/analy
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { ModalBody } from "#/components/shared/modals/modal-body";
+import { getLoginMethod } from "#/utils/local-storage";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
