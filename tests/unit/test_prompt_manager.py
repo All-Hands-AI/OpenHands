@@ -217,9 +217,9 @@ each of which has a corresponding port:
 Today's date is {{ runtime_info.date }}
 </RUNTIME_INFORMATION>
 {% if conversation_instructions.content %}
-<CONTEXT_MESSAGE>
+<CONVERSATION_INSTRUCTIONS>
 {{ conversation_instructions.content }}
-</CONTEXT_MESSAGE>
+</CONVERSATION_INSTRUCTIONS>
 {% endif %}
 {% endif %}
 """)

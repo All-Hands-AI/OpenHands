@@ -466,7 +466,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         assert f'$**{secret_name}**' in workspace_context
         assert secret_description in workspace_context
 
-    assert '<CONTEXT_MESSAGE>' in workspace_context
+    assert '<CONVERSATION_INSTRUCTIONS>' in workspace_context
     assert 'additional agent context for the task' in workspace_context
 
 
