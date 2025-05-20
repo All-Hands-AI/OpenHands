@@ -23,6 +23,7 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useTrackLastPage } from "#/hooks/use-track-last-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
+import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -133,12 +134,22 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
+  // Check if login method exists in local storage
+  const loginMethodExists = React.useMemo(() => {
+    // Only check localStorage if we're in a browser environment
+    if (typeof window !== "undefined" && window.localStorage) {
+      return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
+    }
+    return false;
+  }, []);
+
   const renderAuthModal =
     !isAuthed &&
     !isAuthError &&
     !isFetchingAuth &&
     !isOnTosPage &&
-    config.data?.APP_MODE === "saas";
+    config.data?.APP_MODE === "saas" &&
+    !loginMethodExists; // Don't show auth modal if login method exists in local storage
 
   return (
     <div
