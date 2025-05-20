@@ -55,11 +55,11 @@ class DockerNestedConversationManager(ConversationManager):
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
     ) -> Conversation | None:
-        # Attaching conversations not suported in this manager - clients should connect directly!
+        # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
     async def detach_from_conversation(self, conversation: Conversation):
-        # Attaching conversations not suported in this manager - clients should connect directly!
+        # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
     async def join_conversation(
@@ -69,7 +69,7 @@ class DockerNestedConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
     ) -> AgentLoopInfo:
-        # Attaching conversations not suported in this manager - clients should connect directly!
+        # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
     async def get_running_agent_loops(
@@ -94,21 +94,8 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
+        # Not supported - clients should connect directly to the nested server!
         results: dict[str, str] = {}
-        """
-        for container in self.docker_client.containers.list():
-            if not container.name.startswith('openhands-runtime-'):
-                continue
-            conversation_id = container.name[len('openhands-runtime-'):]
-            if filter_to_sids is None or conversation_id in filter_to_sids:
-                env = container.attrs['Config']['Env']
-                container_port = int(next(e[5:] for e in env if e.startswith('port=')))
-                api_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
-                async with httpx.AsyncClient() as client:
-                    response = await client.get(f'{api_url}/conversations/{conversation_id}')
-                    conversation_info = await response.json()
-                    conversation_info['num_connections']
-        """
         return results
 
     async def maybe_start_agent_loop(
