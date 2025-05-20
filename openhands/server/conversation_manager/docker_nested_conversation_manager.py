@@ -94,7 +94,8 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
-        # Not supported - clients should connect directly to the nested server!
+        # We don't monitor connections outside the nested server, though I suppose we could
+        # introduce an API for this.
         results: dict[str, str] = {}
         return results
 
@@ -159,9 +160,11 @@ class DockerNestedConversationManager(ConversationManager):
             })              
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
+        # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
     async def disconnect_from_session(self, connection_id: str):
+        # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
     async def close_session(self, sid: str):
