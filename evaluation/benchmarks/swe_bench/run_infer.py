@@ -22,6 +22,7 @@ from evaluation.benchmarks.swe_bench.resource.swt_bench_constants import (
     MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE,
     MAP_VERSION_TO_INSTALL,
 )
+from evaluation.benchmarks.swe_bench.loc_eval.loc_utils import loc_output_archive
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -682,6 +683,9 @@ def process_instance(
     histories = [event_to_dict(event) for event in state.history]
     metrics = get_metrics(state)
 
+    if metadata.details['loc_eval']:
+        loc_output_archive(instance, metadata, histories, metrics)
+
     # Save the output
     instruction = message_action.content
     if message_action.image_urls:
@@ -755,6 +759,18 @@ if __name__ == '__main__':
         choices=['swe', 'swt', 'swt-ci'],
         help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
+    parser.add_argument(
+        '--loc-eval',
+        action='store_true',
+        default=False,
+        help="whether apply localization evaluation",
+    )
+    parser.add_argument(
+        '--loc-eval-save',
+        type=str,
+        default="./evaluation/benchmarks/swe_bench/loc_eval/loc_saves",
+        help="whether apply localization evaluation",
+    )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -791,7 +807,7 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    details = {'mode': args.mode}
+    details = {'mode': args.mode, 'loc_eval': args.loc_eval, 'loc_eval_save': args.loc_eval_save}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
     dataset_descrption = (
