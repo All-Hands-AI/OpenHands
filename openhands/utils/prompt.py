@@ -33,7 +33,7 @@ class ConversationContext:
     This can be considered as system instructions on a per conversation basis
     """
 
-    context: str = ''
+    content: str = ''
 
 
 class PromptManager:

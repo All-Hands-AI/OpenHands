@@ -476,7 +476,7 @@ class ConversationMemory:
 
                 if obs.contextual_info:
                     conversation_context = ConversationContext(
-                        context=obs.contextual_info
+                        content=obs.contextual_info
                     )
 
                 repo_instructions = (
