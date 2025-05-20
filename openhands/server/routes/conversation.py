@@ -157,3 +157,33 @@ async def add_event(request: Request):
     data = request.json()
     conversation_manager.send_to_event_stream(request.state.sid, data)
     return JSONResponse({"success": True})
+
+
+@app.get('/action-execution-server-url')
+async def get_action_execution_server_url(request: Request):
+    """Get the action execution server URL.
+
+    This endpoint allows getting the action execution server URL.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime action execution server URL: {runtime.action_execution_server_url}')
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={'url': runtime.action_execution_server_url}
+        )
+    except Exception as e:
+        logger.error(f'Error getting action execution server URL: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                'url': None,
+                'error': f'Error getting action execution server URL: {e}',
+            },
+        )

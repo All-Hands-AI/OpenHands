@@ -10,6 +10,7 @@ import time
 import traceback
 from pathlib import Path
 from threading import RLock
+from typing import Callable
 
 import pythonnet
 
@@ -636,7 +637,11 @@ class WindowsPowershellSession:
         )
         return self._cwd
 
-    def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
+    def execute(
+        self,
+        action: CmdRunAction,
+        stream_callback: Callable[[str, dict], None] | None = None,
+    ) -> CmdOutputObservation | ErrorObservation:
         """
         Executes a command, potentially as a PowerShell background job for long-running tasks.
         Aligned with bash.py behavior regarding command execution and messages.
