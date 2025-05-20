@@ -1,11 +1,14 @@
 from __future__ import annotations
+from base64 import b64encode, urlsafe_b64encode
 from dataclasses import dataclass, field
-import os
+import hashlib
+from cryptography.fernet import Fernet
 from types import MappingProxyType
 from typing import cast
 
 import docker
 from docker.models.containers import Container
+from fastapi import status
 import httpx
 import socketio
 
@@ -115,7 +118,7 @@ class DockerNestedConversationManager(ConversationManager):
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            session_api_key=self.get_session_api_key_for_conversation(sid),
+            session_api_key=self._get_session_api_key_for_conversation(sid),
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
@@ -130,32 +133,57 @@ class DockerNestedConversationManager(ConversationManager):
         runtime = await self._create_runtime(sid, user_id, settings, provider_handler)
         await runtime.connect()
 
-        async with httpx.AsyncClient(headers={'X-Session-API-Key': self.get_session_api_key_for_conversation(sid)}) as client:
+        async with httpx.AsyncClient(headers={'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)}) as client:
             # setup the settings...
             settings_json = settings.model_dump(context={'expose_secrets': True})
             settings_json.pop('custom_secrets', None)
             settings_json.pop('git_provider_tokens', None)
-            secrets_store = settings_json.pop('secrets_store', None)
-            await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
+            secrets_store = settings_json.pop('secrets_store', None) or {}
+            response = await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
+            assert response.status_code == status.HTTP_200_OK
 
             # Setup provider tokens
-            provider_tokens_json = None
-            if provider_handler.provider_tokens:
-                provider_tokens_json = {
-                    k.value: v.token.get_secret_value()
-                    for k, v in provider_handler.provider_tokens.items()
-                    if v and v.token
+            provider_tokens = provider_handler.provider_tokens
+            if provider_tokens:
+                provider_tokens = {
+                    k.value: {
+                        'token': v.token.get_secret_value(),
+                        'user_id': v.user_id,
+                        'host': v.host,
+                    }
+                    for k, v in provider_tokens.items()
                 }
+                response = await client.post(f"{runtime.api_url}/api/add-git-providers", json={
+                    "provider_tokens": provider_tokens,
+                })
+                assert response.status_code == status.HTTP_200_OK
 
-            # Create conversation
-            await client.post(f"{runtime.api_url}/api/conversations", json={
+            # Setup custom secrets
+            custom_secrets = secrets_store.get('custom_secrets') or {}
+            if custom_secrets:
+                for key, value in custom_secrets.items():
+                    response = await client.post(f"{runtime.api_url}/api/secrets", json={
+                        "name": key,
+                        "description": value.description,
+                        "value": value.value,
+                    })
+                    assert response.status_code == status.HTTP_200_OK
+
+            init_conversation = {
                 "initial_user_msg": initial_user_msg,
                 "image_urls": [],
-                "repository": settings.selected_repository,
-                "provider_tokens": provider_tokens_json,
-                "selected_branch": settings.selected_repository,
-                "user_secrets": secrets_store,
-            })              
+                "replay_json": replay_json,
+            }
+
+            if isinstance(settings, ConversationInitData):
+                init_conversation['repository'] = settings.selected_repository
+                init_conversation['selected_branch'] = settings.selected_branch
+                init_conversation['git_provider'] = settings.git_provider
+
+            # Create conversation
+            response = await client.post(f"{runtime.api_url}/api/conversations", json=init_conversation)
+            logger.info(f"_start_agent_loop:{response.status_code}:{response.json()}")
+            assert response.status_code == status.HTTP_200_OK
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
@@ -180,7 +208,7 @@ class DockerNestedConversationManager(ConversationManager):
             agent_loop_info = AgentLoopInfo(
                 conversation_id=conversation_id,
                 url=nested_url,
-                session_api_key=self.get_session_api_key_for_conversation(conversation_id),
+                session_api_key=self._get_session_api_key_for_conversation(conversation_id),
                 event_store=NestedEventStore(
                     base_url=nested_url,
                     sid=conversation_id,
@@ -228,8 +256,11 @@ class DockerNestedConversationManager(ConversationManager):
         nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}/api/conversations/{conversation_id}'
         return nested_url
     
-    def get_session_api_key_for_conversation(self, conversation_id: str):
-        return conversation_id
+    def _get_session_api_key_for_conversation(self, conversation_id: str):
+        jwt_secret = self.config.jwt_secret.get_secret_value()  # type:ignore
+        conversation_key =  f"{jwt_secret}:{conversation_id}".encode()
+        session_api_key = urlsafe_b64encode(hashlib.sha256(conversation_key).digest()).decode().replace('=', '')
+        return session_api_key
 
     async def ensure_num_conversations_below_limit(self, sid: str, user_id: str):
         response_ids = await self.get_running_agent_loops(user_id)
@@ -300,7 +331,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['RUNTIME'] = 'local'
         env_vars['CONVERSATION_ID'] = sid
         env_vars['USER'] = 'CURRENT_USER'
-        env_vars['SESSION_API_KEY'] = self.get_session_api_key_for_conversation(sid)
+        env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
 
         # Check if we are using a standard event store
         config = self.config.model_copy(deep=True)

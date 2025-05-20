@@ -85,6 +85,7 @@ async def _create_new_conversation(
     replay_json: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
+    git_provider: ProviderType | None = None,
 ) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
@@ -121,6 +122,7 @@ async def _create_new_conversation(
     session_init_args['selected_repository'] = selected_repository
     session_init_args['custom_secrets'] = custom_secrets
     session_init_args['selected_branch'] = selected_branch
+    session_init_args['git_provider'] = git_provider
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -189,7 +191,7 @@ async def new_conversation(
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID.
     """
-    logger.info('Initializing new conversation')
+    logger.info(f'initializing_new_conversation:{data}')
     repository = data.repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
@@ -224,6 +226,7 @@ async def new_conversation(
             image_urls=image_urls,
             replay_json=replay_json,
             conversation_trigger=conversation_trigger,
+            git_provider=git_provider,
         )
 
         return InitSessionResponse(
