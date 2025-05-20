@@ -182,7 +182,7 @@ class Memory:
                 custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
                 if self.runtime_info is not None
                 else {},
-                contextual_info=self.conversation_context.content
+                conversation_instructions=self.conversation_context.content
                 if self.conversation_context is not None
                 else '',
             )
@@ -317,12 +317,16 @@ class Memory:
                 custom_secrets_descriptions=custom_secrets_descriptions,
             )
 
-    def set_contextual_info(self, context_msg: str | None) -> None:
+    def set_conversation_instructions(
+        self, conversation_instructions: str | None
+    ) -> None:
         """
         Set contextual information for conversation
         This is information the agent requires but the user doesn't really need to know about
         """
-        self.conversation_context = ConversationContext(content=context_msg or '')
+        self.conversation_context = ConversationContext(
+            content=conversation_instructions or ''
+        )
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""

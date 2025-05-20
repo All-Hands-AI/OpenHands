@@ -135,7 +135,7 @@ def create_memory(
     selected_repository: str | None = None,
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
-    context_msg: str | None = None,
+    conversation_instructions: str | None = None,
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -154,7 +154,7 @@ def create_memory(
         status_callback=status_callback,
     )
 
-    memory.set_contextual_info(context_msg)
+    memory.set_conversation_instructions(conversation_instructions)
 
     if runtime:
         # sets available hosts

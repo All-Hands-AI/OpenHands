@@ -90,7 +90,7 @@ class AgentSession:
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
-        context_msg: str | None = None,
+        conversation_instructions: str | None = None,
         replay_json: str | None = None,
     ) -> None:
         """Starts the Agent session
@@ -145,7 +145,7 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
-                contextual_info=context_msg,
+                conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
             )
 
@@ -420,7 +420,7 @@ class AgentSession:
         self, 
         selected_repository: str | None, 
         repo_directory: str | None, 
-        contextual_info: str | None,
+        conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str]
     ) -> Memory:
         memory = Memory(
@@ -432,7 +432,7 @@ class AgentSession:
         if self.runtime:
             # sets available hosts and other runtime info
             memory.set_runtime_info(self.runtime, custom_secrets_descriptions)
-            memory.set_contextual_info(contextual_info)
+            memory.set_conversation_instructions(conversation_instructions)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(

@@ -876,10 +876,10 @@
                     "type": "string",
                     "nullable": true
                   },
-                  "context_msg": {
+                  "conversation_instructions": {
                     "type": "string",
                     "nullable": true,
-                    "description": "Additional system instructions for the agent task"
+                    "description": "Optional instructions the agent must follow throughout the conversation while addressing the user's initial task"
                   },
                   "image_urls": {
                     "type": "array",

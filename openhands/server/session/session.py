@@ -155,13 +155,13 @@ class Session:
         selected_repository = None
         selected_branch = None
         custom_secrets = None
-        context_msg = None
+        conversation_instructions = None
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
             custom_secrets = settings.custom_secrets
-            context_msg = settings.context_msg
+            conversation_instructions = settings.conversation_instructions
 
         try:
             await self.agent_session.start(
@@ -177,7 +177,7 @@ class Session:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
-                context_msg=context_msg,
+                conversation_instructions=conversation_instructions,
                 replay_json=replay_json,
             )
         except MicroagentValidationError as e:
