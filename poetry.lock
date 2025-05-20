@@ -5540,14 +5540,14 @@ files = [
 
 [[package]]
 name = "mcp"
-version = "1.7.1"
+version = "1.9.0"
 description = "Model Context Protocol SDK"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcp-1.7.1-py3-none-any.whl", hash = "sha256:f7e6108977db6d03418495426c7ace085ba2341b75197f8727f96f9cfd30057a"},
-    {file = "mcp-1.7.1.tar.gz", hash = "sha256:eb4f1f53bd717f75dda8a1416e00804b831a8f3c331e23447a03b78f04b43a6e"},
+    {file = "mcp-1.9.0-py3-none-any.whl", hash = "sha256:9dfb89c8c56f742da10a5910a1f64b0d2ac2c3ed2bd572ddb1cfab7f35957178"},
+    {file = "mcp-1.9.0.tar.gz", hash = "sha256:905d8d208baf7e3e71d70c82803b89112e321581bcd2530f9de0fe4103d28749"},
 ]
 
 [package.dependencies]
@@ -5568,20 +5568,20 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mcpm"
-version = "1.9.0"
+version = "1.12.0"
 description = "MCPM - Model Context Protocol Manager"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mcpm-1.9.0-py3-none-any.whl", hash = "sha256:fc9efe355329bef6a30d201668f9752d6fbc46f9d3a2affda8d45b9c5240475e"},
-    {file = "mcpm-1.9.0.tar.gz", hash = "sha256:97c112cb6d40e9bbcb4091c1db79da4eeda256bfa48083fa1f3abb260b814686"},
+    {file = "mcpm-1.12.0-py3-none-any.whl", hash = "sha256:ed3a87300420bcdb9cd12ef290179fda5bd51eb2f4cd3e793084d83eed91b249"},
+    {file = "mcpm-1.12.0.tar.gz", hash = "sha256:e9d2b852b90d7fd62dede584f035dd6b2b3d068d233e96b82aead835f81a911a"},
 ]
 
 [package.dependencies]
 click = ">=8.1.3"
 duckdb = ">=1.2.2"
-mcp = ">=1.6.0"
+mcp = ">=1.8.0"
 prompt-toolkit = ">=3.0.0"
 psutil = ">=7.0.0"
 pydantic = ">=2.5.1"
@@ -10895,6 +10895,39 @@ docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.2,!=7.3)", "s
 test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8) ; platform_python_implementation == \"PyPy\" or platform_python_implementation == \"CPython\" and sys_platform == \"win32\" and python_version >= \"3.13\"", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10) ; platform_python_implementation == \"CPython\""]
 
 [[package]]
+name = "visualswebench"
+version = "0.0.0"
+description = ""
+optional = false
+python-versions = ">=3.8"
+groups = ["evaluation"]
+files = []
+develop = false
+
+[package.dependencies]
+beautifulsoup4 = "*"
+chardet = "*"
+datasets = "*"
+docker = "*"
+ghapi = "*"
+GitPython = "*"
+pre-commit = "*"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+tqdm = "*"
+unidiff = "*"
+
+[package.extras]
+inference = ["anthropic", "flash_attn", "jedi", "peft", "protobuf", "sentencepiece", "tenacity", "tiktoken", "torch", "transformers", "triton"]
+
+[package.source]
+type = "git"
+url = "https://github.com/luolin101/Visual-SWE-bench.git"
+reference = "HEAD"
+resolved_reference = "e12d06686202a778956bf4faa65330be23feb23e"
+
+[[package]]
 name = "watchdog"
 version = "6.0.0"
 description = "Filesystem events monitoring"
@@ -11813,4 +11846,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "67a91f8aa0386d12e412ffbbd5cb95629254940ab2c152f15000fe8d21f74c98"
+content-hash = "23bf5b6f9c93fdebbfb49bbdd1f80b635b055750a512c2bdd5f698ffcf753356"
