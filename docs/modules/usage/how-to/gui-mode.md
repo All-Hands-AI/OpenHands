@@ -4,7 +4,7 @@ OpenHands provides a Graphical User Interface (GUI) mode for interacting with th
 
 ## Installation and Setup
 
-1. Follow the installation instructions to install OpenHands. Note: This is not supported on Windows without WSL and Docker.
+1. Follow the installation instructions to install OpenHands.
 2. After running the command, access OpenHands at [http://localhost:3000](http://localhost:3000).
 
 ## Interacting with the GUI
