@@ -326,7 +326,7 @@ class Memory:
     ) -> None:
         """
         Set contextual information for conversation
-        This is information the agent requires but the user doesn't really need to know about
+        This is information the agent may require
         """
         self.conversation_instructions = ConversationInstructions(
             content=conversation_instructions or ''
