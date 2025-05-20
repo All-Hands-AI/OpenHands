@@ -14,6 +14,7 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
+import { ReauthModal } from "#/components/features/waitlist/reauth-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
@@ -151,6 +152,14 @@ export default function MainApp() {
     config.data?.APP_MODE === "saas" &&
     !loginMethodExists; // Don't show auth modal if login method exists in local storage
 
+  const renderReAuthModal =
+    !isAuthed &&
+    !isAuthError &&
+    !isFetchingAuth &&
+    !isOnTosPage &&
+    config.data?.APP_MODE === "saas" &&
+    loginMethodExists;
+
   return (
     <div
       data-testid="root-layout"
@@ -171,6 +180,7 @@ export default function MainApp() {
           appMode={config.data?.APP_MODE}
         />
       )}
+      {renderReAuthModal && <ReauthModal />}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {

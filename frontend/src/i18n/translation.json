@@ -1,4 +1,20 @@
 {
+    "AUTH$LOGGING_BACK_IN": {
+        "en": "Logging back into OpenHands...",
+        "ja": "OpenHandsに再ログインしています...",
+        "zh-CN": "正在重新登录OpenHands...",
+        "zh-TW": "正在重新登錄OpenHands...",
+        "ko-KR": "OpenHands에 다시 로그인 중...",
+        "no": "Logger inn igjen på OpenHands...",
+        "it": "Accesso nuovamente a OpenHands...",
+        "pt": "Entrando novamente no OpenHands...",
+        "es": "Iniciando sesión de nuevo en OpenHands...",
+        "ar": "جاري إعادة تسجيل الدخول إلى OpenHands...",
+        "fr": "Reconnexion à OpenHands...",
+        "tr": "OpenHands'e yeniden giriş yapılıyor...",
+        "de": "Erneute Anmeldung bei OpenHands...",
+        "uk": "Повторний вхід до OpenHands..."
+    },
     "SECRETS$SECRET_VALUE_REQUIRED": {
         "en": "Secret value is required",
         "ja": "シークレット値は必須です",
