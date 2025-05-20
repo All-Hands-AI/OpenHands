@@ -12,12 +12,14 @@ import { paragraph } from "../markdown/paragraph";
 interface ChatMessageProps {
   type: OpenHandsSourceType;
   message: string;
+  actionButton?: React.ReactNode;
 }
 
 export function ChatMessage({
   type,
   message,
   children,
+  actionButton,
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
   const [isCopy, setIsCopy] = React.useState(false);
@@ -59,19 +61,24 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <div className="text-sm break-words">
-        <Markdown
-          components={{
-            code,
-            ul,
-            ol,
-            a: anchor,
-            p: paragraph,
-          }}
-          remarkPlugins={[remarkGfm]}
-        >
-          {message}
-        </Markdown>
+      <div className="text-sm break-words flex">
+        <div>
+          <Markdown
+            components={{
+              code,
+              ul,
+              ol,
+              a: anchor,
+              p: paragraph,
+            }}
+            remarkPlugins={[remarkGfm]}
+          >
+            {message}
+          </Markdown>
+        </div>
+
+        {/* Render action button on hover if provided */}
+        {actionButton && isHovering && actionButton}
       </div>
       {children}
     </article>
