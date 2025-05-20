@@ -487,7 +487,9 @@ class ConversationMemory:
                 has_repo_info = repo_info is not None and (
                     repo_info.repo_name or repo_info.repo_directory
                 )
-                has_runtime_info = runtime_info is not None
+                has_runtime_info = runtime_info is not None and (
+                    runtime_info.date or runtime_info.custom_secrets_descriptions
+                )
                 has_repo_instructions = bool(repo_instructions.strip())
                 has_conversation_context = conversation_context is not None
 
