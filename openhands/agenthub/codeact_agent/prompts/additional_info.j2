@@ -37,8 +37,8 @@ Today's date is {{ runtime_info.date }} (UTC).
 {% endif %}
 </RUNTIME_INFORMATION>
 {% if conversation_instructions and conversation_instructions.content -%}
-<CONTEXT_MESSAGE>
+<CONVERSATION_INSTRUCTIONS>
 {{ conversation_instructions.content }}
-</CONTEXT_MESSAGE>
+</CONVERSATION_INSTRUCTIONS>
 {% endif %}
 {% endif %}
