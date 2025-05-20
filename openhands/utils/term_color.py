@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Any, cast
 
 from termcolor import colored
 

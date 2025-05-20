@@ -1,6 +1,6 @@
 import importlib
 from functools import lru_cache
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 T = TypeVar('T')
 
