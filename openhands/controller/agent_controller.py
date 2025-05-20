@@ -5,9 +5,9 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm  # noqa
-from litellm.exceptions import (  # noqa
+from litellm.exceptions import (
     APIConnectionError,
-    APIError,
+    APIError,  # noqa
     AuthenticationError,
     BadRequestError,
     ContentPolicyViolationError,
@@ -805,11 +805,11 @@ class AgentController:
         if self._pending_action:
             return
 
-        self.log(
-            'info',
-            f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
-            extra={'msg_type': 'STEP'},
-        )
+        # self.log(
+        #     'info',
+        #     f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
+        #     extra={'msg_type': 'STEP'},
+        # )
 
         stop_step = False
         if self.state.iteration >= self.state.max_iterations:

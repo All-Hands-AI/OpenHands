@@ -213,7 +213,7 @@ class CodeActAgent(Agent):
                     if tool['function']['name'] not in existing_names
                 ]
                 params['tools'] += unique_mcp_tools
-        logger.debug(f'Messages: {messages}')
+        # logger.debug(f'Messages: {messages}')
         last_message = messages[-1]
         response = None
         if (

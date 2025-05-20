@@ -179,6 +179,25 @@ class StructuredSummaryCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class TaskCompletionCondenserConfig(BaseModel):
+    """Configuration for TaskCompletionCondenser.
+
+    This condenser keeps only the conclusion and report markdown files for completed tasks,
+    condensing all other events before each completed task.
+    """
+
+    type: Literal['task_completion'] = Field('task_completion')
+
+    # at least one event by default, because the best guess is that it is the user task
+    keep_first: int = Field(
+        default=1,
+        description='The number of initial events to always keep (typically task description).',
+        ge=0,
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 # Type alias for convenience
 CondenserConfig = (
     NoOpCondenserConfig
@@ -189,7 +208,7 @@ CondenserConfig = (
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
-    | Mem0CondenserConfig
+    | TaskCompletionCondenserConfig
 )
 
 
@@ -294,6 +313,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
         'mem0': Mem0CondenserConfig,
+        'task_completion': TaskCompletionCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:

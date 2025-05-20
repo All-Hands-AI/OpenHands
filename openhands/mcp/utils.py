@@ -186,7 +186,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
 
         if response.isError:
             return ErrorObservation(f'MCP {action.name} failed: {response.content}')
-        logger.debug(f'MCP response: {response}')
+        # logger.debug(f'MCP response: {response}')
 
         # special case for browser screenshot of playwright_mcp
         if (
