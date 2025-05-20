@@ -154,7 +154,6 @@ class DockerNestedConversationManager(ConversationManager):
                 "repository": settings.selected_repository,
                 "provider_tokens": provider_tokens_json,
                 "selected_branch": settings.selected_repository,
-                "initial_user_msg": initial_user_msg,
                 "user_secrets": secrets_store,
             })              
 
