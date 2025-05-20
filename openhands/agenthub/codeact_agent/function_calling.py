@@ -213,7 +213,7 @@ def response_to_actions(
     response: ModelResponse,
     convert_tool_call_to_action: Callable[
         [ChatCompletionMessageToolCall, list[str] | None], Action
-    ],
+    ] = convert_tool_call_to_action,
     mcp_tool_names: list[str] | None = None,
 ) -> list[Action]:
     actions: list[Action] = []
