@@ -28,9 +28,12 @@ class RepositoryInfo:
 @dataclass
 class ConversationInstructions:
     """
-    Instructions that are important for the agent to perform its task, but the user doesn't need to know
+    Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
 
-    This can be considered as system instructions on a per conversation basis
+    Examples include
+
+        1. Resolver instructions: you're responding to GitHub issue #1234, make sure to open a PR when you are done
+        2. Slack instructions: make sure to check whether any of the context attached is relevant to the task <context_messages>
     """
 
     content: str = ''
