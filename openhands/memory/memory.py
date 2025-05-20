@@ -22,7 +22,11 @@ from openhands.microagent import (
     load_microagents_from_dir,
 )
 from openhands.runtime.base import Runtime
-from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 GLOBAL_MICROAGENTS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(openhands.__file__)),
@@ -65,6 +69,7 @@ class Memory:
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
         self.runtime_info: RuntimeInfo | None = None
+        self.conversation_instructions: ConversationInstructions | None = None
 
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
@@ -156,6 +161,7 @@ class Memory:
             or self.runtime_info
             or repo_instructions
             or microagent_knowledge
+            or self.conversation_instructions
         ):
             obs = RecallObservation(
                 recall_type=RecallType.WORKSPACE_CONTEXT,
@@ -180,6 +186,9 @@ class Memory:
                 custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
                 if self.runtime_info is not None
                 else {},
+                conversation_instructions=self.conversation_instructions.content
+                if self.conversation_instructions is not None
+                else '',
             )
             return obs
         return None
@@ -290,7 +299,9 @@ class Memory:
             self.repository_info = None
 
     def set_runtime_info(
-        self, runtime: Runtime, custom_secrets_descriptions: dict[str, str]
+        self,
+        runtime: Runtime,
+        custom_secrets_descriptions: dict[str, str],
     ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
@@ -306,8 +317,20 @@ class Memory:
             )
         else:
             self.runtime_info = RuntimeInfo(
-                date=date, custom_secrets_descriptions=custom_secrets_descriptions
+                date=date,
+                custom_secrets_descriptions=custom_secrets_descriptions,
             )
+
+    def set_conversation_instructions(
+        self, conversation_instructions: str | None
+    ) -> None:
+        """
+        Set contextual information for conversation
+        This is information the agent may require
+        """
+        self.conversation_instructions = ConversationInstructions(
+            content=conversation_instructions or ''
+        )
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""
