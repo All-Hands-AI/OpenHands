@@ -449,7 +449,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
     )
 
     conversation_instructions = ConversationInstructions(
-        context='additional agent context for the task'
+        content='additional agent context for the task'
     )
 
     # Build the workspace context message

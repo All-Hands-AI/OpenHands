@@ -236,7 +236,7 @@ Today's date is {{ runtime_info.date }}
     )
     repo_instructions = 'This repository contains important code.'
 
-    conversation_instructions = ConversationInstructions(context='additional context')
+    conversation_instructions = ConversationInstructions(content='additional context')
 
     # Build additional info
     result = manager.build_workspace_context(
