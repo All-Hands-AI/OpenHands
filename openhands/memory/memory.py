@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Callable
 
 import openhands
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, EventSource, RecallType
@@ -261,6 +262,25 @@ class Memory:
         for name, agent in repo_agents.items():
             if isinstance(agent, RepoMicroagent):
                 self.repo_microagents[name] = agent
+
+    def get_microagent_mcp_tools(self) -> list[MCPConfig]:
+        """
+        Get MCP tools from all repo microagents (always active)
+
+        Returns:
+            A list of MCP tools configurations from microagents
+        """
+        mcp_configs: list[MCPConfig] = []
+
+        # Check all repo microagents for MCP tools (always active)
+        for agent in self.repo_microagents.values():
+            if agent.metadata.mcp_tools:
+                mcp_configs.append(agent.metadata.mcp_tools)
+                logger.debug(
+                    f'Found MCP tools in repo microagent {agent.name}: {agent.metadata.mcp_tools}'
+                )
+
+        return mcp_configs
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""

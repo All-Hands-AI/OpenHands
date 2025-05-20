@@ -69,7 +69,7 @@ class InitSessionResponse(BaseModel):
     status: str
     conversation_id: str
     conversation_url: str
-    api_key: str | None
+    session_api_key: str | None
     message: str | None = None
 
 
@@ -215,7 +215,7 @@ async def new_conversation(
         agent_loop_info = await _create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
-            custom_secrets=user_secrets.custom_secrets,
+            custom_secrets=user_secrets.custom_secrets if user_secrets else None,
             selected_repository=repository,
             selected_branch=selected_branch,
             initial_user_msg=initial_user_msg,
@@ -228,7 +228,7 @@ async def new_conversation(
             status='ok',
             conversation_id=agent_loop_info.conversation_id,
             conversation_url=agent_loop_info.url,
-            api_key=agent_loop_info.api_key,
+            session_api_key=agent_loop_info.session_api_key,
         )
     except MissingSettingsError as e:
         return JSONResponse(
@@ -289,7 +289,7 @@ async def search_conversations(
     )
     connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
     agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
-    urls_by_conversation_id = {info.conversation_id: info.url for info in agent_loop_info}
+    agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
@@ -299,7 +299,8 @@ async def search_conversations(
                     1 for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
-                url=urls_by_conversation_id.get(conversation.conversation_id),
+                agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),
+
             )
             for conversation in filtered_results
         ),
@@ -317,9 +318,9 @@ async def get_conversation(
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
-        url = agent_loop_info[0].url if agent_loop_info else None
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, url)
+        agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
+        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, agent_loop_info)
         return conversation_info
     except FileNotFoundError:
         return None
@@ -348,7 +349,7 @@ async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
     num_connections: int,
-    url: str | None,
+    agent_loop_info: AgentLoopInfo | None,
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -365,7 +366,8 @@ async def _get_conversation_info(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
             num_connections=num_connections,
-            url=url,
+            url=agent_loop_info.url if agent_loop_info else None,
+            session_api_key=agent_loop_info.session_api_key if agent_loop_info else None,
         )
     except Exception as e:
         logger.error(
