@@ -317,7 +317,6 @@ class DockerNestedConversationManager(ConversationManager):
         config.sandbox.volumes = ",".join(volumes)
 
         # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
-        # In the long term we should use a mounted volume
         event_stream = EventStream(sid, self.file_store, user_id)
 
         runtime = DockerRuntime(
