@@ -42,7 +42,7 @@ Review the current state of the page and all other information to find the best 
     goal_image_urls = []
     if image_urls is not None:
         for idx, url in enumerate(image_urls):
-            goal_txt = goal_txt + f'Images: Goal input image ({idx+1})\n'
+            goal_txt = goal_txt + f'Images: Goal input image ({idx + 1})\n'
             goal_image_urls.append(url)
     goal_txt += '\n'
     return goal_txt, goal_image_urls
@@ -111,7 +111,7 @@ Note: This action set allows you to interact with your environment. Most of them
 def get_history_prompt(prev_actions: list[BrowseInteractiveAction]) -> str:
     history_prompt = ['# History of all previous interactions with the task:\n']
     for i in range(len(prev_actions)):
-        history_prompt.append(f'## step {i+1}')
+        history_prompt.append(f'## step {i + 1}')
         history_prompt.append(
             f'\nOuput thought and action: {prev_actions[i].thought} ```{prev_actions[i].browser_actions}```\n'
         )
@@ -202,14 +202,15 @@ Note:
         tabs = ''
         last_obs = None
         last_action = None
+        set_of_marks = None  # Initialize set_of_marks to None
 
-        if len(state.history) == 1:
+        if len(state.view) == 1:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(browser_actions='noop(1000)')
 
-        for event in state.history:
+        for event in state.view:
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions.append(event)
                 last_action = event
@@ -217,6 +218,9 @@ Note:
                 # agent has responded, task finished.
                 return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
+                # Only process BrowserOutputObservation and skip other observation types
+                if not isinstance(event, BrowserOutputObservation):
+                    continue
                 last_obs = event
 
         if len(prev_actions) >= 1:  # ignore noop()

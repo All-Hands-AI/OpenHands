@@ -6,6 +6,7 @@ from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
@@ -18,6 +19,7 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
+    create_memory,
     create_runtime,
     generate_sid,
     initialize_repository_for_runtime,
@@ -27,8 +29,9 @@ from openhands.events.action import MessageAction, NullAction
 from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
-from openhands.events.serialization import event_from_dict
 from openhands.io import read_input, read_task
+from openhands.mcp import add_mcp_tools_to_agent
+from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -51,6 +54,7 @@ async def run_controller(
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
+    memory: Memory | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -93,6 +97,8 @@ async def run_controller(
     if agent is None:
         agent = create_agent(config)
 
+    # when the runtime is created, it will be connected and clone the selected repository
+    repo_directory = None
     if runtime is None:
         runtime = create_runtime(
             config,
@@ -105,13 +111,26 @@ async def run_controller(
 
         # Initialize repository if needed
         if config.sandbox.selected_repo:
-            initialize_repository_for_runtime(
+            repo_directory = initialize_repository_for_runtime(
                 runtime,
-                agent=agent,
                 selected_repository=config.sandbox.selected_repo,
             )
 
     event_stream = runtime.event_stream
+
+    # when memory is created, it will load the microagents from the selected repository
+    if memory is None:
+        memory = create_memory(
+            runtime=runtime,
+            event_stream=event_stream,
+            sid=sid,
+            selected_repository=config.sandbox.selected_repo,
+            repo_directory=repo_directory,
+        )
+
+    # Add MCP tools to the agent
+    if agent.config.enable_mcp:
+        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -125,16 +144,16 @@ async def run_controller(
         agent, runtime, config, replay_events=replay_events
     )
 
-    assert isinstance(
-        initial_user_action, Action
-    ), f'initial user actions must be an Action, got {type(initial_user_action)}'
+    assert isinstance(initial_user_action, Action), (
+        f'initial user actions must be an Action, got {type(initial_user_action)}'
+    )
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if initial_state is not None:
+    if initial_state is not None and initial_state.last_error:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
@@ -149,7 +168,7 @@ async def run_controller(
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
-    def on_event(event: Event):
+    def on_event(event: Event) -> None:
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
@@ -172,7 +191,7 @@ async def run_controller(
     ]
 
     try:
-        await run_agent_until_done(controller, runtime, end_states)
+        await run_agent_until_done(controller, runtime, memory, end_states)
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 
@@ -180,7 +199,9 @@ async def run_controller(
     if config.file_store is not None and config.file_store != 'memory':
         end_state = controller.get_state()
         # NOTE: the saved state does not include delegates events
-        end_state.save_to_session(event_stream.sid, event_stream.file_store)
+        end_state.save_to_session(
+            event_stream.sid, event_stream.file_store, event_stream.user_id
+        )
 
     await controller.close(set_stop_state=False)
 
@@ -194,9 +215,9 @@ async def run_controller(
         else:
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = controller.get_trajectory()
-        with open(file_path, 'w') as f:
-            json.dump(histories, f)
+        histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
+        with open(file_path, 'w') as f:  # noqa: ASYNC101
+            json.dump(histories, f, indent=4)
 
     return state
 
@@ -234,21 +255,7 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
             raise ValueError(f'Trajectory path is a directory, not a file: {path}')
 
         with open(path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            if not isinstance(data, list):
-                raise ValueError(
-                    f'Expected a list in {path}, got {type(data).__name__}'
-                )
-            events = []
-            for item in data:
-                event = event_from_dict(item)
-                if event.source == EventSource.ENVIRONMENT:
-                    # ignore ENVIRONMENT events as they are not issued by
-                    # the user or agent, and should not be replayed
-                    continue
-                # cannot add an event with _id to event stream
-                event._id = None  # type: ignore[attr-defined]
-                events.append(event)
+            events = ReplayManager.get_replay_events(json.load(file))
             assert isinstance(events[0], MessageAction)
             return events[1:], events[0]
     except json.JSONDecodeError as e:

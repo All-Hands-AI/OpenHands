@@ -3,109 +3,97 @@
 So you've [run OpenHands](./installation) and have
 [set up your LLM](./installation#setup). Now what?
 
-OpenHands can help you tackle a wide variety of engineering tasks. But the technology
-is still new, and we're a long way off from having agents that can take on large, complicated
-engineering tasks without any guidance. So it's important to get a feel for what the agent
-does well, and where it might need some help.
+OpenHands can assist with a range of engineering tasks. However, the technology is still new, and we’re far from having
+agents that can handle complex tasks independently. It’s important to understand what the agent does well and where it
+needs support.
 
 ## Hello World
 
-The first thing you might want to try is a simple "hello world" example.
-This can be more complicated than it sounds!
+Start with a simple "hello world" example. It might be trickier than it seems!
 
-Try prompting the agent with:
-> Please write a bash script hello.sh that prints "hello world!"
+Prompt the agent with:
+> Write a bash script hello.sh that prints "hello world!"
 
-You should see that the agent not only writes the script, it sets the correct
-permissions and runs the script to check the output.
+The agent will write the script, set the correct permissions, and run it to check the output.
 
 You can continue prompting the agent to refine your code. This is a great way to
 work with agents. Start simple, and iterate.
 
-> Please modify hello.sh so that it accepts a name as the first argument, but defaults to "world"
+> Modify hello.sh so that it accepts a name as the first argument, but defaults to "world"
 
-You can also work in any language you need, though the agent might need to spend some
-time setting up its environment!
+You can also use any language you need. The agent may need time to set up the environment.
 
 > Please convert hello.sh to a Ruby script, and run it
 
 ## Building From Scratch
 
-Agents do exceptionally well at "greenfield" tasks (tasks where they don't need
-any context about an existing codebase) and they can just start from scratch.
-
-It's best to start with a simple task, and then iterate on it. It's also best to be
-as specific as possible about what you want, what the tech stack should be, etc.
+Agents excel at "greenfield" tasks, where they don’t need context about existing code and
+they can start from scratch.
+Begin with a simple task and iterate from there. Be specific about what you want and the tech stack.
 
 For example, we might build a TODO app:
 
-> Please build a basic TODO list app in React. It should be frontend-only, and all state
-> should be kept in localStorage.
+> Build a frontend-only TODO app in React. All state should be stored in localStorage.
 
-We can keep iterating on the app once the skeleton is there:
+Once the basic structure is in place, continue refining:
 
-> Please allow adding an optional due date to every task.
+> Allow adding an optional due date to each task.
 
-Just like with normal development, it's good to commit and push your code frequently.
+Just like normal development, commit and push your code often.
 This way you can always revert back to an old state if the agent goes off track.
 You can ask the agent to commit and push for you:
 
-> Please commit the changes and push them to a new branch called "feature/due-dates"
-
+> Commit the changes and push them to a new branch called "feature/due-dates"
 
 ## Adding New Code
 
-OpenHands can also do a great job adding new code to an existing code base.
+OpenHands is great at adding new code to an existing codebase.
 
-For example, you can ask OpenHands to add a new GitHub action to your project
-which lints your code. OpenHands may take a peek at your codebase to see what language
-it should use and then drop a new file into `./github/workflows/lint.yml`.
+For instance, you can ask OpenHands to add a GitHub action that lints your code. It might check your codebase to
+determine the language, then create a new file in `./github/workflows/lint.yml`.
 
-> Please add a GitHub action that lints the code in this repository.
+> Add a GitHub action that lints the code in this repository.
 
-Some tasks might require a bit more context. While OpenHands can use `ls` and `grep`
-to search through your codebase, providing context up front allows it to move faster,
-and more accurately. And it'll cost you fewer tokens!
+Some tasks need more context. While OpenHands can use commands like ls and grep to search, providing context upfront
+speeds things up and reduces token usage.
 
-> Please modify ./backend/api/routes.js to add a new route that returns a list of all tasks.
+> Modify ./backend/api/routes.js to add a new route that returns a list of all tasks.
 
-> Please add a new React component that displays a list of Widgets to the ./frontend/components
-> directory. It should use the existing Widget component.
+> Add a new React component to the ./frontend/components directory to display a list of Widgets.
+> It should use the existing Widget component.
 
 ## Refactoring
 
-OpenHands does great at refactoring existing code, especially in small chunks.
-You probably don't want to try rearchitecting your whole codebase, but breaking up
-long files and functions, renaming variables, etc. tend to work very well.
+OpenHands does great at refactoring code in small chunks. Rather than rearchitecting the entire codebase,
+it's more effective to break up long files and functions or rename variables.
 
-> Please rename all the single-letter variables in ./app.go.
+> Rename all the single-letter variables in ./app.go.
 
-> Please break the function `build_and_deploy_widgets` into two functions, `build_widgets` and `deploy_widgets` in widget.php.
+> Split the `build_and_deploy_widgets` function into two functions, `build_widgets` and `deploy_widgets` in widget.php.
 
-> Please break ./api/routes.js into separate files for each route.
+> Break ./api/routes.js into separate files for each route.
 
 ## Bug Fixes
 
-OpenHands can also help you track down and fix bugs in your code. But as any
-developer knows, bug fixing can be extremely tricky, and often OpenHands will need more context.
-It helps if you've diagnosed the bug, but want OpenHands to figure out the logic.
+OpenHands can help track down and fix bugs, but bug fixing can be tricky and often requires more context.
+It’s helpful if you’ve already diagnosed the issue and just need OpenHands to handle the logic.
 
-> Currently the email field in the `/subscribe` endpoint is rejecting .io domains. Please fix this.
+> The email field in the `/subscribe` endpoint is rejecting .io domains. Fix this.
 
-> The `search_widgets` function in ./app.py is doing a case-sensitive search. Please make it case-insensitive.
+> The `search_widgets` function in ./app.py is doing a case-sensitive search. Make it case-insensitive.
 
-It often helps to do test-driven development when bug fixing with an agent.
-You can ask the agent to write a new test, and then iterate until it fixes the bug:
+For bug fixing, test-driven development can be really useful. You can ask the agent to write a new test and iterate
+until the bug is fixed:
 
-> The `hello` function crashes on the empty string. Please write a test that reproduces this bug, then fix the code so it passes.
+> The `hello` function crashes on the empty string. Write a test that reproduces this bug, then fix the code so it passes.
 
 ## More
 
-OpenHands is capable of helping out on just about any coding task but it takes some practice
-to get the most out of it. Remember to:
+OpenHands can assist with nearly any coding task, but it takes some practice to get the best results.
+Keep these tips in mind:
 * Keep your tasks small.
-* Be as specific as possible.
-* Provide as much context as possible.
+* Be specific.
+* Provide plenty of context.
 * Commit and push frequently.
 
 See [Prompting Best Practices](./prompting/prompting-best-practices) for more tips on how to get the most out of OpenHands.

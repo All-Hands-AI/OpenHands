@@ -17,8 +17,13 @@ from openhands.events.action import (
     AgentFinishAction,
     MessageAction,
 )
+from openhands.events.action.agent import RecallAction
+from openhands.events.event import Event, RecallType
+from openhands.events.observation.agent import RecallObservation
+from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.memory.memory import Memory
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -39,6 +44,15 @@ def mock_parent_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     return agent
 
 
@@ -51,6 +65,15 @@ def mock_child_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     return agent
 
 
@@ -75,6 +98,25 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         initial_state=parent_state,
     )
 
+    # Setup Memory to catch RecallActions
+    mock_memory = MagicMock(spec=Memory)
+    mock_memory.event_stream = mock_event_stream
+
+    def on_event(event: Event):
+        if isinstance(event, RecallAction):
+            # create a RecallObservation
+            microagent_observation = RecallObservation(
+                recall_type=RecallType.KNOWLEDGE,
+                content='Found info',
+            )
+            microagent_observation._cause = event.id  # ignore attr-defined warning
+            mock_event_stream.add_event(microagent_observation, EventSource.ENVIRONMENT)
+
+    mock_memory.on_event = on_event
+    mock_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
+    )
+
     # Setup a delegate action from the parent
     delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
     mock_parent_agent.step.return_value = delegate_action
@@ -87,16 +129,25 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Give time for the async step() to execute
     await asyncio.sleep(1)
 
-    # The parent should receive step() from that event
+    # Verify that a RecallObservation was added to the event stream
+    events = list(mock_event_stream.get_events())
+
+    # SystemMessageAction, RecallAction, AgentChangeState, AgentDelegateAction, SystemMessageAction (for child)
+    assert mock_event_stream.get_latest_event_id() == 5
+
+    # a RecallObservation and an AgentDelegateAction should be in the list
+    assert any(isinstance(event, RecallObservation) for event in events)
+    assert any(isinstance(event, AgentDelegateAction) for event in events)
+
     # Verify that a delegate agent controller is created
-    assert (
-        parent_controller.delegate is not None
-    ), "Parent's delegate controller was not set."
+    assert parent_controller.delegate is not None, (
+        "Parent's delegate controller was not set."
+    )
 
     # The parent's iteration should have incremented
-    assert (
-        parent_controller.state.iteration == 1
-    ), 'Parent iteration should be incremented after step.'
+    assert parent_controller.state.iteration == 1, (
+        'Parent iteration should be incremented after step.'
+    )
 
     # Now simulate that the child increments local iteration and finishes its subtask
     delegate_controller = parent_controller.delegate
@@ -109,14 +160,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     await asyncio.sleep(0.5)
 
     # Now the parent's delegate is None
-    assert (
-        parent_controller.delegate is None
-    ), 'Parent delegate should be None after child finishes.'
+    assert parent_controller.delegate is None, (
+        'Parent delegate should be None after child finishes.'
+    )
 
     # Parent's global iteration is updated from the child
-    assert (
-        parent_controller.state.iteration == 6
-    ), "Parent iteration should be the child's iteration + 1 after child is done."
+    assert parent_controller.state.iteration == 6, (
+        "Parent iteration should be the child's iteration + 1 after child is done."
+    )
 
     # Cleanup
     await parent_controller.close()
@@ -182,6 +233,7 @@ async def test_delegate_step_different_states(
     else:
         assert controller.delegate is None
         assert controller.state.iteration == 5
-        mock_delegate.close.assert_called_once()
+        # The close method is called once in end_delegate
+        assert mock_delegate.close.call_count == 1
 
     await controller.close()

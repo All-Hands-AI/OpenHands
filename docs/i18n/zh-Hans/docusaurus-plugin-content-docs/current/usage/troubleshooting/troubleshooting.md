@@ -1,10 +1,42 @@
 # 🚧 故障排除
 
 :::tip
-OpenHands 仅通过 WSL 支持 Windows。请确保在 WSL 终端内运行所有命令。
+OpenHands 仅通过 WSL 支持 Windows。请确保在 WSL 终端中运行所有命令。
 :::
 
-### 启动 Docker 客户端失败
+### 无法通过本地 IP 访问 VS Code 标签页
+
+**描述**
+
+当通过非本地主机 URL（如 LAN IP 地址）访问 OpenHands 时，VS Code 标签页显示"禁止访问"错误，而 UI 的其他部分正常工作。
+
+**解决方案**
+
+这是因为 VS Code 运行在随机的高端口上，可能没有暴露或无法从其他机器访问。要解决此问题：
+
+1. 使用 `SANDBOX_VSCODE_PORT` 环境变量为 VS Code 设置特定端口：
+   ```bash
+   docker run -it --rm \
+       -e SANDBOX_VSCODE_PORT=41234 \
+       -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:latest \
+       -v /var/run/docker.sock:/var/run/docker.sock \
+       -v ~/.openhands-state:/.openhands-state \
+       -p 3000:3000 \
+       -p 41234:41234 \
+       --add-host host.docker.internal:host-gateway \
+       --name openhands-app \
+       docker.all-hands.dev/all-hands-ai/openhands:latest
+   ```
+
+2. 确保在 Docker 命令中使用 `-p 41234:41234` 暴露相同的端口。
+
+3. 或者，您可以在 `config.toml` 文件中设置：
+   ```toml
+   [sandbox]
+   vscode_port = 41234
+   ```
+
+### 启动 docker 客户端失败
 
 **描述**
 
@@ -15,29 +47,22 @@ Launch docker client failed. Please make sure you have installed docker and star
 
 **解决方案**
 
-请按顺序尝试以下步骤：
-* 确认 `docker` 正在您的系统上运行。您应该能够在终端中成功运行 `docker ps`。
-* 如果使用 Docker Desktop，请确保 `Settings > Advanced > Allow the default Docker socket to be used` 已启用。
-* 根据您的配置，您可能需要在 Docker Desktop 中启用 `Settings > Resources > Network > Enable host networking`。
+按顺序尝试以下方法：
+* 确认系统上正在运行 `docker`。您应该能够在终端中成功运行 `docker ps`。
+* 如果使用 Docker Desktop，确保启用了 `设置 > 高级 > 允许使用默认 Docker 套接字`。
+* 根据您的配置，可能需要在 Docker Desktop 中启用 `设置 > 资源 > 网络 > 启用主机网络`。
 * 重新安装 Docker Desktop。
----
 
-# 开发工作流程特定问题
-### 构建运行时 Docker 镜像时出错
+### 权限错误
 
 **描述**
 
-尝试启动新会话失败，并且日志中出现以下术语的错误：
-```
-debian-security bookworm-security
-InRelease At least one invalid signature was encountered.
-```
+在初始提示时，出现带有 `Permission Denied` 或 `PermissionError` 的错误。
 
-当现有外部库的哈希值发生变化且本地 Docker 实例缓存了先前版本时，似乎会发生这种情况。要解决此问题，请尝试以下操作：
+**解决方案**
 
-* 停止名称以 `openhands-runtime-` 为前缀的任何容器：
-  `docker ps --filter name=openhands-runtime- --filter status=running -aq | xargs docker stop`
-* 删除名称以 `openhands-runtime-` 为前缀的任何容器：
-  `docker rmi $(docker images --filter name=openhands-runtime- -q --no-trunc)`
-* 停止并删除名称以 `openhands-runtime-` 为前缀的任何容器/镜像
-* 清理容器/镜像：`docker container prune -f && docker image prune -f`
+* 检查 `~/.openhands-state` 是否由 `root` 拥有。如果是，您可以：
+  * 更改目录的所有权：`sudo chown <user>:<user> ~/.openhands-state`。
+  * 或更新目录的权限：`sudo chmod 777 ~/.openhands-state`
+  * 或者如果您不需要之前的数据，可以删除它。OpenHands 将重新创建它。您需要重新输入 LLM 设置。
+* 如果挂载本地目录，确保您的 `WORKSPACE_BASE` 对运行 OpenHands 的用户有必要的权限。

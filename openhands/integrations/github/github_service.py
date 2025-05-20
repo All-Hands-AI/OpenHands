@@ -1,47 +1,69 @@
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.github_types import (
-    GhAuthenticationError,
-    GHUnknownException,
-    GitHubRepository,
-    GitHubUser,
+from openhands.integrations.github.queries import (
+    suggested_task_issue_graphql_query,
+    suggested_task_pr_graphql_query,
+)
+from openhands.integrations.service_types import (
+    BaseGitService,
+    Branch,
+    GitService,
+    ProviderType,
+    Repository,
+    RequestMethod,
     SuggestedTask,
     TaskType,
+    UnknownException,
+    User,
 )
+from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitHubService:
+class GitHubService(BaseGitService, GitService):
     BASE_URL = 'https://api.github.com'
-    github_token: SecretStr = SecretStr('')
+    token: SecretStr = SecretStr('')
     refresh = False
 
     def __init__(
         self,
         user_id: str | None = None,
+        external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
-        github_token: SecretStr | None = None,
+        token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_domain: str | None = None,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
 
-        if github_token:
-            self.github_token = github_token
+        if token:
+            self.token = token
+
+        if base_domain and base_domain != 'github.com':
+            self.BASE_URL = f'https://{base_domain}/api/v3'
+
+        self.external_auth_id = external_auth_id
+        self.external_auth_token = external_auth_token
+
+    @property
+    def provider(self) -> str:
+        return ProviderType.GITHUB.value
 
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
-        if self.user_id and not self.github_token:
-            self.github_token = await self.get_latest_token()
+        if not self.token:
+            self.token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.github_token.get_secret_value() if self.github_token else ""}',
+            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
@@ -49,20 +71,37 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr | None:
-        return self.github_token
+        return self.token
 
-    async def _fetch_data(
-        self, url: str, params: dict | None = None
+    async def _make_request(
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
-                response = await client.get(url, headers=github_headers, params=params)
+
+                # Make initial request
+                response = await self.execute_request(
+                    client=client,
+                    url=url,
+                    headers=github_headers,
+                    params=params,
+                    method=method,
+                )
+
+                # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
-                    response = await client.get(
-                        url, headers=github_headers, params=params
+                    response = await self.execute_request(
+                        client=client,
+                        url=url,
+                        headers=github_headers,
+                        params=params,
+                        method=method,
                     )
 
                 response.raise_for_status()
@@ -73,21 +112,15 @@ class GitHubService:
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise GhAuthenticationError('Invalid Github token')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise GHUnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise GHUnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
-    async def get_user(self) -> GitHubUser:
+    async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
 
-        return GitHubUser(
+        return User(
             id=response.get('id'),
             login=response.get('login'),
             avatar_url=response.get('avatar_url'),
@@ -96,53 +129,134 @@ class GitHubService:
             email=response.get('email'),
         )
 
-    async def get_repositories(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
-    ) -> list[GitHubRepository]:
-        params = {'page': str(page), 'per_page': str(per_page)}
-        if installation_id:
-            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-            response, headers = await self._fetch_data(url, params)
-            response = response.get('repositories', [])
-        else:
-            url = f'{self.BASE_URL}/user/repos'
-            params['sort'] = sort
-            response, headers = await self._fetch_data(url, params)
+    async def verify_access(self) -> bool:
+        """Verify if the token is valid by making a simple request."""
+        url = f'{self.BASE_URL}'
+        await self._make_request(url)
+        return True
 
-        next_link: str = headers.get('Link', '')
-        repos = [
-            GitHubRepository(
+    async def _fetch_paginated_repos(
+        self, url: str, params: dict, max_repos: int, extract_key: str | None = None
+    ) -> list[dict]:
+        """
+        Fetch repositories with pagination support.
+
+        Args:
+            url: The API endpoint URL
+            params: Query parameters for the request
+            max_repos: Maximum number of repositories to fetch
+            extract_key: If provided, extract repositories from this key in the response
+
+        Returns:
+            List of repository dictionaries
+        """
+        repos: list[dict] = []
+        page = 1
+
+        while len(repos) < max_repos:
+            page_params = {**params, 'page': str(page)}
+            response, headers = await self._make_request(url, page_params)
+
+            # Extract repositories from response
+            page_repos = response.get(extract_key, []) if extract_key else response
+
+            if not page_repos:  # No more repositories
+                break
+
+            repos.extend(page_repos)
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        return repos[:max_repos]  # Trim to max_repos if needed
+
+    def parse_pushed_at_date(self, repo):
+        ts = repo.get('pushed_at')
+        return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
+
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by GitHub API
+        all_repos: list[dict] = []
+
+        if app_mode == AppMode.SAAS:
+            # Get all installation IDs and fetch repos for each one
+            installation_ids = await self.get_installation_ids()
+
+            # Iterate through each installation ID
+            for installation_id in installation_ids:
+                params = {'per_page': str(PER_PAGE)}
+                url = (
+                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+                )
+
+                # Fetch repositories for this installation
+                installation_repos = await self._fetch_paginated_repos(
+                    url, params, MAX_REPOS - len(all_repos), extract_key='repositories'
+                )
+
+                all_repos.extend(installation_repos)
+
+                # If we've already reached MAX_REPOS, no need to check other installations
+                if len(all_repos) >= MAX_REPOS:
+                    break
+
+            if sort == 'pushed':
+                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
+        else:
+            # Original behavior for non-SaaS mode
+            params = {'per_page': str(PER_PAGE), 'sort': sort}
+            url = f'{self.BASE_URL}/user/repos'
+
+            # Fetch user repositories
+            all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
+
+        # Convert to Repository objects
+        return [
+            Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
-                link_header=next_link,
+                git_provider=ProviderType.GITHUB,
+                is_public=not repo.get('private', True),
             )
-            for repo in response
+            for repo in all_repos
         ]
-        return repos
 
     async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
-        response, _ = await self._fetch_data(url)
+        response, _ = await self._make_request(url)
         installations = response.get('installations', [])
         return [i['id'] for i in installations]
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str
-    ) -> list[GitHubRepository]:
+    ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
+        # Add is:public to the query to ensure we only search for public repositories
+        query_with_visibility = f'{query} is:public'
+        params = {
+            'q': query_with_visibility,
+            'per_page': per_page,
+            'sort': sort,
+            'order': order,
+        }
 
-        response, _ = await self._fetch_data(url, params)
-        repos = response.get('items', [])
+        response, _ = await self._make_request(url, params)
+        repo_items = response.get('items', [])
 
         repos = [
-            GitHubRepository(
+            Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
+                git_provider=ProviderType.GITHUB,
+                is_public=True,
             )
-            for repo in repos
+            for repo in repo_items
         ]
 
         return repos
@@ -163,22 +277,16 @@ class GitHubService:
 
                 result = response.json()
                 if 'errors' in result:
-                    raise GHUnknownException(
-                        f"GraphQL query error: {json.dumps(result['errors'])}"
+                    raise UnknownException(
+                        f'GraphQL query error: {json.dumps(result["errors"])}'
                     )
 
-                return result
+                return dict(result)
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise GhAuthenticationError('Invalid Github token')
-
-            logger.warning(f'Status error on GH API: {e}')
-            raise GHUnknownException('Unknown error')
-
+            raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
-            logger.warning(f'HTTP error on GH API: {e}')
-            raise GHUnknownException('Unknown error')
+            raise self.handle_http_error(e)
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -186,63 +294,26 @@ class GitHubService:
         Returns:
         - PRs authored by the user.
         - Issues assigned to the user.
+
+        Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
         user = await self.get_user()
         login = user.login
-
-        query = """
-        query GetUserTasks($login: String!) {
-          user(login: $login) {
-            pullRequests(first: 100, states: [OPEN], orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-                mergeable
-                commits(last: 1) {
-                  nodes {
-                    commit {
-                      statusCheckRollup {
-                        state
-                      }
-                    }
-                  }
-                }
-                reviews(first: 100, states: [CHANGES_REQUESTED, COMMENTED]) {
-                  nodes {
-                    state
-                  }
-                }
-              }
-            }
-            issues(first: 100, states: [OPEN], filterBy: {assignee: $login}, orderBy: {field: UPDATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                repository {
-                  nameWithOwner
-                }
-              }
-            }
-          }
-        }
-        """
-
+        tasks: list[SuggestedTask] = []
         variables = {'login': login}
 
         try:
-            response = await self.execute_graphql_query(query, variables)
-            data = response['data']['user']
-            tasks: list[SuggestedTask] = []
+            pr_response = await self.execute_graphql_query(
+                suggested_task_pr_graphql_query, variables
+            )
+            pr_data = pr_response['data']['user']
 
             # Process pull requests
-            for pr in data['pullRequests']['nodes']:
+            for pr in pr_data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
 
-                # Always add open PRs
+                # Start with default task type
                 task_type = TaskType.OPEN_PR
 
                 # Check for specific states
@@ -263,20 +334,40 @@ class GitHubService:
                 ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
-                tasks.append(
-                    SuggestedTask(
-                        task_type=task_type,
-                        repo=repo_name,
-                        issue_number=pr['number'],
-                        title=pr['title'],
+                # Only add the task if it's not OPEN_PR
+                if task_type != TaskType.OPEN_PR:
+                    tasks.append(
+                        SuggestedTask(
+                            git_provider=ProviderType.GITHUB,
+                            task_type=task_type,
+                            repo=repo_name,
+                            issue_number=pr['number'],
+                            title=pr['title'],
+                        )
                     )
-                )
+
+        except Exception as e:
+            logger.info(
+                f'Error fetching suggested task for PRs: {e}',
+                extra={
+                    'signal': 'github_suggested_tasks',
+                    'user_id': self.external_auth_id,
+                },
+            )
+
+        try:
+            # Execute issue query
+            issue_response = await self.execute_graphql_query(
+                suggested_task_issue_graphql_query, variables
+            )
+            issue_data = issue_response['data']['user']
 
             # Process issues
-            for issue in data['issues']['nodes']:
+            for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
                     SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
                         task_type=TaskType.OPEN_ISSUE,
                         repo=repo_name,
                         issue_number=issue['number'],
@@ -285,8 +376,77 @@ class GitHubService:
                 )
 
             return tasks
-        except Exception:
-            return []
+
+        except Exception as e:
+            logger.info(
+                f'Error fetching suggested task for issues: {e}',
+                extra={
+                    'signal': 'github_suggested_tasks',
+                    'user_id': self.external_auth_id,
+                },
+            )
+
+        return tasks
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('full_name'),
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+        )
+
+    async def get_branches(self, repository: str) -> list[Branch]:
+        """Get branches for a repository"""
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
+
+        # Set maximum branches to fetch (10 pages with 100 per page)
+        MAX_BRANCHES = 1000
+        PER_PAGE = 100
+
+        all_branches: list[Branch] = []
+        page = 1
+
+        # Fetch up to 10 pages of branches
+        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+            params = {'per_page': str(PER_PAGE), 'page': str(page)}
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more branches
+                break
+
+            for branch_data in response:
+                # Extract the last commit date if available
+                last_push_date = None
+                if branch_data.get('commit') and branch_data['commit'].get('commit'):
+                    commit_info = branch_data['commit']['commit']
+                    if commit_info.get('committer') and commit_info['committer'].get(
+                        'date'
+                    ):
+                        last_push_date = commit_info['committer']['date']
+
+                branch = Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('sha', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=last_push_date,
+                )
+                all_branches.append(branch)
+
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        return all_branches
 
 
 github_service_cls = os.environ.get(

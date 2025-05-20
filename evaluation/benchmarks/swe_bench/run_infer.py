@@ -48,11 +48,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
-from openhands.events.action import (
-    CmdRunAction,
-    FileReadAction,
-    MessageAction,
-)
+from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -140,7 +136,74 @@ Follow these steps to reproduce the issue:
 4. Run the test framework and make sure your tests fail! Only submit FAILING tests! Never submit passing tests.
 {test_instructions}Your thinking should be thorough and so it's fine if it's very long.
 """
+    elif 'multimodal' not in metadata.dataset.lower():
+        logger.info(f'Using SWE-Bench non-multimodal instruction')
+        instruction = f"""
+<uploaded_files>
+/workspace/{workspace_dir_name}
+</uploaded_files>
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
+
+<issue_description>
+{instance.problem_statement}
+</issue_description>
+
+
+Follow these phases to resolve the issue:
+
+Phase 1. READING: read the problem and reword it in clearer terms
+   1.1 If there are code or config snippets. Express in words any best practices or conventions in them.
+   1.2 Hightlight message errors, method names, variables, file names, stack traces, and technical details.
+   1.3 Explain the problem in clear terms.
+   1.4 Enumerate the steps to reproduce the problem.
+   1.5 Hightlight any best practices to take into account when testing and fixing the issue
+
+Phase 2. RUNNING: install and run the tests on the repository
+   2.1 Follow the readme
+   2.2 Install the environment and anything needed
+   2.2 Iterate and figure out how to run the tests
+
+Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions
+   3.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
+   3.2 Identify all files related to the problem statement.
+   3.3 Propose the methods and files to fix the issue and explain why.
+   3.4 From the possible file locations, select the most likely location to fix the issue.
+
+Phase 4. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue.
+   4.1 Look at existing test files in the repository to understand the test format/structure.
+   4.2 Create a minimal reproduction script that reproduces the located issue.
+   4.3 Run the reproduction script to confirm you are reproducing the issue.
+   4.4 Adjust the reproduction script as necessary.
+
+Phase 5. FIX ANALYSIS: state clearly the problem and how to fix it
+   5.1 State clearly what the problem is.
+   5.2 State clearly where the problem is located.
+   5.3 State clearly how the test reproduces the issue.
+   5.4 State clearly the best practices to take into account in the fix.
+   5.5 State clearly how to fix the problem.
+
+Phase 6. FIX IMPLEMENTATION: Edit the source code to implement your chosen solution.
+   6.1 Make minimal, focused changes to fix the issue.
+
+Phase 7. VERIFICATION: Test your implementation thoroughly.
+   7.1 Run your reproduction script to verify the fix works.
+   7.2 Add edge cases to your test script to ensure comprehensive coverage.
+   7.3 Run existing tests related to the modified code to ensure you haven't broken anything.
+
+8. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance['base_commit']}.
+   8.1 Ensure you've fully addressed all requirements.
+   8.2 Run any tests in the repository related to:
+     8.2.1 The issue you are fixing
+     8.2.2 The files you modified
+     8.2.3 The functions you changed
+   8.3 If any tests fail, revise your implementation until all tests pass
+
+Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+"""
     else:
+        assert 'multimodal' in metadata.dataset.lower(), 'multimodal dataset is required for multimodal instruction'
+        assert RUN_WITH_BROWSING, 'RUN_WITH_BROWSING must be true for SWE-Bench multimodal'
+        logger.info(f'Using SWE-Bench multimodal instruction')
         instruction = f"""
 <uploaded_files>
 /workspace/{workspace_dir_name}
@@ -318,10 +381,11 @@ def get_config(
     )
     # TODO
     agent_config = AgentConfig(
-        # codeact_enable_jupyter=False, #TODO: is this needed
-        codeact_enable_browsing=RUN_WITH_BROWSING,  # TODO: this must be True
-        codeact_enable_llm_editor=False,
-        # condenser=metadata.condenser_config, #TODO: use the BrowserOutputCondenser
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
+        enable_mcp=False,
+        condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
     print(agent_config)
@@ -486,6 +550,7 @@ def initialize_runtime(
             obs.exit_code == 0 and 'testbed' in obs.content,
             f'Expected to find python interpreter from testbed, but got: {str(obs)}',
         )
+
     action = CmdRunAction(command='mkdir -p /workspace/downloads')
     obs = runtime.run_action(action)
 
@@ -636,51 +701,11 @@ def complete_runtime(
         f'Failed to remove binary files: {str(obs)}',
     )
 
-    # action = CmdRunAction(command='git reset -- package-lock.json **/package-lock.json "**/*.pdf')
-    # action.set_hard_timeout(600)
-    # logger.info(action, extra={'msg_type': 'ACTION'})
-    # obs = runtime.run_action(action)
-    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    # assert_and_raise(
-    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-    #     f'Failed to reset package-lock.json and PDF files: {str(obs)}',
-    # )
-
-    # # Remove new package-lock.json files from staging
-    # action = CmdRunAction(command='git rm --cached -f --ignore-unmatch package-lock.json **/package-lock.json')
-    # action.set_hard_timeout(600)
-    # logger.info(action, extra={'msg_type': 'ACTION'})
-    # obs = runtime.run_action(action)
-    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    # assert_and_raise(
-    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-    #     f'Failed to remove newly added package-lock.json files: {str(obs)}',
-    # )
-
-    # # Remove new PDF files from staging
-    # action = CmdRunAction(command='git rm --cached -f --ignore-unmatch "**/*.pdf"')
-    # action.set_hard_timeout(600)
-    # logger.info(action, extra={'msg_type': 'ACTION'})
-    # obs = runtime.run_action(action)
-    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    # assert_and_raise(
-    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-    #     f'Failed to remove newly added PDF files: {str(obs)}',
-    # )
-    action = CmdRunAction(
-        command=f'git diff --no-color --cached {instance["base_commit"]}'
-    )
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs)
-
     n_retries = 0
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
             command=f'git diff --no-color --cached {instance["base_commit"]} -- ":(exclude)package-lock.json" ":(exclude)**/package-lock.json" ":(exclude)*.pdf" ":(exclude)**/*.pdf" > patch.diff'
-            # command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
         )
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -689,7 +714,6 @@ def complete_runtime(
         n_retries += 1
         if isinstance(obs, CmdOutputObservation):
             if obs.exit_code == 0:
-                # TODO: FileRead will result in Markdown content being returned. Use cat?
                 # Read the patch file
                 action = FileReadAction(path='patch.diff')
                 action.set_hard_timeout(max(300 + 100 * n_retries, 600))
@@ -849,6 +873,19 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
+            if 'selected_repos' in data:
+                # repos for the swe-bench instances:
+                # ['astropy/astropy', 'django/django', 'matplotlib/matplotlib', 'mwaskom/seaborn', 'pallets/flask', 'psf/requests', 'pydata/xarray', 'pylint-dev/pylint', 'pytest-dev/pytest', 'scikit-learn/scikit-learn', 'sphinx-doc/sphinx', 'sympy/sympy']
+                selected_repos = data['selected_repos']
+                if isinstance(selected_repos, str): selected_repos = [selected_repos]
+                assert isinstance(selected_repos, list)
+                logger.info(
+                    f'Filtering {selected_repos} tasks from "selected_repos"...'
+                )
+                subset = dataset[dataset["repo"].isin(selected_repos)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+                
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
@@ -989,11 +1026,6 @@ if __name__ == '__main__':
             instances = prepare_dataset(
                 swe_bench_tests, cur_output_file, args.eval_n_limit, eval_ids=eval_ids
             )
-            # try:
-            #     instances = instances[instances['repo'] == 'quarto-dev/quarto-cli']
-            # except Exception as _:
-            #     pass
-            # instances = instances.head(135)
             if len(instances) > 0 and not isinstance(
                 instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
             ):

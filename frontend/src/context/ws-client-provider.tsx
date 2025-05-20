@@ -1,14 +1,37 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
+import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
-import { showChatError } from "#/utils/error-handler";
+import { showChatError, trackError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
+  CommandAction,
+  FileEditAction,
+  FileWriteAction,
+  OpenHandsAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { Conversation } from "#/api/open-hands.types";
+import { useUserProviders } from "#/hooks/use-user-providers";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { OpenHandsObservation } from "#/types/core/observations";
+import {
+  isErrorObservation,
+  isOpenHandsAction,
+  isOpenHandsObservation,
+  isUserMessage,
+} from "#/types/core/guards";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+
+const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
+  typeof obj === "object" &&
+  obj !== null &&
+  "message" in obj &&
+  typeof obj.message === "string";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -18,13 +41,16 @@ const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   "message" in event &&
   "timestamp" in event;
 
-const isUserMessage = (
+const isFileWriteAction = (
   event: OpenHandsParsedEvent,
-): event is UserMessageAction =>
-  "source" in event &&
-  "type" in event &&
-  event.source === "user" &&
-  event.type === "message";
+): event is FileWriteAction => "action" in event && event.action === "write";
+
+const isFileEditAction = (
+  event: OpenHandsParsedEvent,
+): event is FileEditAction => "action" in event && event.action === "edit";
+
+const isCommandAction = (event: OpenHandsParsedEvent): event is CommandAction =>
+  "action" in event && event.action === "run";
 
 const isAssistantMessage = (
   event: OpenHandsParsedEvent,
@@ -48,6 +74,7 @@ interface UseWsClient {
   status: WsClientProviderStatus;
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
+  parsedEvents: (OpenHandsAction | OpenHandsObservation)[];
   send: (event: Record<string, unknown>) => void;
 }
 
@@ -55,6 +82,7 @@ const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
+  parsedEvents: [],
   send: () => {
     throw new Error("not connected");
   },
@@ -78,7 +106,7 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
-    if (data.message === "websocket error") {
+    if (data.message === "websocket error" || data.message === "timeout") {
       return;
     }
     let msgId: string | undefined;
@@ -104,21 +132,29 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const { removeOptimisticUserMessage } = useOptimisticUserMessage();
+  const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
+  const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const [parsedEvents, setParsedEvents] = React.useState<
+    (OpenHandsAction | OpenHandsObservation)[]
+  >([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
+  const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
+  const { data: conversation } = useUserConversation(conversationId);
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    sioRef.current.emit("oh_action", event);
+    sioRef.current.emit("oh_user_action", event);
   }
 
   function handleConnect() {
@@ -126,9 +162,64 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsEvent(event) && isMessageAction(event)) {
-      messageRateHandler.record(new Date().getTime());
+    if (isOpenHandsEvent(event)) {
+      if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
+        setParsedEvents((prevEvents) => [...prevEvents, event]);
+      }
+
+      if (isErrorObservation(event)) {
+        trackError({
+          message: event.message,
+          source: "chat",
+          metadata: { msgId: event.id },
+        });
+      } else {
+        removeErrorMessage();
+      }
+
+      if (isUserMessage(event)) {
+        removeOptimisticUserMessage();
+      }
+
+      if (isMessageAction(event)) {
+        messageRateHandler.record(new Date().getTime());
+      }
+
+      // Invalidate diffs cache when a file is edited or written
+      if (
+        isFileEditAction(event) ||
+        isFileWriteAction(event) ||
+        isCommandAction(event)
+      ) {
+        queryClient.removeQueries({
+          queryKey: ["file_changes", conversationId],
+        });
+
+        // Invalidate file diff cache when a file is edited or written
+        if (!isCommandAction(event)) {
+          const cachedConversaton = queryClient.getQueryData<Conversation>([
+            "user",
+            "conversation",
+            conversationId,
+          ]);
+          const clonedRepositoryDirectory =
+            cachedConversaton?.selected_repository?.split("/").pop();
+
+          let fileToInvalidate = event.args.path.replace("/workspace/", "");
+          if (clonedRepositoryDirectory) {
+            fileToInvalidate = fileToInvalidate.replace(
+              `${clonedRepositoryDirectory}/`,
+              "",
+            );
+          }
+
+          queryClient.invalidateQueries({
+            queryKey: ["file_diff", conversationId, fileToInvalidate],
+          });
+        }
+      }
     }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
@@ -146,11 +237,23 @@ export function WsClientProvider({
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
     updateStatusWhenErrorMessagePresent(data);
+
+    setErrorMessage(
+      hasValidMessageProperty(data)
+        ? data.message
+        : "The WebSocket connection was closed.",
+    );
   }
 
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
+
+    setErrorMessage(
+      hasValidMessageProperty(data)
+        ? data.message
+        : "An unknown error occurred on the WebSocket connection.",
+    );
   }
 
   React.useEffect(() => {
@@ -161,6 +264,9 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
+    if (!conversation) {
+      return () => undefined; // conversation not yet loaded
+    }
 
     let sio = sioRef.current;
 
@@ -168,10 +274,16 @@ export function WsClientProvider({
     const query = {
       latest_event_id: lastEvent?.id ?? -1,
       conversation_id: conversationId,
+      providers_set: providers,
+      session_api_key: conversation.session_api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
 
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+    let baseUrl = null;
+    if (conversation.url && !conversation.url.startsWith("/")) {
+      baseUrl = new URL(conversation.url).host;
+    } else {
+      baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+    }
 
     sio = io(baseUrl, {
       transports: ["websocket"],
@@ -192,7 +304,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [conversationId]);
+  }, [conversationId, conversation?.url]);
 
   React.useEffect(
     () => () => {
@@ -210,9 +322,10 @@ export function WsClientProvider({
       status,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
+      parsedEvents,
       send,
     }),
-    [status, messageRateHandler.isUnderThreshold, events],
+    [status, messageRateHandler.isUnderThreshold, events, parsedEvents],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;

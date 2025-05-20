@@ -2,7 +2,7 @@ import json
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel
 
@@ -105,10 +105,10 @@ class CmdOutputObservation(Observation):
         content: str,
         command: str,
         observation: str = ObservationType.RUN,
-        metadata: dict | CmdOutputMetadata | None = None,
+        metadata: dict[str, Any] | CmdOutputMetadata | None = None,
         hidden: bool = False,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(content)
         self.command = command
         self.observation = observation
@@ -170,6 +170,7 @@ class IPythonRunCellObservation(Observation):
 
     code: str
     observation: str = ObservationType.RUN_IPYTHON
+    image_urls: list[str] | None = None
 
     @property
     def error(self) -> bool:
@@ -184,4 +185,7 @@ class IPythonRunCellObservation(Observation):
         return True  # IPython cells are always considered successful
 
     def __str__(self) -> str:
-        return f'**IPythonRunCellObservation**\n{self.content}'
+        result = f'**IPythonRunCellObservation**\n{self.content}'
+        if self.image_urls:
+            result += f'\nImages: {len(self.image_urls)}'
+        return result

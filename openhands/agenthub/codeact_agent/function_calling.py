@@ -6,25 +6,24 @@ This is similar to the functionality of `CodeActResponseParser`.
 import json
 
 from litellm import (
-    ChatCompletionToolParam,
     ModelResponse,
 )
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
-    CmdRunTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
     SearchEngineTool,
-    StrReplaceEditorTool,
     ThinkTool,
-    WebReadTool,
+    create_cmd_run_tool,
+    create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -39,6 +38,7 @@ from openhands.events.action import (
     MessageAction,
     SearchAction,
 )
+from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
@@ -53,7 +53,9 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(response: ModelResponse) -> list[Action]:
+def response_to_actions(
+    response: ModelResponse, mcp_tool_names: list[str] | None = None
+) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -71,10 +73,11 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
+            logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
-                raise RuntimeError(
+                raise FunctionCallValidationError(
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
 
@@ -82,7 +85,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # CmdRunTool (Bash)
             # ================================================
 
-            if tool_call.function.name == CmdRunTool['function']['name']:
+            if tool_call.function.name == create_cmd_run_tool()['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -90,6 +93,15 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 # convert is_input to boolean
                 is_input = arguments.get('is_input', 'false') == 'true'
                 action = CmdRunAction(command=arguments['command'], is_input=is_input)
+
+                # Set hard timeout if provided
+                if 'timeout' in arguments:
+                    try:
+                        action.set_hard_timeout(float(arguments['timeout']))
+                    except ValueError as e:
+                        raise FunctionCallValidationError(
+                            f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
+                        ) from e
 
             # ================================================
             # IPythonTool (Jupyter)
@@ -133,7 +145,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-            elif tool_call.function.name == StrReplaceEditorTool['function']['name']:
+            elif (
+                tool_call.function.name
+                == create_str_replace_editor_tool()['function']['name']
+            ):
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -158,11 +173,29 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
                         other_kwargs.pop('view_range')
+
+                    # Filter out unexpected arguments
+                    valid_kwargs = {}
+                    # Get valid parameters from the str_replace_editor tool definition
+                    str_replace_editor_tool = create_str_replace_editor_tool()
+                    valid_params = set(
+                        str_replace_editor_tool['function']['parameters'][
+                            'properties'
+                        ].keys()
+                    )
+                    for key, value in other_kwargs.items():
+                        if key in valid_params:
+                            valid_kwargs[key] = value
+                        else:
+                            raise FunctionCallValidationError(
+                                f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
+                            )
+
                     action = FileEditAction(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
+                        **valid_kwargs,
                     )
             # ================================================
             # AgentThinkAction
@@ -179,16 +212,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
-
-            # ================================================
-            # WebReadTool (simplified browsing)
-            # ================================================
-            elif tool_call.function.name == WebReadTool['function']['name']:
-                if 'url' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "url" in tool call {tool_call.function.name}'
-                    )
-                action = BrowseURLAction(url=arguments['url'])
+            
             # ================================================
             # SearchEngineTool (search the web using text queries)
             # ================================================
@@ -201,6 +225,14 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 if 'start_date' in arguments:
                     start_date = arguments['start_date']
                 action = SearchAction(query=arguments['query'], start_date=start_date)
+            # ================================================
+            # MCPAction (MCP)
+            # ================================================
+            elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
+                action = MCPAction(
+                    name=tool_call.function.name,
+                    arguments=arguments,
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -225,24 +257,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             )
         )
 
+    # Add response id to actions
+    # This will ensure we can match both actions without tool calls (e.g. MessageAction)
+    # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
+    # with the token usage data
+    for action in actions:
+        action.response_id = response.id
+
     assert len(actions) >= 1
     return actions
-
-
-def get_tools(
-    codeact_enable_browsing: bool = False,
-    codeact_enable_llm_editor: bool = False,
-    codeact_enable_jupyter: bool = False,
-) -> list[ChatCompletionToolParam]:
-    # tools = [CmdRunTool, ThinkTool, FinishTool]
-    tools = [CmdRunTool, SearchEngineTool, FinishTool]
-    if codeact_enable_browsing:
-        # tools.append(WebReadTool)
-        tools.append(BrowserTool)
-    if codeact_enable_jupyter:
-        tools.append(IPythonTool)
-    if codeact_enable_llm_editor:
-        tools.append(LLMBasedFileEditTool)
-    else:
-        tools.append(StrReplaceEditorTool)
-    return tools

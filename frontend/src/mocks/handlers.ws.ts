@@ -35,7 +35,7 @@ export const handlers: WebSocketHandler[] = [
       );
     }
 
-    io.client.on("oh_action", async (_, data) => {
+    io.client.on("oh_user_action", async (_, data) => {
       if (isInitConfig(data)) {
         io.client.emit(
           "oh_event",

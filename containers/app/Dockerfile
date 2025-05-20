@@ -48,7 +48,8 @@ RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
-    && apt-get install -y curl ssh sudo
+    && apt-get install -y curl ssh sudo \
+    && rm -rf /var/lib/apt/lists/*
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
@@ -69,7 +70,6 @@ ENV VIRTUAL_ENV=/app/.venv \
     PYTHONPATH='/app'
 
 COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-RUN playwright install --with-deps chromium
 
 COPY --chown=openhands:app --chmod=770 ./microagents ./microagents
 COPY --chown=openhands:app --chmod=770 ./openhands ./openhands

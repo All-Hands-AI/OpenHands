@@ -59,7 +59,7 @@ describe("TrajectoryActions", () => {
     expect(onNegativeFeedback).toHaveBeenCalled();
   });
 
-  it("should call onExportTrajectory when negative feedback is clicked", async () => {
+  it("should call onExportTrajectory when export button is clicked", async () => {
     renderWithProviders(
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}

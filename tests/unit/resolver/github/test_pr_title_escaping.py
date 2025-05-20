@@ -2,9 +2,9 @@ import os
 import subprocess
 import tempfile
 
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
-from openhands.resolver.utils import Platform
 
 
 def test_commit_message_with_quotes():
@@ -71,9 +71,9 @@ def test_pr_title_with_quotes(monkeypatch):
         data = kwargs.get('json', {})
         title = data.get('title', '')
         expected = "Fix issue #123: Issue with 'quotes' and \"double quotes\" and <class 'ValueError'>"
-        assert (
-            title == expected
-        ), f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
+        assert title == expected, (
+            f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
+        )
         return MockResponse()
 
     class MockGetResponse:
@@ -87,8 +87,8 @@ def test_pr_title_with_quotes(monkeypatch):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr('requests.post', mock_post)
-    monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
+    monkeypatch.setattr('httpx.post', mock_post)
+    monkeypatch.setattr('httpx.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
         'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,
@@ -98,7 +98,7 @@ def test_pr_title_with_quotes(monkeypatch):
     original_run = subprocess.run
 
     def mock_run(*args, **kwargs):
-        print(f"Running command: {args[0] if args else kwargs.get('args', [])}")
+        print(f'Running command: {args[0] if args else kwargs.get("args", [])}')
         if isinstance(args[0], list) and args[0][0] == 'git':
             if 'push' in args[0]:
                 return subprocess.CompletedProcess(
@@ -160,7 +160,7 @@ def test_pr_title_with_quotes(monkeypatch):
             issue=issue,
             token='dummy-token',
             username='test-user',
-            platform=Platform.GITHUB,
+            platform=ProviderType.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )

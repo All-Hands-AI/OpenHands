@@ -6,15 +6,14 @@ import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { extractSettings } from "#/utils/settings-utils";
-import { useEndSession } from "#/hooks/use-end-session";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useCurrentSettings } from "#/context/settings-context";
 import { Settings } from "#/types/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -23,8 +22,7 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
-  const { saveUserSettings } = useCurrentSettings();
-  const endSession = useEndSession();
+  const { mutate: saveUserSettings } = useSaveSettings();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -34,23 +32,16 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
 
-  const resetOngoingSession = () => {
-    if (location.pathname.startsWith("/conversations/")) {
-      endSession();
-    }
-  };
-
   const handleFormSubmission = async (formData: FormData) => {
     const newSettings = extractSettings(formData);
 
     await saveUserSettings(newSettings, {
       onSuccess: () => {
         onClose();
-        resetOngoingSession();
 
         posthog.capture("settings_saved", {
           LLM_MODEL: newSettings.LLM_MODEL,
-          LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+          LLM_API_KEY_SET: newSettings.LLM_API_KEY_SET ? "SET" : "UNSET",
           REMOTE_RUNTIME_RESOURCE_FACTOR:
             newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
         });
@@ -74,7 +65,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
     }
   };
 
-  const isLLMKeySet = settings.LLM_API_KEY === "**********";
+  const isLLMKeySet = settings.LLM_API_KEY_SET;
 
   return (
     <div>
@@ -93,17 +84,18 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
           <SettingsInput
             testId="llm-api-key-input"
             name="llm-api-key-input"
-            label="API Key"
+            label={t(I18nKey.SETTINGS_FORM$API_KEY)}
             type="password"
             className="w-[680px]"
+            placeholder={isLLMKeySet ? "<hidden>" : ""}
             startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />
 
           <HelpLink
             testId="llm-api-key-help-anchor"
-            text="Don't know your API key?"
-            linkText="Click here for instructions"
-            href="https://docs.all-hands.dev/modules/usage/llms"
+            text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+            linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+            href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
           />
         </div>
 

@@ -47,7 +47,9 @@ const extractAdvancedFormData = (formData: FormData) => {
   };
 };
 
-export const extractSettings = (formData: FormData): Partial<Settings> => {
+export const extractSettings = (
+  formData: FormData,
+): Partial<Settings> & { llm_api_key?: string | null } => {
   const { LLM_MODEL, LLM_API_KEY, AGENT, LANGUAGE } =
     extractBasicFormData(formData);
 
@@ -61,12 +63,13 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
 
   return {
     LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
-    LLM_API_KEY,
+    LLM_API_KEY_SET: !!LLM_API_KEY,
     AGENT,
     LANGUAGE,
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
+    llm_api_key: LLM_API_KEY,
   };
 };

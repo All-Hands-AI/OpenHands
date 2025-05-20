@@ -2,6 +2,7 @@ import os
 import re
 import tempfile
 from abc import ABC, abstractmethod
+from typing import Any
 
 from openhands_aci.utils.diff import get_diff
 
@@ -52,12 +53,12 @@ IMPORTANT:
 """.strip()
 
 
-def _extract_code(string):
+def _extract_code(string: str) -> str | None:
     pattern = r'```(?:\w*\n)?(.*?)```'
     matches = re.findall(pattern, string, re.DOTALL)
     if not matches:
         return None
-    return matches[0]
+    return str(matches[0])
 
 
 def get_new_file_contents(
@@ -102,7 +103,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, enable_llm_editor: bool, *args, **kwargs):
+    def __init__(self, enable_llm_editor: bool, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.enable_llm_editor = enable_llm_editor
 
@@ -301,10 +302,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 'Here are some snippets that maybe relevant to the provided edit.\n'
             )
             for i, chunk in enumerate(topk_chunks):
-                error_msg += f'[begin relevant snippet {i+1}. Line range: L{chunk.line_range[0]}-L{chunk.line_range[1]}. Similarity: {chunk.normalized_lcs}]\n'
+                error_msg += f'[begin relevant snippet {i + 1}. Line range: L{chunk.line_range[0]}-L{chunk.line_range[1]}. Similarity: {chunk.normalized_lcs}]\n'
                 error_msg += f'[Browse around it via `open_file("{action.path}", {(chunk.line_range[0] + chunk.line_range[1]) // 2})`]\n'
                 error_msg += chunk.visualize() + '\n'
-                error_msg += f'[end relevant snippet {i+1}]\n'
+                error_msg += f'[end relevant snippet {i + 1}]\n'
                 error_msg += '-' * 40 + '\n'
 
             error_msg += 'Consider using `open_file` to explore around the relevant snippets if needed.\n'

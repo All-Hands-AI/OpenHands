@@ -39,11 +39,14 @@ def get_mock_sio(get_message: GetMessageMock | None = None):
 async def test_init_new_local_session():
     session_instance = AsyncMock()
     session_instance.agent_session = MagicMock()
+    session_instance.agent_session.event_stream.cur_id = 1
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
+    is_agent_loop_running_mock = AsyncMock()
+    is_agent_loop_running_mock.return_value = True
     with (
         patch(
             'openhands.server.conversation_manager.standalone_conversation_manager.Session',
@@ -60,9 +63,18 @@ async def test_init_new_local_session():
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
             )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), 1
-            )
+            with (
+                patch(
+                    'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.is_agent_loop_running',
+                    is_agent_loop_running_mock,
+                ),
+            ):
+                await conversation_manager.join_conversation(
+                    'new-session-id',
+                    'new-session-id',
+                    ConversationInitData(),
+                    1,
+                )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 1
 
@@ -73,9 +85,12 @@ async def test_join_local_session():
     session_instance.agent_session = MagicMock()
     mock_session = MagicMock()
     mock_session.return_value = session_instance
+    session_instance.agent_session.event_stream.cur_id = 1
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
+    is_agent_loop_running_mock = AsyncMock()
+    is_agent_loop_running_mock.return_value = True
     with (
         patch(
             'openhands.server.conversation_manager.standalone_conversation_manager.Session',
@@ -92,12 +107,24 @@ async def test_join_local_session():
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), None
             )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None
-            )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None
-            )
+            with (
+                patch(
+                    'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.is_agent_loop_running',
+                    is_agent_loop_running_mock,
+                ),
+            ):
+                await conversation_manager.join_conversation(
+                    'new-session-id',
+                    'new-session-id',
+                    ConversationInitData(),
+                    None,
+                )
+                await conversation_manager.join_conversation(
+                    'new-session-id',
+                    'new-session-id',
+                    ConversationInitData(),
+                    None,
+                )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
 
@@ -108,6 +135,7 @@ async def test_add_to_local_event_stream():
     session_instance.agent_session = MagicMock()
     mock_session = MagicMock()
     mock_session.return_value = session_instance
+    session_instance.agent_session.event_stream.cur_id = 1
     sio = get_mock_sio()
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()

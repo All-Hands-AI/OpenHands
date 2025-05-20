@@ -1,11 +1,13 @@
 """Editor-related tests for the DockerRuntime."""
 
 import os
+from unittest.mock import MagicMock
 
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileWriteAction
+from openhands.runtime.action_execution_server import _execute_file_editor
 
 
 def test_view_file(temp_dir, runtime_cls, run_as_openhands):
@@ -200,9 +202,10 @@ def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhand
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
-        action = FileWriteAction(
-            content='def test():\n\tprint("Hello, World!")',
+        action = FileEditAction(
+            command='create',
             path=test_file,
+            file_text='def test():\n\tprint("Hello, World!")',
         )
         runtime.run_action(action)
 
@@ -219,8 +222,7 @@ def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhand
             obs.content
             == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
-     2\t{'\t'.expandtabs()}print("Hello, Universe!")
-     3\t
+     2\t\tprint("Hello, Universe!")
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
         )
 
@@ -435,7 +437,7 @@ def test_insert_invalid_line(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Invalid `insert_line` parameter' in obs.content
-        assert 'It should be within the range of lines of the file' in obs.content
+        assert 'It should be within the range of allowed values' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -690,3 +692,32 @@ def test_view_large_file_with_truncation(temp_dir, runtime_cls, run_as_openhands
         )
     finally:
         _close_test_runtime(runtime)
+
+
+def test_insert_line_string_conversion():
+    """Test that insert_line is properly converted from string to int.
+
+    This test reproduces issue #8369 Example 2 where a string value for insert_line
+    causes a TypeError in the editor.
+    """
+    # Mock the OHEditor
+    mock_editor = MagicMock()
+    mock_editor.return_value = MagicMock(
+        error=None, output='Success', old_content=None, new_content=None
+    )
+
+    # Test with string insert_line
+    result, _ = _execute_file_editor(
+        editor=mock_editor,
+        command='insert',
+        path='/test/path.py',
+        insert_line='185',  # String instead of int
+        new_str='test content',
+    )
+
+    # Verify the editor was called with the correct parameters (insert_line converted to int)
+    mock_editor.assert_called_once()
+    args, kwargs = mock_editor.call_args
+    assert isinstance(kwargs['insert_line'], int)
+    assert kwargs['insert_line'] == 185
+    assert result == 'Success'
