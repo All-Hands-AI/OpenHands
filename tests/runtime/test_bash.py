@@ -1291,7 +1291,6 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
 def test_long_running_command_follow_by_execute(
     temp_dir, runtime_cls, run_as_openhands
 ):
-
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         if is_windows():
