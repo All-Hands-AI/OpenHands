@@ -28,7 +28,7 @@ fi
 
 echo "... Evaluating on $INPUT_FILE ..."
 
-COMMAND="/home/ubuntu/miniconda3/envs/openhands/bin/poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
   --eval-num-workers $NUM_WORKERS \
   --input-file $INPUT_FILE \
   --dataset $DATASET \
@@ -43,4 +43,4 @@ fi
 eval $COMMAND
 
 # update the output with evaluation results
-/home/ubuntu/miniconda3/envs/openhands/bin/poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $INPUT_FILE
+poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $INPUT_FILE

@@ -18,7 +18,7 @@ DATASET_NAME=${3:-"princeton-nlp/SWE-bench_Lite"}
 SPLIT=${4:-"test"}
 
 echo "INSTANCE_ID: $INSTANCE_ID"
-echo "DATASET_NAME: $"DATASET_NAME""
+echo "DATASET_NAME: $DATASET_NAME"
 echo "SPLIT: $SPLIT"
 
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
@@ -58,7 +58,7 @@ else
 
     # ==== Convert OH format to SWE-bench format ====
     echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
-    /home/ubuntu/miniconda3/envs/openhands/bin/poetry run python3 evaluation/benchmarks/swe_bench/scripts/eval/convert_oh_output_to_swe_json.py $PROCESS_FILEPATH
+    poetry run python3 evaluation/benchmarks/swe_bench/scripts/eval/convert_oh_output_to_swe_json.py $PROCESS_FILEPATH
     # replace .jsonl with .swebench.jsonl in filename
     SWEBENCH_FORMAT_JSONL=${PROCESS_FILEPATH/.jsonl/.swebench.jsonl}
     echo "SWEBENCH_FORMAT_JSONL: $SWEBENCH_FORMAT_JSONL"
@@ -83,7 +83,7 @@ if [ -z "$INSTANCE_ID" ]; then
     # Default to SWE-Bench-lite
     # change `--dataset_name` and `--split` to alter dataset
 
-    /home/ubuntu/miniconda3/envs/openhands/bin/poetry run python -m swebench.harness.run_evaluation \
+    poetry run python -m swebench.harness.run_evaluation \
         --dataset_name "$DATASET_NAME" \
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
@@ -125,11 +125,11 @@ if [ -z "$INSTANCE_ID" ]; then
         mv $REPORT_PATH $RESULT_OUTPUT_DIR/report.json
     fi
 
-    /home/ubuntu/miniconda3/envs/openhands/bin/poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
+    poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
 
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
-    /home/ubuntu/miniconda3/envs/openhands/bin/poetry run python -m swebench.harness.run_evaluation \
+    poetry run python -m swebench.harness.run_evaluation \
         --dataset_name "$DATASET_NAME" \
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
