@@ -1,4 +1,4 @@
-# Local LLM with SGLang or vLLM
+# Local LLMs
 
 :::warning
 When using a Local LLM, OpenHands may have limited functionality.
@@ -7,7 +7,7 @@ It is highly recommended that you use GPUs to serve local models for optimal exp
 
 ## News
 
-- 2025/05/21: We partner with [] and release []!
+- 2025/05/21: We collaborate with Mistral AI and release [Devstral Small](https://mistral.ai/news/devstral) that achieves [46.8% on SWE-Bench Verified](https://github.com/SWE-bench/experiments/pull/228)!
 - 2025/03/31: We released an open model OpenHands LM v0.1 32B that achieves 37.1% on SWE-Bench Verified
 ([blog](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model), [model](https://huggingface.co/all-hands/openhands-lm-32b-v0.1)).
 
@@ -20,9 +20,9 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 
 - Download [LM Studio](https://lmstudio.ai/) and install it
 
-- Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](FIXME), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --include devstralQ4_K_M.gguf --local-dir mistralai/Devstral-Small-2505_gguf`
+- Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](FIXME), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`
 
-- In bash terminal, run `lms import devstralQ4_K_M.gguf` in the directory where you've downloaded the model checkpoint (e.g. `mistralai/Devstral-Small-2505_gguf`)
+- In bash terminal, run `lms import {model_name}` in the directory where you've downloaded the model checkpoint (e.g. run `lms import devstralQ4_K_M.gguf` in `mistralai/Devstral-Small-2505_gguf`)
 
 - Open LM Studio application, you should first switch to "power user" mode, and then open the developer tab:
   
@@ -32,11 +32,11 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 
 ![image](./screenshots/2_select_model.png)
 
-- And choose `Devstral Q4 K M` as the model:
+- And choose the model you want to use, holding `option` on mac to enable advanced loading options:
 
 ![image](./screenshots/3_select_devstral.png)
 
-- You should then pick an appropriate context window for OpenHands based on your hardware configuration (larger than 32768 is recommended for using OpenHands); Flash attention is also recommended if it works on your machine.
+- You should then pick an appropriate context window for OpenHands based on your hardware configuration (larger than 32768 is recommended for using OpenHands, but too large may cause you to run out of memory); Flash attention is also recommended if it works on your machine.
 
 ![image](./screenshots/4_set_context_window.png)
 
@@ -55,14 +55,14 @@ Check [the installation guide](https://docs.all-hands.dev/modules/usage/installa
 ```bash
 export OPENHANDS_VERSION=0.38
 export LMSTUDIO_MODEL_NAME="imported-models/uncategorized/devstralq4_k_m.gguf" # <- Replace this with the model name you copied from LMStudio
-export LMSTUDIO_URL="http://host.docker.internal:1234"  # <- Replace this with the URL you just copied from LMStudio
+export LMSTUDIO_URL="http://host.docker.internal:1234"  # <- Replace this with the port from LMStudio
 
 docker pull docker.all-hands.dev/all-hands-ai/runtime:${OPENHANDS_VERSION}-nikolaik
 
 mkdir -p ~/.openhands-state && echo '{"language":"en","agent":"CodeActAgent","max_iterations":null,"security_analyzer":null,"confirmation_mode":false,"llm_model":"lm_studio/'$LMSTUDIO_MODEL_NAME'","llm_api_key":"dummy","llm_base_url":"'$LMSTUDIO_URL/v1'","remote_runtime_resource_factor":null,"github_token":null,"enable_default_condenser":true,"user_consents_to_analytics":true}' > ~/.openhands-state/settings.json
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:${OPENHANDS_VERSION}-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
