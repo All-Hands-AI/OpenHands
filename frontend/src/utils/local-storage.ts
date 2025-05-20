@@ -56,4 +56,4 @@ export const clearLoginData = (): void => {
  * @returns True if the path should be excluded, false otherwise
  */
 export const shouldExcludePath = (path: string): boolean =>
-  path.startsWith("/settings") || path === "/";
+  path.startsWith("/settings");

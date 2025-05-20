@@ -21,7 +21,8 @@ export const useTrackLastPage = () => {
 
     // Don't track excluded paths
     if (shouldExcludePath(pathname)) {
-      return;
+      // leave code block for now as we may decide not to track certain pages.
+      // return;
     }
 
     // Store the current path as the last visited page
