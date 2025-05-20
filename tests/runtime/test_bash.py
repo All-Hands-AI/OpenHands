@@ -841,12 +841,12 @@ def test_git_operation(temp_dir, runtime_cls):
             logger.info('Setting git config author')
             obs = _run_cmd_action(
                 runtime,
-                'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev"',
+                'git config user.name "openhands" && git config user.email "openhands@all-hands.dev"',
             )
             assert obs.exit_code == 0
 
             # Set up git config - list current settings (should be empty or just what was set)
-            obs = _run_cmd_action(runtime, 'git config --file ./.git_config --list')
+            obs = _run_cmd_action(runtime, 'git config --list')
             assert obs.exit_code == 0
 
         # git add
