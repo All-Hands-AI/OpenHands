@@ -86,6 +86,8 @@ def mock_agent():
     agent.config = MagicMock()
     agent.config.enable_mcp = False
 
+    return agent
+
 
 @pytest.mark.asyncio
 async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
@@ -588,7 +590,7 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
 
 @pytest.mark.asyncio
 async def test_conversation_instructions_plumbed_to_memory(
-    mock_agent, memory, event_stream, file_store
+    mock_agent, event_stream, file_store
 ):
     # Setup
     session = AgentSession(
@@ -630,4 +632,8 @@ async def test_conversation_instructions_plumbed_to_memory(
             conversation_instructions='instructions for conversation',
         )
 
-        assert memory.conversation_instructions.content == 'instructions for conversation'
+        # Use the memory instance from the session, not the fixture
+        assert (
+            session.memory.conversation_instructions.content
+            == 'instructions for conversation'
+        )
