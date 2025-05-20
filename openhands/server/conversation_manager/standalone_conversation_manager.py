@@ -485,7 +485,7 @@ class StandaloneConversationManager(ConversationManager):
         )
 
     def _get_conversation_url(self, conversation_id: str):
-        return f"/conversations/{conversation_id}"
+        return f"/api/conversations/{conversation_id}"
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
