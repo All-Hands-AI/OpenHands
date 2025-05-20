@@ -23,7 +23,7 @@ On your repository, label an issue with `openhands` or add a message starting wi
 
 ### Working with Pull/Merge Requests
 
-To get OpenHands to work on pull requests (GitHub) or merge requests (GitLab), mention `@openhands` in comments to:
+To get OpenHands to work on pull requests, mention `@openhands` in comments to:
 - Ask questions
 - Request updates
 - Get code explanations
