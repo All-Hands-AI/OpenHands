@@ -231,4 +231,5 @@ class State:
         if history_checksum != old_history_checksum:
             self._history_checksum = history_checksum
             self._view = View.from_events(self.history)
+
         return self._view

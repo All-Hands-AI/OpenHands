@@ -78,6 +78,7 @@ from openhands.events.serialization.event import (
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.server.mem0 import process_single_event_for_mem0, search_knowledge_mem0
+from openhands.server.thesis_auth import webhook_rag_conversation
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -430,19 +431,18 @@ class AgentController:
 
         # Retrieve conversation and embedding mem0
         await process_single_event_for_mem0(self.id, event_to_dict(event))
+        # sync rag when the agent is finished or waiting for user input
+        if (
+            self.state.agent_state
+            in (AgentState.FINISHED, AgentState.AWAITING_USER_INPUT)
+            and not self._rag_synced
+        ):
+            logger.info(f'webhook_rag_conversation: Update rag {self.id}')
+            await webhook_rag_conversation(self.id)
 
-        # sync rag when the agent is finished or waiting for user input -> stop sync, used mem0 option
-        # if (
-        #     self.state.agent_state
-        #     in (AgentState.FINISHED, AgentState.AWAITING_USER_INPUT)
-        #     and not self._rag_synced
-        # ):
-        #     logger.info(f'webhook_rag_conversation: Update rag {self.id}')
-        #     await webhook_rag_conversation(self.id)
-
-        #     self._rag_synced = True
-        # if self.state.agent_state == AgentState.RUNNING:
-        #     self._rag_synced = False
+            self._rag_synced = True
+        if self.state.agent_state == AgentState.RUNNING:
+            self._rag_synced = False
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""
@@ -805,11 +805,11 @@ class AgentController:
         if self._pending_action:
             return
 
-        # self.log(
-        #     'info',
-        #     f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
-        #     extra={'msg_type': 'STEP'},
-        # )
+        self.log(
+            'info',
+            f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
+            extra={'msg_type': 'STEP'},
+        )
 
         stop_step = False
         if self.state.iteration >= self.state.max_iterations:
