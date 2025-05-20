@@ -25,7 +25,7 @@ export const useLogout = () => {
 
       posthog.reset();
       await navigate("/");
-      
+
       // Refresh the page after all logout logic is completed
       window.location.reload();
     },
