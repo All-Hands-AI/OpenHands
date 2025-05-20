@@ -138,105 +138,9 @@ class DockerNestedConversationManager(ConversationManager):
 
     async def _start_agent_loop(self, sid, settings, user_id, initial_user_msg = None, replay_json = None):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
-
-        response_ids = await self.get_running_agent_loops(user_id)
-        if len(response_ids) >= self.config.max_concurrent_conversations:
-            logger.info(
-                f'too_many_sessions_for:{user_id or ""}',
-                extra={'session_id': sid, 'user_id': user_id},
-            )
-            # Get the conversations sorted (oldest first)
-            conversation_store = await self._get_conversation_store(user_id)
-            conversations = await conversation_store.get_all_metadata(response_ids)
-            conversations.sort(key=_last_updated_at_key, reverse=True)
-
-            while len(conversations) >= self.config.max_concurrent_conversations:
-                oldest_conversation_id = conversations.pop().conversation_id
-                logger.debug(
-                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
-                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
-                )
-                # Send status message to client and close session.
-                status_update_dict = {
-                    'status_update': True,
-                    'type': 'error',
-                    'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
-                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
-                }
-                await self.sio.emit(
-                    'oh_event',
-                    status_update_dict,
-                    to=ROOM_KEY.format(sid=oldest_conversation_id),
-                )
-                await self.close_session(oldest_conversation_id)
-
-        # This session is created here only because it is the easiest way to get a runtime, which
-        # is the easiest way to create the needed docker container
-        session = Session(
-            sid=sid,
-            file_store=self.file_store,
-            config=self.config,
-            sio=self.sio,
-            user_id=user_id,
-        )
-        agent_cls = settings.agent or self.config.default_agent
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        llm = LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=session._notify_on_llm_retry,
-        )
-        llm = session._create_llm(agent_cls)
-        agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
-
-        provider_tokens = None
-        if isinstance(settings, ConversationInitData):
-            provider_tokens = settings.git_provider_tokens
-
-        provider_handler = ProviderHandler(
-            provider_tokens=provider_tokens
-            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
-        )
-        env_vars = await provider_handler.get_env_vars(expose_secrets=True)
-        env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
-        env_vars['SERVE_FRONTEND'] = '0'
-        env_vars['RUNTIME'] = 'local'
-        env_vars['CONVERSATION_ID'] = sid
-        env_vars['USER'] = 'CURRENT_USER'
-        env_vars['SESSION_API_KEY'] = self.get_session_api_key_for_conversation(sid)
-
-        # Check if we are using a standard event store
-        config = self.config.model_copy(deep=True)
-
-        # TODO: Check if we are using the standard event store and file store
-        volumes = config.sandbox.volumes
-        if not config.sandbox.volumes:
-            volumes = []
-        else:
-            volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
-        
-        conversation_dir = get_conversation_dir(sid, user_id)
-        volumes.append(f"{config.file_store_path}/{conversation_dir}:{AppConfig.model_fields['file_store_path'].default}/{conversation_dir}:rw")
-        config.sandbox.volumes = ",".join(volumes)
-
-        # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
-        # In the long term we should use a mounted volume
-        event_stream = EventStream(sid, self.file_store, user_id)
-
-        runtime = DockerRuntime(
-            config=config,
-            event_stream=event_stream,
-            sid=sid,
-            plugins=agent.sandbox_plugins,
-            headless_mode=False,
-            attach_to_existing=False,
-            env_vars=env_vars,
-            main_module="openhands.server",
-        )
-
-        # Hack - disable setting initial env.
-        runtime.setup_initial_env = lambda: None  # type:ignore
-        
+        await self.ensure_num_conversations_below_limit(sid, user_id)
+        provider_handler = self._get_provider_handler(settings)
+        runtime = await self._create_runtime(sid, user_id, settings, provider_handler)
         await runtime.connect()
 
         async with httpx.AsyncClient(headers={'X-Session-API-Key': self.get_session_api_key_for_conversation(sid)}) as client:
@@ -249,10 +153,10 @@ class DockerNestedConversationManager(ConversationManager):
 
             # Setup provider tokens
             provider_tokens_json = None
-            if provider_tokens:
+            if provider_handler.provider_tokens:
                 provider_tokens_json = {
                     k.value: v.token.get_secret_value()
-                    for k, v in provider_tokens.items()
+                    for k, v in provider_handler.provider_tokens.items()
                     if v and v.token
                 }
 
@@ -339,6 +243,110 @@ class DockerNestedConversationManager(ConversationManager):
     def get_session_api_key_for_conversation(self, conversation_id: str):
         return conversation_id
 
+    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str):
+        response_ids = await self.get_running_agent_loops(user_id)
+        if len(response_ids) >= self.config.max_concurrent_conversations:
+            logger.info(
+                f'too_many_sessions_for:{user_id or ""}',
+                extra={'session_id': sid, 'user_id': user_id},
+            )
+            # Get the conversations sorted (oldest first)
+            conversation_store = await self._get_conversation_store(user_id)
+            conversations = await conversation_store.get_all_metadata(response_ids)
+            conversations.sort(key=_last_updated_at_key, reverse=True)
+
+            while len(conversations) >= self.config.max_concurrent_conversations:
+                oldest_conversation_id = conversations.pop().conversation_id
+                logger.debug(
+                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
+                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+                )
+                # Send status message to client and close session.
+                status_update_dict = {
+                    'status_update': True,
+                    'type': 'error',
+                    'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
+                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
+                }
+                await self.sio.emit(
+                    'oh_event',
+                    status_update_dict,
+                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                )
+                await self.close_session(oldest_conversation_id)
+
+    def _get_provider_handler(self, settings: Settings):
+        provider_tokens = None
+        if isinstance(settings, ConversationInitData):
+            provider_tokens = settings.git_provider_tokens
+        provider_handler = ProviderHandler(
+            provider_tokens=provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+        )
+        return provider_handler
+
+    async def _create_runtime(self, sid: str, user_id: str, settings: Settings, provider_handler: ProviderHandler):
+
+        # This session is created here only because it is the easiest way to get a runtime, which
+        # is the easiest way to create the needed docker container
+        session = Session(
+            sid=sid,
+            file_store=self.file_store,
+            config=self.config,
+            sio=self.sio,
+            user_id=user_id,
+        )
+        agent_cls = settings.agent or self.config.default_agent
+        agent_name = agent_cls if agent_cls is not None else 'agent'
+        llm = LLM(
+            config=self.config.get_llm_config_from_agent(agent_name),
+            retry_listener=session._notify_on_llm_retry,
+        )
+        llm = session._create_llm(agent_cls)
+        agent_config = self.config.get_agent_config(agent_cls)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+
+        env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
+        env_vars['SERVE_FRONTEND'] = '0'
+        env_vars['RUNTIME'] = 'local'
+        env_vars['CONVERSATION_ID'] = sid
+        env_vars['USER'] = 'CURRENT_USER'
+        env_vars['SESSION_API_KEY'] = self.get_session_api_key_for_conversation(sid)
+
+        # Check if we are using a standard event store
+        config = self.config.model_copy(deep=True)
+
+        # Set up mounted volume for conversation directory within workspace
+        # TODO: Check if we are using the standard event store and file store
+        volumes = config.sandbox.volumes
+        if not config.sandbox.volumes:
+            volumes = []
+        else:
+            volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
+        conversation_dir = get_conversation_dir(sid, user_id)
+        volumes.append(f"{config.file_store_path}/{conversation_dir}:{AppConfig.model_fields['file_store_path'].default}/{conversation_dir}:rw")
+        config.sandbox.volumes = ",".join(volumes)
+
+        # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
+        # In the long term we should use a mounted volume
+        event_stream = EventStream(sid, self.file_store, user_id)
+
+        runtime = DockerRuntime(
+            config=config,
+            event_stream=event_stream,
+            sid=sid,
+            plugins=agent.sandbox_plugins,
+            headless_mode=False,
+            attach_to_existing=False,
+            env_vars=env_vars,
+            main_module="openhands.server",
+        )
+
+        # Hack - disable setting initial env.
+        runtime.setup_initial_env = lambda: None  # type:ignore
+
+        return runtime
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
     last_updated_at = conversation.last_updated_at
