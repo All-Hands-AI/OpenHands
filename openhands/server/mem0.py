@@ -5,8 +5,8 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-import asyncpg
 from mem0 import MemoryClient
+from psycopg2.pool import ThreadedConnectionPool
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -31,8 +31,8 @@ class DBConnectionPool:
             cls._instance = super(DBConnectionPool, cls).__new__(cls)
         return cls._instance
 
-    async def init_pool(self):
-        """Initialize the connection pool asynchronously if not already initialized."""
+    def init_pool(self):
+        """Initialize the connection pool if not already initialized."""
         if self._pool is None and not self._initializing:
             try:
                 self._initializing = True
@@ -45,14 +45,14 @@ class DBConnectionPool:
                 port = os.getenv('POSTGRES_PORT', '5432')
 
                 # Create a connection pool
-                self._pool = await asyncpg.create_pool(
+                self._pool = ThreadedConnectionPool(
+                    minconn=2,
+                    maxconn=10,
                     user=user,
                     password=password,
                     database=database,
                     host=host,
                     port=port,
-                    min_size=2,
-                    max_size=10,
                 )
                 logger.info('Database connection pool initialized successfully')
             except Exception as e:
@@ -63,22 +63,22 @@ class DBConnectionPool:
 
         return self._pool
 
-    async def get_connection(self):
+    def get_connection(self):
         """Get a connection from the pool."""
-        pool = await self.init_pool()
+        pool = self.init_pool()
         if pool:
-            return await pool.acquire()
+            return pool.getconn()
         return None
 
-    async def release_connection(self, conn):
+    def release_connection(self, conn):
         """Return a connection to the pool."""
         if self._pool and conn:
-            await self._pool.release(conn)
+            self._pool.putconn(conn)
 
-    async def close_pool(self):
+    def close_pool(self):
         """Close the connection pool."""
         if self._pool:
-            await self._pool.close()
+            self._pool.closeall()
             self._pool = None
 
 
@@ -181,23 +181,23 @@ async def _add_mem0_conversation_job_direct_db(
 
     try:
         # Get connection from pool
-        conn = await _db_pool_instance.get_connection()
+        conn = _db_pool_instance.get_connection()
         if not conn:
             logger.error('Failed to get database connection from pool')
             return False
 
-        # Insert directly with asyncpg
-        await conn.execute(
+        # Insert directly with psycopg2
+        cursor = conn.cursor()
+        cursor.execute(
             """
             INSERT INTO mem0_conversation_jobs
             (conversation_id, events, metadata, status)
-            VALUES ($1, $2, $3, $4)
+            VALUES (%s, %s, %s, %s)
             """,
-            conversation_id,
-            json.dumps(events),
-            json.dumps(metadata),
-            'pending',
+            (conversation_id, json.dumps(events), json.dumps(metadata), 'pending'),
         )
+        conn.commit()
+        cursor.close()
         return True
     except Exception as e:
         logger.error(f'Error adding mem0 conversation job directly: {str(e)}')
@@ -205,7 +205,7 @@ async def _add_mem0_conversation_job_direct_db(
     finally:
         # Always release the connection back to the pool
         if conn:
-            await _db_pool_instance.release_connection(conn)
+            _db_pool_instance.release_connection(conn)
 
 
 async def process_single_event_for_mem0(
@@ -263,27 +263,56 @@ async def process_single_event_for_mem0(
                 if file_text:
                     parsed_events.append({'role': 'assistant', 'content': file_text})
                 metadata['type'] = Mem0MetadataType.FINISH_CONCLUSION.value
-        # else:  # If you want to handle other agent cases, add here
-        #     parsed_events.append({'role': 'assistant', 'content': content})
-
-    # mem0_client = Mem0Client()
-    # if not mem0_client.is_available:
-    #     logger.warning('MemoryClient is not available. Skipping mem0 add.')
-    #     return parsed_events
 
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
         try:
-            await asyncio.create_task(
-                _add_mem0_conversation_job_direct_db(
-                    conversation_id=conversation_id,
-                    events=parsed_events,
-                    metadata=metadata,
+            # Try to get the running event loop
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    # Normal case - loop exists and is running
+                    loop.create_task(
+                        _add_mem0_conversation_job_direct_db(
+                            conversation_id=conversation_id,
+                            events=parsed_events,
+                            metadata=metadata,
+                        )
+                    )
+                else:
+                    # Loop exists but isn't running - run synchronously
+                    logger.warning(
+                        "Event loop exists but isn't running - running DB operation synchronously"
+                    )
+                    await _add_mem0_conversation_job_direct_db(
+                        conversation_id=conversation_id,
+                        events=parsed_events,
+                        metadata=metadata,
+                    )
+            except RuntimeError as e:
+                # No running event loop - try to create one and run synchronously
+                logger.warning(
+                    f'No running event loop - running DB operation synchronously: {str(e)}'
                 )
-            )
+                # Create a new event loop for this operation
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    # Run the operation synchronously in the new loop
+                    new_loop.run_until_complete(
+                        _add_mem0_conversation_job_direct_db(
+                            conversation_id=conversation_id,
+                            events=parsed_events,
+                            metadata=metadata,
+                        )
+                    )
+                finally:
+                    # Clean up the new loop
+                    new_loop.close()
+                    asyncio.set_event_loop(None)
         except Exception as e:
-            logger.error(f'Failed to add mem0 conversation job: {e}')
-            return parsed_events
+            # Log any other exceptions that might occur
+            logger.exception(f'Failed to add mem0 conversation job: {e}')
 
     return parsed_events
 
