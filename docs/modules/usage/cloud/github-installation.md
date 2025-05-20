@@ -19,7 +19,7 @@ This guide walks you through the process of installing and configuring OpenHands
 
 You can grant OpenHands access to specific repositories:
 
-1. Click on the `Select a GitHub project` dropdown, then select `Add more repositories...`
+1. Click on `Add GitHub repos`
 2. Select your organization and choose the specific repositories to grant OpenHands access to.
    - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
      - Actions: Read and write
