@@ -14,7 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 class Chunk(BaseModel):
     text: str
     line_range: tuple[int, int]  # (start_line, end_line), 1-index, inclusive
-    normalized_lcs: float | None = None
+    normalized_lcs: float = 0.0
 
     def visualize(self) -> str:
         lines = self.text.split('\n')
@@ -25,9 +25,9 @@ class Chunk(BaseModel):
         return ret
 
 
-def _create_chunks_from_raw_string(content: str, size: int):
+def _create_chunks_from_raw_string(content: str, size: int) -> list[Chunk]:
     lines = content.split('\n')
-    ret = []
+    ret: list[Chunk] = []
     for i in range(0, len(lines), size):
         _cur_lines = lines[i : i + size]
         ret.append(
@@ -66,7 +66,7 @@ def normalized_lcs(chunk: str, query: str) -> float:
     if len(chunk) == 0:
         return 0.0
     _score = pylcs.lcs_sequence_length(chunk, query)
-    return _score / len(chunk)
+    return float(_score / len(chunk))
 
 
 def get_top_k_chunk_matches(
@@ -93,7 +93,7 @@ def get_top_k_chunk_matches(
     ]
     sorted_chunks = sorted(
         chunks_with_lcs,
-        key=lambda x: x.normalized_lcs,  # type: ignore
+        key=lambda x: x.normalized_lcs,
         reverse=True,
     )
     return sorted_chunks[:k]

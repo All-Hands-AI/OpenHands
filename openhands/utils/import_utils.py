@@ -1,11 +1,11 @@
 import importlib
 from functools import lru_cache
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar('T')
 
 
-def import_from(qual_name: str):
+def import_from(qual_name: str) -> Any:
     """Import the value from the qualified name given"""
     parts = qual_name.split('.')
     module_name = '.'.join(parts[:-1])
