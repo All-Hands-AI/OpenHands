@@ -30,6 +30,7 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.storage.locations import get_conversation_dir
 from openhands.utils.import_utils import get_impl
 
 
@@ -204,12 +205,26 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['USER'] = 'CURRENT_USER'
         env_vars['SESSION_API_KEY'] = self.get_session_api_key_for_conversation(sid)
 
+        # Check if we are using a standard event store
+        config = self.config.model_copy(deep=True)
+
+        # TODO: Check if we are using the standard event store and file store
+        volumes = config.sandbox.volumes
+        if not config.sandbox.volumes:
+            volumes = []
+        else:
+            volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
+        
+        conversation_dir = get_conversation_dir(sid, user_id)
+        volumes.append(f"{config.file_store_path}/{conversation_dir}:{AppConfig.model_fields['file_store_path'].default}/{conversation_dir}:rw")
+        config.sandbox.volumes = ",".join(volumes)
+
         # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
         # In the long term we should use a mounted volume
         event_stream = EventStream(sid, self.file_store, user_id)
 
         runtime = DockerRuntime(
-            config=self.config,
+            config=config,
             event_stream=event_stream,
             sid=sid,
             plugins=agent.sandbox_plugins,
