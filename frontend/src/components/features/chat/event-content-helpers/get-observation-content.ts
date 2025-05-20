@@ -9,6 +9,7 @@ import {
 } from "#/types/core/observations";
 import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
+import i18n from "#/i18n";
 
 const getReadObservationContent = (event: ReadObservation): string =>
   `\`\`\`\n${event.content}\n\`\`\``;
@@ -20,7 +21,7 @@ const getCommandObservationContent = (
   if (content.length > MAX_CONTENT_LENGTH) {
     content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
   }
-  return `Output:\n\`\`\`sh\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
+  return `Output:\n\`\`\`sh\n${content.trim() || i18n.t("OBSERVATION$COMMAND_NO_OUTPUT")}\n\`\`\``;
 };
 
 const getEditObservationContent = (
@@ -50,7 +51,7 @@ const getMcpObservationContent = (event: OpenHandsObservation): string => {
   if (content.length > MAX_CONTENT_LENGTH) {
     content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
   }
-  return `**Output:**\n\`\`\`\n${content.trim() || "[MCP Tool finished execution with no output]"}\n\`\`\``;
+  return `**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
 };
 
 const getRecallObservationContent = (event: RecallObservation): string => {
