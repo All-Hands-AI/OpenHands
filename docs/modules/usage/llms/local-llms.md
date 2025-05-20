@@ -20,7 +20,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 
 - Download [LM Studio](https://lmstudio.ai/) and install it
 
-- Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](FIXME), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`
+- Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](FIXME), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --include devstralQ4_K_M.gguf --local-dir mistralai/Devstral-Small-2505_gguf`
 
 - In bash terminal, run `lms import devstralQ4_K_M.gguf` in the directory where you've downloaded the model checkpoint (e.g. `mistralai/Devstral-Small-2505_gguf`)
 
