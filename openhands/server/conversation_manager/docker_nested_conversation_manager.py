@@ -94,8 +94,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
-        # We don't monitor connections outside the nested server, though I suppose we could
-        # introduce an API for this.
+        # We don't monitor connections outside the nested server, though we could introduce an API for this.
         results: dict[str, str] = {}
         return results
 
