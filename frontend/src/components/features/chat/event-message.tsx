@@ -1,3 +1,6 @@
+import { FaCircleUp } from "react-icons/fa6";
+import { createPortal } from "react-dom";
+import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { I18nKey } from "#/i18n/declaration";
 import { OpenHandsAction } from "#/types/core/actions";
@@ -18,6 +21,24 @@ import { getObservationResult } from "./event-content-helpers/get-observation-re
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
+import { LaunchMicroagentModal } from "./launch-miocroagent-modal";
+
+interface LaunchToMicroagentButtonProps {
+  onClick: () => void;
+}
+
+function LaunchToMicroagentButton({ onClick }: LaunchToMicroagentButtonProps) {
+  return (
+    <button
+      data-testid="launch-microagent-button"
+      type="button"
+      onClick={onClick}
+      className="w-7 h-7 border border-white/30 bg-white/20 rounded flex items-center justify-center"
+    >
+      <FaCircleUp className="w-[14px] h-[14px]" />
+    </button>
+  );
+}
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -38,6 +59,9 @@ export function EventMessage({
   isAwaitingUserConfirmation,
   isLastMessage,
 }: EventMessageProps) {
+  const [showLaunchMicroagentModal, setShowLaunchMicroagentModal] =
+    React.useState(false);
+
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
@@ -59,6 +83,10 @@ export function EventMessage({
       </div>
     );
   }
+
+  const handleLaunchMicroagent = () => {
+    setShowLaunchMicroagentModal(true);
+  };
 
   if (isErrorObservation(event)) {
     return (
@@ -88,11 +116,21 @@ export function EventMessage({
       <ChatMessage
         type={event.source}
         message={isUserMessage(event) ? event.args.content : event.message}
+        actionButton={
+          <LaunchToMicroagentButton onClick={handleLaunchMicroagent} />
+        }
       >
         {event.args.image_urls && event.args.image_urls.length > 0 && (
           <ImageCarousel size="small" images={event.args.image_urls} />
         )}
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
+        {showLaunchMicroagentModal &&
+          createPortal(
+            <LaunchMicroagentModal
+              onClose={() => setShowLaunchMicroagentModal(false)}
+            />,
+            document.getElementById("modal-portal-exit") || document.body,
+          )}
       </ChatMessage>
     );
   }

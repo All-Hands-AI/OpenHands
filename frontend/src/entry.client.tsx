@@ -67,6 +67,7 @@ prepareApp().then(() =>
           <QueryClientProvider client={queryClient}>
             <HydratedRouter />
             <PosthogInit />
+            <div id="modal-portal-exit" />
           </QueryClientProvider>
         </Provider>
       </StrictMode>,
