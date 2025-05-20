@@ -470,6 +470,194 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
     assert 'additional agent context for the task' in workspace_context
 
 
+@pytest.mark.asyncio
+async def test_conversation_instructions_in_memory(prompt_dir, file_store, monkeypatch):
+    """Test that conversation_instructions in init session gets stored into memory and rendered in the Jinja template."""
+    import uuid
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    from openhands.core.config import AppConfig
+    from openhands.server.data_models.agent_loop_info import AgentLoopInfo
+    from openhands.server.routes.manage_conversations import _create_new_conversation
+    from openhands.server.session.conversation_init_data import ConversationInitData
+    from openhands.storage.data_models.conversation_metadata import ConversationTrigger
+    from openhands.storage.data_models.settings import Settings
+
+    # Define the conversation instructions content
+    conversation_instructions_content = (
+        'Follow these specific instructions for the conversation'
+    )
+
+    # Create a test conversation ID
+    test_conversation_id = uuid.uuid4().hex
+
+    # Create a real event stream for testing
+    event_stream = EventStream(sid=test_conversation_id, file_store=file_store)
+
+    # Create a real Memory instance for testing
+    memory = Memory(
+        event_stream=event_stream,
+        sid=test_conversation_id,
+    )
+
+    # Create mock settings
+    mock_settings = Settings(
+        llm_model='test-model',
+        llm_api_key='test-api-key',
+    )
+
+    # Create a mock settings store
+    mock_settings_store = AsyncMock()
+    mock_settings_store.load = AsyncMock(return_value=mock_settings)
+
+    # Create a mock conversation store
+    mock_conversation_store = AsyncMock()
+    mock_conversation_store.exists = AsyncMock(return_value=False)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create a mock for the conversation manager
+    mock_conversation_manager = AsyncMock()
+
+    # Create a mock config
+    mock_config = MagicMock(spec=AppConfig)
+
+    # Variables to capture the ConversationInitData
+    captured_init_data = None
+
+    # Create a mock for maybe_start_agent_loop that captures the ConversationInitData
+    async def mock_maybe_start_agent_loop(
+        sid, init_data, user_id, initial_user_msg=None, replay_json=None
+    ):
+        nonlocal captured_init_data
+        captured_init_data = init_data
+
+        # Set the conversation instructions in our real memory instance
+        memory.set_conversation_instructions(init_data.conversation_instructions)
+
+        # Create a workspace context recall action
+        recall_action = RecallAction(
+            query='Initial message', recall_type=RecallType.WORKSPACE_CONTEXT
+        )
+        recall_action._source = EventSource.USER  # type: ignore[attr-defined]
+
+        # Add the recall action to the event stream
+        event_stream.add_event(recall_action, EventSource.USER)
+
+        # Process the recall action
+        await memory._on_event(recall_action)
+
+        # Return a mock AgentLoopInfo
+        return AgentLoopInfo(
+            conversation_id=sid,
+            url=f'http://localhost/{sid}',
+            session_api_key='test-api-key',
+            event_store=event_stream,
+        )
+
+    # Set the side effect for maybe_start_agent_loop
+    mock_conversation_manager.maybe_start_agent_loop.side_effect = (
+        mock_maybe_start_agent_loop
+    )
+
+    # Mock the necessary dependencies
+    with (
+        patch(
+            'openhands.server.routes.manage_conversations.ConversationStoreImpl'
+        ) as mock_store_cls,
+        patch(
+            'openhands.server.routes.manage_conversations.SettingsStoreImpl'
+        ) as mock_settings_cls,
+        patch(
+            'openhands.server.routes.manage_conversations.conversation_manager',
+            mock_conversation_manager,
+        ),
+        patch('openhands.server.routes.manage_conversations.config', mock_config),
+        patch(
+            'openhands.server.routes.manage_conversations.uuid.uuid4',
+            return_value=MagicMock(hex=test_conversation_id),
+        ),
+    ):
+        # Set up the mocks
+        mock_store_cls.get_instance = AsyncMock(return_value=mock_conversation_store)
+        mock_settings_cls.get_instance = AsyncMock(return_value=mock_settings_store)
+
+        # Call _create_new_conversation with conversation_instructions
+        agent_loop_info = await _create_new_conversation(
+            user_id='test-user',
+            git_provider_tokens=None,
+            custom_secrets=None,
+            selected_repository='test-owner/test-repo',
+            selected_branch='main',
+            initial_user_msg='Hello',
+            image_urls=None,
+            replay_json=None,
+            conversation_trigger=ConversationTrigger.GUI,
+            conversation_instructions=conversation_instructions_content,
+        )
+
+        # Verify the conversation was created successfully
+        assert agent_loop_info is not None
+        assert agent_loop_info.conversation_id == test_conversation_id
+
+        # Verify that conversation_instructions was passed to ConversationInitData
+        assert captured_init_data is not None
+        assert isinstance(captured_init_data, ConversationInitData)
+        assert (
+            captured_init_data.conversation_instructions
+            == conversation_instructions_content
+        )
+
+        # Get all events from the stream
+        events = list(event_stream.get_events())
+
+        # Find the RecallObservation event
+        recall_obs_events = [
+            event for event in events if isinstance(event, RecallObservation)
+        ]
+
+        # We should have at least one RecallObservation
+        assert len(recall_obs_events) > 0
+
+        # Get the first RecallObservation
+        observation = recall_obs_events[0]
+
+        # Verify conversation_instructions is included in the observation
+        assert (
+            observation.conversation_instructions == conversation_instructions_content
+        )
+
+        # Now test that it's rendered in the Jinja template
+        # Create a PromptManager with the test prompt directory
+        prompt_manager = PromptManager(prompt_dir)
+
+        # Create a RuntimeInfo
+        runtime_info = RuntimeInfo(
+            date='2025-05-15',
+            available_hosts={'test-host.example.com': 8080},
+        )
+
+        # Create a RepositoryInfo
+        repository_info = RepositoryInfo(
+            repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
+        )
+
+        # Create ConversationInstructions
+        conversation_instructions = ConversationInstructions(
+            content=conversation_instructions_content
+        )
+
+        # Build the workspace context message
+        workspace_context = prompt_manager.build_workspace_context(
+            repository_info=repository_info,
+            runtime_info=runtime_info,
+            conversation_instructions=conversation_instructions,
+        )
+
+        # Verify conversation_instructions is rendered in the template
+        assert '<CONVERSATION_INSTRUCTIONS>' in workspace_context
+        assert conversation_instructions_content in workspace_context
+
+
 def test_serialization_deserialization_with_custom_secrets():
     """Test that RecallObservation can be serialized and deserialized with custom_secrets_descriptions."""
     # This simulates an older version of the RecallObservation
