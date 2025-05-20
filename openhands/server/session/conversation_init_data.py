@@ -14,6 +14,7 @@ class ConversationInitData(Settings):
     selected_repository: str | None = Field(default=None)
     replay_json: str | None = Field(default=None)
     selected_branch: str | None = Field(default=None)
+    conversation_instructions: str | None = Field(default=None)
 
     model_config = {
         'arbitrary_types_allowed': True,
