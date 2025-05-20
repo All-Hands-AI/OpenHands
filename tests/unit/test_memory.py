@@ -524,19 +524,6 @@ async def test_conversation_instructions_in_memory(prompt_dir, file_store, monke
     # Variables to capture the ConversationInitData
     captured_init_data = None
 
-    # Create a spy for Memory.set_conversation_instructions
-    original_set_conversation_instructions = Memory.set_conversation_instructions
-    set_conversation_instructions_calls = []
-
-    def spy_set_conversation_instructions(self, instructions):
-        set_conversation_instructions_calls.append(instructions)
-        return original_set_conversation_instructions(self, instructions)
-
-    # Patch the Memory.set_conversation_instructions method with our spy
-    monkeypatch.setattr(
-        Memory, 'set_conversation_instructions', spy_set_conversation_instructions
-    )
-
     # Create a mock for maybe_start_agent_loop that captures the ConversationInitData
     async def mock_maybe_start_agent_loop(
         sid, init_data, user_id, initial_user_msg=None, replay_json=None
@@ -544,34 +531,8 @@ async def test_conversation_instructions_in_memory(prompt_dir, file_store, monke
         nonlocal captured_init_data
         captured_init_data = init_data
 
-        # Mock the _create_memory method to simulate what happens in AgentSession
-        async def mock_create_memory(
-            selected_repository,
-            repo_directory,
-            conversation_instructions,
-            custom_secrets_descriptions,
-        ):
-            # Create a mock runtime with the required attributes
-            mock_runtime = MagicMock()
-            mock_runtime.web_hosts = {'test-host.example.com': 8080}
-            mock_runtime.additional_agent_instructions = None
-
-            # This simulates what happens in AgentSession._create_memory
-            memory.set_runtime_info(mock_runtime, custom_secrets_descriptions)
-            memory.set_conversation_instructions(conversation_instructions)
-            return memory
-
-        # Create a mock agent session
-        mock_agent_session = AsyncMock()
-        mock_agent_session._create_memory.side_effect = mock_create_memory
-
-        # Call the mocked _create_memory method with the conversation_instructions
-        await mock_agent_session._create_memory(
-            selected_repository='test-owner/test-repo',
-            repo_directory='/workspace/test-repo',
-            conversation_instructions=init_data.conversation_instructions,
-            custom_secrets_descriptions={},
-        )
+        # Set the conversation instructions in our real memory instance
+        memory.set_conversation_instructions(init_data.conversation_instructions)
 
         # Create a workspace context recall action
         recall_action = RecallAction(
@@ -645,10 +606,6 @@ async def test_conversation_instructions_in_memory(prompt_dir, file_store, monke
             captured_init_data.conversation_instructions
             == conversation_instructions_content
         )
-
-        # Verify that set_conversation_instructions was called with the correct parameter
-        assert len(set_conversation_instructions_calls) > 0
-        assert conversation_instructions_content in set_conversation_instructions_calls
 
         # Get all events from the stream
         events = list(event_stream.get_events())
