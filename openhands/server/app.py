@@ -15,6 +15,7 @@ from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.git import app as git_api_router
+from openhands.server.routes.health import add_health_endpoints
 from openhands.server.routes.manage_conversations import (
     app as manage_conversation_api_router,
 )
@@ -40,17 +41,6 @@ app = FastAPI(
 )
 
 
-@app.get('/health')
-async def health() -> str:
-    return 'OK'
-
-
-@app.get('/alive')
-async def alive():
-    # Maybe I add here... conversation_id?
-    return {'status': 'ok'}
-
-
 app.include_router(public_api_router)
 app.include_router(files_api_router)
 app.include_router(security_api_router)
@@ -61,3 +51,4 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
+add_health_endpoints(app)
