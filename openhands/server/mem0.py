@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import uuid
@@ -274,15 +273,12 @@ async def process_single_event_for_mem0(
     logger.info(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
         try:
-            # Use a separate task to write to the database to avoid event loop conflicts
-            # This creates a fire-and-forget task that won't block the main execution
-            asyncio.create_task(
-                _add_mem0_conversation_job_direct_db(
-                    conversation_id=conversation_id,
-                    events=parsed_events,
-                    metadata=metadata,
-                )
+            await _add_mem0_conversation_job_direct_db(
+                conversation_id=conversation_id,
+                events=parsed_events,
+                metadata=metadata,
             )
+
         except Exception as e:
             logger.error(f'Failed to add mem0 conversation job: {e}')
             return parsed_events
