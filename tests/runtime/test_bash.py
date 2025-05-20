@@ -1284,11 +1284,13 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='FIXME: CLIRuntime does not implement empty command behavior.',
+)
 def test_long_running_command_follow_by_execute(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    if runtime_cls == CLIRuntime:
-        pytest.skip('FIXME: Empty commands are not implemented in CLIRuntime')
 
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
