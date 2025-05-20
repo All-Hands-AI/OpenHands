@@ -8,7 +8,7 @@ from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
 from openhands.microagent import BaseMicroagent
 from openhands.utils.prompt import (
-    ConversationContext,
+    ConversationInstructions,
     PromptManager,
     RepositoryInfo,
     RuntimeInfo,
@@ -60,7 +60,7 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
         repository_info=repo_info,
         runtime_info=None,
         repo_instructions='',
-        conversation_context=None,
+        conversation_instructions=None,
     )
     assert '<REPOSITORY_INFO>' in additional_info
     assert (
@@ -216,9 +216,9 @@ each of which has a corresponding port:
 
 Today's date is {{ runtime_info.date }}
 </RUNTIME_INFORMATION>
-{% if conversation_context.context %}
+{% if conversation_instructions.content %}
 <CONTEXT_MESSAGE>
-{{ conversation_context.context }}
+{{ conversation_instructions.content }}
 </CONTEXT_MESSAGE>
 {% endif %}
 {% endif %}
@@ -236,14 +236,14 @@ Today's date is {{ runtime_info.date }}
     )
     repo_instructions = 'This repository contains important code.'
 
-    conversation_context = ConversationContext(context='additional context')
+    conversation_instructions = ConversationInstructions(context='additional context')
 
     # Build additional info
     result = manager.build_workspace_context(
         repository_info=repo_info,
         runtime_info=runtime_info,
         repo_instructions=repo_instructions,
-        conversation_context=conversation_context,
+        conversation_instructions=conversation_instructions,
     )
 
     # Check that all information is included

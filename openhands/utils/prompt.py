@@ -26,7 +26,7 @@ class RepositoryInfo:
 
 
 @dataclass
-class ConversationContext:
+class ConversationInstructions:
     """
     Instructions that are important for the agent to perform its task, but the user doesn't need to know
 
@@ -85,7 +85,7 @@ class PromptManager:
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
-        conversation_context: ConversationContext | None,
+        conversation_instructions: ConversationInstructions | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -93,7 +93,7 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
-            conversation_context=conversation_context,
+            conversation_instructions=conversation_instructions,
         ).strip()
 
     def build_microagent_info(

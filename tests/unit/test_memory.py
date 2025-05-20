@@ -27,7 +27,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.prompt import (
-    ConversationContext,
+    ConversationInstructions,
     PromptManager,
     RepositoryInfo,
     RuntimeInfo,
@@ -448,7 +448,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
     )
 
-    conversation_context = ConversationContext(
+    conversation_instructions = ConversationInstructions(
         context='additional agent context for the task'
     )
 
@@ -457,7 +457,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         repository_info=repository_info,
         runtime_info=runtime_info,
         repo_instructions='Test repository instructions',
-        conversation_context=conversation_context,
+        conversation_instructions=conversation_instructions,
     )
 
     # Verify that the workspace context includes the custom_secrets_descriptions

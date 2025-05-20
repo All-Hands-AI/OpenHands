@@ -146,7 +146,7 @@ def create_memory(
         selected_repository: The repository to clone and start with, if any.
         repo_directory: The repository directory, if any.
         status_callback: Optional callback function to handle status updates.
-        conversation_context: Optional instructions that are passed to the agent
+        conversation_instructions: Optional instructions that are passed to the agent
     """
     memory = Memory(
         event_stream=event_stream,

@@ -42,7 +42,7 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import (
-    ConversationContext,
+    ConversationInstructions,
     PromptManager,
     RepositoryInfo,
     RuntimeInfo,
@@ -472,10 +472,10 @@ class ConversationMemory:
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
 
-                conversation_context = None
+                conversation_instructions = None
 
                 if obs.conversation_instructions:
-                    conversation_context = ConversationContext(
+                    conversation_instructions = ConversationInstructions(
                         content=obs.conversation_instructions
                     )
 
@@ -491,7 +491,7 @@ class ConversationMemory:
                     runtime_info.date or runtime_info.custom_secrets_descriptions
                 )
                 has_repo_instructions = bool(repo_instructions.strip())
-                has_conversation_context = conversation_context is not None
+                has_conversation_instructions = conversation_instructions is not None
 
                 # Filter and process microagent knowledge
                 filtered_agents = []
@@ -513,13 +513,13 @@ class ConversationMemory:
                     has_repo_info
                     or has_runtime_info
                     or has_repo_instructions
-                    or has_conversation_context
+                    or has_conversation_instructions
                 ):
                     formatted_workspace_text = (
                         self.prompt_manager.build_workspace_context(
                             repository_info=repo_info,
                             runtime_info=runtime_info,
-                            conversation_context=conversation_context,
+                            conversation_instructions=conversation_instructions,
                             repo_instructions=repo_instructions,
                         )
                     )

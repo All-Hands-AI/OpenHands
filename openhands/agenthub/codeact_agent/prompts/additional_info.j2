@@ -36,9 +36,9 @@ You are have access to the following environment variables
 Today's date is {{ runtime_info.date }} (UTC).
 {% endif %}
 </RUNTIME_INFORMATION>
-{% if conversation_context and conversation_context.context -%}
+{% if conversation_instructions and conversation_instructions.content -%}
 <CONTEXT_MESSAGE>
-{{ conversation_context.context }}
+{{ conversation_instructions.content }}
 </CONTEXT_MESSAGE>
 {% endif %}
 {% endif %}

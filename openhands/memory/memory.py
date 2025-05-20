@@ -22,7 +22,11 @@ from openhands.microagent import (
     load_microagents_from_dir,
 )
 from openhands.runtime.base import Runtime
-from openhands.utils.prompt import ConversationContext, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 GLOBAL_MICROAGENTS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(openhands.__file__)),
@@ -65,7 +69,7 @@ class Memory:
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
         self.runtime_info: RuntimeInfo | None = None
-        self.conversation_context: ConversationContext | None = None
+        self.conversation_instructions: ConversationInstructions | None = None
 
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
@@ -157,7 +161,7 @@ class Memory:
             or self.runtime_info
             or repo_instructions
             or microagent_knowledge
-            or self.conversation_context
+            or self.conversation_instructions
         ):
             obs = RecallObservation(
                 recall_type=RecallType.WORKSPACE_CONTEXT,
@@ -182,8 +186,8 @@ class Memory:
                 custom_secrets_descriptions=self.runtime_info.custom_secrets_descriptions
                 if self.runtime_info is not None
                 else {},
-                conversation_instructions=self.conversation_context.content
-                if self.conversation_context is not None
+                conversation_instructions=self.conversation_instructions.content
+                if self.conversation_instructions is not None
                 else '',
             )
             return obs
@@ -324,7 +328,7 @@ class Memory:
         Set contextual information for conversation
         This is information the agent requires but the user doesn't really need to know about
         """
-        self.conversation_context = ConversationContext(
+        self.conversation_instructions = ConversationInstructions(
             content=conversation_instructions or ''
         )
 
