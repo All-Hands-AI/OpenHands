@@ -876,6 +876,11 @@
                     "type": "string",
                     "nullable": true
                   },
+                  "context_msg": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Additional system instructions for the agent task"
+                  },
                   "image_urls": {
                     "type": "array",
                     "items": {
