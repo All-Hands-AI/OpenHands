@@ -271,7 +271,7 @@ class CLIRuntime(Runtime):
 
         try:
             if process.stdout:
-                while process.poll() is None and first_line:
+                while process.poll() is None:
                     if (
                         timeout is not None
                         and (time.monotonic() - start_time) > timeout
@@ -290,7 +290,6 @@ class CLIRuntime(Runtime):
 
                     if ready_to_read:
                         line = process.stdout.readline()
-                        first_line = False
                         if line:
                             logger.debug(f'LINE: {line}')
                             output_lines.append(line)

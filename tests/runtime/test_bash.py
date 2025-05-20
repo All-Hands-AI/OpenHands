@@ -371,12 +371,12 @@ def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
         # expected_outputs = ['.git_config', 'hello\nworld']
     else:
         cmds = [
-            'ls -l .bashrc',  # A command that will likely produce some output
+            'echo "hello"',  # A command that will always work
             'echo -e "hello\nworld"',
             """echo -e "hello it's me\"""",
         ]
         expected_outputs = [
-            '.bashrc',
+            'hello',  # Simple string output
             'hello\nworld',
             "hello it's me",
         ]  # Simplified expectations
