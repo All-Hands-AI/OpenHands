@@ -89,11 +89,12 @@ prompt-toolkit = "^3.0.50"
 traceloop-sdk = "0.24.0"
 PyYAML = "^6.0.1"
 mem0ai = "0.1.98"
+psycopg2-binary = "2.9.10"
 
 json-schema-to-pydantic = "0.2.3"
-autogen_core = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-core"}
-autogen_agentchat = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-agentchat"}
-autogen_ext = {git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-ext"}
+autogen_core = { git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-core" }
+autogen_agentchat = { git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-agentchat" }
+autogen_ext = { git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-ext" }
 opentelemetry-distro = "<0.53b1"
 opentelemetry-instrumentation-asyncio = "0.46b0"
 opentelemetry-instrumentation-aws-lambda = "0.46b0"
@@ -123,7 +124,7 @@ opentelemetry-instrumentation-tortoiseorm = "0.46b0"
 opentelemetry-instrumentation-urllib3 = "0.46b0"
 pip = "^25.0.1"
 aiofiles = "^24.1.0"
-tritonclient = {extras = ["http"], version = "^2.56.0"}
+tritonclient = { extras = ["http"], version = "^2.56.0" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.5"
