@@ -14,6 +14,7 @@
         "tr": "OpenHands'e yeniden giriş yapılıyor...",
         "de": "Erneute Anmeldung bei OpenHands...",
         "uk": "Повторний вхід до OpenHands..."
+    },
     "SECURITY$LOW_RISK": {
         "en": "Low Risk",
         "ja": "低リスク",
