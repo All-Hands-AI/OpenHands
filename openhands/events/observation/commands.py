@@ -170,6 +170,7 @@ class IPythonRunCellObservation(Observation):
 
     code: str
     observation: str = ObservationType.RUN_IPYTHON
+    image_urls: list[str] | None = None
 
     @property
     def error(self) -> bool:
@@ -184,4 +185,7 @@ class IPythonRunCellObservation(Observation):
         return True  # IPython cells are always considered successful
 
     def __str__(self) -> str:
-        return f'**IPythonRunCellObservation**\n{self.content}'
+        result = f'**IPythonRunCellObservation**\n{self.content}'
+        if self.image_urls:
+            result += f'\nImages: {len(self.image_urls)}'
+        return result

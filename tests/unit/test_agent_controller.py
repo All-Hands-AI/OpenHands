@@ -57,6 +57,10 @@ def mock_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
 
+    # Add config with enable_mcp attribute
+    agent.config = MagicMock(spec=AgentConfig)
+    agent.config.enable_mcp = True
+
     # Add a proper system message mock
     system_message = SystemMessageAction(
         content='Test system message', tools=['test_tool']
