@@ -185,26 +185,7 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        params['tools'] = self.tools
-
-        # Special handling for Gemini model which doesn't support default fields
-        if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
-            logger.info(
-                f'Removing the default fields from tools for {self.llm.config.model} '
-                "since it doesn't support them and the request would crash."
-            )
-            # prevent mutation of input tools
-            params['tools'] = copy.deepcopy(params['tools'])
-            # Strip off default fields that cause errors with gemini-preview
-            for tool in params['tools']:
-                if 'function' in tool and 'parameters' in tool['function']:
-                    if 'properties' in tool['function']['parameters']:
-                        for prop_name, prop in tool['function']['parameters'][
-                            'properties'
-                        ].items():
-                            if 'default' in prop:
-                                del prop['default']
-        # log to litellm proxy if possible
+        params['tools'] = self._check_tools(self.tools)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
@@ -282,6 +263,39 @@ class CodeActAgent(Agent):
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
+    
+    def _check_tools(self, tools: list['ChatCompletionToolParam']) -> list['ChatCompletionToolParam']:
+        """Checks and modifies tools for compatibility with the current LLM."""
+        # Special handling for Gemini models which don't support default fields and have limited format support
+        if 'gemini' in self.llm.config.model.lower():
+            logger.info(
+                f'Removing default fields and unsupported formats from tools for Gemini model {self.llm.config.model} '
+                "since Gemini models have limited format support (only 'enum' and 'date-time' for STRING types)."
+            )
+            # prevent mutation of input tools
+            checked_tools = copy.deepcopy(tools)
+            # Strip off default fields and unsupported formats that cause errors with gemini-preview
+            for tool in checked_tools:
+                if 'function' in tool and 'parameters' in tool['function']:
+                    if 'properties' in tool['function']['parameters']:
+                        for prop_name, prop in tool['function']['parameters'][
+                            'properties'
+                        ].items():
+                            # Remove default fields
+                            if 'default' in prop:
+                                del prop['default']
+                            
+                            # Remove format fields for STRING type parameters if the format is unsupported
+                            # Gemini only supports 'enum' and 'date-time' formats for STRING type
+                            if prop.get('type') == 'string' and 'format' in prop:
+                                supported_formats = ['enum', 'date-time']
+                                if prop['format'] not in supported_formats:
+                                    logger.info(
+                                        f'Removing unsupported format "{prop["format"]}" for STRING parameter "{prop_name}"'
+                                    )
+                                    del prop['format']
+            return checked_tools
+        return tools
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
