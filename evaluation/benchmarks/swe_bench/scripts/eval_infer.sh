@@ -152,6 +152,6 @@ else
         --instance_ids $INSTANCE_ID \
         --cache_level instance \
         --max_workers $N_PROCESS \
-        --run_id $RUN_ID
+        --run_id $RUN_ID \
         $MODAL_FLAG
 fi
