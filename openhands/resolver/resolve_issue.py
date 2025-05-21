@@ -146,7 +146,7 @@ class IssueResolver:
             user_instructions_prompt_template = f.read()
 
         with open(
-            prompt_file.replace('.jinja', 'conversation-instructions.jinja')
+            prompt_file.replace('.jinja', '-conversation-instructions.jinja')
         ) as f:
             conversation_instructions_prompt_template = f.read()
 
