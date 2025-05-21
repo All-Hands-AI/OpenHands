@@ -2,6 +2,7 @@ import os
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
 from openhands.utils.import_utils import get_impl
 
 
@@ -31,6 +32,21 @@ class MCPStdioServerConfig(BaseModel):
     command: str
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
+
+    def __eq__(self, other):
+        """Override equality operator to compare server configurations.
+
+        Two server configurations are considered equal if they have the same
+        name, command, args, and env values.
+        """
+        if not isinstance(other, MCPStdioServerConfig):
+            return False
+        return (
+            self.name == other.name
+            and self.command == other.command
+            and self.args == other.args
+            and self.env == other.env
+        )
 
 
 class MCPConfig(BaseModel):
@@ -124,10 +140,11 @@ class MCPConfig(BaseModel):
         return mcp_mapping
 
 
-
 class OpenHandsMCPConfig:
     @staticmethod
-    def create_default_mcp_server_config(host: str, user_id: str | None = None) -> MCPSSEServerConfig | None:
+    def create_default_mcp_server_config(
+        host: str, user_id: str | None = None
+    ) -> MCPSSEServerConfig | None:
         """
         Create a default MCP server configuration.
 
@@ -141,12 +158,9 @@ class OpenHandsMCPConfig:
         return MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)
 
 
-
 openhands_mcp_config_cls = os.environ.get(
     'OPENHANDS_MCP_CONFIG_CLS',
     'openhands.core.config.mcp_config.OpenHandsMCPConfig',
 )
 
-OpenHandsMCPConfigImpl = get_impl(
-    OpenHandsMCPConfig, openhands_mcp_config_cls
-)
+OpenHandsMCPConfigImpl = get_impl(OpenHandsMCPConfig, openhands_mcp_config_cls)

@@ -4,14 +4,17 @@ import threading
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
-import json
 
 import httpcore
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )
@@ -358,50 +361,55 @@ class ActionExecutionClient(Runtime):
     ) -> MCPConfig:
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
-        
+
         # Get current stdio servers
-        current_stdio_servers: list[MCPStdioServerConfig] = list(updated_mcp_config.stdio_servers)
+        current_stdio_servers: list[MCPStdioServerConfig] = list(
+            updated_mcp_config.stdio_servers
+        )
         if extra_stdio_servers:
             current_stdio_servers.extend(extra_stdio_servers)
-            
-        # Convert to JSON format for comparison
-        current_json_configs = [server.model_dump(mode='json') for server in current_stdio_servers]
-        
-        # Create a lookup of server JSON by its string representation for fast comparison
-        last_updated_json_set = {
-            json.dumps(server.model_dump(mode='json'), sort_keys=True)
-            for server in self._last_updated_mcp_stdio_servers
-        }
-        
-        # Check if there are any new servers
-        new_servers = []
-        for idx, config in enumerate(current_json_configs):
-            if json.dumps(config, sort_keys=True) not in last_updated_json_set:
-                new_servers.append(current_stdio_servers[idx])
-        
-        self.log('debug', f'adding {len(new_servers)} new stdio servers to MCP config: {new_servers}')
-        
+
+        # Check if there are any new servers using the __eq__ operator
+        new_servers = [
+            server
+            for server in current_stdio_servers
+            if server not in self._last_updated_mcp_stdio_servers
+        ]
+
+        self.log(
+            'debug',
+            f'adding {len(new_servers)} new stdio servers to MCP config: {new_servers}',
+        )
+
         # Only send update request if there are new servers
         if new_servers:
             # Use all current servers for the update (simpler and more reliable)
             # This works because we're replacing the complete configuration
-            stdio_tools = [server.model_dump(mode='json') for server in current_stdio_servers]
+            stdio_tools = [
+                server.model_dump(mode='json') for server in current_stdio_servers
+            ]
             stdio_tools.sort(key=lambda x: x.get('name', ''))  # Sort by server name
-            
-            self.log('debug', f'Updating MCP server with {len(new_servers)} new stdio servers')
+
+            self.log(
+                'debug',
+                f'Updating MCP server with {len(new_servers)} new stdio servers',
+            )
             response = self._send_action_server_request(
                 'POST',
                 f'{self.action_execution_server_url}/update_mcp_server',
                 json=stdio_tools,
                 timeout=10,
             )
-            
+
             if response.status_code != 200:
                 self.log('warning', f'Failed to update MCP server: {response.text}')
             else:
                 # Update our cached list with current servers after successful update
                 self._last_updated_mcp_stdio_servers = current_stdio_servers.copy()
-                self.log('debug', f'Successfully updated MCP stdio servers, now tracking {len(current_stdio_servers)} servers')
+                self.log(
+                    'debug',
+                    f'Successfully updated MCP stdio servers, now tracking {len(current_stdio_servers)} servers',
+                )
 
             # No API key by default. Child runtime can override this when appropriate
             updated_mcp_config.sse_servers.append(
@@ -415,11 +423,8 @@ class ActionExecutionClient(Runtime):
                 f'Updated MCP config: {updated_mcp_config.sse_servers}',
             )
         else:
-            self.log(
-                'debug',
-                'No new stdio servers to update'
-            )
-        
+            self.log('debug', 'No new stdio servers to update')
+
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
