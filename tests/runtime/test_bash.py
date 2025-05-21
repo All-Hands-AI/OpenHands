@@ -815,7 +815,12 @@ def test_basic_command(reusable_runtime):
     is_windows(), reason='Powershell does not support interactive commands'
 )
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'},
+    )
     try:
         # Test interactive command
         action = CmdRunAction('read -p "Enter name: " name && echo "Hello $name"')
