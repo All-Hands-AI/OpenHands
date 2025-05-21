@@ -531,6 +531,40 @@ class LLM(RetryMixin, DebugMixin):
             )
         )
 
+    def clone(self, **kwargs) -> 'LLM':
+        """Create a clone of this LLM instance with optional parameter overrides.
+
+        Args:
+            **kwargs: Parameters to override in the cloned instance.
+                      Can include any parameter accepted by the LLM constructor.
+
+        Returns:
+            LLM: A new LLM instance with the same configuration as this one,
+                 but with any parameters specified in kwargs overridden.
+        """
+        # Create a copy of the config
+        new_config = copy.deepcopy(self.config)
+
+        # Apply any config overrides from kwargs
+        for key, value in kwargs.items():
+            if hasattr(new_config, key):
+                setattr(new_config, key, value)
+
+        # Get other constructor parameters from kwargs or use current values
+        conversation_id = kwargs.get('conversation_id', self.conversation_id)
+        user_id = kwargs.get('user_id', self.user_id)
+        metrics = kwargs.get('metrics', copy.deepcopy(self.metrics))
+        retry_listener = kwargs.get('retry_listener', self.retry_listener)
+
+        # Create and return a new LLM instance
+        return LLM(
+            config=new_config,
+            conversation_id=conversation_id,
+            user_id=user_id,
+            metrics=metrics,
+            retry_listener=retry_listener,
+        )
+
     def is_caching_prompt_active(self) -> bool:
         """Check if prompt caching is supported and enabled for current model.
 

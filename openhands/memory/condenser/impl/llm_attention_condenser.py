@@ -113,27 +113,12 @@ class LLMAttentionCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(
-        cls, config: LLMAttentionCondenserConfig, llm: LLM | None = None
-    ) -> LLMAttentionCondenser:
-        # If an LLM is not provided, create one from the config
-        if llm is None:
-            # This condenser cannot take advantage of prompt caching. If it happens
-            # to be set, we'll pay for the cache writes but never get a chance to
-            # save on a read.
-            llm_config = config.llm_config.model_copy()
-            llm_config.caching_prompt = False
-
-            llm = LLM(
-                config=llm_config,
-                conversation_id='attention_condenser',
-                user_id='system',
-            )
-
-        return LLMAttentionCondenser(
-            llm=llm,
-            max_size=config.max_size,
-            keep_first=config.keep_first,
+    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+        # For backward compatibility, we need to handle the case where llm is not provided
+        # This will be removed in a future version as llm is now required
+        raise ValueError(
+            'LLMAttentionCondenser.from_config now requires an LLM instance to be passed directly to the constructor. '
+            'Please create the condenser using LLMAttentionCondenser(llm=your_llm, max_size=..., keep_first=...)'
         )
 
 
