@@ -151,6 +151,8 @@ The script now accepts optional arguments:
 - `instance_id`: Specify a single instance to evaluate (optional)
 - `dataset_name`: The name of the dataset to use (default: `"princeton-nlp/SWE-bench_Lite"`)
 - `split`: The split of the dataset to use (default: `"test"`)
+- `environment`: The environment to use for patch evaluation (default: `"local"`). You can set it to
+  `"modal"` to use [official SWE-Bench support](https://github.com/swe-bench/SWE-bench/blob/main/docs/assets/evaluation.md#%EF%B8%8F-evaluation-with-modal) for running evaluation on Modal.
 
 For example, to evaluate a specific instance with a custom dataset and split:
 
