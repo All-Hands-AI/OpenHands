@@ -290,8 +290,6 @@ export function WsClientProvider({
       query,
     });
 
-    console.log("ROOT REF", sio);
-
     sio.on("connect", handleConnect);
     sio.on("oh_event", handleMessage);
     sio.on("connect_error", handleError);

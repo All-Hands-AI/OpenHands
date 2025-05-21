@@ -6,10 +6,21 @@ import {
   SystemMessageAction,
 } from "./actions";
 import {
+  AgentStateChangeObservation,
   CommandObservation,
   ErrorObservation,
   OpenHandsObservation,
 } from "./observations";
+
+export const isOpenHandsEvent = (
+  event: unknown,
+): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
 
 export const isOpenHandsAction = (
   event: OpenHandsParsedEvent,
@@ -57,3 +68,8 @@ export const isRejectObservation = (
   event: OpenHandsParsedEvent,
 ): event is OpenHandsObservation =>
   isOpenHandsObservation(event) && event.observation === "user_rejected";
+
+export const isAgentStateChangeObservation = (
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
+  isOpenHandsObservation(event) && event.observation === "agent_state_changed";

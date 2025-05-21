@@ -69,32 +69,11 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const { providers } = useUserProviders();
     const { mutate: createConversation } = useCreateConversation();
 
-    const { connect, socket } = useSubscribeToConversation();
+    const { connect } = useSubscribeToConversation();
     const optimisticUserMessage = getOptimisticUserMessage();
 
     const [showLaunchMicroagentModal, setShowLaunchMicroagentModal] =
       React.useState(false);
-
-    // Monitor socket connection and events
-    React.useEffect(() => {
-      if (socket) {
-        console.log("Socket available in Messages component:", socket);
-        
-        // Log when events are received
-        const originalOnEvent = socket.onevent;
-        socket.onevent = function(packet) {
-          console.log("Socket event received:", packet);
-          return originalOnEvent.call(this, packet);
-        };
-        
-        return () => {
-          // Restore original onevent function when component unmounts
-          if (socket) {
-            socket.onevent = originalOnEvent;
-          }
-        };
-      }
-    }, [socket]);
 
     // Check if conversation metadata has trigger=resolver
     const isResolverTrigger = conversation?.trigger === "resolver";
