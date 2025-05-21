@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
@@ -156,10 +154,8 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
     @classmethod
     def from_config(
-        cls, config: LLMSummarizingCondenserConfig, llm: Any = None
-    ) -> "LLMSummarizingCondenser":
-        if llm is None:
-            raise ValueError("LLM instance is required for LLMSummarizingCondenser")
+        cls, config: LLMSummarizingCondenserConfig, llm: LLM
+    ) -> 'LLMSummarizingCondenser':
         return LLMSummarizingCondenser(
             llm=llm,
             max_size=config.max_size,

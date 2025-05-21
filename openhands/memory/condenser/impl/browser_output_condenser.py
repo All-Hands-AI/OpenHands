@@ -4,6 +4,7 @@ from openhands.core.config.condenser_config import BrowserOutputCondenserConfig
 from openhands.events.event import Event
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
+from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
@@ -40,7 +41,7 @@ class BrowserOutputCondenser(Condenser):
 
     @classmethod
     def from_config(
-        cls, config: BrowserOutputCondenserConfig, llm=None
+        cls, config: BrowserOutputCondenserConfig, llm: LLM
     ) -> BrowserOutputCondenser:
         return BrowserOutputCondenser(**config.model_dump(exclude=['type']))
 

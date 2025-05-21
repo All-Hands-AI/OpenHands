@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from litellm import supports_response_schema
 from pydantic import BaseModel
 
@@ -116,10 +114,8 @@ class LLMAttentionCondenser(RollingCondenser):
 
     @classmethod
     def from_config(
-        cls, config: LLMAttentionCondenserConfig, llm: Any = None
-    ) -> "LLMAttentionCondenser":
-        if llm is None:
-            raise ValueError("LLM instance is required for LLMAttentionCondenser")
+        cls, config: LLMAttentionCondenserConfig, llm: LLM
+    ) -> 'LLMAttentionCondenser':
         return LLMAttentionCondenser(
             llm=llm,
             max_size=config.max_size,

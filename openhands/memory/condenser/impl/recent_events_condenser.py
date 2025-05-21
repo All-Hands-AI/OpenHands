@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import RecentEventsCondenserConfig
+from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
@@ -22,7 +23,7 @@ class RecentEventsCondenser(Condenser):
 
     @classmethod
     def from_config(
-        cls, config: RecentEventsCondenserConfig, llm=None
+        cls, config: RecentEventsCondenserConfig, llm: LLM
     ) -> RecentEventsCondenser:
         return RecentEventsCondenser(**config.model_dump(exclude=['type']))
 

@@ -13,7 +13,7 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm import LLM
+from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -309,10 +309,8 @@ Capture all relevant information, especially:
 
     @classmethod
     def from_config(
-        cls, config: StructuredSummaryCondenserConfig, llm: Any = None
-    ) -> "StructuredSummaryCondenser":
-        if llm is None:
-            raise ValueError("LLM instance is required for StructuredSummaryCondenser")
+        cls, config: StructuredSummaryCondenserConfig, llm: LLM
+    ) -> 'StructuredSummaryCondenser':
         return StructuredSummaryCondenser(
             llm=llm,
             max_size=config.max_size,

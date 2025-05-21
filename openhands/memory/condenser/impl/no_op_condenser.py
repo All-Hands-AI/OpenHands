@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
@@ -12,7 +13,7 @@ class NoOpCondenser(Condenser):
         return view
 
     @classmethod
-    def from_config(cls, config: NoOpCondenserConfig, llm=None) -> NoOpCondenser:
+    def from_config(cls, config: NoOpCondenserConfig, llm: LLM) -> NoOpCondenser:
         return NoOpCondenser()
 
 
