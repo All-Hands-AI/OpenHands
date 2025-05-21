@@ -342,34 +342,40 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-    # # copy processed indexes
-    # action = CmdRunAction(command='mkdir _index_data/graph_index_v2.3')
-    # obs = runtime.run_action(action)
+    # Copy the processed indexes if available
+    action = CmdRunAction(command='mkdir _index_data/graph_index_v2.3')
+    obs = runtime.run_action(action)
 
-    # graph_index_file_path = os.path.join(
-    #     INDEX_BASE_DIR, 'graph_index_v2.3', f"{instance['instance_id']}.pkl"
-    # )
-    # runtime.copy_to(
-    #     graph_index_file_path,
-    #     f'/workspace/{workspace_dir_name}/_index_data/graph_index_v2.3',
-    # )
-    # action = CmdRunAction(
-    #     command=f'mv _index_data/graph_index_v2.3/{instance["instance_id"]}.pkl _index_data/graph_index_v2.3/code_graph.pkl'
-    # )
-    # obs = runtime.run_action(action)
+    # Check if an existing graph index file is available
+    graph_index_file_path = os.path.join(
+        INDEX_BASE_DIR, 'graph_index_v2.3', f"{instance['instance_id']}.pkl"
+    )
+    if INDEX_BASE_DIR and os.path.exists(graph_index_file_path):
+        logger.info(
+            f"Copying graph index from {graph_index_file_path} to /workspace/{workspace_dir_name}/_index_data/graph_index_v2.3"
+        )
+    
+        runtime.copy_to(
+            graph_index_file_path,
+            f'/workspace/{workspace_dir_name}/_index_data/graph_index_v2.3',
+        )
+        action = CmdRunAction(
+            command=f'mv _index_data/graph_index_v2.3/{instance["instance_id"]}.pkl _index_data/graph_index_v2.3/code_graph.pkl'
+        )
+        obs = runtime.run_action(action)
 
-    # bm25_index_dir = os.path.join(INDEX_BASE_DIR, 'BM25_index', instance['instance_id'])
-    # runtime.copy_to(
-    #     bm25_index_dir, f'/workspace/{workspace_dir_name}/_index_data', recursive=True
-    # )
-    # action = CmdRunAction(
-    #     command=f'mv _index_data/{instance["instance_id"]} _index_data/bm25_index'
-    # )
-    # action.set_hard_timeout(600)
-    # logger.info(action, extra={'msg_type': 'ACTION'})
-    # obs = runtime.run_action(action)
-    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    # assert_and_raise(obs.exit_code == 0, f'Failed to mv file: {str(obs)}')
+        bm25_index_dir = os.path.join(INDEX_BASE_DIR, 'BM25_index', instance['instance_id'])
+        runtime.copy_to(
+            bm25_index_dir, f'/workspace/{workspace_dir_name}/_index_data', recursive=True
+        )
+        action = CmdRunAction(
+            command=f'mv _index_data/{instance["instance_id"]} _index_data/bm25_index'
+        )
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(obs.exit_code == 0, f'Failed to mv file: {str(obs)}')
 
     action = CmdRunAction(command='which python')
     action.set_hard_timeout(600)
