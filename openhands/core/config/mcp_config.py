@@ -1,6 +1,8 @@
+import os
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
+from openhands.utils.import_utils import get_impl
 
 
 class MCPSSEServerConfig(BaseModel):
@@ -120,3 +122,31 @@ class MCPConfig(BaseModel):
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
         return mcp_mapping
+
+
+
+class OpenHandsMCPConfig:
+    @staticmethod
+    def create_default_mcp_server_config(host: str, user_id: str | None = None) -> MCPSSEServerConfig | None:
+        """
+        Create a default MCP server configuration.
+
+        Args:
+            host: Host string
+
+        Returns:
+            MCPSSEServerConfig: A default SSE server configuration
+        """
+
+        return MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)
+
+
+
+openhands_mcp_config_cls = os.environ.get(
+    'OPENHANDS_MCP_CONFIG_CLS',
+    'openhands.core.config.mcp_config.OpenHandsMCPConfig',
+)
+
+OpenHandsMCPConfigImpl = get_impl(
+    OpenHandsMCPConfig, openhands_mcp_config_cls
+)
