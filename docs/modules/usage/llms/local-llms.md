@@ -53,7 +53,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 Check [the installation guide](https://docs.all-hands.dev/modules/usage/installation) to make sure you have all the prerequisites for running OpenHands.
 
 ```bash
-export OPENHANDS_VERSION=0.38
+export OPENHANDS_VERSION=0.39
 export LMSTUDIO_MODEL_NAME="imported-models/uncategorized/devstralq4_k_m.gguf" # <- Replace this with the model name you copied from LMStudio
 export LMSTUDIO_URL="http://host.docker.internal:1234"  # <- Replace this with the port from LMStudio
 
