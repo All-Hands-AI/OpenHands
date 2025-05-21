@@ -50,6 +50,7 @@ def create_runtime(
     # otherwise generate it on the basis of the configured jwt_secret
     # we can do this better, this is just so that the sid is retrieved when we want to restore the session
     session_id = sid or generate_sid(config)
+    user_id = session_id.split('-')[0]
 
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -61,11 +62,14 @@ def create_runtime(
             config.security.security_analyzer, SecurityAnalyzer
         )(event_stream)
 
-    # agent class
+    # agent class and LLM
     if agent:
         agent_cls = type(agent)
+        llm = agent.llm
     else:
         agent_cls = Agent.get_cls(config.default_agent)
+        llm_config = config.get_llm_config_from_agent(config.default_agent)
+        llm = LLM(config=llm_config, conversation_id=session_id, user_id=user_id)
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
@@ -73,6 +77,7 @@ def create_runtime(
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
+        llm=llm,
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,

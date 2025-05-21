@@ -106,6 +106,7 @@ class Runtime(FileEditRuntimeMixin):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm: LLM,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -118,6 +119,7 @@ class Runtime(FileEditRuntimeMixin):
         self.git_handler = GitHandler(
             execute_shell_fn=self._execute_shell_fn_git_handler
         )
+        self.llm = llm
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -176,7 +178,8 @@ class Runtime(FileEditRuntimeMixin):
                 )
                 draft_editor_config.caching_prompt = False
 
-            draft_editor_llm = LLM(
+            # Create a new LLM instance for the draft editor based on the provided LLM
+            draft_editor_llm = self.llm.clone(
                 config=draft_editor_config,
                 conversation_id='draft_editor',
                 user_id='system',

@@ -16,6 +16,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.llm.llm import LLM
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -74,6 +75,7 @@ class DockerRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm: LLM,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -120,6 +122,7 @@ class DockerRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm,
             sid,
             plugins,
             env_vars,

@@ -63,6 +63,7 @@ class ActionExecutionClient(Runtime):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -80,6 +81,7 @@ class ActionExecutionClient(Runtime):
         super().__init__(
             config,
             event_stream,
+            llm,
             sid,
             plugins,
             env_vars,
