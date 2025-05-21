@@ -55,6 +55,7 @@ export const getEventContent = (
           command:
             hasCommandProperty(event.extras) &&
             trimText(event.extras.command, 80),
+          mcp_tool_name: event.observation === "mcp" && event.extras.name,
         }}
         components={{
           path: <PathComponent />,
