@@ -23,7 +23,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -80,6 +80,7 @@ class DockerRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        main_module: str = DEFAULT_MAIN_MODULE,
     ):
         if not DockerRuntime._shutdown_listener_id:
             DockerRuntime._shutdown_listener_id = add_shutdown_listener(
@@ -109,6 +110,7 @@ class DockerRuntime(ActionExecutionClient):
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
         self.container: Container | None = None
+        self.main_module = main_module
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
 
@@ -336,11 +338,7 @@ class DockerRuntime(ActionExecutionClient):
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
 
-        command = get_action_execution_server_startup_command(
-            server_port=self._container_port,
-            plugins=self.plugins,
-            app_config=self.config,
-        )
+        command = self.get_action_execution_server_startup_command()
 
         try:
             self.container = self.docker_client.containers.run(
@@ -534,3 +532,11 @@ class DockerRuntime(ActionExecutionClient):
             pass
         finally:
             docker_client.close()
+
+    def get_action_execution_server_startup_command(self):
+        return get_action_execution_server_startup_command(
+            server_port=self._container_port,
+            plugins=self.plugins,
+            app_config=self.config,
+            main_module=self.main_module,
+        )

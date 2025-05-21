@@ -24,7 +24,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -41,6 +41,7 @@ class RemoteRuntime(ActionExecutionClient):
     runtime_builder: RemoteRuntimeBuilder
     container_image: str
     available_hosts: dict[str, int]
+    main_module: str
 
     def __init__(
         self,
@@ -54,6 +55,7 @@ class RemoteRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        main_module: str = DEFAULT_MAIN_MODULE,
     ) -> None:
         super().__init__(
             config,
@@ -85,6 +87,7 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+        self.main_module = main_module
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
@@ -231,11 +234,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_runtime(self) -> None:
         # Prepare the request body for the /start endpoint
-        command = get_action_execution_server_startup_command(
-            server_port=self.port,
-            plugins=self.plugins,
-            app_config=self.config,
-        )
+        command = self.get_action_execution_server_startup_command()
         environment: dict[str, str] = {}
         if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
             environment['DEBUG'] = 'true'
@@ -492,3 +491,11 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: RetryCallState) -> bool:
         return self._runtime_closed
+
+    def get_action_execution_server_startup_command(self):
+        return get_action_execution_server_startup_command(
+            server_port=self.port,
+            plugins=self.plugins,
+            app_config=self.config,
+            main_module=self.main_module,
+        )

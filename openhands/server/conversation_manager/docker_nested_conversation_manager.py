@@ -134,12 +134,11 @@ class DockerNestedConversationManager(ConversationManager):
     async def _start_agent_loop(self, sid: str, settings: Settings, user_id: str | None, initial_user_msg: MessageAction | None, replay_json: str | None):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
         await self.ensure_num_conversations_below_limit(sid, user_id)
-        provider_handler = self._get_provider_handler(settings)
-        runtime = await self._create_runtime(sid, user_id, settings, provider_handler)
+        runtime = await self._create_runtime(sid, user_id, settings)
         await runtime.connect()
-        asyncio.create_task(self._start_conversation(sid, settings, user_id, initial_user_msg, replay_json, provider_handler, runtime.api_url))
+        asyncio.create_task(self._start_conversation(sid, settings, user_id, initial_user_msg, replay_json, runtime.api_url))
 
-    async def _start_conversation(self, sid: str, settings: Settings, user_id: str | None, initial_user_msg: MessageAction | None, replay_json: str | None, provider_handler: ProviderHandler, api_url: str):
+    async def _start_conversation(self, sid: str, settings: Settings, user_id: str | None, initial_user_msg: MessageAction | None, replay_json: str | None, api_url: str):
         self._starting_conversation_ids.add(sid)
         try:
             async with httpx.AsyncClient(headers={'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)}) as client:
@@ -152,6 +151,7 @@ class DockerNestedConversationManager(ConversationManager):
                 assert response.status_code == status.HTTP_200_OK
 
                 # Setup provider tokens
+                provider_handler = self._get_provider_handler(settings)
                 provider_tokens = provider_handler.provider_tokens
                 if provider_tokens:
                     provider_tokens_json = {
@@ -318,7 +318,7 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return provider_handler
 
-    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings, provider_handler: ProviderHandler):
+    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings):
 
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
@@ -339,14 +339,13 @@ class DockerNestedConversationManager(ConversationManager):
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        config = self.config.model_copy(deep=True)
+        env_vars = config.sandbox.runtime_startup_env_vars
         env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
         env_vars['USER'] = 'CURRENT_USER'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
-
-        config = self.config.model_copy(deep=True)
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
