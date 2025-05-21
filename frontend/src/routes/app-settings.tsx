@@ -175,7 +175,7 @@ function AppSettingsScreen() {
               {t("Enable Browsing")}
             </SettingsSwitch>
             <Tooltip 
-              content="New conversations only: Disables interactive webpage features but preserves content fetching."
+              content="Affects new conversations only. Disables interactive browsing (clicking, dragging) but web page fetching remains available."
               placement="right"
               className="max-w-xs"
             >
