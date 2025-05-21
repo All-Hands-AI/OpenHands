@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Tooltip } from "@heroui/react";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
 import { AvailableLanguages } from "#/i18n";
@@ -164,14 +165,24 @@ function AppSettingsScreen() {
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
 
-          <SettingsSwitch
-            testId="enable-browsing-switch"
-            name="enable-browsing-switch"
-            defaultIsToggled={!!settings.ENABLE_BROWSING}
-            onToggle={checkIfBrowsingSwitchHasChanged}
-          >
-            {t("Enable Browsing")}
-          </SettingsSwitch>
+          <div className="flex items-center gap-2">
+            <SettingsSwitch
+              testId="enable-browsing-switch"
+              name="enable-browsing-switch"
+              defaultIsToggled={!!settings.ENABLE_BROWSING}
+              onToggle={checkIfBrowsingSwitchHasChanged}
+            >
+              {t("Enable Browsing")}
+            </SettingsSwitch>
+            <Tooltip 
+              content="This change will only take effect on new conversations. This will only disable the interactive browsing capability (e.g., click, drag on a webpage, and see screenshots from webpage), but the ability to fetch web pages will remain intact."
+              placement="right"
+            >
+              <div className="cursor-help text-xs text-gray-500 rounded-full border border-gray-300 w-5 h-5 flex items-center justify-center">
+                ?
+              </div>
+            </Tooltip>
+          </div>
 
           {config?.APP_MODE === "saas" && (
             <SettingsSwitch
