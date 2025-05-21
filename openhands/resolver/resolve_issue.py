@@ -394,8 +394,10 @@ class IssueResolver:
 
         self.initialize_runtime(runtime)
 
-        instruction, images_urls = issue_handler.get_instruction(
-            issue, self.prompt_template, self.repo_instruction
+        instruction, conversation_instructions, images_urls = (
+            issue_handler.get_instruction(
+                issue, self.prompt_template, self.repo_instruction
+            )
         )
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         action = MessageAction(content=instruction, image_urls=images_urls)
@@ -405,6 +407,7 @@ class IssueResolver:
                 initial_user_action=action,
                 runtime=runtime,
                 fake_user_response_fn=codeact_user_response,
+                conversation_instructions=conversation_instructions,
             )
             if state is None:
                 raise RuntimeError('Failed to run the agent.')

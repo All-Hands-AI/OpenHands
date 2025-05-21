@@ -117,9 +117,10 @@ class ServiceContextPR(ServiceContext):
         issue: Issue,
         prompt_template: str,
         repo_instruction: str | None = None,
-    ) -> tuple[str, list[str]]:
+    ) -> tuple[str, str, list[str]]:
         """Generate instruction for the agent."""
-        template = jinja2.Template(prompt_template)
+        user_instruction_template = jinja2.Template(prompt_template)
+        conversation_instructions_template = jinja2.Template(prompt_template.replace('.jinja', '-conversation-instructions.jinja'))
         images = []
 
         issues_str = None
@@ -153,15 +154,19 @@ class ServiceContextPR(ServiceContext):
             thread_context = '\n---\n'.join(issue.thread_comments)
             images.extend(extract_image_urls(thread_context))
 
-        instruction = template.render(
-            issues=issues_str,
+        user_instruction = user_instruction_template.render(
             review_comments=review_comments_str,
             review_threads=review_thread_str,
             files=review_thread_file_str,
-            thread_context=thread_context,
-            repo_instruction=repo_instruction,
+            thread_context=thread_context
         )
-        return instruction, images
+
+        conversation_instructions = conversation_instructions_template.render(
+            issues=issues_str,
+            repo_instruction=repo_instruction
+        )
+
+        return user_instruction, conversation_instructions, images
 
     def _check_feedback_with_llm(self, prompt: str) -> tuple[bool, str]:
         """Helper function to check feedback with LLM and parse response."""
@@ -332,7 +337,7 @@ class ServiceContextIssue(ServiceContext):
         issue: Issue,
         prompt_template: str,
         repo_instruction: str | None = None,
-    ) -> tuple[str, list[str]]:
+    ) -> tuple[str, str, list[str]]:
         """Generate instruction for the agent."""
         # Format thread comments if they exist
         thread_context = ''
@@ -345,14 +350,17 @@ class ServiceContextIssue(ServiceContext):
         images.extend(extract_image_urls(issue.body))
         images.extend(extract_image_urls(thread_context))
 
-        template = jinja2.Template(prompt_template)
-        return (
-            template.render(
-                body=issue.title + '\n\n' + issue.body + thread_context,
-                repo_instruction=repo_instruction,
-            ),
-            images,
+        user_instructions_template = jinja2.Template(prompt_template)
+        user_instructions = user_instructions_template.render(
+                body=issue.title + '\n\n' + issue.body + thread_context
+        ) # Issue body and comments
+
+        conversation_instructions_template = jinja2.Template(prompt_template.replace('.jinja', '-conversation-instructions.jinja'))
+        conversation_instructions = conversation_instructions_template.render(
+            repo_instruction=repo_instruction,
         )
+
+        return user_instructions, conversation_instructions, images
 
     def guess_success(
         self, issue: Issue, history: list[Event], git_patch: str | None = None
