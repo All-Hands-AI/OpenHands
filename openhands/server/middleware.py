@@ -204,11 +204,7 @@ class SessionApiKeyMiddleware:
     async def __call__(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        if (
-            request.method != 'OPTIONS'
-            and request.url.path != '/alive'
-            and request.url.path != '/server_info'
-        ):
+        if request.method != 'OPTIONS' and request.url.path.startswith('/api'):
             if self.session_api_key != request.headers.get('X-Session-API-Key'):
                 return JSONResponse(
                     {'code': 'invalid_session_api_key'},
