@@ -2,11 +2,12 @@ import asyncio
 import os
 import shutil
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
 from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
@@ -25,8 +26,14 @@ from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 @pytest.fixture
@@ -75,6 +82,11 @@ def mock_agent():
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
+
+    agent.config = MagicMock()
+    agent.config.enable_mcp = False
+
+    return agent
 
 
 @pytest.mark.asyncio
@@ -443,11 +455,16 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
     )
 
+    conversation_instructions = ConversationInstructions(
+        content='additional agent context for the task'
+    )
+
     # Build the workspace context message
     workspace_context = prompt_manager.build_workspace_context(
         repository_info=repository_info,
         runtime_info=runtime_info,
         repo_instructions='Test repository instructions',
+        conversation_instructions=conversation_instructions,
     )
 
     # Verify that the workspace context includes the custom_secrets_descriptions
@@ -455,6 +472,9 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
     for secret_name, secret_description in custom_secrets.items():
         assert f'$**{secret_name}**' in workspace_context
         assert secret_description in workspace_context
+
+    assert '<CONVERSATION_INSTRUCTIONS>' in workspace_context
+    assert 'additional agent context for the task' in workspace_context
 
 
 def test_serialization_deserialization_with_custom_secrets():
@@ -566,3 +586,54 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'))
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'))
+
+
+@pytest.mark.asyncio
+async def test_conversation_instructions_plumbed_to_memory(
+    mock_agent, event_stream, file_store
+):
+    # Setup
+    session = AgentSession(
+        sid='test-session',
+        file_store=file_store,
+    )
+
+    # Create a mock runtime and set it up
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
+
+    # Mock the runtime creation to set up the runtime attribute
+    async def mock_create_runtime(*args, **kwargs):
+        session.runtime = mock_runtime
+        return True
+
+    session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
+
+    # Create a spy on set_initial_state
+    class SpyAgentController(AgentController):
+        set_initial_state_call_count = 0
+        test_initial_state = None
+
+        def set_initial_state(self, *args, state=None, **kwargs):
+            self.set_initial_state_call_count += 1
+            self.test_initial_state = state
+            super().set_initial_state(*args, state=state, **kwargs)
+
+    # Patch AgentController
+    with (
+        patch(
+            'openhands.server.session.agent_session.AgentController', SpyAgentController
+        ),
+    ):
+        await session.start(
+            runtime_name='test-runtime',
+            config=AppConfig(),
+            agent=mock_agent,
+            max_iterations=10,
+            conversation_instructions='instructions for conversation',
+        )
+
+        # Use the memory instance from the session, not the fixture
+        assert (
+            session.memory.conversation_instructions.content
+            == 'instructions for conversation'
+        )

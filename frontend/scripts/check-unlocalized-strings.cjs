@@ -119,6 +119,18 @@ function isExcludedTechnicalString(str) {
   return EXCLUDED_TECHNICAL_STRINGS.includes(str);
 }
 
+function isLikelyCode(str) {
+  // A string with no spaces and at least one underscore or colon is likely a code.
+  // (e.g.: "browser_interactive" or "error:")
+  if (str.includes(" ")) {
+    return false
+  }
+  if (str.includes(":") || str.includes("_")){
+    return true
+  }
+  return false
+}
+
 function isCommonDevelopmentString(str) {
   // Technical patterns that are definitely not UI strings
   const technicalPatterns = [
@@ -383,6 +395,11 @@ function isLikelyUserFacingText(str) {
   // Check if it's a specifically excluded technical string
   if (isExcludedTechnicalString(str)) {
     return false;
+  }
+
+  // Check if it looks like a code rather than a key
+  if (isLikelyCode(str)) {
+    return false
   }
 
   // Check if it's a raw translation key that should be wrapped in t()

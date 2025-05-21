@@ -35,6 +35,7 @@ def mock_agent():
 
     # Configure the agent config
     agent_config.disabled_microagents = []
+    agent_config.enable_mcp = True
 
     # Set up the chain of mocks
     llm.metrics = metrics

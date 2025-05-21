@@ -55,6 +55,7 @@ async def run_controller(
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
     memory: Memory | None = None,
+    conversation_instructions: str | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -126,10 +127,12 @@ async def run_controller(
             sid=sid,
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
+            conversation_instructions=conversation_instructions,
         )
 
     # Add MCP tools to the agent
-    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+    if agent.config.enable_mcp:
+        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:

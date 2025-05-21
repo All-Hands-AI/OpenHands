@@ -61,6 +61,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    conversation_instructions: str | None = None
 
     model_config = {'extra': 'forbid'}
 
@@ -69,7 +70,7 @@ class InitSessionResponse(BaseModel):
     status: str
     conversation_id: str
     conversation_url: str
-    api_key: str | None
+    session_api_key: str | None
     message: str | None = None
 
 
@@ -82,6 +83,7 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
+    conversation_instructions: str | None = None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
 ) -> AgentLoopInfo:
@@ -120,6 +122,7 @@ async def _create_new_conversation(
     session_init_args['selected_repository'] = selected_repository
     session_init_args['custom_secrets'] = custom_secrets
     session_init_args['selected_branch'] = selected_branch
+    session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -195,6 +198,7 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     git_provider = data.git_provider
+    conversation_instructions = data.conversation_instructions
 
     conversation_trigger = ConversationTrigger.GUI
 
@@ -222,13 +226,14 @@ async def new_conversation(
             image_urls=image_urls,
             replay_json=replay_json,
             conversation_trigger=conversation_trigger,
+            conversation_instructions=conversation_instructions
         )
 
         return InitSessionResponse(
             status='ok',
             conversation_id=agent_loop_info.conversation_id,
             conversation_url=agent_loop_info.url,
-            api_key=agent_loop_info.api_key,
+            session_api_key=agent_loop_info.session_api_key,
         )
     except MissingSettingsError as e:
         return JSONResponse(
@@ -289,7 +294,7 @@ async def search_conversations(
     )
     connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
     agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
-    urls_by_conversation_id = {info.conversation_id: info.url for info in agent_loop_info}
+    agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
@@ -299,7 +304,8 @@ async def search_conversations(
                     1 for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
-                url=urls_by_conversation_id.get(conversation.conversation_id),
+                agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),
+
             )
             for conversation in filtered_results
         ),
@@ -317,9 +323,9 @@ async def get_conversation(
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
-        url = agent_loop_info[0].url if agent_loop_info else None
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, url)
+        agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
+        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, agent_loop_info)
         return conversation_info
     except FileNotFoundError:
         return None
@@ -348,7 +354,7 @@ async def _get_conversation_info(
     conversation: ConversationMetadata,
     is_running: bool,
     num_connections: int,
-    url: str | None,
+    agent_loop_info: AgentLoopInfo | None,
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -365,7 +371,8 @@ async def _get_conversation_info(
                 ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
             ),
             num_connections=num_connections,
-            url=url,
+            url=agent_loop_info.url if agent_loop_info else None,
+            session_api_key=agent_loop_info.session_api_key if agent_loop_info else None,
         )
     except Exception as e:
         logger.error(
