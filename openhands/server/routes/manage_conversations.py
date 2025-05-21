@@ -106,6 +106,17 @@ async def new_conversation(
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
+
+    if conversation_trigger == ConversationTrigger.REMOTE_API_KEY and not initial_user_msg:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Missing initial user message',
+                'msg_id': 'CONFIGURATION$MISSING_USER_MESSAGE',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     try:
         if repository:
             provider_handler = ProviderHandler(provider_tokens)
