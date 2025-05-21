@@ -92,8 +92,13 @@ def mock_os():
 
 
 @pytest.fixture
-def mock_prompt_template():
+def mock_user_instructions_template():
     return 'Issue: {{ body }}\n\nPlease fix this issue.'
+
+
+@pytest.fixture
+def mock_conversation_instructions_template():
+    return 'Instructions: {{ repo_instruction }}'
 
 
 @pytest.fixture
@@ -459,7 +464,7 @@ async def test_process_issue(
     default_mock_args,
     mock_gitlab_token,
     mock_output_dir,
-    mock_prompt_template,
+    mock_user_instructions_template,
     test_case,
 ):
     """Test the process_issue method with different scenarios."""
@@ -479,7 +484,7 @@ async def test_process_issue(
 
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
-    resolver.prompt_template = mock_prompt_template
+    resolver.user_instructions_prompt_template = mock_user_instructions_template
 
     # Mock the handler with LLM config
     llm_config = LLMConfig(model='test', api_key='test')
@@ -546,7 +551,11 @@ async def test_process_issue(
             handler_instance.guess_success.assert_not_called()
 
 
-def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
+def test_get_instruction(
+    mock_user_instructions_template,
+    mock_conversation_instructions_template,
+    mock_followup_prompt_template,
+):
     issue = Issue(
         owner='test_owner',
         repo='test_repo',
@@ -559,7 +568,10 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, mock_prompt_template, None
+        issue,
+        mock_user_instructions_template,
+        mock_conversation_instructions_template,
+        None,
     )
     expected_instruction = 'Issue: Test Issue\n\nThis is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)\n\nPlease fix this issue.'
 
@@ -590,7 +602,10 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         GitlabPRHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = pr_handler.get_instruction(
-        issue, mock_followup_prompt_template, None
+        issue,
+        mock_followup_prompt_template,
+        mock_conversation_instructions_template,
+        None,
     )
     expected_instruction = "Issue context: [\n    \"Issue 1 fix the type\"\n]\n\nReview comments: None\n\nReview threads: [\n    \"There is still a typo 'pthon' instead of 'python'\"\n]\n\nFiles: []\n\nThread comments: I've left review comments, please address them\n---\nThis is a valid concern.\n\nPlease fix this issue."
 
@@ -614,13 +629,19 @@ def test_file_instruction():
     # load prompt from openhands/resolver/prompts/resolve/basic.jinja
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
+
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
+        conversation_instructions_template = f.read()
+
     # Test without thread comments
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
     issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, prompt, None
+        issue, prompt, conversation_instructions_template, None
     )
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -628,15 +649,75 @@ An environment has been set up for you to start working. You may assume all nece
 # Problem Statement
 Test Issue
 
-This is a test issue ![image](https://sampleimage.com/sample.png)
+This is a test issue ![image](https://sampleimage.com/sample.png)"""
 
-IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
+    expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
 You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
 
 When you think you have fixed the issue through code changes, please finish the interaction."""
 
     assert instruction == expected_instruction
+    assert conversation_instructions == expected_conversation_instructions
     assert images_urls == ['https://sampleimage.com/sample.png']
+
+
+def test_file_instruction_with_repo_instruction():
+    issue = Issue(
+        owner='test_owner',
+        repo='test_repo',
+        number=123,
+        title='Test Issue',
+        body='This is a test issue',
+    )
+    # load prompt from openhands/resolver/prompts/resolve/basic.jinja
+    with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
+        prompt = f.read()
+
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
+        conversation_instructions_prompt = f.read()
+
+    # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
+    with open(
+        'openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt',
+        'r',
+    ) as f:
+        repo_instruction = f.read()
+
+    mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
+    instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
+        issue, prompt, conversation_instructions_prompt, repo_instruction
+    )
+
+    expected_instruction = """Please fix the following issue for the repository in /workspace.
+An environment has been set up for you to start working. You may assume all necessary tools are installed.
+
+# Problem Statement
+Test Issue
+
+This is a test issue"""
+
+    expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
+You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
+
+Some basic information about this repository:
+This is a Python repo for openhands-resolver, a library that attempts to resolve github issues with the AI agent OpenHands.
+
+- Setup: `poetry install --with test --with dev`
+- Testing: `poetry run pytest tests/test_*.py`
+
+
+When you think you have fixed the issue through code changes, please finish the interaction."""
+
+    assert instruction == expected_instruction
+    assert conversation_instructions == expected_conversation_instructions
+    assert conversation_instructions is not None
+    assert issue_handler.issue_type == 'issue'
+    assert image_urls == []
 
 
 def test_guess_success():
@@ -733,12 +814,17 @@ def test_instruction_with_thread_comments():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
+        conversation_instructions_template = f.read()
+
     llm_config = LLMConfig(model='test', api_key='test')
     issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, prompt, None
+        issue, prompt, conversation_instructions_template, None
     )
 
     # Verify that thread comments are included in the instruction
