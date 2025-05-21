@@ -24,11 +24,11 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
    - Option 1: Directly download the LLM in LM Studio by searching for name `devstral-small-2505-mlx`
    - Option 2: Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](https://huggingface.co/mistralai/Devstral-Small-2505_gguf), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`. Then in bash terminal, run `lms import {model_name}` in the directory where you've downloaded the model checkpoint (e.g. run `lms import devstralQ4_K_M.gguf` in `mistralai/Devstral-Small-2505_gguf`)
 
-3. Open LM Studio application, you should first switch to "power user" mode, and then open the developer tab:
+3. Open LM Studio application, you should first switch to `power user` mode, and then open the developer tab:
   
 ![image](./screenshots/1_select_power_user.png)
 
-4. Then click "Select a model to load" on top of the application:
+4. Then click `Select a model to load` on top of the application:
 
 ![image](./screenshots/2_select_model.png)
 
@@ -40,11 +40,11 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 
 ![image](./screenshots/4_set_context_window.png)
 
-7. And you should start the server (if it is not already in "Running" status), un-toggle "Serve on Local Network" and remember the port number of the LMStudio URL (`1234` is the port number for `http://127.0.0.1:1234` in this example):
+7. And you should start the server (if it is not already in `Running` status), un-toggle `Serve on Local Network` and remember the port number of the LMStudio URL (`1234` is the port number for `http://127.0.0.1:1234` in this example):
 
 ![image](./screenshots/5_copy_url.png)
 
-8. Finally, you can click the "copy" button near model name to copy the model name (`imported-models/uncategorized/devstralq4_k_m.gguf` in this example):
+8. Finally, you can click the `copy` button near model name to copy the model name (`imported-models/uncategorized/devstralq4_k_m.gguf` in this example):
 
 ![image](./screenshots/6_copy_to_get_model_name.png)
 
