@@ -163,7 +163,11 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         llm_config.caching_prompt = False
 
         return LLMSummarizingCondenser(
-            llm=LLM(config=llm_config),
+            llm=LLM(
+                config=llm_config,
+                conversation_id="condenser",
+                user_id="system"
+            ),
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

@@ -109,6 +109,8 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
+        conversation_id: str,
+        user_id: str,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
@@ -118,7 +120,10 @@ class LLM(RetryMixin, DebugMixin):
 
         Args:
             config: The LLM configuration.
+            conversation_id: The ID of the conversation.
+            user_id: The ID of the user.
             metrics: The metrics to use.
+            retry_listener: Optional callback for retry events.
         """
         self._tried_model_info = False
         self.metrics: Metrics = (
@@ -126,6 +131,8 @@ class LLM(RetryMixin, DebugMixin):
         )
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
+        self.conversation_id: str = conversation_id
+        self.user_id: str = user_id
 
         self.model_info: ModelInfo | None = None
         self.retry_listener = retry_listener

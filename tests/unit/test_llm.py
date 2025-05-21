@@ -36,13 +36,23 @@ def default_config():
         retry_max_wait=2,
     )
 
+@pytest.fixture
+def conversation_id():
+    return "test_conversation"
 
-def test_llm_init_with_default_config(default_config):
-    llm = LLM(default_config)
+@pytest.fixture
+def user_id():
+    return "test_user"
+
+
+def test_llm_init_with_default_config(default_config, conversation_id, user_id):
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     assert llm.config.model == 'gpt-4o'
     assert llm.config.api_key.get_secret_value() == 'test_key'
     assert isinstance(llm.metrics, Metrics)
     assert llm.metrics.model_name == 'gpt-4o'
+    assert llm.conversation_id == conversation_id
+    assert llm.user_id == user_id
 
 
 def test_token_usage_add():
@@ -124,27 +134,27 @@ def test_metrics_merge_accumulated_token_usage():
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
-def test_llm_init_with_model_info(mock_get_model_info, default_config):
+def test_llm_init_with_model_info(mock_get_model_info, default_config, conversation_id, user_id):
     mock_get_model_info.return_value = {
         'max_input_tokens': 8000,
         'max_output_tokens': 2000,
     }
-    llm = LLM(default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 8000
     assert llm.config.max_output_tokens == 2000
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
-def test_llm_init_without_model_info(mock_get_model_info, default_config):
+def test_llm_init_without_model_info(mock_get_model_info, default_config, conversation_id, user_id):
     mock_get_model_info.side_effect = Exception('Model info not available')
-    llm = LLM(default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 4096
     assert llm.config.max_output_tokens == 4096
 
 
-def test_llm_init_with_custom_config():
+def test_llm_init_with_custom_config(conversation_id, user_id):
     custom_config = LLMConfig(
         model='custom-model',
         api_key='custom_key',
@@ -154,7 +164,7 @@ def test_llm_init_with_custom_config():
         top_p=0.9,
         top_k=None,
     )
-    llm = LLM(custom_config)
+    llm = LLM(config=custom_config, conversation_id=conversation_id, user_id=user_id)
     assert llm.config.model == 'custom-model'
     assert llm.config.api_key.get_secret_value() == 'custom_key'
     assert llm.config.max_input_tokens == 5000
@@ -165,10 +175,10 @@ def test_llm_init_with_custom_config():
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_llm_top_k_in_completion_when_set(mock_litellm_completion):
+def test_llm_top_k_in_completion_when_set(mock_litellm_completion, conversation_id, user_id):
     # Create a config with top_k set
     config_with_top_k = LLMConfig(top_k=50)
-    llm = LLM(config_with_top_k)
+    llm = LLM(config=config_with_top_k, conversation_id=conversation_id, user_id=user_id)
 
     # Define a side effect function to check top_k
     def side_effect(*args, **kwargs):
@@ -183,10 +193,10 @@ def test_llm_top_k_in_completion_when_set(mock_litellm_completion):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion):
+def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion, conversation_id, user_id):
     # Create a config with top_k set to None
     config_without_top_k = LLMConfig(top_k=None)
-    llm = LLM(config_without_top_k)
+    llm = LLM(config=config_without_top_k, conversation_id=conversation_id, user_id=user_id)
 
     # Define a side effect function to check top_k
     def side_effect(*args, **kwargs):
@@ -199,10 +209,10 @@ def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion):
     llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
 
 
-def test_llm_init_with_metrics():
+def test_llm_init_with_metrics(conversation_id, user_id):
     config = LLMConfig(model='gpt-4o', api_key='test_key')
     metrics = Metrics()
-    llm = LLM(config, metrics=metrics)
+    llm = LLM(config=config, metrics=metrics, conversation_id=conversation_id, user_id=user_id)
     assert llm.metrics is metrics
     assert (
         llm.metrics.model_name == 'default'
@@ -224,7 +234,7 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
 
     # Create LLM instance and make a completion call
     config = LLMConfig(model='gpt-4o', api_key='test_key')
-    llm = LLM(config)
+    llm = LLM(config=config, conversation_id=conversation_id, user_id=user_id)
     response = llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
 
     # Verify the response latency was tracked correctly
@@ -250,8 +260,8 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert latency_record.latency == 0.0  # Should be lifted to 0 instead of being -1!
 
 
-def test_llm_reset():
-    llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
+def test_llm_reset(conversation_id, user_id):
+    llm = LLM(config=LLMConfig(model='gpt-4o-mini', api_key='test_key'), conversation_id=conversation_id, user_id=user_id)
     initial_metrics = copy.deepcopy(llm.metrics)
     initial_metrics.add_cost(1.0)
     initial_metrics.add_response_latency(0.5, 'test-id')
@@ -273,13 +283,13 @@ def test_llm_reset():
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
-def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
+def test_llm_init_with_openrouter_model(mock_get_model_info, default_config, conversation_id, user_id):
     default_config.model = 'openrouter:gpt-4o-mini'
     mock_get_model_info.return_value = {
         'max_input_tokens': 7000,
         'max_output_tokens': 1500,
     }
-    llm = LLM(default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
@@ -290,14 +300,12 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_with_mocked_logger(
-    mock_litellm_completion, default_config, mock_logger
-):
+def test_completion_with_mocked_logger(mock_litellm_completion, default_config, mock_logger, conversation_id, user_id):
     mock_litellm_completion.return_value = {
         'choices': [{'message': {'content': 'Test response'}}]
     }
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -316,19 +324,17 @@ def test_completion_with_mocked_logger(
     ],
 )
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_retries(
-    mock_litellm_completion,
+def test_completion_retries(mock_litellm_completion,
     default_config,
     exception_class,
     extra_args,
-    expected_retries,
-):
+    expected_retries, conversation_id, user_id):
     mock_litellm_completion.side_effect = [
         exception_class('Test error message', **extra_args),
         {'choices': [{'message': {'content': 'Retry successful'}}]},
     ]
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -339,7 +345,7 @@ def test_completion_retries(
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config):
+def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config, conversation_id, user_id):
     with patch('time.sleep') as mock_sleep:
         mock_litellm_completion.side_effect = [
             RateLimitError(
@@ -348,7 +354,7 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
             {'choices': [{'message': {'content': 'Retry successful'}}]},
         ]
 
-        llm = LLM(config=default_config)
+        llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
         response = llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
@@ -367,10 +373,10 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_operation_cancelled(mock_litellm_completion, default_config):
+def test_completion_operation_cancelled(mock_litellm_completion, default_config, conversation_id, user_id):
     mock_litellm_completion.side_effect = OperationCancelled('Operation cancelled')
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     with pytest.raises(OperationCancelled):
         llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
@@ -381,13 +387,13 @@ def test_completion_operation_cancelled(mock_litellm_completion, default_config)
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_keyboard_interrupt(mock_litellm_completion, default_config):
+def test_completion_keyboard_interrupt(mock_litellm_completion, default_config, conversation_id, user_id):
     def side_effect(*args, **kwargs):
         raise KeyboardInterrupt('Simulated KeyboardInterrupt')
 
     mock_litellm_completion.side_effect = side_effect
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     with pytest.raises(OperationCancelled):
         try:
             llm.completion(
@@ -401,7 +407,7 @@ def test_completion_keyboard_interrupt(mock_litellm_completion, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_config):
+def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_config, conversation_id, user_id):
     global _should_exit
 
     def side_effect(*args, **kwargs):
@@ -411,7 +417,7 @@ def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_
 
     mock_litellm_completion.side_effect = side_effect
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     result = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -453,7 +459,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
     mock_litellm_completion.side_effect = side_effect
 
     # Create LLM instance and make a completion call
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -494,7 +500,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
         'LLM did not return a response'
     )
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     with pytest.raises(LLMNoResponseError):
         llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
@@ -561,7 +567,7 @@ def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
 
     for model_name, expected_support in test_cases:
         config = LLMConfig(model=model_name, api_key='test_key')
-        llm = LLM(config)
+        llm = LLM(config=config, conversation_id=conversation_id, user_id=user_id)
 
         assert llm.is_function_calling_active() == expected_support, (
             f'Expected function calling support to be {expected_support} for model {model_name}'
@@ -604,7 +610,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
     mock_litellm_completion.side_effect = side_effect
 
     # Create LLM instance and make a completion call with non-zero temperature
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -665,7 +671,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
     mock_litellm_completion.side_effect = side_effect
 
     # Create LLM instance and make a completion call with explicit temperature=0
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -691,13 +697,13 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
+def test_completion_with_litellm_mock(mock_litellm_completion, default_config, conversation_id, user_id):
     mock_response = {
         'choices': [{'message': {'content': 'This is a mocked response.'}}]
     }
     mock_litellm_completion.return_value = mock_response
 
-    test_llm = LLM(config=default_config)
+    test_llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = test_llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -716,13 +722,13 @@ def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_with_two_positional_args(mock_litellm_completion, default_config):
+def test_completion_with_two_positional_args(mock_litellm_completion, default_config, conversation_id, user_id):
     mock_response = {
         'choices': [{'message': {'content': 'Response to positional args.'}}]
     }
     mock_litellm_completion.return_value = mock_response
 
-    test_llm = LLM(config=default_config)
+    test_llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     response = test_llm.completion(
         'some-model-to-be-ignored',
         [{'role': 'user', 'content': 'Hello from positional args!'}],
@@ -752,9 +758,9 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
-def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
+def test_get_token_count_with_dict_messages(mock_token_counter, default_config, conversation_id, user_id):
     mock_token_counter.return_value = 42
-    llm = LLM(default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
     token_count = llm.get_token_count(messages)
@@ -766,10 +772,8 @@ def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
-def test_get_token_count_with_message_objects(
-    mock_token_counter, default_config, mock_logger
-):
-    llm = LLM(default_config)
+def test_get_token_count_with_message_objects(mock_token_counter, default_config, mock_logger, conversation_id, user_id):
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
 
     # Create a Message object and its equivalent dict
     message_obj = Message(role='user', content=[TextContent(text='Hello!')])
@@ -789,16 +793,14 @@ def test_get_token_count_with_message_objects(
 
 @patch('openhands.llm.llm.litellm.token_counter')
 @patch('openhands.llm.llm.create_pretrained_tokenizer')
-def test_get_token_count_with_custom_tokenizer(
-    mock_create_tokenizer, mock_token_counter, default_config
-):
+def test_get_token_count_with_custom_tokenizer(mock_create_tokenizer, mock_token_counter, default_config, conversation_id, user_id):
     mock_tokenizer = MagicMock()
     mock_create_tokenizer.return_value = mock_tokenizer
     mock_token_counter.return_value = 42
 
     config = copy.deepcopy(default_config)
     config.custom_tokenizer = 'custom/tokenizer'
-    llm = LLM(config)
+    llm = LLM(config=config, conversation_id=conversation_id, user_id=user_id)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
     token_count = llm.get_token_count(messages)
@@ -811,11 +813,9 @@ def test_get_token_count_with_custom_tokenizer(
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
-def test_get_token_count_error_handling(
-    mock_token_counter, default_config, mock_logger
-):
+def test_get_token_count_error_handling(mock_token_counter, default_config, mock_logger, conversation_id, user_id):
     mock_token_counter.side_effect = Exception('Token counting failed')
-    llm = LLM(default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
     token_count = llm.get_token_count(messages)
@@ -857,7 +857,7 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
     # We'll make mock_litellm_completion return these responses in sequence
     mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
 
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
 
     # First call
     llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
@@ -916,7 +916,7 @@ def test_accumulated_token_usage(mock_litellm_completion, default_config):
     mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
 
     # Create LLM instance
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
 
     # First call
     llm.completion(messages=[{'role': 'user', 'content': 'First message'}])
@@ -963,7 +963,7 @@ def test_accumulated_token_usage(mock_litellm_completion, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_with_log_completions(mock_litellm_completion, default_config):
+def test_completion_with_log_completions(mock_litellm_completion, default_config, conversation_id, user_id):
     with tempfile.TemporaryDirectory() as temp_dir:
         default_config.log_completions = True
         default_config.log_completions_folder = temp_dir
@@ -972,7 +972,7 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
         }
         mock_litellm_completion.return_value = mock_response
 
-        test_llm = LLM(config=default_config)
+        test_llm = LLM(config=default_config, conversation_id=conversation_id, user_id=user_id)
         response = test_llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
@@ -987,7 +987,7 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
 
 
 @patch('httpx.get')
-def test_llm_base_url_auto_protocol_patch(mock_get):
+def test_llm_base_url_auto_protocol_patch(mock_get, conversation_id, user_id):
     """Test that LLM base_url without protocol is automatically fixed with 'http://'."""
     config = LLMConfig(
         model='litellm_proxy/test-model',
@@ -998,7 +998,7 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = {'model': 'fake'}
 
-    llm = LLM(config=config)
+    llm = LLM(config=config, conversation_id=conversation_id, user_id=user_id)
     llm.init_model_info()
 
     called_url = mock_get.call_args[0][0]

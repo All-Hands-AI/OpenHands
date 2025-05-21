@@ -210,6 +210,8 @@ class Session:
         agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
             config=self.config.get_llm_config_from_agent(agent_name),
+            conversation_id=self.sid,
+            user_id=self.user_id or "anonymous",
             retry_listener=self._notify_on_llm_retry,
         )
 

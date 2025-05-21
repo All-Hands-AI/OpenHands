@@ -35,7 +35,11 @@ async def generate_conversation_title(
         truncated_message = message
 
     try:
-        llm = LLM(llm_config)
+        llm = LLM(
+            config=llm_config,
+            conversation_id="title_generator",
+            user_id="system"
+        )
 
         # Create a simple prompt for the LLM to generate a title
         messages = [

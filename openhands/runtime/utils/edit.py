@@ -121,7 +121,12 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
             draft_editor_config.caching_prompt = False
 
-        self.draft_editor_llm = LLM(draft_editor_config, metrics=llm_metrics)
+        self.draft_editor_llm = LLM(
+            config=draft_editor_config,
+            conversation_id="draft_editor",
+            user_id="system",
+            metrics=llm_metrics
+        )
         logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
