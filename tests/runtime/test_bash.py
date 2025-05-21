@@ -1,7 +1,6 @@
 """Bash-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -9,6 +8,8 @@ import pytest
 from conftest import (
     close_test_runtime,
     create_runtime_and_config,
+    delete_file_or_dir,
+    is_windows,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -19,11 +20,6 @@ from openhands.runtime.impl.local.local_runtime import LocalRuntime
 # ============================================================================================================================
 # Bash-specific tests
 # ============================================================================================================================
-
-
-# Helper function to determine if running on Windows
-def is_windows():
-    return sys.platform == 'win32'
 
 
 def _run_cmd_action(runtime, custom_command: str):
@@ -215,7 +211,7 @@ done && echo "created files"
     mv "$file" "$new_date"
 done && echo "success"
 """
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls)
+    runtime, _ = create_runtime_and_config(temp_dir, runtime_cls)
     try:
         obs = _run_cmd_action(runtime, init_cmd)
         assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -285,102 +281,102 @@ def test_multiple_multiline_commands(reusable_runtime):
     assert 'hello\nworld "' in results[6]  # echo -e with quote
 
 
-def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        if is_windows():
-            # Windows PowerShell version
-            obs = _run_cmd_action(
-                runtime, f'Get-ChildItem -Path {config.workspace_mount_path_in_sandbox}'
-            )
-            assert obs.exit_code == 0
+def test_cmd_run(reusable_runtime, reusable_config, run_as_openhands, runtime_cls):
+    if is_windows():
+        # Windows PowerShell version
+        obs = _run_cmd_action(
+            reusable_runtime,
+            f'Get-ChildItem -Path {reusable_config.workspace_mount_path_in_sandbox}',
+        )
+        assert obs.exit_code == 0
 
-            obs = _run_cmd_action(runtime, 'Get-ChildItem')
-            assert obs.exit_code == 0
+        obs = _run_cmd_action(reusable_runtime, 'Get-ChildItem')
+        assert obs.exit_code == 0
 
-            obs = _run_cmd_action(runtime, 'New-Item -ItemType Directory -Path test')
-            assert obs.exit_code == 0
+        obs = _run_cmd_action(
+            reusable_runtime, 'New-Item -ItemType Directory -Path test'
+        )
+        assert obs.exit_code == 0
 
-            obs = _run_cmd_action(runtime, 'Get-ChildItem')
-            assert obs.exit_code == 0
-            assert 'test' in obs.content
+        obs = _run_cmd_action(reusable_runtime, 'Get-ChildItem')
+        assert obs.exit_code == 0
+        assert 'test' in obs.content
 
-            obs = _run_cmd_action(runtime, 'New-Item -ItemType File -Path test/foo.txt')
-            assert obs.exit_code == 0
+        obs = _run_cmd_action(
+            reusable_runtime, 'New-Item -ItemType File -Path test/foo.txt'
+        )
+        assert obs.exit_code == 0
 
-            obs = _run_cmd_action(runtime, 'Get-ChildItem test')
-            assert obs.exit_code == 0
-            assert 'foo.txt' in obs.content
+        obs = _run_cmd_action(reusable_runtime, 'Get-ChildItem test')
+        assert obs.exit_code == 0
+        assert 'foo.txt' in obs.content
 
-            # clean up
-            _run_cmd_action(runtime, 'Remove-Item -Recurse -Force test')
-            assert obs.exit_code == 0
+        # clean up
+        _run_cmd_action(reusable_runtime, 'Remove-Item -Recurse -Force test')
+        assert obs.exit_code == 0
+    else:
+        # Unix version
+        obs = _run_cmd_action(
+            reusable_runtime, f'ls -l {reusable_config.workspace_mount_path_in_sandbox}'
+        )
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(reusable_runtime, 'ls -l')
+        assert obs.exit_code == 0
+        assert 'total 0' in obs.content
+
+        obs = _run_cmd_action(reusable_runtime, 'mkdir test')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(reusable_runtime, 'ls -l')
+        assert obs.exit_code == 0
+        if run_as_openhands:
+            assert 'openhands' in obs.content
+        elif runtime_cls == LocalRuntime:
+            assert 'root' not in obs.content and 'openhands' not in obs.content
         else:
-            # Unix version
-            obs = _run_cmd_action(
-                runtime, f'ls -l {config.workspace_mount_path_in_sandbox}'
+            assert 'root' in obs.content
+        assert 'test' in obs.content
+
+        obs = _run_cmd_action(reusable_runtime, 'touch test/foo.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(reusable_runtime, 'ls -l test')
+        assert obs.exit_code == 0
+        assert 'foo.txt' in obs.content
+
+        # clean up: this is needed, since CI will not be
+        # run as root, and this test may leave a file
+        # owned by root
+        _run_cmd_action(reusable_runtime, 'rm -rf test')
+        assert obs.exit_code == 0
+
+
+def test_run_as_user_correct_home_dir(
+    reusable_runtime, reusable_config, runtime_cls, run_as_openhands
+):
+    if is_windows():
+        # Windows PowerShell version
+        obs = _run_cmd_action(reusable_runtime, 'cd $HOME && Get-Location')
+        assert obs.exit_code == 0
+        # Check for Windows-style home paths
+        if runtime_cls == LocalRuntime:
+            assert (
+                os.getenv('USERPROFILE') in obs.content
+                or os.getenv('HOME') in obs.content
             )
-            assert obs.exit_code == 0
-
-            obs = _run_cmd_action(runtime, 'ls -l')
-            assert obs.exit_code == 0
-            assert 'total 0' in obs.content
-
-            obs = _run_cmd_action(runtime, 'mkdir test')
-            assert obs.exit_code == 0
-
-            obs = _run_cmd_action(runtime, 'ls -l')
-            assert obs.exit_code == 0
-            if run_as_openhands:
-                assert 'openhands' in obs.content
-            elif runtime_cls == LocalRuntime:
-                assert 'root' not in obs.content and 'openhands' not in obs.content
-            else:
-                assert 'root' in obs.content
-            assert 'test' in obs.content
-
-            obs = _run_cmd_action(runtime, 'touch test/foo.txt')
-            assert obs.exit_code == 0
-
-            obs = _run_cmd_action(runtime, 'ls -l test')
-            assert obs.exit_code == 0
-            assert 'foo.txt' in obs.content
-
-            # clean up: this is needed, since CI will not be
-            # run as root, and this test may leave a file
-            # owned by root
-            _run_cmd_action(runtime, 'rm -rf test')
-            assert obs.exit_code == 0
-    finally:
-        close_test_runtime(runtime)
-
-
-def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        if is_windows():
-            # Windows PowerShell version
-            obs = _run_cmd_action(runtime, 'cd $HOME && Get-Location')
-            assert obs.exit_code == 0
-            # Check for Windows-style home paths
-            if runtime_cls == LocalRuntime:
-                assert (
-                    os.getenv('USERPROFILE') in obs.content
-                    or os.getenv('HOME') in obs.content
-                )
-            # For non-local runtime, we are less concerned with precise paths
+        # For non-local runtime, we are less concerned with precise paths
+    else:
+        # Original Linux version
+        obs = _run_cmd_action(reusable_runtime, 'cd ~ && pwd')
+        assert obs.exit_code == 0
+        if runtime_cls == LocalRuntime:
+            assert os.getenv('HOME') in obs.content
+        elif run_as_openhands:
+            assert '/home/openhands' in obs.content
         else:
-            # Original Linux version
-            obs = _run_cmd_action(runtime, 'cd ~ && pwd')
-            assert obs.exit_code == 0
-            if runtime_cls == LocalRuntime:
-                assert os.getenv('HOME') in obs.content
-            elif run_as_openhands:
-                assert '/home/openhands' in obs.content
-            else:
-                assert '/root' in obs.content
-    finally:
-        close_test_runtime(runtime)
+            assert '/root' in obs.content
+    _run_cmd_action(f'cd "{reusable_config.workspace_mount_path_in_sandbox}"')
 
 
 def test_multi_cmd_run_in_single_line(reusable_runtime, reusable_config):
@@ -388,7 +384,7 @@ def test_multi_cmd_run_in_single_line(reusable_runtime, reusable_config):
         # Windows PowerShell version using semicolon
         obs = _run_cmd_action(reusable_runtime, 'Get-Location && Get-ChildItem')
         assert obs.exit_code == 0
-        assert reusable_config.workspace_mount_path_in_sandbox in obs.content
+        assert reusable_config.workspace_mount_path_in_sandbox in str(obs.content)
         assert '.git_config' in obs.content
     else:
         # Original Linux version using &&
@@ -398,40 +394,41 @@ def test_multi_cmd_run_in_single_line(reusable_runtime, reusable_config):
         assert 'total 0' in obs.content
 
 
-def test_stateful_cmd(temp_dir, runtime_cls):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls)
-    try:
-        if is_windows():
-            # Windows PowerShell version
-            obs = _run_cmd_action(
-                runtime, 'New-Item -ItemType Directory -Path test -Force'
-            )
-            assert obs.exit_code == 0, 'The exit code should be 0.'
+def test_stateful_cmd(reusable_runtime, reusable_config):
+    if is_windows():
+        # Windows PowerShell version
+        obs = _run_cmd_action(
+            reusable_runtime, 'New-Item -ItemType Directory -Path test -Force'
+        )
+        assert obs.exit_code == 0, 'The exit code should be 0.'
 
-            obs = _run_cmd_action(runtime, 'Set-Location test')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
+        obs = _run_cmd_action(reusable_runtime, 'Set-Location test')
+        assert obs.exit_code == 0, 'The exit code should be 0.'
 
-            obs = _run_cmd_action(runtime, 'Get-Location')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
-            # Account for both forward and backward slashes in path
-            norm_path = config.workspace_mount_path_in_sandbox.replace(
-                '\\', '/'
-            ).replace('//', '/')
-            test_path = f'{norm_path}/test'.replace('//', '/')
-            assert test_path in obs.content.replace('\\', '/')
-        else:
-            # Original Linux version
-            obs = _run_cmd_action(runtime, 'mkdir -p test')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
+        obs = _run_cmd_action(reusable_runtime, 'Get-Location')
+        assert obs.exit_code == 0, 'The exit code should be 0.'
+        # Account for both forward and backward slashes in path
+        norm_path = reusable_config.workspace_mount_path_in_sandbox.replace(
+            '\\', '/'
+        ).replace('//', '/')
+        test_path = f'{norm_path}/test'.replace('//', '/')
+        assert test_path in obs.content.replace('\\', '/')
+    else:
+        # Original Linux version
+        obs = _run_cmd_action(reusable_runtime, 'mkdir -p test')
+        assert obs.exit_code == 0, 'The exit code should be 0.'
 
-            obs = _run_cmd_action(runtime, 'cd test')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
+        obs = _run_cmd_action(reusable_runtime, 'cd test')
+        assert obs.exit_code == 0, 'The exit code should be 0.'
 
-            obs = _run_cmd_action(runtime, 'pwd')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
-            assert f'{config.workspace_mount_path_in_sandbox}/test' in obs.content
-    finally:
-        close_test_runtime(runtime)
+        obs = _run_cmd_action(reusable_runtime, 'pwd')
+        assert obs.exit_code == 0, 'The exit code should be 0.'
+        assert f'{reusable_config.workspace_mount_path_in_sandbox}/test' in obs.content
+
+    _run_cmd_action(
+        reusable_runtime, f'cd "{reusable_config.workspace_mount_path_in_sandbox}"'
+    )
+    delete_file_or_dir(reusable_runtime, 'test')
 
 
 def test_failed_cmd(reusable_runtime):
@@ -445,32 +442,32 @@ def _create_test_file(host_temp_dir):
         f.write('Hello, World!')
 
 
-def test_copy_single_file(temp_dir, runtime_cls):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls)
-    try:
-        sandbox_dir = config.workspace_mount_path_in_sandbox
-        sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
-        _create_test_file(temp_dir)
-        runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
+def test_copy_single_file(reusable_runtime, reusable_config):
+    sandbox_dir = reusable_config.workspace_mount_path_in_sandbox
+    sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
+    _create_test_file(reusable_config.file_store_path)
+    reusable_runtime.copy_to(
+        os.path.join(reusable_config.file_store_path, 'test_file.txt'), sandbox_dir
+    )
 
-        if is_windows():
-            obs = _run_cmd_action(runtime, f'Get-ChildItem -Path {sandbox_dir}')
-            assert obs.exit_code == 0
-            assert 'test_file.txt' in obs.content
+    if is_windows():
+        obs = _run_cmd_action(reusable_runtime, f'Get-ChildItem -Path {sandbox_dir}')
+        assert obs.exit_code == 0
+        assert 'test_file.txt' in obs.content
 
-            obs = _run_cmd_action(runtime, f'Get-Content {sandbox_file}')
-            assert obs.exit_code == 0
-            assert 'Hello, World!' in obs.content
-        else:
-            obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
-            assert obs.exit_code == 0
-            assert 'test_file.txt' in obs.content
+        obs = _run_cmd_action(reusable_runtime, f'Get-Content {sandbox_file}')
+        assert obs.exit_code == 0
+        assert 'Hello, World!' in obs.content
+    else:
+        obs = _run_cmd_action(reusable_runtime, f'ls -alh {sandbox_dir}')
+        assert obs.exit_code == 0
+        assert 'test_file.txt' in obs.content
 
-            obs = _run_cmd_action(runtime, f'cat {sandbox_file}')
-            assert obs.exit_code == 0
-            assert 'Hello, World!' in obs.content
-    finally:
-        close_test_runtime(runtime)
+        obs = _run_cmd_action(reusable_runtime, f'cat {sandbox_file}')
+        assert obs.exit_code == 0
+        assert 'Hello, World!' in obs.content
+
+    delete_file_or_dir(reusable_runtime, 'test_file.txt')
 
 
 def _create_host_test_dir_with_files(test_dir):
@@ -659,7 +656,7 @@ def test_git_operation(temp_dir, runtime_cls):
     # do not mount workspace, since workspace mount by tests will be owned by root
     # while the user_id we get via os.getuid() is different from root
     # which causes permission issues
-    runtime, config = create_runtime_and_config(
+    runtime, _ = create_runtime_and_config(
         temp_dir=temp_dir,
         use_workspace=False,
         runtime_cls=runtime_cls,
@@ -815,7 +812,7 @@ def test_basic_command(reusable_runtime):
     is_windows(), reason='Powershell does not support interactive commands'
 )
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(
+    runtime, _ = create_runtime_and_config(
         temp_dir,
         runtime_cls,
         run_as_openhands,
@@ -884,7 +881,7 @@ def test_long_output_exceed_history_limit(reusable_runtime):
     is_windows(), reason='Test uses Linux-specific temp directory and bash for loops'
 )
 def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
+    runtime, _ = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create nested directories with many files
         setup_cmd = 'mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do mkdir -p "folder_$i"; for j in $(seq 1 100); do touch "folder_$i/file_$j.txt"; done; done'
@@ -913,7 +910,7 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
     reason='Test uses Linux-specific commands like find and grep with complex syntax',
 )
 def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
+    runtime, _ = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a file with the content "implemented_function"
         action = CmdRunAction(
@@ -1013,88 +1010,74 @@ def test_stress_long_output_with_soft_and_hard_timeout(reusable_runtime):
         logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
 
 
-def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        if is_windows():
-            # Windows PowerShell version
-            action = CmdRunAction(
-                '1..5 | ForEach-Object { Write-Output $_; Start-Sleep 3 }'
-            )
-            action.set_hard_timeout(2.5)
-            obs = runtime.run_action(action)
-            assert obs.content.strip() == '1'
-            assert obs.metadata.prefix == ''
-            assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+def test_command_output_continuation(remote_runtime):
+    if is_windows():
+        # Windows PowerShell version
+        action = CmdRunAction(
+            '1..5 | ForEach-Object { Write-Output $_; Start-Sleep 3 }'
+        )
+        action.set_hard_timeout(2.5)
+        obs = remote_runtime.run_action(action)
+        assert obs.content.strip() == '1'
+        assert obs.metadata.prefix == ''
+        assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
-            # Continue watching output
+        # Continue watching output
+        action = CmdRunAction('')
+        action.set_hard_timeout(2.5)
+        obs = remote_runtime.run_action(action)
+        assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+        assert obs.content.strip() == '2'
+        assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+
+        # Continue until completion
+        for expected in ['3', '4', '5']:
             action = CmdRunAction('')
             action.set_hard_timeout(2.5)
-            obs = runtime.run_action(action)
+            obs = remote_runtime.run_action(action)
             assert (
                 '[Below is the output of the previous command.]' in obs.metadata.prefix
             )
-            assert obs.content.strip() == '2'
+            assert obs.content.strip() == expected
             assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
-            # Continue until completion
-            for expected in ['3', '4', '5']:
-                action = CmdRunAction('')
-                action.set_hard_timeout(2.5)
-                obs = runtime.run_action(action)
-                assert (
-                    '[Below is the output of the previous command.]'
-                    in obs.metadata.prefix
-                )
-                assert obs.content.strip() == expected
-                assert (
-                    '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
-                )
+        # Final empty command to complete
+        action = CmdRunAction('')
+        obs = remote_runtime.run_action(action)
+        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    else:
+        # Original Linux version
+        # Start a command that produces output slowly
+        action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
+        action.set_hard_timeout(2.5)
+        obs = remote_runtime.run_action(action)
+        assert obs.content.strip() == '1'
+        assert obs.metadata.prefix == ''
+        assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
-            # Final empty command to complete
-            action = CmdRunAction('')
-            obs = runtime.run_action(action)
-            assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-        else:
-            # Original Linux version
-            # Start a command that produces output slowly
-            action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
-            action.set_hard_timeout(2.5)
-            obs = runtime.run_action(action)
-            assert obs.content.strip() == '1'
-            assert obs.metadata.prefix == ''
-            assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
+        # Continue watching output
+        action = CmdRunAction('')
+        action.set_hard_timeout(2.5)
+        obs = remote_runtime.run_action(action)
+        assert '[Below is the output of the previous command.]' in obs.metadata.prefix
+        assert obs.content.strip() == '2'
+        assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
-            # Continue watching output
+        # Continue until completion
+        for expected in ['3', '4', '5']:
             action = CmdRunAction('')
             action.set_hard_timeout(2.5)
-            obs = runtime.run_action(action)
+            obs = remote_runtime.run_action(action)
             assert (
                 '[Below is the output of the previous command.]' in obs.metadata.prefix
             )
-            assert obs.content.strip() == '2'
+            assert obs.content.strip() == expected
             assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
-            # Continue until completion
-            for expected in ['3', '4', '5']:
-                action = CmdRunAction('')
-                action.set_hard_timeout(2.5)
-                obs = runtime.run_action(action)
-                assert (
-                    '[Below is the output of the previous command.]'
-                    in obs.metadata.prefix
-                )
-                assert obs.content.strip() == expected
-                assert (
-                    '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
-                )
-
-            # Final empty command to complete
-            action = CmdRunAction('')
-            obs = runtime.run_action(action)
-            assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-    finally:
-        close_test_runtime(runtime)
+        # Final empty command to complete
+        action = CmdRunAction('')
+        obs = remote_runtime.run_action(action)
+        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
 
 
 def test_long_running_command_follow_by_execute(reusable_runtime):

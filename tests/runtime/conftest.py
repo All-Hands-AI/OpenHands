@@ -2,6 +2,7 @@ import os
 import random
 import shutil
 import stat
+import sys
 import time
 
 import pytest
@@ -10,6 +11,9 @@ from pytest import TempPathFactory
 from openhands.core.config import AppConfig, MCPConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.action.commands import CmdRunAction
+from openhands.events.observation.commands import CmdOutputObservation
+from openhands.events.observation.error import ErrorObservation
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
@@ -297,3 +301,17 @@ def reusable_runtime(reusable_runtime_and_config):
 @pytest.fixture
 def reusable_config(reusable_runtime_and_config):
     return reusable_runtime_and_config[1]
+
+
+def is_windows():
+    return sys.platform == 'win32'
+
+
+def delete_file_or_dir(runtime: Runtime, file_path: str):
+    if is_windows():
+        custom_command = f'Remove-Item -Path "{file_path}" -Recurse'
+    else:
+        custom_command = f'rm -rf "{file_path}"'
+    action = CmdRunAction(command=custom_command)
+    obs = runtime.run_action(action)
+    assert isinstance(obs, (CmdOutputObservation, ErrorObservation))
