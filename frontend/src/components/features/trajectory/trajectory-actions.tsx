@@ -4,6 +4,7 @@ import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
 import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 import ExportIcon from "#/icons/export.svg?react";
 import { TrajectoryActionButton } from "#/components/shared/buttons/trajectory-action-button";
+import { BrowsingToggle } from "./browsing-toggle";
 
 interface TrajectoryActionsProps {
   onPositiveFeedback: () => void;
@@ -38,6 +39,7 @@ export function TrajectoryActions({
         icon={<ExportIcon width={15} height={15} />}
         tooltip={t(I18nKey.BUTTON$EXPORT_CONVERSATION)}
       />
+      <BrowsingToggle />
     </div>
   );
 }

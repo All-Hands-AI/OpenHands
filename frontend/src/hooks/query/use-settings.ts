@@ -24,6 +24,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     ENABLE_PROACTIVE_CONVERSATION_STARTERS:
       apiSettings.enable_proactive_conversation_starters,
+    ENABLE_BROWSING: apiSettings.enable_browsing,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
 
     MCP_CONFIG: apiSettings.mcp_config,

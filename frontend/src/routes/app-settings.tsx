@@ -36,6 +36,10 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
+  const [
+    browsingSwitchHasChanged,
+    setBrowsingSwitchHasChanged,
+  ] = React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -52,6 +56,9 @@ function AppSettingsScreen() {
     const enableProactiveConversations =
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
+      
+    const enableBrowsing =
+      formData.get("enable-browsing-switch")?.toString() === "on";
 
     saveSettings(
       {
@@ -59,6 +66,7 @@ function AppSettingsScreen() {
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
+        ENABLE_BROWSING: enableBrowsing,
       },
       {
         onSuccess: () => {
@@ -73,6 +81,8 @@ function AppSettingsScreen() {
           setLanguageInputHasChanged(false);
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
+          setProactiveConversationsSwitchHasChanged(false);
+          setBrowsingSwitchHasChanged(false);
         },
       },
     );
@@ -108,12 +118,20 @@ function AppSettingsScreen() {
       checked !== currentProactiveConversations,
     );
   };
+  
+  const checkIfBrowsingSwitchHasChanged = (checked: boolean) => {
+    const currentBrowsing = !!settings?.ENABLE_BROWSING;
+    setBrowsingSwitchHasChanged(
+      checked !== currentBrowsing,
+    );
+  };
 
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
-    !proactiveConversationsSwitchHasChanged;
+    !proactiveConversationsSwitchHasChanged &&
+    !browsingSwitchHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -148,6 +166,15 @@ function AppSettingsScreen() {
             onToggle={checkIfSoundNotificationsSwitchHasChanged}
           >
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
+          </SettingsSwitch>
+
+          <SettingsSwitch
+            testId="enable-browsing-switch"
+            name="enable-browsing-switch"
+            defaultIsToggled={!!settings.ENABLE_BROWSING}
+            onToggle={checkIfBrowsingSwitchHasChanged}
+          >
+            {t("Enable Browsing")}
           </SettingsSwitch>
 
           {config?.APP_MODE === "saas" && (
