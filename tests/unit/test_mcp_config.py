@@ -223,7 +223,7 @@ def test_stdio_server_equality_with_different_arg_and_env_order():
 
     # Should not be equal
     assert server1 != server3
-    
+
     # Modify one env value to make them different
     server4 = MCPStdioServerConfig(
         name='test-server',
@@ -231,6 +231,6 @@ def test_stdio_server_equality_with_different_arg_and_env_order():
         args=['--verbose', '--debug', '--port=8080'],
         env={'DEBUG': 'true', 'PORT': '9090'},  # Different port
     )
-    
+
     # Should not be equal
     assert server1 != server4
