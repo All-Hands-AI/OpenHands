@@ -5,7 +5,6 @@ interface TrajectoryActionButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   tooltip?: string;
-  active?: boolean;
 }
 
 export function TrajectoryActionButton({
@@ -13,14 +12,13 @@ export function TrajectoryActionButton({
   onClick,
   icon,
   tooltip,
-  active = false,
 }: TrajectoryActionButtonProps) {
   const button = (
     <button
       type="button"
       data-testid={testId}
       onClick={onClick}
-      className={`button-base p-1 hover:bg-neutral-500 ${active ? "bg-primary text-white" : ""}`}
+      className="button-base p-1 hover:bg-neutral-500"
     >
       {icon}
     </button>
