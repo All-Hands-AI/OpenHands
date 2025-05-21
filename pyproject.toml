@@ -35,7 +35,9 @@ types-toml = "*"
 numpy = "*"
 json-repair = "*"
 tavily-python = "*"
-browsergym-core = "0.13.3"                           # integrate browsergym-core as the browsing interface
+# This browsergym fork contains a minor timeout fix required for visual web arena
+# https://github.com/All-Hands-AI/BrowserGym/commit/bcab0e9d497b052bfd1b739ab0c7a0752c9d20cb
+browsergym-core = { git = "https://github.com/All-Hands-AI/BrowserGym", subdirectory = "browsergym/core", rev = "bcab0e9d497b052bfd1b739ab0c7a0752c9d20cb" }
 html2text = "*"
 e2b = ">=1.0.5,<1.4.0"
 pexpect = "*"
@@ -126,10 +128,9 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
-browsergym = "0.13.3"
-browsergym-webarena = "0.13.3"
-browsergym-miniwob = "0.13.3"
-browsergym-visualwebarena = "0.13.3"
+browsergym-webarena = { git = "https://github.com/All-Hands-AI/BrowserGym", subdirectory = "browsergym/webarena", rev = "bcab0e9d497b052bfd1b739ab0c7a0752c9d20cb" }
+browsergym-miniwob = { git = "https://github.com/All-Hands-AI/BrowserGym", subdirectory = "browsergym/miniwob", rev = "bcab0e9d497b052bfd1b739ab0c7a0752c9d20cb" }
+browsergym-visualwebarena = { git = "https://github.com/All-Hands-AI/BrowserGym", subdirectory = "browsergym/visualwebarena", rev = "bcab0e9d497b052bfd1b739ab0c7a0752c9d20cb" }
 boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
 pyarrow = "20.0.0"                                                             # transitive dependency, pinned here to avoid conflicts
 datasets = "*"
