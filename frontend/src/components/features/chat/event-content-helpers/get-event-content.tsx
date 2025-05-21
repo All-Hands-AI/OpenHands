@@ -35,7 +35,7 @@ export const getEventContent = (
           path: hasPathProperty(event.args) && event.args.path,
           command:
             hasCommandProperty(event.args) && trimText(event.args.command, 80),
-          name: event.action === "call_tool_mcp" && event.args.name,
+          mcp_tool_name: event.action === "call_tool_mcp" && event.args.name,
         }}
         components={{
           path: <PathComponent />,
