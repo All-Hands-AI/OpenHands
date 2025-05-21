@@ -23,10 +23,8 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.services.conversation import create_new_conversation
-from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
-    SettingsStoreImpl,
     config,
     conversation_manager,
 )
@@ -62,7 +60,6 @@ class InitSessionRequest(BaseModel):
     suggested_task: SuggestedTask | None = None
     conversation_instructions: str | None = None
     conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
-    wait_for_start: bool = True
 
     model_config = {'extra': 'forbid'}
 
@@ -116,7 +113,7 @@ async def new_conversation(
             await provider_handler.verify_repo_provider(repository, git_provider)
 
         conversation_id = data.conversation_id
-        coro = create_new_conversation(
+        await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -130,10 +127,6 @@ async def new_conversation(
             git_provider=git_provider,
             conversation_id=conversation_id,
         )
-        if data.wait_for_start:
-            await coro
-        else:
-            asyncio.create_task(coro)
 
         return InitSessionResponse(
             status='ok',
@@ -174,7 +167,6 @@ async def new_conversation(
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
-    user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
@@ -193,9 +185,6 @@ async def search_conversations(
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_results
     )
-    running_conversations = await conversation_manager.get_running_agent_loops(
-        user_id, conversation_ids
-    )
     connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
     agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
     agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
@@ -203,7 +192,6 @@ async def search_conversations(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
-                is_running=conversation.conversation_id in running_conversations,
                 num_connections=sum(
                     1 for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
@@ -225,11 +213,11 @@ async def get_conversation(
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+        logger.info(f"TRACE:get_conversation:{conversation_id}")
         num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
         agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, agent_loop_info)
+        conversation_info = await _get_conversation_info(metadata, num_connections, agent_loop_info)
         return conversation_info
     except FileNotFoundError:
         return None
@@ -256,7 +244,6 @@ async def delete_conversation(
 
 async def _get_conversation_info(
     conversation: ConversationMetadata,
-    is_running: bool,
     num_connections: int,
     agent_loop_info: AgentLoopInfo | None,
 ) -> ConversationInfo | None:
@@ -272,7 +259,7 @@ async def _get_conversation_info(
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
             status=(
-                ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
+                agent_loop_info.status if agent_loop_info else ConversationStatus.STOPPED
             ),
             num_connections=num_connections,
             url=agent_loop_info.url if agent_loop_info else None,

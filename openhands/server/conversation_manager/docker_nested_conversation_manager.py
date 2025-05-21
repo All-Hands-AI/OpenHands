@@ -1,10 +1,11 @@
 from __future__ import annotations
+import asyncio
 from base64 import b64encode, urlsafe_b64encode
 from dataclasses import dataclass, field
 import hashlib
 from cryptography.fernet import Fernet
 from types import MappingProxyType
-from typing import cast
+from typing import Any, cast
 
 import docker
 from docker.models.containers import Container
@@ -31,6 +32,7 @@ from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
@@ -46,6 +48,7 @@ class DockerNestedConversationManager(ConversationManager):
     file_store: FileStore
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
     _conversation_store_class: type[ConversationStore] | None = None
+    _starting_conversation_ids: set[str] = field(default_factory=set)
 
     async def __aenter__(self):
         # No action is required on startup for this implementation
@@ -109,6 +112,7 @@ class DockerNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
+
         if not await self.is_agent_loop_running(sid):
             await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
@@ -124,67 +128,75 @@ class DockerNestedConversationManager(ConversationManager):
                 sid=sid,
                 user_id=user_id,
             ),
+            status=ConversationStatus.STARTING if sid in self._starting_conversation_ids else ConversationStatus.RUNNING
         )
 
-    async def _start_agent_loop(self, sid, settings, user_id, initial_user_msg = None, replay_json = None):
+    async def _start_agent_loop(self, sid: str, settings: Settings, user_id: str | None, initial_user_msg: MessageAction | None, replay_json: str | None):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
         await self.ensure_num_conversations_below_limit(sid, user_id)
         provider_handler = self._get_provider_handler(settings)
         runtime = await self._create_runtime(sid, user_id, settings, provider_handler)
         await runtime.connect()
+        asyncio.create_task(self._start_conversation(sid, settings, user_id, initial_user_msg, replay_json, provider_handler, runtime.api_url))
 
-        async with httpx.AsyncClient(headers={'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)}) as client:
-            # setup the settings...
-            settings_json = settings.model_dump(context={'expose_secrets': True})
-            settings_json.pop('custom_secrets', None)
-            settings_json.pop('git_provider_tokens', None)
-            secrets_store = settings_json.pop('secrets_store', None) or {}
-            response = await client.post(f"{runtime.api_url}/api/settings", json=settings_json)
-            assert response.status_code == status.HTTP_200_OK
-
-            # Setup provider tokens
-            provider_tokens = provider_handler.provider_tokens
-            if provider_tokens:
-                provider_tokens = {
-                    k.value: {
-                        'token': v.token.get_secret_value(),
-                        'user_id': v.user_id,
-                        'host': v.host,
-                    }
-                    for k, v in provider_tokens.items()
-                }
-                response = await client.post(f"{runtime.api_url}/api/add-git-providers", json={
-                    "provider_tokens": provider_tokens,
-                })
+    async def _start_conversation(self, sid: str, settings: Settings, user_id: str | None, initial_user_msg: MessageAction | None, replay_json: str | None, provider_handler: ProviderHandler, api_url: str):
+        self._starting_conversation_ids.add(sid)
+        try:
+            async with httpx.AsyncClient(headers={'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)}) as client:
+                # setup the settings...
+                settings_json = settings.model_dump(context={'expose_secrets': True})
+                settings_json.pop('custom_secrets', None)
+                settings_json.pop('git_provider_tokens', None)
+                secrets_store = settings_json.pop('secrets_store', None) or {}
+                response = await client.post(f"{api_url}/api/settings", json=settings_json)
                 assert response.status_code == status.HTTP_200_OK
 
-            # Setup custom secrets
-            custom_secrets = secrets_store.get('custom_secrets') or {}
-            if custom_secrets:
-                for key, value in custom_secrets.items():
-                    response = await client.post(f"{runtime.api_url}/api/secrets", json={
-                        "name": key,
-                        "description": value.description,
-                        "value": value.value,
+                # Setup provider tokens
+                provider_tokens = provider_handler.provider_tokens
+                if provider_tokens:
+                    provider_tokens_json = {
+                        k.value: {
+                            'token': v.token.get_secret_value(),
+                            'user_id': v.user_id,
+                            'host': v.host,
+                        }
+                        for k, v in provider_tokens.items()
+                        if v.token
+                    }
+                    response = await client.post(f"{api_url}/api/add-git-providers", json={
+                        "provider_tokens": provider_tokens_json,
                     })
                     assert response.status_code == status.HTTP_200_OK
 
-            init_conversation = {
-                "initial_user_msg": initial_user_msg,
-                "image_urls": [],
-                "replay_json": replay_json,
-                "conversation_id": sid,
-            }
+                # Setup custom secrets
+                custom_secrets = secrets_store.get('custom_secrets') or {}
+                if custom_secrets:
+                    for key, value in custom_secrets.items():
+                        response = await client.post(f"{api_url}/api/secrets", json={
+                            "name": key,
+                            "description": value.description,
+                            "value": value.value,
+                        })
+                        assert response.status_code == status.HTTP_200_OK
 
-            if isinstance(settings, ConversationInitData):
-                init_conversation['repository'] = settings.selected_repository
-                init_conversation['selected_branch'] = settings.selected_branch
-                init_conversation['git_provider'] = settings.git_provider
+                init_conversation: dict[str, Any] = {
+                    "initial_user_msg": initial_user_msg,
+                    "image_urls": [],
+                    "replay_json": replay_json,
+                    "conversation_id": sid,
+                }
 
-            # Create conversation
-            response = await client.post(f"{runtime.api_url}/api/conversations", json=init_conversation)
-            logger.info(f"_start_agent_loop:{response.status_code}:{response.json()}")
-            assert response.status_code == status.HTTP_200_OK
+                if isinstance(settings, ConversationInitData):
+                    init_conversation['repository'] = settings.selected_repository
+                    init_conversation['selected_branch'] = settings.selected_branch
+                    init_conversation['git_provider'] = settings.git_provider.value if settings.git_provider else None
+
+                # Create conversation
+                response = await client.post(f"{api_url}/api/conversations", json=init_conversation)
+                logger.info(f"_start_agent_loop:{response.status_code}:{response.json()}")
+                assert response.status_code == status.HTTP_200_OK
+        finally:
+            self._starting_conversation_ids.remove(sid)
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
@@ -199,7 +211,8 @@ class DockerNestedConversationManager(ConversationManager):
 
     async def get_agent_loop_info(self, user_id = None, filter_to_sids = None):
         results = []
-        for container in self.docker_client.containers.list():
+        containers = self.docker_client.containers.list()
+        for container in containers:
             if not container.name.startswith('openhands-runtime-'):
                 continue
             conversation_id = container.name[len('openhands-runtime-'):]
@@ -263,7 +276,7 @@ class DockerNestedConversationManager(ConversationManager):
         session_api_key = urlsafe_b64encode(hashlib.sha256(conversation_key).digest()).decode().replace('=', '')
         return session_api_key
 
-    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str):
+    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str | None):
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
@@ -305,7 +318,7 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return provider_handler
 
-    async def _create_runtime(self, sid: str, user_id: str, settings: Settings, provider_handler: ProviderHandler):
+    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings, provider_handler: ProviderHandler):
 
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
