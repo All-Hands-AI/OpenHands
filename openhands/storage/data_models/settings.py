@@ -114,11 +114,6 @@ class Settings(BaseModel):
         mcp_config = None
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
-
-        # Get agent config if available
-        agent_config = None
-        if hasattr(app_config, 'agent'):
-            agent_config = app_config.agent.get('agent')
         
         settings = Settings(
             language='en',
@@ -130,7 +125,7 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
-            enable_browsing=agent_config.enable_browsing if agent_config else True,
+            enable_browsing=app_config.get_agent_config(app_config.default_agent).enable_browsing,
             mcp_config=mcp_config,
         )
         return settings

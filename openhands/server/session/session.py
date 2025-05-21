@@ -137,9 +137,7 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         # Apply enable_browsing setting from frontend to agent config
-        if hasattr(settings, 'enable_browsing'):
-            agent_config.enable_browsing = settings.enable_browsing
-            self.logger.info(f'Setting enable_browsing to {settings.enable_browsing} from user settings')
+        agent_config.enable_browsing = settings.enable_browsing
 
         if settings.enable_default_condenser:
             # Default condenser chains a condenser that limits browser the total
