@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from openhands.events.action import Action
     from openhands.llm.llm import ModelResponse
 
+from openhands.llm.llm_utils import check_tools_for_llm_compatibility
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
@@ -185,7 +186,7 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        params['tools'] = self._check_tools(self.tools)
+        params['tools'] = check_tools_for_llm_compatibility(self.tools, self.llm.config)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
@@ -264,39 +265,6 @@ class CodeActAgent(Agent):
 
         return messages
     
-    def _check_tools(self, tools: list['ChatCompletionToolParam']) -> list['ChatCompletionToolParam']:
-        """Checks and modifies tools for compatibility with the current LLM."""
-        # Special handling for Gemini models which don't support default fields and have limited format support
-        if 'gemini' in self.llm.config.model.lower():
-            logger.info(
-                f'Removing default fields and unsupported formats from tools for Gemini model {self.llm.config.model} '
-                "since Gemini models have limited format support (only 'enum' and 'date-time' for STRING types)."
-            )
-            # prevent mutation of input tools
-            checked_tools = copy.deepcopy(tools)
-            # Strip off default fields and unsupported formats that cause errors with gemini-preview
-            for tool in checked_tools:
-                if 'function' in tool and 'parameters' in tool['function']:
-                    if 'properties' in tool['function']['parameters']:
-                        for prop_name, prop in tool['function']['parameters'][
-                            'properties'
-                        ].items():
-                            # Remove default fields
-                            if 'default' in prop:
-                                del prop['default']
-                            
-                            # Remove format fields for STRING type parameters if the format is unsupported
-                            # Gemini only supports 'enum' and 'date-time' formats for STRING type
-                            if prop.get('type') == 'string' and 'format' in prop:
-                                supported_formats = ['enum', 'date-time']
-                                if prop['format'] not in supported_formats:
-                                    logger.info(
-                                        f'Removing unsupported format "{prop["format"]}" for STRING parameter "{prop_name}"'
-                                    )
-                                    del prop['format']
-            return checked_tools
-        return tools
-
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
             response, mcp_tool_names=list(self.mcp_tools.keys())
