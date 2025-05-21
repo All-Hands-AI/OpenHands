@@ -333,7 +333,6 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['USER'] = 'CURRENT_USER'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
 
-        # Check if we are using a standard event store
         config = self.config.model_copy(deep=True)
 
         # Set up mounted volume for conversation directory within workspace
