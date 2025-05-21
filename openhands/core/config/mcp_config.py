@@ -44,7 +44,7 @@ class MCPStdioServerConfig(BaseModel):
         return (
             self.name == other.name
             and self.command == other.command
-            and self.args == other.args
+            and set(self.args) == set(other.args)
             and self.env == other.env
         )
 

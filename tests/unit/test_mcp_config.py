@@ -192,3 +192,34 @@ def test_mcp_config_extra_fields_forbidden():
 
     # Note: The nested models don't have 'extra': 'forbid' set, so they allow extra fields
     # We're only testing the main MCPConfig class here
+
+
+def test_stdio_server_equality_with_different_arg_order():
+    """Test that MCPStdioServerConfig equality works with args in different order."""
+    server1 = MCPStdioServerConfig(
+        name='test-server',
+        command='python',
+        args=['--verbose', '--debug', '--port=8080'],
+        env={'DEBUG': 'true'},
+    )
+
+    server2 = MCPStdioServerConfig(
+        name='test-server',
+        command='python',
+        args=['--debug', '--port=8080', '--verbose'],  # Different order
+        env={'DEBUG': 'true'},
+    )
+
+    # Should be equal because args are compared as sets
+    assert server1 == server2
+
+    # Modify one arg to make them different
+    server3 = MCPStdioServerConfig(
+        name='test-server',
+        command='python',
+        args=['--debug', '--port=9090', '--verbose'],  # Different port
+        env={'DEBUG': 'true'},
+    )
+
+    # Should not be equal
+    assert server1 != server3
