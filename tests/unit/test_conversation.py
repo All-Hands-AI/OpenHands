@@ -157,7 +157,6 @@ async def test_search_conversations():
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
-                        user_id='12345',
                         conversation_store=mock_store,
                     )
 
@@ -258,6 +257,7 @@ async def test_new_conversation_success(provider_handler_mock):
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
                 image_urls=['https://example.com/image.jpg'],
+                conversation_id='test_conversation_id',
             )
 
             # Call new_conversation
@@ -267,7 +267,6 @@ async def test_new_conversation_success(provider_handler_mock):
             assert isinstance(response, InitSessionResponse)
             assert response.status == 'ok'
             assert response.conversation_id == 'test_conversation_id'
-            assert response.conversation_url == 'https://my-conversation.com'
 
             # Verify that create_new_conversation was called with the correct arguments
             mock_create_conversation.assert_called_once()
@@ -315,6 +314,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                     repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
+                    conversation_id='test_conversation_id',
                 )
 
                 # Call new_conversation
@@ -324,7 +324,6 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 assert isinstance(response, InitSessionResponse)
                 assert response.status == 'ok'
                 assert response.conversation_id == 'test_conversation_id'
-                assert response.conversation_url == 'https://my-conversation.com'
 
                 # Verify that create_new_conversation was called with the correct arguments
                 mock_create_conversation.assert_called_once()
