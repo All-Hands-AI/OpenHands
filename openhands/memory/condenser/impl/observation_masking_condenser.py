@@ -28,7 +28,7 @@ class ObservationMaskingCondenser(Condenser):
 
     @classmethod
     def from_config(
-        cls, config: ObservationMaskingCondenserConfig
+        cls, config: ObservationMaskingCondenserConfig, llm=None
     ) -> ObservationMaskingCondenser:
         return ObservationMaskingCondenser(**config.model_dump(exclude=['type']))
 

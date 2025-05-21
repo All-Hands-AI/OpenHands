@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from litellm import supports_response_schema
 from pydantic import BaseModel
 
@@ -113,12 +115,15 @@ class LLMAttentionCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
-        # For backward compatibility, we need to handle the case where llm is not provided
-        # This will be removed in a future version as llm is now required
-        raise ValueError(
-            'LLMAttentionCondenser.from_config now requires an LLM instance to be passed directly to the constructor. '
-            'Please create the condenser using LLMAttentionCondenser(llm=your_llm, max_size=..., keep_first=...)'
+    def from_config(
+        cls, config: LLMAttentionCondenserConfig, llm: Any = None
+    ) -> "LLMAttentionCondenser":
+        if llm is None:
+            raise ValueError("LLM instance is required for LLMAttentionCondenser")
+        return LLMAttentionCondenser(
+            llm=llm,
+            max_size=config.max_size,
+            keep_first=config.keep_first,
         )
 
 

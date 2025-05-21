@@ -309,20 +309,12 @@ Capture all relevant information, especially:
 
     @classmethod
     def from_config(
-        cls, config: StructuredSummaryCondenserConfig
-    ) -> StructuredSummaryCondenser:
-        # This condenser cannot take advantage of prompt caching. If it happens
-        # to be set, we'll pay for the cache writes but never get a chance to
-        # save on a read.
-        llm_config = config.llm_config.model_copy()
-        llm_config.caching_prompt = False
-
+        cls, config: StructuredSummaryCondenserConfig, llm: Any = None
+    ) -> "StructuredSummaryCondenser":
+        if llm is None:
+            raise ValueError("LLM instance is required for StructuredSummaryCondenser")
         return StructuredSummaryCondenser(
-            llm=LLM(
-                config=llm_config,
-                conversation_id="structured_summary_condenser",
-                user_id="system"
-            ),
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

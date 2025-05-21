@@ -124,11 +124,12 @@ class Condenser(ABC):
         CONDENSER_REGISTRY[configuration_type] = cls
 
     @classmethod
-    def from_config(cls, config: CondenserConfig) -> Condenser:
+    def from_config(cls, config: CondenserConfig, llm=None) -> Condenser:
         """Create a condenser from a configuration object.
 
         Args:
             config: Configuration for the condenser.
+            llm: Optional LLM instance to use for the condenser.
 
         Returns:
             Condenser: A condenser instance.
@@ -138,7 +139,7 @@ class Condenser(ABC):
         """
         try:
             condenser_class = CONDENSER_REGISTRY[type(config)]
-            return condenser_class.from_config(config)
+            return condenser_class.from_config(config, llm)
         except KeyError:
             raise ValueError(f'Unknown condenser config: {config}')
 

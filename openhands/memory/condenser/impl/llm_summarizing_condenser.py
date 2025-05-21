@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
@@ -154,20 +156,12 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
     @classmethod
     def from_config(
-        cls, config: LLMSummarizingCondenserConfig
-    ) -> LLMSummarizingCondenser:
-        # This condenser cannot take advantage of prompt caching. If it happens
-        # to be set, we'll pay for the cache writes but never get a chance to
-        # save on a read.
-        llm_config = config.llm_config.model_copy()
-        llm_config.caching_prompt = False
-
+        cls, config: LLMSummarizingCondenserConfig, llm: Any = None
+    ) -> "LLMSummarizingCondenser":
+        if llm is None:
+            raise ValueError("LLM instance is required for LLMSummarizingCondenser")
         return LLMSummarizingCondenser(
-            llm=LLM(
-                config=llm_config,
-                conversation_id="condenser",
-                user_id="system"
-            ),
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

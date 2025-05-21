@@ -12,7 +12,7 @@ class NoOpCondenser(Condenser):
         return view
 
     @classmethod
-    def from_config(cls, config: NoOpCondenserConfig) -> NoOpCondenser:
+    def from_config(cls, config: NoOpCondenserConfig, llm=None) -> NoOpCondenser:
         return NoOpCondenser()
 
 

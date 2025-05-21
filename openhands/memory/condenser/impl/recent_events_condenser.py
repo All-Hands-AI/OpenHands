@@ -21,7 +21,9 @@ class RecentEventsCondenser(Condenser):
         return View(events=head + tail)
 
     @classmethod
-    def from_config(cls, config: RecentEventsCondenserConfig) -> RecentEventsCondenser:
+    def from_config(
+        cls, config: RecentEventsCondenserConfig, llm=None
+    ) -> RecentEventsCondenser:
         return RecentEventsCondenser(**config.model_dump(exclude=['type']))
 
 
