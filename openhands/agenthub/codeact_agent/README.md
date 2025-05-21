@@ -63,7 +63,9 @@ The agent includes specialized micro-agents for specific tasks:
 
 1. **npm**: Handles npm package installation with non-interactive shell workarounds
 2. **github**: Manages GitHub operations with API token support and PR creation guidelines
-3. **flarglebargle**: Easter egg response handler
+3. **gitlab**: Manages GitLab operations with API token support and merge request creation guidelines
+4. **azure_devops**: Manages Azure DevOps operations with API token support and pull request/work item management
+5. **flarglebargle**: Easter egg response handler
 
 ## Adding New Tools
 

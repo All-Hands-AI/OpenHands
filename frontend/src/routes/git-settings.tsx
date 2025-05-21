@@ -6,6 +6,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
+import { AzureDevOpsTokenInput } from "#/components/features/settings/git-settings/azure-devops-token-input";
 import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -32,18 +33,24 @@ function GitSettingsScreen() {
     React.useState(false);
   const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
     React.useState(false);
+  const [azureDevOpsTokenInputHasValue, setAzureDevOpsTokenInputHasValue] =
+    React.useState(false);
 
   const [githubHostInputHasValue, setGithubHostInputHasValue] =
     React.useState(false);
   const [gitlabHostInputHasValue, setGitlabHostInputHasValue] =
     React.useState(false);
+  const [azureDevOpsHostInputHasValue, setAzureDevOpsHostInputHasValue] =
+    React.useState(false);
 
   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
+  const existingAzureDevOpsHost = settings?.PROVIDER_TOKENS_SET.azure_devops;
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providers.includes("github");
   const isGitLabTokenSet = providers.includes("gitlab");
+  const isAzureDevOpsTokenSet = providers.includes("azure_devops");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -56,14 +63,17 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
+    const azureDevOpsToken = formData.get("azure-devops-token-input")?.toString() || "";
     const githubHost = formData.get("github-host-input")?.toString() || "";
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
+    const azureDevOpsHost = formData.get("azure-devops-host-input")?.toString() || "";
 
     saveGitProviders(
       {
         providers: {
           github: { token: githubToken, host: githubHost },
           gitlab: { token: gitlabToken, host: gitlabHost },
+          azure_devops: { token: azureDevOpsToken, host: azureDevOpsHost },
         },
       },
       {
@@ -77,8 +87,10 @@ function GitSettingsScreen() {
         onSettled: () => {
           setGithubTokenInputHasValue(false);
           setGitlabTokenInputHasValue(false);
+          setAzureDevOpsTokenInputHasValue(false);
           setGithubHostInputHasValue(false);
           setGitlabHostInputHasValue(false);
+          setAzureDevOpsHostInputHasValue(false);
         },
       },
     );
@@ -87,8 +99,10 @@ function GitSettingsScreen() {
   const formIsClean =
     !githubTokenInputHasValue &&
     !gitlabTokenInputHasValue &&
+    !azureDevOpsTokenInputHasValue &&
     !githubHostInputHasValue &&
-    !gitlabHostInputHasValue;
+    !gitlabHostInputHasValue &&
+    !azureDevOpsHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
 
   return (
@@ -130,6 +144,20 @@ function GitSettingsScreen() {
               gitlabHostSet={existingGitlabHost}
             />
           )}
+
+          {!isSaas && (
+            <AzureDevOpsTokenInput
+              name="azure-devops-token-input"
+              isAzureDevOpsTokenSet={isAzureDevOpsTokenSet}
+              onChange={(value) => {
+                setAzureDevOpsTokenInputHasValue(!!value);
+              }}
+              onAzureDevOpsHostChange={(value) => {
+                setAzureDevOpsHostInputHasValue(!!value);
+              }}
+              azureDevOpsHostSet={existingAzureDevOpsHost}
+            />
+          )}
         </div>
       )}
 
@@ -143,7 +171,7 @@ function GitSettingsScreen() {
               name="disconnect-tokens-button"
               type="submit"
               variant="secondary"
-              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet && !isAzureDevOpsTokenSet}
             >
               Disconnect Tokens
             </BrandButton>

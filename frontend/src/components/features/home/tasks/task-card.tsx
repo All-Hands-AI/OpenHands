@@ -54,7 +54,17 @@ export function TaskCard({ task }: TaskCardProps) {
     const issueType =
       task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
     href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
+  } else if (task.git_provider === "azure_devops") {
+    // Azure DevOps URLs format: https://dev.azure.com/{organization}/{project}/_workitems/edit/{id}
+    // For pull requests: https://dev.azure.com/{organization}/{project}/_git/{repository}/pullrequest/{id}
+    const [project, repository] = task.repo.split('/');
+    if (task.task_type === "OPEN_ISSUE") {
+      href = `https://dev.azure.com/${project}/_workitems/edit/${task.issue_number}`;
+    } else {
+      href = `https://dev.azure.com/${project}/_git/${repository}/pullrequest/${task.issue_number}`;
+    }
   } else {
+    // Default to GitHub
     const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
     href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
   }

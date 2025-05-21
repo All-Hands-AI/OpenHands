@@ -10,13 +10,14 @@ You can also interact with OpenHands Cloud programmatically using the [API](./cl
 
 ## Getting Started
 
-After visiting OpenHands Cloud, you will be asked to connect with your GitHub or GitLab account:
+After visiting OpenHands Cloud, you will be asked to connect with your GitHub, GitLab, or Azure DevOps account:
 
-1. After reading and accepting the terms of service, click `Log in with GitHub` or `Log in with GitLab`.
+1. After reading and accepting the terms of service, click `Log in with GitHub`, `Log in with GitLab`, or `Log in with Azure DevOps`.
 2. Review the permissions requested by OpenHands and then click `Authorize OpenHands AI`.
-   - OpenHands will require some permissions from your GitHub or GitLab account. To read more about these permissions:
+   - OpenHands will require some permissions from your account. To read more about these permissions:
      - GitHub: You can click the `Learn more` link on the GitHub authorize page.
      - GitLab: You can expand each permission request on the GitLab authorize page.
+     - Azure DevOps: You can review the requested permissions on the Azure DevOps authorization page.
 
 ## Repository Access
 
@@ -57,6 +58,36 @@ You can modify GitHub repository access at any time by:
 ### GitLab
 
 When using your GitLab account, OpenHands will automatically have access to your repositories.
+
+### Azure DevOps
+
+#### Adding Repository Access
+
+You can grant OpenHands specific repository access:
+1. Click `Add Azure DevOps repos` on the Home page.
+2. Select the organization, then choose the specific projects and repositories to grant OpenHands access to.
+   <details>
+     <summary>Permission Details for Repository Access</summary>
+
+     OpenHands requests these permissions:
+     - Code: Read and write
+     - Work Items: Read and write
+     - Pull Requests: Read and write
+     - Build: Read-only
+     - Project and Team: Read-only
+
+     Repository access for a user is granted based on:
+     - Granted permission for the repository.
+     - User's Azure DevOps permissions (owner/collaborator).
+   </details>
+
+3. Click on `Install & Authorize`.
+
+#### Modifying Repository Access
+
+You can modify Azure DevOps repository access at any time by:
+* Using the same `Add Azure DevOps repos` workflow, or
+* Visiting the Settings page and selecting `Configure Azure DevOps Repositories` under the `Git Settings` section.
 
 ## Conversation Persistence
 

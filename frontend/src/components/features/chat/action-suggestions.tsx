@@ -23,19 +23,29 @@ export function ActionSuggestions({
 
   const providersAreSet = providers.length > 0;
   const isGitLab = providers.includes("gitlab");
+  const isAzureDevOps = providers.includes("azure_devops");
 
-  const pr = isGitLab ? "merge request" : "pull request";
-  const prShort = isGitLab ? "MR" : "PR";
+  // Determine the correct terminology based on the provider
+  let pr, prShort, providerName;
+  if (isGitLab) {
+    pr = "merge request";
+    prShort = "MR";
+    providerName = "GitLab";
+  } else if (isAzureDevOps) {
+    pr = "pull request";
+    prShort = "PR";
+    providerName = "Azure DevOps";
+  } else {
+    pr = "pull request";
+    prShort = "PR";
+    providerName = "GitHub";
+  }
 
   const terms = {
     pr,
     prShort,
-    pushToBranch: `Please push the changes to a remote branch on ${
-      isGitLab ? "GitLab" : "GitHub"
-    }, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
-    createPR: `Please push the changes to ${
-      isGitLab ? "GitLab" : "GitHub"
-    } and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
+    pushToBranch: `Please push the changes to a remote branch on ${providerName}, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
+    createPR: `Please push the changes to ${providerName} and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
     pushToPR: `Please push the latest changes to the existing ${pr}.`,
   };
 

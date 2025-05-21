@@ -89,6 +89,9 @@ describe("Content", () => {
     await screen.findByTestId("gitlab-token-input");
     await screen.findByTestId("gitlab-token-help-anchor");
 
+    await screen.findByTestId("azure-devops-token-input");
+    await screen.findByTestId("azure-devops-token-help-anchor");
+
     getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
     rerender();
@@ -133,6 +136,12 @@ describe("Content", () => {
       expect(
         screen.queryByTestId("gl-set-token-indicator"),
       ).not.toBeInTheDocument();
+
+      const azureDevOpsInput = screen.getByTestId("azure-devops-token-input");
+      expect(azureDevOpsInput).toHaveProperty("placeholder", "");
+      expect(
+        screen.queryByTestId("ado-set-token-indicator"),
+      ).not.toBeInTheDocument();
     });
 
     getSettingsSpy.mockResolvedValue({
@@ -140,6 +149,7 @@ describe("Content", () => {
       provider_tokens_set: {
         github: null,
         gitlab: null,
+        azure_devops: null,
       },
     });
     queryClient.invalidateQueries();
@@ -158,12 +168,19 @@ describe("Content", () => {
       expect(
         screen.queryByTestId("gl-set-token-indicator"),
       ).toBeInTheDocument();
+
+      const azureDevOpsInput = screen.getByTestId("azure-devops-token-input");
+      expect(azureDevOpsInput).toHaveProperty("placeholder", "<hidden>");
+      expect(
+        screen.queryByTestId("ado-set-token-indicator"),
+      ).toBeInTheDocument();
     });
 
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
         gitlab: null,
+        azure_devops: null,
       },
     });
     queryClient.invalidateQueries();
@@ -181,6 +198,12 @@ describe("Content", () => {
       expect(gitlabInput).toHaveProperty("placeholder", "<hidden>");
       expect(
         screen.queryByTestId("gl-set-token-indicator"),
+      ).toBeInTheDocument();
+
+      const azureDevOpsInput = screen.getByTestId("azure-devops-token-input");
+      expect(azureDevOpsInput).toHaveProperty("placeholder", "<hidden>");
+      expect(
+        screen.queryByTestId("ado-set-token-indicator"),
       ).toBeInTheDocument();
     });
   });
@@ -243,15 +266,47 @@ describe("Form submission", () => {
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "test-token", host: "" },
       gitlab: { token: "", host: "" },
+      azure_devops: { token: "", host: "" },
     });
+  });
+
+  it("should save the GitLab token", async () => {
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
 
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
+    const submit = await screen.findByTestId("submit-button");
+
     await userEvent.type(gitlabInput, "test-token");
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
-      github: { token: "test-token", host: "" },
+      github: { token: "", host: "" },
+      gitlab: { token: "test-token", host: "" },
+      azure_devops: { token: "", host: "" },
+    });
+  });
+
+  it("should save the Azure DevOps token", async () => {
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const azureDevOpsInput = await screen.findByTestId("azure-devops-token-input");
+    const submit = await screen.findByTestId("submit-button");
+
+    await userEvent.type(azureDevOpsInput, "test-token");
+    await userEvent.click(submit);
+
+    expect(saveProvidersSpy).toHaveBeenCalledWith({
+      github: { token: "", host: "" },
       gitlab: { token: "", host: "" },
+      azure_devops: { token: "test-token", host: "" },
     });
   });
 
@@ -279,6 +334,14 @@ describe("Form submission", () => {
 
     await userEvent.clear(gitlabInput);
     expect(submit).toBeDisabled();
+
+    const azureDevOpsInput = await screen.findByTestId("azure-devops-token-input");
+    await userEvent.type(azureDevOpsInput, "test-token");
+
+    expect(submit).not.toBeDisabled();
+
+    await userEvent.clear(azureDevOpsInput);
+    expect(submit).toBeDisabled();
   });
 
   it("should enable a disconnect tokens button if there is at least one token set", async () => {
@@ -291,6 +354,7 @@ describe("Form submission", () => {
       provider_tokens_set: {
         github: null,
         gitlab: null,
+        azure_devops: null,
       },
     });
 
@@ -322,6 +386,7 @@ describe("Form submission", () => {
       provider_tokens_set: {
         github: null,
         gitlab: null,
+        azure_devops: null,
       },
     });
 

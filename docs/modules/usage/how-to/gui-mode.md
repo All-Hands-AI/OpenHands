@@ -120,6 +120,51 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - For group/organization repositories, ensure you have proper access.
 </details>
 
+#### Azure DevOps Token Setup
+
+OpenHands automatically exports an `AZURE_DEVOPS_TOKEN` to the shell environment if provided:
+
+<details>
+  <summary>Setting Up an Azure DevOps Token</summary>
+
+  1. **Generate a Personal Access Token (PAT)**:
+   - In Azure DevOps, click on your profile picture in the top right corner.
+   - Select "Personal access tokens".
+   - Click "New Token".
+   - Give your token a name and select the appropriate scopes:
+     - `Code` (Read & Write)
+     - `Work Items` (Read & Write)
+     - `Pull Request Threads` (Read & Write)
+     - `Pull Request Contribute` (Read & Write)
+   - Set an expiration date for your token.
+   - Click "Create" and copy the token value.
+  2. **Enter Token in OpenHands**:
+   - Click the Settings button (gear icon).
+   - Navigate to the `Git` tab.
+   - Paste your token in the `Azure DevOps Token` field.
+   - Click `Save Changes` to apply the changes.
+</details>
+
+<details>
+  <summary>Troubleshooting</summary>
+
+  Common issues and solutions:
+
+  - **Token Not Recognized**:
+     - Ensure the token is properly saved in settings.
+     - Check that the token hasn't expired.
+     - Verify the token has the required scopes.
+
+  - **Access Denied**:
+     - Verify project access permissions.
+     - Check if the token has the necessary scopes.
+     - For organization repositories, ensure you have proper access to the project.
+
+  - **Organization/Project Format**:
+     - Azure DevOps repositories are referenced in the format `{project}/{repository}`.
+     - Make sure you're using the correct format when specifying repositories.
+</details>
+
 ### Advanced Settings
 
 1. Inside the Settings page, under the `LLM` tab, toggle `Advanced` options to access additional settings.

@@ -7887,6 +7887,22 @@
         "tr": "GitLab'a bağlan",
         "uk": "Увійти за допомогою GitLab"
     },
+    "AZURE_DEVOPS$CONNECT_TO_AZURE_DEVOPS": {
+        "en": "Log in with Azure DevOps",
+        "ja": "Azure DevOpsに接続",
+        "zh-CN": "连接到Azure DevOps",
+        "zh-TW": "連接到Azure DevOps",
+        "ko-KR": "Azure DevOps에 연결",
+        "de": "Mit Azure DevOps verbinden",
+        "no": "Koble til Azure DevOps",
+        "it": "Connetti a Azure DevOps",
+        "pt": "Conectar ao Azure DevOps",
+        "es": "Conectar a Azure DevOps",
+        "ar": "الاتصال بـ Azure DevOps",
+        "fr": "Se connecter à Azure DevOps",
+        "tr": "Azure DevOps'a bağlan",
+        "uk": "Увійти за допомогою Azure DevOps"
+    },
     "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
         "en": "Log in to OpenHands",
         "ja": "IDプロバイダーでサインイン",

@@ -159,11 +159,12 @@ async def test_export_latest_git_provider_tokens_success(runtime):
 async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     """Test token export with multiple token references"""
     config = AppConfig()
-    # Initialize with both GitHub and GitLab tokens
+    # Initialize with GitHub, GitLab, and Azure DevOps tokens
     git_provider_tokens = MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github_token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
+            ProviderType.AZURE_DEVOPS: ProviderToken(token=SecretStr('azure_token')),
         }
     )
     file_store = get_file_store('local', temp_dir)
@@ -177,15 +178,18 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     )
 
     # Create a command that references multiple tokens
-    cmd = CmdRunAction(command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN')
+    cmd = CmdRunAction(
+        command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN && echo $AZURE_DEVOPS_TOKEN'
+    )
 
     # Export the tokens
     await runtime._export_latest_git_provider_tokens(cmd)
 
-    # Verify that both tokens were exported
+    # Verify that all tokens were exported
     assert event_stream.secrets == {
         'github_token': 'github_token',
         'gitlab_token': 'gitlab_token',
+        'azure_devops_token': 'azure_token',
     }
 
 
@@ -375,6 +379,37 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     cmd = runtime.run_action_calls[0].command
     assert (
         f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in cmd
+    )
+    assert result == 'repo'
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_azure_devops_with_token(temp_dir, monkeypatch):
+    config = AppConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    azure_token = 'azure_test_token'
+    git_provider_tokens = MappingProxyType(
+        {ProviderType.AZURE_DEVOPS: ProviderToken(token=SecretStr(azure_token))}
+    )
+
+    runtime = TestRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid='test',
+        user_id='test_user',
+        git_provider_tokens=git_provider_tokens,
+    )
+
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.AZURE_DEVOPS)
+
+    result = await runtime.clone_or_init_repo(git_provider_tokens, 'project/repo', None)
+
+    cmd = runtime.run_action_calls[0].command
+    assert (
+        f'git clone https://{azure_token}@dev.azure.com/owner/project/_git/repo repo'
+        in cmd
     )
     assert result == 'repo'
 

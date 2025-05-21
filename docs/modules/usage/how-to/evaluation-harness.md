@@ -75,6 +75,24 @@ The `run_controller()` function is the core of OpenHands's execution. It manages
 
 We encourage you to review the various evaluation benchmarks available in the [`evaluation/benchmarks/` directory](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks) of our repository.
 
+### Testing with Different Git Providers
+
+When evaluating OpenHands with different Git providers, you can configure the appropriate tokens:
+
+```toml
+[git]
+# GitHub token for repository access
+github_token = "ghp_xxx"
+
+# GitLab token for repository access
+gitlab_token = "glpat-xxx"
+
+# Azure DevOps token for repository access
+azure_devops_token = "xxx"
+```
+
+This allows you to test OpenHands' performance across GitHub, GitLab, and Azure DevOps repositories.
+
 To integrate your own benchmark, we suggest starting with the one that most closely resembles your needs. This approach can significantly streamline your integration process, allowing you to build upon existing structures and adapt them to your specific requirements.
 
 ## How to create an evaluation workflow

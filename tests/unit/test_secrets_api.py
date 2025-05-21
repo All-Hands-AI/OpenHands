@@ -435,12 +435,16 @@ async def test_add_multiple_git_providers_with_hosts(test_client, file_secrets_s
             'provider_tokens': {
                 'github': {'token': 'github-token', 'host': 'github.enterprise.com'},
                 'gitlab': {'token': 'gitlab-token', 'host': 'gitlab.enterprise.com'},
+                'azure_devops': {
+                    'token': 'azure-token',
+                    'host': 'dev.azure.com/enterprise',
+                },
             }
         }
         response = test_client.post('/api/add-git-providers', json=add_providers_data)
         assert response.status_code == 200
 
-        # Verify that both providers were stored with their respective hosts
+        # Verify that all providers were stored with their respective hosts
         stored_secrets = await file_secrets_store.load()
         assert ProviderType.GITHUB in stored_secrets.provider_tokens
         assert (
@@ -460,4 +464,16 @@ async def test_add_multiple_git_providers_with_hosts(test_client, file_secrets_s
         assert (
             stored_secrets.provider_tokens[ProviderType.GITLAB].host
             == 'gitlab.enterprise.com'
+        )
+
+        assert ProviderType.AZURE_DEVOPS in stored_secrets.provider_tokens
+        assert (
+            stored_secrets.provider_tokens[
+                ProviderType.AZURE_DEVOPS
+            ].token.get_secret_value()
+            == 'azure-token'
+        )
+        assert (
+            stored_secrets.provider_tokens[ProviderType.AZURE_DEVOPS].host
+            == 'dev.azure.com/enterprise'
         )

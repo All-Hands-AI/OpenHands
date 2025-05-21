@@ -50,6 +50,7 @@ AGENT_CLASS = 'CodeActAgent'
 
 class IssueResolver:
     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
+    AZURE_PIPELINE = os.getenv('TF_BUILD') == 'true'
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the IssueResolver with the given parameters.
@@ -212,8 +213,8 @@ class IssueResolver:
             timeout=300,
         )
 
-        # Configure sandbox for GitLab CI environment
-        if cls.GITLAB_CI:
+        # Configure sandbox for CI environments
+        if cls.GITLAB_CI or cls.AZURE_PIPELINE:
             sandbox_config.local_runtime_url = os.getenv(
                 'LOCAL_RUNTIME_URL', 'http://localhost'
             )
@@ -244,7 +245,10 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-        if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
+        # Handle permissions in CI environments
+        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (
+            self.platform == ProviderType.AZURE_DEVOPS and self.AZURE_PIPELINE
+        ):
             action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)

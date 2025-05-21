@@ -36,7 +36,7 @@ const socket = io("http://localhost:3000", {
   query: {
     conversation_id: "your-conversation-id",
     latest_event_id: -1,
-    providers_set: "github,gitlab" // Optional
+    providers_set: "github,gitlab,azure_devops" // Optional
   }
 });
 
