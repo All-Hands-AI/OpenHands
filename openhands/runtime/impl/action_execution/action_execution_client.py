@@ -415,20 +415,23 @@ class ActionExecutionClient(Runtime):
                     'debug',
                     f'Successfully updated MCP stdio servers, now tracking {len(combined_servers)} servers',
                 )
-
-            # No API key by default. Child runtime can override this when appropriate
-            updated_mcp_config.sse_servers.append(
-                MCPSSEServerConfig(
-                    url=self.action_execution_server_url.rstrip('/') + '/sse',
-                    api_key=None,
-                )
-            )
             self.log(
                 'info',
                 f'Updated MCP config: {updated_mcp_config.sse_servers}',
             )
         else:
             self.log('debug', 'No new stdio servers to update')
+
+
+        if len(self._last_updated_mcp_stdio_servers) > 0:
+            # We should always include the runtime as an MCP server whenever there's > 0 stdio servers
+            updated_mcp_config.sse_servers.append(
+                MCPSSEServerConfig(
+                    url=self.action_execution_server_url.rstrip('/') + '/sse',
+                    # No API key by default. Child runtime can override this when appropriate
+                    api_key=None,
+                )
+            )
 
         return updated_mcp_config
 
