@@ -14,6 +14,8 @@ import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 import { clickOnEditButton } from "./utils";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { downloadTrajectory } from "#/utils/download-trajectory";
 
 // We'll use the actual i18next implementation but override the translation function
 import { I18nextProvider } from "react-i18next";
@@ -29,7 +31,9 @@ vi.mock("react-i18next", async () => {
         const translations: Record<string, string> = {
           "CONVERSATION$CREATED": "Created",
           "CONVERSATION$AGO": "ago",
-          "CONVERSATION$UPDATED": "Updated"
+          "CONVERSATION$UPDATED": "Updated",
+          "CONVERSATION$DOWNLOAD_ERROR": "Download Error",
+          "CONVERSATION$UNKNOWN": "Unknown"
         };
         return translations[key] || key;
       },
@@ -44,6 +48,29 @@ describe("ConversationCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
   const onChangeTitle = vi.fn();
+
+  // Mock the useGetTrajectory hook
+  vi.mock("#/hooks/mutation/use-get-trajectory", () => ({
+    useGetTrajectory: vi.fn().mockReturnValue({
+      mutate: vi.fn((id, options) => {
+        if (options?.onSuccess) {
+          options.onSuccess({ trajectory: [{ test: "data" }] });
+        }
+      }),
+    }),
+  }));
+
+  // Mock the downloadTrajectory function
+  vi.mock("#/utils/download-trajectory", () => ({
+    downloadTrajectory: vi.fn(),
+  }));
+
+  // Mock posthog
+  vi.mock("posthog-js", () => ({
+    default: {
+      capture: vi.fn(),
+    },
+  }));
 
   beforeAll(() => {
     vi.stubGlobal("window", {
@@ -348,6 +375,52 @@ describe("ConversationCard", () => {
     const newMenu = await screen.findByTestId("context-menu");
     within(newMenu).getByTestId("display-cost-button");
   });
+  
+  it("should show export trajectory button only when showOptions and conversationId are true", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Wait for context menu to appear
+    const menu = await screen.findByTestId("context-menu");
+    expect(
+      within(menu).queryByTestId("export-trajectory-button"),
+    ).not.toBeInTheDocument();
+
+    // Close menu
+    await user.click(ellipsisButton);
+
+    rerender(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        showOptions
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+        conversationId="test-conversation-id"
+      />,
+    );
+
+    // Open menu again
+    await user.click(ellipsisButton);
+
+    // Wait for context menu to appear and check for export trajectory button
+    const newMenu = await screen.findByTestId("context-menu");
+    within(newMenu).getByTestId("export-trajectory-button");
+  });
 
   it("should show metrics modal when clicking the display cost button", async () => {
     const user = userEvent.setup();
@@ -373,6 +446,44 @@ describe("ConversationCard", () => {
 
     // Verify if metrics modal is displayed by checking for the modal content
     expect(screen.getByTestId("metrics-modal")).toBeInTheDocument();
+  });
+  
+  it("should call export trajectory when clicking the export trajectory button", async () => {
+    const user = userEvent.setup();
+    const getTrajectoryMock = useGetTrajectory as jest.Mock;
+    const downloadTrajectoryMock = downloadTrajectory as jest.Mock;
+    
+    renderWithProviders(
+      <ConversationCard
+        onDelete={onDelete}
+        isActive
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+        showOptions
+        conversationId="test-conversation-id"
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const menu = screen.getByTestId("context-menu");
+    const exportTrajectoryButton = within(menu).getByTestId("export-trajectory-button");
+
+    await user.click(exportTrajectoryButton);
+
+    // Verify that the trajectory was fetched and downloaded
+    expect(getTrajectoryMock().mutate).toHaveBeenCalledWith(
+      "test-conversation-id",
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      })
+    );
+    
+    // Check that downloadTrajectory was called
+    expect(downloadTrajectoryMock).toHaveBeenCalled();
   });
 
   it("should not display the edit or delete options if the handler is not provided", async () => {

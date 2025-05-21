@@ -19,6 +19,9 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { downloadTrajectory } from "#/utils/download-trajectory";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -60,6 +63,7 @@ export function ConversationCard({
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const { mutate: getTrajectory } = useGetTrajectory();
 
   const systemMessage = parsedEvents.find(isSystemMessage);
 
@@ -140,6 +144,33 @@ export function ConversationCard({
   const handleShowAgentTools = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setSystemModalVisible(true);
+  };
+
+  const handleExportTrajectory = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    posthog.capture("export_trajectory_button_clicked");
+
+    if (!conversationId) {
+      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
+      return;
+    }
+
+    getTrajectory(conversationId, {
+      onSuccess: async (data) => {
+        await downloadTrajectory(
+          conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
+          data.trajectory,
+        );
+      },
+      onError: () => {
+        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
+      },
+    });
+
+    setContextMenuVisible(false);
   };
 
   React.useEffect(() => {
@@ -223,6 +254,11 @@ export function ConversationCard({
                   onShowAgentTools={
                     showOptions && systemMessage
                       ? handleShowAgentTools
+                      : undefined
+                  }
+                  onExportTrajectory={
+                    conversationId && showOptions
+                      ? handleExportTrajectory
                       : undefined
                   }
                   position={variant === "compact" ? "top" : "bottom"}
