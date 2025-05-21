@@ -60,6 +60,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    conversation_instructions: str | None = None
 
     model_config = {'extra': 'forbid'}
 
@@ -95,6 +96,7 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     git_provider = data.git_provider
+    conversation_instructions = data.conversation_instructions
 
     conversation_trigger = ConversationTrigger.GUI
 
@@ -122,6 +124,7 @@ async def new_conversation(
             image_urls=image_urls,
             replay_json=replay_json,
             conversation_trigger=conversation_trigger,
+            conversation_instructions=conversation_instructions,
             git_provider=git_provider,
             conversation_id=conversation_id,
         ))

@@ -15,6 +15,7 @@ class ConversationInitData(Settings):
     selected_repository: str | None = Field(default=None)
     replay_json: str | None = Field(default=None)
     selected_branch: str | None = Field(default=None)
+    conversation_instructions: str | None = Field(default=None)
     git_provider: ProviderType | None = Field(default=None)
 
     model_config = {

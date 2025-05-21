@@ -7,7 +7,12 @@ from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
 from openhands.microagent import BaseMicroagent
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 @pytest.fixture
@@ -52,7 +57,10 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 
     # Test building additional info
     additional_info = manager.build_workspace_context(
-        repository_info=repo_info, runtime_info=None, repo_instructions=''
+        repository_info=repo_info,
+        runtime_info=None,
+        repo_instructions='',
+        conversation_instructions=None,
     )
     assert '<REPOSITORY_INFO>' in additional_info
     assert (
@@ -205,7 +213,14 @@ each of which has a corresponding port:
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
 {% endif %}
+
+Today's date is {{ runtime_info.date }}
 </RUNTIME_INFORMATION>
+{% if conversation_instructions.content %}
+<CONVERSATION_INSTRUCTIONS>
+{{ conversation_instructions.content }}
+</CONVERSATION_INSTRUCTIONS>
+{% endif %}
 {% endif %}
 """)
 
@@ -221,11 +236,14 @@ each of which has a corresponding port:
     )
     repo_instructions = 'This repository contains important code.'
 
+    conversation_instructions = ConversationInstructions(content='additional context')
+
     # Build additional info
     result = manager.build_workspace_context(
         repository_info=repo_info,
         runtime_info=runtime_info,
         repo_instructions=repo_instructions,
+        conversation_instructions=conversation_instructions,
     )
 
     # Check that all information is included
@@ -237,7 +255,8 @@ each of which has a corresponding port:
     assert '<RUNTIME_INFORMATION>' in result
     assert 'example.com (port 8080)' in result
     assert 'You know everything about this runtime.' in result
-    assert "Today's date is 02/12/1232 (UTC)."
+    assert "Today's date is 02/12/1232" in result
+    assert 'additional context' in result
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'additional_info.j2'))

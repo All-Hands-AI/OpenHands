@@ -23,10 +23,11 @@ async def create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
+    conversation_instructions: str | None = None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     attach_convo_id: bool = False,
     git_provider: ProviderType | None = None,
-    conversation_id: str | None = None
+    conversation_id: str | None = None,
 ) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
@@ -64,6 +65,7 @@ async def create_new_conversation(
     session_init_args['custom_secrets'] = custom_secrets
     session_init_args['selected_branch'] = selected_branch
     session_init_args['git_provider'] = git_provider
+    session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
