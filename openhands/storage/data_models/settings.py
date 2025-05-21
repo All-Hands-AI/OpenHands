@@ -35,6 +35,7 @@ class Settings(BaseModel):
     enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
     enable_proactive_conversation_starters: bool = True
+    enable_browsing: bool = True
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
@@ -114,6 +115,11 @@ class Settings(BaseModel):
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
 
+        # Get agent config if available
+        agent_config = None
+        if hasattr(app_config, 'agent'):
+            agent_config = app_config.agent.get('agent')
+        
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -124,6 +130,7 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
+            enable_browsing=agent_config.enable_browsing if agent_config else True,
             mcp_config=mcp_config,
         )
         return settings
