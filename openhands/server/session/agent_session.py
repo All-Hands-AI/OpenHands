@@ -91,6 +91,7 @@ class AgentSession:
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
+        conversation_instructions: str | None = None,
         replay_json: str | None = None,
     ) -> None:
         """Starts the Agent session
@@ -145,6 +146,7 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
+                conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
             )
 
@@ -437,7 +439,11 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None, custom_secrets_descriptions: dict[str, str]
+        self, 
+        selected_repository: str | None, 
+        repo_directory: str | None, 
+        conversation_instructions: str | None,
+        custom_secrets_descriptions: dict[str, str]
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -448,6 +454,7 @@ class AgentSession:
         if self.runtime:
             # sets available hosts and other runtime info
             memory.set_runtime_info(self.runtime, custom_secrets_descriptions)
+            memory.set_conversation_instructions(conversation_instructions)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
@@ -457,7 +464,10 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+                memory.set_repository_info(
+                    selected_repository, 
+                    repo_directory
+                )
         return memory
 
     def _maybe_restore_state(self) -> State | None:
