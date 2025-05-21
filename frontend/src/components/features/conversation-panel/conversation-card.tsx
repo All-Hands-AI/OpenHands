@@ -257,9 +257,7 @@ export function ConversationCard({
                       : undefined
                   }
                   onExportTrajectory={
-                    conversationId && showOptions
-                      ? handleExportTrajectory
-                      : undefined
+                    conversationId ? handleExportTrajectory : undefined
                   }
                   position={variant === "compact" ? "top" : "bottom"}
                 />
