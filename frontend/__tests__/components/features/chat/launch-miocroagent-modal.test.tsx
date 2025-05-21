@@ -1,31 +1,47 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LaunchMicroagentModal } from "#/components/features/chat/launch-miocroagent-modal";
+import { MemoryService } from "#/api/memory-service/memory-service.api";
+import { FileService } from "#/api/file-service/file-service.api";
+
+vi.mock("react-router", async () => ({
+  useParams: vi.fn().mockReturnValue({
+    conversationId: "123",
+  }),
+}));
 
 describe("LaunchMicroagentModal", () => {
   const onCloseMock = vi.fn();
   const onLaunchMock = vi.fn();
+
+  const renderMicroagentModal = () =>
+    render(
+      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
+      {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        ),
+      },
+    );
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("should render the launch microagent modal", () => {
-    render(
-      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
-    );
+    renderMicroagentModal();
     expect(screen.getByTestId("launch-microagent-modal")).toBeInTheDocument();
   });
 
   it("should render the form fields", () => {
-    render(
-      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
-    );
+    renderMicroagentModal();
 
     // inputs
     screen.getByTestId("description-input");
-    screen.getByTestId("name-input");
     screen.getByTestId("target-input");
     screen.getByTestId("trigger-input");
 
@@ -35,9 +51,7 @@ describe("LaunchMicroagentModal", () => {
   });
 
   it("should call onClose when pressing the cancel button", async () => {
-    render(
-      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
-    );
+    renderMicroagentModal();
 
     const cancelButton = screen.getByRole("button", { name: "Cancel" });
     await userEvent.click(cancelButton);
@@ -45,13 +59,42 @@ describe("LaunchMicroagentModal", () => {
   });
 
   it("should call onLaunch when pressing the launch button", async () => {
-    render(
-      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
-    );
+    renderMicroagentModal();
 
     const launchButton = screen.getByRole("button", { name: "Launch" });
     await userEvent.click(launchButton);
 
     expect(onLaunchMock).toHaveBeenCalled();
+  });
+
+  it("should make a query to get the prompt", async () => {
+    const getPromptSpy = vi.spyOn(MemoryService, "getPrompt");
+    getPromptSpy.mockResolvedValue("Generated prompt");
+    renderMicroagentModal();
+
+    expect(getPromptSpy).toHaveBeenCalled();
+    const descriptionInput = screen.getByTestId("description-input");
+    await waitFor(() =>
+      expect(descriptionInput).toHaveValue("Generated prompt"),
+    );
+  });
+
+  it("should make a query to get the list of valid target files", async () => {
+    const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
+    getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
+    renderMicroagentModal();
+
+    expect(getMicroagentFiles).toHaveBeenCalledWith("123", ".openhands");
+
+    const targetInput = screen.getByTestId("target-input");
+    expect(targetInput).toHaveValue("");
+
+    await userEvent.click(targetInput);
+
+    expect(screen.getByText("file1")).toBeInTheDocument();
+    expect(screen.getByText("file2")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("file1"));
+    expect(targetInput).toHaveValue("file1");
   });
 });
