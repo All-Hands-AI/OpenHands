@@ -12,7 +12,7 @@ from openhands.core.config.condenser_config import (
     CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -116,7 +116,7 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
-        self.config.mcp = settings.mcp_config
+        self.config.mcp = settings.mcp_config or MCPConfig(sse_servers=[], stdio_servers=[])
         # Add OpenHands' MCP server by default
         openhands_mcp_server = OpenHandsMCPConfigImpl.create_default_mcp_server_config(self.config.mcp_host, self.user_id)
         if openhands_mcp_server:
