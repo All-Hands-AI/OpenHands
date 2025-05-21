@@ -42,7 +42,7 @@ def run_inference(model_name, origin_data_list):
         test_list.append(instruction)
 
     sampling_params = SamplingParams(n=6, temperature=0.8, top_p=0.95, max_tokens=512)
-    llm = LLM(model=model_name, tensor_parallel_size=1, gpu_memory_utilization=0.6, swap_space=40)
+    llm = LLM(model=model_name, tensor_parallel_size=4, gpu_memory_utilization=0.6, swap_space=40)
 
     outputs = llm.generate(test_list, sampling_params)
     for output in outputs:
@@ -62,7 +62,7 @@ def run_inference(model_name, origin_data_list):
     save_json_path = os.path.join(save_folder_path, json_path.split('/')[-1])
 
     with open(save_json_path, 'w', encoding='utf-8') as fw:
-        json.dump({'count': len(temp_data_list), 'data': temp_data_list}, fw, indent=4, ensure_ascii=False)
+        json.dump(temp_data_list, fw, indent=4, ensure_ascii=False)
 
     gc.collect()
     torch.cuda.empty_cache()
@@ -96,12 +96,12 @@ def bulid_prompt(description, old_version, old_code, new_version) -> str:
     return prompt
 
 
-json_path = '../data/test_data/VersiCode_mirgration.json'
+json_path = '../data/test_data/VersiCode_migration.json'
 
 with open(json_path, 'r', encoding='utf-8')as fr:
     lodict = json.load(fr)
 
-origin_data_list = lodict['data']
+origin_data_list = lodict
 
 for model_name in model_list:
     process = Process(target=run_inference, args=(model_name, origin_data_list))

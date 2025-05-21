@@ -6,15 +6,15 @@ import json
 import os
 
 model_name = ''
-task = ''
+task = 'block_completion'
 
-result_path = f'../data/result_data/{task}/{model_name}/VersiCode_token_completion.json'    #Modify the file according to the task format
+result_path = f'../data/result_data/{task}/{model_name}/VersiCode_block_completion.json'    #Modify the file according to the task format
 
 
 with open(result_path, 'r', encoding='utf-8')as fr:
     lodict = json.load(fr)
 data_dict = lodict
-data_list = data_dict['data']
+data_list = data_dict
 
 for data in data_list:
     temp_list = []

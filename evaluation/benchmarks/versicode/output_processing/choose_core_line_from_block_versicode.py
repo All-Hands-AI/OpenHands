@@ -80,15 +80,15 @@ if __name__ == "__main__":
         output_json_file = input_json_file
         data = load_json(input_json_file)
 
-        for item in data['data']:
-            core_token = item['answer']
+        for item in data:
+            core_token = item['core_token']
             code = item['code']
 
-            _, core_line_in_core_block = process_line_mask(code, core_token)
-            if core_line_in_core_block:
-                item['core_line_in_core_block'] = core_line_in_core_block
+            _, core_line_in_code = process_line_mask(code, core_token)
+            if core_line_in_code:
+                item['core_line_in_code'] = core_line_in_code
             else:
-                item['core_line_in_core_block'] = "N/A"
+                item['core_line_in_code'] = "N/A"
 
             model_output_clear = item['model_output_clear']
             core_line_in_output_list = []

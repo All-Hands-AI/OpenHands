@@ -5,7 +5,7 @@ This project is used to evaluate the performance of the model on VersiCode. It i
 - data: the test data needed and the model outputs
 - inference_utils: inference scripts for ours tasks and models
 - metric: scripts for calculating various metric
-- output_processing: process the  the model output to facilitate the calculation of model metrics
+- output_processing: process the model output to facilitate the calculation of model metrics
 
 # Details
 
@@ -19,21 +19,35 @@ This project is used to evaluate the performance of the model on VersiCode. It i
    pip install -r requirements.txt
    ```
 
-2. **Model inference**
+2. **Experiment Data**
+
+    To obtain the experimental data, please visit the Hugging Face link: https://huggingface.co/datasets/AstoneNg/VersiCode.
+    Locate the files `VersiCode_block_completion.json` and `VersiCode_migration.json` under the `experiment_data` directory, and place them in the `/data/test_data directory` of this project.
+
+
+3. **Model inference**
 
    ```shell
    #cd inference_utils directory
    cd inference_utils
+   
    #The script file starting with 'test' is used to test the local model
    #The script file at the beginning of the API is used to test the API call model
-   #Modify the 30th line of code to specify the local model path
+   
+   #block level code completipn
    #Modify the 10th and 12th lines of code to specify the base URL and model name
-   python api_test_token_completion.py
-   python test_token.py
-   ...
+   python api_test_block_completion.py
+   #Modify the 30th line of code to specify the local model path
+   python test_block.py
+   
+   # code migration (migration order is 'old_to_new')
+   #Modify the 10th and 12th lines of code to specify the base URL and model name
+   python api_code_migration.py
+   #Modify the 30th line of code to specify the local model path
+   python test_migration.py
    ```
 
-3. **Process output**
+4. **Process output**
    Process the output content of the model, remove redundant content, extract specified content for easy calculation of indicators.
 
    ```shell
@@ -50,18 +64,22 @@ This project is used to evaluate the performance of the model on VersiCode. It i
    python choose_core_line_from_migration_versicode.py
    ```
 
-4. **Metric**
+5. **Metric**
    We have three metrics pass@k，em@k and cdc@k Due to our inability to automatically build a dynamic evaluation environment, we have not provided pass@k .
 
    ```shell
    #cd metric
+   cd metric
+   
    #Modify lines 137-140 in migration task (compute_migration_cdc_score.py) or 143-145 in block and line completion task (compute_versicode_cdc_score.py and compute_versicode_em_score.py) of the code to specify the data path and calculate the k-value of the metric
    python compute_migration_cdc_score.py
    python compute_versicode_cdc_score.py
    python compute_versicode_em_score.py
    
-   #Modify line 9 in token_level_em_score.py to specify the data path
-   python token_level_em_score.py
+   #Notes
+   #We found limitations in the ISM@k and PM@k metrics for evaluating code generation, so they are used only as reference in our experiments.
+   #Modify lines 261-265 in block and line completion task of the code to specify the data path and calculate the k-value of the metric
+   python compute_ism_pm_score.py
    ```
 
 # Citation
@@ -81,8 +99,5 @@ This project is used to evaluate the performance of the model on VersiCode. It i
 
 # Contributor
 
-[Tongtong Wu](https://github.com/wutong8023), 
-[Weigang Wu](https://github.com/Weigang-Wu), 
-[Xingyu Wang](https://github.com/wxy879001), 
-[Kang Xu](https://github.com/xk57238890),
-[Suyu Ma](https://github.com/JOJO201)
+[Tongtong Wu](https://scholar.google.com/citations?hl=zh-CN&user=u1Qp8lUAAAAJ&view_op=list_works&sortby=pubdate), [Weigang Wu](https://scholar.google.com/citations?hl=zh-CN&user=UneIZo8AAAAJ), [Xingyu Wang](https://scholar.google.com/citations?hl=zh-CN&user=wqPJcxcAAAAJ), [Kang Xu](https://scholar.google.com/citations?hl=zh-CN&user=N1UUDi0AAAAJ), [Suyu Ma](https://scholar.google.com/citations?hl=zh-CN&user=NJHR1ukAAAAJ), [Bo Jiang](https://wutong8023.site/VersiCode/), [Ping Yang](https://scholar.google.com/citations?view_op=list_works&hl=en&hl=en&user=hrogvxoAAAAJ), [Zhenchang Xing](https://scholar.google.com/citations?hl=zh-CN&user=0vCxuH4AAAAJ), [Yuan-Fang Li](https://scholar.google.com/citations?hl=zh-CN&user=wufXO1kAAAAJ), [Gholamreza Haffari](https://scholar.google.com/citations?hl=zh-CN&user=Perjx5EAAAAJ)
+

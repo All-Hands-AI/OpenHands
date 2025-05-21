@@ -7,7 +7,7 @@ from openai import OpenAI
 import os
 import tiktoken
 max_tokens = 127000   #gpt3.5 is 16ktoken    gpt4o is 128k
-model_name = "gpt-4o"
+model_name = ""
 
 os.environ["OPENAI_API_KEY"] = ""
 client = OpenAI()
@@ -98,7 +98,7 @@ json_path = '../data/test_data/VersiCode_block_completion.json'
 with open(json_path, 'r', encoding='utf-8')as fr:
     lodict = json.load(fr)
 data_dict = lodict
-data_list = data_dict['data']
+data_list = data_dict
 
 
 for data in data_list:

@@ -144,32 +144,32 @@ k = 3   #cdc@k
 task = 'block' # line or block
 json_name = f"Versicode_{task}_completion.json"
 
-folder_path = f'../data/result_data/{task}completion'
+folder_path = f'../data/result_data/{task}_completion'
 model_list = os.listdir(folder_path)
 
 for model in model_list:
     model_json_path = os.path.join(folder_path, model, json_name)
     with open(model_json_path, 'r', encoding='utf-8')as fr:
         lodict = json.load(fr)
-    data_list = lodict['data']
+    data_list = lodict
 
     if task == 'line':
         score_list = []
         for data in data_list:
-            answer = data['answer']
-            model_output = eval(data['model_outpute_clear'])
+            answer = data['core_token']
+            model_output = eval(data['model_output_clear'])
             model_filled_code = [data['masked_code'].replace('<mask>', i) for i in model_output]
-            core_line = data['masked_line']
+            core_line = data['core_line']
             score_list.append(compute_line_score_k(answer, model_output, k, model_filled_code, core_line))
     else:
         score_list = []
         for data in data_list:
-            answer = data['answer']
+            answer = data['core_token']
             model_output = eval(data['model_output_clear'])
             model_filled_code = eval(data['model_output_clear'])
-            core_line = data['masked_line']
+            core_line = data['core_line']
             core_line_in_output_clear = data['core_line_in_output_clear']
             score_list.append(compute_block_score_k(answer, model_output, k, model_filled_code, core_line, core_line_in_output_clear))
 
     final_score = sum(score_list)/len(score_list)
-    print(f"{model}的{task}的cdc@{k}为\t{final_score}")
+    print(f"{model}, {task} completion task, cdc@{k} score: {final_score}")
