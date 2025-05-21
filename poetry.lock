@@ -6548,35 +6548,31 @@ name = "openhands-aci"
 version = "0.2.14"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
+python-versions = "<4.0,>=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_aci-0.2.14-py3-none-any.whl", hash = "sha256:49bb25bde9ca04c4be035c9314230d5dd2cd4377bcfad4c88d480761ab73e911"},
+    {file = "openhands_aci-0.2.14.tar.gz", hash = "sha256:24f40f60b9e221c91089ce2fc34395aee3e22f3f132dd7c381be9983370b2cd8"},
+]
 
 [package.dependencies]
-binaryornot = "^0.4.4"
-cachetools = "^5.5.2"
-charset-normalizer = "^3.4.1"
+binaryornot = ">=0.4.4,<0.5.0"
+cachetools = ">=5.5.2,<6.0.0"
+charset-normalizer = ">=3.4.1,<4.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
 libcst = "1.5.0"
-llama-index = "^0.12.29"
-llama-index-core = "^0.12.29"
-llama-index-retrievers-bm25 = "^0.5.2"
-matplotlib = "^3.10.3"
-networkx = "^3.4.2"
-pydantic = "^2.11.3"
-rapidfuzz = "^3.13.0"
-tree-sitter = "^0.24.0"
+llama-index = ">=0.12.29,<0.13.0"
+llama-index-core = ">=0.12.29,<0.13.0"
+llama-index-retrievers-bm25 = ">=0.5.2,<0.6.0"
+matplotlib = ">=3.10.3,<4.0.0"
+networkx = ">=3.4.2,<4.0.0"
+pydantic = ">=2.11.3,<3.0.0"
+rapidfuzz = ">=3.13.0,<4.0.0"
+tree-sitter = ">=0.24.0,<0.25.0"
 tree-sitter-language-pack = "0.7.3"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "add-locagent-tools"
-resolved_reference = "24dcaa79be55bc998c56a67e97a2789b2c928334"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -12002,4 +11998,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "23bf5b6f9c93fdebbfb49bbdd1f80b635b055750a512c2bdd5f698ffcf753356"
+content-hash = "170b3b61c126a4ee22e707e37f129e5faf4b3a7b5ec78aabc07e77b0abc83b3b"
