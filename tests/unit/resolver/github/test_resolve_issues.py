@@ -630,6 +630,10 @@ def test_file_instruction_with_repo_instruction():
     # load prompt from openhands/resolver/prompts/resolve/basic.jinja
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
+
+    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+        conversation_instructions_prompt = f.read()
+
     # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
     with open(
         'openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt',
@@ -642,14 +646,33 @@ def test_file_instruction_with_repo_instruction():
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
-        issue, prompt, repo_instruction
+        issue, prompt, conversation_instructions_prompt, repo_instruction
     )
-    # Compare content ignoring exact formatting
-    assert 'Test Issue' in instruction
-    assert 'This is a test issue' in instruction
-    # The repo instruction might not be included in the actual output
-    # Just check for the essential parts
-    # The repo-specific instructions might not be included in the actual output
+
+
+    expected_instruction = """Please fix the following issue for the repository in /workspace.
+An environment has been set up for you to start working. You may assume all necessary tools are installed.
+
+# Problem Statement
+Test Issue
+
+This is a test issue"""
+
+    expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
+You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
+
+Some basic information about this repository:
+This is a Python repo for openhands-resolver, a library that attempts to resolve github issues with the AI agent OpenHands.
+
+- Setup: `poetry install --with test --with dev`
+- Testing: `poetry run pytest tests/test_*.py`
+
+
+When you think you have fixed the issue through code changes, please finish the interaction."""
+
+
+    assert instruction == expected_instruction
+    assert conversation_instructions == expected_conversation_instructions
     assert conversation_instructions is not None
     assert issue_handler.issue_type == 'issue'
     assert image_urls == []

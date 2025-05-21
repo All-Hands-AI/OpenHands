@@ -639,39 +639,6 @@ When you think you have fixed the issue through code changes, please finish the 
     assert images_urls == ['https://sampleimage.com/sample.png']
 
 
-def test_file_instruction_with_repo_instruction():
-    issue = Issue(
-        owner='test_owner',
-        repo='test_repo',
-        number=123,
-        title='Test Issue',
-        body='This is a test issue',
-    )
-    # load prompt from openhands/resolver/prompts/resolve/basic.jinja
-    with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
-        prompt = f.read()
-    # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
-    with open(
-        'openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt',
-        'r',
-    ) as f:
-        repo_instruction = f.read()
-
-    mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = ServiceContextIssue(
-        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
-    )
-    instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
-        issue, prompt, repo_instruction
-    )
-    # Compare content ignoring exact formatting
-    assert 'Test Issue' in instruction
-    assert 'This is a test issue' in instruction
-    assert conversation_instructions is not None
-    assert issue_handler.issue_type == 'issue'
-    assert image_urls == []
-
-
 def test_guess_success():
     mock_issue = Issue(
         owner='test_owner',

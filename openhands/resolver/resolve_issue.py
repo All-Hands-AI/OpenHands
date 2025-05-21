@@ -143,7 +143,12 @@ class IssueResolver:
                     os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
                 )
         with open(prompt_file, 'r') as f:
-            prompt_template = f.read()
+            user_instructions_prompt_template = f.read()
+
+        with open(
+            prompt_file.replace('.jinja', 'conversation-instructions.jinja')
+        ) as f:
+            conversation_instructions_prompt_template = f.read()
 
         base_domain = args.base_domain
         if base_domain is None:
@@ -157,7 +162,10 @@ class IssueResolver:
         self.max_iterations = args.max_iterations
         self.output_dir = args.output_dir
         self.llm_config = llm_config
-        self.prompt_template = prompt_template
+        self.user_instructions_prompt_template = user_instructions_prompt_template
+        self.conversation_instructions_prompt_template = (
+            conversation_instructions_prompt_template
+        )
         self.issue_type = issue_type
         self.repo_instruction = repo_instruction
         self.issue_number = args.issue_number
@@ -396,7 +404,10 @@ class IssueResolver:
 
         instruction, conversation_instructions, images_urls = (
             issue_handler.get_instruction(
-                issue, self.prompt_template, self.repo_instruction
+                issue,
+                self.user_instructions_prompt_template,
+                self.conversation_instructions_prompt_template,
+                self.repo_instruction,
             )
         )
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
