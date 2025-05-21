@@ -8,7 +8,7 @@ To get started with OpenHands Cloud, visit [app.all-hands.dev](https://app.all-h
 
 You'll be prompted to connect with your GitHub or GitLab account:
 
-1. After reading and accepting the terms of service, click `Connect to GitHub` or `Connect to GitLab`.
+1. Click `Log in with GitHub` or `Log in with GitLab`.
 2. Review the permissions requested by OpenHands and authorize the application.
    - OpenHands will require certain permissions from your account. To read more about these permissions,
      you can click the `Learn more` link on the authorization page.

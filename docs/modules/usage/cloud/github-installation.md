@@ -38,9 +38,7 @@ You can grant OpenHands access to specific repositories:
 
 ## Modifying Repository Access
 
-You can modify repository access at any time:
-* Using the same `Select a GitHub project > Add more repositories` workflow, or
-* By visiting the Settings page and selecting `Configure GitHub Repositories` in the `GitHub Settings` section.
+You can modify repository access at any time by visiting the Settings page and selecting `Configure GitHub Repositories` under the `Git` tab.
 
 ## Using OpenHands with GitHub
 

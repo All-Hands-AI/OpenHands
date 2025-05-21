@@ -6,8 +6,6 @@ The Cloud UI provides a web interface for interacting with OpenHands AI. This pa
 
 The OpenHands Cloud UI can be accessed at [app.all-hands.dev](https://app.all-hands.dev). You'll need to sign in with your GitHub or GitLab account to access the interface.
 
-<!-- Image will be added in a future update -->
-<!-- ![OpenHands Cloud UI](/img/docs/openhands-cloud-ui.png) -->
 
 ## Key Features
 
@@ -17,13 +15,12 @@ For detailed information about the features available in the OpenHands Cloud UI,
 
 The settings page allows you to:
 
-1. Configure your account preferences
-2. Manage repository access
-3. Generate API keys for programmatic access
-4. Customize your OpenHands experience
+- Configure your account preferences.
+- Manage repository access.
+- Generate API keys for programmatic access.
+- Generate custom secrets for the agent.
 
 ## Next Steps
 
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance
-- [Learn about the Cloud API](./cloud-api.md) for programmatic access
-- [Return to Getting Started](./openhands-cloud.md)
+- [Use the Cloud Issue Resolver](./cloud-issue-resolver.md) to automate code fixes and get assistance.
+- [Learn about the Cloud API](./cloud-api.md) for programmatic access.
