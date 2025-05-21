@@ -114,7 +114,7 @@ async def new_conversation(
             await provider_handler.verify_repo_provider(repository, git_provider)
 
         conversation_id = uuid.uuid4().hex
-        asyncio.create_task(create_new_conversation(
+        await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -127,7 +127,7 @@ async def new_conversation(
             conversation_instructions=conversation_instructions,
             git_provider=git_provider,
             conversation_id=conversation_id,
-        ))
+        )
 
         return InitSessionResponse(
             status='ok',
