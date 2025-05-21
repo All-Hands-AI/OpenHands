@@ -48,6 +48,8 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.integrations.service_types import AuthenticationError
+from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -158,8 +160,33 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         # Load mixins
+        # Create draft editor LLM if needed
+        draft_editor_llm = None
+        if config.get_agent_config().enable_llm_editor:
+            draft_editor_config = config.get_llm_config('draft_editor')
+
+            # manually set the model name for the draft editor LLM to distinguish token costs
+            llm_metrics = Metrics(
+                model_name='draft_editor:' + draft_editor_config.model
+            )
+            if draft_editor_config.caching_prompt:
+                logger.debug(
+                    'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
+                    'Automatically setting caching_prompt=false.'
+                )
+                draft_editor_config.caching_prompt = False
+
+            draft_editor_llm = LLM(
+                config=draft_editor_config,
+                conversation_id='draft_editor',
+                user_id='system',
+                metrics=llm_metrics,
+            )
+
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
+            self,
+            enable_llm_editor=config.get_agent_config().enable_llm_editor,
+            draft_editor_llm=draft_editor_llm,
         )
 
         self.user_id = user_id
