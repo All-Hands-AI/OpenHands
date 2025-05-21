@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
 
-def check_tools_for_llm_compatibility(
+def check_tools(
     tools: list['ChatCompletionToolParam'], llm_config: LLMConfig
 ) -> list['ChatCompletionToolParam']:
     """Checks and modifies tools for compatibility with the current LLM."""
