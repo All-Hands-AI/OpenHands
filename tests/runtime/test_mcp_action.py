@@ -267,12 +267,11 @@ async def test_both_stdio_and_sse_mcp(
 
 
 @pytest.mark.asyncio
-async def test_two_stdio_mcp(temp_dir, runtime_cls, run_as_openhands):
+async def test_microagent_and_one_stdio_mcp_in_config(
+    temp_dir, runtime_cls, run_as_openhands
+):
     runtime = None
     try:
-        fetch_config = MCPStdioServerConfig(
-            name='fetch', command='uvx', args=['mcp-server-fetch']
-        )
         filesystem_config = MCPStdioServerConfig(
             name='filesystem',
             command='npx',
@@ -281,8 +280,7 @@ async def test_two_stdio_mcp(temp_dir, runtime_cls, run_as_openhands):
                 '/',
             ],
         )
-
-        override_mcp_config = MCPConfig(stdio_servers=[fetch_config, filesystem_config])
+        override_mcp_config = MCPConfig(stdio_servers=[filesystem_config])
         runtime, config = _load_runtime(
             temp_dir,
             runtime_cls,
@@ -290,7 +288,17 @@ async def test_two_stdio_mcp(temp_dir, runtime_cls, run_as_openhands):
             override_mcp_config=override_mcp_config,
         )
 
-        # ======= Test SSE server =======
+        # NOTE: this simulate the case where the microagent adds a new stdio server to the runtime
+        # but that stdio server is not in the initial config
+        # Actual invocation of the microagent involves `add_mcp_tools_to_agent`
+        # which will call `get_updated_mcp_config` with the stdio server from microagent's config
+        fetch_config = MCPStdioServerConfig(
+            name='fetch', command='uvx', args=['mcp-server-fetch']
+        )
+        updated_config = runtime.get_updated_mcp_config([fetch_config])
+        logger.info(f'updated_config: {updated_config}')
+
+        # ======= Test the stdio server in the config =======
         mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '/'})
         obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
         logger.info(obs_sse, extra={'msg_type': 'OBSERVATION'})
@@ -299,7 +307,7 @@ async def test_two_stdio_mcp(temp_dir, runtime_cls, run_as_openhands):
         )
         assert '[FILE] .dockerenv' in obs_sse.content
 
-        # ======= Test stdio server =======
+        # ======= Test the stdio server added by the microagent =======
         # Test browser server
         action_cmd_http = CmdRunAction(
             command='python3 -m http.server 8000 > server.log 2>&1 &'
