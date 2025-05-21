@@ -450,8 +450,10 @@ describe("ConversationCard", () => {
   
   it("should call export trajectory when clicking the export trajectory button", async () => {
     const user = userEvent.setup();
-    const getTrajectoryMock = useGetTrajectory as jest.Mock;
-    const downloadTrajectoryMock = downloadTrajectory as jest.Mock;
+    const getTrajectoryMock = useGetTrajectory as unknown as { 
+      (): { mutate: vi.Mock };
+    };
+    const downloadTrajectoryMock = downloadTrajectory as vi.Mock;
     
     renderWithProviders(
       <ConversationCard
