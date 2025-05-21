@@ -1887,6 +1887,38 @@
         "tr": "GitHub'da Görevler Öner",
         "uk": "Запропонувати завдання на GitHub"
     },
+    "SETTINGS$ENABLE_BROWSING": {
+        "en": "Enable Browsing",
+        "ja": "ブラウジングを有効にする",
+        "zh-CN": "启用浏览",
+        "zh-TW": "啟用瀏覽",
+        "ko-KR": "브라우징 활성화",
+        "no": "Aktiver surfing",
+        "it": "Abilita navigazione",
+        "pt": "Ativar navegação",
+        "es": "Habilitar navegación",
+        "ar": "تمكين التصفح",
+        "fr": "Activer la navigation",
+        "tr": "Taramayı Etkinleştir",
+        "de": "Browsing aktivieren",
+        "uk": "Увімкнути перегляд"
+    },
+    "SETTINGS$BROWSING_TOOLTIP": {
+        "en": "Affects new conversations only. Disables interactive browsing (clicking, dragging) but web page fetching remains available.",
+        "ja": "新しい会話のみに影響します。インタラクティブなブラウジング（クリック、ドラッグ）を無効にしますが、Webページの取得は引き続き利用可能です。",
+        "zh-CN": "仅影响新对话。禁用交互式浏览（点击、拖动）但网页获取仍然可用。",
+        "zh-TW": "僅影響新對話。禁用互動式瀏覽（點擊、拖動）但網頁獲取仍然可用。",
+        "ko-KR": "새 대화에만 영향을 미칩니다. 대화형 브라우징(클릭, 드래그)을 비활성화하지만 웹 페이지 가져오기는 계속 사용할 수 있습니다.",
+        "no": "Påvirker bare nye samtaler. Deaktiverer interaktiv surfing (klikking, dra) men henting av nettsider forblir tilgjengelig.",
+        "it": "Influisce solo sulle nuove conversazioni. Disabilita la navigazione interattiva (clic, trascinamento) ma il recupero delle pagine web rimane disponibile.",
+        "pt": "Afeta apenas novas conversas. Desativa a navegação interativa (cliques, arrastar) mas a busca de páginas web permanece disponível.",
+        "es": "Afecta solo a nuevas conversaciones. Deshabilita la navegación interactiva (clic, arrastre) pero la obtención de páginas web sigue disponible.",
+        "ar": "يؤثر على المحادثات الجديدة فقط. يعطل التصفح التفاعلي (النقر، السحب) ولكن يظل جلب صفحات الويب متاحًا.",
+        "fr": "Affecte uniquement les nouvelles conversations. Désactive la navigation interactive (clic, glisser) mais la récupération de pages web reste disponible.",
+        "tr": "Yalnızca yeni konuşmaları etkiler. Etkileşimli taramayı (tıklama, sürükleme) devre dışı bırakır ancak web sayfası getirme kullanılabilir kalır.",
+        "de": "Betrifft nur neue Gespräche. Deaktiviert interaktives Browsen (Klicken, Ziehen), aber das Abrufen von Webseiten bleibt verfügbar.",
+        "uk": "Впливає лише на нові розмови. Вимикає інтерактивний перегляд (клацання, перетягування), але отримання веб-сторінок залишається доступним."
+    },
     "SETTINGS$CUSTOM_MODEL": {
         "en": "Custom Model",
         "ja": "カスタムモデル",

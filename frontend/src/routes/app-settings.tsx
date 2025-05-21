@@ -172,10 +172,10 @@ function AppSettingsScreen() {
               defaultIsToggled={!!settings.ENABLE_BROWSING}
               onToggle={checkIfBrowsingSwitchHasChanged}
             >
-              {t("Enable Browsing")}
+              {t(I18nKey.SETTINGS$ENABLE_BROWSING)}
             </SettingsSwitch>
             <Tooltip
-              content="Affects new conversations only. Disables interactive browsing (clicking, dragging) but web page fetching remains available."
+              content={t(I18nKey.SETTINGS$BROWSING_TOOLTIP)}
               placement="right"
               className="max-w-xs"
             >
