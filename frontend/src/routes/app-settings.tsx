@@ -175,8 +175,9 @@ function AppSettingsScreen() {
               {t("Enable Browsing")}
             </SettingsSwitch>
             <Tooltip 
-              content="This change will only take effect on new conversations. This will only disable the interactive browsing capability (e.g., click, drag on a webpage, and see screenshots from webpage), but the ability to fetch web pages will remain intact."
+              content="New conversations only: Disables interactive webpage features but preserves content fetching."
               placement="right"
+              className="max-w-xs"
             >
               <div className="cursor-help text-xs text-gray-500 rounded-full border border-gray-300 w-5 h-5 flex items-center justify-center">
                 ?
