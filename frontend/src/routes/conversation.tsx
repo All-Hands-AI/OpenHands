@@ -1,6 +1,6 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -13,10 +13,8 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
@@ -32,15 +30,15 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
+import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
   useConversationConfig();
@@ -50,12 +48,10 @@ function AppContent() {
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
-  const endSession = useEndSession();
+  const navigate = useNavigate();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -67,30 +63,16 @@ function AppContent() {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
-      endSession();
+      navigate("/");
     }
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
-    }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
@@ -113,6 +95,8 @@ function AppContent() {
   } = useDisclosure();
 
   function renderMain() {
+    const basePath = `/conversations/${conversationId}`;
+
     if (width <= 640) {
       return (
         <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
@@ -155,10 +139,8 @@ function AppContent() {
                       e.stopPropagation();
                       if (conversationId) {
                         try {
-                          const response = await fetch(
-                            `/api/conversations/${conversationId}/vscode-url`,
-                          );
-                          const data = await response.json();
+                          const data =
+                            await OpenHands.getVSCodeUrl(conversationId);
                           if (data.vscode_url) {
                             const transformedUrl = transformVSCodeUrl(
                               data.vscode_url,
@@ -197,7 +179,10 @@ function AppContent() {
               },
             ]}
           >
-            <Outlet />
+            {/* Use both Outlet and TabContent */}
+            <div className="h-full w-full">
+              <TabContent conversationPath={basePath} />
+            </div>
           </Container>
         }
       />

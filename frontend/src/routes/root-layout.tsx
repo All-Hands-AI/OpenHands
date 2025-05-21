@@ -5,7 +5,6 @@ import {
   Outlet,
   useNavigate,
   useLocation,
-  useSearchParams,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -15,6 +14,7 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
+import { ReauthModal } from "#/components/features/waitlist/reauth-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
@@ -22,6 +22,9 @@ import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
+import { useTrackLastPage } from "#/hooks/use-track-last-page";
+import { useAutoLogin } from "#/hooks/use-auto-login";
+import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -59,10 +62,9 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const tosPageStatus = useIsOnTosPage();
-  const [searchParams] = useSearchParams();
+  const isOnTosPage = useIsOnTosPage();
   const { data: settings } = useSettings();
-  const { error, isFetching } = useBalance();
+  const { error } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
 
@@ -70,7 +72,7 @@ export default function MainApp() {
   const {
     data: isAuthed,
     isFetching: isFetchingAuth,
-    isError: authError,
+    isError: isAuthError,
   } = useIsAuthed();
 
   // Always call the hook, but we'll only use the result when not on TOS page
@@ -80,30 +82,36 @@ export default function MainApp() {
   });
 
   // When on TOS page, we don't use the GitHub auth URL
-  const effectiveGitHubAuthUrl = tosPageStatus ? null : gitHubAuthUrl;
+  const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
+  // Track the last visited page
+  useTrackLastPage();
+
+  // Auto-login if login method is stored in local storage
+  useAutoLogin();
+
   React.useEffect(() => {
     // Don't change language when on TOS page
-    if (!tosPageStatus && settings?.LANGUAGE) {
+    if (!isOnTosPage && settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings?.LANGUAGE, tosPageStatus]);
+  }, [settings?.LANGUAGE, isOnTosPage]);
 
   React.useEffect(() => {
     // Don't show consent form when on TOS page
-    if (!tosPageStatus) {
+    if (!isOnTosPage) {
       const consentFormModalIsOpen =
         settings?.USER_CONSENTS_TO_ANALYTICS === null;
 
       setConsentFormIsOpen(consentFormModalIsOpen);
     }
-  }, [settings, tosPageStatus]);
+  }, [settings, isOnTosPage]);
 
   React.useEffect(() => {
     // Don't migrate user consent when on TOS page
-    if (!tosPageStatus) {
+    if (!isOnTosPage) {
       // Migrate user consent to the server if it was previously stored in localStorage
       migrateUserConsent({
         handleAnalyticsWasPresentInLocalStorage: () => {
@@ -111,37 +119,46 @@ export default function MainApp() {
         },
       });
     }
-  }, [tosPageStatus]);
+  }, [isOnTosPage]);
+
+  React.useEffect(() => {
+    if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
+      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
+    }
+  }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
 
   React.useEffect(() => {
     // Don't do any redirects when on TOS page
-    if (!tosPageStatus) {
-      // Don't allow users to use the app if it 402s
-      if (error?.status === 402 && pathname !== "/") {
-        navigate("/");
-      } else if (
-        !isFetching &&
-        searchParams.get("free_credits") === "success"
-      ) {
-        displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
-        searchParams.delete("free_credits");
-        navigate("/");
-      }
+    // Don't allow users to use the app if it 402s
+    if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
+      navigate("/");
     }
-  }, [error?.status, pathname, isFetching, tosPageStatus]);
+  }, [error?.status, pathname, isOnTosPage]);
 
-  // When on TOS page, we don't make any API calls, so we need to handle this case
-  const userIsAuthed = tosPageStatus ? false : !!isAuthed && !authError;
+  // Check if login method exists in local storage
+  const loginMethodExists = React.useMemo(() => {
+    // Only check localStorage if we're in a browser environment
+    if (typeof window !== "undefined" && window.localStorage) {
+      return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
+    }
+    return false;
+  }, []);
 
-  // Only show the auth modal if:
-  // 1. User is not authenticated
-  // 2. We're not currently on the TOS page
-  // 3. We're in SaaS mode
   const renderAuthModal =
+    !isAuthed &&
+    !isAuthError &&
     !isFetchingAuth &&
-    !userIsAuthed &&
-    !tosPageStatus &&
-    config.data?.APP_MODE === "saas";
+    !isOnTosPage &&
+    config.data?.APP_MODE === "saas" &&
+    !loginMethodExists; // Don't show auth modal if login method exists in local storage
+
+  const renderReAuthModal =
+    !isAuthed &&
+    !isAuthError &&
+    !isFetchingAuth &&
+    !isOnTosPage &&
+    config.data?.APP_MODE === "saas" &&
+    loginMethodExists;
 
   return (
     <div
@@ -163,6 +180,7 @@ export default function MainApp() {
           appMode={config.data?.APP_MODE}
         />
       )}
+      {renderReAuthModal && <ReauthModal />}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {

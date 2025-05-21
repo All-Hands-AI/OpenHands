@@ -1,9 +1,16 @@
 import copy
 import os
+import sys
 from collections import deque
+from typing import TYPE_CHECKING
 
-from litellm import ChatCompletionToolParam
+if TYPE_CHECKING:
+    from litellm import ChatCompletionToolParam
 
+    from openhands.events.action import Action
+    from openhands.llm.llm import ModelResponse
+
+from openhands.llm.llm_utils import check_tools
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
@@ -14,13 +21,12 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
-from openhands.agenthub.codeact_agent.tools.web_read import WebReadTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.action import Action, AgentFinishAction, MessageAction
+from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
@@ -75,13 +81,9 @@ class CodeActAgent(Agent):
         - config (AgentConfig): The configuration for this agent
         """
         super().__init__(llm, config)
-        self.pending_actions: deque[Action] = deque()
+        self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
-
-        self.prompt_manager = PromptManager(
-            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-        )
 
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
@@ -89,9 +91,16 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
-        self.response_to_actions_fn = codeact_function_calling.response_to_actions
+    @property
+    def prompt_manager(self) -> PromptManager:
+        if self._prompt_manager is None:
+            self._prompt_manager = PromptManager(
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+            )
 
-    def _get_tools(self) -> list[ChatCompletionToolParam]:
+        return self._prompt_manager
+
+    def _get_tools(self) -> list['ChatCompletionToolParam']:
         # For these models, we use short tool descriptions ( < 1024 tokens)
         # to avoid hitting the OpenAI token limit for tool descriptions.
         SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
@@ -111,8 +120,10 @@ class CodeActAgent(Agent):
         if self.config.enable_finish:
             tools.append(FinishTool)
         if self.config.enable_browsing:
-            tools.append(WebReadTool)
-            tools.append(BrowserTool)
+            if sys.platform == 'win32':
+                logger.warning('Windows runtime does not support browsing yet')
+            else:
+                tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:
@@ -130,7 +141,7 @@ class CodeActAgent(Agent):
         super().reset()
         self.pending_actions.clear()
 
-    def step(self, state: State) -> Action:
+    def step(self, state: State) -> 'Action':
         """Performs one step using the CodeAct Agent.
 
         This includes gathering info on previous steps and prompting the model to make a command to execute.
@@ -175,32 +186,11 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        params['tools'] = self.tools
-
-        # Special handling for Gemini model which doesn't support default fields
-        if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
-            logger.info(
-                f'Removing the default fields from tools for {self.llm.config.model} '
-                "since it doesn't support them and the request would crash."
-            )
-            # prevent mutation of input tools
-            params['tools'] = copy.deepcopy(params['tools'])
-            # Strip off default fields that cause errors with gemini-preview
-            for tool in params['tools']:
-                if 'function' in tool and 'parameters' in tool['function']:
-                    if 'properties' in tool['function']['parameters']:
-                        for prop_name, prop in tool['function']['parameters'][
-                            'properties'
-                        ].items():
-                            if 'default' in prop:
-                                del prop['default']
-        # log to litellm proxy if possible
+        params['tools'] = check_tools(self.tools, self.llm.config)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
-        actions = self.response_to_actions_fn(
-            response, mcp_tool_names=list(self.mcp_tools.keys())
-        )
+        actions = self.response_to_actions(response)
         logger.debug(f'Actions after response_to_actions: {actions}')
         for action in actions:
             self.pending_actions.append(action)
@@ -274,3 +264,8 @@ class CodeActAgent(Agent):
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
+
+    def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
+        return codeact_function_calling.response_to_actions(
+            response, mcp_tool_names=list(self.mcp_tools.keys())
+        )

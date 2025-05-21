@@ -2,11 +2,12 @@ import asyncio
 import os
 import shutil
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
 from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
@@ -17,6 +18,7 @@ from openhands.events.observation.agent import (
     RecallObservation,
     RecallType,
 )
+from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.stream import EventStream
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -24,7 +26,14 @@ from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 @pytest.fixture
@@ -73,6 +82,11 @@ def mock_agent():
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
+
+    agent.config = MagicMock()
+    agent.config.enable_mcp = False
+
+    return agent
 
 
 @pytest.mark.asyncio
@@ -189,11 +203,23 @@ async def test_memory_with_microagents():
     assert isinstance(observation, RecallObservation)
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
+
+    # We should have at least one microagent: flarglebargle (triggered by keyword)
+    # Note: The default-tools microagent might not be loaded in tests
     assert len(observation.microagent_knowledge) == 1
+
+    # Find the flarglebargle microagent in the list
+    flarglebargle_knowledge = None
+    for knowledge in observation.microagent_knowledge:
+        if knowledge.name == derived_name:
+            flarglebargle_knowledge = knowledge
+            break
+
     # Check against the derived name
-    assert observation.microagent_knowledge[0].name == derived_name
-    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
-    assert 'magic word' in observation.microagent_knowledge[0].content
+    assert flarglebargle_knowledge is not None
+    assert flarglebargle_knowledge.name == derived_name
+    assert flarglebargle_knowledge.trigger == 'flarglebargle'
+    assert 'magic word' in flarglebargle_knowledge.content
 
 
 def test_memory_repository_info(prompt_dir, file_store):
@@ -319,11 +345,163 @@ async def test_memory_with_agent_microagents():
     assert isinstance(observation, RecallObservation)
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE
+
+    # We should have at least one microagent: flarglebargle (triggered by keyword)
+    # Note: The default-tools microagent might not be loaded in tests
     assert len(observation.microagent_knowledge) == 1
+
+    # Find the flarglebargle microagent in the list
+    flarglebargle_knowledge = None
+    for knowledge in observation.microagent_knowledge:
+        if knowledge.name == derived_name:
+            flarglebargle_knowledge = knowledge
+            break
+
     # Check against the derived name
-    assert observation.microagent_knowledge[0].name == derived_name
-    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
-    assert 'magic word' in observation.microagent_knowledge[0].content
+    assert flarglebargle_knowledge is not None
+    assert flarglebargle_knowledge.name == derived_name
+    assert flarglebargle_knowledge.trigger == 'flarglebargle'
+    assert 'magic word' in flarglebargle_knowledge.content
+
+
+@pytest.mark.asyncio
+async def test_custom_secrets_descriptions():
+    """Test that custom_secrets_descriptions are properly stored in memory and included in RecallObservation."""
+    # Create a mock event stream
+    event_stream = MagicMock(spec=EventStream)
+
+    # Initialize Memory
+    memory = Memory(
+        event_stream=event_stream,
+        sid='test-session',
+    )
+
+    # Create a mock runtime with custom secrets descriptions
+    mock_runtime = MagicMock()
+    mock_runtime.web_hosts = {'test-host.example.com': 8080}
+    mock_runtime.additional_agent_instructions = 'Test instructions'
+
+    # Define custom secrets descriptions
+    custom_secrets = {
+        'API_KEY': 'API key for external service',
+        'DATABASE_URL': 'Connection string for the database',
+        'SECRET_TOKEN': 'Authentication token for secure operations',
+    }
+
+    # Set runtime info with custom secrets
+    memory.set_runtime_info(mock_runtime, custom_secrets)
+
+    # Set repository info
+    memory.set_repository_info('test-owner/test-repo', '/workspace/test-repo')
+
+    # Create a workspace context recall action
+    recall_action = RecallAction(
+        query='Initial message', recall_type=RecallType.WORKSPACE_CONTEXT
+    )
+    recall_action._source = EventSource.USER  # type: ignore[attr-defined]
+
+    # Mock the event_stream.add_event method
+    added_events = []
+
+    def mock_add_event(event, source):
+        added_events.append((event, source))
+
+    event_stream.add_event = mock_add_event
+
+    # Process the recall action
+    await memory._on_event(recall_action)
+
+    # Verify a RecallObservation was added to the event stream
+    assert len(added_events) == 1
+    observation, source = added_events[0]
+
+    # Verify the observation is a RecallObservation
+    assert isinstance(observation, RecallObservation)
+    assert source == EventSource.ENVIRONMENT
+    assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
+
+    # Verify custom_secrets_descriptions are included in the observation
+    assert observation.custom_secrets_descriptions == custom_secrets
+
+    # Verify repository info is included
+    assert observation.repo_name == 'test-owner/test-repo'
+    assert observation.repo_directory == '/workspace/test-repo'
+
+    # Verify runtime info is included
+    assert observation.runtime_hosts == {'test-host.example.com': 8080}
+    assert observation.additional_agent_instructions == 'Test instructions'
+
+
+def test_custom_secrets_descriptions_serialization(prompt_dir):
+    """Test that custom_secrets_descriptions are properly serialized in the message for the LLM."""
+    # Create a PromptManager with the test prompt directory
+    prompt_manager = PromptManager(prompt_dir)
+
+    # Create a RuntimeInfo with custom_secrets_descriptions
+    custom_secrets = {
+        'API_KEY': 'API key for external service',
+        'DATABASE_URL': 'Connection string for the database',
+        'SECRET_TOKEN': 'Authentication token for secure operations',
+    }
+    runtime_info = RuntimeInfo(
+        date='2025-05-15',
+        available_hosts={'test-host.example.com': 8080},
+        additional_agent_instructions='Test instructions',
+        custom_secrets_descriptions=custom_secrets,
+    )
+
+    # Create a RepositoryInfo
+    repository_info = RepositoryInfo(
+        repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
+    )
+
+    conversation_instructions = ConversationInstructions(
+        content='additional agent context for the task'
+    )
+
+    # Build the workspace context message
+    workspace_context = prompt_manager.build_workspace_context(
+        repository_info=repository_info,
+        runtime_info=runtime_info,
+        repo_instructions='Test repository instructions',
+        conversation_instructions=conversation_instructions,
+    )
+
+    # Verify that the workspace context includes the custom_secrets_descriptions
+    assert '<CUSTOM_SECRETS>' in workspace_context
+    for secret_name, secret_description in custom_secrets.items():
+        assert f'$**{secret_name}**' in workspace_context
+        assert secret_description in workspace_context
+
+    assert '<CONVERSATION_INSTRUCTIONS>' in workspace_context
+    assert 'additional agent context for the task' in workspace_context
+
+
+def test_serialization_deserialization_with_custom_secrets():
+    """Test that RecallObservation can be serialized and deserialized with custom_secrets_descriptions."""
+    # This simulates an older version of the RecallObservation
+    legacy_observation = {
+        'message': 'Added workspace context',
+        'observation': 'recall',
+        'content': 'Test content',
+        'extras': {
+            'recall_type': 'workspace_context',
+            'repo_name': 'test-owner/test-repo',
+            'repo_directory': '/workspace/test-repo',
+            'repo_instructions': 'Test repository instructions',
+            'runtime_hosts': {'test-host.example.com': 8080},
+            'additional_agent_instructions': 'Test instructions',
+            'date': '2025-05-15',
+            'microagent_knowledge': [],  # Intentionally omitting custom_secrets_descriptions
+        },
+    }
+
+    legacy_observation = observation_from_dict(legacy_observation)
+
+    # Verify that the observation was created successfully
+    assert legacy_observation.recall_type == RecallType.WORKSPACE_CONTEXT
+    assert legacy_observation.repo_name == 'test-owner/test-repo'
+    assert legacy_observation.repo_directory == '/workspace/test-repo'
 
 
 def test_memory_multiple_repo_microagents(prompt_dir, file_store):
@@ -408,3 +586,54 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'))
     os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'))
+
+
+@pytest.mark.asyncio
+async def test_conversation_instructions_plumbed_to_memory(
+    mock_agent, event_stream, file_store
+):
+    # Setup
+    session = AgentSession(
+        sid='test-session',
+        file_store=file_store,
+    )
+
+    # Create a mock runtime and set it up
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
+
+    # Mock the runtime creation to set up the runtime attribute
+    async def mock_create_runtime(*args, **kwargs):
+        session.runtime = mock_runtime
+        return True
+
+    session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
+
+    # Create a spy on set_initial_state
+    class SpyAgentController(AgentController):
+        set_initial_state_call_count = 0
+        test_initial_state = None
+
+        def set_initial_state(self, *args, state=None, **kwargs):
+            self.set_initial_state_call_count += 1
+            self.test_initial_state = state
+            super().set_initial_state(*args, state=state, **kwargs)
+
+    # Patch AgentController
+    with (
+        patch(
+            'openhands.server.session.agent_session.AgentController', SpyAgentController
+        ),
+    ):
+        await session.start(
+            runtime_name='test-runtime',
+            config=AppConfig(),
+            agent=mock_agent,
+            max_iterations=10,
+            conversation_instructions='instructions for conversation',
+        )
+
+        # Use the memory instance from the session, not the fixture
+        assert (
+            session.memory.conversation_instructions.content
+            == 'instructions for conversation'
+        )

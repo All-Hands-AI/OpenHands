@@ -8,7 +8,7 @@ from openhands.server import shared
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import UserAuth
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.settings.secret_store import SecretsStore
+from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 
@@ -29,7 +29,7 @@ class DefaultUserAuth(UserAuth):
         """The default implementation does not support multi tenancy, so access_token is always None"""
         return None
 
-    async def get_user_settings_store(self):
+    async def get_user_settings_store(self) -> SettingsStore:
         settings_store = self._settings_store
         if settings_store:
             return settings_store
@@ -37,6 +37,8 @@ class DefaultUserAuth(UserAuth):
         settings_store = await shared.SettingsStoreImpl.get_instance(
             shared.config, user_id
         )
+        if settings_store is None:
+            raise ValueError('Failed to get settings store instance')
         self._settings_store = settings_store
         return settings_store
 
@@ -49,7 +51,7 @@ class DefaultUserAuth(UserAuth):
         self._settings = settings
         return settings
 
-    async def get_secrets_store(self):
+    async def get_secrets_store(self) -> SecretsStore:
         secrets_store = self._secrets_store
         if secrets_store:
             return secrets_store
@@ -57,6 +59,8 @@ class DefaultUserAuth(UserAuth):
         secret_store = await shared.SecretsStoreImpl.get_instance(
             shared.config, user_id
         )
+        if secret_store is None:
+            raise ValueError('Failed to get secrets store instance')
         self._secrets_store = secret_store
         return secret_store
 
@@ -69,11 +73,11 @@ class DefaultUserAuth(UserAuth):
         self._user_secrets = user_secrets
         return user_secrets
 
-
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
-        secrets_store = await self.get_user_secrets()
-        provider_tokens = getattr(secrets_store, 'provider_tokens', None)
-        return provider_tokens
+        user_secrets = await self.get_user_secrets()
+        if user_secrets is None:
+            return None
+        return user_secrets.provider_tokens
 
     @classmethod
     async def get_instance(cls, request: Request) -> UserAuth:

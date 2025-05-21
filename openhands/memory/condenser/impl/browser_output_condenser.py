@@ -28,7 +28,7 @@ class BrowserOutputCondenser(Condenser):
             ):
                 results.append(
                     AgentCondensationObservation(
-                        f'Current URL: {event.url}\nContent Omitted'
+                        f'Visited URL {event.url}\nContent omitted'
                     )
                 )
             else:

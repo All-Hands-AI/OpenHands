@@ -1,33 +1,38 @@
 # Sandbox Personalizado
 
+:::note
+Este guia é para usuários que gostariam de usar sua própria imagem Docker personalizada para o runtime. Por exemplo,
+com certas ferramentas ou linguagens de programação pré-instaladas.
+:::
+
 O sandbox é onde o agente realiza suas tarefas. Em vez de executar comandos diretamente no seu computador
 (o que poderia ser arriscado), o agente os executa dentro de um contêiner Docker.
 
 O sandbox padrão do OpenHands (`python-nodejs:python3.12-nodejs22`
-do [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) vem com alguns pacotes instalados, como
+do [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) vem com alguns pacotes instalados como
 python e Node.js, mas pode precisar de outros softwares instalados por padrão.
 
 Você tem duas opções para personalização:
 
 - Usar uma imagem existente com o software necessário.
-- Criar sua própria imagem personalizada do Docker.
+- Criar sua própria imagem Docker personalizada.
 
-Se você escolher a primeira opção, pode pular a seção `Crie Sua Imagem Docker`.
+Se você escolher a primeira opção, pode pular a seção `Criar Sua Imagem Docker`.
 
-## Crie Sua Imagem Docker
+## Criar Sua Imagem Docker
 
-Para criar uma imagem personalizada do Docker, ela deve ser baseada no Debian.
+Para criar uma imagem Docker personalizada, ela deve ser baseada em Debian.
 
-Por exemplo, se você quiser que o OpenHands tenha o `ruby` instalado, você pode criar um `Dockerfile` com o seguinte conteúdo:
+Por exemplo, se você quiser que o OpenHands tenha `ruby` instalado, você poderia criar um `Dockerfile` com o seguinte conteúdo:
 
 ```dockerfile
 FROM nikolaik/python-nodejs:python3.12-nodejs22
 
-# Instalar pacotes necessários
+# Install required packages
 RUN apt-get update && apt-get install -y ruby
 ```
 
-Ou você pode usar uma imagem base específica do Ruby:
+Ou você poderia usar uma imagem base específica para Ruby:
 
 ```dockerfile
 FROM ruby:latest
@@ -56,12 +61,12 @@ docker run -it --rm --pull=always \
 
 ### Configuração
 
-Primeiro, certifique-se de que você pode executar o OpenHands seguindo as instruções em [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+Primeiro, certifique-se de que pode executar o OpenHands seguindo as instruções em [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-### Especifique a Imagem Base do Sandbox
+### Especificar a Imagem Base do Sandbox
 
-No arquivo `config.toml` dentro do diretório OpenHands, defina `base_container_image` como a imagem que você deseja usar.
-Isso pode ser uma imagem que você já baixou ou uma que você construiu:
+No arquivo `config.toml` dentro do diretório OpenHands, defina o `base_container_image` para a imagem que você deseja usar.
+Pode ser uma imagem que você já baixou ou uma que você construiu:
 
 ```bash
 [core]
@@ -76,22 +81,22 @@ O arquivo `config.toml` suporta várias outras opções para personalizar seu sa
 
 ```toml
 [core]
-# Instalar dependências adicionais quando o runtime for construído
-# Pode conter quaisquer comandos shell válidos
-# Se você precisar do caminho para o interpretador Python em qualquer um desses comandos, pode usar a variável $OH_INTERPRETER_PATH
+# Install additional dependencies when the runtime is built
+# Can contain any valid shell commands
+# If you need the path to the Python interpreter in any of these commands, you can use the $OH_INTERPRETER_PATH variable
 runtime_extra_deps = """
 pip install numpy pandas
 apt-get update && apt-get install -y ffmpeg
 """
 
-# Definir variáveis de ambiente para o runtime
-# Útil para configuração que precisa estar disponível em tempo de execução
+# Set environment variables for the runtime
+# Useful for configuration that needs to be available at runtime
 runtime_startup_env_vars = { DATABASE_URL = "postgresql://user:pass@localhost/db" }
 
-# Especificar a plataforma para builds de várias arquiteturas (por exemplo, "linux/amd64" ou "linux/arm64")
+# Specify platform for multi-architecture builds (e.g., "linux/amd64" or "linux/arm64")
 platform = "linux/amd64"
 ```
 
 ### Executar
 
-Execute o OpenHands executando ```make run``` no diretório de nível superior.
+Execute o OpenHands rodando ```make run``` no diretório de nível superior.

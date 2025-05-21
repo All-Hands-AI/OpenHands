@@ -10,6 +10,7 @@ import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitRepository, GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
+import { SECRETS_HANDLERS } from "./secrets-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -25,6 +26,8 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   provider_tokens_set: DEFAULT_SETTINGS.PROVIDER_TOKENS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
+  enable_proactive_conversation_starters:
+    DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
 };
 
@@ -51,6 +54,8 @@ const conversations: Conversation[] = [
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
+    url: null,
+    session_api_key: null,
   },
   {
     conversation_id: "2",
@@ -62,6 +67,8 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    url: null,
+    session_api_key: null,
   },
   {
     conversation_id: "3",
@@ -73,6 +80,8 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    url: null,
+    session_api_key: null,
   },
 ];
 
@@ -90,7 +99,7 @@ const openHandsHandlers = [
       "gpt-4o",
       "gpt-4o-mini",
       "anthropic/claude-3.5",
-      "anthropic/claude-3-5-sonnet-20241022",
+      "anthropic/claude-3-7-sonnet-20250219",
     ]),
   ),
 
@@ -116,6 +125,7 @@ export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
   ...FILE_SERVICE_HANDLERS,
   ...TASK_SUGGESTIONS_HANDLERS,
+  ...SECRETS_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/user/repositories", () => {
     const data: GitRepository[] = [
@@ -162,7 +172,7 @@ export const handlers = [
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
       STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
-        ENABLE_BILLING: mockSaas,
+        ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
       },
     };
@@ -207,8 +217,6 @@ export const handlers = [
   http.post("/api/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),
   ),
-
-  http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
   http.get("/api/conversations", async () => {
     const values = Array.from(CONVERSATIONS.values());
@@ -265,6 +273,8 @@ export const handlers = [
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",
+      url: null,
+      session_api_key: null,
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);

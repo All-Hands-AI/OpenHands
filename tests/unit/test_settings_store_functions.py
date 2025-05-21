@@ -15,7 +15,7 @@ from openhands.server.settings import POSTProviderModel
 from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
-from openhands.storage.settings.file_secrets_store import FileSecretsStore
+from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 
 # Mock functions to simulate the actual functions in settings.py
@@ -47,7 +47,7 @@ def file_secrets_store(temp_dir):
     file_store = get_file_store('local', temp_dir)
     store = FileSecretsStore(file_store)
     with patch(
-        'openhands.storage.settings.file_secrets_store.FileSecretsStore.get_instance',
+        'openhands.storage.secrets.file_secrets_store.FileSecretsStore.get_instance',
         AsyncMock(return_value=store),
     ):
         yield store
@@ -60,13 +60,16 @@ async def test_check_provider_tokens_valid():
     provider_token = ProviderToken(token=SecretStr('valid-token'))
     providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
     # Mock the validate_provider_token function to return GITHUB for valid tokens
     with patch(
         'openhands.server.routes.secrets.validate_provider_token'
     ) as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
-        result = await check_provider_tokens(providers)
+        result = await check_provider_tokens(providers, existing_provider_tokens)
 
         # Should return empty string for valid token
         assert result == ''
@@ -79,13 +82,16 @@ async def test_check_provider_tokens_invalid():
     provider_token = ProviderToken(token=SecretStr('invalid-token'))
     providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
     # Mock the validate_provider_token function to return None for invalid tokens
     with patch(
         'openhands.server.routes.secrets.validate_provider_token'
     ) as mock_validate:
         mock_validate.return_value = None
 
-        result = await check_provider_tokens(providers)
+        result = await check_provider_tokens(providers, existing_provider_tokens)
 
         # Should return error message for invalid token
         assert 'Invalid token' in result
@@ -98,7 +104,11 @@ async def test_check_provider_tokens_wrong_type():
     # We can't test with an unsupported provider type directly since the model enforces valid types
     # Instead, we'll test with an empty provider_tokens dictionary
     providers = POSTProviderModel(provider_tokens={})
-    result = await check_provider_tokens(providers)
+
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
+    result = await check_provider_tokens(providers, existing_provider_tokens)
 
     # Should return empty string for no providers
     assert result == ''
@@ -109,7 +119,10 @@ async def test_check_provider_tokens_no_tokens():
     """Test check_provider_tokens with no tokens."""
     providers = POSTProviderModel(provider_tokens={})
 
-    result = await check_provider_tokens(providers)
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
+    result = await check_provider_tokens(providers, existing_provider_tokens)
 
     # Should return empty string when no tokens provided
     assert result == ''

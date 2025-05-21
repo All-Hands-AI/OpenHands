@@ -48,6 +48,7 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
+        mcp_host: Host for OpenHands' default MCP server 
         mcp: MCP configuration settings.
     """
 
@@ -63,10 +64,12 @@ class AppConfig(BaseModel):
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
-    workspace_base: str | None = Field(default=None)
-    workspace_mount_path: str | None = Field(default=None)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace')
-    workspace_mount_rewrite: str | None = Field(default=None)
+
+    # Deprecated parameters - will be removed in a future version
+    workspace_base: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
+    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
@@ -90,6 +93,7 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
+    mcp_host: str = Field(default='localhost:3000')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     defaults_dict: ClassVar[dict] = {}
@@ -139,5 +143,6 @@ class AppConfig(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
+
         if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
             AppConfig.defaults_dict = model_defaults_to_dict(self)

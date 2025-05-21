@@ -4,6 +4,7 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { JupyterLine } from "#/utils/parse-cell-content";
+import { paragraph } from "../markdown/paragraph";
 
 interface JupyterCellOutputProps {
   lines: JupyterLine[];
@@ -23,10 +24,19 @@ export function JupyterCellOutput({ lines }: JupyterCellOutputProps) {
         {/* display the lines as plaintext or image */}
         {lines.map((line, index) => {
           if (line.type === "image") {
+            // Use markdown to display the image
+            const imageMarkdown = line.url
+              ? `![image](${line.url})`
+              : line.content;
             return (
               <div key={index}>
-                <Markdown urlTransform={(value: string) => value}>
-                  {line.content}
+                <Markdown
+                  components={{
+                    p: paragraph,
+                  }}
+                  urlTransform={(value: string) => value}
+                >
+                  {imageMarkdown}
                 </Markdown>
               </div>
             );

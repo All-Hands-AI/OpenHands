@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import AsyncExitStack
-from typing import Dict, List, Optional
+from typing import Optional
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -18,14 +18,18 @@ class MCPClient(BaseModel):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     description: str = 'MCP client tools for server interaction'
-    tools: List[MCPClientTool] = Field(default_factory=list)
-    tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
+    tools: list[MCPClientTool] = Field(default_factory=list)
+    tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
 
     async def connect_sse(
-        self, server_url: str, api_key: str | None = None, timeout: float = 30.0
+        self,
+        server_url: str,
+        api_key: str | None = None,
+        conversation_id: str | None = None,
+        timeout: float = 30.0,
     ) -> None:
         """Connect to an MCP server using SSE transport.
 
@@ -41,9 +45,14 @@ class MCPClient(BaseModel):
         try:
             # Use asyncio.wait_for to enforce the timeout
             async def connect_with_timeout():
+                headers = {'Authorization': f'Bearer {api_key}'} if api_key else {}
+
+                if conversation_id:
+                    headers['X-OpenHands-Conversation-ID'] = conversation_id
+
                 streams_context = sse_client(
                     url=server_url,
-                    headers={'Authorization': f'Bearer {api_key}'} if api_key else None,
+                    headers=headers if headers else None,
                     timeout=timeout,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
@@ -91,7 +100,7 @@ class MCPClient(BaseModel):
             f'Connected to server with tools: {[tool.name for tool in response.tools]}'
         )
 
-    async def call_tool(self, tool_name: str, args: Dict):
+    async def call_tool(self, tool_name: str, args: dict):
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')

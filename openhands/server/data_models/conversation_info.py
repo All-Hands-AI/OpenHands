@@ -18,4 +18,7 @@ class ConversationInfo:
     status: ConversationStatus = ConversationStatus.STOPPED
     selected_repository: str | None = None
     trigger: ConversationTrigger | None = None
+    num_connections: int = 0
+    url: str | None = None
+    session_api_key: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
