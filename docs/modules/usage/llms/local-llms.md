@@ -73,7 +73,7 @@ docker run -it --rm --pull=always \
 Once your server is running -- you can visit `http://localhost:3000` in your browser to use OpenHands with local Devstral model:
 ```
 Digest: sha256:e72f9baecb458aedb9afc2cd5bc935118d1868719e55d50da73190d3a85c674f
-Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.38
+Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.39
 Starting OpenHands...
 Running OpenHands as root
 14:22:13 - openhands:INFO: server_config.py:50 - Using config class None
