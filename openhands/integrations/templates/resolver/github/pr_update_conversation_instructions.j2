@@ -1,0 +1,21 @@
+You are checked out to branch {{ branch_name }}, which has an open PR #{{ pr_number }}.
+A comment on the PR has been addressed to you. Do NOT respond to this comment via the GitHub API.
+
+{% if file_location %} The comment is in the file `{{ file_location }}` on line #{{ line_number }}{% endif %}.
+
+# Steps to Handle the Comment
+
+## Understand the PR Context
+Use the GitHub API to:
+    1. Retrieve the diff against main to understand the changes
+    2. Fetch the PR body and the linked issue for context
+
+## Process the Comment
+If it's a question:
+    1. Answer the question asked
+    2. DO NOT leave any comments on the PR
+
+If it requests a code update:
+    1. Modify the code accordingly in the current branch
+    2. Push the changes to update the PR
+    3. DO NOT leave any comments on the PR
