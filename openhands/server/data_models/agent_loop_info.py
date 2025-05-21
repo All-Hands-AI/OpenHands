@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from openhands.events.event_store_abc import EventStoreABC
+from openhands.storage.data_models.conversation_status import ConversationStatus
 
 
 @dataclass
@@ -11,4 +12,5 @@ class AgentLoopInfo:
     conversation_id: str
     url: str | None
     session_api_key: str | None
-    event_store: EventStoreABC
+    event_store: EventStoreABC | None
+    status: ConversationStatus = field(default=ConversationStatus.RUNNING)
