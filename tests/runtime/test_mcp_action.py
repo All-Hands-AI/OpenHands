@@ -8,6 +8,7 @@ import time
 import docker
 import pytest
 from conftest import (
+    close_test_runtime,
     create_runtime_and_config,
 )
 
@@ -123,40 +124,42 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = create_runtime_and_config(
         temp_dir, runtime_cls, run_as_openhands, override_mcp_config=override_mcp_config
     )
+    try:
+        # Test browser server
+        action_cmd = CmdRunAction(
+            command='python3 -m http.server 8000 > server.log 2>&1 &'
+        )
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    # Test browser server
-    action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
-    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action_cmd)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert '[1]' in obs.content
 
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-    assert '[1]' in obs.content
+        action_cmd = CmdRunAction(command='sleep 3 && cat server.log')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
 
-    action_cmd = CmdRunAction(command='sleep 3 && cat server.log')
-    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action_cmd)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
+        mcp_action = MCPAction(name='fetch', arguments={'url': 'http://localhost:8000'})
+        obs = await runtime.call_tool_mcp(mcp_action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, MCPObservation), (
+            'The observation should be a MCPObservation.'
+        )
 
-    mcp_action = MCPAction(name='fetch', arguments={'url': 'http://localhost:8000'})
-    obs = await runtime.call_tool_mcp(mcp_action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, MCPObservation), (
-        'The observation should be a MCPObservation.'
-    )
-
-    result_json = json.loads(obs.content)
-    assert not result_json['isError']
-    assert len(result_json['content']) == 1
-    assert result_json['content'][0]['type'] == 'text'
-    assert (
-        result_json['content'][0]['text']
-        == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
-    )
-
-    runtime.close()
+        result_json = json.loads(obs.content)
+        assert not result_json['isError']
+        assert len(result_json['content']) == 1
+        assert result_json['content'][0]['type'] == 'text'
+        assert (
+            result_json['content'][0]['text']
+            == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+        )
+    finally:
+        close_test_runtime(runtime)
 
 
 @pytest.mark.asyncio
@@ -196,25 +199,23 @@ async def test_both_stdio_and_sse_mcp(
 ):
     sse_server_info = sse_mcp_docker_server
     sse_url = sse_server_info['url']
-    runtime = None
+    mcp_sse_server_config = MCPSSEServerConfig(url=sse_url)
+
+    # Also add stdio server
+    mcp_stdio_server_config = MCPStdioServerConfig(
+        name='fetch', command='uvx', args=['mcp-server-fetch']
+    )
+
+    override_mcp_config = MCPConfig(
+        sse_servers=[mcp_sse_server_config], stdio_servers=[mcp_stdio_server_config]
+    )
+    runtime, config = create_runtime_and_config(
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        override_mcp_config=override_mcp_config,
+    )
     try:
-        mcp_sse_server_config = MCPSSEServerConfig(url=sse_url)
-
-        # Also add stdio server
-        mcp_stdio_server_config = MCPStdioServerConfig(
-            name='fetch', command='uvx', args=['mcp-server-fetch']
-        )
-
-        override_mcp_config = MCPConfig(
-            sse_servers=[mcp_sse_server_config], stdio_servers=[mcp_stdio_server_config]
-        )
-        runtime, config = create_runtime_and_config(
-            temp_dir,
-            runtime_cls,
-            run_as_openhands,
-            override_mcp_config=override_mcp_config,
-        )
-
         # ======= Test SSE server =======
         mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '.'})
         obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
@@ -261,8 +262,7 @@ async def test_both_stdio_and_sse_mcp(
             == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
         )
     finally:
-        if runtime:
-            runtime.close()
+        close_test_runtime(runtime)
         # SSE Docker container cleanup is handled by the sse_mcp_docker_server fixture
 
 
@@ -270,24 +270,22 @@ async def test_both_stdio_and_sse_mcp(
 async def test_microagent_and_one_stdio_mcp_in_config(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime = None
+    filesystem_config = MCPStdioServerConfig(
+        name='filesystem',
+        command='npx',
+        args=[
+            '@modelcontextprotocol/server-filesystem',
+            '/',
+        ],
+    )
+    override_mcp_config = MCPConfig(stdio_servers=[filesystem_config])
+    runtime, config = create_runtime_and_config(
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        override_mcp_config=override_mcp_config,
+    )
     try:
-        filesystem_config = MCPStdioServerConfig(
-            name='filesystem',
-            command='npx',
-            args=[
-                '@modelcontextprotocol/server-filesystem',
-                '/',
-            ],
-        )
-        override_mcp_config = MCPConfig(stdio_servers=[filesystem_config])
-        runtime, config = _load_runtime(
-            temp_dir,
-            runtime_cls,
-            run_as_openhands,
-            override_mcp_config=override_mcp_config,
-        )
-
         # NOTE: this simulate the case where the microagent adds a new stdio server to the runtime
         # but that stdio server is not in the initial config
         # Actual invocation of the microagent involves `add_mcp_tools_to_agent`
@@ -344,6 +342,5 @@ async def test_microagent_and_one_stdio_mcp_in_config(
             == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
         )
     finally:
-        if runtime:
-            runtime.close()
+        close_test_runtime(runtime)
         # SSE Docker container cleanup is handled by the sse_mcp_docker_server fixture
