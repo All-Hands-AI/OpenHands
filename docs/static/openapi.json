@@ -876,6 +876,11 @@
                     "type": "string",
                     "nullable": true
                   },
+                  "conversation_instructions": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Optional instructions the agent must follow throughout the conversation while addressing the user's initial task"
+                  },
                   "image_urls": {
                     "type": "array",
                     "items": {
