@@ -248,6 +248,7 @@ def test_microagent_observation_serialization():
             'custom_secrets_descriptions': {'SECRET': 'CUSTOM'},
             'date': '04/12/1023',
             'microagent_knowledge': [],
+            'conversation_instructions': 'additional_context',
         },
     }
     serialization_deserialization(original_observation_dict, RecallObservation)
@@ -266,6 +267,7 @@ def test_microagent_observation_microagent_knowledge_serialization():
             'runtime_hosts': {},
             'additional_agent_instructions': '',
             'custom_secrets_descriptions': {},
+            'conversation_instructions': 'additional_context',
             'date': '',
             'microagent_knowledge': [
                 {

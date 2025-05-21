@@ -14,6 +14,7 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
+import { ReauthModal } from "#/components/features/waitlist/reauth-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
@@ -21,6 +22,9 @@ import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
+import { useTrackLastPage } from "#/hooks/use-track-last-page";
+import { useAutoLogin } from "#/hooks/use-auto-login";
+import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -82,6 +86,12 @@ export default function MainApp() {
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
+  // Track the last visited page
+  useTrackLastPage();
+
+  // Auto-login if login method is stored in local storage
+  useAutoLogin();
+
   React.useEffect(() => {
     // Don't change language when on TOS page
     if (!isOnTosPage && settings?.LANGUAGE) {
@@ -125,12 +135,30 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
+  // Check if login method exists in local storage
+  const loginMethodExists = React.useMemo(() => {
+    // Only check localStorage if we're in a browser environment
+    if (typeof window !== "undefined" && window.localStorage) {
+      return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
+    }
+    return false;
+  }, []);
+
   const renderAuthModal =
     !isAuthed &&
     !isAuthError &&
     !isFetchingAuth &&
     !isOnTosPage &&
-    config.data?.APP_MODE === "saas";
+    config.data?.APP_MODE === "saas" &&
+    !loginMethodExists; // Don't show auth modal if login method exists in local storage
+
+  const renderReAuthModal =
+    !isAuthed &&
+    !isAuthError &&
+    !isFetchingAuth &&
+    !isOnTosPage &&
+    config.data?.APP_MODE === "saas" &&
+    loginMethodExists;
 
   return (
     <div
@@ -152,6 +180,7 @@ export default function MainApp() {
           appMode={config.data?.APP_MODE}
         />
       )}
+      {renderReAuthModal && <ReauthModal />}
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => {
