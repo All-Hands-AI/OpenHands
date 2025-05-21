@@ -13,7 +13,11 @@ from openhands.storage.files import FileStore
 
 
 async def generate_conversation_title(
-    message: str, llm_config: LLMConfig, max_length: int = 50
+    message: str,
+    llm_config: LLMConfig,
+    max_length: int = 50,
+    conversation_id: str = 'title_generator',
+    user_id: str = 'system',
 ) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
@@ -21,6 +25,8 @@ async def generate_conversation_title(
         message: The first user message in the conversation.
         llm_config: The LLM configuration to use for generating the title.
         max_length: The maximum length of the generated title.
+        conversation_id: The ID of the conversation.
+        user_id: The ID of the user.
 
     Returns:
         A concise title for the conversation, or None if generation fails.
@@ -35,11 +41,7 @@ async def generate_conversation_title(
         truncated_message = message
 
     try:
-        llm = LLM(
-            config=llm_config,
-            conversation_id="title_generator",
-            user_id="system"
-        )
+        llm = LLM(config=llm_config, conversation_id=conversation_id, user_id=user_id)
 
         # Create a simple prompt for the LLM to generate a title
         messages = [
@@ -124,7 +126,10 @@ async def auto_generate_title(
 
                     # Try to generate title using LLM
                     llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
+                        first_user_message,
+                        llm_config,
+                        conversation_id=conversation_id,
+                        user_id=user_id or 'system',
                     )
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')
