@@ -194,8 +194,9 @@ def test_mcp_config_extra_fields_forbidden():
     # We're only testing the main MCPConfig class here
 
 
-def test_stdio_server_equality_with_different_arg_and_env_order():
-    """Test that MCPStdioServerConfig equality works with args and env in different order."""
+def test_stdio_server_equality_with_different_env_order():
+    """Test that MCPStdioServerConfig equality works with env in different order but respects arg order."""
+    # Test 1: Same args, different env order
     server1 = MCPStdioServerConfig(
         name='test-server',
         command='python',
@@ -206,26 +207,37 @@ def test_stdio_server_equality_with_different_arg_and_env_order():
     server2 = MCPStdioServerConfig(
         name='test-server',
         command='python',
-        args=['--debug', '--port=8080', '--verbose'],  # Different order
+        args=['--verbose', '--debug', '--port=8080'],  # Same order
         env={'PORT': '8080', 'DEBUG': 'true'},  # Different order
     )
 
-    # Should be equal because args and env are compared as sets
+    # Should be equal because env is compared as a set
     assert server1 == server2
 
-    # Modify one arg to make them different
+    # Test 2: Different args order
     server3 = MCPStdioServerConfig(
         name='test-server',
         command='python',
-        args=['--debug', '--port=9090', '--verbose'],  # Different port
+        args=['--debug', '--port=8080', '--verbose'],  # Different order
+        env={'DEBUG': 'true', 'PORT': '8080'},
+    )
+
+    # Should NOT be equal because args order matters
+    assert server1 != server3
+
+    # Test 3: Different arg value
+    server4 = MCPStdioServerConfig(
+        name='test-server',
+        command='python',
+        args=['--verbose', '--debug', '--port=9090'],  # Different port
         env={'DEBUG': 'true', 'PORT': '8080'},
     )
 
     # Should not be equal
-    assert server1 != server3
+    assert server1 != server4
 
-    # Modify one env value to make them different
-    server4 = MCPStdioServerConfig(
+    # Test 4: Different env value
+    server5 = MCPStdioServerConfig(
         name='test-server',
         command='python',
         args=['--verbose', '--debug', '--port=8080'],
@@ -233,4 +245,4 @@ def test_stdio_server_equality_with_different_arg_and_env_order():
     )
 
     # Should not be equal
-    assert server1 != server4
+    assert server1 != server5

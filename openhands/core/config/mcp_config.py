@@ -37,14 +37,15 @@ class MCPStdioServerConfig(BaseModel):
         """Override equality operator to compare server configurations.
 
         Two server configurations are considered equal if they have the same
-        name, command, args, and env values.
+        name, command, args, and env values. The order of args is important,
+        but the order of env variables is not.
         """
         if not isinstance(other, MCPStdioServerConfig):
             return False
         return (
             self.name == other.name
             and self.command == other.command
-            and set(self.args) == set(other.args)
+            and self.args == other.args
             and set(self.env.items()) == set(other.env.items())
         )
 
