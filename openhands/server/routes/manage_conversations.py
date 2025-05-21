@@ -213,7 +213,6 @@ async def get_conversation(
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        logger.info(f"TRACE:get_conversation:{conversation_id}")
         num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
         agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None

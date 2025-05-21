@@ -23,6 +23,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import ConversationManager
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -36,6 +37,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 
 
@@ -135,12 +137,25 @@ class DockerNestedConversationManager(ConversationManager):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
         await self.ensure_num_conversations_below_limit(sid, user_id)
         runtime = await self._create_runtime(sid, user_id, settings)
-        await runtime.connect()
-        asyncio.create_task(self._start_conversation(sid, settings, user_id, initial_user_msg, replay_json, runtime.api_url))
-
-    async def _start_conversation(self, sid: str, settings: Settings, user_id: str | None, initial_user_msg: MessageAction | None, replay_json: str | None, api_url: str):
         self._starting_conversation_ids.add(sid)
         try:
+            # Build the runtime container image if it is missing
+            await call_sync_from_async(runtime.maybe_build_runtime_container_image)
+            
+            # initialize the container but dont wait for it to start
+            await call_sync_from_async(runtime.init_container)
+
+            # Start the conversation in a background task.
+            asyncio.create_task(self._start_conversation(sid, settings, runtime, initial_user_msg, replay_json, runtime.api_url))
+
+        except Exception:
+            self._starting_conversation_ids.remove(sid)
+            raise
+
+    async def _start_conversation(self, sid: str, settings: Settings, runtime: DockerRuntime, initial_user_msg: MessageAction | None, replay_json: str | None, api_url: str):
+        try:
+            await call_sync_from_async(runtime.wait_until_alive)
+            await call_sync_from_async(runtime.setup_initial_env)
             async with httpx.AsyncClient(headers={'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)}) as client:
                 # setup the settings...
                 settings_json = settings.model_dump(context={'expose_secrets': True})
@@ -228,6 +243,7 @@ class DockerNestedConversationManager(ConversationManager):
                     sid=conversation_id,
                     user_id=user_id,
                 ),
+                status=ConversationStatus.STARTING if conversation_id in self._starting_conversation_ids else ConversationStatus.RUNNING
             )
             results.append(agent_loop_info)
         return results        
