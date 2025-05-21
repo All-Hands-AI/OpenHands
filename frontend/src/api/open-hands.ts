@@ -216,6 +216,7 @@ class OpenHands {
       image_urls: imageUrls,
       replay_json: replayJson,
       suggested_task,
+      wait_for_start: false,
     };
 
     const { data } = await openHands.post<Conversation>(
