@@ -21,7 +21,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 1. Download [LM Studio](https://lmstudio.ai/) and install it
 
 2. Download the model:
-   - Option 1: Directly download the LLM in LM Studio by searching for name `devstral-small-2505-mlx`
+   - Option 1: Directly download the LLM from [this link](https://lmstudio.ai/model/devstral-small-2505-mlx) or by searching for the name `Devstral-Small-2505` in LM Studio
    - Option 2: Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](https://huggingface.co/mistralai/Devstral-Small-2505_gguf), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`. Then in bash terminal, run `lms import {model_name}` in the directory where you've downloaded the model checkpoint (e.g. run `lms import devstralQ4_K_M.gguf` in `mistralai/Devstral-Small-2505_gguf`)
 
 3. Open LM Studio application, you should first switch to `power user` mode, and then open the developer tab:
