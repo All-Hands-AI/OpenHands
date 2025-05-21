@@ -53,6 +53,8 @@ class AppConfig(BaseModel):
             input is read line by line. When enabled, input continues until /exit command.
         dict_mcp_config: dictionary of MCP configurations.
         condenser: Condenser configuration settings.
+        evaluation_endpoint_url: URL of the evaluation endpoint.
+        enable_evaluation: Whether to enable the evaluation endpoint.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -106,6 +108,9 @@ class AppConfig(BaseModel):
     defaults_dict: ClassVar[dict] = {}
 
     model_config = {'extra': 'forbid'}
+
+    evaluation_endpoint_url: str | None = Field(default=None)
+    enable_evaluation: bool = Field(default=False)
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""

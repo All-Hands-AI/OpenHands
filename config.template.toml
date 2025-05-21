@@ -110,6 +110,10 @@
 # Whether to enable microagents
 #enable_microagents = true
 
+# Evaluation config
+evaluation_endpoint_url = ""
+enable_evaluation = false
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
