@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
@@ -61,6 +61,8 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
     conversation_instructions: str | None = None
+    conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    wait_for_start: bool = True
 
     model_config = {'extra': 'forbid'}
 
@@ -113,8 +115,8 @@ async def new_conversation(
             # Check against git_provider, otherwise check all provider apis
             await provider_handler.verify_repo_provider(repository, git_provider)
 
-        conversation_id = uuid.uuid4().hex
-        await create_new_conversation(
+        conversation_id = data.conversation_id
+        coro = create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -128,6 +130,10 @@ async def new_conversation(
             git_provider=git_provider,
             conversation_id=conversation_id,
         )
+        if data.wait_for_start:
+            await coro
+        else:
+            asyncio.create_task(coro)
 
         return InitSessionResponse(
             status='ok',

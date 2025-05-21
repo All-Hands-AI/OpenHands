@@ -173,6 +173,7 @@ class DockerNestedConversationManager(ConversationManager):
                 "initial_user_msg": initial_user_msg,
                 "image_urls": [],
                 "replay_json": replay_json,
+                "conversation_id": sid,
             }
 
             if isinstance(settings, ConversationInitData):
@@ -329,7 +330,6 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['CONVERSATION_MANAGER_CLASS'] = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
-        env_vars['CONVERSATION_ID'] = sid
         env_vars['USER'] = 'CURRENT_USER'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
 
