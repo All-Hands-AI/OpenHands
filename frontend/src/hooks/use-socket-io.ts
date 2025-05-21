@@ -29,12 +29,18 @@ interface UseSocketIOReturn {
  * @returns An object containing the socket instance and helper methods
  */
 export const useSocketIO = (
-  eventHandlers?: Record<string, (data: string) => void>,
+  eventHandlers?: Record<string, (data: any) => void>,
 ): UseSocketIOReturn => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const eventHandlersRef = useRef<Record<string, (data: any) => void> | undefined>(eventHandlers);
+
+  // Update the ref when eventHandlers changes
+  useEffect(() => {
+    eventHandlersRef.current = eventHandlers;
+  }, [eventHandlers]);
 
   const initSocket = useCallback(
     (options: UseSocketIOOptions) => {
@@ -53,6 +59,12 @@ export const useSocketIO = (
         const fullUrl = namespace ? `${url}/${namespace}` : url;
         console.warn("Connecting to socket at:", options);
 
+        // Clean up any existing socket
+        if (socketRef.current) {
+          socketRef.current.removeAllListeners();
+          socketRef.current.disconnect();
+        }
+
         socketRef.current = io(fullUrl, {
           transports: ["websocket"],
           reconnectionAttempts,
@@ -63,23 +75,23 @@ export const useSocketIO = (
           path,
         });
 
-        console.warn("REF", socketRef.current);
+        console.warn("Socket instance created:", socketRef.current);
 
         // Set up event listeners
         socketRef.current.on("connect", () => {
-          console.warn("CONNECTED!");
+          console.warn("Socket CONNECTED!");
           setIsConnected(true);
           setIsConnecting(false);
           setError(null);
         });
 
         socketRef.current.on("disconnect", () => {
-          console.warn("DISCONNECTED!");
+          console.warn("Socket DISCONNECTED!");
           setIsConnected(false);
         });
 
         socketRef.current.on("connect_error", (err) => {
-          console.warn("CONNECT_ERROR:", err);
+          console.warn("Socket CONNECT_ERROR:", err);
           setError(err);
           setIsConnecting(false);
         });
@@ -90,10 +102,16 @@ export const useSocketIO = (
         });
 
         // Register custom event handlers
-        console.warn("Registering event handlers:", eventHandlers);
-        Object.entries(eventHandlers || {}).forEach(([event, handler]) => {
-          socketRef.current?.on(event, handler);
-        });
+        if (eventHandlersRef.current) {
+          console.warn("Registering event handlers:", eventHandlersRef.current);
+          Object.entries(eventHandlersRef.current).forEach(([event, handler]) => {
+            console.warn(`Registering handler for event: ${event}`);
+            socketRef.current?.on(event, (data) => {
+              console.warn(`Received ${event} event:`, data);
+              handler(data);
+            });
+          });
+        }
       } catch (err) {
         console.warn("Error initializing socket:", err);
         setError(
@@ -104,7 +122,7 @@ export const useSocketIO = (
         setIsConnecting(false);
       }
     },
-    [eventHandlers],
+    [], // Remove eventHandlers dependency since we're using a ref
   );
 
   const connect = useCallback(
