@@ -20,7 +20,7 @@ export function TrajectoryActionButton({
       type="button"
       data-testid={testId}
       onClick={onClick}
-      className={`button-base p-1 hover:bg-neutral-500 ${active ? 'bg-primary text-white' : ''}`}
+      className={`button-base p-1 hover:bg-neutral-500 ${active ? "bg-primary text-white" : ""}`}
     >
       {icon}
     </button>

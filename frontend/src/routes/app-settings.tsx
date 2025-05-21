@@ -36,10 +36,8 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
-  const [
-    browsingSwitchHasChanged,
-    setBrowsingSwitchHasChanged,
-  ] = React.useState(false);
+  const [browsingSwitchHasChanged, setBrowsingSwitchHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -56,7 +54,7 @@ function AppSettingsScreen() {
     const enableProactiveConversations =
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
-      
+
     const enableBrowsing =
       formData.get("enable-browsing-switch")?.toString() === "on";
 
@@ -118,12 +116,10 @@ function AppSettingsScreen() {
       checked !== currentProactiveConversations,
     );
   };
-  
+
   const checkIfBrowsingSwitchHasChanged = (checked: boolean) => {
     const currentBrowsing = !!settings?.ENABLE_BROWSING;
-    setBrowsingSwitchHasChanged(
-      checked !== currentBrowsing,
-    );
+    setBrowsingSwitchHasChanged(checked !== currentBrowsing);
   };
 
   const formIsClean =

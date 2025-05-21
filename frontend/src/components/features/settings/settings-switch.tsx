@@ -26,17 +26,30 @@ export function SettingsSwitch({
     onToggle?.(value);
   };
 
+  // Determine if we're in controlled or uncontrolled mode
+  const isControlled = controlledIsToggled !== undefined;
+
   return (
     <label className="flex items-center gap-2 w-fit cursor-pointer">
-      <input
-        hidden
-        data-testid={testId}
-        name={name}
-        type="checkbox"
-        onChange={(e) => handleToggle(e.target.checked)}
-        checked={controlledIsToggled ?? isToggled}
-        defaultChecked={defaultIsToggled}
-      />
+      {isControlled ? (
+        <input
+          hidden
+          data-testid={testId}
+          name={name}
+          type="checkbox"
+          onChange={(e) => handleToggle(e.target.checked)}
+          checked={controlledIsToggled}
+        />
+      ) : (
+        <input
+          hidden
+          data-testid={testId}
+          name={name}
+          type="checkbox"
+          onChange={(e) => handleToggle(e.target.checked)}
+          defaultChecked={defaultIsToggled}
+        />
+      )}
 
       <StyledSwitchComponent isToggled={controlledIsToggled ?? isToggled} />
 
