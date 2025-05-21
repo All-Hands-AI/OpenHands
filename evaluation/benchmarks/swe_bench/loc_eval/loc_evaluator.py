@@ -359,10 +359,12 @@ class LocEvaluator:
 
     def _add_task_success_metric(self) -> bool:
         """Task success evaluation result"""
+        self.task_success = False
         report_pth = os.path.join(self.eval_dir, self.instance.instance_id, "report.json")
         eval_report = self.read_from_json(report_pth)
-        self.task_success = eval_report[self.instance.instance_id]["resolved"]   
-        return self.task_success     
+        if self.instance.instance_id in eval_report.keys():
+            self.task_success = eval_report[self.instance.instance_id]["resolved"]
+        return self.task_success
 
     def eval_agent_trajectory(self):
         """Evaluate agent's localization at current state"""

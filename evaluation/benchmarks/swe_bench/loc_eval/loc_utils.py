@@ -27,3 +27,4 @@ def loc_output_archive(
     metric_save_pth = os.path.join(metric_save_dir, f"instance_{instance.instance_id}.json")
     with open(metric_save_pth, "w") as file:
         json.dump(metrics, file, indent=4)
+        

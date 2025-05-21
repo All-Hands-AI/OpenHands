@@ -1,51 +1,45 @@
-#!/bin/bash
-
-# Config
-INFER_DIR="./llm.claude-3-5-haiku1/litellm_proxy_claude-3-5-haiku-20241022"
-EVAL_DIR="./evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/claude-3-5-haiku-20241022_maxiter_20_N_v0.38.0-no-hint-run_1/eval_outputs"
-OUTPUT_DIR="./evaluation/benchmarks/swe_bench/loc_eval/eval_saves"
-SPLIT="test"
-DATASET="princeton-nlp/SWE-bench_Verified"
-MAX_TURN=20
+#!/usr/bin/env bash
+set -eo pipefail
+source "evaluation/utils/version_control.sh"
 
 # Function to display usage information
 usage() {
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
-    echo "  -d, --infer-dir DIR      Directory containing model inference outputs"
-    echo "                         (default: $INFER_DIR)"
-    echo "  -d, --eval-dir DIR      Directory containing inference evaluation outputs"
-    echo "                         (default: $EVAL_DIR)"
-    echo "  -o, --output-dir DIR    Output directory to save eval results"
-    echo "                         (default: $OUTPUT_DIR)"
-    echo "  -s, --split SPLIT       SWE-Bench dataset split selection"
-    echo "                         (default: $SPLIT)"
+    echo "  --infer-dir DIR         Directory containing model inference outputs"
+    echo "  --eval-dir DIR          Directory containing inference evaluation outputs"
+    echo "  --output-dir DIR        Output directory to save eval results"
+    echo "  --split SPLIT           SWE-Bench dataset split selection"
     echo "  --dataset DATASET       Dataset name"
-    echo "                         (default: $DATASET)"
     echo "  --max-infer-turn NUM    Max number of turns for coding agent"
-    echo "                         (default: $MAX_TURN)"
-    echo "  -h, --help             Display this help message"
+    echo "  -h, --help              Display this help message"
     echo ""
     echo "Example:"
-    echo "  $0 --infer-dir ./my_data --output-dir ./my_output --split test"
+    echo "  $0 --infer-dir ./inference_outputs --eval-dir ./evaluation_outputs --output-dir ./saves --split test"
 }
+
+# Check if no arguments were provided
+if [ $# -eq 0 ]; then
+    usage
+    exit 1
+fi
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -d|--infer-dir)
+        --infer-dir)
             INFER_DIR="$2"
             shift 2
             ;;
-        -d|--eval-dir)
+        --eval-dir)
             EVAL_DIR="$2"
             shift 2
             ;;
-        -o|--output-dir)
+        --output-dir)
             OUTPUT_DIR="$2"
             shift 2
             ;;
-        -s|--split)
+        --split)
             SPLIT="$2"
             shift 2
             ;;
@@ -68,6 +62,29 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Check for required arguments
+if [ -z "$INFER_DIR" ] || [ -z "$EVAL_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
+    echo "Error: Missing required arguments"
+    usage
+    exit 1
+fi
+
+# Set defaults for optional arguments if not provided
+if [ -z "$SPLIT" ]; then
+    SPLIT="test"
+    echo "Split not specified, using default: $SPLIT"
+fi
+
+if [ -z "$DATASET" ]; then
+    DATASET="princeton-nlp/SWE-bench_Verified"
+    echo "Dataset not specified, using default: $DATASET"
+fi
+
+if [ -z "$MAX_TURN" ]; then
+    MAX_TURN=20
+    echo "Max inference turn not specified, using default: $MAX_TURN"
+fi
 
 # Color codes for output
 RED='\033[0;31m'
@@ -148,12 +165,12 @@ fi
 # Display configuration
 print_header "Starting Localization Evaluation with the following configuration:"
 echo "  Inference Directory:   $INFER_DIR"
-echo "  Evaluation Directory:   $EVAL_DIR"
-echo "  Output Directory: $OUTPUT_DIR"
-echo "  Split:           $SPLIT"
-echo "  Dataset:         $DATASET"
-echo "  Max Turns:       $MAX_TURN"
-echo "  Python Command:  $PYTHON_CMD"
+echo "  Evaluation Directory:  $EVAL_DIR"
+echo "  Output Directory:      $OUTPUT_DIR"
+echo "  Split:                 $SPLIT"
+echo "  Dataset:               $DATASET"
+echo "  Max Turns:             $MAX_TURN"
+echo "  Python Command:        $PYTHON_CMD"
 echo ""
 
 # Check Python dependencies (optional check)
