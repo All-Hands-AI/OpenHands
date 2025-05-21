@@ -1,5 +1,6 @@
 // this file generate by script, don't modify it manually!!!
 export enum I18nKey {
+  AUTH$LOGGING_BACK_IN = "AUTH$LOGGING_BACK_IN",
   SECURITY$LOW_RISK = "SECURITY$LOW_RISK",
   SECURITY$MEDIUM_RISK = "SECURITY$MEDIUM_RISK",
   SECURITY$HIGH_RISK = "SECURITY$HIGH_RISK",
