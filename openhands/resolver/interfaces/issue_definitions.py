@@ -353,7 +353,6 @@ class ServiceContextIssue(ServiceContext):
         images.extend(extract_image_urls(thread_context))
 
         user_instructions_template = jinja2.Template(user_instructions_prompt_template)
-        print("found template", user_instructions_template)
         user_instructions = user_instructions_template.render(
                 body=issue.title + '\n\n' + issue.body + thread_context
         ) # Issue body and comments
