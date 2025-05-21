@@ -119,7 +119,7 @@ class LLMAttentionCondenser(RollingCondenser):
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
-        llm_config = llm.config.model_copy()
+        llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
 
         return LLMAttentionCondenser(
