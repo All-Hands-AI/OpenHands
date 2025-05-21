@@ -22,6 +22,12 @@ import { getEventContent } from "./event-content-helpers/get-event-content";
 import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
 import { LaunchMicroagentModal } from "./launch-miocroagent-modal";
+import {
+  useSubscribeToConversation,
+  UseSubscribeToConversationOptions,
+} from "#/hooks/use-subscribe-to-conversation";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 interface LaunchToMicroagentButtonProps {
   onClick: () => void;
@@ -59,8 +65,12 @@ export function EventMessage({
   isAwaitingUserConfirmation,
   isLastMessage,
 }: EventMessageProps) {
+  const { providers } = useUserProviders();
+  const { mutate: createConversation } = useCreateConversation();
   const [showLaunchMicroagentModal, setShowLaunchMicroagentModal] =
     React.useState(false);
+
+  const { connect } = useSubscribeToConversation();
 
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
@@ -85,7 +95,33 @@ export function EventMessage({
   }
 
   const handleLaunchMicroagent = () => {
-    setShowLaunchMicroagentModal(true);
+    createConversation(
+      { q: "Hello!" },
+      {
+        onSuccess: (data) => {
+          let baseUrl = "";
+          if (data?.url && !data.url.startsWith("/")) {
+            baseUrl = new URL(data.url).host;
+          } else {
+            baseUrl =
+              (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
+              window?.location.host;
+          }
+
+          const opts: UseSubscribeToConversationOptions = {
+            conversation_id: data.conversation_id,
+            session_api_key: data.session_api_key,
+            providers_set: providers,
+          };
+          connect({
+            url: baseUrl,
+            query: opts,
+          });
+
+          console.log(opts);
+        },
+      },
+    );
   };
 
   if (isErrorObservation(event)) {
@@ -117,7 +153,9 @@ export function EventMessage({
         type={event.source}
         message={isUserMessage(event) ? event.args.content : event.message}
         actionButton={
-          <LaunchToMicroagentButton onClick={handleLaunchMicroagent} />
+          <LaunchToMicroagentButton
+            onClick={() => setShowLaunchMicroagentModal(true)}
+          />
         }
       >
         {event.args.image_urls && event.args.image_urls.length > 0 && (
@@ -128,6 +166,7 @@ export function EventMessage({
           createPortal(
             <LaunchMicroagentModal
               onClose={() => setShowLaunchMicroagentModal(false)}
+              onLaunch={handleLaunchMicroagent}
             />,
             document.getElementById("modal-portal-exit") || document.body,
           )}

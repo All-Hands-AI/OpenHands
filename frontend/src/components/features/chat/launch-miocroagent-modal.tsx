@@ -5,9 +5,13 @@ import { SettingsInput } from "../settings/settings-input";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
+  onLaunch: () => void;
 }
 
-export function LaunchMicroagentModal({ onClose }: LaunchMicroagentModalProps) {
+export function LaunchMicroagentModal({
+  onClose,
+  onLaunch,
+}: LaunchMicroagentModalProps) {
   const formAction = (formData: FormData) => {
     console.log(Object.fromEntries(formData.entries()));
   };
@@ -54,7 +58,7 @@ export function LaunchMicroagentModal({ onClose }: LaunchMicroagentModalProps) {
             <BrandButton type="button" variant="secondary" onClick={onClose}>
               Cancel
             </BrandButton>
-            <BrandButton type="submit" variant="primary">
+            <BrandButton type="submit" variant="primary" onClick={onLaunch}>
               Launch
             </BrandButton>
           </div>

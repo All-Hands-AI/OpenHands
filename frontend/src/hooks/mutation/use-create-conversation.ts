@@ -52,7 +52,7 @@ export const useCreateConversation = () => {
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
-      navigate(`/conversations/${conversationId}`);
+      // navigate(`/conversations/${conversationId}`);
     },
   });
 };

@@ -5,18 +5,23 @@ import { LaunchMicroagentModal } from "#/components/features/chat/launch-miocroa
 
 describe("LaunchMicroagentModal", () => {
   const onCloseMock = vi.fn();
+  const onLaunchMock = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("should render the launch microagent modal", () => {
-    render(<LaunchMicroagentModal onClose={onCloseMock} />);
+    render(
+      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
+    );
     expect(screen.getByTestId("launch-microagent-modal")).toBeInTheDocument();
   });
 
   it("should render the form fields", () => {
-    render(<LaunchMicroagentModal onClose={onCloseMock} />);
+    render(
+      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
+    );
 
     // inputs
     screen.getByTestId("description-input");
@@ -30,10 +35,23 @@ describe("LaunchMicroagentModal", () => {
   });
 
   it("should call onClose when pressing the cancel button", async () => {
-    render(<LaunchMicroagentModal onClose={onCloseMock} />);
+    render(
+      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
+    );
 
     const cancelButton = screen.getByRole("button", { name: "Cancel" });
     await userEvent.click(cancelButton);
     expect(onCloseMock).toHaveBeenCalled();
+  });
+
+  it("should call onLaunch when pressing the launch button", async () => {
+    render(
+      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
+    );
+
+    const launchButton = screen.getByRole("button", { name: "Launch" });
+    await userEvent.click(launchButton);
+
+    expect(onLaunchMock).toHaveBeenCalled();
   });
 });

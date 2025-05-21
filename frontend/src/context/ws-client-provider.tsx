@@ -289,6 +289,7 @@ export function WsClientProvider({
       transports: ["websocket"],
       query,
     });
+
     sio.on("connect", handleConnect);
     sio.on("oh_event", handleMessage);
     sio.on("connect_error", handleError);
