@@ -383,16 +383,21 @@ class ActionExecutionClient(Runtime):
 
         # Only send update request if there are new servers
         if new_servers:
-            # Use all current servers for the update (simpler and more reliable)
-            # This works because we're replacing the complete configuration
+            # Use a union of current servers and last updated servers for the update
+            # This ensures we don't lose any servers that might be missing from either list
+            combined_servers = current_stdio_servers.copy()
+            for server in self._last_updated_mcp_stdio_servers:
+                if server not in combined_servers:
+                    combined_servers.append(server)
+
             stdio_tools = [
-                server.model_dump(mode='json') for server in current_stdio_servers
+                server.model_dump(mode='json') for server in combined_servers
             ]
             stdio_tools.sort(key=lambda x: x.get('name', ''))  # Sort by server name
 
             self.log(
                 'debug',
-                f'Updating MCP server with {len(new_servers)} new stdio servers',
+                f'Updating MCP server with {len(new_servers)} new stdio servers (total: {len(combined_servers)})',
             )
             response = self._send_action_server_request(
                 'POST',
@@ -404,11 +409,11 @@ class ActionExecutionClient(Runtime):
             if response.status_code != 200:
                 self.log('warning', f'Failed to update MCP server: {response.text}')
             else:
-                # Update our cached list with current servers after successful update
-                self._last_updated_mcp_stdio_servers = current_stdio_servers.copy()
+                # Update our cached list with combined servers after successful update
+                self._last_updated_mcp_stdio_servers = combined_servers.copy()
                 self.log(
                     'debug',
-                    f'Successfully updated MCP stdio servers, now tracking {len(current_stdio_servers)} servers',
+                    f'Successfully updated MCP stdio servers, now tracking {len(combined_servers)} servers',
                 )
 
             # No API key by default. Child runtime can override this when appropriate
