@@ -238,7 +238,7 @@ class RemoteRuntime(ActionExecutionClient):
         environment: dict[str, str] = {}
         if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
             environment['DEBUG'] = 'true'
-        environment.update(self.initial_env_vars)
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request: dict[str, Any] = {
             'image': self.container_image,
             'command': command,
