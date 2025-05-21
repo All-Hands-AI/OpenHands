@@ -20,6 +20,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.14"
+mem0 = { path = "./external/mem0" }
 litellm = "^1.60.0, !=1.64.4, !=1.67.*"              # avoid 1.64.4 (known bug) & 1.67.* (known bug #10272)
 aiohttp = ">=3.9.0,!=3.11.13"                        # Pin to avoid yanked version 3.11.13
 google-generativeai = "*"                            # To use litellm with Gemini Pro API
