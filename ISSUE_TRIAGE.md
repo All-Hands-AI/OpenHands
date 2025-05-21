@@ -3,16 +3,11 @@ These are the procedures and guidelines on how issues are triaged in this repo b
 
 ## General
 * All issues must be tagged with **enhancement**, **bug** or **troubleshooting/help**.
-* Issues may be tagged with what it relates to (**agent quality**, **frontend**, **resolver**, etc.).
+* Issues may be tagged with what it relates to (**agent quality**, **resolver**, **CLI**, etc.).
 
 ## Severity
-* **Low**: Minor issues or affecting single user.
-* **Medium**: Affecting multiple users.
 * **High**: High visibility issues or affecting many users.
 * **Critical**: Affecting all users or potential security issues.
-
-## Effort
-* Issues may be estimated with effort required (**small effort**, **medium effort**, **large effort**).
 
 ## Difficulty
 * Issues with low implementation difficulty may be tagged with **good first issue**.

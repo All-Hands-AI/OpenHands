@@ -11,7 +11,6 @@ from openhands.server.settings import (
     GETSettingsModel,
 )
 from openhands.server.shared import config
-from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -20,7 +19,6 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
-from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api')
 
@@ -47,13 +45,11 @@ async def load_settings(
                 content={'error': 'Settings not found'},
             )
 
-
         # On initial load, user secrets may not be populated with values migrated from settings store
         user_secrets = await invalidate_legacy_secrets_store(
             settings, settings_store, secrets_store
         )
 
-        
         # If invalidation is successful, then the returned user secrets holds the most recent values
         git_providers = (
             user_secrets.provider_tokens if user_secrets else provider_tokens
@@ -65,7 +61,6 @@ async def load_settings(
                 if provider_token.token or provider_token.user_id:
                     provider_tokens_set[provider_type] = provider_token.host
 
-
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
             llm_api_key_set=settings.llm_api_key is not None
@@ -76,6 +71,11 @@ async def load_settings(
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
+        # Get user_id from settings if available
+        user_id = getattr(settings, 'user_id', 'unknown') if settings else 'unknown'
+        logger.info(
+            f'Returning 401 Unauthorized - Invalid token for user_id: {user_id}'
+        )
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},

@@ -1,14 +1,16 @@
 import asyncio
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Any
 from urllib.parse import urlparse
 
 from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request as StarletteRequest
+from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from openhands.server import shared
@@ -22,7 +24,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     while using standard CORS rules for other origins.
     """
 
-    def __init__(self, app: ASGIApp, **kwargs) -> None:
+    def __init__(self, app: ASGIApp, **kwargs: Any) -> None:
         super().__init__(app, **kwargs)
 
     def is_allowed_origin(self, origin: str) -> bool:
@@ -35,7 +37,8 @@ class LocalhostCORSMiddleware(CORSMiddleware):
                 return True
 
         # For missing origin or other origins, use the parent class's logic
-        return super().is_allowed_origin(origin)
+        result: bool = super().is_allowed_origin(origin)
+        return result
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
@@ -43,7 +46,9 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
     Middleware to disable caching for all routes by adding appropriate headers
     """
 
-    async def dispatch(self, request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
         if request.url.path.startswith('/assets'):
             # The content of the assets directory has fingerprinted file names so we cache aggressively
@@ -58,7 +63,7 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
 
 
 class InMemoryRateLimiter:
-    history: dict
+    history: dict[str, list[datetime]]
     requests: int
     seconds: int
     sleep_seconds: int
@@ -100,7 +105,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate_limiter = rate_limiter
 
-    async def dispatch(self, request: StarletteRequest, call_next):
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         if not self.is_rate_limited_request(request):
             return await call_next(request)
         ok = await self.rate_limiter(request)
@@ -112,7 +119,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
         return await call_next(request)
 
-    def is_rate_limited_request(self, request: StarletteRequest):
+    def is_rate_limited_request(self, request: StarletteRequest) -> bool:
         if request.url.path.startswith('/assets'):
             return False
         # Put Other non rate limited checks here
@@ -120,10 +127,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 class AttachConversationMiddleware(SessionMiddlewareInterface):
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    def _should_attach(self, request) -> bool:
+    def _should_attach(self, request: Request) -> bool:
         """
         Determine if the middleware should attach a session for the given request.
         """
@@ -168,7 +175,9 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             request.state.conversation
         )
 
-    async def __call__(self, request: Request, call_next: Callable):
+    async def __call__(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         if not self._should_attach(request):
             return await call_next(request)
 
@@ -183,4 +192,27 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             # Ensure the session is detached
             await self._detach_session(request)
 
+        return response
+
+
+@dataclass
+class SessionApiKeyMiddleware:
+    """Middleware which ensures that all requests contain a header with the token given"""
+
+    session_api_key: str
+
+    async def __call__(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        if (
+            request.method != 'OPTIONS'
+            and request.url.path != '/alive'
+            and request.url.path != '/server_info'
+        ):
+            if self.session_api_key != request.headers.get('X-Session-API-Key'):
+                return JSONResponse(
+                    {'code': 'invalid_session_api_key'},
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                )
+        response = await call_next(request)
         return response

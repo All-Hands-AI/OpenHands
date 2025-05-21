@@ -1,5 +1,7 @@
 import asyncio
+import os
 from types import MappingProxyType
+from typing import Any
 from urllib.parse import parse_qs
 
 from socketio.exceptions import ConnectionRefusedError
@@ -38,7 +40,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 def create_provider_tokens_object(
     providers_set: list[ProviderType],
 ) -> PROVIDER_TOKEN_TYPE:
-    provider_information = {}
+    provider_information: dict[ProviderType, ProviderToken] = {}
 
     for provider in providers_set:
         provider_information[provider] = ProviderToken(token=None, user_id=None)
@@ -47,7 +49,7 @@ def create_provider_tokens_object(
 
 
 @sio.event
-async def connect(connection_id: str, environ):
+async def connect(connection_id: str, environ: dict) -> None:
     try:
         logger.info(f'sio:connect: {connection_id}')
         query_params = parse_qs(environ.get('QUERY_STRING', ''))
@@ -71,10 +73,16 @@ async def connect(connection_id: str, environ):
             logger.error('No conversation_id in query params')
             raise ConnectionRefusedError('No conversation_id in query params')
 
+        if _invalid_session_api_key(query_params):
+            raise ConnectionRefusedError('invalid_session_api_key')
+
         cookies_str = environ.get('HTTP_COOKIE', '')
+        # Get Authorization header from the environment
+        # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
+        authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
-        user_id, github_user_id = await conversation_validator.validate(
-            conversation_id, cookies_str
+        user_id = await conversation_validator.validate(
+            conversation_id, cookies_str, authorization_header
         )
 
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -96,23 +104,26 @@ async def connect(connection_id: str, environ):
             git_provider_tokens = user_secrets.provider_tokens
 
         session_init_args['git_provider_tokens'] = git_provider_tokens
+        if user_secrets:
+            session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
         conversation_init_data = ConversationInitData(**session_init_args)
 
-        event_stream = await conversation_manager.join_conversation(
+        agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
             conversation_init_data,
             user_id,
-            github_user_id,
         )
         logger.info(
             f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
         )
         agent_state_changed = None
-        if event_stream is None:
+        if agent_loop_info is None:
             raise ConnectionRefusedError('Failed to join conversation')
-        async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+        async_store = AsyncEventStoreWrapper(
+            agent_loop_info.event_store, latest_event_id + 1
+        )
         async for event in async_store:
             logger.debug(f'oh_event: {event.__class__.__name__}')
             if isinstance(
@@ -138,18 +149,28 @@ async def connect(connection_id: str, environ):
 
 
 @sio.event
-async def oh_user_action(connection_id: str, data: dict):
+async def oh_user_action(connection_id: str, data: dict[str, Any]) -> None:
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
-async def oh_action(connection_id: str, data: dict):
+async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
     # TODO: Remove this handler once all clients are updated to use oh_user_action
     # Keeping for backward compatibility with in-progress sessions
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
-async def disconnect(connection_id: str):
+async def disconnect(connection_id: str) -> None:
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)
+
+
+def _invalid_session_api_key(query_params: dict[str, list[Any]]):
+    session_api_key = os.getenv('SESSION_API_KEY')
+    if not session_api_key:
+        return False
+    query_api_keys = query_params['session_api_key']
+    if not query_api_keys:
+        return True
+    return query_api_keys[0] != session_api_key
