@@ -66,3 +66,42 @@ These details may or may not be useful for your current task.
 - Actions with `thought` property are displayed in the UI based on their action type:
   - Regular actions (like "run", "edit") display the thought as a separate message
   - Special actions (like "think") are displayed as collapsible elements only
+
+#### Adding User Settings:
+- To add a new user setting to OpenHands, follow these steps:
+  1. Add the setting to the frontend:
+     - Add the setting to the `Settings` type in `frontend/src/types/settings.ts`
+     - Add the setting to the `ApiSettings` type in the same file
+     - Add the setting with an appropriate default value to `DEFAULT_SETTINGS` in `frontend/src/services/settings.ts`
+     - Update the `useSettings` hook in `frontend/src/hooks/query/use-settings.ts` to map the API response
+     - Update the `useSaveSettings` hook in `frontend/src/hooks/mutation/use-save-settings.ts` to include the setting in API requests
+     - Add UI components (like toggle switches) in the appropriate settings screen (e.g., `frontend/src/routes/app-settings.tsx`)
+     - Add i18n translations for the setting name and any tooltips in `frontend/src/i18n/translation.json`
+     - Add the translation key to `frontend/src/i18n/declaration.ts`
+  2. Add the setting to the backend:
+     - Add the setting to the `Settings` model in `openhands/storage/data_models/settings.py`
+     - Update any relevant backend code to apply the setting (e.g., in session creation)
+
+#### UI Components:
+- Tooltips: To add tooltips to settings in the frontend, use the `Tooltip` component from `@heroui/react`:
+  ```tsx
+  <div className="flex items-center gap-2">
+    <SettingsSwitch
+      testId="setting-id"
+      name="setting-name"
+      defaultIsToggled={!!settings.SETTING_NAME}
+      onToggle={checkIfSettingHasChanged}
+    >
+      {t(I18nKey.SETTINGS$SETTING_NAME)}
+    </SettingsSwitch>
+    <Tooltip
+      content={t(I18nKey.SETTINGS$SETTING_TOOLTIP)}
+      placement="right"
+      className="max-w-xs"
+    >
+      <div className="cursor-help text-xs text-gray-500 rounded-full border border-gray-300 w-5 h-5 flex items-center justify-center">
+        ?
+      </div>
+    </Tooltip>
+  </div>
+  ```
