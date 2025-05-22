@@ -373,8 +373,14 @@ function LlmSettingsScreen() {
                 className="w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
+                startContent={
+                  settings.LLM_API_KEY_SET && (
+                    <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
+                  )
+                }
+              />
               <HelpLink
-                testId="llm-api-key-help-anchor"
+                testId="llm-api-key-help-anchor-advanced"
                 text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
                 linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
                 href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
@@ -404,7 +410,7 @@ function LlmSettingsScreen() {
               />
 
               <HelpLink
-                testId="llm-api-key-help-anchor"
+                testId="llm-api-key-help-anchor-advanced2"
                 text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
                 linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
                 href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
