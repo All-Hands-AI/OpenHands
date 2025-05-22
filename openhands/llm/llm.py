@@ -57,7 +57,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
     'claude-sonnet-4-20250514',
-    'claude-opus-4-20250514'
+    'claude-opus-4-20250514',
 ]
 
 # function calling supporting models
@@ -240,7 +240,10 @@ class LLM(RetryMixin, DebugMixin):
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
                 add_in_context_learning_example = True
-                if 'openhands-lm' in self.config.model or 'devstral' in self.config.model:
+                if (
+                    'openhands-lm' in self.config.model
+                    or 'devstral' in self.config.model
+                ):
                     add_in_context_learning_example = False
 
                 messages = convert_fncall_messages_to_non_fncall_messages(
