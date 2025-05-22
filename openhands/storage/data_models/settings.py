@@ -39,23 +39,24 @@ class Settings(BaseModel):
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
+    search_api_key: SecretStr | None = None
 
 
     model_config = {
         'validate_assignment': True,
     }
 
-    @field_serializer('llm_api_key')
-    def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
-        """Custom serializer for the LLM API key.
+    @field_serializer('llm_api_key', 'search_api_key')
+    def api_key_serializer(self, api_key: SecretStr, info: SerializationInfo):
+        """Custom serializer for API keys.
 
         To serialize the API key instead of ********, set expose_secrets to True in the serialization context.
         """
         context = info.context
         if context and context.get('expose_secrets', False):
-            return llm_api_key.get_secret_value()
+            return api_key.get_secret_value()
 
-        return pydantic_encoder(llm_api_key) if llm_api_key else None
+        return pydantic_encoder(api_key) if api_key else None
 
     @model_validator(mode='before')
     @classmethod
@@ -114,6 +115,12 @@ class Settings(BaseModel):
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
 
+        # Convert search_api_key to SecretStr if it exists
+        search_api_key = None
+        if app_config.search_api_key:
+            from pydantic import SecretStr
+            search_api_key = SecretStr(app_config.search_api_key)
+
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -125,5 +132,6 @@ class Settings(BaseModel):
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
+            search_api_key=search_api_key,
         )
         return settings
