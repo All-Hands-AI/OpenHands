@@ -83,25 +83,4 @@ These details may or may not be useful for your current task.
      - Update any relevant backend code to apply the setting (e.g., in session creation)
 
 #### UI Components:
-- Tooltips: To add tooltips to settings in the frontend, use the `Tooltip` component from `@heroui/react`:
-  ```tsx
-  <div className="flex items-center gap-2">
-    <SettingsSwitch
-      testId="setting-id"
-      name="setting-name"
-      defaultIsToggled={!!settings.SETTING_NAME}
-      onToggle={checkIfSettingHasChanged}
-    >
-      {t(I18nKey.SETTINGS$SETTING_NAME)}
-    </SettingsSwitch>
-    <Tooltip
-      content={t(I18nKey.SETTINGS$SETTING_TOOLTIP)}
-      placement="right"
-      className="max-w-xs"
-    >
-      <div className="cursor-help text-xs text-gray-500 rounded-full border border-gray-300 w-5 h-5 flex items-center justify-center">
-        ?
-      </div>
-    </Tooltip>
-  </div>
-  ```
+- Tooltips: To add tooltips to settings in the frontend, use the `Tooltip` component from `@heroui/react`. See implementation examples in `frontend/src/routes/app-settings.tsx`.
