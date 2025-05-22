@@ -387,37 +387,21 @@ class CLIRuntime(Runtime):
             )
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        """Run a Python code cell."""
-        # TODO: This currently executes as a plain Python script.
-        # For full IPython/Jupyter functionality (magics, kernel state, etc.),
-        # this would need to connect to a running Jupyter kernel if available
-        # on the user's machine, or provide a more sophisticated wrapper.
-        # This would also involve returning IPythonRunCellObservation.
-        if not self._runtime_initialized:
-            return ErrorObservation('Runtime not initialized')
-
-        # Create a temporary Python file
-        with tempfile.NamedTemporaryFile(
-            suffix='.py', mode='w', delete=False
-        ) as temp_file:
-            temp_file.write(action.code)
-            temp_file_path = temp_file.name
-
-        try:
-            return self._execute_shell_command(
-                f'python {temp_file_path}',
-                timeout=action.timeout
-                if action.timeout is not None
-                else self.config.sandbox.timeout,
-            )
-        except Exception as e:
-            logger.error(f'Error running IPython cell: {str(e)}')
-            return ErrorObservation(f'Error running IPython cell: {str(e)}')
-        finally:
-            try:
-                os.unlink(temp_file_path)
-            except Exception:
-                pass
+        """Run a Python code cell.
+        This functionality is not implemented in CLIRuntime.
+        Users should also disable the Jupyter plugin in AgentConfig.
+        """
+        # This functionality is not implemented in CLIRuntime.
+        # If you need to run IPython/Jupyter cells, please consider using a different runtime
+        # or ensure the Jupyter plugin is disabled in your AgentConfig to avoid
+        # attempting to use this disabled feature.
+        logger.warning(
+            "run_ipython is called on CLIRuntime, but it's not implemented. "
+            "Please disable the Jupyter plugin in AgentConfig."
+        )
+        return ErrorObservation(
+            "Executing IPython cells is not implemented in CLIRuntime. "
+        )
 
     def _sanitize_filename(self, filename: str) -> str:
         # if path is absolute, ensure it starts with _workspace_path
