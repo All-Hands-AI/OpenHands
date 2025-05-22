@@ -376,7 +376,9 @@ def test_run_as_user_correct_home_dir(
             assert '/home/openhands' in obs.content
         else:
             assert '/root' in obs.content
-    _run_cmd_action(f'cd "{reusable_config.workspace_mount_path_in_sandbox}"')
+    _run_cmd_action(
+        reusable_runtime, f'cd "{reusable_config.workspace_mount_path_in_sandbox}"'
+    )
 
 
 def test_multi_cmd_run_in_single_line(reusable_runtime, reusable_config):
