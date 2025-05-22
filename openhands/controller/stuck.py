@@ -30,8 +30,8 @@ class StuckDetector:
 
         Args:
             headless_mode: Matches AgentController's headless_mode.
-                        If True: Consider all history (automated/testing)
-                        If False: Consider only history after last user message (interactive)
+                          If True: Consider all history (automated/testing)
+                          If False: Consider only history after last user message (interactive)
 
         Returns:
             bool: True if the agent is stuck in a loop, False otherwise.
