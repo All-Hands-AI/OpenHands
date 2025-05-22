@@ -81,6 +81,3 @@ These details may or may not be useful for your current task.
   2. Add the setting to the backend:
      - Add the setting to the `Settings` model in `openhands/storage/data_models/settings.py`
      - Update any relevant backend code to apply the setting (e.g., in session creation)
-
-#### UI Components:
-- Tooltips: To add tooltips to settings in the frontend, use the `Tooltip` component from `@heroui/react`. See implementation examples in `frontend/src/routes/app-settings.tsx`.
