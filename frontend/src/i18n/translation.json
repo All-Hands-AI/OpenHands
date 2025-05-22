@@ -1871,6 +1871,22 @@
         "tr": "GitHub'da Görevler Öner",
         "uk": "Запропонувати завдання на GitHub"
     },
+    "SETTINGS$SEARCH_API_KEY": {
+        "en": "Search API Key (Tavily)",
+        "ja": "検索APIキー (Tavily)",
+        "zh-CN": "搜索API密钥 (Tavily)",
+        "zh-TW": "搜索API密鑰 (Tavily)",
+        "ko-KR": "검색 API 키 (Tavily)",
+        "de": "Such-API-Schlüssel (Tavily)",
+        "no": "Søk API-nøkkel (Tavily)",
+        "it": "Chiave API di ricerca (Tavily)",
+        "pt": "Chave de API de pesquisa (Tavily)",
+        "es": "Clave API de búsqueda (Tavily)",
+        "ar": "مفتاح API للبحث (Tavily)",
+        "fr": "Clé API de recherche (Tavily)",
+        "tr": "Arama API Anahtarı (Tavily)",
+        "uk": "Ключ API пошуку (Tavily)"
+    },
     "SETTINGS$CUSTOM_MODEL": {
         "en": "Custom Model",
         "ja": "カスタムモデル",

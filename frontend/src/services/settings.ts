@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: false,
+  SEARCH_API_KEY: "",
   IS_NEW_USER: true,
   MCP_CONFIG: {
     sse_servers: [],
