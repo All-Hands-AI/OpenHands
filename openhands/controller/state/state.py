@@ -9,7 +9,9 @@ import openhands
 from openhands.controller.state.task import RootTask
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.events.action import MessageAction
+from openhands.events.action import (
+    MessageAction,
+)
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics

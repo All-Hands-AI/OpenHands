@@ -8,7 +8,10 @@ import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, EventSource, RecallType
-from openhands.events.observation.agent import MicroagentKnowledge, RecallObservation
+from openhands.events.observation.agent import (
+    MicroagentKnowledge,
+    RecallObservation,
+)
 from openhands.events.observation.empty import NullObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.microagent import (
@@ -158,31 +161,21 @@ class Memory:
         ):
             obs = RecallObservation(
                 recall_type=RecallType.WORKSPACE_CONTEXT,
-                repo_name=(
-                    self.repository_info.repo_name
-                    if self.repository_info
-                    and self.repository_info.repo_name is not None
-                    else ''
-                ),
-                repo_directory=(
-                    self.repository_info.repo_directory
-                    if self.repository_info
-                    and self.repository_info.repo_directory is not None
-                    else ''
-                ),
+                repo_name=self.repository_info.repo_name
+                if self.repository_info and self.repository_info.repo_name is not None
+                else '',
+                repo_directory=self.repository_info.repo_directory
+                if self.repository_info
+                and self.repository_info.repo_directory is not None
+                else '',
                 repo_instructions=repo_instructions if repo_instructions else '',
-                runtime_hosts=(
-                    self.runtime_info.available_hosts
-                    if self.runtime_info
-                    and self.runtime_info.available_hosts is not None
-                    else {}
-                ),
-                additional_agent_instructions=(
-                    self.runtime_info.additional_agent_instructions
-                    if self.runtime_info
-                    and self.runtime_info.additional_agent_instructions is not None
-                    else ''
-                ),
+                runtime_hosts=self.runtime_info.available_hosts
+                if self.runtime_info and self.runtime_info.available_hosts is not None
+                else {},
+                additional_agent_instructions=self.runtime_info.additional_agent_instructions
+                if self.runtime_info
+                and self.runtime_info.additional_agent_instructions is not None
+                else '',
                 microagent_knowledge=microagent_knowledge,
                 content='Added workspace context',
                 date=self.runtime_info.date if self.runtime_info is not None else '',

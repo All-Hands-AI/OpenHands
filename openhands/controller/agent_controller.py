@@ -5,9 +5,9 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm  # noqa
-from litellm.exceptions import (
+from litellm.exceptions import (  # noqa
     APIConnectionError,
-    APIError,  # noqa
+    APIError,
     AuthenticationError,
     BadRequestError,
     ContentPolicyViolationError,
@@ -152,11 +152,6 @@ class AgentController:
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
-            a2a_manager: A2AManager instance.
-            space_id: The space ID of the agent.
-            thread_follow_up: The thread follow-up ID of the agent.
-            user_id: The user ID of the agent.
-            raw_followup_conversation_id: The raw follow-up conversation ID of the agent.
         """
         self.id = sid or event_stream.sid
         self.agent = agent
