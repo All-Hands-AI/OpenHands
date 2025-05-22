@@ -1,6 +1,7 @@
 from typing import Callable
 
 from openhands.core.config import AppConfig
+from openhands.llm.llm import LLM
 from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
@@ -24,6 +25,7 @@ class E2BRuntime(Runtime):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm: LLM,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
@@ -32,6 +34,7 @@ class E2BRuntime(Runtime):
         super().__init__(
             config,
             event_stream,
+            llm,
             sid,
             plugins,
             status_callback=status_callback,

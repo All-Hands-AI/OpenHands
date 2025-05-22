@@ -13,7 +13,7 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm import LLM
+from openhands.llm.llm import LLM
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -309,8 +309,8 @@ Capture all relevant information, especially:
 
     @classmethod
     def from_config(
-        cls, config: StructuredSummaryCondenserConfig
-    ) -> StructuredSummaryCondenser:
+        cls, config: StructuredSummaryCondenserConfig, llm: LLM
+    ) -> 'StructuredSummaryCondenser':
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
@@ -318,7 +318,7 @@ Capture all relevant information, especially:
         llm_config.caching_prompt = False
 
         return StructuredSummaryCondenser(
-            llm=LLM(config=llm_config),
+            llm=llm.clone(config=llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

@@ -437,7 +437,11 @@ def update_existing_pull_request(
 
                 # Summarize with LLM if provided
                 if llm_config is not None:
-                    llm = LLM(llm_config)
+                    llm = LLM(
+                        config=llm_config,
+                        conversation_id=f"pr_update_{issue.number}",
+                        user_id=username or "system"
+                    )
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),

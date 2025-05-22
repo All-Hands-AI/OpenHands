@@ -4,6 +4,7 @@ import pytest
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
+from openhands.llm.llm import LLM
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
 
@@ -40,12 +41,22 @@ def event_stream():
     return MagicMock(spec=EventStream)
 
 
+@pytest.fixture
+def mock_llm():
+    """Fixture for a mock LLM"""
+    mock = MagicMock(spec=LLM)
+    mock.conversation_id = "test-conversation"
+    mock.user_id = "test-user"
+    mock.clone.return_value = mock  # Make clone return the same mock
+    return mock
+
+
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
 def test_container_stopped_when_keep_runtime_alive_false(
-    mock_stop_containers, mock_docker_client, config, event_stream
+    mock_stop_containers, mock_docker_client, config, event_stream, mock_llm
 ):
     # Arrange
-    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime = DockerRuntime(config, event_stream, llm=mock_llm, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
 
     # Act
@@ -57,11 +68,11 @@ def test_container_stopped_when_keep_runtime_alive_false(
 
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
 def test_container_not_stopped_when_keep_runtime_alive_true(
-    mock_stop_containers, mock_docker_client, config, event_stream
+    mock_stop_containers, mock_docker_client, config, event_stream, mock_llm
 ):
     # Arrange
     config.sandbox.keep_runtime_alive = True
-    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime = DockerRuntime(config, event_stream, llm=mock_llm, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
 
     # Act

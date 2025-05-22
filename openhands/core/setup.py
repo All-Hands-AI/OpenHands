@@ -50,6 +50,7 @@ def create_runtime(
     # otherwise generate it on the basis of the configured jwt_secret
     # we can do this better, this is just so that the sid is retrieved when we want to restore the session
     session_id = sid or generate_sid(config)
+    user_id = session_id.split('-')[0]
 
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -61,11 +62,14 @@ def create_runtime(
             config.security.security_analyzer, SecurityAnalyzer
         )(event_stream)
 
-    # agent class
+    # agent class and LLM
     if agent:
         agent_cls = type(agent)
+        llm = agent.llm
     else:
         agent_cls = Agent.get_cls(config.default_agent)
+        llm_config = config.get_llm_config_from_agent(config.default_agent)
+        llm = LLM(config=llm_config, conversation_id=session_id, user_id=user_id)
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
@@ -73,6 +77,7 @@ def create_runtime(
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
+        llm=llm,
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
@@ -172,13 +177,13 @@ def create_memory(
     return memory
 
 
-def create_agent(config: AppConfig) -> Agent:
+def create_agent(config: AppConfig, conversation_id: str = "default", user_id: str = "default") -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
 
     agent = agent_cls(
-        llm=LLM(config=llm_config),
+        llm=LLM(config=llm_config, conversation_id=conversation_id, user_id=user_id),
         config=agent_config,
     )
 
@@ -186,20 +191,30 @@ def create_agent(config: AppConfig) -> Agent:
 
 
 def create_controller(
-    agent: Agent,
-    runtime: Runtime,
-    config: AppConfig,
+    agent: Agent | None = None,
+    runtime: Runtime | None = None,
+    config: AppConfig | None = None,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
+    if runtime is None or config is None:
+        raise ValueError("Runtime and config must be provided")
+        
     event_stream = runtime.event_stream
+    session_id = event_stream.sid
+    user_id = session_id.split('-')[0]
+    
+    # Create agent if not provided
+    if agent is None:
+        agent = create_agent(config, conversation_id=session_id, user_id=user_id)
+        
     initial_state = None
     try:
         logger.debug(
-            f'Trying to restore agent state from session {event_stream.sid} if available'
+            f'Trying to restore agent state from session {session_id} if available'
         )
         initial_state = State.restore_from_session(
-            event_stream.sid, event_stream.file_store
+            session_id, event_stream.file_store
         )
     except Exception as e:
         logger.debug(f'Cannot restore agent state: {e}')

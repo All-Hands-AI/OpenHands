@@ -11,6 +11,7 @@ from openhands.events.observation import NullObservation, Observation
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import ProviderHandler, ProviderToken, ProviderType
 from openhands.integrations.service_types import AuthenticationError, Repository
+from openhands.llm.llm import LLM
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 
@@ -72,7 +73,17 @@ def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
 
 
 @pytest.fixture
-def runtime(temp_dir):
+def mock_llm():
+    """Fixture for a mock LLM"""
+    mock = MagicMock(spec=LLM)
+    mock.conversation_id = "test-conversation"
+    mock.user_id = "test-user"
+    mock.clone.return_value = mock  # Make clone return the same mock
+    return mock
+
+
+@pytest.fixture
+def runtime(temp_dir, mock_llm):
     """Fixture for runtime testing"""
     config = AppConfig()
     git_provider_tokens = MappingProxyType(
@@ -83,6 +94,7 @@ def runtime(temp_dir):
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
+        llm=mock_llm,
         sid='test',
         user_id='test_user',
         git_provider_tokens=git_provider_tokens,
@@ -105,12 +117,12 @@ def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=Tru
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
+async def test_export_latest_git_provider_tokens_no_user_id(temp_dir, mock_llm):
     """Test that no token export happens when user_id is not set"""
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test')
+    runtime = TestRuntime(config=config, event_stream=event_stream, llm=mock_llm, sid='test')
 
     # Create a command that would normally trigger token export
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
@@ -123,13 +135,13 @@ async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
+async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir, mock_llm):
     """Test that no token export happens when command doesn't reference tokens"""
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+        config=config, event_stream=event_stream, llm=mock_llm, sid='test', user_id='test_user'
     )
 
     # Create a command that doesn't reference any tokens

@@ -30,7 +30,7 @@ class LLMAttentionCondenser(RollingCondenser):
         if keep_first < 0:
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
-            raise ValueError(f'max_size ({keep_first}) cannot be non-positive')
+            raise ValueError(f'max_size ({max_size}) cannot be non-positive')
 
         self.max_size = max_size
         self.keep_first = keep_first
@@ -113,7 +113,9 @@ class LLMAttentionCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+    def from_config(
+        cls, config: LLMAttentionCondenserConfig, llm: LLM
+    ) -> 'LLMAttentionCondenser':
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
@@ -121,7 +123,7 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config.caching_prompt = False
 
         return LLMAttentionCondenser(
-            llm=LLM(config=llm_config),
+            llm=llm.clone(config=llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
         )
