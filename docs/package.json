@@ -36,7 +36,7 @@
     "@docusaurus/tsconfig": "^3.7.0",
     "@docusaurus/types": "^3.5.1",
     "swagger-cli": "^4.0.4",
-    "swagger-ui-dist": "^5.21.0",
+    "swagger-ui-dist": "^5.22.0",
     "typescript": "~5.8.3"
   },
   "browserslist": {

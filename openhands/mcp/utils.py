@@ -150,7 +150,9 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     response = await matching_client.call_tool(action.name, action.arguments)
     logger.debug(f'MCP response: {response}')
 
-    return MCPObservation(content=json.dumps(response.model_dump(mode='json')))
+    return MCPObservation(
+        content=json.dumps(response.model_dump(mode='json')), name=action.name
+    )
 
 
 async def add_mcp_tools_to_agent(
