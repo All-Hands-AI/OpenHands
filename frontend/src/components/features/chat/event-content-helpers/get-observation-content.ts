@@ -54,7 +54,7 @@ const getMcpObservationContent = (event: MCPObservation): string => {
   }
 
   // Display tool name and arguments
-  let header = `**MCP Tool Result: ${event.extras.name}**\n\n`;
+  let header = ``;
 
   // Add arguments if available
   if (
