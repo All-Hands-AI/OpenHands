@@ -44,7 +44,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_servers: list[MCPSSEServerConfig],
+    sse_servers: list[MCPSSEServerConfig], conversation_id: str | None = None
 ) -> list[MCPClient]:
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
@@ -56,7 +56,11 @@ async def create_mcp_clients(
 
             client = MCPClient()
             try:
-                await client.connect_sse(server_url.url, api_key=server_url.api_key)
+                await client.connect_sse(
+                    server_url.url,
+                    api_key=server_url.api_key,
+                    conversation_id=conversation_id,
+                )
                 # Only add the client to the list after a successful connection
                 mcp_clients.append(client)
                 logger.info(f'Connected to MCP server {server_url} via SSE')
@@ -155,6 +159,7 @@ async def add_mcp_tools_to_agent(
     """
     Add MCP tools to an agent.
     """
+
     assert runtime.runtime_initialized, (
         'Runtime must be initialized before adding MCP tools'
     )

@@ -13,7 +13,6 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -34,11 +33,11 @@ import Security from "#/components/shared/modals/security/security";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
@@ -49,9 +48,7 @@ function AppContent() {
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -71,25 +68,11 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
-    }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
@@ -156,10 +139,8 @@ function AppContent() {
                       e.stopPropagation();
                       if (conversationId) {
                         try {
-                          const response = await fetch(
-                            `/api/conversations/${conversationId}/vscode-url`,
-                          );
-                          const data = await response.json();
+                          const data =
+                            await OpenHands.getVSCodeUrl(conversationId);
                           if (data.vscode_url) {
                             const transformedUrl = transformVSCodeUrl(
                               data.vscode_url,

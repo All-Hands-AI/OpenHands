@@ -25,7 +25,11 @@ class MCPClient(BaseModel):
         arbitrary_types_allowed = True
 
     async def connect_sse(
-        self, server_url: str, api_key: str | None = None, timeout: float = 30.0
+        self,
+        server_url: str,
+        api_key: str | None = None,
+        conversation_id: str | None = None,
+        timeout: float = 30.0,
     ) -> None:
         """Connect to an MCP server using SSE transport.
 
@@ -41,9 +45,14 @@ class MCPClient(BaseModel):
         try:
             # Use asyncio.wait_for to enforce the timeout
             async def connect_with_timeout():
+                headers = {'Authorization': f'Bearer {api_key}'} if api_key else {}
+
+                if conversation_id:
+                    headers['X-OpenHands-Conversation-ID'] = conversation_id
+
                 streams_context = sse_client(
                     url=server_url,
-                    headers={'Authorization': f'Bearer {api_key}'} if api_key else None,
+                    headers=headers if headers else None,
                     timeout=timeout,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
