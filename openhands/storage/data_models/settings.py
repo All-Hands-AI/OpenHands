@@ -47,16 +47,19 @@ class Settings(BaseModel):
     }
 
     @field_serializer('llm_api_key', 'search_api_key')
-    def api_key_serializer(self, api_key: SecretStr, info: SerializationInfo):
+    def api_key_serializer(self, api_key: SecretStr | None, info: SerializationInfo):
         """Custom serializer for API keys.
 
         To serialize the API key instead of ********, set expose_secrets to True in the serialization context.
         """
+        if api_key is None:
+            return None
+        
         context = info.context
         if context and context.get('expose_secrets', False):
             return api_key.get_secret_value()
 
-        return pydantic_encoder(api_key) if api_key else None
+        return pydantic_encoder(api_key)
 
     @model_validator(mode='before')
     @classmethod
