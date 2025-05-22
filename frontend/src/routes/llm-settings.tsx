@@ -329,8 +329,8 @@ function LlmSettingsScreen() {
 
               <HelpLink
                 testId="search-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
                 href="https://tavily.com/"
               />
             </div>
@@ -404,8 +404,8 @@ function LlmSettingsScreen() {
 
               <HelpLink
                 testId="search-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
                 href="https://tavily.com/"
               />
 
