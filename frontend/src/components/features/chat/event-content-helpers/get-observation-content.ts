@@ -47,24 +47,20 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
   return contentDetails;
 };
 
-const getMcpObservationContent = (event: MCPObservation): string => {
-  let { content } = event;
-  if (content.length > MAX_CONTENT_LENGTH) {
-    content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+const getMcpObservationContent = (
+  event: MCPObservation,
+): string | { type: "mcp"; event: MCPObservation } => {
+  // Truncate content if it's too long
+  let truncatedEvent = event;
+  if (event.content.length > MAX_CONTENT_LENGTH) {
+    truncatedEvent = {
+      ...event,
+      content: `${event.content.slice(0, MAX_CONTENT_LENGTH)}...`,
+    };
   }
 
-  // Display tool name and arguments
-  let header = ``;
-
-  // Add arguments if available
-  if (
-    event.extras.arguments &&
-    Object.keys(event.extras.arguments).length > 0
-  ) {
-    header += `**Arguments:**\n\`\`\`json\n${JSON.stringify(event.extras.arguments, null, 2)}\n\`\`\`\n\n`;
-  }
-
-  return `${header}**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
+  // Return a special object that will be handled in the GenericEventMessage component
+  return { type: "mcp", event: truncatedEvent };
 };
 
 const getRecallObservationContent = (event: RecallObservation): string => {
@@ -123,7 +119,9 @@ const getRecallObservationContent = (event: RecallObservation): string => {
   return content;
 };
 
-export const getObservationContent = (event: OpenHandsObservation): string => {
+export const getObservationContent = (
+  event: OpenHandsObservation,
+): string | { type: "mcp"; event: MCPObservation } => {
   switch (event.observation) {
     case "read":
       return getReadObservationContent(event);
