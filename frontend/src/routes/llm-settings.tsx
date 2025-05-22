@@ -321,8 +321,8 @@ function LlmSettingsScreen() {
                 onChange={handleSearchApiKeyIsDirty}
                 placeholder="sk-tavily-..."
                 startContent={
-                  settings.SEARCH_API_KEY && (
-                    <KeyStatusIcon isSet={!!settings.SEARCH_API_KEY} />
+                  settings.SEARCH_API_KEY_SET && (
+                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
                   )
                 }
               />
@@ -396,7 +396,7 @@ function LlmSettingsScreen() {
                 onChange={handleSearchApiKeyIsDirty}
                 placeholder="tvly-..."
                 startContent={
-                  settings.SEARCH_API_KEY && (
+                  settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
                   )
                 }

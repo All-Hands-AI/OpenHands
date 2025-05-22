@@ -33,6 +33,7 @@ export type Settings = {
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY_SET: boolean;
+  SEARCH_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
@@ -53,6 +54,7 @@ export type ApiSettings = {
   language: string;
   llm_api_key: string | null;
   llm_api_key_set: boolean;
+  search_api_key_set: boolean;
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
