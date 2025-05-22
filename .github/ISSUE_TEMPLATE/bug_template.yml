@@ -5,11 +5,12 @@ labels: ['bug']
 body:
   - type: markdown
     attributes:
-      value: Thank you for taking the time to fill out this bug report. Please provide as much information as possible to help us understand and address the issue effectively.
+      value: Thank you for taking the time to fill out this bug report. Please provide as much information as possible
+       to help us understand and address the issue effectively.
 
   - type: checkboxes
     attributes:
-      label: Is there an existing issue for the same bug?
+      label: Is there an existing issue for the same bug? (If one exists, thumbs up or comment on the issue instead).
       description: Please check if an issue already exists for the bug you encountered.
       options:
       - label: I have checked the existing issues.

@@ -79,8 +79,8 @@ def get_config(
     agent_config.enable_prompt_extensions = False
     agent_config = AgentConfig(
         function_calling=False,
-        codeact_enable_jupyter=True,
-        codeact_enable_browsing_delegate=True,
+        enable_jupyter=True,
+        enable_browsing=True,
     )
     config.set_agent_config(agent_config)
     return config
@@ -145,7 +145,7 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     action = CmdRunAction(command='mkdir -p /workspace')
@@ -170,7 +170,7 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def get_last_agent_finish_action(state: State) -> AgentFinishAction:

@@ -21,7 +21,7 @@ def convert_tool_call_to_string(tool_call: ChatCompletionMessageToolCall) -> str
         args = json.loads(tool_call.function.arguments)
     except json.JSONDecodeError as e:
         raise ValueError(
-            f"Failed to parse arguments as JSON. Arguments: {tool_call['function']['arguments']}"
+            f'Failed to parse arguments as JSON. Arguments: {tool_call["function"]["arguments"]}'
         ) from e
 
     tool_call_str = f'<function={tool_call.function.name}>\n'

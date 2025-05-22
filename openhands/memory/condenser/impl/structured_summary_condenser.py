@@ -311,8 +311,14 @@ Capture all relevant information, especially:
     def from_config(
         cls, config: StructuredSummaryCondenserConfig
     ) -> StructuredSummaryCondenser:
+        # This condenser cannot take advantage of prompt caching. If it happens
+        # to be set, we'll pay for the cache writes but never get a chance to
+        # save on a read.
+        llm_config = config.llm_config.model_copy()
+        llm_config.caching_prompt = False
+
         return StructuredSummaryCondenser(
-            llm=LLM(config=config.llm_config),
+            llm=LLM(config=llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

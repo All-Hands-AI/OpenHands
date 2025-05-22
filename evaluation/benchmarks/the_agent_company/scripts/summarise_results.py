@@ -8,7 +8,6 @@ import json
 import os
 import re
 import sys
-from typing import Dict, Tuple
 
 
 def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
@@ -60,7 +59,7 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
         raise ValueError(f'Unknown model: {model}')
 
 
-def analyze_eval_json_file(filepath: str) -> Tuple[int, int]:
+def analyze_eval_json_file(filepath: str) -> tuple[int, int]:
     """
     Analyze a single eval JSON file and extract the total and result from final_score.
 
@@ -84,7 +83,7 @@ def analyze_eval_json_file(filepath: str) -> Tuple[int, int]:
         return (0, 0)
 
 
-def analyze_traj_json_file(filepath: str) -> Tuple[int, float]:
+def analyze_traj_json_file(filepath: str) -> tuple[int, float]:
     """
     Analyze a single trajectory JSON file and extract the steps and tokens
     for each step. Then estimate the cost based on the tokens and the model type.
@@ -115,7 +114,7 @@ def analyze_traj_json_file(filepath: str) -> Tuple[int, float]:
 
 def analyze_folder(
     folder_path: str,
-) -> Tuple[Dict[str, Tuple[int, int]], Dict[str, Tuple[int, float]]]:
+) -> tuple[dict[str, tuple[int, int]], dict[str, tuple[int, float]]]:
     """
     Analyze all eval_*.json & traj_*.json files in the specified folder.
 
@@ -252,7 +251,7 @@ def main():
     print('\n## Summary\n')
     print(f'**Tasks Evaluated:** {len(eval_results)}\n')
     print(
-        f'**Perfect Completions:** {perfect_completions}/{len(eval_results)} ({(perfect_completions/len(eval_results)*100):.2f}%)\n'
+        f'**Perfect Completions:** {perfect_completions}/{len(eval_results)} ({(perfect_completions / len(eval_results) * 100):.2f}%)\n'
     )
 
     overall_score = (
@@ -278,10 +277,10 @@ def main():
         print('\n## Statistics\n')
         print('| Metric | Value |')
         print('|---------|--------|')
-        print(f'| Highest Task Score | {highest_score*100:.2f}% |')
-        print(f'| Lowest Task Score | {lowest_score*100:.2f}% |')
-        print(f'| Median Task Score | {median_score*100:.2f}% |')
-        print(f'| Average Task Score | {avg_score*100:.2f}% |')
+        print(f'| Highest Task Score | {highest_score * 100:.2f}% |')
+        print(f'| Lowest Task Score | {lowest_score * 100:.2f}% |')
+        print(f'| Median Task Score | {median_score * 100:.2f}% |')
+        print(f'| Average Task Score | {avg_score * 100:.2f}% |')
 
         # compute avg score per nature category
         print('\n## Statistics per Nature Category\n')
@@ -307,9 +306,11 @@ def main():
                 if nature_category == task_nature and is_perfect
             )
             print(
-                f'| Perfect Completions for {task_nature} | {perfect_completions}/{num_of_tasks} ({perfect_completions/num_of_tasks*100:.2f}%) |'
+                f'| Perfect Completions for {task_nature} | {perfect_completions}/{num_of_tasks} ({perfect_completions / num_of_tasks * 100:.2f}%) |'
             )
-            print(f'| Average Score for {task_nature} | {task_nature_score*100:.2f}% |')
+            print(
+                f'| Average Score for {task_nature} | {task_nature_score * 100:.2f}% |'
+            )
 
 
 if __name__ == '__main__':

@@ -23,9 +23,11 @@ class CriticResult(BaseModel):
 
 class BaseCritic(abc.ABC):
     """
-    A critic is a function that takes in a list of events and returns a score about the quality of those events.
+    A critic is a function that takes in a list of events, optional git patch, and returns a score about the quality of those events.
     """
 
     @abc.abstractmethod
-    def evaluate(self, events: list[Event]) -> CriticResult:
+    def evaluate(
+        self, events: list[Event], git_patch: str | None = None
+    ) -> CriticResult:
         pass

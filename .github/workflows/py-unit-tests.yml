@@ -48,8 +48,29 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: poetry run pytest --forked -n auto -svv ./tests/unit
+
+  # Run specific Windows python tests
+  test-on-windows:
+    name: Python Tests on Windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pipx
+        run: pip install pipx
+      - name: Install poetry via pipx
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+      - name: Install Python dependencies using Poetry
+        run: poetry install --without evaluation
+      - name: Run Windows unit tests
+        run: poetry run pytest -svv tests/unit/test_windows_bash.py
+      - name: Run Windows runtime tests
+        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py

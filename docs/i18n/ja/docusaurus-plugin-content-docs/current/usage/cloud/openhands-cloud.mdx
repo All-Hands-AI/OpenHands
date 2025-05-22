@@ -1,0 +1,65 @@
+# OpenHands Cloud
+
+OpenHands CloudはAll Hands AIによるOpenHandsのクラウドホスト版です。
+
+## OpenHands Cloudへのアクセス
+
+OpenHands Cloudは https://app.all-hands.dev/ でアクセスできます。
+
+[API](./cloud-api)を使用してプログラム的にOpenHands Cloudと対話することもできます。
+
+## はじめに
+
+OpenHands Cloudにアクセスすると、GitHubまたはGitLabアカウントとの接続を求められます：
+
+1. 利用規約を読んで同意した後、`Log in with GitHub`または`Log in with GitLab`をクリックします。
+2. OpenHandsが要求する権限を確認し、`Authorize OpenHands AI`をクリックします。
+   - OpenHandsはGitHubまたはGitLabアカウントからいくつかの権限を必要とします。これらの権限について詳しく知るには：
+     - GitHub：GitHub認証ページの`Learn more`リンクをクリックできます。
+     - GitLab：GitLab認証ページで各権限リクエストを展開できます。
+
+## リポジトリアクセス
+
+### GitHub
+
+#### リポジトリアクセスの追加
+
+OpenHandsに特定のリポジトリへのアクセス権を付与できます：
+1. ホームページで`Add GitHub repos`をクリックします。
+2. 組織を選択し、OpenHandsにアクセス権を付与する特定のリポジトリを選択します。
+   <details>
+     <summary>リポジトリアクセスの権限詳細</summary>
+
+     Openhandsは短期間のトークン（8時間で期限切れ）を以下の権限で要求します：
+     - Actions：読み取りと書き込み
+     - Administration：読み取り専用
+     - Commit statuses：読み取りと書き込み
+     - Contents：読み取りと書き込み
+     - Issues：読み取りと書き込み
+     - Metadata：読み取り専用
+     - Pull requests：読み取りと書き込み
+     - Webhooks：読み取りと書き込み
+     - Workflows：読み取りと書き込み
+
+     ユーザーのリポジトリアクセスは以下に基づいて付与されます：
+     - リポジトリに対して付与された権限
+     - ユーザーのGitHub権限（オーナー/コラボレーター）
+   </details>
+
+3. `Install & Authorize`をクリックします。
+
+#### リポジトリアクセスの変更
+
+GitHubリポジトリアクセスはいつでも以下の方法で変更できます：
+* 同じ`Add GitHub repos`ワークフローを使用する、または
+* 設定ページにアクセスし、`Git Settings`セクションの下にある`Configure GitHub Repositories`を選択する。
+
+### GitLab
+
+GitLabアカウントを使用する場合、OpenHandsは自動的にあなたのリポジトリにアクセスできるようになります。
+
+## 会話の保持
+
+- 会話リスト – 過去10日間に開始された最新10件の会話のみが表示されます。
+- ワークスペース – 会話ワークスペースは14日間保持されます。
+- ランタイム – ランタイムは30分間アクティブ（「ウォーム」）な状態を維持します。この期間後、会話を再開するには1〜2分かかる場合があります。

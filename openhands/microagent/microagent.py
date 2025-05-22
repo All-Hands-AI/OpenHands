@@ -6,27 +6,39 @@ import frontmatter
 from pydantic import BaseModel
 
 from openhands.core.exceptions import (
-    MicroAgentValidationError,
+    MicroagentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroAgentMetadata, MicroAgentType
+from openhands.microagent.types import MicroagentMetadata, MicroagentType
 
 
-class BaseMicroAgent(BaseModel):
+class BaseMicroagent(BaseModel):
     """Base class for all microagents."""
 
     name: str
     content: str
-    metadata: MicroAgentMetadata
+    metadata: MicroagentMetadata
     source: str  # path to the file
-    type: MicroAgentType
+    type: MicroagentType
 
     @classmethod
     def load(
-        cls, path: Union[str, Path], file_content: str | None = None
-    ) -> 'BaseMicroAgent':
-        """Load a microagent from a markdown file with frontmatter."""
+        cls,
+        path: Union[str, Path],
+        microagent_dir: Path | None = None,
+        file_content: str | None = None,
+    ) -> 'BaseMicroagent':
+        """Load a microagent from a markdown file with frontmatter.
+
+        The agent's name is derived from its path relative to the microagent_dir.
+        """
         path = Path(path) if isinstance(path, str) else path
+
+        # Calculate derived name from relative path if microagent_dir is provided
+        # Otherwise, we will rely on the name from metadata later
+        derived_name = None
+        if microagent_dir is not None:
+            derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -35,12 +47,12 @@ class BaseMicroAgent(BaseModel):
 
         # Legacy repo instructions are stored in .openhands_instructions
         if path.name == '.openhands_instructions':
-            return RepoMicroAgent(
+            return RepoMicroagent(
                 name='repo_legacy',
                 content=file_content,
-                metadata=MicroAgentMetadata(name='repo_legacy'),
+                metadata=MicroagentMetadata(name='repo_legacy'),
                 source=str(path),
-                type=MicroAgentType.REPO_KNOWLEDGE,
+                type=MicroagentType.REPO_KNOWLEDGE,
             )
 
         file_io = io.StringIO(file_content)
@@ -51,30 +63,65 @@ class BaseMicroAgent(BaseModel):
         metadata_dict = loaded.metadata or {}
 
         try:
-            metadata = MicroAgentMetadata(**metadata_dict)
+            metadata = MicroagentMetadata(**metadata_dict)
+
+            # Validate MCP tools configuration if present
+            if metadata.mcp_tools:
+                if metadata.mcp_tools.sse_servers:
+                    logger.warning(
+                        f'Microagent {metadata.name} has SSE servers. Only stdio servers are currently supported.'
+                    )
+
+                if not metadata.mcp_tools.stdio_servers:
+                    raise MicroagentValidationError(
+                        f'Microagent {metadata.name} has MCP tools configuration but no stdio servers. '
+                        'Only stdio servers are currently supported.'
+                    )
         except Exception as e:
-            raise MicroAgentValidationError(f'Error loading metadata: {e}') from e
+            # Provide more detailed error message for validation errors
+            error_msg = f'Error validating microagent metadata in {path.name}: {str(e)}'
+            if 'type' in metadata_dict and metadata_dict['type'] not in [
+                t.value for t in MicroagentType
+            ]:
+                valid_types = ', '.join([f'"{t.value}"' for t in MicroagentType])
+                error_msg += f'. Invalid "type" value: "{metadata_dict["type"]}". Valid types are: {valid_types}'
+            raise MicroagentValidationError(error_msg) from e
 
         # Create appropriate subclass based on type
         subclass_map = {
-            MicroAgentType.KNOWLEDGE: KnowledgeMicroAgent,
-            MicroAgentType.REPO_KNOWLEDGE: RepoMicroAgent,
-            MicroAgentType.TASK: TaskMicroAgent,
+            MicroagentType.KNOWLEDGE: KnowledgeMicroagent,
+            MicroagentType.REPO_KNOWLEDGE: RepoMicroagent,
         }
-        if metadata.type not in subclass_map:
-            raise ValueError(f'Unknown microagent type: {metadata.type}')
 
-        agent_class = subclass_map[metadata.type]
+        # Infer the agent type:
+        # 1. If triggers exist -> KNOWLEDGE (optional)
+        # 2. Else (no triggers) -> REPO (always active)
+        inferred_type: MicroagentType
+        if metadata.triggers:
+            inferred_type = MicroagentType.KNOWLEDGE
+        else:
+            # No triggers, default to REPO
+            # This handles cases where 'type' might be missing or defaulted by Pydantic
+            inferred_type = MicroagentType.REPO_KNOWLEDGE
+
+        if inferred_type not in subclass_map:
+            # This should theoretically not happen with the logic above
+            raise ValueError(f'Could not determine microagent type for: {path}')
+
+        # Use derived_name if available (from relative path), otherwise fallback to metadata.name
+        agent_name = derived_name if derived_name is not None else metadata.name
+
+        agent_class = subclass_map[inferred_type]
         return agent_class(
-            name=metadata.name,
+            name=agent_name,
             content=content,
             metadata=metadata,
             source=str(path),
-            type=metadata.type,
+            type=inferred_type,
         )
 
 
-class KnowledgeMicroAgent(BaseMicroAgent):
+class KnowledgeMicroagent(BaseMicroagent):
     """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations. They help with:
     - Language best practices
     - Framework guidelines
@@ -84,8 +131,8 @@ class KnowledgeMicroAgent(BaseMicroAgent):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroAgentType.KNOWLEDGE:
-            raise ValueError('KnowledgeMicroAgent must have type KNOWLEDGE')
+        if self.type != MicroagentType.KNOWLEDGE:
+            raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE')
 
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
@@ -96,6 +143,7 @@ class KnowledgeMicroAgent(BaseMicroAgent):
         for trigger in self.triggers:
             if trigger.lower() in message:
                 return trigger
+
         return None
 
     @property
@@ -103,10 +151,10 @@ class KnowledgeMicroAgent(BaseMicroAgent):
         return self.metadata.triggers
 
 
-class RepoMicroAgent(BaseMicroAgent):
-    """MicroAgent specialized for repository-specific knowledge and guidelines.
+class RepoMicroagent(BaseMicroagent):
+    """Microagent specialized for repository-specific knowledge and guidelines.
 
-    RepoMicroAgents are loaded from `.openhands/microagents/repo.md` files within repositories
+    RepoMicroagents are loaded from `.openhands/microagents/repo.md` files within repositories
     and contain private, repository-specific instructions that are automatically loaded when
     working with that repository. They are ideal for:
         - Repository-specific guidelines
@@ -117,24 +165,15 @@ class RepoMicroAgent(BaseMicroAgent):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.type != MicroAgentType.REPO_KNOWLEDGE:
-            raise ValueError('RepoMicroAgent must have type REPO_KNOWLEDGE')
-
-
-class TaskMicroAgent(BaseMicroAgent):
-    """MicroAgent specialized for task-based operations."""
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        if self.type != MicroAgentType.TASK:
-            raise ValueError('TaskMicroAgent must have type TASK')
+        if self.type != MicroagentType.REPO_KNOWLEDGE:
+            raise ValueError(
+                f'RepoMicroagent initialized with incorrect type: {self.type}'
+            )
 
 
 def load_microagents_from_dir(
     microagent_dir: Union[str, Path],
-) -> tuple[
-    dict[str, RepoMicroAgent], dict[str, KnowledgeMicroAgent], dict[str, TaskMicroAgent]
-]:
+) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
     """Load all microagents from the given directory.
 
     Note, legacy repo instructions will not be loaded here.
@@ -150,9 +189,8 @@ def load_microagents_from_dir(
 
     repo_agents = {}
     knowledge_agents = {}
-    task_agents = {}
 
-    # Load all agents from .openhands/microagents directory
+    # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
         for file in microagent_dir.rglob('*.md'):
@@ -161,15 +199,21 @@ def load_microagents_from_dir(
             if file.name == 'README.md':
                 continue
             try:
-                agent = BaseMicroAgent.load(file)
-                if isinstance(agent, RepoMicroAgent):
+                agent = BaseMicroagent.load(file, microagent_dir)
+                if isinstance(agent, RepoMicroagent):
                     repo_agents[agent.name] = agent
-                elif isinstance(agent, KnowledgeMicroAgent):
+                elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                elif isinstance(agent, TaskMicroAgent):
-                    task_agents[agent.name] = agent
-                logger.debug(f'Loaded agent {agent.name} from {file}')
+                logger.debug(
+                    f'Loaded agent {agent.name} from {file}. Type: {type(agent)}'
+                )
+            except MicroagentValidationError as e:
+                # For validation errors, include the original exception
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
+                raise MicroagentValidationError(error_msg) from e
             except Exception as e:
-                raise ValueError(f'Error loading agent from {file}: {e}')
+                # For other errors, wrap in a ValueError with detailed message
+                error_msg = f'Error loading microagent from {file}: {str(e)}'
+                raise ValueError(error_msg) from e
 
-    return repo_agents, knowledge_agents, task_agents
+    return repo_agents, knowledge_agents

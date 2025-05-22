@@ -5,7 +5,7 @@ The GitHub Resolver automates code fixes and provides intelligent assistance for
 ## Setup
 
 The Cloud GitHub Resolver is available automatically when you
-[grant OpenHands Cloud repository access](./openhands-cloud.md#adding-repository-access).
+[grant OpenHands Cloud repository access](./openhands-cloud#adding-repository-access).
 
 ## Usage
 
