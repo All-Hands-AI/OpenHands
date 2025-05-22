@@ -82,9 +82,9 @@ class TaskCompletionCondenser(RollingCondenser):
     def _find_task_chunks(self, view: View) -> List[Tuple[int, int]]:
         """Find chunks of completed tasks in the view.
 
-        Each task starts with a user message and ends right before the next user message.
-        Does NOT include the last incomplete chunk if it's still ongoing (no next user message yet).
+        Each task starts with a user message and ends with an agent message.
         Only considers events with IDs higher than the last processed ID.
+        A valid chunk is from a user message to the next agent message (inclusive).
 
         Args:
             view: The view to analyze
@@ -93,46 +93,73 @@ class TaskCompletionCondenser(RollingCondenser):
             List of tuples (start_index, end_index) for each task chunk
         """
         task_chunks = []
-        user_message_indices = []
 
         # Track if we've found new events
         found_new_events = False
 
-        # First identify all user message indices for events we haven't processed yet
-        for i, event in enumerate(view):
+        # Process each event to find user messages and their corresponding agent responses
+        i = 0
+        while i < len(view):
+            event = view[i]
+
             # Skip events with negative IDs or None source (likely condensation events)
             if event.id < 0 or event.source is None:
+                i += 1
                 continue
 
             # Skip events we've already processed
             if event.id <= self.highest_processed_id:
+                i += 1
                 continue
 
             # We've found at least one new event
             found_new_events = True
 
+            # Check if this is a user message that could start a chunk
             if (
                 event.source == EventSource.USER
                 and hasattr(event, 'action')
                 and event.action == ActionType.MESSAGE
             ):
-                user_message_indices.append(i)
+                start_idx = i
                 logger.info(
-                    f'[TaskCompletionCondenser]: New user message found at index {i}, ID: {event.id}'
+                    f'[TaskCompletionCondenser]: Potential chunk start found at index {i}, ID: {event.id}'
                 )
 
-        # If we don't have new user messages, return empty list
-        if not found_new_events or len(user_message_indices) < 2:
-            logger.info('[TaskCompletionCondenser]: No new user message chunks found')
-            return []
+                # Look for the next agent message
+                found_agent_message = False
+                for j in range(i + 1, len(view)):
+                    next_event = view[j]
 
-        # Create chunks between consecutive user messages
-        for i in range(len(user_message_indices) - 1):
-            start_idx = user_message_indices[i]
-            end_idx = (
-                user_message_indices[i + 1] - 1
-            )  # End before the next user message
-            task_chunks.append((start_idx, end_idx))
+                    # Skip events with negative IDs or None source
+                    if next_event.id < 0 or next_event.source is None:
+                        continue
+
+                    if (
+                        next_event.source == EventSource.AGENT
+                        and hasattr(next_event, 'action')
+                        and next_event.action == ActionType.MESSAGE
+                    ):
+                        # Found an agent message, create a chunk
+                        end_idx = j  # Include the agent message in the chunk
+                        task_chunks.append((start_idx, end_idx))
+                        logger.info(
+                            f'[TaskCompletionCondenser]: Created chunk from index {start_idx} to {end_idx}'
+                        )
+                        found_agent_message = True
+                        break
+
+                if not found_agent_message:
+                    logger.info(
+                        f'[TaskCompletionCondenser]: No agent message found after user message at index {i}'
+                    )
+
+            i += 1
+
+        # If we don't have new events or no chunks were created, return empty list
+        if not found_new_events or not task_chunks:
+            logger.info('[TaskCompletionCondenser]: No new task chunks found')
+            return []
 
         logger.info(
             f'[TaskCompletionCondenser]: Found {len(task_chunks)} new task chunks'
@@ -209,15 +236,11 @@ class TaskCompletionCondenser(RollingCondenser):
         )
 
     def condense(self, view: View) -> View | Condensation:
-        # """Entry point for condensation.
+        """Entry point for condensation.
 
-        # If there are completed task chunks that need condensing, perform the condensation.
-        # Otherwise, return the original view.
-        # """
-        # logger.info(f'[TaskCompletionCondenser]: condense view={view}')
-
-        # if self.should_condense(view):
-        #     return self.get_condensation(view)
+        If there are completed task chunks that need condensing, perform the condensation.
+        Otherwise, return the original view.
+        """
         return super().condense(view)
 
     @classmethod
