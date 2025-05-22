@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import os
+import logging
 import shutil
+import tempfile
 from abc import ABC
 from dataclasses import dataclass, field
 from io import BytesIO, StringIO
@@ -108,11 +109,18 @@ class _StorageTest(ABC):
 
 class TestLocalFileStore(TestCase, _StorageTest):
     def setUp(self):
-        os.makedirs('./_test_files_tmp', exist_ok=True)
-        self.store = LocalFileStore('./_test_files_tmp')
+        # Create a unique temporary directory for each test instance
+        self.temp_dir = tempfile.mkdtemp(prefix='openhands_test_')
+        self.store = LocalFileStore(self.temp_dir)
 
     def tearDown(self):
-        shutil.rmtree('./_test_files_tmp')
+        try:
+            # Use ignore_errors=True to avoid failures if directory is not empty
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+        except Exception as e:
+            logging.warning(
+                f'Failed to remove temporary directory {self.temp_dir}: {e}'
+            )
 
 
 class TestInMemoryFileStore(TestCase, _StorageTest):

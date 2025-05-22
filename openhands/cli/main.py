@@ -105,6 +105,7 @@ async def run_session(
     settings_store: FileSettingsStore,
     current_dir: str,
     task_content: str | None = None,
+    conversation_instructions: str | None = None,
     session_name: str | None = None,
 ) -> bool:
     reload_microagents = False
@@ -232,7 +233,6 @@ async def run_session(
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
 
     await runtime.connect()
-    await add_mcp_tools_to_agent(agent, runtime, config.mcp)
 
     # Initialize repository if needed
     repo_directory = None
@@ -249,7 +249,12 @@ async def run_session(
         sid=sid,
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
+        conversation_instructions=conversation_instructions,
     )
+
+    # Add MCP tools to the agent
+    if agent.config.enable_mcp:
+        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
 
     # Clear loading animation
     is_loaded.set()

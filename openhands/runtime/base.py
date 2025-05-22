@@ -118,9 +118,10 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.sid = sid
         self.event_stream = event_stream
-        self.event_stream.subscribe(
-            EventStreamSubscriber.RUNTIME, self.on_event, self.sid
-        )
+        if event_stream:
+            event_stream.subscribe(
+                EventStreamSubscriber.RUNTIME, self.on_event, self.sid
+            )
         self.plugins = (
             copy.deepcopy(plugins) if plugins is not None and len(plugins) > 0 else []
         )
@@ -135,10 +136,6 @@ class Runtime(FileEditRuntimeMixin):
         atexit.register(self.close)
 
         self.initial_env_vars = _default_env_vars(config.sandbox)
-
-        # also update with runtime_startup_env_vars
-        self.initial_env_vars.update(self.config.sandbox.runtime_startup_env_vars)
-
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
@@ -271,9 +268,10 @@ class Runtime(FileEditRuntimeMixin):
             return
 
         try:
-            await self.provider_handler.set_event_stream_secrets(
-                self.event_stream, env_vars=env_vars
-            )
+            if self.event_stream:
+                await self.provider_handler.set_event_stream_secrets(
+                    self.event_stream, env_vars=env_vars
+                )
             self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
