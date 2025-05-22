@@ -1,4 +1,4 @@
-# OpenHands Cloud API
+# Cloud API
 
 OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This is useful if
 you want to kick off your own jobs from your programs in a flexible way.
