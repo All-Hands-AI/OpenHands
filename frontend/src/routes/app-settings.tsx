@@ -37,7 +37,8 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
-  const [searchApiKeyHasChanged, setSearchApiKeyHasChanged] = React.useState(false);
+  const [searchApiKeyHasChanged, setSearchApiKeyHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -54,8 +55,9 @@ function AppSettingsScreen() {
     const enableProactiveConversations =
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
-    
-    const searchApiKey = formData.get("search-api-key")?.toString() || "";
+
+    const searchApiKey =
+      formData.get(t(I18nKey.SETTINGS$SEARCH_API_KEY))?.toString() || "";
 
     saveSettings(
       {
@@ -147,7 +149,7 @@ function AppSettingsScreen() {
 
           <SettingsInput
             testId="search-api-key-input"
-            name="search-api-key"
+            name={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
             label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
             type="password"
             defaultValue={settings.SEARCH_API_KEY || ""}
