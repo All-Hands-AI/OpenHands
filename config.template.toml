@@ -392,6 +392,11 @@ type = "noop"
 # Maximum size of history before triggering attention mechanism
 #max_size = 100
 
+# 7. Task Completion Condenser
+#type = "task_completion"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+
 # Example of a custom LLM configuration for condensers that require an LLM
 # If not provided, it falls back to the default LLM
 #[llm.condenser]

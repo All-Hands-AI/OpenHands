@@ -153,6 +153,25 @@ class StructuredSummaryCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class TaskCompletionCondenserConfig(BaseModel):
+    """Configuration for TaskCompletionCondenser.
+
+    This condenser keeps only the conclusion and report markdown files for completed tasks,
+    condensing all other events before each completed task.
+    """
+
+    type: Literal['task_completion'] = Field('task_completion')
+
+    # at least one event by default, because the best guess is that it is the user task
+    keep_first: int = Field(
+        default=1,
+        description='The number of initial events to always keep (typically task description).',
+        ge=0,
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 # Type alias for convenience
 CondenserConfig = (
     NoOpCondenserConfig
@@ -163,6 +182,7 @@ CondenserConfig = (
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
+    | TaskCompletionCondenserConfig
 )
 
 
@@ -248,24 +268,25 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
 
     Args:
         condenser_type: The type of condenser to create.
-        data: The configuration data.
+        data: The configuration data for the condenser.
 
     Returns:
-        A CondenserConfig instance.
+        CondenserConfig: A condenser configuration instance.
 
     Raises:
-        ValueError: If the condenser type is unknown.
-        ValidationError: If the provided data fails validation for the condenser type.
+        ValidationError: If the configuration is invalid.
+        ValueError: If the condenser type is not recognized.
     """
-    # Mapping of condenser types to their config classes
     condenser_classes = {
         'noop': NoOpCondenserConfig,
         'observation_masking': ObservationMaskingCondenserConfig,
+        'browser_output_masking': BrowserOutputCondenserConfig,
         'recent': RecentEventsCondenserConfig,
         'llm': LLMSummarizingCondenserConfig,
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
+        'task_completion': TaskCompletionCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:

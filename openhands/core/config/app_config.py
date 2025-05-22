@@ -104,7 +104,6 @@ class AppConfig(BaseModel):
     )
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
     enable_microagents: bool = Field(default=True)
-
     defaults_dict: ClassVar[dict] = {}
 
     model_config = {'extra': 'forbid'}

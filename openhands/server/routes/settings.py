@@ -113,7 +113,7 @@ async def reset_settings(request: Request) -> JSONResponse:
             llm_api_key='',
             llm_base_url='',
             remote_runtime_resource_factor=1,
-            enable_default_condenser=True,
+            enable_default_condenser=False,
             enable_sound_notifications=False,
             user_consents_to_analytics=existing_settings.user_consents_to_analytics
             if existing_settings
