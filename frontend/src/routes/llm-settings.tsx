@@ -304,6 +304,13 @@ function LlmSettingsScreen() {
                 }
               />
 
+              <HelpLink
+                testId="llm-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+              />
+
               <SettingsInput
                 testId="search-api-key-input"
                 name={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
@@ -321,10 +328,10 @@ function LlmSettingsScreen() {
               />
 
               <HelpLink
-                testId="llm-api-key-help-anchor"
+                testId="search-api-key-help-anchor"
                 text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
                 linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+                href="https://tavily.com/"
               />
             </div>
           )}
@@ -366,11 +373,11 @@ function LlmSettingsScreen() {
                 className="w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
-                startContent={
-                  settings.LLM_API_KEY_SET && (
-                    <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
-                  )
-                }
+              <HelpLink
+                testId="llm-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
               />
 
               <SettingsInput
@@ -387,6 +394,13 @@ function LlmSettingsScreen() {
                     <KeyStatusIcon isSet={!!settings.SEARCH_API_KEY} />
                   )
                 }
+              />
+
+              <HelpLink
+                testId="search-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
+                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
+                href="https://tavily.com/"
               />
 
               <HelpLink
