@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Set, Tuple
+from typing import List, Tuple
 
 from openhands.core.config.condenser_config import TaskCompletionCondenserConfig
 from openhands.core.logger import openhands_logger as logger
@@ -31,10 +31,7 @@ class TaskCompletionCondenser(RollingCondenser):
             f'[TaskCompletionCondenser]: Initialize successfully keep_first={keep_first}'
         )
         self.keep_first = keep_first
-        self.condensed_chunks: Set[Tuple[int, int]] = (
-            set()
-        )  # Track which chunks have been condensed
-        self.highest_processed_id = -1  # Track highest event ID we've processed
+        self.highest_processed_id = -1
         super().__init__()
 
     def _is_important_event(self, event: Event) -> bool:
@@ -46,7 +43,6 @@ class TaskCompletionCondenser(RollingCondenser):
         Returns:
             bool: True if the event should be kept, False otherwise
         """
-        # Keep user messages
         if (
             event.source == EventSource.USER
             and hasattr(event, 'action')
@@ -54,7 +50,6 @@ class TaskCompletionCondenser(RollingCondenser):
         ):
             return True
 
-        # Keep edit observations with file text (report files)
         if (
             event.source == EventSource.AGENT
             and hasattr(event, 'observation')
@@ -69,7 +64,6 @@ class TaskCompletionCondenser(RollingCondenser):
         ):
             return True
 
-        # Keep finish actions with file text (conclusions)
         if (
             event.source == EventSource.AGENT
             and hasattr(event, 'action')
@@ -94,7 +88,6 @@ class TaskCompletionCondenser(RollingCondenser):
         """
         task_chunks = []
 
-        # Track if we've found new events
         found_new_events = False
 
         # Process each event to find user messages and their corresponding agent responses
@@ -102,20 +95,16 @@ class TaskCompletionCondenser(RollingCondenser):
         while i < len(view):
             event = view[i]
 
-            # Skip events with negative IDs or None source (likely condensation events)
             if event.id < 0 or event.source is None:
                 i += 1
                 continue
 
-            # Skip events we've already processed
             if event.id <= self.highest_processed_id:
                 i += 1
                 continue
 
-            # We've found at least one new event
             found_new_events = True
 
-            # Check if this is a user message that could start a chunk
             if (
                 event.source == EventSource.USER
                 and hasattr(event, 'action')
@@ -179,10 +168,8 @@ class TaskCompletionCondenser(RollingCondenser):
         Returns:
             A Condensation containing an action that will be added to the event stream
         """
-        # Find all new completed task chunks
         task_chunks = self._find_task_chunks(view)
 
-        # Collect IDs of events to forget
         forgotten_event_ids = []
         new_highest_id = self.highest_processed_id
 
@@ -190,7 +177,6 @@ class TaskCompletionCondenser(RollingCondenser):
         for start_idx, end_idx in task_chunks:
             chunk_events = view[start_idx : end_idx + 1]
 
-            # Log the chunk we're processing
             logger.info(
                 f'[TaskCompletionCondenser]: Processing chunk {start_idx}-{end_idx} with {len(chunk_events)} events'
             )
@@ -262,14 +248,7 @@ class TaskCompletionCondenser(RollingCondenser):
         Returns:
             True if the view should be condensed, False otherwise
         """
-        logger.info(
-            f'[TaskCompletionCondenser]: should_condense called with view length={len(view)}'
-        )
-        logger.info(
-            f'[TaskCompletionCondenser]: Current highest_processed_id={self.highest_processed_id}'
-        )
 
-        # Check if we have any new events to process
         has_new_events = False
         for event in view:
             if event.id > self.highest_processed_id and event.id >= 0:
@@ -280,30 +259,6 @@ class TaskCompletionCondenser(RollingCondenser):
             logger.info('[TaskCompletionCondenser]: No new events to process')
             return False
 
-        # Log event stream for debugging (only new events)
-        logger.info('[TaskCompletionCondenser]: --- New events snapshot ---')
-        new_event_count = 0
-        for i, event in enumerate(view):
-            # Skip events we've already processed or condensation events
-            if (
-                event.id <= self.highest_processed_id
-                or event.id < 0
-                or event.source is None
-            ):
-                continue
-
-            new_event_count += 1
-            event_id = getattr(event, 'id', 'unknown')
-            event_source = getattr(event, 'source', 'unknown')
-            event_action = getattr(event, 'action', 'N/A')
-            logger.info(
-                f'[TaskCompletionCondenser]: Event {i} - ID:{event_id}, Source:{event_source}, Action:{event_action}'
-            )
-        logger.info(
-            f'[TaskCompletionCondenser]: --- End of new events snapshot ({new_event_count} new events) ---'
-        )
-
-        # Find new task chunks using the existing method (will only consider new events)
         task_chunks = self._find_task_chunks(view)
 
         result = len(task_chunks) > 0
