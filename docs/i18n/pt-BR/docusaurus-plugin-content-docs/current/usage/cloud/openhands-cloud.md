@@ -1,45 +1,24 @@
-# Openhands Cloud
+# OpenHands Cloud
 
-O OpenHands Cloud é a versão hospedada na nuvem do OpenHands da All Hands AI.
+OpenHands Cloud é a versão hospedada na nuvem do OpenHands da All Hands AI.
 
 ## Acessando o OpenHands Cloud
 
-Atualmente, os usuários estão sendo admitidos para acessar o OpenHands Cloud em ondas. Para se inscrever,
-[entre na lista de espera](https://www.all-hands.dev/join-waitlist). Assim que for aprovado, você receberá um e-mail com
-instruções sobre como acessá-lo.
+Para começar com o OpenHands Cloud, visite [app.all-hands.dev](https://app.all-hands.dev).
 
-## Primeiros Passos
+Você será solicitado a se conectar com sua conta GitHub ou GitLab:
 
-Após visitar o OpenHands Cloud, você será solicitado a se conectar com sua conta do GitHub:
-1. Após ler e aceitar os termos de serviço, clique em `Connect to GitHub`.
-2. Revise as permissões solicitadas pelo OpenHands e clique em `Authorize OpenHands AI`.
-   - O OpenHands exigirá algumas permissões da sua conta do GitHub. Para ler mais sobre essas permissões,
-     você pode clicar no link `Learn more` na página de autorização do GitHub.
+1. Após ler e aceitar os termos de serviço, clique em `Conectar ao GitHub` ou `Conectar ao GitLab`.
+2. Revise as permissões solicitadas pelo OpenHands e autorize a aplicação.
+   - OpenHands exigirá certas permissões da sua conta. Para ler mais sobre essas permissões,
+     você pode clicar no link `Saiba mais` na página de autorização.
 
-## Acesso ao Repositório
+## Próximos Passos
 
-### Adicionando Acesso ao Repositório
+Depois de conectar sua conta, você pode:
 
-Você pode conceder ao OpenHands acesso específico ao repositório:
-1. Clique no menu suspenso `Select a GitHub project`, selecione `Add more repositories...`.
-2. Selecione a organização e escolha os repositórios específicos para conceder acesso ao OpenHands.
-   - O Openhands solicita tokens de curta duração (expiração de 8 horas) com estas permissões:
-     - Actions: Read and write
-     - Administration: Read-only
-     - Commit statuses: Read and write
-     - Contents: Read and write
-     - Issues: Read and write
-     - Metadata: Read-only
-     - Pull requests: Read and write
-     - Webhooks: Read and write
-     - Workflows: Read and write
-   - O acesso ao repositório para um usuário é concedido com base em:
-     - Permissão concedida para o repositório.
-     - Permissões do GitHub do usuário (proprietário/colaborador).
-3. Clique em `Install & Authorize`.
-
-### Modificando o Acesso ao Repositório
-
-Você pode modificar o acesso ao repositório a qualquer momento:
-* Usando o mesmo fluxo de trabalho `Select a GitHub project > Add more repositories`, ou
-* Visitando a página de Configurações e selecionando `Configure GitHub Repositories` na seção `GitHub Settings`.
+- [Instalar a Integração com GitHub](./github-installation.md) para usar o OpenHands com seus repositórios GitHub
+- [Instalar a Integração com GitLab](./gitlab-installation.md) para usar o OpenHands com seus repositórios GitLab
+- [Acessar a Interface da Nuvem](./cloud-ui.md) para interagir com a interface web
+- [Usar a API da Nuvem](./cloud-api.md) para interagir programaticamente com o OpenHands
+- [Configurar o Resolvedor de Problemas na Nuvem](./cloud-issue-resolver.md) para automatizar correções de código e fornecer assistência inteligente
