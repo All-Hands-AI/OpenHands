@@ -46,12 +46,15 @@ class ModalRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -91,14 +94,17 @@ class ModalRuntime(ActionExecutionClient):
             )
 
         super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
+            config=config,
+            event_stream=event_stream,
+            llm=llm,
+            sid=sid,
+            plugins=plugins,
+            env_vars=env_vars,
+            status_callback=status_callback,
+            attach_to_existing=attach_to_existing,
+            headless_mode=headless_mode,
+            user_id=user_id,
+            git_provider_tokens=git_provider_tokens,
         )
 
     async def connect(self):

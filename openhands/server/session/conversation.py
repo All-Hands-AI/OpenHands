@@ -15,6 +15,7 @@ class Conversation:
     event_stream: EventStream
     runtime: Runtime
     user_id: str | None
+    llm: None  # This will be set by the agent session
 
     def __init__(
         self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
@@ -33,9 +34,12 @@ class Conversation:
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
+            llm=self.llm,
             sid=self.sid,
             attach_to_existing=True,
             headless_mode=False,
+            user_id=self.user_id,
+            git_provider_tokens=None,
         )
 
     async def connect(self) -> None:

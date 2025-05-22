@@ -24,7 +24,10 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
+from openhands.runtime.utils.command import (
+    DEFAULT_MAIN_MODULE,
+    get_action_execution_server_startup_command,
+)
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -46,6 +49,7 @@ class RemoteRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -57,16 +61,17 @@ class RemoteRuntime(ActionExecutionClient):
         main_module: str = DEFAULT_MAIN_MODULE,
     ) -> None:
         super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
-            user_id,
-            git_provider_tokens,
+            config=config,
+            event_stream=event_stream,
+            llm=llm,
+            sid=sid,
+            plugins=plugins,
+            env_vars=env_vars,
+            status_callback=status_callback,
+            attach_to_existing=attach_to_existing,
+            headless_mode=headless_mode,
+            user_id=user_id,
+            git_provider_tokens=git_provider_tokens,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(

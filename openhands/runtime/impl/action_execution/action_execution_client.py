@@ -10,7 +10,11 @@ import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )
@@ -79,17 +83,17 @@ class ActionExecutionClient(Runtime):
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         super().__init__(
-            config,
-            event_stream,
-            llm,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
-            user_id,
-            git_provider_tokens,
+            config=config,
+            event_stream=event_stream,
+            llm=llm,
+            sid=sid,
+            plugins=plugins,
+            env_vars=env_vars,
+            status_callback=status_callback,
+            attach_to_existing=attach_to_existing,
+            headless_mode=headless_mode,
+            user_id=user_id,
+            git_provider_tokens=git_provider_tokens,
         )
 
     @property

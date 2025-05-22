@@ -118,12 +118,15 @@ class LocalRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
+        llm,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, str, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ) -> None:
         self.is_windows = sys.platform == 'win32'
         if self.is_windows:
@@ -190,18 +193,21 @@ class LocalRuntime(ActionExecutionClient):
 
         # Initialize the action_execution_server
         super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
+            config=config,
+            event_stream=event_stream,
+            llm=llm,
+            sid=sid,
+            plugins=plugins,
+            env_vars=env_vars,
+            status_callback=status_callback,
+            attach_to_existing=attach_to_existing,
+            headless_mode=headless_mode,
+            user_id=user_id,
+            git_provider_tokens=git_provider_tokens,
         )
 
-        #If there is an API key in the environment we use this in requests to the runtime
-        session_api_key = os.getenv("SESSION_API_KEY")
+        # If there is an API key in the environment we use this in requests to the runtime
+        session_api_key = os.getenv('SESSION_API_KEY')
         if session_api_key:
             self.session.headers['X-Session-API-Key'] = session_api_key
 

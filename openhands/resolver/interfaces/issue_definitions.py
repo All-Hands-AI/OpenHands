@@ -22,11 +22,15 @@ class ServiceContext:
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
-        if llm_config is not None:
+        if (
+            llm_config is not None
+            and hasattr(strategy, 'owner')
+            and hasattr(strategy, 'repo')
+        ):
             self.llm = LLM(
                 config=llm_config,
-                conversation_id=f"service_context_{strategy.owner}_{strategy.repo}",
-                user_id="system"
+                conversation_id=f'service_context_{getattr(strategy, "owner", "unknown")}_{getattr(strategy, "repo", "unknown")}',
+                user_id='system',
             )
 
     def set_strategy(self, strategy: IssueHandlerInterface) -> None:
