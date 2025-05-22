@@ -40,6 +40,7 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
 
+
     model_config = {
         'validate_assignment': True,
     }

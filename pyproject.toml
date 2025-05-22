@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.38.0"
+version = "0.39.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -83,14 +83,15 @@ prompt-toolkit = "^3.0.50"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 pythonnet = "*"
-mcp = "1.7.1"
-mcpm = "1.9.0"
+fastmcp = "^2.3.3"
+mcpm = "1.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.10"
 mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
+types-setuptools = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -115,6 +116,7 @@ whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = "^3.0.8"
+visualswebench = { git = "https://github.com/luolin101/Visual-SWE-bench.git" }
 swegym = { git = "https://github.com/SWE-Gym/SWE-Bench-Package.git" }
 commit0 = "*"
 func_timeout = "*"
@@ -128,7 +130,7 @@ browsergym-webarena = "0.13.3"
 browsergym-miniwob = "0.13.3"
 browsergym-visualwebarena = "0.13.3"
 boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
-pyarrow = "20.0.0"                                                    # transitive dependency, pinned here to avoid conflicts
+pyarrow = "20.0.0"                                                             # transitive dependency, pinned here to avoid conflicts
 datasets = "*"
 
 [tool.poetry.scripts]
