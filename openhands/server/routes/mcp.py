@@ -1,11 +1,8 @@
-import os
 import re
 from typing import Annotated
 from pydantic import Field
-from fastmcp import FastMCP, Client
+from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
-from fastmcp.client.transports import NpxStdioTransport
-
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
@@ -140,3 +137,5 @@ async def create_mr(
         response = str(e)
 
     return response
+
+

@@ -209,14 +209,6 @@ describe("HomeScreen", () => {
         "retrieveUserGitRepositories",
       );
       retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
-      
-      // Mock createConversation to return a pending promise that doesn't resolve
-      // This will keep the isPending state true for the duration of the test
-      const createConversationSpy = vi.spyOn(
-        OpenHands,
-        "createConversation",
-      );
-      createConversationSpy.mockImplementation(() => new Promise(() => {}));
     });
 
     it("should disable the other launch buttons when the header launch button is clicked", async () => {
@@ -229,14 +221,11 @@ describe("HomeScreen", () => {
 
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
-      
-      // Wait for the UI to update
-      await waitFor(() => {
-        expect(headerLaunchButton).toBeDisabled();
-        expect(repoLaunchButton).toBeDisabled();
-        tasksLaunchButtonsAfter.forEach((button) => {
-          expect(button).toBeDisabled();
-        });
+
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
       });
     });
 
@@ -250,14 +239,11 @@ describe("HomeScreen", () => {
 
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
-      
-      // Wait for the UI to update
-      await waitFor(() => {
-        expect(headerLaunchButton).toBeDisabled();
-        expect(repoLaunchButton).toBeDisabled();
-        tasksLaunchButtonsAfter.forEach((button) => {
-          expect(button).toBeDisabled();
-        });
+
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
       });
     });
 
@@ -271,14 +257,11 @@ describe("HomeScreen", () => {
 
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
-      
-      // Wait for the UI to update
-      await waitFor(() => {
-        expect(headerLaunchButton).toBeDisabled();
-        expect(repoLaunchButton).toBeDisabled();
-        tasksLaunchButtonsAfter.forEach((button) => {
-          expect(button).toBeDisabled();
-        });
+
+      expect(headerLaunchButton).toBeDisabled();
+      expect(repoLaunchButton).toBeDisabled();
+      tasksLaunchButtonsAfter.forEach((button) => {
+        expect(button).toBeDisabled();
       });
     });
   });
