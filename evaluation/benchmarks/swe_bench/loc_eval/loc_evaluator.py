@@ -13,7 +13,7 @@ from openhands.core.logger import openhands_logger as logger
 
 
 class LocEvaluator:
-    def __init__(self, args):
+    def __init__(self, args, cost_summary: Dict = None):
         """
         Localization evaluation.
 
@@ -44,6 +44,9 @@ class LocEvaluator:
 
         # Task success tracking
         self.task_success = False
+
+        # Cost metric
+        self.cost_summary = cost_summary
 
         # Save
         self.save_dir = os.path.join(args.output_dir, "loc_eval_results")
@@ -130,7 +133,7 @@ class LocEvaluator:
 
     def _compute_avg_over_all(self):
         """Compute average loc evaluations over all instances"""
-        la_file, la_func, success_rate = 0, 0, 0
+        la_file, la_func, resolve_rate = 0, 0, 0
         avg_file_idx, avg_func_idx, avg_sr_idx = 0, 0, 0
         total_instance_num = len(self.all_eval_results.keys())
 
@@ -150,7 +153,7 @@ class LocEvaluator:
                 avg_func_idx += self.max_agent_turn
 
             if curr_eval_result["task_success"]:
-                success_rate += 1
+                resolve_rate += 1
                 avg_sr_idx += curr_eval_result["task_success_idx"]
             else:
                 avg_sr_idx += self.max_agent_turn
@@ -158,20 +161,27 @@ class LocEvaluator:
         # Average
         la_file = la_file / total_instance_num * 100 
         la_func = la_func / total_instance_num * 100
-        success_rate = success_rate / total_instance_num * 100
+        resolve_rate = resolve_rate / total_instance_num * 100
         avg_file_idx = avg_file_idx / total_instance_num
         avg_func_idx = avg_func_idx / total_instance_num
         avg_sr_idx = avg_sr_idx / total_instance_num
 
+        # Cost metric
+        cost_metric = {
+            "total_cost": cost_summary["total_cost"],
+            "average_cost": cost_summary["average_cost"],
+        }
+
         self.overall_eval = {
             "la_file (%)": la_file,
             "la_func (%)": la_func,
-            "success_rate (%)": success_rate,
+            "resolve_rate (%)": resolve_rate,
             "loc_file_idx (turn idx)": avg_file_idx,
             "loc_func_idx (turn idx)": avg_func_idx,
             "success_idx (turn idx)": avg_sr_idx,
             "max_turn_limit": self.max_agent_turn,
             "total_instance_num": total_instance_num,
+            "cost_summary": cost_metric,
         }
         self._write_to_json(self.overall_eval, "overall_eval.json")
 
@@ -676,12 +686,6 @@ if __name__ == '__main__':
 
     # Show costs
     cost_summary = infer_cost_calculator(args)
-    logger.info(
-        f"\n[Inference Data Summary]"
-        f"\n{' ' * 4} - Total cost:   $ {cost_summary['total_cost']}"
-        f"\n{' ' * 4} - Average cost: $ {cost_summary['average_cost']}"
-        f"\n{' ' * 4} - Number of Instances: {len(instances)}"
-    )
     if len(instances) != cost_summary['file_count']:
         logger.error(
             f"\n[ERROR] Instance number mismatch between histories and metrics:"
@@ -693,7 +697,7 @@ if __name__ == '__main__':
     # Loc eval
     processed_instances = []
     loc_eval_results = {}
-    loc_evaluator = LocEvaluator(args)
+    loc_evaluator = LocEvaluator(args, cost_summary)
     for swe_index, swe_instance in swe_instances.iterrows():
         # If completed processing all inference instances
         if Counter(processed_instances) == Counter(instances):
@@ -708,4 +712,12 @@ if __name__ == '__main__':
             curr_trajectory_pth = os.path.join(args.infer_dir, "histories", f"instance_{swe_instance.instance_id}.json")
             curr_trajectory = loc_evaluator.read_from_json(curr_trajectory_pth)
             loc_evaluator.instance_loc_eval(swe_instance, curr_trajectory)
-        
+
+    # Cost metric
+    logger.info(
+        f"\n[Inference Data Summary]"
+        f"\n{' ' * 4} - Total cost:   $ {cost_summary['total_cost']}"
+        f"\n{' ' * 4} - Average cost: $ {cost_summary['average_cost']}"
+        f"\n{' ' * 4} - Number of Instances: {len(instances)}"
+    )
+    

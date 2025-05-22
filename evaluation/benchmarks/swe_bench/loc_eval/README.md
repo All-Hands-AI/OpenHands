@@ -52,7 +52,10 @@ This folder implements localization evaluation at both file and function levels 
     - **File localization accuracy:** the accuracy of accurately localize the target file
     - **Function localization accuracy:** the accuracy of accurately localize the target function
     - **Task success** (will be auto-skipped if missing): the success rate of whether tasks are successfully resolved
-    - **Inference cost:** the expenditure of agent running inference on SWE-Bench instances
+    - **File localization efficiency:** the average number of iterations taken to localize the target file
+    - **Function localization efficiency:** the average number of iterations taken to localize the target function
+    - **Task success efficiency:** the average number of iterations taken to resolve the task
+    - **Resource efficiency:** the API expenditure of the agent running inference on SWE-Bench instances
 - Run localization evaluation
     - Format:
         ```bash
