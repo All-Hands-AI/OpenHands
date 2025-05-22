@@ -496,18 +496,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.38.20"
+version = "1.38.21"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.38.20-py3-none-any.whl", hash = "sha256:0494bafa771561c02ae5926143ce69b6ee4017f11ced22d0293a8372acb7472a"},
-    {file = "boto3-1.38.20.tar.gz", hash = "sha256:aa1424213678a249fe828fb9345deac5e33f9a2266fd1b23ec72e02857b018a2"},
+    {file = "boto3-1.38.21-py3-none-any.whl", hash = "sha256:37e4b6b7f77f4cc476ea82eb76a502a289bb750eee96f7d07ec9bcec6592191a"},
+    {file = "boto3-1.38.21.tar.gz", hash = "sha256:417d0328fd3394ffb1c1f400d4277d45b0b86f48d2f088a02306474969344a47"},
 ]
 
 [package.dependencies]
-botocore = ">=1.38.20,<1.39.0"
+botocore = ">=1.38.21,<1.39.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.12.0,<0.13.0"
 
@@ -516,14 +516,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.38.20"
-description = "Type annotations for boto3 1.38.20 generated with mypy-boto3-builder 8.11.0"
+version = "1.38.21"
+description = "Type annotations for boto3 1.38.21 generated with mypy-boto3-builder 8.11.0"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.38.20-py3-none-any.whl", hash = "sha256:5406da868980a3854cc9b57db150c6f2e39a4fe4a58f2872e61ac5a3d46f734e"},
-    {file = "boto3_stubs-1.38.20.tar.gz", hash = "sha256:7f1d7bfff7355eb4d17e7984fbf27f44709cd8484abb54bd6ba34ec73a552605"},
+    {file = "boto3_stubs-1.38.21-py3-none-any.whl", hash = "sha256:685130a7d5b8388144412d66466c1739a536b8d804308b6508ea9a7897f3cd4b"},
+    {file = "boto3_stubs-1.38.21.tar.gz", hash = "sha256:81bf885522c783456f343552a16f227e368b06af7021238d209e3e256237410e"},
 ]
 
 [package.dependencies]
@@ -579,7 +579,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.38.0,<1.39.0)"]
 billing = ["mypy-boto3-billing (>=1.38.0,<1.39.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.38.0,<1.39.0)"]
-boto3 = ["boto3 (==1.38.20)"]
+boto3 = ["boto3 (==1.38.21)"]
 braket = ["mypy-boto3-braket (>=1.38.0,<1.39.0)"]
 budgets = ["mypy-boto3-budgets (>=1.38.0,<1.39.0)"]
 ce = ["mypy-boto3-ce (>=1.38.0,<1.39.0)"]
@@ -942,14 +942,14 @@ xray = ["mypy-boto3-xray (>=1.38.0,<1.39.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.38.20"
+version = "1.38.21"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.38.20-py3-none-any.whl", hash = "sha256:70feba9b3f73946a9739d0c16703190d79379f065cf6e29883b5d7f791b247b8"},
-    {file = "botocore-1.38.20.tar.gz", hash = "sha256:03a5027a207fc66cd0bf8cd1abb98db41fd4d23e6bd5f43f68586af9736240fc"},
+    {file = "botocore-1.38.21-py3-none-any.whl", hash = "sha256:567b4d338114174d0b41857002a4b1e8efb68f1654ed9f3ec6c34ebdef5e9eaf"},
+    {file = "botocore-1.38.21.tar.gz", hash = "sha256:08d5e9c00e5cc9e0ae0e60570846011789dc7f1d4ea094b3f3e3f3ae1ff2063a"},
 ]
 
 [package.dependencies]
@@ -2390,14 +2390,14 @@ devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benc
 
 [[package]]
 name = "fastmcp"
-version = "2.3.5"
+version = "2.4.0"
 description = "The fast, Pythonic way to build MCP servers."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "fastmcp-2.3.5-py3-none-any.whl", hash = "sha256:193e35a8d35a5c6a4af07e764873d8592aadc2f1e32dd8827b57869a83956088"},
-    {file = "fastmcp-2.3.5.tar.gz", hash = "sha256:09e11723c6588d8c13562d5eb04d42b13b91eb32f53cef77cc8c0ee121b2f907"},
+    {file = "fastmcp-2.4.0-py3-none-any.whl", hash = "sha256:fccd0768028a31eec488707fb6bbe4f8659f84ca0c206c4c32dd33947c0faae9"},
+    {file = "fastmcp-2.4.0.tar.gz", hash = "sha256:a08d812939d16c0d4490bdbdaf17ab136f1bdaa8ddcc14a37e33335727343c05"},
 ]
 
 [package.dependencies]
@@ -3015,14 +3015,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.93.1"
+version = "1.94.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.93.1-py2.py3-none-any.whl", hash = "sha256:d46004d77c7eb950957ea541620d7191bc7bf3475d6cca228e85eadf239fd26e"},
-    {file = "google_cloud_aiplatform-1.93.1.tar.gz", hash = "sha256:b15dda9163d4c5d967290b5d23146888552340567cd8057cde11f8508b392f50"},
+    {file = "google_cloud_aiplatform-1.94.0-py2.py3-none-any.whl", hash = "sha256:cfb198d322133559c076677fbff5b51568ca7759f228c6fc5273e091c2752a41"},
+    {file = "google_cloud_aiplatform-1.94.0.tar.gz", hash = "sha256:5429dfaa953eef90e48e16fb2a6be82f26c5d4a9a0e53178fcf6f837b528373e"},
 ]
 
 [package.dependencies]
@@ -3041,7 +3041,7 @@ shapely = "<3.0.0"
 typing-extensions = "*"
 
 [package.extras]
-adk = ["google-adk (>=0.0.2)"]
+adk = ["google-adk (>=0.0.2,<1.0.0)"]
 ag2 = ["ag2[gemini]", "openinference-instrumentation-autogen (>=0.1.6,<0.2)"]
 ag2-testing = ["absl-py", "ag2[gemini]", "cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "openinference-instrumentation-autogen (>=0.1.6,<0.2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.11.1,<3)", "pytest-xdist", "typing-extensions"]
 agent-engines = ["cloudpickle (>=3.0,<4.0)", "google-cloud-logging (<4)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "packaging (>=24.0)", "pydantic (>=2.11.1,<3)", "typing-extensions"]
@@ -4168,14 +4168,14 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.45.1"
+version = "0.46.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "json_repair-0.45.1-py3-none-any.whl", hash = "sha256:a5e53cf65e875ddc36c804aa6cf5899a1472319ab832578ebf5efc47f8dbc336"},
-    {file = "json_repair-0.45.1.tar.gz", hash = "sha256:7ee439d044e4525aebc57f05666ddfbbd7230c68a1fae94ad036f05c0307943f"},
+    {file = "json_repair-0.46.0-py3-none-any.whl", hash = "sha256:54d6a9889fba0846b80befb2b1aca619103ad3ed74612fb3fedd965a4a3b1653"},
+    {file = "json_repair-0.46.0.tar.gz", hash = "sha256:abc751162baf8e384685558acba978478e833c1207be31468d9babfaf8029ab6"},
 ]
 
 [[package]]
