@@ -1,6 +1,5 @@
 import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
-import { I18nKey } from "#/i18n/declaration";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
   isUserMessage,
@@ -17,7 +16,6 @@ import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
-import { ExpandableMessage } from "./expandable-message";
 import { GenericEventMessage } from "./generic-event-message";
 
 const hasThoughtProperty = (
@@ -27,7 +25,6 @@ const hasThoughtProperty = (
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
   hasObservationPair: boolean;
-  isFirstMessageWithResolverTrigger: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
   assistantMessageActionButton: React.ReactNode;
@@ -36,32 +33,12 @@ interface EventMessageProps {
 export function EventMessage({
   event,
   hasObservationPair,
-  isFirstMessageWithResolverTrigger,
   isAwaitingUserConfirmation,
   isLastMessage,
   assistantMessageActionButton,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
-
-  const isFirstUserMessageWithResolverTrigger =
-    isFirstMessageWithResolverTrigger && isUserMessage(event);
-
-  // Special case: First user message with resolver trigger
-  if (isFirstUserMessageWithResolverTrigger) {
-    return (
-      <div>
-        <ExpandableMessage
-          type="action"
-          message={event.args.content}
-          id={I18nKey.CHAT$RESOLVER_INSTRUCTIONS}
-        />
-        {event.args.image_urls && event.args.image_urls.length > 0 && (
-          <ImageCarousel size="small" images={event.args.image_urls} />
-        )}
-      </div>
-    );
-  }
 
   if (isErrorObservation(event)) {
     return (

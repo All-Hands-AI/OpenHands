@@ -14,6 +14,7 @@ SPLIT=$8
 N_RUNS=$9
 MODE=${10}
 
+
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
   echo "Number of workers not specified, use default $NUM_WORKERS"
@@ -51,6 +52,12 @@ if [ -z "$MODE" ]; then
   echo "MODE not specified, use default $MODE"
 fi
 
+if [ -n "$EVAL_CONDENSER" ]; then
+  echo "Using Condenser Config: $EVAL_CONDENSER"
+else
+  echo "No Condenser Config provided via EVAL_CONDENSER, use default (NoOpCondenser)."
+fi
+
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
@@ -65,6 +72,7 @@ echo "MAX_ITER: $MAX_ITER"
 echo "NUM_WORKERS: $NUM_WORKERS"
 echo "COMMIT_HASH: $COMMIT_HASH"
 echo "MODE: $MODE"
+echo "EVAL_CONDENSER: $EVAL_CONDENSER"
 
 # Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
@@ -88,6 +96,10 @@ fi
 if [ "$MODE" != "swe" ]; then
   EVAL_NOTE="${EVAL_NOTE}-${MODE}"
 fi
+# Add condenser config to eval note if provided
+if [ -n "$EVAL_CONDENSER" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${EVAL_CONDENSER}"
+fi
 
 function run_eval() {
   local eval_note="${1}"
@@ -100,6 +112,8 @@ function run_eval() {
     --dataset $DATASET \
     --split $SPLIT \
     --mode $MODE"
+
+
 
   if [ -n "$EVAL_LIMIT" ]; then
     echo "EVAL_LIMIT: $EVAL_LIMIT"
