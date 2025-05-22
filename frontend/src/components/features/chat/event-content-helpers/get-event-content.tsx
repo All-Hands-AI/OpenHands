@@ -6,6 +6,7 @@ import { MonoComponent } from "../mono-component";
 import { PathComponent } from "../path-component";
 import { getActionContent } from "./get-action-content";
 import { getObservationContent } from "./get-observation-content";
+import i18n from "#/i18n";
 
 const hasPathProperty = (
   obj: Record<string, unknown>,
@@ -64,7 +65,7 @@ export const getEventContent = (
   }
 
   return {
-    title: title ?? "Unknown event",
-    details: details ?? "Unknown event",
+    title: title ?? i18n.t("EVENT$UNKNOWN_EVENT"),
+    details: details ?? i18n.t("EVENT$UNKNOWN_EVENT"),
   };
 };

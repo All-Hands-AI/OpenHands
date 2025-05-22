@@ -1,6 +1,4 @@
 import React from "react";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { useConversation } from "#/context/conversation-context";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
@@ -38,13 +36,8 @@ interface MessagesProps {
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
-    const { conversationId } = useConversation();
-    const { data: conversation } = useUserConversation(conversationId || null);
 
     const optimisticUserMessage = getOptimisticUserMessage();
-
-    // Check if conversation metadata has trigger=resolver
-    const isResolverTrigger = conversation?.trigger === "resolver";
 
     const actionHasObservationPair = React.useCallback(
       (event: OpenHandsAction | OpenHandsObservation): boolean => {
@@ -66,7 +59,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             key={index}
             event={message}
             hasObservationPair={actionHasObservationPair(message)}
-            isFirstMessageWithResolverTrigger={index === 0 && isResolverTrigger}
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
           />

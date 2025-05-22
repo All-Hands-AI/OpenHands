@@ -40,10 +40,10 @@ async def test_create_mcp_clients_success(mock_mcp_client):
 
     # Check that connect_sse was called with correct parameters
     mock_client_instance.connect_sse.assert_any_call(
-        'http://server1:8080', api_key=None
+        'http://server1:8080', api_key=None, conversation_id=None
     )
     mock_client_instance.connect_sse.assert_any_call(
-        'http://server2:8080', api_key='test-key'
+        'http://server2:8080', api_key='test-key', conversation_id=None
     )
 
 
