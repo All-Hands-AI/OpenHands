@@ -1012,14 +1012,14 @@ def test_stress_long_output_with_soft_and_hard_timeout(reusable_runtime):
         logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
 
 
-def test_command_output_continuation(remote_runtime):
+def test_command_output_continuation(reusable_runtime):
     if is_windows():
         # Windows PowerShell version
         action = CmdRunAction(
             '1..5 | ForEach-Object { Write-Output $_; Start-Sleep 3 }'
         )
         action.set_hard_timeout(2.5)
-        obs = remote_runtime.run_action(action)
+        obs = reusable_runtime.run_action(action)
         assert obs.content.strip() == '1'
         assert obs.metadata.prefix == ''
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
@@ -1027,7 +1027,7 @@ def test_command_output_continuation(remote_runtime):
         # Continue watching output
         action = CmdRunAction('')
         action.set_hard_timeout(2.5)
-        obs = remote_runtime.run_action(action)
+        obs = reusable_runtime.run_action(action)
         assert '[Below is the output of the previous command.]' in obs.metadata.prefix
         assert obs.content.strip() == '2'
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
@@ -1036,7 +1036,7 @@ def test_command_output_continuation(remote_runtime):
         for expected in ['3', '4', '5']:
             action = CmdRunAction('')
             action.set_hard_timeout(2.5)
-            obs = remote_runtime.run_action(action)
+            obs = reusable_runtime.run_action(action)
             assert (
                 '[Below is the output of the previous command.]' in obs.metadata.prefix
             )
@@ -1045,14 +1045,14 @@ def test_command_output_continuation(remote_runtime):
 
         # Final empty command to complete
         action = CmdRunAction('')
-        obs = remote_runtime.run_action(action)
+        obs = reusable_runtime.run_action(action)
         assert '[The command completed with exit code 0.]' in obs.metadata.suffix
     else:
         # Original Linux version
         # Start a command that produces output slowly
         action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
         action.set_hard_timeout(2.5)
-        obs = remote_runtime.run_action(action)
+        obs = reusable_runtime.run_action(action)
         assert obs.content.strip() == '1'
         assert obs.metadata.prefix == ''
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
@@ -1060,7 +1060,7 @@ def test_command_output_continuation(remote_runtime):
         # Continue watching output
         action = CmdRunAction('')
         action.set_hard_timeout(2.5)
-        obs = remote_runtime.run_action(action)
+        obs = reusable_runtime.run_action(action)
         assert '[Below is the output of the previous command.]' in obs.metadata.prefix
         assert obs.content.strip() == '2'
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
@@ -1069,7 +1069,7 @@ def test_command_output_continuation(remote_runtime):
         for expected in ['3', '4', '5']:
             action = CmdRunAction('')
             action.set_hard_timeout(2.5)
-            obs = remote_runtime.run_action(action)
+            obs = reusable_runtime.run_action(action)
             assert (
                 '[Below is the output of the previous command.]' in obs.metadata.prefix
             )
@@ -1078,7 +1078,7 @@ def test_command_output_continuation(remote_runtime):
 
         # Final empty command to complete
         action = CmdRunAction('')
-        obs = remote_runtime.run_action(action)
+        obs = reusable_runtime.run_action(action)
         assert '[The command completed with exit code 0.]' in obs.metadata.suffix
 
 
