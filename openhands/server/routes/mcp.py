@@ -10,7 +10,7 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
-from openhands.server.shared import ConversationStoreImpl, config
+from openhands.server.shared import ConversationStoreImpl, config, app
 from openhands.server.user_auth import get_access_token, get_provider_tokens, get_user_id
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
