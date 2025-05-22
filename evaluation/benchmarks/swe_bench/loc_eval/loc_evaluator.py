@@ -239,7 +239,7 @@ class LocEvaluator:
 
     def _parse_agent_turn_num(self):
         """Get the max agent turn for current instance"""
-        history_idx = 0
+        history_idx = 1  # skip system prompt
         self.agent_turn_num = 0
         while history_idx < len(self.trajectory):
             if (self.trajectory[history_idx]["source"] == "agent") and ("action" in self.trajectory[history_idx].keys()):
