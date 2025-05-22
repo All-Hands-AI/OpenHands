@@ -32,10 +32,11 @@ class AppConfig(BaseModel):
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
-        workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
-        workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
-        workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
-        workspace_mount_rewrite: Path to rewrite the workspace mount path.
+        search_api_key: API key for Tavily search engine (https://tavily.com/).
+        workspace_base (deprecated): Base path for the workspace. Defaults to `./workspace` as absolute path.
+        workspace_mount_path (deprecated): Path to mount the workspace. Defaults to `workspace_base`.
+        workspace_mount_path_in_sandbox (deprecated): Path to mount the workspace in sandbox. Defaults to `/workspace`.
+        workspace_mount_rewrite (deprecated): Path to rewrite the workspace mount path.
         cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
@@ -64,12 +65,15 @@ class AppConfig(BaseModel):
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
+    search_api_key: str | None = Field(default=None)
 
     # Deprecated parameters - will be removed in a future version
     workspace_base: str | None = Field(default=None, deprecated=True)
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
     workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
+    # End of deprecated parameters
+    
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)

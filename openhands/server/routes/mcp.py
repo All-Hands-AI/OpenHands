@@ -1,8 +1,11 @@
+import os
 import re
 from typing import Annotated
 from pydantic import Field
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Client
 from fastmcp.server.dependencies import get_http_request
+from fastmcp.client.transports import NpxStdioTransport
+
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
@@ -139,3 +142,16 @@ async def create_mr(
     return response
 
 
+if config.search_api_key:
+    proxy_client = Client(transport=NpxStdioTransport(
+        package="tavily-mcp@0.1.4",
+        env_vars={"TAVILY_API_KEY": config.search_api_key})
+    )
+    proxy_server = FastMCP.as_proxy(proxy_client)
+
+    mcp_server.mount(
+        prefix="tavily",
+        server=proxy_server
+    )
+else:
+    logger.warning("Tavily search API key not found in config (config.search_api_key), search functionality will be disabled")
