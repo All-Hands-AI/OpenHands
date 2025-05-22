@@ -16,7 +16,6 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
 import { useConfig } from "#/hooks/query/use-config";
-import { SettingsInput } from "#/components/features/settings/settings-input";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -37,8 +36,6 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
-  const [searchApiKeyHasChanged, setSearchApiKeyHasChanged] =
-    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -56,16 +53,12 @@ function AppSettingsScreen() {
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
 
-    const searchApiKey =
-      formData.get(t(I18nKey.SETTINGS$SEARCH_API_KEY))?.toString() || "";
-
     saveSettings(
       {
         LANGUAGE: language,
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
-        SEARCH_API_KEY: searchApiKey,
       },
       {
         onSuccess: () => {
@@ -81,7 +74,6 @@ function AppSettingsScreen() {
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
-          setSearchApiKeyHasChanged(false);
         },
       },
     );
@@ -118,17 +110,11 @@ function AppSettingsScreen() {
     );
   };
 
-  const checkIfSearchApiKeyHasChanged = (value: string) => {
-    const currentSearchApiKey = settings?.SEARCH_API_KEY || "";
-    setSearchApiKeyHasChanged(value !== currentSearchApiKey);
-  };
-
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
-    !proactiveConversationsSwitchHasChanged &&
-    !searchApiKeyHasChanged;
+    !proactiveConversationsSwitchHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -145,16 +131,6 @@ function AppSettingsScreen() {
             name="language-input"
             defaultKey={settings.LANGUAGE}
             onChange={checkIfLanguageInputHasChanged}
-          />
-
-          <SettingsInput
-            testId="search-api-key-input"
-            name={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-            label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-            type="password"
-            defaultValue={settings.SEARCH_API_KEY || ""}
-            onChange={checkIfSearchApiKeyHasChanged}
-            placeholder="sk-tavily-..."
           />
 
           <SettingsSwitch
