@@ -394,10 +394,10 @@ function LlmSettingsScreen() {
                 className="w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
-                placeholder="sk-tavily-..."
+                placeholder="tvly-..."
                 startContent={
                   settings.SEARCH_API_KEY && (
-                    <KeyStatusIcon isSet={!!settings.SEARCH_API_KEY} />
+                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
                   )
                 }
               />
