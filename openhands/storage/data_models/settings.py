@@ -115,12 +115,6 @@ class Settings(BaseModel):
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
 
-        # Convert search_api_key to SecretStr if it exists
-        search_api_key = None
-        if app_config.search_api_key:
-            from pydantic import SecretStr
-            search_api_key = SecretStr(app_config.search_api_key)
-
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -132,6 +126,6 @@ class Settings(BaseModel):
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
-            search_api_key=search_api_key,
+            search_api_key=app_config.search_api_key,
         )
         return settings
