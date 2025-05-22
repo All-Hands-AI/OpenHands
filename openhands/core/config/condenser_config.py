@@ -56,32 +56,6 @@ class RecentEventsCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
-class Mem0CondenserConfig(BaseModel):
-    """Configuration for Mem0Condenser.
-
-    This condenser removes events that have already been synchronized to Mem0
-    knowledge base, keeping only new events that happened after the last sync.
-    """
-
-    type: Literal['mem0'] = Field('mem0')
-
-    # at least one event by default, because the best guess is that it is the user task
-    keep_first: int = Field(
-        default=1,
-        description='The number of initial events to always keep (typically task description).',
-        ge=0,
-    )
-
-    # Maximum events before triggering condensation
-    max_events: int = Field(
-        default=100,
-        description='Maximum number of events before triggering condensation.',
-        ge=10,
-    )
-
-    model_config = {'extra': 'forbid'}
-
-
 class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
@@ -312,7 +286,6 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
-        'mem0': Mem0CondenserConfig,
         'task_completion': TaskCompletionCondenserConfig,
     }
 

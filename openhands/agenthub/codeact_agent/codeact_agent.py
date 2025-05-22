@@ -164,7 +164,6 @@ class CodeActAgent(Agent):
         # event we'll just return that instead of an action. The controller will
         # immediately ask the agent to step again with the new view.
         condensed_history: list[Event] = []
-        logger.info(f'abcxyz {state.view}')
         match self.condenser.condensed_history(state):
             case View(events=events):
                 condensed_history = events
