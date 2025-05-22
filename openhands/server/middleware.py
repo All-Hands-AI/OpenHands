@@ -1,5 +1,6 @@
 import asyncio
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 from urllib.parse import urlparse
@@ -191,4 +192,23 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             # Ensure the session is detached
             await self._detach_session(request)
 
+        return response
+
+
+@dataclass
+class SessionApiKeyMiddleware:
+    """Middleware which ensures that all requests contain a header with the token given"""
+
+    session_api_key: str
+
+    async def __call__(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        if request.method != 'OPTIONS' and request.url.path.startswith('/api'):
+            if self.session_api_key != request.headers.get('X-Session-API-Key'):
+                return JSONResponse(
+                    {'code': 'invalid_session_api_key'},
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                )
+        response = await call_next(request)
         return response

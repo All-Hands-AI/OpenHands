@@ -23,6 +23,7 @@ export interface IPythonObservation
   source: "agent";
   extras: {
     code: string;
+    image_urls?: string[];
   };
 }
 
@@ -133,8 +134,14 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
 export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   source: "agent";
   extras: {
-    // Add any specific fields for MCP observations
+    name: string;
   };
+}
+
+export interface UserRejectedObservation
+  extends OpenHandsObservationEvent<"user_rejected"> {
+  source: "agent";
+  extras: Record<string, unknown>;
 }
 
 export type OpenHandsObservation =
@@ -150,4 +157,5 @@ export type OpenHandsObservation =
   | EditObservation
   | ErrorObservation
   | RecallObservation
-  | MCPObservation;
+  | MCPObservation
+  | UserRejectedObservation;

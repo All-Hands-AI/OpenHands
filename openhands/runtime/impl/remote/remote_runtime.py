@@ -41,6 +41,7 @@ class RemoteRuntime(ActionExecutionClient):
     runtime_builder: RemoteRuntimeBuilder
     container_image: str
     available_hosts: dict[str, int]
+    main_module: str
 
     def __init__(
         self,

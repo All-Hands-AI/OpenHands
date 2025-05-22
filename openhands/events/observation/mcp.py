@@ -9,6 +9,7 @@ class MCPObservation(Observation):
     """This data class represents the result of a MCP Server operation."""
 
     observation: str = ObservationType.MCP
+    name: str = ''  # The name of the MCP tool that was called
 
     @property
     def message(self) -> str:
