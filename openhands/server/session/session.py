@@ -130,6 +130,7 @@ class Session:
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
         default_llm_config.base_url = settings.llm_base_url
+        self.config.search_api_key = settings.search_api_key
 
         # TODO: override other LLM config & agent config groups (#2075)
 

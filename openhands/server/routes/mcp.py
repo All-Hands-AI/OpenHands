@@ -140,35 +140,3 @@ async def create_mr(
         response = str(e)
 
     return response
-
-
-# Initialize Tavily search integration if API key is available
-def initialize_tavily_search():
-    """Initialize Tavily search integration if API key is available in config"""
-    if config.search_api_key:
-        try:
-            proxy_client = Client(transport=NpxStdioTransport(
-                package="tavily-mcp@0.1.4",
-                env_vars={"TAVILY_API_KEY": config.search_api_key})
-            )
-            proxy_server = FastMCP.as_proxy(proxy_client)
-
-            mcp_server.mount(
-                prefix="tavily",
-                server=proxy_server
-            )
-            logger.info("Tavily search integration initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize Tavily search integration: {e}")
-    else:
-        logger.warning("Tavily search API key not found in config (config.search_api_key), search functionality will be disabled")
-
-# Initialize Tavily search integration
-initialize_tavily_search()
-
-# Re-initialize Tavily search when settings are updated
-@app.post("/tavily/reinitialize")
-async def reinitialize_tavily_search():
-    """Re-initialize Tavily search integration with the latest API key from config"""
-    initialize_tavily_search()
-    return {"status": "success", "message": "Tavily search integration reinitialized"}

@@ -161,19 +161,6 @@ async def store_settings(
             config.sandbox.remote_runtime_resource_factor = (
                 settings.remote_runtime_resource_factor
             )
-            
-        # Update search API key in config
-        if settings.search_api_key is not None:
-            config.search_api_key = settings.search_api_key.get_secret_value() if settings.search_api_key else None
-            
-            # Reinitialize Tavily search if available
-            try:
-                import httpx
-                # Use httpx to call the reinitialize endpoint
-                async with httpx.AsyncClient() as client:
-                    await client.post(f"{config.server.base_url}/api/mcp/tavily/reinitialize")
-            except Exception as e:
-                logger.warning(f"Failed to reinitialize Tavily search: {e}")
 
         settings = convert_to_settings(settings)
         await settings_store.store(settings)

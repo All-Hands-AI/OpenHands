@@ -65,7 +65,7 @@ class AppConfig(BaseModel):
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
-    search_api_key: str | None = Field(default=None, description="API key for Tavily search engine (https://tavily.com/). Required for search functionality.")
+    search_api_key: SecretStr | None = Field(default=None, description="API key for Tavily search engine (https://tavily.com/). Required for search functionality.")
 
     # Deprecated parameters - will be removed in a future version
     workspace_base: str | None = Field(default=None, deprecated=True)
