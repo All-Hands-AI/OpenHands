@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
+from openhands.core.config.app_config import AppConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
@@ -12,7 +13,6 @@ from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
     """
@@ -156,7 +156,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
 
 async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, memory: 'Memory', mcp_config: MCPConfig
+    agent: 'Agent', runtime: Runtime, memory: 'Memory', app_config: AppConfig
 ):
     """
     Add MCP tools to an agent.
@@ -174,6 +174,7 @@ async def add_mcp_tools_to_agent(
     )
 
     # Add microagent MCP tools if available
+    mcp_config: MCPConfig = app_config.mcp_config
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     extra_stdio_servers = []
     for mcp_config in microagent_mcp_configs:

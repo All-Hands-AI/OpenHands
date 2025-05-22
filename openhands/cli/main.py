@@ -254,7 +254,7 @@ async def run_session(
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
-        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+        await add_mcp_tools_to_agent(agent, runtime, memory, config)
 
     # Clear loading animation
     is_loaded.set()
