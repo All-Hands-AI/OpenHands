@@ -161,7 +161,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     )
 
 
-def add_search_engine(app_config: AppConfig):
+def add_search_engine(app_config: AppConfig) -> MCPStdioServerConfig | None:
     """Add search engine to the MCP config"""
     from openhands.server.shared import server_config
 
@@ -171,16 +171,16 @@ def add_search_engine(app_config: AppConfig):
             and app_config.search_api_key.get_secret_value().startswith('tvly-')
         ):
             logger.info('Adding search engine to MCP config')
-            stdio_config = MCPStdioServerConfig(
+            return MCPStdioServerConfig(
                 name='tavily',
                 command='npx',
                 args=['-y', 'tavily-mcp@0.1.4'],
                 env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
             )
-            app_config.mcp.stdio_servers.append(stdio_config)
         else:
             logger.warning('No search engine API key found, skipping search engine')
     # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
+    return None
 
 
 async def add_mcp_tools_to_agent(
@@ -201,13 +201,16 @@ async def add_mcp_tools_to_agent(
         'Runtime must be initialized before adding MCP tools'
     )
 
+    extra_stdio_servers = []
+
     # Add search engine to the MCP config (if available)
-    add_search_engine(app_config)
+    search_engine_stdio_config = add_search_engine(app_config)
+    if search_engine_stdio_config:
+        extra_stdio_servers.append(search_engine_stdio_config)
 
     # Add microagent MCP tools if available
     mcp_config: MCPConfig = app_config.mcp
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
-    extra_stdio_servers = []
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
             logger.warning(
