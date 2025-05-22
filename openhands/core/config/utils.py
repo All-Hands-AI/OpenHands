@@ -387,11 +387,13 @@ def finalize_config(cfg: AppConfig) -> None:
     # If CLIRuntime is selected, disable Jupyter for all agents
     # Assuming 'cli' is the identifier for CLIRuntime
     if cfg.runtime and cfg.runtime.lower() == 'cli':
-        for agent_name, agent_config in cfg.agents.items():
+        for age_nt_name, agent_config in cfg.agents.items():
             if agent_config.enable_jupyter:
                 agent_config.enable_jupyter = False
+            if agent_config.enable_browsing:
+                agent_config.enable_browsing = False
         logger.openhands_logger.debug(
-            "Automatically disabled Jupyter plugin for all agents "
+            "Automatically disabled Jupyter plugin and browsing for all agents "
             "because CLIRuntime is selected and does not support IPython execution."
         )
 
@@ -834,3 +836,4 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         config.sandbox.selected_repo = args.selected_repo
 
     return config
+

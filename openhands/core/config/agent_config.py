@@ -13,7 +13,8 @@ class AgentConfig(BaseModel):
     classpath: str | None = Field(default=None)
     """The classpath of the agent to use. To be used for custom agents that are not defined in the openhands.agenthub package."""
     enable_browsing: bool = Field(default=True)
-    """Whether to enable browsing tool"""
+    """Whether to enable browsing tool.
+    Note: If using CLIRuntime, browsing is not implemented and should be disabled."""
     enable_llm_editor: bool = Field(default=False)
     """Whether to enable LLM editor tool"""
     enable_editor: bool = Field(default=True)
