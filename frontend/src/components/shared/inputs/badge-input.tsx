@@ -37,7 +37,7 @@ export function BadgeInput({ name, value, onChange }: BadgeInputProps) {
   return (
     <div
       className={cn(
-        "bg-tertiary border border-[#717888] w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+        "bg-tertiary border border-[#717888] rounded w-full p-2 placeholder:italic placeholder:text-tertiary-alt",
         "flex flex-wrap items-center gap-2",
       )}
     >
@@ -61,7 +61,7 @@ export function BadgeInput({ name, value, onChange }: BadgeInputProps) {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="flex-grow outline-none bg-transparent"
+        className="flex-grow outline-none bg-trsansparent"
       />
     </div>
   );

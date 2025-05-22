@@ -15,10 +15,17 @@ vi.mock("react-router", async () => ({
 describe("LaunchMicroagentModal", () => {
   const onCloseMock = vi.fn();
   const onLaunchMock = vi.fn();
+  const eventId = 12;
+  const conversationId = "123";
 
-  const renderMicroagentModal = () =>
+  const renderMicroagentModal = (selectedRepo?: string) =>
     render(
-      <LaunchMicroagentModal onClose={onCloseMock} onLaunch={onLaunchMock} />,
+      <LaunchMicroagentModal
+        onClose={onCloseMock}
+        onLaunch={onLaunchMock}
+        eventId={eventId}
+        selectedRepo={selectedRepo}
+      />,
       {
         wrapper: ({ children }) => (
           <QueryClientProvider client={new QueryClient()}>
@@ -72,7 +79,7 @@ describe("LaunchMicroagentModal", () => {
     getPromptSpy.mockResolvedValue("Generated prompt");
     renderMicroagentModal();
 
-    expect(getPromptSpy).toHaveBeenCalled();
+    expect(getPromptSpy).toHaveBeenCalledWith(conversationId, eventId);
     const descriptionInput = screen.getByTestId("description-input");
     await waitFor(() =>
       expect(descriptionInput).toHaveValue("Generated prompt"),
@@ -84,7 +91,32 @@ describe("LaunchMicroagentModal", () => {
     getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
     renderMicroagentModal();
 
-    expect(getMicroagentFiles).toHaveBeenCalledWith("123", ".openhands");
+    expect(getMicroagentFiles).toHaveBeenCalledWith(
+      conversationId,
+      ".openhands/microagents/",
+    );
+
+    const targetInput = screen.getByTestId("target-input");
+    expect(targetInput).toHaveValue("");
+
+    await userEvent.click(targetInput);
+
+    expect(screen.getByText("file1")).toBeInTheDocument();
+    expect(screen.getByText("file2")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("file1"));
+    expect(targetInput).toHaveValue("file1");
+  });
+
+  it("should make a query to get the list of valid target files if user has a selected repo", async () => {
+    const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
+    getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
+    renderMicroagentModal("some-repo");
+
+    expect(getMicroagentFiles).toHaveBeenCalledWith(
+      conversationId,
+      "some-repo/.openhands/microagents/",
+    );
 
     const targetInput = screen.getByTestId("target-input");
     expect(targetInput).toHaveValue("");

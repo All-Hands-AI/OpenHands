@@ -13,22 +13,32 @@ import { BadgeInput } from "#/components/shared/inputs/badge-input";
 interface LaunchMicroagentModalProps {
   onClose: () => void;
   onLaunch: () => void;
+  eventId: number;
+  selectedRepo?: string | null;
 }
 
 export function LaunchMicroagentModal({
   onClose,
   onLaunch,
+  eventId,
+  selectedRepo,
 }: LaunchMicroagentModalProps) {
   const { conversationId } = useParams<{ conversationId: string }>();
   const { data: prompt } = useQuery({
-    queryKey: ["memory", "prompt", conversationId],
-    queryFn: () => MemoryService.getPrompt(conversationId!),
+    queryKey: ["memory", "prompt", conversationId, eventId],
+    queryFn: () => MemoryService.getPrompt(conversationId!, eventId),
     enabled: !!conversationId,
   });
+
+  const microagentPath = selectedRepo
+    ? `${selectedRepo}/.openhands/microagents/`
+    : ".openhands/microagents/";
   const { data: microagents } = useQuery({
-    queryKey: ["files", "microagents", conversationId],
-    queryFn: () => FileService.getFiles(conversationId!, ".openhands"),
+    queryKey: ["files", "microagents", conversationId, microagentPath],
+    queryFn: () => FileService.getFiles(conversationId!, microagentPath),
     enabled: !!conversationId,
+    select: (data) =>
+      data.map((fileName) => fileName.replace(microagentPath, "")),
   });
 
   const [badges, setBadges] = React.useState<string[]>([]);
@@ -61,6 +71,7 @@ export function LaunchMicroagentModal({
             testId="target-input"
             name="target-input"
             label="Where should we put it?"
+            allowsCustomValue
             items={
               microagents?.map((item) => ({
                 key: item,
