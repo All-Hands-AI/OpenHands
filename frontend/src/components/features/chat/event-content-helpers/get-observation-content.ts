@@ -6,6 +6,7 @@ import {
   BrowseObservation,
   OpenHandsObservation,
   RecallObservation,
+  MCPObservation,
 } from "#/types/core/observations";
 import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
@@ -46,12 +47,24 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
   return contentDetails;
 };
 
-const getMcpObservationContent = (event: OpenHandsObservation): string => {
+const getMcpObservationContent = (event: MCPObservation): string => {
   let { content } = event;
   if (content.length > MAX_CONTENT_LENGTH) {
     content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
   }
-  return `**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
+
+  // Display tool name and arguments
+  let header = `**MCP Tool Result: ${event.extras.name}**\n\n`;
+
+  // Add arguments if available
+  if (
+    event.extras.arguments &&
+    Object.keys(event.extras.arguments).length > 0
+  ) {
+    header += `**Arguments:**\n\`\`\`json\n${JSON.stringify(event.extras.arguments, null, 2)}\n\`\`\`\n\n`;
+  }
+
+  return `${header}**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
 };
 
 const getRecallObservationContent = (event: RecallObservation): string => {

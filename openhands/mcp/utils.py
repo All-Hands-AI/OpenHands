@@ -151,7 +151,9 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     logger.debug(f'MCP response: {response}')
 
     return MCPObservation(
-        content=json.dumps(response.model_dump(mode='json')), name=action.name
+        content=json.dumps(response.model_dump(mode='json')),
+        name=action.name,
+        arguments=action.arguments,
     )
 
 
