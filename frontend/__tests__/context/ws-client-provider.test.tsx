@@ -57,7 +57,7 @@ describe("WsClientProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mock("#/hooks/query/use-user-conversation", () => ({
-      useUserConversation: () => {
+      useActiveConversation: () => {
         return { data: {
         conversation_id: "1",
         title: "Conversation 1",

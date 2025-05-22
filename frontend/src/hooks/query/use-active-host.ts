@@ -6,12 +6,17 @@ import OpenHands from "#/api/open-hands";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RootState } from "#/store";
 import { useConversation } from "#/context/conversation-context";
+import { useActiveConversation } from "./use-active-conversation";
 
 export const useActiveHost = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
 
   const { conversationId } = useConversation();
+  const { data: conversation } = useActiveConversation();
+  const enabled =
+    conversation?.status === "RUNNING" &&
+    RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const { data } = useQuery({
     queryKey: [conversationId, "hosts"],
@@ -19,7 +24,7 @@ export const useActiveHost = () => {
       const hosts = await OpenHands.getWebHosts(conversationId);
       return { hosts };
     },
-    enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
+    enabled,
     initialData: { hosts: [] },
     meta: {
       disableToast: true,
@@ -37,7 +42,7 @@ export const useActiveHost = () => {
           return "";
         }
       },
-      refetchInterval: 3000,
+      // refetchInterval: 3000,
       meta: {
         disableToast: true,
       },

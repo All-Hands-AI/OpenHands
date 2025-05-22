@@ -30,7 +30,7 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { RootState } from "#/store";
@@ -45,9 +45,7 @@ function AppContent() {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation(
-    conversationId || null,
-  );
+  const { data: conversation, isFetched } = useActiveConversation();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
