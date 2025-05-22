@@ -44,8 +44,8 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
-from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
@@ -721,15 +721,16 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 # repos for the swe-bench instances:
                 # ['astropy/astropy', 'django/django', 'matplotlib/matplotlib', 'mwaskom/seaborn', 'pallets/flask', 'psf/requests', 'pydata/xarray', 'pylint-dev/pylint', 'pytest-dev/pytest', 'scikit-learn/scikit-learn', 'sphinx-doc/sphinx', 'sympy/sympy']
                 selected_repos = data['selected_repos']
-                if isinstance(selected_repos, str): selected_repos = [selected_repos]
+                if isinstance(selected_repos, str):
+                    selected_repos = [selected_repos]
                 assert isinstance(selected_repos, list)
                 logger.info(
                     f'Filtering {selected_repos} tasks from "selected_repos"...'
                 )
-                subset = dataset[dataset["repo"].isin(selected_repos)]
+                subset = dataset[dataset['repo'].isin(selected_repos)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
-                
+
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
@@ -806,7 +807,9 @@ if __name__ == '__main__':
     else:
         # If no specific condenser config is provided via env var, default to NoOpCondenser
         condenser_config = NoOpCondenserConfig()
-        logger.debug('No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.')
+        logger.debug(
+            'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
+        )
 
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
