@@ -91,9 +91,15 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       [messages],
     );
 
-    const handleLaunchMicroagent = () => {
+    const handleLaunchMicroagent = (
+      description: string,
+      target: string,
+      triggers: string[],
+    ) => {
+      const query = `Target file: ${target}\n\nDescription: ${description}\n\nTriggers: ${triggers.join(", ")}`;
+
       createConversation(
-        { q: "Hello!" },
+        { q: query },
         {
           onSuccess: (data) => {
             let baseUrl = "";

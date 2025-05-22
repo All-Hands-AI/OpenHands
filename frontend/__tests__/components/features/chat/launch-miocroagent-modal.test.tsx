@@ -18,13 +18,13 @@ describe("LaunchMicroagentModal", () => {
   const eventId = 12;
   const conversationId = "123";
 
-  const renderMicroagentModal = (selectedRepo?: string) =>
+  const renderMicroagentModal = () =>
     render(
       <LaunchMicroagentModal
         onClose={onCloseMock}
         onLaunch={onLaunchMock}
         eventId={eventId}
-        selectedRepo={selectedRepo}
+        selectedRepo="some-repo"
       />,
       {
         wrapper: ({ children }) => (
@@ -65,15 +65,6 @@ describe("LaunchMicroagentModal", () => {
     expect(onCloseMock).toHaveBeenCalled();
   });
 
-  it("should call onLaunch when pressing the launch button", async () => {
-    renderMicroagentModal();
-
-    const launchButton = screen.getByRole("button", { name: "Launch" });
-    await userEvent.click(launchButton);
-
-    expect(onLaunchMock).toHaveBeenCalled();
-  });
-
   it("should make a query to get the prompt", async () => {
     const getPromptSpy = vi.spyOn(MemoryService, "getPrompt");
     getPromptSpy.mockResolvedValue("Generated prompt");
@@ -86,32 +77,10 @@ describe("LaunchMicroagentModal", () => {
     );
   });
 
-  it("should make a query to get the list of valid target files", async () => {
-    const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
-    getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
-    renderMicroagentModal();
-
-    expect(getMicroagentFiles).toHaveBeenCalledWith(
-      conversationId,
-      ".openhands/microagents/",
-    );
-
-    const targetInput = screen.getByTestId("target-input");
-    expect(targetInput).toHaveValue("");
-
-    await userEvent.click(targetInput);
-
-    expect(screen.getByText("file1")).toBeInTheDocument();
-    expect(screen.getByText("file2")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByText("file1"));
-    expect(targetInput).toHaveValue("file1");
-  });
-
   it("should make a query to get the list of valid target files if user has a selected repo", async () => {
     const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
     getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
-    renderMicroagentModal("some-repo");
+    renderMicroagentModal();
 
     expect(getMicroagentFiles).toHaveBeenCalledWith(
       conversationId,
@@ -128,5 +97,31 @@ describe("LaunchMicroagentModal", () => {
 
     await userEvent.click(screen.getByText("file1"));
     expect(targetInput).toHaveValue("file1");
+  });
+
+  it("should call onLaunch with the form data", async () => {
+    const getPromptSpy = vi.spyOn(MemoryService, "getPrompt");
+    const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
+
+    getPromptSpy.mockResolvedValue("Generated prompt");
+    getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
+
+    renderMicroagentModal();
+
+    const triggerInput = screen.getByTestId("trigger-input");
+    await userEvent.type(triggerInput, "trigger1 ");
+    await userEvent.type(triggerInput, "trigger2 ");
+
+    const targetInput = screen.getByTestId("target-input");
+    await userEvent.click(targetInput);
+    await userEvent.click(screen.getByText("file1"));
+
+    const launchButton = await screen.findByRole("button", { name: "Launch" });
+    await userEvent.click(launchButton);
+
+    expect(onLaunchMock).toHaveBeenCalledWith("Generated prompt", "file1", [
+      "trigger1",
+      "trigger2",
+    ]);
   });
 });

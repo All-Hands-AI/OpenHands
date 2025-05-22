@@ -12,7 +12,7 @@ import { BadgeInput } from "#/components/shared/inputs/badge-input";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
-  onLaunch: () => void;
+  onLaunch: (description: string, target: string, triggers: string[]) => void;
   eventId: number;
   selectedRepo?: string | null;
 }
@@ -41,10 +41,15 @@ export function LaunchMicroagentModal({
       data.map((fileName) => fileName.replace(microagentPath, "")),
   });
 
-  const [badges, setBadges] = React.useState<string[]>([]);
+  const [triggers, setTriggers] = React.useState<string[]>([]);
 
   const formAction = (formData: FormData) => {
-    // console.log(Object.fromEntries(formData.entries()));
+    const description = formData.get("description-input")?.toString();
+    const target = formData.get("target-input")?.toString();
+
+    if (description && target) {
+      onLaunch(description, target, triggers);
+    }
   };
 
   return (
@@ -87,8 +92,8 @@ export function LaunchMicroagentModal({
             Add a trigger for the microagent
             <BadgeInput
               name="trigger-input"
-              value={badges}
-              onChange={setBadges}
+              value={triggers}
+              onChange={setTriggers}
             />
           </label>
 
@@ -96,7 +101,7 @@ export function LaunchMicroagentModal({
             <BrandButton type="button" variant="secondary" onClick={onClose}>
               Cancel
             </BrandButton>
-            <BrandButton type="submit" variant="primary" onClick={onLaunch}>
+            <BrandButton type="submit" variant="primary">
               Launch
             </BrandButton>
           </div>
