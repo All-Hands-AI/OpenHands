@@ -975,22 +975,6 @@
         "de": "Starten",
         "uk": "Запуск"
     },
-    "CHAT$RESOLVER_INSTRUCTIONS": {
-        "en": "Resolver Instructions",
-        "ja": "リゾルバの指示",
-        "zh-CN": "解析器指令",
-        "zh-TW": "解析器指令",
-        "ko-KR": "리졸버 지침",
-        "no": "Resolver-instruksjoner",
-        "it": "Istruzioni del resolver",
-        "pt": "Instruções do resolvedor",
-        "es": "Instrucciones del resolvedor",
-        "ar": "تعليمات المحلل",
-        "fr": "Instructions du résolveur",
-        "tr": "Çözümleyici Talimatları",
-        "de": "Resolver-Anweisungen",
-        "uk": "Інструкції для вирішувача"
-    },
     "SETTINGS$ADVANCED": {
         "en": "Advanced",
         "ja": "詳細設定",
