@@ -393,8 +393,8 @@ def finalize_config(cfg: AppConfig) -> None:
             if agent_config.enable_browsing:
                 agent_config.enable_browsing = False
         logger.openhands_logger.debug(
-            "Automatically disabled Jupyter plugin and browsing for all agents "
-            "because CLIRuntime is selected and does not support IPython execution."
+            'Automatically disabled Jupyter plugin and browsing for all agents '
+            'because CLIRuntime is selected and does not support IPython execution.'
         )
 
 
@@ -836,4 +836,3 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         config.sandbox.selected_repo = args.selected_repo
 
     return config
-

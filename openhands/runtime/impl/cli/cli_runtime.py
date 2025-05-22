@@ -267,7 +267,6 @@ class CLIRuntime(Runtime):
         )
 
         exit_code = None
-        first_line = True
 
         try:
             if process.stdout:
@@ -397,10 +396,10 @@ class CLIRuntime(Runtime):
         # attempting to use this disabled feature.
         logger.warning(
             "run_ipython is called on CLIRuntime, but it's not implemented. "
-            "Please disable the Jupyter plugin in AgentConfig."
+            'Please disable the Jupyter plugin in AgentConfig.'
         )
         return ErrorObservation(
-            "Executing IPython cells is not implemented in CLIRuntime. "
+            'Executing IPython cells is not implemented in CLIRuntime. '
         )
 
     def _sanitize_filename(self, filename: str) -> str:

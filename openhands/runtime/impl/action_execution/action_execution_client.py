@@ -417,7 +417,6 @@ class ActionExecutionClient(Runtime):
         else:
             self.log('debug', 'No new stdio servers to update')
 
-
         if len(self._last_updated_mcp_stdio_servers) > 0:
             # We should always include the runtime as an MCP server whenever there's > 0 stdio servers
             updated_mcp_config.sse_servers.append(
