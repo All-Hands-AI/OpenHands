@@ -78,7 +78,6 @@ class ActionExecutionClient(Runtime):
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
@@ -98,10 +97,6 @@ class ActionExecutionClient(Runtime):
     @property
     def action_execution_server_url(self) -> str:
         raise NotImplementedError('Action execution server URL is not implemented')
-
-    @property
-    def runtime_initialized(self) -> bool:
-        return self._runtime_initialized
 
     @retry(
         retry=retry_if_exception(_is_retryable_error),
@@ -356,7 +351,7 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def get_updated_mcp_config(
+    def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
         # Add the runtime as another MCP server
@@ -422,7 +417,6 @@ class ActionExecutionClient(Runtime):
         else:
             self.log('debug', 'No new stdio servers to update')
 
-
         if len(self._last_updated_mcp_stdio_servers) > 0:
             # We should always include the runtime as an MCP server whenever there's > 0 stdio servers
             updated_mcp_config.sse_servers.append(
@@ -441,7 +435,7 @@ class ActionExecutionClient(Runtime):
         from openhands.mcp.utils import create_mcp_clients
 
         # Get the updated MCP config
-        updated_mcp_config = self.get_updated_mcp_config()
+        updated_mcp_config = self.get_mcp_config()
         self.log(
             'debug',
             f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',

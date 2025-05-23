@@ -118,7 +118,7 @@ class RecallObservation(Observation):
                     f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
                     f'date={self.date}'
                     f'custom_secrets_descriptions={self.custom_secrets_descriptions}',
-                    f'conversation_instructions={self.conversation_instructions[0:20]}...'
+                    f'conversation_instructions={self.conversation_instructions[0:20]}...',
                 ]
             )
         else:

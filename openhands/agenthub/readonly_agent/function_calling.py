@@ -32,7 +32,6 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
     AgentThinkAction,
-    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     MCPAction,
@@ -45,6 +44,9 @@ from openhands.events.tool import ToolCallMetadata
 def grep_to_cmdrun(
     pattern: str, path: str | None = None, include: str | None = None
 ) -> str:
+    # NOTE: This function currently relies on `rg` (ripgrep).
+    # `rg` may not be installed when using CLIRuntime or LocalRuntime.
+    # TODO: Implement a fallback to `grep` if `rg` is not available.
     """Convert grep tool arguments to a shell command string.
 
     Args:
@@ -75,6 +77,9 @@ def grep_to_cmdrun(
 
 
 def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
+    # NOTE: This function currently relies on `rg` (ripgrep).
+    # `rg` may not be installed when using CLIRuntime or LocalRuntime
+    # TODO: Implement a fallback to `find` if `rg` is not available.
     """Convert glob tool arguments to a shell command string.
 
     Args:

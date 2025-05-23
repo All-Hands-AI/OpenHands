@@ -76,6 +76,7 @@ async def test_cleanup_session_cancels_pending_tasks(
 
     # Run cleanup session directly from the test task
     await cli.cleanup_session(loop, mock_agent, mock_runtime, mock_controller)
+    await asyncio.sleep(0)
 
     # Check that the other task was indeed cancelled
     assert other_task.cancelled() or other_task_cancelled is True

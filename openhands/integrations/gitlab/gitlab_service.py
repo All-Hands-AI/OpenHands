@@ -196,7 +196,7 @@ class GitLabService(BaseGitService, GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
-                is_public=True
+                is_public=True,
             )
             for repo in response
         ]
@@ -468,7 +468,9 @@ class GitLabService(BaseGitService, GitService):
 
             # Set default description if none provided
             if not description:
-                description = f'Merging changes from {source_branch} into {target_branch}'
+                description = (
+                    f'Merging changes from {source_branch} into {target_branch}'
+                )
 
             # Prepare the request payload
             payload = {
@@ -477,7 +479,6 @@ class GitLabService(BaseGitService, GitService):
                 'title': title,
                 'description': description,
             }
-            
 
             # Make the POST request to create the MR
             response, _ = await self._make_request(

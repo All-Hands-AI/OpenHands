@@ -16,6 +16,7 @@ from zipfile import ZipFile
 import httpx
 
 from openhands.core.config import AppConfig, SandboxConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -26,6 +27,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -99,6 +101,7 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
+    _runtime_initialized: bool = False
 
     def __init__(
         self,
@@ -161,6 +164,10 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+
+    @property
+    def runtime_initialized(self) -> bool:
+        return self._runtime_initialized
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -427,6 +434,11 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
+    @property
+    def workspace_root(self) -> Path:
+        """Return the workspace root path."""
+        return Path(self.config.workspace_mount_path_in_sandbox)
+
     def maybe_setup_git_hooks(self):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
         pre_commit_script = '.openhands/pre-commit.sh'
@@ -611,7 +623,6 @@ fi
             A list of loaded microagents from the org/user level repository
         """
         loaded_microagents: list[BaseMicroagent] = []
-        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
 
         repo_parts = selected_repository.split('/')
         if len(repo_parts) < 2:
@@ -634,7 +645,7 @@ fi
         # Try to clone the org-level .openhands repo
         try:
             # Create a temporary directory for the org-level repo
-            org_repo_dir = workspace_root / f'org_openhands_{org_name}'
+            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
@@ -683,10 +694,8 @@ fi
         For example, if the repository is github.com/acme-co/api, it will also check for
         github.com/acme-co/.openhands and load microagents from there if it exists.
         """
-
         loaded_microagents: list[BaseMicroagent] = []
-        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
-        microagents_dir = workspace_root / '.openhands' / 'microagents'
+        microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
 
         # Check for user/org level microagents if a repository is selected
@@ -696,7 +705,7 @@ fi
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
-            repo_root = workspace_root / selected_repository.split('/')[-1]
+            repo_root = self.workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
 
         self.log(
@@ -707,7 +716,7 @@ fi
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
         obs = self.read(
-            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
+            FileReadAction(path=str(self.workspace_root / '.openhands_instructions'))
         )
         if isinstance(obs, ErrorObservation) and repo_root is not None:
             # If the instructions file is not found in the workspace root, try to load it from the repo root
@@ -783,6 +792,12 @@ fi
     async def connect(self) -> None:
         pass
 
+    @abstractmethod
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ) -> MCPConfig:
+        pass
+
     # ====================================================================
     # Action execution
     # ====================================================================
@@ -801,6 +816,10 @@ fi
 
     @abstractmethod
     def write(self, action: FileWriteAction) -> Observation:
+        pass
+
+    @abstractmethod
+    def edit(self, action: FileEditAction) -> Observation:
         pass
 
     @abstractmethod
@@ -884,3 +903,19 @@ fi
     @property
     def additional_agent_instructions(self) -> str:
         return ''
+
+    def subscribe_to_shell_stream(
+        self, callback: Callable[[str], None] | None = None
+    ) -> bool:
+        """
+        Subscribe to shell command output stream.
+        This method is meant to be overridden by runtime implementations
+        that want to stream shell command output to external consumers.
+
+        Args:
+            callback: A function that will be called with each line of output from shell commands.
+                     If None, any existing subscription will be removed.
+
+        Returns False by default.
+        """
+        return False
