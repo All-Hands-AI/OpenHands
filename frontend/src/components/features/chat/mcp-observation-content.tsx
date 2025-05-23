@@ -2,26 +2,7 @@ import React from "react";
 import ReactJsonView from "@microlink/react-json-view";
 import { useTranslation } from "react-i18next";
 import { MCPObservation } from "#/types/core/observations";
-
-// Custom JSON viewer theme that matches our application theme
-const jsonViewTheme = {
-  base00: "transparent", // background
-  base01: "#2d2d2d", // lighter background
-  base02: "#4e4e4e", // selection background
-  base03: "#6c6c6c", // comments, invisibles
-  base04: "#969896", // dark foreground
-  base05: "#d9d9d9", // default foreground
-  base06: "#e8e8e8", // light foreground
-  base07: "#ffffff", // light background
-  base08: "#ff5370", // variables, red
-  base09: "#f78c6c", // integers, orange
-  base0A: "#ffcb6b", // booleans, yellow
-  base0B: "#c3e88d", // strings, green
-  base0C: "#89ddff", // support, cyan
-  base0D: "#82aaff", // functions, blue
-  base0E: "#c792ea", // keywords, purple
-  base0F: "#ff5370", // deprecated, red
-};
+import { JSON_VIEW_THEME } from "#/utils/constants";
 
 interface MCPObservationContentProps {
   event: MCPObservation;
