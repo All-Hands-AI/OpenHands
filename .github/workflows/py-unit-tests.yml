@@ -48,7 +48,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Unit Tests
-        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit
+        run: poetry run pytest --forked -n auto -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
         run: TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
 
