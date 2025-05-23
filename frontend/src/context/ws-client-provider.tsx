@@ -169,16 +169,25 @@ export function WsClientProvider({
         setParsedEvents((prevEvents) => [...prevEvents, event]);
       }
 
-      if (isErrorObservation(event) || isAgentStateChangeObservation(event)) {
+      if (isAgentStateChangeObservation(event)) {
+        if (event.extras.agent_state === "error") {
+          trackError({
+            message: event.message,
+            source: "chat",
+            metadata: { msgId: event.id },
+          });
+          setErrorMessage(event.extras.reason || "Unknown error");
+        }
+
+        return;
+      }
+
+      if (isErrorObservation(event)) {
         trackError({
           message: event.message,
           source: "chat",
           metadata: { msgId: event.id },
         });
-
-        if (isAgentStateChangeObservation(event)) {
-          setErrorMessage(event.extras.reason || "Unknown error");
-        }
       } else {
         removeErrorMessage();
       }
