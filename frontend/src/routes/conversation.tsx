@@ -1,25 +1,22 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { FaServer } from "react-icons/fa";
+import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { DiGit } from "react-icons/di";
+import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  ConversationProvider,
-  useConversation,
-} from "#/context/conversation-context";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
-import { FilesProvider } from "#/context/files";
+
 import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
@@ -30,28 +27,26 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
+import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
+import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation(
-    conversationId || null,
-  );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { conversationId } = useConversationId();
+  const { data: conversation, isFetched } = useActiveConversation();
+
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
-  const endSession = useEndSession();
+  const navigate = useNavigate();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -63,30 +58,16 @@ function AppContent() {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
-      endSession();
+      navigate("/");
     }
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
-    }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
@@ -109,6 +90,8 @@ function AppContent() {
   } = useDisclosure();
 
   function renderMain() {
+    const basePath = `/conversations/${conversationId}`;
+
     if (width <= 640) {
       return (
         <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
@@ -134,9 +117,40 @@ function AppContent() {
                 icon: <DiGit className="w-6 h-6" />,
               },
               {
-                label: t(I18nKey.WORKSPACE$TITLE),
-                to: "workspace",
-                icon: <CodeIcon />,
+                label: (
+                  <div className="flex items-center gap-1">
+                    {t(I18nKey.VSCODE$TITLE)}
+                  </div>
+                ),
+                to: "vscode",
+                icon: <VscCode className="w-5 h-5" />,
+                rightContent: !RUNTIME_INACTIVE_STATES.includes(
+                  curAgentState,
+                ) ? (
+                  <FaExternalLinkAlt
+                    className="w-3 h-3 text-neutral-400 cursor-pointer"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (conversationId) {
+                        try {
+                          const data =
+                            await OpenHands.getVSCodeUrl(conversationId);
+                          if (data.vscode_url) {
+                            const transformedUrl = transformVSCodeUrl(
+                              data.vscode_url,
+                            );
+                            if (transformedUrl) {
+                              window.open(transformedUrl, "_blank");
+                            }
+                          }
+                        } catch (err) {
+                          // Silently handle the error
+                        }
+                      }
+                    }}
+                  />
+                ) : null,
               },
               {
                 label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
@@ -160,9 +174,10 @@ function AppContent() {
               },
             ]}
           >
-            <FilesProvider>
-              <Outlet />
-            </FilesProvider>
+            {/* Use both Outlet and TabContent */}
+            <div className="h-full w-full">
+              <TabContent conversationPath={basePath} />
+            </div>
           </Container>
         }
       />
@@ -193,11 +208,7 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <ConversationProvider>
-      <AppContent />
-    </ConversationProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;

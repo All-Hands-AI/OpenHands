@@ -4,13 +4,12 @@ import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
-import { TOSCheckbox } from "./tos-checkbox";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { LoginMethod, setLoginMethod } from "#/utils/local-storage";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
@@ -19,7 +18,6 @@ interface AuthModalProps {
 
 export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
   const { t } = useTranslation();
-  const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
@@ -28,14 +26,22 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
-      handleCaptureConsent(true);
+      // Store the login method in local storage (only in SAAS mode)
+      if (appMode === "saas") {
+        setLoginMethod(LoginMethod.GITHUB);
+      }
+      // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = githubAuthUrl;
     }
   };
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
-      handleCaptureConsent(true);
+      // Store the login method in local storage (only in SAAS mode)
+      if (appMode === "saas") {
+        setLoginMethod(LoginMethod.GITLAB);
+      }
+      // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = gitlabAuthUrl;
     }
   };
@@ -50,11 +56,8 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
           </h1>
         </div>
 
-        <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
-
         <div className="flex flex-col gap-3 w-full">
           <BrandButton
-            isDisabled={!isTosAccepted}
             type="button"
             variant="primary"
             onClick={handleGitHubAuth}
@@ -65,7 +68,6 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
           </BrandButton>
 
           <BrandButton
-            isDisabled={!isTosAccepted}
             type="button"
             variant="primary"
             onClick={handleGitLabAuth}

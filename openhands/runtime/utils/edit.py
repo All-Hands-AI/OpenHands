@@ -4,7 +4,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any
 
-from openhands_aci.utils.diff import get_diff  # type: ignore
+from openhands_aci.utils.diff import get_diff
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger

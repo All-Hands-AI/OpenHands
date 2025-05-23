@@ -9,9 +9,17 @@ interface NavTabProps {
   icon: React.ReactNode;
   isBeta?: boolean;
   isLoading?: boolean;
+  rightContent?: React.ReactNode;
 }
 
-export function NavTab({ to, label, icon, isBeta, isLoading }: NavTabProps) {
+export function NavTab({
+  to,
+  label,
+  icon,
+  isBeta,
+  isLoading,
+  rightContent,
+}: NavTabProps) {
   return (
     <NavLink
       end
@@ -24,15 +32,17 @@ export function NavTab({ to, label, icon, isBeta, isLoading }: NavTabProps) {
       )}
     >
       {({ isActive }) => (
-        <>
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <div className={cn(isActive && "text-logo")}>{icon}</div>
             {label}
             {isBeta && <BetaBadge />}
           </div>
-
-          {isLoading && <LoadingSpinner size="small" />}
-        </>
+          <div className="flex items-center gap-2">
+            {rightContent}
+            {isLoading && <LoadingSpinner size="small" />}
+          </div>
+        </div>
       )}
     </NavLink>
   );

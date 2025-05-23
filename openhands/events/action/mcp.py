@@ -1,14 +1,14 @@
-from dataclasses import dataclass
-from typing import ClassVar
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
 
 
 @dataclass
-class McpAction(Action):
+class MCPAction(Action):
     name: str
-    arguments: str | None = None
+    arguments: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
@@ -24,7 +24,7 @@ class McpAction(Action):
         )
 
     def __str__(self) -> str:
-        ret = '**McpAction**\n'
+        ret = '**MCPAction**\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'NAME: {self.name}\n'

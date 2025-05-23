@@ -46,6 +46,7 @@ class SystemMessageAction(Action):
     content: str
     tools: list[Any] | None = None
     openhands_version: str | None = openhands.__version__
+    agent_class: str | None = None
     action: ActionType = ActionType.SYSTEM
 
     @property
@@ -57,4 +58,6 @@ class SystemMessageAction(Action):
         ret += f'CONTENT: {self.content}'
         if self.tools:
             ret += f'\nTOOLS: {len(self.tools)} tools available'
+        if self.agent_class:
+            ret += f'\nAGENT_CLASS: {self.agent_class}'
         return ret

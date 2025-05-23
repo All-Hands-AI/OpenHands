@@ -9,6 +9,16 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   };
 }
 
+export interface SystemMessageAction extends OpenHandsActionEvent<"system"> {
+  source: "agent";
+  args: {
+    content: string;
+    tools: Array<Record<string, unknown>> | null;
+    openhands_version: string | null;
+    agent_class: string | null;
+  };
+}
+
 export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent";
   args: {
@@ -142,9 +152,19 @@ export interface RecallAction extends OpenHandsActionEvent<"recall"> {
   };
 }
 
+export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
+  source: "agent";
+  args: {
+    name: string;
+    arguments: Record<string, unknown>;
+    thought?: string;
+  };
+}
+
 export type OpenHandsAction =
   | UserMessageAction
   | AssistantMessageAction
+  | SystemMessageAction
   | CommandAction
   | IPythonAction
   | ThinkAction
@@ -156,4 +176,5 @@ export type OpenHandsAction =
   | FileEditAction
   | FileWriteAction
   | RejectAction
-  | RecallAction;
+  | RecallAction
+  | MCPAction;

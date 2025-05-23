@@ -1,32 +1,32 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
 import { useConfig } from "../query/use-config";
+import { clearLoginData } from "#/utils/local-storage";
 
 export const useLogout = () => {
-  const { setProviderTokensSet, setProvidersAreSet } = useAuth();
   const queryClient = useQueryClient();
   const { data: config } = useConfig();
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: async () => {
-      // Pause all queries that depend on githubTokenIsSet
-      queryClient.setQueryData(["user"], null);
-
-      // Call logout endpoint
-      await OpenHands.logout(config?.APP_MODE ?? "oss");
-
-      // Remove settings from cache so it will be refetched with new token state
+    mutationFn: () => OpenHands.logout(config?.APP_MODE ?? "oss"),
+    onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["tasks"] });
       queryClient.removeQueries({ queryKey: ["settings"] });
+      queryClient.removeQueries({ queryKey: ["user"] });
+      queryClient.removeQueries({ queryKey: ["secrets"] });
 
-      // Update token state - this will trigger a settings refetch since it's part of the query key
-      setProviderTokensSet([]);
-      setProvidersAreSet(false);
+      // Clear login method and last page from local storage
+      if (config?.APP_MODE === "saas") {
+        clearLoginData();
+      }
 
-      // Navigate to root page and refresh the page
-      navigate("/");
+      posthog.reset();
+      await navigate("/");
+
+      // Refresh the page after all logout logic is completed
       window.location.reload();
     },
   });

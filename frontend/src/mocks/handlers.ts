@@ -6,15 +6,18 @@ import {
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
-import { GitUser } from "#/types/git";
+import { GitRepository, GitUser } from "#/types/git";
+import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
+import { SECRETS_HANDLERS } from "./secrets-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
   llm_api_key: null,
   llm_api_key_set: DEFAULT_SETTINGS.LLM_API_KEY_SET,
+  search_api_key_set: DEFAULT_SETTINGS.SEARCH_API_KEY_SET,
   agent: DEFAULT_SETTINGS.AGENT,
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
@@ -24,14 +27,24 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   provider_tokens_set: DEFAULT_SETTINGS.PROVIDER_TOKENS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
+  enable_proactive_conversation_starters:
+    DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-  provider_tokens: DEFAULT_SETTINGS.PROVIDER_TOKENS,
 };
 
 const MOCK_USER_PREFERENCES: {
   settings: ApiSettings | PostApiSettings | null;
 } = {
   settings: null,
+};
+
+/**
+ * Set the user settings to the default settings
+ *
+ * Useful for resetting the settings in tests
+ */
+export const resetTestHandlersMockSettings = () => {
+  MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
 };
 
 const conversations: Conversation[] = [
@@ -42,6 +55,8 @@ const conversations: Conversation[] = [
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
+    url: null,
+    session_api_key: null,
   },
   {
     conversation_id: "2",
@@ -53,6 +68,8 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    url: null,
+    session_api_key: null,
   },
   {
     conversation_id: "3",
@@ -64,6 +81,8 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    url: null,
+    session_api_key: null,
   },
 ];
 
@@ -79,8 +98,9 @@ const openHandsHandlers = [
     HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
+      "gpt-4o-mini",
       "anthropic/claude-3.5",
-      "anthropic/claude-3-5-sonnet-20241022",
+      "anthropic/claude-sonnet-4-20250514",
     ]),
   ),
 
@@ -105,13 +125,27 @@ const openHandsHandlers = [
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
   ...FILE_SERVICE_HANDLERS,
+  ...TASK_SUGGESTIONS_HANDLERS,
+  ...SECRETS_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/user/repositories", () =>
-    HttpResponse.json([
-      { id: 1, full_name: "octocat/hello-world" },
-      { id: 2, full_name: "octocat/earth" },
-    ]),
-  ),
+  http.get("/api/user/repositories", () => {
+    const data: GitRepository[] = [
+      {
+        id: 1,
+        full_name: "octocat/hello-world",
+        git_provider: "github",
+        is_public: true,
+      },
+      {
+        id: 2,
+        full_name: "octocat/earth",
+        git_provider: "github",
+        is_public: true,
+      },
+    ];
+
+    return HttpResponse.json(data);
+  }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
       id: 1,
@@ -139,7 +173,7 @@ export const handlers = [
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
       STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
-        ENABLE_BILLING: mockSaas,
+        ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
       },
     };
@@ -154,11 +188,12 @@ export const handlers = [
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
     if (Object.keys(settings.provider_tokens_set).length > 0)
-      settings.provider_tokens_set = { github: false, gitlab: false };
+      settings.provider_tokens_set = {};
 
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
+    await delay();
     const body = await request.json();
 
     if (body) {
@@ -183,8 +218,6 @@ export const handlers = [
   http.post("/api/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),
   ),
-
-  http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
   http.get("/api/conversations", async () => {
     const values = Array.from(CONVERSATIONS.values());
@@ -231,7 +264,9 @@ export const handlers = [
     },
   ),
 
-  http.post("/api/conversations", () => {
+  http.post("/api/conversations", async () => {
+    await delay();
+
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",
@@ -239,6 +274,8 @@ export const handlers = [
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",
+      url: null,
+      session_api_key: null,
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);
@@ -265,5 +302,33 @@ export const handlers = [
     await delay();
     MOCK_USER_PREFERENCES.settings = { ...MOCK_DEFAULT_USER_SETTINGS };
     return HttpResponse.json(null, { status: 200 });
+  }),
+
+  http.post("/api/add-git-providers", async ({ request }) => {
+    const body = await request.json();
+
+    if (typeof body === "object" && body?.provider_tokens) {
+      const rawTokens = body.provider_tokens as Record<
+        string,
+        { token?: string }
+      >;
+
+      const providerTokensSet: Partial<Record<Provider, string | null>> =
+        Object.fromEntries(
+          Object.entries(rawTokens)
+            .filter(([, val]) => val && val.token)
+            .map(([provider]) => [provider as Provider, ""]),
+        );
+
+      const newSettings = {
+        ...(MOCK_USER_PREFERENCES.settings ?? MOCK_DEFAULT_USER_SETTINGS),
+        provider_tokens_set: providerTokensSet,
+      };
+      MOCK_USER_PREFERENCES.settings = newSettings;
+
+      return HttpResponse.json(true, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 400 });
   }),
 ];

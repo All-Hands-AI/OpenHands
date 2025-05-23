@@ -2,53 +2,118 @@
 
 ## システム要件
 
-* Docker バージョン26.0.0+またはDocker Desktop 4.31.0+
-* LinuxまたはMac OSを使用する必要があります
-  * Windowsを使用している場合は、[WSL](https://learn.microsoft.com/en-us/windows/wsl/install)を使用する必要があります
+- [Docker Desktopをサポート](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)するMacOS
+- Linux
+- [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)と[Docker Desktopをサポート](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)するWindows
 
-## アプリケーションの起動
+OpenHandsを実行するには、最新のプロセッサと最低**4GB RAM**を搭載したシステムが推奨されます。
 
-OpenHandsを実行する最も簡単な方法は、Dockerを使用することです。
+## 前提条件
+
+<details>
+  <summary>MacOS</summary>
+
+  **Docker Desktop**
+
+  1. [MacにDocker Desktopをインストール](https://docs.docker.com/desktop/setup/install/mac-install)します。
+  2. Docker Desktopを開き、`設定 > 詳細設定`に移動して、`デフォルトのDockerソケットの使用を許可する`が有効になっていることを確認します。
+</details>
+
+<details>
+  <summary>Linux</summary>
+
+  :::note
+  Ubuntu 22.04でテスト済み。
+  :::
+
+  **Docker Desktop**
+
+  1. [LinuxにDocker Desktopをインストール](https://docs.docker.com/desktop/setup/install/linux/)します。
+
+</details>
+
+<details>
+  <summary>Windows</summary>
+
+  **WSL**
+
+  1. [WSLをインストール](https://learn.microsoft.com/en-us/windows/wsl/install)します。
+  2. PowerShellで`wsl --version`を実行し、`Default Version: 2`であることを確認します。
+
+  **Docker Desktop**
+
+  1. [WindowsにDocker Desktopをインストール](https://docs.docker.com/desktop/setup/install/windows-install)します。
+  2. Docker Desktopを開き、`設定`で以下を確認します：
+  - 一般：`WSL 2ベースのエンジンを使用する`が有効になっている。
+  - リソース > WSL統合：`デフォルトのWSLディストリビューションとの統合を有効にする`が有効になっている。
+
+  :::note
+  アプリを起動するための以下のdockerコマンドは、WSLターミナル内で実行する必要があります。
+  :::
+
+</details>
+
+## アプリの起動
+
+OpenHandsを実行する最も簡単な方法はDockerを使用することです。
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.29-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.29
+    docker.all-hands.dev/all-hands-ai/openhands:0.39
 ```
 
-また、[ヘッドレススクリプトモード](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)、[対話型CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)、または[OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action)としても実行できます。
+OpenHandsは http://localhost:3000 で実行されています！
 
-## 設定
+また、[OpenHandsをローカルファイルシステムに接続](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem)したり、
+OpenHandsを[ヘッドレスモード](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)でスクリプト実行したり、
+[使いやすいCLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)を介して操作したり、
+[GitHubアクション](https://docs.all-hands.dev/modules/usage/how-to/github-action)でタグ付けされた課題に対して実行したりすることもできます。
 
-上記のコマンドを実行すると、OpenHandsは[http://localhost:3000](http://localhost:3000)で動作します。
+## セットアップ
 
-OpenHandsを起動すると、設定モーダルウィンドウが表示されます。`LLMプロバイダー`と`LLMモデル`を選択し、対応する`APIキー`を入力する**必要があります**。
-これらの設定は、UIの`設定`ボタン（歯車アイコン）を選択することでいつでも変更できます。
+OpenHandsを起動した後、`LLMプロバイダー`と`LLMモデル`を選択し、対応する`APIキー`を入力する**必要があります**。
+これは、初期設定ポップアップ時に行うか、UIの`設定`ボタン（歯車アイコン）を選択して行うことができます。
 
-必要な`LLMモデル`がリストに存在しない場合は、`詳細オプション`を有効にして、
-`カスタムモデル`テキストボックスに適切なプレフィックスを付けて手動で入力できます。
-`詳細オプション`では、必要に応じて`ベースURL`も指定できます。
+必要なモデルがリストに存在しない場合は、`詳細設定`をトグルして、正しいプレフィックスを付けて
+`カスタムモデル`テキストボックスに手動で入力することができます。
+`詳細設定`では、必要に応じて`ベースURL`を指定することもできます。
 
-<div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
-  <img src="/img/settings-screenshot.png" alt="settings-modal" width="340" />
-  <img src="/img/settings-advanced.png" alt="settings-modal" width="335" />
-</div>
+### APIキーの取得
+
+OpenHandsはほとんどの言語モデルにアクセスするためにAPIキーが必要です。推奨プロバイダーからAPIキーを取得する方法は次のとおりです：
+
+#### Anthropic (Claude)
+
+1. [Anthropicアカウントを作成](https://console.anthropic.com/)します。
+2. [APIキーを生成](https://console.anthropic.com/settings/keys)します。
+3. [課金を設定](https://console.anthropic.com/settings/billing)します。
+
+コストを管理するために使用制限を設定することを検討してください。
+
+#### OpenAI
+
+1. [OpenAIアカウントを作成](https://platform.openai.com/)します。
+2. [APIキーを生成](https://platform.openai.com/api-keys)します。
+3. [課金を設定](https://platform.openai.com/account/billing/overview)します。
+
+これで[OpenHandsを使い始める](./getting-started)準備ができました。
 
 ## バージョン
 
-上記のコマンドは、OpenHandsの最新の安定版を取得します。他のオプションもあります：
-- 特定のバージョンを使用する場合は、`docker.all-hands.dev/all-hands-ai/openhands:$VERSION`を使用し、$VERSIONをバージョン番号に置き換えてください。
-- semverを使用しており、メジャー、マイナー、パッチバージョンのタグを公開しています。したがって、`0.9`は最新の`0.9.x`バージョンを、`0`は最新の`0.x.x`バージョンを指します。
-- 最新の開発バージョンを使用する場合は、`docker.all-hands.dev/all-hands-ai/openhands:main`を使用できます。このバージョンは不安定で、テストまたは開発目的でのみ推奨されます。
-
-安定性要件と必要な機能に応じて、最適なタグを選択できます。
+[上記のdockerコマンド](./installation#start-the-app)は、OpenHandsの最新の安定版リリースを取得します。他のオプションもあります：
+- 特定のリリースの場合、`openhands:$VERSION`と`runtime:$VERSION`の$VERSIONをバージョン番号に置き換えます。
+SemVerを使用しているため、`0.9`は自動的に最新の`0.9.x`リリースを指し、`0`は最新の`0.x.x`リリースを指します。
+- 最新の開発バージョンの場合、`openhands:$VERSION`と`runtime:$VERSION`の$VERSIONを`main`に置き換えます。
+このバージョンは不安定であり、テストまたは開発目的でのみ推奨されます。
 
 開発ワークフローについては、[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)を参照してください。
 

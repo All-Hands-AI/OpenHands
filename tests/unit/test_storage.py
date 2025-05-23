@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
+import logging
 import shutil
+import tempfile
 from abc import ABC
 from dataclasses import dataclass, field
 from io import BytesIO, StringIO
-from typing import Dict, List
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -109,11 +109,18 @@ class _StorageTest(ABC):
 
 class TestLocalFileStore(TestCase, _StorageTest):
     def setUp(self):
-        os.makedirs('./_test_files_tmp', exist_ok=True)
-        self.store = LocalFileStore('./_test_files_tmp')
+        # Create a unique temporary directory for each test instance
+        self.temp_dir = tempfile.mkdtemp(prefix='openhands_test_')
+        self.store = LocalFileStore(self.temp_dir)
 
     def tearDown(self):
-        shutil.rmtree('./_test_files_tmp')
+        try:
+            # Use ignore_errors=True to avoid failures if directory is not empty
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+        except Exception as e:
+            logging.warning(
+                f'Failed to remove temporary directory {self.temp_dir}: {e}'
+            )
 
 
 class TestInMemoryFileStore(TestCase, _StorageTest):
@@ -143,12 +150,12 @@ class _MockGoogleCloudClient:
 
 @dataclass
 class _MockGoogleCloudBucket:
-    blobs_by_path: Dict[str, _MockGoogleCloudBlob] = field(default_factory=dict)
+    blobs_by_path: dict[str, _MockGoogleCloudBlob] = field(default_factory=dict)
 
     def blob(self, path: str | None = None) -> _MockGoogleCloudBlob:
         return self.blobs_by_path.get(path) or _MockGoogleCloudBlob(self, path)
 
-    def list_blobs(self, prefix: str | None = None) -> List[_MockGoogleCloudBlob]:
+    def list_blobs(self, prefix: str | None = None) -> list[_MockGoogleCloudBlob]:
         blobs = list(self.blobs_by_path.values())
         if prefix and prefix != '/':
             blobs = [blob for blob in blobs if blob.name.startswith(prefix)]
@@ -197,14 +204,14 @@ class _MockGoogleCloudBlobWriter:
 
 class _MockS3Client:
     def __init__(self):
-        self.objects_by_bucket: Dict[str, Dict[str, _MockS3Object]] = {}
+        self.objects_by_bucket: dict[str, dict[str, _MockS3Object]] = {}
 
     def put_object(self, Bucket: str, Key: str, Body: str | bytes) -> None:
         if Bucket not in self.objects_by_bucket:
             self.objects_by_bucket[Bucket] = {}
         self.objects_by_bucket[Bucket][Key] = _MockS3Object(Key, Body)
 
-    def get_object(self, Bucket: str, Key: str) -> Dict:
+    def get_object(self, Bucket: str, Key: str) -> dict:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
                 {
@@ -230,7 +237,7 @@ class _MockS3Client:
             return {'Body': BytesIO(content)}
         return {'Body': StringIO(content)}
 
-    def list_objects_v2(self, Bucket: str, Prefix: str = '') -> Dict:
+    def list_objects_v2(self, Bucket: str, Prefix: str = '') -> dict:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
                 {

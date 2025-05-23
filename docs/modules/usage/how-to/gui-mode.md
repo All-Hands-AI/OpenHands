@@ -24,9 +24,8 @@ OpenHands supports multiple version control providers. You can configure tokens 
 
 #### GitHub Token Setup
 
-OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
+OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if provided:
 
-**Local Installation**: The user directly inputs their GitHub token.
 <details>
   <summary>Setting Up a GitHub Token</summary>
 
@@ -40,7 +39,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
      - Minimal Permissions ( Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
-   - Navigate to the `Git Provider Settings` section.
+   - Navigate to the `Git` tab.
    - Paste your token in the `GitHub Token` field.
    - Click `Save Changes` to apply the changes.
 </details>
@@ -83,26 +82,9 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
      - Check the browser console for any error messages.
 </details>
 
-**OpenHands Cloud**: The token is obtained through GitHub OAuth authentication.
-
-<details>
-  <summary>OAuth Authentication</summary>
-
-  When using OpenHands Cloud, the GitHub OAuth flow requests the following permissions:
-   - Repository access (read/write)
-   - Workflow management
-   - Organization read access
-
-  To authenticate OpenHands:
-   - Click `Sign in with GitHub` when prompted.
-   - Review the requested permissions.
-   - Authorize OpenHands to access your GitHub account.
-   - If using an organization, authorize organization access if prompted.
-</details>
-
 #### GitLab Token Setup
 
-OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for local installations only, if it is available.
+OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if provided:
 
 <details>
   <summary>Setting Up a GitLab Token</summary>
@@ -117,9 +99,8 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for l
    - Set an expiration date or leave it blank for a non-expiring token.
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
-   - Navigate to the `Git Provider Settings` section.
+   - Navigate to the `Git` tab.
    - Paste your token in the `GitLab Token` field.
-   - Enter your GitLab instance URL if using self-hosted GitLab.
    - Click `Save Changes` to apply the changes.
 </details>
 
@@ -132,7 +113,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for l
      - Ensure the token is properly saved in settings.
      - Check that the token hasn't expired.
      - Verify the token has the required scopes.
-     - For self-hosted instances, verify the correct instance URL.
 
   - **Access Denied**:
      - Verify project access permissions.
@@ -142,7 +122,7 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for l
 
 ### Advanced Settings
 
-1. Inside the Settings page, toggle `Advanced` options to access additional settings.
+1. Inside the Settings page, under the `LLM` tab, toggle `Advanced` options to access additional settings.
 2. Use the `Custom Model` text box to manually enter a model if it's not in the list.
 3. Specify a `Base URL` if required by your LLM provider.
 
@@ -156,7 +136,6 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment, for l
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use the workspace panel to explore your project structure.
 - Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive

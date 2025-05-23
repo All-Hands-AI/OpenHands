@@ -40,7 +40,9 @@ jobs:
           # Only build nikolaik on PRs, otherwise build both nikolaik and ubuntu.
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             json=$(jq -n -c '[
-                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" }
+                { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
+                { image: "ubuntu:24.04", tag: "ubuntu" }
+
               ]')
           else
             json=$(jq -n -c '[
@@ -310,11 +312,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
 
   # Run unit tests with the Docker runtime Docker images as openhands user
   test_runtime_oh:
@@ -379,11 +377,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
 
   # The two following jobs (named identically) are to check whether all the runtime tests have passed as the
   # "All Runtime Tests Passed" is a required job for PRs to merge
