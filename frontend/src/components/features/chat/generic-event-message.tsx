@@ -37,11 +37,13 @@ const renderDetails = (details: GenericEventMessageProps["details"]) => {
     typeof details === "object" &&
     details !== null &&
     "type" in details &&
-    details.type === "mcp"
+    details.type === "mcp" &&
+    "event" in details
   ) {
     return <MCPObservationContent event={details.event} />;
   }
 
+  // If it's a React element, return it directly
   return details;
 };
 
@@ -75,7 +77,7 @@ export function GenericEventMessage({
         {success && <SuccessIndicator status={success} />}
       </div>
 
-      {showDetails && renderDetails(details)}
+      {showDetails && <>{renderDetails(details)}</>}
     </div>
   );
 }

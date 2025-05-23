@@ -8,7 +8,6 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import { cn } from "#/utils/utils";
 import { JSON_VIEW_THEME } from "#/utils/constants";
 
-
 interface SystemMessageModalProps {
   isOpen: boolean;
   onClose: () => void;

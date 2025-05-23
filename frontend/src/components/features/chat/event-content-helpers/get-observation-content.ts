@@ -49,10 +49,9 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
 
 const getMcpObservationContent = (
   event: MCPObservation,
-): string | { type: "mcp"; event: MCPObservation } => {
+): string | { type: "mcp"; event: MCPObservation } =>
   // Return the full MCP event without truncating the content (since we need to parse them into JSON)
-  return { type: "mcp", event: event };
-};
+  ({ type: "mcp", event });
 
 const getRecallObservationContent = (event: RecallObservation): string => {
   let content = "";

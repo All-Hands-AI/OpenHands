@@ -61,11 +61,11 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
               collapsed={1}
               displayDataTypes={false}
             />
-            ) : (
-              <pre className="whitespace-pre-wrap">
-                {event.content.trim() || t("OBSERVATION$MCP_NO_OUTPUT")}
-              </pre>
-            )}
+          ) : (
+            <pre className="whitespace-pre-wrap">
+              {event.content.trim() || t("OBSERVATION$MCP_NO_OUTPUT")}
+            </pre>
+          )}
         </div>
       </div>
     </div>
