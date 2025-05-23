@@ -6,7 +6,6 @@ import {
   BrowseObservation,
   OpenHandsObservation,
   RecallObservation,
-  MCPObservation,
 } from "#/types/core/observations";
 import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
@@ -45,14 +44,6 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
     contentDetails = `${contentDetails.slice(0, MAX_CONTENT_LENGTH)}...(truncated)`;
   }
   return contentDetails;
-};
-
-const getMcpObservationContent = (event: MCPObservation): string => {
-  let { content } = event;
-  if (content.length > MAX_CONTENT_LENGTH) {
-    content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-  }
-  return `**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
 };
 
 const getRecallObservationContent = (event: RecallObservation): string => {
