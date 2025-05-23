@@ -15,6 +15,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.server.shared import config as app_config
 from openhands.server.shared import server_config
 from openhands.server.user_auth import (
     get_access_token,
@@ -28,7 +29,7 @@ app = APIRouter(prefix='/api/user')
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
@@ -37,6 +38,7 @@ async def get_user_repositories(
             provider_tokens=provider_tokens,
             external_auth_token=access_token,
             external_auth_id=user_id,
+            config=app_config,
         )
 
         try:
@@ -68,13 +70,16 @@ async def get_user_repositories(
 
 @app.get('/info', response_model=User)
 async def get_user(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> User | JSONResponse:
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+            config=app_config,
         )
 
         try:
@@ -111,13 +116,15 @@ async def search_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            config=app_config,
         )
         try:
             repos: list[Repository] = await client.search_repositories(
@@ -148,7 +155,7 @@ async def search_repositories(
 
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[SuggestedTask] | JSONResponse:
@@ -160,7 +167,9 @@ async def get_suggested_tasks(
     """
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            config=app_config,
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
@@ -188,7 +197,7 @@ async def get_suggested_tasks(
 @app.get('/repository/branches', response_model=list[Branch])
 async def get_repository_branches(
     repository: str,
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Branch] | JSONResponse:
@@ -202,7 +211,9 @@ async def get_repository_branches(
     """
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            config=app_config,
         )
         try:
             branches: list[Branch] = await client.get_branches(repository)

@@ -46,15 +46,21 @@ vi.mock("react-router", () => ({
 }));
 
 const renderActionSuggestions = () =>
-  render(<ActionSuggestions onSuggestionsClick={() => {}} />, {
-    wrapper: ({ children }) => (
-      <ConversationProvider>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </ConversationProvider>
-    ),
-  });
+  render(
+    <ActionSuggestions 
+      onSuggestionsClick={() => {}} 
+      conversationProp={{ selected_repository: "test-repo" }}
+    />, 
+    {
+      wrapper: ({ children }) => (
+        <ConversationProvider>
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        </ConversationProvider>
+      ),
+    }
+  );
 
 describe("ActionSuggestions", () => {
   // Setup mocks for each test

@@ -3,19 +3,19 @@ import { ConnectToProviderMessage } from "./connect-to-provider-message";
 import { RepositorySelectionForm } from "./repo-selection-form";
 import { useConfig } from "#/hooks/query/use-config";
 import { RepoProviderLinks } from "./repo-provider-links";
-import { useUserProviders } from "#/hooks/use-user-providers";
+import { useUserConnected } from "#/hooks/query/use-user-connected";
 
 interface RepoConnectorProps {
   onRepoSelection: (repoTitle: string | null) => void;
 }
 
 export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
-  const { providers } = useUserProviders();
+  const { data: isUserConnected, isLoading } = useUserConnected();
   const { data: config } = useConfig();
   const { t } = useTranslation();
 
   const isSaaS = config?.APP_MODE === "saas";
-  const providersAreSet = providers.length > 0;
+  const providersAreSet = isUserConnected === true;
 
   return (
     <section
@@ -24,8 +24,8 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
     >
       <h2 className="heading">{t("HOME$CONNECT_TO_REPOSITORY")}</h2>
 
-      {!providersAreSet && <ConnectToProviderMessage />}
-      {providersAreSet && (
+      {!isLoading && !providersAreSet && <ConnectToProviderMessage />}
+      {!isLoading && providersAreSet && (
         <RepositorySelectionForm onRepoSelection={onRepoSelection} />
       )}
 

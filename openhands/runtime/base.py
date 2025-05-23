@@ -318,12 +318,22 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
+    def set_git_dir(self, selected_repository: str | None) -> None:
+        if not selected_repository:
+            git_dir = self.config.workspace_mount_path_in_sandbox
+            self.git_handler.set_cwd(git_dir)
+            return
+        repo_name = selected_repository.split('/')[-1]
+        git_dir = str(Path(self.config.workspace_mount_path_in_sandbox) / repo_name)
+        self.git_handler.set_cwd(git_dir)
+
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
         selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
+        self.set_git_dir(selected_repository)
         repository = None
         if selected_repository:  # Determine provider from repo name
             try:
@@ -355,17 +365,30 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
-        # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
         if not repository:
             return ''
 
         provider = repository.git_provider
+
+        if provider == ProviderType.LOCAL:
+            logger.debug(f'Local repository selected: {selected_repository}')
+            dir_name = selected_repository.split('/')[-1]
+            full_path = str(
+                Path(self.config.workspace_mount_path_in_sandbox) / dir_name
+            )
+            print('ADD SAFE DIRECTORY:', full_path)
+            action = CmdRunAction(
+                command=f'cd {full_path}; git config --global --add safe.directory {full_path}',
+            )
+            self.run_action(action)
+            return dir_name
+
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
         }
 
-        domain = provider_domains[provider]
+        domain = provider_domains[provider] if provider in provider_domains else None
 
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
@@ -876,7 +899,9 @@ fi
     # ====================================================================
 
     def _execute_shell_fn_git_handler(
-        self, command: str, cwd: str | None
+        self,
+        command: str,
+        cwd: str | None,
     ) -> CommandResult:
         """
         This function is used by the GitHandler to execute shell commands.
@@ -892,12 +917,10 @@ fi
 
         return CommandResult(content=content, exit_code=exit_code)
 
-    def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
-        self.git_handler.set_cwd(cwd)
+    def get_git_changes(self) -> list[dict[str, str]] | None:
         return self.git_handler.get_git_changes()
 
-    def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
-        self.git_handler.set_cwd(cwd)
+    def get_git_diff(self, file_path: str) -> dict[str, str]:
         return self.git_handler.get_git_diff(file_path)
 
     @property

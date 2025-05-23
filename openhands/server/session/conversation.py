@@ -5,6 +5,7 @@ from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -15,15 +16,22 @@ class Conversation:
     event_stream: EventStream
     runtime: Runtime
     user_id: str | None
+    metadata: ConversationMetadata
 
     def __init__(
-        self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
+        self,
+        sid: str,
+        file_store: FileStore,
+        config: AppConfig,
+        user_id: str | None,
+        metadata: ConversationMetadata,
     ):
         self.sid = sid
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
         self.event_stream = EventStream(sid, file_store, user_id)
+        self.metadata = metadata
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
@@ -39,6 +47,7 @@ class Conversation:
         )
 
     async def connect(self) -> None:
+        self.runtime.set_git_dir(self.metadata.selected_repository)
         await self.runtime.connect()
 
     async def disconnect(self) -> None:

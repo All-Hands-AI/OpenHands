@@ -45,6 +45,7 @@ class GitHandler:
             bool: True if inside a Git repository, otherwise False.
         """
         cmd = 'git rev-parse --is-inside-work-tree'
+        print('CHECK IS GIT REPO', self.cwd)
         output = self.execute(cmd, self.cwd)
         return output.content.strip() == 'true'
 

@@ -215,16 +215,24 @@ describe("RepoConnector", () => {
   });
 
   it("should display a button to settings if the user needs to sign in with their git provider", async () => {
+    // Mock the getGitUser to throw an error, which will make useUserConnected return false
+    const getGitUserSpy = vi.spyOn(OpenHands, "getGitUser");
+    getGitUserSpy.mockRejectedValue(new Error("No git user"));
+    
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {},
     });
+    
     renderRepoConnector();
 
-    const goToSettingsButton = await screen.findByTestId(
-      "navigate-to-settings-button",
-    );
+    // Wait for the component to render with the mocked data
+    await waitFor(() => {
+      expect(screen.getByText("HOME$CONNECT_PROVIDER_MESSAGE")).toBeInTheDocument();
+    });
+
+    const goToSettingsButton = screen.getByTestId("navigate-to-settings-button");
     const dropdown = screen.queryByTestId("repo-dropdown");
     const launchButton = screen.queryByTestId("repo-launch-button");
     const providerLinks = screen.queryAllByText(/add git(hub|lab) repos/i);
