@@ -46,12 +46,11 @@ export function EventMessage({
     );
   }
 
-  if (
-    hasObservationPair &&
-    isOpenHandsAction(event) &&
-    hasThoughtProperty(event.args)
-  ) {
-    return <ChatMessage type="agent" message={event.args.thought} />;
+  if (hasObservationPair && isOpenHandsAction(event)) {
+    if (hasThoughtProperty(event.args)) {
+      return <ChatMessage type="agent" message={event.args.thought} />;
+    }
+    return null;
   }
 
   if (isFinishAction(event)) {
