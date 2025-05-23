@@ -154,7 +154,7 @@ export function ChatInterface() {
         )}
 
         {isWaitingForUserInput &&
-          parsedEvents.length > 0 &&
+          events.length > 0 &&
           !optimisticUserMessage && (
             <ActionSuggestions
               onSuggestionsClick={(value) => handleSendMessage(value, [])}
