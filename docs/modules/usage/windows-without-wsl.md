@@ -72,10 +72,12 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
 1. **Start the Backend**
    ```powershell
-   $env:LOCAL_RUNTIME_MODE=1; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   $env:LOCAL_RUNTIME_MODE=1; poetry run python -m openhands.cli.main --runtime local --host 0.0.0.0 --port 3000
    ```
 
    This will start the OpenHands backend using the local runtime with PowerShell integration.
+   
+   > **Note**: If you encounter a `ModuleNotFoundError: No module named 'pylcs'` error when using the uvicorn command directly, use the CLI command above instead. The `pylcs` module is a C++ extension that may require additional setup on Windows.
 
 2. **Start the Frontend (in a separate PowerShell window)**
    ```powershell
