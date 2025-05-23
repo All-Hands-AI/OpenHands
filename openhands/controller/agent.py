@@ -166,7 +166,7 @@ class Agent(ABC):
         Args:
         - mcp_tools (list[dict]): The list of MCP tools.
         """
-        logger.info(
+        logger.debug(
             f'Setting {len(mcp_tools)} MCP tools for agent {self.name}: {[tool["function"]["name"] for tool in mcp_tools]}'
         )
         for tool in mcp_tools:
@@ -178,6 +178,6 @@ class Agent(ABC):
                 continue
             self.mcp_tools[_tool['function']['name']] = _tool
             self.tools.append(_tool)
-        logger.info(
+        logger.debug(
             f'Tools updated for agent {self.name}, total {len(self.tools)}: {[tool["function"]["name"] for tool in self.tools]}'
         )
