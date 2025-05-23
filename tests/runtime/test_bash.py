@@ -547,6 +547,7 @@ def test_stateful_cmd(temp_dir, runtime_cls):
 
 def test_failed_cmd(reusable_runtime):
     obs = _run_cmd_action(reusable_runtime, 'non_existing_command')
+    logger.info(f'TRACE:test_failed_cmd:{obs}')
     assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
 
 
