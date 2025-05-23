@@ -82,7 +82,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
 2. **Start the Backend**
    ```powershell
-   $env:LOCAL_RUNTIME_MODE=1; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   $env:LOCAL_RUNTIME_MODE="1"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
 
    This will start the OpenHands backend using the local runtime with PowerShell integration.
