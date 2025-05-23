@@ -168,7 +168,7 @@ VERIFIED_ANTHROPIC_MODELS = [
     'claude-3-sonnet-20240229',
     'claude-3-7-sonnet-20250219',
     'claude-sonnet-4-20250514',
-    'claude-opus-4-20250514'
+    'claude-opus-4-20250514',
 ]
 
 
