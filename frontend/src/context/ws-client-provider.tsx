@@ -172,7 +172,7 @@ export function WsClientProvider({
       if (isAgentStateChangeObservation(event)) {
         if (event.extras.agent_state === "error") {
           trackError({
-            message: event.message,
+            message: event.extras.reason || "Unknown error",
             source: "chat",
             metadata: { msgId: event.id },
           });
