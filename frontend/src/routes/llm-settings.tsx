@@ -97,7 +97,7 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData
-      .get(t(I18nKey.SETTINGS$SEARCH_API_KEY))
+      .get("search-api-key-input")
       ?.toString();
 
     const fullLlmModel =
@@ -128,7 +128,7 @@ function LlmSettingsScreen() {
     const baseUrl = formData.get("base-url-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData
-      .get(t(I18nKey.SETTINGS$SEARCH_API_KEY))
+      .get("search-api-key-input")
       ?.toString();
     const agent = formData.get("agent-input")?.toString();
     const confirmationMode =
@@ -313,7 +313,7 @@ function LlmSettingsScreen() {
 
               <SettingsInput
                 testId="search-api-key-input"
-                name={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                name="search-api-key-input"
                 label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
                 type="password"
                 className="w-[680px]"
@@ -388,7 +388,7 @@ function LlmSettingsScreen() {
 
               <SettingsInput
                 testId="search-api-key-input"
-                name={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                name="search-api-key-input"
                 label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
                 type="password"
                 className="w-[680px]"
