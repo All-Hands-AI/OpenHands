@@ -92,8 +92,14 @@ export const useAutoLogin = () => {
     // Get the last page from local storage
     const lastPage = getLastPage();
 
-    // Navigate to the last page if it exists
-    if (lastPage) {
+    // Get the current pathname
+    const currentPath = window.location.pathname;
+
+    // Only navigate to the last page if:
+    // 1. Last page exists in local storage
+    // 2. We're on the home page (/) - this prevents redirecting when a user
+    //    explicitly navigates to a specific page or opens a link in a new tab
+    if (lastPage && currentPath === "/") {
       navigate(lastPage);
     }
   }, [config?.APP_MODE, isAuthed, isAuthLoading, navigate]);
