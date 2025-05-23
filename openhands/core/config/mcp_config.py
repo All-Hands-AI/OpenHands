@@ -145,26 +145,27 @@ class MCPConfig(BaseModel):
         return mcp_mapping
 
 
-def add_search_engine(app_config: "AppConfig") -> MCPStdioServerConfig | None:
-    """Add search engine to the MCP config"""
-    if (
-        app_config.search_api_key
-        and app_config.search_api_key.get_secret_value().startswith('tvly-')
-    ):
-        logger.info('Adding search engine to MCP config')
-        return MCPStdioServerConfig(
-            name='tavily',
-            command='npx',
-            args=['-y', 'tavily-mcp@0.1.4'],
-            env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
-        )
-    else:
-        logger.warning('No search engine API key found, skipping search engine')
-    # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
-    return None
-
-
 class OpenHandsMCPConfig:
+    @staticmethod
+    def add_search_engine(app_config: "AppConfig") -> MCPStdioServerConfig | None:
+        """Add search engine to the MCP config"""
+        if (
+            app_config.search_api_key
+            and app_config.search_api_key.get_secret_value().startswith('tvly-')
+        ):
+            logger.info('Adding search engine to MCP config')
+            return MCPStdioServerConfig(
+                name='tavily',
+                command='npx',
+                args=['-y', 'tavily-mcp@0.1.4'],
+                env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
+            )
+        else:
+            logger.warning('No search engine API key found, skipping search engine')
+        # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
+        return None
+
+
     @staticmethod
     def create_default_mcp_server_config(
         host: str, config: "AppConfig", user_id: str | None = None
@@ -180,7 +181,7 @@ class OpenHandsMCPConfig:
         """
         sse_server = MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)
         stdio_servers = []
-        search_engine_stdio_server = add_search_engine(config)
+        search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
         return sse_server, stdio_servers
