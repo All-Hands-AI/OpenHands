@@ -96,9 +96,7 @@ function LlmSettingsScreen() {
     const provider = formData.get("llm-provider-input")?.toString();
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
-    const searchApiKey = formData
-      .get("search-api-key-input")
-      ?.toString();
+    const searchApiKey = formData.get("search-api-key-input")?.toString();
 
     const fullLlmModel =
       provider && model && `${provider}/${model}`.toLowerCase();
@@ -127,9 +125,7 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-custom-model-input")?.toString();
     const baseUrl = formData.get("base-url-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
-    const searchApiKey = formData
-      .get("search-api-key-input")
-      ?.toString();
+    const searchApiKey = formData.get("search-api-key-input")?.toString();
     const agent = formData.get("agent-input")?.toString();
     const confirmationMode =
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
