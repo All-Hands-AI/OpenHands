@@ -33,6 +33,7 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -254,6 +255,17 @@ async def run_session(
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
+        # Add OpenHands' MCP server by default
+        openhands_mcp_server, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                config.mcp_host, config, None
+            )
+        )
+        # FIXME: OpenHands' SSE server may not be running when CLI mode is started
+        # if openhands_mcp_server:
+        #     config.mcp.sse_servers.append(openhands_mcp_server)
+        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
         await add_mcp_tools_to_agent(agent, runtime, memory, config)
 
     # Clear loading animation

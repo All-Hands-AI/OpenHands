@@ -8,7 +8,6 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
-    MCPStdioServerConfig,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
@@ -17,7 +16,6 @@ from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-from openhands.server.types import AppMode
 
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
@@ -161,28 +159,6 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     )
 
 
-def add_search_engine(app_config: AppConfig) -> MCPStdioServerConfig | None:
-    """Add search engine to the MCP config"""
-    from openhands.server.shared import server_config
-
-    if server_config.app_mode == AppMode.OSS:
-        if (
-            app_config.search_api_key
-            and app_config.search_api_key.get_secret_value().startswith('tvly-')
-        ):
-            logger.info('Adding search engine to MCP config')
-            return MCPStdioServerConfig(
-                name='tavily',
-                command='npx',
-                args=['-y', 'tavily-mcp@0.1.4'],
-                env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
-            )
-        else:
-            logger.warning('No search engine API key found, skipping search engine')
-    # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
-    return None
-
-
 async def add_mcp_tools_to_agent(
     agent: 'Agent', runtime: Runtime, memory: 'Memory', app_config: AppConfig
 ):
@@ -202,11 +178,6 @@ async def add_mcp_tools_to_agent(
     )
 
     extra_stdio_servers = []
-
-    # Add search engine to the MCP config (if available)
-    search_engine_stdio_config = add_search_engine(app_config)
-    if search_engine_stdio_config:
-        extra_stdio_servers.append(search_engine_stdio_config)
 
     # Add microagent MCP tools if available
     mcp_config: MCPConfig = app_config.mcp
