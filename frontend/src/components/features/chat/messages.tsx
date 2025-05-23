@@ -35,7 +35,6 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
-    console.count("Messages component rendered");
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
 
     const optimisticUserMessage = getOptimisticUserMessage();
