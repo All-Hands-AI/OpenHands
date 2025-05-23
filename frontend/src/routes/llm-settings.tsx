@@ -97,7 +97,7 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData
-      .get(t(I18nKey.SETTINGS$SEARCH_API_KEY))
+      .get("search-api-key-input")
       ?.toString();
 
     const fullLlmModel =
