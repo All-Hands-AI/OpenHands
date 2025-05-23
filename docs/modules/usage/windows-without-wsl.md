@@ -70,21 +70,32 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
 ## Step 3: Run OpenHands
 
-1. **Start the Backend**
+1. **Build the Frontend**
+   ```powershell
+   cd frontend
+   npm install
+   npm run build
+   cd ..
+   ```
+
+   This will build the frontend files that the backend will serve.
+
+2. **Start the Backend**
    ```powershell
    $env:LOCAL_RUNTIME_MODE=1; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
 
    This will start the OpenHands backend using the local runtime with PowerShell integration.
 
-2. **Start the Frontend (in a separate PowerShell window)**
+   > **Note**: If you encounter a `RuntimeError: Directory './frontend/build' does not exist` error, make sure you've built the frontend first using the command above.
+
+3. **Alternatively, Run the Frontend in Development Mode (in a separate PowerShell window)**
    ```powershell
    cd frontend
-   npm install
    npm run dev
    ```
 
-3. **Access the OpenHands GUI**
+4. **Access the OpenHands GUI**
    
    Open your browser and navigate to:
    ```
