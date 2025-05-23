@@ -435,9 +435,11 @@ def test_stateful_cmd(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'Get-Location')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             # Account for both forward and backward slashes in path
-            norm_path = config.workspace_mount_path_in_sandbox.replace(
-                '\\', '/'
-            ).replace('//', '/')
+            norm_path = (
+                str(config.workspace_mount_path_in_sandbox)
+                .replace('\\', '/')
+                .replace('//', '/')
+            )
             test_path = f'{norm_path}/test'.replace('//', '/')
             assert test_path in obs.content.replace('\\', '/')
         else:
