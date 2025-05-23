@@ -23,6 +23,7 @@ import {
   isErrorObservation,
   isOpenHandsAction,
   isOpenHandsObservation,
+  isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
@@ -165,21 +166,30 @@ export function WsClientProvider({
 
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event)) {
-      if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
-        setParsedEvents((prevEvents) => [...prevEvents, event]);
-      }
+      const isStatusUpdateError =
+        isStatusUpdate(event) && event.type === "error";
 
-      if (isAgentStateChangeObservation(event)) {
-        if (event.extras.agent_state === "error") {
-          trackError({
-            message: event.extras.reason || "Unknown error",
-            source: "chat",
-            metadata: { msgId: event.id },
-          });
-          setErrorMessage(event.extras.reason || "Unknown error");
-        }
+      const isAgentStateChangeError =
+        isAgentStateChangeObservation(event) &&
+        event.extras.agent_state === "error";
+
+      if (isStatusUpdateError || isAgentStateChangeError) {
+        const errorMessage = isStatusUpdate(event)
+          ? event.message
+          : event.extras.reason || "Unknown error";
+
+        trackError({
+          message: errorMessage,
+          source: "chat",
+          metadata: { msgId: event.id },
+        });
+        setErrorMessage(errorMessage);
 
         return;
+      }
+
+      if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
+        setParsedEvents((prevEvents) => [...prevEvents, event]);
       }
 
       if (isErrorObservation(event)) {

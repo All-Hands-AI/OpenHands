@@ -12,6 +12,7 @@ import {
   MCPObservation,
   OpenHandsObservation,
 } from "./observations";
+import { StatusUpdate } from "./variances";
 
 export const isOpenHandsAction = (
   event: OpenHandsParsedEvent,
@@ -69,3 +70,8 @@ export const isMcpObservation = (
   event: OpenHandsParsedEvent,
 ): event is MCPObservation =>
   isOpenHandsObservation(event) && event.observation === "mcp";
+
+export const isStatusUpdate = (
+  event: OpenHandsParsedEvent,
+): event is StatusUpdate =>
+  "status_update" in event && "type" in event && "id" in event;
