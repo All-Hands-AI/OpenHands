@@ -401,9 +401,6 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
-        # Give others a little chance
-        await asyncio.sleep(0.01)
-
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             self.state.history.append(event)

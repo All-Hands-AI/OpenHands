@@ -226,7 +226,7 @@ async def test_add_mcp_tools_from_microagents():
 
     # Configure the mock runtime
     mock_runtime.runtime_initialized = True
-    mock_runtime.get_updated_mcp_config.return_value = mock_microagent_mcp_config
+    mock_runtime.get_mcp_config.return_value = mock_microagent_mcp_config
 
     # Mock the fetch_mcp_tools_from_config function to return a mock tool
     mock_tool = {
@@ -250,9 +250,9 @@ async def test_add_mcp_tools_from_microagents():
         # Verify that the memory's get_microagent_mcp_tools was called
         mock_memory.get_microagent_mcp_tools.assert_called_once()
 
-        # Verify that the runtime's get_updated_mcp_config was called with the extra stdio servers
-        mock_runtime.get_updated_mcp_config.assert_called_once()
-        args, kwargs = mock_runtime.get_updated_mcp_config.call_args
+        # Verify that the runtime's get_mcp_config was called with the extra stdio servers
+        mock_runtime.get_mcp_config.assert_called_once()
+        args, kwargs = mock_runtime.get_mcp_config.call_args
         assert len(args) == 1
         assert len(args[0]) == 1
         assert args[0][0].name == 'test-tool'
