@@ -13,14 +13,16 @@ files on your machine. Only use this runtime in controlled environments or when 
 Before using the Local Runtime, ensure that:
 
 1. You can run OpenHands using the [Development workflow](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-2. tmux is available on your system.
+2. For Linux and Mac, tmux is available on your system.
+3. For Windows, PowerShell is available on your system.
+    - Only [CLI mode](../how-to/cli-mode) and [headless mode](../how-to/headless-mode) are supported in Windows with Local Runtime. 
 
 ## Configuration
 
 To use the Local Runtime, besides required configurations like the LLM provider, model and API key, you'll need to set
 the following options via environment variables or the [config.toml file](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) when starting OpenHands:
 
-Via environment variables:
+Via environment variables (please use PowerShell syntax for Windows PowerShell):
 
 ```bash
 # Required
@@ -65,4 +67,4 @@ The Local Runtime is particularly useful for:
 
 - CI/CD pipelines where Docker is not available.
 - Testing and development of OpenHands itself.
-- Environments where container usage is restricted.
+- Environments where container usage is restricted (e.g. native Windows).

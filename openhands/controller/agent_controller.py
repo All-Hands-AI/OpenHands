@@ -194,7 +194,7 @@ class AgentController:
         logger.debug(f'System message got from agent: {system_message}')
         if system_message:
             self.event_stream.add_event(system_message, EventSource.AGENT)
-            logger.info(f'System message added to event stream: {system_message}')
+            logger.debug(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -440,9 +440,6 @@ class AgentController:
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
             return
-
-        # Give others a little chance
-        await asyncio.sleep(0.01)
 
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
