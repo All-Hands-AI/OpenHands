@@ -31,7 +31,7 @@
     "jose": "^6.0.11",
     "lucide-react": "^0.511.0",
     "monaco-editor": "^0.52.2",
-    "posthog-js": "^1.245.1",
+    "posthog-js": "^1.245.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-highlight": "^0.15.0",

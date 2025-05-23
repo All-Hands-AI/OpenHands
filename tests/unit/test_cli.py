@@ -117,6 +117,14 @@ def mock_config():
     config.runtime = 'local'
     config.cli_multiline_input = False
     config.workspace_base = '/test/dir'
+
+    # Mock search_api_key with get_secret_value method
+    search_api_key_mock = MagicMock()
+    search_api_key_mock.get_secret_value.return_value = (
+        ''  # Empty string, not starting with 'tvly-'
+    )
+    config.search_api_key = search_api_key_mock
+
     return config
 
 
@@ -201,7 +209,7 @@ async def test_run_session_without_initial_action(
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
     mock_add_mcp_tools.assert_called_once_with(
-        mock_agent, mock_runtime, mock_memory, mock_config.mcp
+        mock_agent, mock_runtime, mock_memory, mock_config
     )
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()

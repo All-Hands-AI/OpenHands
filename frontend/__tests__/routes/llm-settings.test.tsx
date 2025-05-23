@@ -105,7 +105,7 @@ describe("Content", () => {
       within(advancedForm).getByTestId("llm-custom-model-input");
       within(advancedForm).getByTestId("base-url-input");
       within(advancedForm).getByTestId("llm-api-key-input");
-      within(advancedForm).getByTestId("llm-api-key-help-anchor");
+      within(advancedForm).getByTestId("llm-api-key-help-anchor-advanced");
       within(advancedForm).getByTestId("agent-input");
       within(advancedForm).getByTestId("enable-confirmation-mode-switch");
       within(advancedForm).getByTestId("enable-memory-condenser-switch");

@@ -5,13 +5,13 @@ import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RootState } from "#/store";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 export const useActiveHost = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
 
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
 
   const { data } = useQuery({
     queryKey: [conversationId, "hosts"],

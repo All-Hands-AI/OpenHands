@@ -153,11 +153,13 @@ export function ChatInterface() {
           />
         )}
 
-        {isWaitingForUserInput && (
-          <ActionSuggestions
-            onSuggestionsClick={(value) => handleSendMessage(value, [])}
-          />
-        )}
+        {isWaitingForUserInput &&
+          events.length > 0 &&
+          !optimisticUserMessage && (
+            <ActionSuggestions
+              onSuggestionsClick={(value) => handleSendMessage(value, [])}
+            />
+          )}
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">

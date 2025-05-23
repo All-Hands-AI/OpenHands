@@ -113,6 +113,7 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "GitHub API", // Git provider specific terminology
   "add-secret-form", // Test ID for secret form
   "edit-secret-form", // Test ID for secret form
+  "search-api-key-input", // Input name for search API key
 ];
 
 function isExcludedTechnicalString(str) {

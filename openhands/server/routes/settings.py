@@ -65,9 +65,12 @@ async def load_settings(
             **settings.model_dump(exclude='secrets_store'),
             llm_api_key_set=settings.llm_api_key is not None
             and bool(settings.llm_api_key),
+            search_api_key_set=settings.search_api_key is not None
+            and bool(settings.search_api_key),
             provider_tokens_set=provider_tokens_set,
         )
         settings_with_token_data.llm_api_key = None
+        settings_with_token_data.search_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -116,6 +119,9 @@ async def store_llm_settings(
             settings.llm_model = existing_settings.llm_model
         if settings.llm_base_url is None:
             settings.llm_base_url = existing_settings.llm_base_url
+        # Keep existing search API key if not provided
+        if settings.search_api_key is None:
+            settings.search_api_key = existing_settings.search_api_key
 
     return settings
 
@@ -180,8 +186,9 @@ def convert_to_settings(settings_with_token_data: Settings) -> Settings:
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
 
-    # Convert the `llm_api_key` to a `SecretStr` instance
+    # Convert the API keys to `SecretStr` instances
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
+    filtered_settings_data['search_api_key'] = settings_with_token_data.search_api_key
 
     # Create a new Settings instance
     settings = Settings(**filtered_settings_data)

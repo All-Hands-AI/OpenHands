@@ -995,6 +995,7 @@ def test_api_keys_repr_str():
         'modal_api_token_secret',
         'runloop_api_key',
         'daytona_api_key',
+        'search_api_key',
     ]
     for attr_name in AppConfig.model_fields.keys():
         if (

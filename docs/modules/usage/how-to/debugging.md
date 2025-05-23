@@ -14,7 +14,7 @@ The following `launch.json` will allow debugging the agent, controller and serve
             "name": "OpenHands CLI",
             "type": "debugpy",
             "request": "launch",
-            "module": "openhands.core.cli",
+            "module": "openhands.cli.main",
             "justMyCode": false
         },
         {
