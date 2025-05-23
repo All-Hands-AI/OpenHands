@@ -175,6 +175,38 @@
         "de": "[MCP-Tool wurde ohne Ausgabe ausgeführt]",
         "uk": "[Інструмент MCP завершив виконання без виводу]"
     },
+    "MCP_OBSERVATION$ARGUMENTS": {
+        "en": "Arguments",
+        "ja": "引数",
+        "zh-CN": "参数",
+        "zh-TW": "參數",
+        "ko-KR": "인수",
+        "no": "Argumenter",
+        "it": "Argomenti",
+        "pt": "Argumentos",
+        "es": "Argumentos",
+        "ar": "المعاملات",
+        "fr": "Arguments",
+        "tr": "Argümanlar",
+        "de": "Argumente",
+        "uk": "Аргументи"
+    },
+    "MCP_OBSERVATION$OUTPUT": {
+        "en": "Output",
+        "ja": "出力",
+        "zh-CN": "输出",
+        "zh-TW": "輸出",
+        "ko-KR": "출력",
+        "no": "Utdata",
+        "it": "Output",
+        "pt": "Saída",
+        "es": "Salida",
+        "ar": "المخرجات",
+        "fr": "Sortie",
+        "tr": "Çıktı",
+        "de": "Ausgabe",
+        "uk": "Вивід"
+    },
     "OBSERVATION$ERROR_PREFIX": {
         "en": "error:",
         "ja": "エラー:",
