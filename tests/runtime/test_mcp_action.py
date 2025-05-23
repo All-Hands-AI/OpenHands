@@ -22,6 +22,11 @@ from openhands.events.observation import CmdOutputObservation, MCPObservation
 # Bash-specific tests
 # ============================================================================================================================
 
+pytestmark = pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support MCP actions',
+)
+
 
 @pytest.fixture
 def sse_mcp_docker_server():
@@ -291,11 +296,11 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         # NOTE: this simulate the case where the microagent adds a new stdio server to the runtime
         # but that stdio server is not in the initial config
         # Actual invocation of the microagent involves `add_mcp_tools_to_agent`
-        # which will call `get_updated_mcp_config` with the stdio server from microagent's config
+        # which will call `get_mcp_config` with the stdio server from microagent's config
         fetch_config = MCPStdioServerConfig(
             name='fetch', command='uvx', args=['mcp-server-fetch']
         )
-        updated_config = runtime.get_updated_mcp_config([fetch_config])
+        updated_config = runtime.get_mcp_config([fetch_config])
         logger.info(f'updated_config: {updated_config}')
 
         # ======= Test the stdio server in the config =======
