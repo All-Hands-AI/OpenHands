@@ -10,7 +10,6 @@ import i18n from "i18next";
 import { vi } from "vitest";
 import { AxiosError } from "axios";
 import { AppStore, RootState, rootReducer } from "./src/store";
-// ConversationProvider is no longer needed as we use useConversationId directly
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
