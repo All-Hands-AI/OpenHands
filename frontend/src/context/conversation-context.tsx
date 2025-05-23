@@ -1,42 +1,16 @@
-import React, { useMemo } from "react";
-import { useParams } from "react-router";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
-interface ConversationContextType {
-  conversationId: string;
+// This file is kept for backward compatibility
+// It re-exports the useConversationId hook as useConversation
+export function useConversation() {
+  return useConversationId();
 }
 
-const ConversationContext = React.createContext<ConversationContextType | null>(
-  null,
-);
-
+// ConversationProvider is kept as a no-op component for backward compatibility
 export function ConversationProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { conversationId } = useParams<{ conversationId: string }>();
-
-  if (!conversationId) {
-    throw new Error(
-      "ConversationProvider must be used within a route that has a conversationId parameter",
-    );
-  }
-
-  const value = useMemo(() => ({ conversationId }), [conversationId]);
-
-  return (
-    <ConversationContext.Provider value={value}>
-      {children}
-    </ConversationContext.Provider>
-  );
-}
-
-export function useConversation() {
-  const context = React.useContext(ConversationContext);
-  if (!context) {
-    throw new Error(
-      "useConversation must be used within a ConversationProvider",
-    );
-  }
-  return context;
+  return children;
 }
