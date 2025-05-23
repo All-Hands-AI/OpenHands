@@ -4,7 +4,7 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
-import pylcs
+from rapidfuzz.distance import LCSseq
 from pydantic import BaseModel
 from tree_sitter_languages import get_parser
 
@@ -65,7 +65,10 @@ def normalized_lcs(chunk: str, query: str) -> float:
     """
     if len(chunk) == 0:
         return 0.0
-    _score = pylcs.lcs_sequence_length(chunk, query)
+    
+    # Use rapidfuzz's LCSseq implementation which works on all platforms
+    _score = LCSseq.similarity(chunk, query)
+    
     return _score / len(chunk)
 
 
