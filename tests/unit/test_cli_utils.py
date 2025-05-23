@@ -354,11 +354,11 @@ class TestModelAndProviderFunctions:
         assert result['separator'] == '/'
 
     def test_extract_model_and_provider_anthropic_implicit(self):
-        model = 'claude-3-7-sonnet-20250219'
+        model = 'claude-sonnet-4-20250514'
         result = extract_model_and_provider(model)
 
         assert result['provider'] == 'anthropic'
-        assert result['model'] == 'claude-3-7-sonnet-20250219'
+        assert result['model'] == 'claude-sonnet-4-20250514'
         assert result['separator'] == '/'
 
     def test_extract_model_and_provider_versioned(self):
@@ -380,7 +380,7 @@ class TestModelAndProviderFunctions:
     def test_organize_models_and_providers(self):
         models = [
             'openai/gpt-4o',
-            'anthropic/claude-3-7-sonnet-20250219',
+            'anthropic/claude-sonnet-4-20250514',
             'o3-mini',
             'anthropic.claude-3-5',  # Should be ignored as it uses dot separator for anthropic
             'unknown-model',
@@ -397,7 +397,7 @@ class TestModelAndProviderFunctions:
         assert 'o3-mini' in result['openai']['models']
 
         assert len(result['anthropic']['models']) == 1
-        assert 'claude-3-7-sonnet-20250219' in result['anthropic']['models']
+        assert 'claude-sonnet-4-20250514' in result['anthropic']['models']
 
         assert len(result['other']['models']) == 1
         assert 'unknown-model' in result['other']['models']
