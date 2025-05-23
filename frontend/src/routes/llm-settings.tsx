@@ -128,7 +128,7 @@ function LlmSettingsScreen() {
     const baseUrl = formData.get("base-url-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData
-      .get("search-api-key-input")
+      .get(t(I18nKey.SETTINGS$SEARCH_API_KEY))
       ?.toString();
     const agent = formData.get("agent-input")?.toString();
     const confirmationMode =
