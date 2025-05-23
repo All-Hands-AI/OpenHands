@@ -35,6 +35,7 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
+    console.count("Messages component rendered");
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
 
     const optimisticUserMessage = getOptimisticUserMessage();
@@ -69,6 +70,14 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         )}
       </>
     );
+  },
+  (prevProps, nextProps) => {
+    // Prevent re-renders if messages are the same length
+    if (prevProps.messages.length !== nextProps.messages.length) {
+      return false;
+    }
+
+    return true;
   },
 );
 
