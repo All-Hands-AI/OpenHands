@@ -6735,6 +6735,22 @@
         "tr": "Sistem Mesajı",
         "uk": "Системне повідомлення"
     },
+    "ACTION_MESSAGE$CONDENSATION": {
+        "en": "Condensation",
+        "zh-CN": "浓缩",
+        "zh-TW": "濃縮",
+        "ko-KR": "응축",
+        "ja": "凝縮",
+        "no": "Kondensering",
+        "ar": "تكثيف",
+        "de": "Kondensation",
+        "fr": "Condensation",
+        "it": "Condensazione",
+        "pt": "Condensação",
+        "es": "Condensación",
+        "tr": "Yoğunlaşma",
+        "uk": "Конденсація"
+    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran <cmd>{{command}}</cmd>",
         "zh-CN": "运行 <cmd>{{command}}</cmd>",
@@ -6862,6 +6878,22 @@
         "tr": "MikroAjan hazır",
         "de": "Microagent bereit",
         "uk": "Мікроагент готовий"
+    },
+    "OBSERVATION_MESSAGE$THINK": {
+        "en": "Thought",
+        "ja": "思考",
+        "zh-CN": "思考",
+        "zh-TW": "思考",
+        "ko-KR": "생각",
+        "no": "Tanke",
+        "it": "Pensiero",
+        "pt": "Pensamento",
+        "es": "Pensamiento",
+        "ar": "فكرة",
+        "fr": "Pensée",
+        "tr": "Düşünce",
+        "de": "Gedanke",
+        "uk": "Думка"
     },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",

@@ -121,7 +121,9 @@ class ServiceContextPR(ServiceContext):
     ) -> tuple[str, str, list[str]]:
         """Generate instruction for the agent."""
         user_instruction_template = jinja2.Template(user_instructions_prompt_template)
-        conversation_instructions_template = jinja2.Template(conversation_instructions_prompt_template)
+        conversation_instructions_template = jinja2.Template(
+            conversation_instructions_prompt_template
+        )
         images = []
 
         issues_str = None
@@ -159,12 +161,11 @@ class ServiceContextPR(ServiceContext):
             review_comments=review_comments_str,
             review_threads=review_thread_str,
             files=review_thread_file_str,
-            thread_context=thread_context
+            thread_context=thread_context,
         )
 
         conversation_instructions = conversation_instructions_template.render(
-            issues=issues_str,
-            repo_instruction=repo_instruction
+            issues=issues_str, repo_instruction=repo_instruction
         )
 
         return user_instruction, conversation_instructions, images
@@ -354,10 +355,12 @@ class ServiceContextIssue(ServiceContext):
 
         user_instructions_template = jinja2.Template(user_instructions_prompt_template)
         user_instructions = user_instructions_template.render(
-                body=issue.title + '\n\n' + issue.body + thread_context
-        ) # Issue body and comments
+            body=issue.title + '\n\n' + issue.body + thread_context
+        )  # Issue body and comments
 
-        conversation_instructions_template = jinja2.Template(conversation_instructions_prompt_template)
+        conversation_instructions_template = jinja2.Template(
+            conversation_instructions_prompt_template
+        )
         conversation_instructions = conversation_instructions_template.render(
             repo_instruction=repo_instruction,
         )
