@@ -55,6 +55,7 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
         <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[300px] shadow-inner">
           {typeof outputData === "object" && outputData !== null ? (
             <ReactJsonView
+              name={false}
               src={outputData}
               theme={JSON_VIEW_THEME}
               collapsed={1}
