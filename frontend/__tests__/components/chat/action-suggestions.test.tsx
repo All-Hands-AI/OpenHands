@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { ConversationProvider } from "#/context/conversation-context";
+// ConversationProvider is no longer needed as we use useConversationId directly
 
 // Mock dependencies
 vi.mock("posthog-js", () => ({
@@ -48,11 +48,9 @@ vi.mock("react-router", () => ({
 const renderActionSuggestions = () =>
   render(<ActionSuggestions onSuggestionsClick={() => {}} />, {
     wrapper: ({ children }) => (
-      <ConversationProvider>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </ConversationProvider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 

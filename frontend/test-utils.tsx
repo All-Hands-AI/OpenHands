@@ -10,7 +10,7 @@ import i18n from "i18next";
 import { vi } from "vitest";
 import { AxiosError } from "axios";
 import { AppStore, RootState, rootReducer } from "./src/store";
-import { ConversationProvider } from "#/context/conversation-context";
+// ConversationProvider is no longer needed as we use useConversationId directly
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -72,9 +72,7 @@ export function renderWithProviders(
             })
           }
         >
-          <ConversationProvider>
-            <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
-          </ConversationProvider>
+          <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
         </QueryClientProvider>
       </Provider>
     );
