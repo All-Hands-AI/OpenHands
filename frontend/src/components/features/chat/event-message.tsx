@@ -57,9 +57,9 @@ export function EventMessage({
   }
 
   if (isFinishAction(event)) {
-    const { details } = getEventContent(event);
-    // For finish actions, we know the details will always be a string
-    return <ChatMessage type="agent" message={details as string} />;
+    return (
+      <ChatMessage type="agent" message={getEventContent(event).details} />
+    );
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
