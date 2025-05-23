@@ -7,45 +7,12 @@ import ArrowDown from "#/icons/angle-down-solid.svg?react";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import { SuccessIndicator } from "./success-indicator";
 import { ObservationResultStatus } from "./event-content-helpers/get-observation-result";
-import { MCPObservation } from "#/types/core/observations";
-import { MCPObservationContent } from "./mcp-observation-content";
 
 interface GenericEventMessageProps {
   title: React.ReactNode;
-  details: string | { type: "mcp"; event: MCPObservation } | React.ReactNode;
+  details: string | React.ReactNode;
   success?: ObservationResultStatus;
 }
-
-// Helper function to render details based on their type
-const renderDetails = (details: GenericEventMessageProps["details"]) => {
-  if (typeof details === "string") {
-    return (
-      <Markdown
-        components={{
-          code,
-          ul,
-          ol,
-        }}
-        remarkPlugins={[remarkGfm]}
-      >
-        {details}
-      </Markdown>
-    );
-  }
-
-  if (
-    typeof details === "object" &&
-    details !== null &&
-    "type" in details &&
-    details.type === "mcp" &&
-    "event" in details
-  ) {
-    return <MCPObservationContent event={details.event} />;
-  }
-
-  // If it's a React element, return it directly
-  return details;
-};
 
 export function GenericEventMessage({
   title,
@@ -77,7 +44,21 @@ export function GenericEventMessage({
         {success && <SuccessIndicator status={success} />}
       </div>
 
-      {showDetails && <>{renderDetails(details)}</>}
+      {showDetails &&
+        (typeof details === "string" ? (
+          <Markdown
+            components={{
+              code,
+              ul,
+              ol,
+            }}
+            remarkPlugins={[remarkGfm]}
+          >
+            {details}
+          </Markdown>
+        ) : (
+          details
+        ))}
     </div>
   );
 }

@@ -1,10 +1,7 @@
 import { Trans } from "react-i18next";
 import { OpenHandsAction } from "#/types/core/actions";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
-import {
-  MCPObservation,
-  OpenHandsObservation,
-} from "#/types/core/observations";
+import { OpenHandsObservation } from "#/types/core/observations";
 import { MonoComponent } from "../mono-component";
 import { PathComponent } from "../path-component";
 import { getActionContent } from "./get-action-content";
@@ -28,7 +25,7 @@ export const getEventContent = (
   event: OpenHandsAction | OpenHandsObservation,
 ) => {
   let title: React.ReactNode = "";
-  let details: string | { type: "mcp"; event: MCPObservation } = "";
+  let details: string = "";
 
   if (isOpenHandsAction(event)) {
     title = (

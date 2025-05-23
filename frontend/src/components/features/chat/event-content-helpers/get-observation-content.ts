@@ -47,11 +47,13 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
   return contentDetails;
 };
 
-const getMcpObservationContent = (
-  event: MCPObservation,
-): string | { type: "mcp"; event: MCPObservation } =>
-  // Return the full MCP event without truncating the content (since we need to parse them into JSON)
-  ({ type: "mcp", event });
+const getMcpObservationContent = (event: MCPObservation): string => {
+  let { content } = event;
+  if (content.length > MAX_CONTENT_LENGTH) {
+    content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+  }
+  return `**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
+};
 
 const getRecallObservationContent = (event: RecallObservation): string => {
   let content = "";
@@ -109,9 +111,7 @@ const getRecallObservationContent = (event: RecallObservation): string => {
   return content;
 };
 
-export const getObservationContent = (
-  event: OpenHandsObservation,
-): string | { type: "mcp"; event: MCPObservation } => {
+export const getObservationContent = (event: OpenHandsObservation): string => {
   switch (event.observation) {
     case "read":
       return getReadObservationContent(event);
