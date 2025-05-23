@@ -130,7 +130,7 @@ export default function MainApp() {
   React.useEffect(() => {
     // Don't do any redirects when on TOS page
     // Don't allow users to use the app if it 402s
-    if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
+    if (!isOnTosPage && error?.status === 402) {
       navigate("/");
     }
   }, [error?.status, pathname, isOnTosPage]);
