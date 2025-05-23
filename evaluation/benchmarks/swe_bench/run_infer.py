@@ -43,6 +43,7 @@ from openhands.core.config import (
     AppConfig,
     get_llm_config_arg,
     get_parser,
+    load_from_toml
 )
 from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.config.condenser_config import NoOpCondenserConfig
@@ -254,15 +255,21 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
     )
+    # copy 'draft_editor' config if exists
+    if 'draft_editor' in config_copy.llms:
+        config.set_llm_config(config_copy.llms['draft_editor'], 'draft_editor')
+
     agent_config = AgentConfig(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
-        enable_llm_editor=False,
+        enable_llm_editor=config_copy.agent.get('enable_llm_editor', False),
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
