@@ -189,6 +189,7 @@ export function SystemMessageModal({
                                   </h4>
                                   <div className="text-sm mt-2 p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
                                     <ReactJsonView
+                                      name={false}
                                       src={parameters}
                                       theme={JSON_VIEW_THEME}
                                     />

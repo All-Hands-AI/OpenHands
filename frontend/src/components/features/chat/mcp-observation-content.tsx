@@ -35,8 +35,9 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
           </div>
           <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[200px] shadow-inner">
             <ReactJsonView
+              name={false}
               src={event.extras.arguments}
-              theme={jsonViewTheme}
+              theme={JSON_VIEW_THEME}
               collapsed={1}
               displayDataTypes={false}
             />
@@ -54,11 +55,11 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
         <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[300px] shadow-inner">
           {typeof outputData === "object" && outputData !== null ? (
             <ReactJsonView
-                src={outputData}
-                theme={jsonViewTheme}
-                collapsed={1}
-                displayDataTypes={false}
-              />
+              src={outputData}
+              theme={JSON_VIEW_THEME}
+              collapsed={1}
+              displayDataTypes={false}
+            />
             ) : (
               <pre className="whitespace-pre-wrap">
                 {event.content.trim() || t("OBSERVATION$MCP_NO_OUTPUT")}
