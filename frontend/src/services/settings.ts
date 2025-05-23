@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: Settings = {
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY_SET: false,
+  SEARCH_API_KEY_SET: false,
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
@@ -16,6 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: false,
+  SEARCH_API_KEY: "",
   IS_NEW_USER: true,
   MCP_CONFIG: {
     sse_servers: [],
