@@ -39,17 +39,29 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     const optimisticUserMessage = getOptimisticUserMessage();
 
+    // Create a map of action IDs to their corresponding observations for efficient lookup
+    const observationsByActionId = React.useMemo(() => {
+      const map = new Map<number, OpenHandsObservation>();
+
+      messages.forEach((msg) => {
+        if (isOpenHandsObservation(msg) && msg.cause) {
+          map.set(msg.cause, msg);
+        }
+      });
+
+      return map;
+    }, [messages]);
+
     const actionHasObservationPair = React.useCallback(
       (event: OpenHandsAction | OpenHandsObservation): boolean => {
         if (isOpenHandsAction(event)) {
-          return !!messages.some(
-            (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
-          );
+          // Check if there's an observation with a cause matching this action's ID
+          return observationsByActionId.has(event.id);
         }
 
         return false;
       },
-      [messages],
+      [observationsByActionId],
     );
 
     return (
