@@ -198,6 +198,7 @@ def test_multiline_commands(reusable_runtime):
 
         # test multiline output
         obs = _run_cmd_action(reusable_runtime, 'Write-Output "hello`nworld"')
+        logger.info(f'TRACE:test_bash_test_multiline_commands:{obs}')
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert 'hello\nworld' in obs.content
 
