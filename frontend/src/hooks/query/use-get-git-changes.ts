@@ -2,14 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { GitChange } from "#/api/open-hands.types";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useActiveConversation } from "./use-active-conversation";
 
 export const useGetGitChanges = () => {
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
   const { data: conversation } = useActiveConversation();
   const [orderedChanges, setOrderedChanges] = React.useState<GitChange[]>([]);
   const previousDataRef = React.useRef<GitChange[]>(null);

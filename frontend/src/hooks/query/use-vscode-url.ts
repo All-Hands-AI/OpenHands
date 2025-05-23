@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
@@ -17,7 +17,7 @@ interface VSCodeUrlResult {
 
 export const useVSCodeUrl = () => {
   const { t } = useTranslation();
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
   const { data: conversation } = useActiveConversation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const enabled =

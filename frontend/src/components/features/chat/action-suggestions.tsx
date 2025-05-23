@@ -16,7 +16,6 @@ export function ActionSuggestions({
   const { t } = useTranslation();
   const { providers } = useUserProviders();
   const { data: conversation } = useActiveConversation();
-
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   const providersAreSet = providers.length > 0;
