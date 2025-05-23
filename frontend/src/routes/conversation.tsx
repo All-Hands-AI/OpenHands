@@ -8,10 +8,7 @@ import { DiGit } from "react-icons/di";
 import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import {
-  ConversationProvider,
-  useConversation,
-} from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { Controls } from "#/components/features/controls/controls";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
@@ -44,7 +41,7 @@ function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
@@ -213,11 +210,7 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <ConversationProvider>
-      <AppContent />
-    </ConversationProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;

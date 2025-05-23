@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.config.app_config import AppConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
@@ -158,26 +162,21 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
 
 async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, memory: 'Memory', mcp_config: MCPConfig
+    agent: 'Agent', runtime: Runtime, memory: 'Memory', app_config: AppConfig
 ):
     """
     Add MCP tools to an agent.
     """
 
-    from openhands.runtime.impl.action_execution.action_execution_client import (
-        ActionExecutionClient,  # inline import to avoid circular import
-    )
-
-    assert isinstance(runtime, ActionExecutionClient), (
-        'Runtime must be an instance of ActionExecutionClient'
-    )
     assert runtime.runtime_initialized, (
         'Runtime must be initialized before adding MCP tools'
     )
 
-    # Add microagent MCP tools if available
-    microagent_mcp_configs = memory.get_microagent_mcp_tools()
     extra_stdio_servers = []
+
+    # Add microagent MCP tools if available
+    mcp_config: MCPConfig = app_config.mcp
+    microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
             logger.warning(
@@ -192,7 +191,7 @@ async def add_mcp_tools_to_agent(
                     logger.info(f'Added microagent stdio server: {stdio_server.name}')
 
     # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config(extra_stdio_servers)
+    updated_mcp_config = runtime.get_mcp_config(extra_stdio_servers)
 
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)

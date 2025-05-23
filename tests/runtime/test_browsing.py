@@ -2,6 +2,7 @@
 
 import os
 
+import pytest
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
@@ -21,6 +22,10 @@ from openhands.events.observation import (
 # ============================================================================================================================
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
@@ -65,6 +70,10 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -135,6 +144,10 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
