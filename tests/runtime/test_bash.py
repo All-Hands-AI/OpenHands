@@ -489,7 +489,7 @@ def test_multi_cmd_run_in_single_line(reusable_runtime, reusable_config):
         # Windows PowerShell version using semicolon
         obs = _run_cmd_action(reusable_runtime, 'Get-Location && Get-ChildItem')
         assert obs.exit_code == 0
-        assert reusable_config.workspace_mount_path_in_sandbox in obs.content
+        assert str(reusable_config.workspace_mount_path_in_sandbox) in obs.content
         assert '.git_config' in obs.content
     else:
         # Original Linux version using &&
