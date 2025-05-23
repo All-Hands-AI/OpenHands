@@ -2591,38 +2591,6 @@
         "de": "Hier",
         "uk": "тут"
     },
-    "COMMON$SHOW": {
-        "en": "Show",
-        "ja": "表示",
-        "zh-CN": "显示",
-        "zh-TW": "顯示",
-        "ko-KR": "보기",
-        "no": "Vis",
-        "it": "Mostra",
-        "pt": "Mostrar",
-        "es": "Mostrar",
-        "ar": "عرض",
-        "fr": "Afficher",
-        "tr": "Göster",
-        "de": "Anzeigen",
-        "uk": "Показати"
-    },
-    "COMMON$HIDE": {
-        "en": "Hide",
-        "ja": "隠す",
-        "zh-CN": "隐藏",
-        "zh-TW": "隱藏",
-        "ko-KR": "숨기기",
-        "no": "Skjul",
-        "it": "Nascondi",
-        "pt": "Ocultar",
-        "es": "Ocultar",
-        "ar": "إخفاء",
-        "fr": "Masquer",
-        "tr": "Gizle",
-        "de": "Ausblenden",
-        "uk": "Приховати"
-    },
     "ANALYTICS$ENABLE": {
         "en": "Enable analytics",
         "ja": "アナリティクスを有効にする",
