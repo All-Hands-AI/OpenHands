@@ -204,7 +204,8 @@ async def search_conversations(
             _get_conversation_info(
                 conversation=conversation,
                 num_connections=sum(
-                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
                 agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),

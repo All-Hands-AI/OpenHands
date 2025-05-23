@@ -118,7 +118,9 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets if custom_secrets else {})
+        custom_secrets_handler = UserSecrets(
+            custom_secrets=custom_secrets if custom_secrets else {}
+        )
 
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -146,8 +148,12 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
+<<<<<<< HEAD
+                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
+=======
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
+>>>>>>> origin/main
             )
 
             # NOTE: this needs to happen before controller is created
@@ -339,7 +345,7 @@ class AgentSession:
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
-            
+
             # Merge git provider tokens with custom secrets before passing over to runtime
             env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
             self.runtime = runtime_cls(
