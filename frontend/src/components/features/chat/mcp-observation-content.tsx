@@ -29,8 +29,6 @@ interface MCPObservationContentProps {
 
 export function MCPObservationContent({ event }: MCPObservationContentProps) {
   const { t } = useTranslation();
-  const [showArguments, setShowArguments] = React.useState(true);
-  const [showOutput, setShowOutput] = React.useState(true);
 
   // Parse the content as JSON if possible
   let outputData: unknown;
@@ -53,24 +51,15 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
             <h3 className="text-sm font-semibold text-gray-300">
               {t("MCP_OBSERVATION$ARGUMENTS")}
             </h3>
-            <button
-              type="button"
-              onClick={() => setShowArguments(!showArguments)}
-              className="text-xs text-gray-400 hover:text-gray-300"
-            >
-              {showArguments ? t("COMMON$HIDE") : t("COMMON$SHOW")}
-            </button>
           </div>
-          {showArguments && (
-            <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[200px] shadow-inner">
-              <ReactJsonView
-                src={event.extras.arguments}
-                theme={jsonViewTheme}
-                collapsed={1}
-                displayDataTypes={false}
-              />
-            </div>
-          )}
+          <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[200px] shadow-inner">
+            <ReactJsonView
+              src={event.extras.arguments}
+              theme={jsonViewTheme}
+              collapsed={1}
+              displayDataTypes={false}
+            />
+          </div>
         </div>
       )}
 
@@ -80,18 +69,10 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
           <h3 className="text-sm font-semibold text-gray-300">
             {t("MCP_OBSERVATION$OUTPUT")}
           </h3>
-          <button
-            type="button"
-            onClick={() => setShowOutput(!showOutput)}
-            className="text-xs text-gray-400 hover:text-gray-300"
-          >
-            {showOutput ? t("COMMON$HIDE") : t("COMMON$SHOW")}
-          </button>
         </div>
-        {showOutput && (
-          <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[300px] shadow-inner">
-            {typeof outputData === "object" && outputData !== null ? (
-              <ReactJsonView
+        <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[300px] shadow-inner">
+          {typeof outputData === "object" && outputData !== null ? (
+            <ReactJsonView
                 src={outputData}
                 theme={jsonViewTheme}
                 collapsed={1}
@@ -102,8 +83,7 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
                 {event.content.trim() || t("OBSERVATION$MCP_NO_OUTPUT")}
               </pre>
             )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
