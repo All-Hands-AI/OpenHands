@@ -50,17 +50,8 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
 const getMcpObservationContent = (
   event: MCPObservation,
 ): string | { type: "mcp"; event: MCPObservation } => {
-  // Truncate content if it's too long
-  let truncatedEvent = event;
-  if (event.content.length > MAX_CONTENT_LENGTH) {
-    truncatedEvent = {
-      ...event,
-      content: `${event.content.slice(0, MAX_CONTENT_LENGTH)}...`,
-    };
-  }
-
-  // Return a special object that will be handled in the GenericEventMessage component
-  return { type: "mcp", event: truncatedEvent };
+  // Return the full MCP event without truncating the content (since we need to parse them into JSON)
+  return { type: "mcp", event: event };
 };
 
 const getRecallObservationContent = (event: RecallObservation): string => {
