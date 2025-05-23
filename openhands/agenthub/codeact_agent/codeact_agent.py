@@ -266,5 +266,5 @@ class CodeActAgent(Agent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys())
+            response, mcp_tool_names=list(self.mcp_tools.keys()),
         )

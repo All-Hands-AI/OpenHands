@@ -8,11 +8,13 @@ import {
   isOpenHandsObservation,
   isFinishAction,
   isRejectObservation,
+  isMcpObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
 import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
+import { MCPObservationContent } from "./mcp-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
@@ -75,6 +77,19 @@ export function EventMessage({
 
   if (isRejectObservation(event)) {
     return <ChatMessage type="agent" message={event.content} />;
+  }
+
+  if (isMcpObservation(event)) {
+    return (
+      <div>
+        <GenericEventMessage
+          title={getEventContent(event).title}
+          details={<MCPObservationContent event={event} />}
+          success={getObservationResult(event)}
+        />
+        {shouldShowConfirmationButtons && <ConfirmationButtons />}
+      </div>
+    );
   }
 
   return (

@@ -16,7 +16,7 @@ import {
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
   isErrorObservation,
@@ -68,6 +68,7 @@ const isMessageAction = (
 export enum WsClientProviderStatus {
   CONNECTED,
   DISCONNECTED,
+  CONNECTING,
 }
 
 interface UseWsClient {
@@ -147,7 +148,7 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
-  const { data: conversation } = useUserConversation(conversationId);
+  const { data: conversation } = useActiveConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {

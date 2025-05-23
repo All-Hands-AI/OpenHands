@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.config.app_config import AppConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
@@ -151,12 +155,14 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     logger.debug(f'MCP response: {response}')
 
     return MCPObservation(
-        content=json.dumps(response.model_dump(mode='json')), name=action.name
+        content=json.dumps(response.model_dump(mode='json')),
+        name=action.name,
+        arguments=action.arguments,
     )
 
 
 async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, memory: 'Memory', mcp_config: MCPConfig
+    agent: 'Agent', runtime: Runtime, memory: 'Memory', app_config: AppConfig
 ):
     """
     Add MCP tools to an agent.
@@ -166,9 +172,11 @@ async def add_mcp_tools_to_agent(
         'Runtime must be initialized before adding MCP tools'
     )
 
-    # Add microagent MCP tools if available
-    microagent_mcp_configs = memory.get_microagent_mcp_tools()
     extra_stdio_servers = []
+
+    # Add microagent MCP tools if available
+    mcp_config: MCPConfig = app_config.mcp
+    microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
             logger.warning(
