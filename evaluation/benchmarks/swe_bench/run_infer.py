@@ -45,6 +45,8 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.utils import get_condenser_config_arg
+from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
@@ -914,6 +916,7 @@ if __name__ == '__main__':
         choices=['swe', 'swt', 'swt-ci'],
         help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
+
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -950,6 +953,19 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
+    # Get condenser config from environment variable
+    condenser_name = os.environ.get('EVAL_CONDENSER')
+    if condenser_name:
+        condenser_config = get_condenser_config_arg(condenser_name)
+        if condenser_config is None:
+            raise ValueError(
+                f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
+            )
+    else:
+        # If no specific condenser config is provided via env var, default to NoOpCondenser
+        condenser_config = NoOpCondenserConfig()
+        logger.debug('No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.')
+
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
@@ -964,6 +980,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        condenser_config=condenser_config,
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')

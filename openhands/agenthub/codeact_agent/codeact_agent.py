@@ -1,4 +1,3 @@
-import copy
 import os
 import sys
 from collections import deque
@@ -28,6 +27,7 @@ from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
+from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
@@ -186,26 +186,7 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        params['tools'] = self.tools
-
-        # Special handling for Gemini model which doesn't support default fields
-        if self.llm.config.model == 'gemini-2.5-pro-preview-03-25':
-            logger.info(
-                f'Removing the default fields from tools for {self.llm.config.model} '
-                "since it doesn't support them and the request would crash."
-            )
-            # prevent mutation of input tools
-            params['tools'] = copy.deepcopy(params['tools'])
-            # Strip off default fields that cause errors with gemini-preview
-            for tool in params['tools']:
-                if 'function' in tool and 'parameters' in tool['function']:
-                    if 'properties' in tool['function']['parameters']:
-                        for prop_name, prop in tool['function']['parameters'][
-                            'properties'
-                        ].items():
-                            if 'default' in prop:
-                                del prop['default']
-        # log to litellm proxy if possible
+        params['tools'] = check_tools(self.tools, self.llm.config)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
@@ -286,5 +267,5 @@ class CodeActAgent(Agent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys())
+            response, mcp_tool_names=list(self.mcp_tools.keys()),
         )

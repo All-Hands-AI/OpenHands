@@ -44,7 +44,12 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 class ConversationMemory:
@@ -484,6 +489,13 @@ class ConversationMemory:
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
 
+                conversation_instructions = None
+
+                if obs.conversation_instructions:
+                    conversation_instructions = ConversationInstructions(
+                        content=obs.conversation_instructions
+                    )
+
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
                 )
@@ -493,10 +505,10 @@ class ConversationMemory:
                     repo_info.repo_name or repo_info.repo_directory
                 )
                 has_runtime_info = runtime_info is not None and (
-                    runtime_info.available_hosts
-                    or runtime_info.additional_agent_instructions
+                    runtime_info.date or runtime_info.custom_secrets_descriptions
                 )
                 has_repo_instructions = bool(repo_instructions.strip())
+                has_conversation_instructions = conversation_instructions is not None
 
                 # Filter and process microagent knowledge
                 filtered_agents = []
@@ -514,11 +526,17 @@ class ConversationMemory:
                 message_content = []
 
                 # Build the workspace context information
-                if has_repo_info or has_runtime_info or has_repo_instructions:
+                if (
+                    has_repo_info
+                    or has_runtime_info
+                    or has_repo_instructions
+                    or has_conversation_instructions
+                ):
                     formatted_workspace_text = (
                         self.prompt_manager.build_workspace_context(
                             repository_info=repo_info,
                             runtime_info=runtime_info,
+                            conversation_instructions=conversation_instructions,
                             repo_instructions=repo_instructions,
                         )
                     )

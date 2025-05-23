@@ -261,10 +261,15 @@ export function WsClientProvider({
   }, [conversationId]);
 
   React.useEffect(() => {
+    // reset events when conversationId changes
+    setEvents([]);
+    setParsedEvents([]);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
+
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (!conversation) {
+    if (!conversation || conversation.status === "STARTING") {
       return () => undefined; // conversation not yet loaded
     }
 
@@ -304,7 +309,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [conversationId, conversation?.url]);
+  }, [conversationId, conversation?.url, conversation?.status]);
 
   React.useEffect(
     () => () => {
