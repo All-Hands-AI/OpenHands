@@ -38,6 +38,7 @@ def response_to_actions(
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
     assistant_msg = choice.message
+
     if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
         thought = ''
@@ -52,51 +53,52 @@ def response_to_actions(
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
             logger.debug(f'Tool call in function_calling.py: {tool_call}')
-        try:
-            arguments = json.loads(tool_call.function.arguments)
-        except json.decoder.JSONDecodeError as e:
-            raise RuntimeError(
-                f'Failed to parse tool call arguments: {tool_call.function.arguments}'
-            ) from e
+            try:
+                arguments = json.loads(tool_call.function.arguments)
+            except json.decoder.JSONDecodeError as e:
+                raise RuntimeError(
+                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
+                ) from e
 
-        # ================================================
-        # LocAgent's Tools
-        # ================================================
-        ALL_FUNCTIONS = [
-            'explore_tree_structure',
-            'search_code_snippets',
-            'get_entity_contents',
-        ]
-        if tool_call.function.name in ALL_FUNCTIONS:
-            # We implement this in agent_skills, which can be used via Jupyter
-            func_name = tool_call.function.name
-            code = f'print({func_name}(**{arguments}))'
-            logger.debug(f'TOOL CALL: {func_name} with code: {code}')
-            action = IPythonRunCellAction(code=code)
+            # ================================================
+            # LocAgent's Tools
+            # ================================================
+            ALL_FUNCTIONS = [
+                'explore_tree_structure',
+                'search_code_snippets',
+                'get_entity_contents',
+            ]
+            if tool_call.function.name in ALL_FUNCTIONS:
+                # We implement this in agent_skills, which can be used via Jupyter
+                func_name = tool_call.function.name
+                code = f'print({func_name}(**{arguments}))'
+                logger.debug(f'TOOL CALL: {func_name} with code: {code}')
+                action = IPythonRunCellAction(code=code)
 
-        # ================================================
-        # AgentFinishAction
-        # ================================================
-        elif tool_call.function.name == FinishTool['function']['name']:
-            action = AgentFinishAction(
-                final_thought=arguments.get('message', ''),
-                task_completed=arguments.get('task_completed', None),
+            # ================================================
+            # AgentFinishAction
+            # ================================================
+            elif tool_call.function.name == FinishTool['function']['name']:
+                action = AgentFinishAction(
+                    final_thought=arguments.get('message', ''),
+                    task_completed=arguments.get('task_completed', None),
+                )
+            else:
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
+        
+            # We only add thought to the first action
+            if i == 0:
+                action = combine_thought(action, thought)
+            # Add metadata for tool calling
+            action.tool_call_metadata = ToolCallMetadata(
+                tool_call_id=tool_call.id,
+                function_name=tool_call.function.name,
+                model_response=response,
+                total_calls_in_response=len(assistant_msg.tool_calls),
             )
-        else:
-            raise FunctionCallNotExistsError(
-                f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
-            )
-        # We only add thought to the first action
-        if i == 0:
-            action = combine_thought(action, thought)
-        # Add metadata for tool calling
-        action.tool_call_metadata = ToolCallMetadata(
-            tool_call_id=tool_call.id,
-            function_name=tool_call.function.name,
-            model_response=response,
-            total_calls_in_response=len(assistant_msg.tool_calls),
-        )
-        actions.append(action)
+            actions.append(action)
     else:
         actions.append(
             MessageAction(
