@@ -1,13 +1,15 @@
 from openhands.agenthub.codeact_agent import CodeActAgent
-from openhands.agenthub.loc_agent.function_calling import (
-    convert_tool_call_to_action,
-)
-from openhands.agenthub.loc_agent.function_calling import (
-    get_tools as get_loc_agent_tools,
-)
+import openhands.agenthub.loc_agent.function_calling as locagent_function_calling
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+
+    from openhands.events.action import Action
+    from openhands.llm.llm import ModelResponse
 
 
 class LocAgent(CodeActAgent):
@@ -26,8 +28,12 @@ class LocAgent(CodeActAgent):
         """
         super().__init__(llm, config)
 
-        self.tools = get_loc_agent_tools()
+        self.tools = locagent_function_calling.get_tools()
         logger.debug(
             f'TOOLS loaded for LocAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
         )
-        self.convert_tool_call_to_action = convert_tool_call_to_action
+
+    def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
+        return locagent_function_calling.response_to_actions(
+            response, mcp_tool_names=list(self.mcp_tools.keys()),
+        )

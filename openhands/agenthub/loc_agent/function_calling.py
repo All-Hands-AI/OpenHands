@@ -4,13 +4,16 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+from typing import Callable
 
 from litellm import (
     ChatCompletionMessageToolCall,
     ChatCompletionToolParam,
+    ModelResponse,
 )
 
 from openhands.agenthub.codeact_agent.tools import FinishTool
+import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling 
 from openhands.agenthub.loc_agent.tools import (
     SearchEntityTool,
     SearchRepoTool,
@@ -68,6 +71,18 @@ def convert_tool_call_to_action(
         )
     return action
 
+def response_to_actions(
+    response: ModelResponse,
+    convert_tool_call_to_action: Callable[
+        [ChatCompletionMessageToolCall, list[str] | None], Action
+    ] = convert_tool_call_to_action,
+    mcp_tool_names: list[str] | None = None,
+) -> list[Action]:
+    return codeact_function_calling.response_to_actions(
+        response,
+        convert_tool_call_to_action=convert_tool_call_to_action,
+        mcp_tool_names=mcp_tool_names,
+    )
 
 def get_tools() -> list[ChatCompletionToolParam]:
     tools = [FinishTool]
