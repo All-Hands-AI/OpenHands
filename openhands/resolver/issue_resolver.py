@@ -246,22 +246,22 @@ class IssueResolver:
         obs: Observation
 
         action = CmdRunAction(command='cd /workspace')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
         if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
             action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
-            logger.info(action, extra={'msg_type': 'ACTION'})
+            logger.debug(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
 
         action = CmdRunAction(command='git config --global core.pager ""')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config.\n{obs}')
 
@@ -290,27 +290,27 @@ class IssueResolver:
         obs: Observation
 
         action = CmdRunAction(command='cd /workspace')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
                 f'Failed to change directory to /workspace. Observation: {obs}'
             )
 
         action = CmdRunAction(command='git config --global core.pager ""')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
         action = CmdRunAction(
             command='git config --global --add safe.directory /workspace'
         )
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
@@ -319,9 +319,9 @@ class IssueResolver:
         else:
             action = CmdRunAction(command='git add -A')
 
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to git add. Observation: {obs}')
 
@@ -330,9 +330,9 @@ class IssueResolver:
         while n_retries < 5:
             action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
             action.set_hard_timeout(600 + 100 * n_retries)
-            logger.info(action, extra={'msg_type': 'ACTION'})
+            logger.debug(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
             n_retries += 1
             if isinstance(obs, CmdOutputObservation):
                 if obs.exit_code == 0:
