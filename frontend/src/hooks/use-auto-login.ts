@@ -5,6 +5,8 @@ import { useIsAuthed } from "./query/use-is-authed";
 import {
   getLoginMethod,
   getLastPage,
+  getJustLoggedIn,
+  setJustLoggedIn,
   LoginMethod,
 } from "#/utils/local-storage";
 import { useAuthUrl } from "./use-auth-url";
@@ -59,6 +61,9 @@ export const useAutoLogin = () => {
 
     // If we have an auth URL, redirect to it
     if (authUrl) {
+      // Set the "just logged in" flag to true
+      setJustLoggedIn(true);
+
       // After successful login, the user will be redirected back and can navigate to the last page
       window.location.href = authUrl;
     }
@@ -95,11 +100,18 @@ export const useAutoLogin = () => {
     // Get the current pathname
     const currentPath = window.location.pathname;
 
+    // Check if the user just logged in
+
     // Only navigate to the last page if:
     // 1. Last page exists in local storage
     // 2. We're on the home page (/) - this prevents redirecting when a user
     //    explicitly navigates to a specific page or opens a link in a new tab
-    if (lastPage && currentPath === "/") {
+    // 3. The user just logged in (new condition)
+    if (lastPage && currentPath === "/" && getJustLoggedIn()) {
+      // Clear the "just logged in" flag
+      setJustLoggedIn(false);
+
+      // Navigate to the last page
       navigate(lastPage);
     }
   }, [config?.APP_MODE, isAuthed, isAuthLoading, navigate]);

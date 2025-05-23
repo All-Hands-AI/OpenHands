@@ -2,6 +2,7 @@
 export const LOCAL_STORAGE_KEYS = {
   LOGIN_METHOD: "openhands_login_method",
   LAST_PAGE: "openhands_last_page",
+  JUST_LOGGED_IN: "openhands_just_logged_in",
 };
 
 // Login methods
@@ -43,11 +44,12 @@ export const getLastPage = (): string | null =>
   localStorage.getItem(LOCAL_STORAGE_KEYS.LAST_PAGE);
 
 /**
- * Clear login method and last page from local storage
+ * Clear login method, last page, and just logged in flag from local storage
  */
 export const clearLoginData = (): void => {
   localStorage.removeItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD);
   localStorage.removeItem(LOCAL_STORAGE_KEYS.LAST_PAGE);
+  localStorage.removeItem(LOCAL_STORAGE_KEYS.JUST_LOGGED_IN);
 };
 
 /**
@@ -57,3 +59,20 @@ export const clearLoginData = (): void => {
  */
 export const shouldExcludePath = (path: string): boolean =>
   path.startsWith("/settings");
+
+/**
+ * Set the "just logged in" flag in local storage
+ * @param value True if the user just logged in, false otherwise
+ */
+export const setJustLoggedIn = (value: boolean): void => {
+  localStorage.setItem(LOCAL_STORAGE_KEYS.JUST_LOGGED_IN, value.toString());
+};
+
+/**
+ * Get the "just logged in" flag from local storage
+ * @returns True if the user just logged in, false otherwise
+ */
+export const getJustLoggedIn = (): boolean => {
+  const value = localStorage.getItem(LOCAL_STORAGE_KEYS.JUST_LOGGED_IN);
+  return value === "true";
+};
