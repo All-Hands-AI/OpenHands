@@ -1,6 +1,7 @@
 """Replay tests"""
 
 import asyncio
+from pathlib import Path
 
 from conftest import close_test_runtime, create_runtime_and_config
 
@@ -22,7 +23,9 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
-        replay_trajectory_path=f'./tests/runtime/trajs/{trajectory_name}.json',
+        replay_trajectory_path=str(
+            (Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()
+        ),
     )
 
 
@@ -32,7 +35,10 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     (creating a simple 2048 game), using the default agent
     """
     runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = './tests/runtime/trajs/basic.json'
+    config.replay_trajectory_path = str(
+        (Path(__file__).parent / 'trajs' / 'basic.json').resolve()
+    )
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(
@@ -61,6 +67,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     config = _get_config('basic_gui_mode')
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(
@@ -87,7 +94,10 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     meaningless.
     """
     runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = './tests/runtime/trajs/wrong_initial_state.json'
+    config.replay_trajectory_path = str(
+        (Path(__file__).parent / 'trajs' / 'wrong_initial_state.json').resolve()
+    )
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(
@@ -121,6 +131,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     config = _get_config('basic_interactions')
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(

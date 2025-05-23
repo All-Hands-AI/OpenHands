@@ -1,5 +1,7 @@
 """Image-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
+import os
+
 import pytest
 from conftest import close_test_runtime, create_runtime_and_config
 
@@ -9,6 +11,13 @@ from openhands.events.action import CmdRunAction
 # ============================================================================================================================
 # Image-specific tests
 # ============================================================================================================================
+
+# Skip all tests in this file if running with CLIRuntime or LocalRuntime,
+# as these tests are specific to Docker images.
+pytestmark = pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') in ['cli', 'local'],
+    reason='Image tests are specific to DockerRuntime and not applicable to CLIRuntime or LocalRuntime.',
+)
 
 
 def test_bash_python_version(temp_dir, runtime_cls, base_container_image):
