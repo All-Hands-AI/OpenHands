@@ -6,6 +6,7 @@ import {
   SystemMessageAction,
 } from "./actions";
 import {
+  AgentStateChangeObservation,
   CommandObservation,
   ErrorObservation,
   MCPObservation,
@@ -38,6 +39,11 @@ export const isErrorObservation = (
   event: OpenHandsParsedEvent,
 ): event is ErrorObservation =>
   isOpenHandsObservation(event) && event.observation === "error";
+
+export const isAgentStateChangeObservation = (
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
+  isOpenHandsObservation(event) && event.observation === "agent_state_changed";
 
 export const isCommandObservation = (
   event: OpenHandsParsedEvent,

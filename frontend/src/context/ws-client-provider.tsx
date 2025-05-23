@@ -19,6 +19,7 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
+  isAgentStateChangeObservation,
   isErrorObservation,
   isOpenHandsAction,
   isOpenHandsObservation,
@@ -168,12 +169,16 @@ export function WsClientProvider({
         setParsedEvents((prevEvents) => [...prevEvents, event]);
       }
 
-      if (isErrorObservation(event)) {
+      if (isErrorObservation(event) || isAgentStateChangeObservation(event)) {
         trackError({
           message: event.message,
           source: "chat",
           metadata: { msgId: event.id },
         });
+
+        if (isAgentStateChangeObservation(event)) {
+          setErrorMessage(event.extras.reason || "Unknown error");
+        }
       } else {
         removeErrorMessage();
       }
