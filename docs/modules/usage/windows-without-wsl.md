@@ -148,26 +148,31 @@ If you encounter an error message stating that "System.Management.Automation" wa
 
 To resolve this issue:
 
-1. **Install the latest PowerShell version**:
-   - Download and install PowerShell 7 from the [official PowerShell GitHub repository](https://github.com/PowerShell/PowerShell/releases)
-   - Choose the MSI installer appropriate for your system (x64 for most modern computers)
-   - Run the installer with default options
+1. **Install the latest version of PowerShell** (PowerShell 7 or later) from the official Microsoft repository:
+   - Visit [https://github.com/PowerShell/PowerShell/releases](https://github.com/PowerShell/PowerShell/releases)
+   - Download and install the latest MSI package for your system architecture (x64 for most systems)
+   - During installation, make sure to select the option to "Add to PATH"
 
-2. **Verify the installation**:
+2. **Restart your terminal or command prompt** to ensure the new PowerShell is available
+
+3. **Verify the installation** by running:
    ```powershell
    pwsh --version
    ```
 
-3. **Restart your terminal** and try running OpenHands again using PowerShell 7 (pwsh) instead of Windows PowerShell:
+4. **Run OpenHands using PowerShell 7** instead of Windows PowerShell:
    ```powershell
-   pwsh
-   $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   pwsh -c "cd path\to\openhands && poetry run openhands"
    ```
 
-4. **If the issue persists**, ensure that you have the .NET Runtime installed:
+5. **If the issue persists**, ensure that you have the .NET Runtime installed:
    - Download and install the latest .NET Runtime from [Microsoft's .NET download page](https://dotnet.microsoft.com/download)
    - Restart your computer after installation
    - Try running OpenHands again
+
+6. **Ensure that the .NET Framework is properly installed** on your system:
+   - Go to Control Panel > Programs > Programs and Features > Turn Windows features on or off
+   - Make sure ".NET Framework" features are enabled
 
 This error occurs because OpenHands uses the pythonnet package to interact with PowerShell, which requires the System.Management.Automation assembly from the .NET framework. A minimal PowerShell installation might not include all the necessary components for this integration.
 
