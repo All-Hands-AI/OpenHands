@@ -49,7 +49,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
         return false;
       },
-      [messages],
+      [],
     );
 
     return (
