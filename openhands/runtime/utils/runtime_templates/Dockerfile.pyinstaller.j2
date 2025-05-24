@@ -1,0 +1,49 @@
+FROM {{ base_image }}
+
+# Install minimal dependencies required by the base system
+RUN if command -v apt-get > /dev/null; then \
+        apt-get update && apt-get install -y --no-install-recommends ca-certificates bash && \
+        apt-get clean && rm -rf /var/lib/apt/lists/*; \
+    elif command -v apk > /dev/null; then \
+        apk add --no-cache ca-certificates bash gcompat libstdc++; \
+    elif command -v yum > /dev/null; then \
+        yum install -y ca-certificates bash; \
+        yum clean all; \
+    fi
+
+# Create the openhands user if it doesn't exist
+RUN if ! id -u openhands > /dev/null 2>&1; then \
+        if command -v useradd > /dev/null 2>&1; then \
+            groupadd -g 1000 openhands 2>/dev/null || true; \
+            useradd -u 1000 -g 1000 -m -s /bin/bash openhands 2>/dev/null || true; \
+        elif command -v adduser > /dev/null 2>&1; then \
+            addgroup -g 1000 openhands 2>/dev/null || true; \
+            adduser -D -u 1000 -G openhands openhands 2>/dev/null || true; \
+        fi; \
+    fi
+
+# Create directories
+RUN mkdir -p /openhands/bin /openhands/lib /workspace && \
+    chown -R openhands:openhands /workspace /openhands 2>/dev/null || true
+
+# Copy the bundled action execution server
+COPY ./dist/pyinstaller/action-execution-server /openhands/action-execution-server
+
+# Copy Playwright browser
+COPY ./browser /openhands/browser
+
+# Set environment variables
+ENV PATH=/openhands/bin:$PATH \
+    LD_LIBRARY_PATH=/openhands/lib:$LD_LIBRARY_PATH \
+    PLAYWRIGHT_BROWSERS_PATH=/openhands/browser \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# Set the working directory
+WORKDIR /workspace
+
+# Switch to the openhands user
+USER openhands
+
+# Command to start the action execution server
+CMD ["/openhands/action-execution-server/action-execution-server", "8000", "/workspace"]
