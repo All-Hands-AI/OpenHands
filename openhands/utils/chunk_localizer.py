@@ -4,8 +4,8 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
-from rapidfuzz.distance import LCSseq
 from pydantic import BaseModel
+from rapidfuzz.distance import LCSseq
 from tree_sitter_languages import get_parser
 
 from openhands.core.logger import openhands_logger as logger
@@ -65,10 +65,10 @@ def normalized_lcs(chunk: str, query: str) -> float:
     """
     if len(chunk) == 0:
         return 0.0
-    
+
     # Use rapidfuzz's LCSseq implementation which works on all platforms
     _score = LCSseq.similarity(chunk, query)
-    
+
     return _score / len(chunk)
 
 

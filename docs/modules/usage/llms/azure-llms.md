@@ -1,6 +1,6 @@
 # Azure
 
-OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their documentation on using Azure as a 
+OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their documentation on using Azure as a
 provider [here](https://docs.litellm.ai/docs/providers/azure).
 
 ## Azure OpenAI Configuration

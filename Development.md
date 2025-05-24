@@ -1,7 +1,7 @@
 # Development Guide
 
 This guide is for people working on OpenHands and editing the source code.
-If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md) on how to clone and setup the project 
+If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md) on how to clone and setup the project
 initially before moving on. Otherwise, you can clone the OpenHands project directly.
 
 ## Start the Server for Development
@@ -21,7 +21,7 @@ Make sure you have all these dependencies installed before moving on to `make bu
 
 #### Develop without sudo access
 
-If you want to develop without system admin/sudo access to upgrade/install `Python` and/or `NodeJs`, you can use 
+If you want to develop without system admin/sudo access to upgrade/install `Python` and/or `NodeJs`, you can use
 `conda` or `mamba` to manage the packages for you:
 
 ```bash
@@ -37,7 +37,7 @@ mamba install conda-forge::poetry
 
 ### 2. Build and Setup The Environment
 
-Begin by building the project which includes setting up the environment and installing dependencies. This step ensures 
+Begin by building the project which includes setting up the environment and installing dependencies. This step ensures
 that OpenHands is ready to run on your system:
 
 ```bash
@@ -54,11 +54,11 @@ To configure the LM of your choice, run:
 make setup-config
 ```
 
-This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenHands is 
-tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, 
+This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenHands is
+tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI,
 please set the model in the UI.
 
-Note: If you have previously run OpenHands using the docker command, you may have already set some environmental 
+Note: If you have previously run OpenHands using the docker command, you may have already set some environmental
 variables in your terminal. The final configurations are set from highest to lowest priority:
 Environment variables > config.toml variables > default variables
 
@@ -77,14 +77,14 @@ make run
 
 #### Option B: Individual Server Startup
 
-- **Start the Backend Server:** If you prefer, you can start the backend server independently to focus on 
+- **Start the Backend Server:** If you prefer, you can start the backend server independently to focus on
 backend-related tasks or configurations.
 
   ```bash
   make start-backend
   ```
 
-- **Start the Frontend Server:** Similarly, you can start the frontend server on its own to work on frontend-related 
+- **Start the Frontend Server:** Similarly, you can start the frontend server on its own to work on frontend-related
 components or interface enhancements.
   ```bash
   make start-frontend
@@ -120,7 +120,7 @@ poetry run pytest ./tests/unit/test_*.py
 
 ### 9. Use existing Docker image
 
-To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker 
+To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker
 container image by setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
 Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.39-nikolaik`

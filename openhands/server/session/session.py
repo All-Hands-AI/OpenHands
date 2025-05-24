@@ -128,9 +128,15 @@ class Session:
         self.config.search_api_key = settings.search_api_key
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        self.config.mcp = settings.mcp_config or MCPConfig(sse_servers=[], stdio_servers=[])
+        self.config.mcp = settings.mcp_config or MCPConfig(
+            sse_servers=[], stdio_servers=[]
+        )
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = OpenHandsMCPConfigImpl.create_default_mcp_server_config(self.config.mcp_host, self.config, self.user_id)
+        openhands_mcp_server, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                self.config.mcp_host, self.config, self.user_id
+            )
+        )
         if openhands_mcp_server:
             self.config.mcp.sse_servers.append(openhands_mcp_server)
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)

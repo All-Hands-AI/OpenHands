@@ -83,7 +83,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
    ```powershell
    poetry install
    ```
-   
+
    This will install all required dependencies, including:
    - pythonnet - Required for Windows PowerShell integration
    - All other OpenHands dependencies
@@ -110,7 +110,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
    This will start the OpenHands backend using the local runtime with PowerShell integration.
 
    > **Note**: If you encounter a `RuntimeError: Directory './frontend/build' does not exist` error, make sure you've built the frontend first using the command above.
-   
+
    > **Important**: Using PowerShell 7 (pwsh) instead of Windows PowerShell is recommended to avoid "System.Management.Automation" errors. If you encounter this error, see the Troubleshooting section below.
 
 3. **Alternatively, Run the Frontend in Development Mode (in a separate PowerShell window)**
@@ -120,7 +120,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
    ```
 
 4. **Access the OpenHands GUI**
-   
+
    Open your browser and navigate to:
    ```
    http://localhost:3001

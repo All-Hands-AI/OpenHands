@@ -5,14 +5,13 @@ This is similar to the functionality of `CodeActResponseParser`.
 
 import json
 
-
 from litellm import (
     ChatCompletionToolParam,
     ModelResponse,
 )
 
-from openhands.agenthub.codeact_agent.tools import FinishTool
 from openhands.agenthub.codeact_agent.function_calling import combine_thought
+from openhands.agenthub.codeact_agent.tools import FinishTool
 from openhands.agenthub.loc_agent.tools import (
     SearchEntityTool,
     SearchRepoTool,
@@ -32,7 +31,8 @@ from openhands.events.tool import ToolCallMetadata
 
 
 def response_to_actions(
-    response: ModelResponse, mcp_tool_names: list[str] | None = None,
+    response: ModelResponse,
+    mcp_tool_names: list[str] | None = None,
 ) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
@@ -87,7 +87,7 @@ def response_to_actions(
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
                 )
-        
+
             # We only add thought to the first action
             if i == 0:
                 action = combine_thought(action, thought)
@@ -106,7 +106,7 @@ def response_to_actions(
                 wait_for_response=True,
             )
         )
-    
+
     # Add response id to actions
     # This will ensure we can match both actions without tool calls (e.g. MessageAction)
     # and actions with tool calls (e.g. CmdRunAction, IPythonRunCellAction, etc.)
@@ -116,7 +116,7 @@ def response_to_actions(
 
     assert len(actions) >= 1
     return actions
-        
+
 
 def get_tools() -> list[ChatCompletionToolParam]:
     tools = [FinishTool]

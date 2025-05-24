@@ -58,7 +58,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
-    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+    _get_swebench_workspace_dir_name(instance)
     instruction = f"""
 Consider the following issue description:
 
@@ -348,13 +348,13 @@ def initialize_runtime(
 
     # Check if an existing graph index file is available
     graph_index_file_path = os.path.join(
-        INDEX_BASE_DIR, 'graph_index_v2.3', f"{instance['instance_id']}.pkl"
+        INDEX_BASE_DIR, 'graph_index_v2.3', f'{instance["instance_id"]}.pkl'
     )
     if INDEX_BASE_DIR and os.path.exists(graph_index_file_path):
         logger.info(
-            f"Copying graph index from {graph_index_file_path} to /workspace/{workspace_dir_name}/_index_data/graph_index_v2.3"
+            f'Copying graph index from {graph_index_file_path} to /workspace/{workspace_dir_name}/_index_data/graph_index_v2.3'
         )
-    
+
         runtime.copy_to(
             graph_index_file_path,
             f'/workspace/{workspace_dir_name}/_index_data/graph_index_v2.3',
@@ -364,9 +364,13 @@ def initialize_runtime(
         )
         obs = runtime.run_action(action)
 
-        bm25_index_dir = os.path.join(INDEX_BASE_DIR, 'BM25_index', instance['instance_id'])
+        bm25_index_dir = os.path.join(
+            INDEX_BASE_DIR, 'BM25_index', instance['instance_id']
+        )
         runtime.copy_to(
-            bm25_index_dir, f'/workspace/{workspace_dir_name}/_index_data', recursive=True
+            bm25_index_dir,
+            f'/workspace/{workspace_dir_name}/_index_data',
+            recursive=True,
         )
         action = CmdRunAction(
             command=f'mv _index_data/{instance["instance_id"]} _index_data/bm25_index'

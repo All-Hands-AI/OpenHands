@@ -6,7 +6,7 @@ Organizations and users can define microagents that apply to all repositories be
 
 ## Usage
 
-These microagents can be [any type of microagent](./microagents-overview#microagent-types) and will be loaded 
+These microagents can be [any type of microagent](./microagents-overview#microagent-types) and will be loaded
 accordingly. However, they are applied to all repositories belonging to the organization or user.
 
 Add a `.openhands` repository under the organization or user and create a `microagents` directory and place the

@@ -90,11 +90,14 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     # Check if we're on Windows - MCP client is not supported on Windows
     import os
     import sys
+
     if os.name == 'nt' or sys.platform == 'win32':
-        logger.warning('MCP client is not supported on Windows. MCP tools will be disabled.')
+        logger.warning(
+            'MCP client is not supported on Windows. MCP tools will be disabled.'
+        )
         # Return an empty list to disable MCP tools on Windows
         return []
-    
+
     mcp_clients = []
     mcp_tools = []
     try:
@@ -140,14 +143,17 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     # Check if we're on Windows - MCP client is not supported on Windows
     import os
     import sys
+
     if os.name == 'nt' or sys.platform == 'win32':
-        logger.error(f'MCP tool execution is not supported on Windows. Tool {action.name} cannot be executed.')
+        logger.error(
+            f'MCP tool execution is not supported on Windows. Tool {action.name} cannot be executed.'
+        )
         return MCPObservation(
-            content=json.dumps({"error": "MCP tools are not supported on Windows"}),
+            content=json.dumps({'error': 'MCP tools are not supported on Windows'}),
             name=action.name,
             arguments=action.arguments,
         )
-    
+
     if not mcp_clients:
         raise ValueError('No MCP clients found')
 

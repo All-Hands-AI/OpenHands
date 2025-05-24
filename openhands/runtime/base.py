@@ -221,8 +221,9 @@ class Runtime(FileEditRuntimeMixin):
         # Check if we're on Windows
         import os
         import sys
+
         is_windows = os.name == 'nt' or sys.platform == 'win32'
-        
+
         if is_windows:
             # Add env vars using PowerShell commands for Windows
             cmd = ''
@@ -230,23 +231,23 @@ class Runtime(FileEditRuntimeMixin):
                 # Use PowerShell's $env: syntax for environment variables
                 # Note: json.dumps gives us nice escaping for free
                 cmd += f'$env:{key} = {json.dumps(value)}; '
-            
+
             if not cmd:
                 return
-                
+
             cmd = cmd.strip()
             logger.debug('Adding env vars to PowerShell')  # don't log the values
-            
+
             obs = self.run(CmdRunAction(cmd))
             if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
                 raise RuntimeError(
                     f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
                 )
-                
+
             # We don't add to profile persistence on Windows as it's more complex
             # and varies between PowerShell versions
             logger.debug(f'Added env vars to PowerShell session: {env_vars.keys()}')
-            
+
         else:
             # Original bash implementation for Unix systems
             cmd = ''
@@ -256,19 +257,19 @@ class Runtime(FileEditRuntimeMixin):
                 cmd += f'export {key}={json.dumps(value)}; '
                 # Add to .bashrc if not already present
                 bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
-            
+
             if not cmd:
                 return
-                
+
             cmd = cmd.strip()
             logger.debug('Adding env vars to bash')  # don't log the values
-            
+
             obs = self.run(CmdRunAction(cmd))
             if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
                 raise RuntimeError(
                     f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
                 )
-            
+
             # Add to .bashrc for persistence
             bashrc_cmd = bashrc_cmd.strip()
             logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
@@ -440,7 +441,7 @@ class Runtime(FileEditRuntimeMixin):
         # First clone the repository
         clone_action = CmdRunAction(command=clone_command)
         self.run_action(clone_action)
-        
+
         # Then change directory and checkout
         cd_checkout_action = CmdRunAction(
             command=f'cd {dir_name} && {checkout_command}'
@@ -686,19 +687,16 @@ fi
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
-            
+
             # Use a platform-independent approach to handle errors
             # First try to clone the repo
-            clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir}"
+            clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
 
             # Check if the clone was successful
-            if (
-                isinstance(obs, CmdOutputObservation)
-                and obs.exit_code == 0
-            ):
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 self.log(
                     'info',
                     f'Successfully cloned org-level microagents from {org_openhands_repo}',
