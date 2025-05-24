@@ -5,7 +5,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 ## Prerequisites
 
 1. **Windows 10/11** - A modern Windows operating system
-2. **PowerShell 5.1 or PowerShell 7+** - Windows PowerShell comes pre-installed on Windows 10/11, but PowerShell 7+ is recommended for better compatibility
+2. **PowerShell 7+** - While Windows PowerShell comes pre-installed on Windows 10/11, PowerShell 7+ is strongly recommended to avoid compatibility issues (see Troubleshooting section for "System.Management.Automation" errors)
 3. **.NET Core Runtime** - Required for the PowerShell integration via pythonnet
 4. **Python 3.12** - Python 3.12 is required (Python 3.14 is not supported due to pythonnet compatibility)
 5. **Git** - For cloning the repository and version control
@@ -21,7 +21,17 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      python --version
      ```
 
-2. **Install .NET Core Runtime**
+2. **Install PowerShell 7**
+   - Download and install PowerShell 7 from the [official PowerShell GitHub repository](https://github.com/PowerShell/PowerShell/releases)
+   - Choose the MSI installer appropriate for your system (x64 for most modern computers)
+   - Run the installer with default options
+   - Verify installation by opening a new terminal and running:
+     ```powershell
+     pwsh --version
+     ```
+   - Using PowerShell 7 (pwsh) instead of Windows PowerShell will help avoid "System.Management.Automation" errors
+
+3. **Install .NET Core Runtime**
    - Download and install the .NET Core Runtime from [Microsoft's .NET download page](https://dotnet.microsoft.com/download)
    - Choose the latest .NET Core Runtime (not SDK)
    - Verify installation by opening PowerShell and running:
@@ -30,7 +40,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      ```
    - This step is required for the PowerShell integration via pythonnet. Without it, OpenHands will fall back to a more limited PowerShell implementation.
 
-3. **Install Git**
+4. **Install Git**
    - Download Git from [git-scm.com](https://git-scm.com/download/win)
    - Use default installation options
    - Verify installation:
@@ -38,7 +48,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      git --version
      ```
 
-4. **Install Node.js and npm**
+5. **Install Node.js and npm**
    - Download Node.js from [nodejs.org](https://nodejs.org/) (LTS version recommended)
    - During installation, accept the default options which will install npm as well
    - Verify installation:
@@ -47,7 +57,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      npm --version
      ```
 
-5. **Install Poetry**
+6. **Install Poetry**
    - Open PowerShell as Administrator and run:
      ```powershell
      (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
@@ -92,12 +102,16 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
 2. **Start the Backend**
    ```powershell
+   # Make sure to use PowerShell 7 (pwsh) instead of Windows PowerShell
+   pwsh
    $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
 
    This will start the OpenHands backend using the local runtime with PowerShell integration.
 
    > **Note**: If you encounter a `RuntimeError: Directory './frontend/build' does not exist` error, make sure you've built the frontend first using the command above.
+   
+   > **Important**: Using PowerShell 7 (pwsh) instead of Windows PowerShell is recommended to avoid "System.Management.Automation" errors. If you encounter this error, see the Troubleshooting section below.
 
 3. **Alternatively, Run the Frontend in Development Mode (in a separate PowerShell window)**
    ```powershell
@@ -126,8 +140,40 @@ When running OpenHands on Windows without WSL or Docker, be aware of the followi
 
 5. **Performance**: Some operations may be slower on Windows compared to Linux/macOS.
 
+## Troubleshooting
+
+### "System.Management.Automation" Not Found Error
+
+If you encounter an error message stating that "System.Management.Automation" was not found, this typically indicates that you have a minimal version of PowerShell installed or that the .NET components required for PowerShell integration are missing.
+
+To resolve this issue:
+
+1. **Install the latest PowerShell version**:
+   - Download and install PowerShell 7 from the [official PowerShell GitHub repository](https://github.com/PowerShell/PowerShell/releases)
+   - Choose the MSI installer appropriate for your system (x64 for most modern computers)
+   - Run the installer with default options
+
+2. **Verify the installation**:
+   ```powershell
+   pwsh --version
+   ```
+
+3. **Restart your terminal** and try running OpenHands again using PowerShell 7 (pwsh) instead of Windows PowerShell:
+   ```powershell
+   pwsh
+   $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   ```
+
+4. **If the issue persists**, ensure that you have the .NET Runtime installed:
+   - Download and install the latest .NET Runtime from [Microsoft's .NET download page](https://dotnet.microsoft.com/download)
+   - Restart your computer after installation
+   - Try running OpenHands again
+
+This error occurs because OpenHands uses the pythonnet package to interact with PowerShell, which requires the System.Management.Automation assembly from the .NET framework. A minimal PowerShell installation might not include all the necessary components for this integration.
+
 ## Additional Resources
 
 - [OpenHands Documentation](https://docs.all-hands.dev/)
 - [PowerShell Documentation](https://learn.microsoft.com/en-us/powershell/)
 - [Poetry Documentation](https://python-poetry.org/docs/)
+- [PowerShell GitHub Repository](https://github.com/PowerShell/PowerShell)
