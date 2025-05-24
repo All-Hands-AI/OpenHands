@@ -23,7 +23,7 @@ This command opens an interactive prompt where you can type tasks or commands an
 
 1. Set the following environment variables in your terminal:
    - `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access ([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes))
-   - `LLM_MODEL` - the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-3-7-sonnet-20250219"`)
+   - `LLM_MODEL` - the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-sonnet-4-20250514"`)
    - `LLM_API_KEY` - your API key (e.g. `export LLM_API_KEY="sk_test_12345"`)
 
 2. Run the following command:
@@ -31,7 +31,7 @@ This command opens an interactive prompt where you can type tasks or commands an
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -40,7 +40,7 @@ docker run -it \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.38 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.39 \
     python -m openhands.cli.main
 ```
 

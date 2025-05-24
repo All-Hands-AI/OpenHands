@@ -6,12 +6,13 @@ from logging import LoggerAdapter
 import socketio
 
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig, MCPConfig
+from openhands.core.config import AppConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -115,7 +116,6 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
-        self.config.mcp = settings.mcp_config or MCPConfig()
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will
@@ -125,6 +125,15 @@ class Session:
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
         default_llm_config.base_url = settings.llm_base_url
+        self.config.search_api_key = settings.search_api_key
+
+        # NOTE: this need to happen AFTER the config is updated with the search_api_key
+        self.config.mcp = settings.mcp_config or MCPConfig(sse_servers=[], stdio_servers=[])
+        # Add OpenHands' MCP server by default
+        openhands_mcp_server, openhands_mcp_stdio_servers = OpenHandsMCPConfigImpl.create_default_mcp_server_config(self.config.mcp_host, self.config, self.user_id)
+        if openhands_mcp_server:
+            self.config.mcp.sse_servers.append(openhands_mcp_server)
+        self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         # TODO: override other LLM config & agent config groups (#2075)
 
@@ -155,11 +164,13 @@ class Session:
         selected_repository = None
         selected_branch = None
         custom_secrets = None
+        conversation_instructions = None
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
             custom_secrets = settings.custom_secrets
+            conversation_instructions = settings.conversation_instructions
 
         try:
             await self.agent_session.start(
@@ -175,6 +186,7 @@ class Session:
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
+                conversation_instructions=conversation_instructions,
                 replay_json=replay_json,
             )
         except MicroagentValidationError as e:

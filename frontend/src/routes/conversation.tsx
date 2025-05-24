@@ -8,12 +8,8 @@ import { DiGit } from "react-icons/di";
 import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import {
-  ConversationProvider,
-  useConversation,
-} from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -31,27 +27,23 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation(
-    conversationId || null,
-  );
-  const { initialPrompt, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { conversationId } = useConversationId();
+  const { data: conversation, isFetched } = useActiveConversation();
+
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -71,25 +63,11 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    if (conversationId && (initialPrompt || files.length > 0)) {
-      dispatch(
-        addUserMessage({
-          content: initialPrompt || "",
-          imageUrls: files || [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-      dispatch(clearInitialPrompt());
-      dispatch(clearFiles());
-    }
   }, [conversationId]);
 
   useEffectOnce(() => {
-    dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
@@ -156,10 +134,8 @@ function AppContent() {
                       e.stopPropagation();
                       if (conversationId) {
                         try {
-                          const response = await fetch(
-                            `/api/conversations/${conversationId}/vscode-url`,
-                          );
-                          const data = await response.json();
+                          const data =
+                            await OpenHands.getVSCodeUrl(conversationId);
                           if (data.vscode_url) {
                             const transformedUrl = transformVSCodeUrl(
                               data.vscode_url,
@@ -232,11 +208,7 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <ConversationProvider>
-      <AppContent />
-    </ConversationProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;
