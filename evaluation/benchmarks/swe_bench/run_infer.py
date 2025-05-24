@@ -262,9 +262,8 @@ def get_config(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
     )
-    # copy 'draft_editor' config if exists
-    if 'draft_editor' in config_copy.llms:
-        config.set_llm_config(config_copy.llms['draft_editor'], 'draft_editor')
+    # get 'draft_editor' config if exists
+    config.set_llm_config(get_llm_config_arg('draft_editor'), 'draft_editor')
 
     agent_config = AgentConfig(
         enable_jupyter=False,
