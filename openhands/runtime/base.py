@@ -431,7 +431,7 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
         obs = self.run_action(action)
-        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
     @property
