@@ -6,9 +6,10 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
 1. **Windows 10/11** - A modern Windows operating system
 2. **PowerShell 5.1 or PowerShell 7+** - Windows PowerShell comes pre-installed on Windows 10/11, but PowerShell 7+ is recommended for better compatibility
-3. **Python 3.12** - Python 3.12 is required (Python 3.14 is not supported due to pythonnet compatibility)
-4. **Git** - For cloning the repository and version control
-5. **Node.js and npm** - For running the frontend
+3. **.NET Core Runtime** - Required for the PowerShell integration via pythonnet
+4. **Python 3.12** - Python 3.12 is required (Python 3.14 is not supported due to pythonnet compatibility)
+5. **Git** - For cloning the repository and version control
+6. **Node.js and npm** - For running the frontend
 
 ## Step 1: Install Required Software
 
@@ -20,7 +21,16 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      python --version
      ```
 
-2. **Install Git**
+2. **Install .NET Core Runtime**
+   - Download and install the .NET Core Runtime from [Microsoft's .NET download page](https://dotnet.microsoft.com/download)
+   - Choose the latest .NET Core Runtime (not SDK)
+   - Verify installation by opening PowerShell and running:
+     ```powershell
+     dotnet --info
+     ```
+   - This step is required for the PowerShell integration via pythonnet. Without it, OpenHands will fall back to a more limited PowerShell implementation.
+
+3. **Install Git**
    - Download Git from [git-scm.com](https://git-scm.com/download/win)
    - Use default installation options
    - Verify installation:
@@ -28,7 +38,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      git --version
      ```
 
-3. **Install Node.js and npm**
+4. **Install Node.js and npm**
    - Download Node.js from [nodejs.org](https://nodejs.org/) (LTS version recommended)
    - During installation, accept the default options which will install npm as well
    - Verify installation:
@@ -37,7 +47,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      npm --version
      ```
 
-4. **Install Poetry**
+5. **Install Poetry**
    - Open PowerShell as Administrator and run:
      ```powershell
      (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
@@ -108,11 +118,13 @@ When running OpenHands on Windows without WSL or Docker, be aware of the followi
 
 1. **Browser Tool Not Supported**: The browser tool is not currently supported on Windows.
 
-2. **Interactive Shell Commands**: Some interactive shell commands may not work as expected. The PowerShell session implementation has limitations compared to the bash session used on Linux/macOS.
+2. **.NET Core Requirement**: The PowerShell integration requires .NET Core Runtime to be installed. If .NET Core is not available, OpenHands will automatically fall back to a more limited PowerShell implementation with reduced functionality.
 
-3. **Path Handling**: Windows uses backslashes (`\`) in paths, which may require adjustments when working with code examples designed for Unix-like systems.
+3. **Interactive Shell Commands**: Some interactive shell commands may not work as expected. The PowerShell session implementation has limitations compared to the bash session used on Linux/macOS.
 
-4. **Performance**: Some operations may be slower on Windows compared to Linux/macOS.
+4. **Path Handling**: Windows uses backslashes (`\`) in paths, which may require adjustments when working with code examples designed for Unix-like systems.
+
+5. **Performance**: Some operations may be slower on Windows compared to Linux/macOS.
 
 ## Additional Resources
 
