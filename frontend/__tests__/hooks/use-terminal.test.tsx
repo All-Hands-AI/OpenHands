@@ -35,6 +35,7 @@ describe("useTerminal", () => {
     onKey: vi.fn(),
     attachCustomKeyEventHandler: vi.fn(),
     dispose: vi.fn(),
+    reset: vi.fn(),
   }));
 
   beforeAll(() => {
@@ -78,6 +79,31 @@ describe("useTerminal", () => {
       },
     });
 
+    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
+    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
+  });
+
+  it("should re-render all commands when terminal is reinitialized", () => {
+    const commands: Command[] = [
+      { content: "echo hello", type: "input" },
+      { content: "hello", type: "output" },
+    ];
+
+    const { rerender } = renderWithProviders(<TestTerminalComponent commands={commands} />, {
+      preloadedState: {
+        agent: { curAgentState: AgentState.RUNNING },
+        cmd: { commands },
+      },
+    });
+
+    // Clear mock calls from initial render
+    mockTerminal.writeln.mockClear();
+
+    // Trigger re-render with new commands array
+    const newCommands = [...commands];
+    rerender(<TestTerminalComponent commands={newCommands} />);
+
+    // Verify all commands are re-rendered
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
   });
