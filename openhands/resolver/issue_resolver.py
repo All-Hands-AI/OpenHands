@@ -14,7 +14,6 @@ from uuid import uuid4
 from pydantic import SecretStr
 from termcolor import colored
 
-import openhands
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
@@ -37,7 +36,6 @@ from openhands.resolver.issue_handler_factory import IssueHandlerFactory
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     codeact_user_response,
-    get_unique_uid,
     identify_token,
     reset_logger_for_multiprocessing,
 )
@@ -51,7 +49,7 @@ AGENT_CLASS = 'CodeActAgent'
 class IssueResolver:
     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
 
-    def __init__(self, args: Namespace) -> None:
+    def __init__(self, args: Namespace, sandbox_config: SandboxConfig) -> None:
         """Initialize the IssueResolver with the given parameters.
         Params initialized:
             owner: Owner of the repo.
@@ -59,7 +57,6 @@ class IssueResolver:
             token: Token to access the repository.
             username: Username to access the repository.
             platform: Platform of the repository.
-            runtime_container_image: Container image to use.
             max_iterations: Maximum number of iterations to run.
             output_dir: Output directory to write the results.
             llm_config: Configuration for the language model.
@@ -70,13 +67,6 @@ class IssueResolver:
             comment_id: Optional ID of a specific comment to focus on.
             base_domain: The base domain for the git server.
         """
-
-        # Setup and validate container images
-        self.sandbox_config = self._setup_sandbox_config(
-            args.base_container_image,
-            args.runtime_container_image,
-            args.is_experimental,
-        )
 
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
@@ -182,54 +172,7 @@ class IssueResolver:
             llm_config=self.llm_config,
         )
         self.issue_handler = factory.create()
-
-    @classmethod
-    def _setup_sandbox_config(
-        cls,
-        base_container_image: str | None,
-        runtime_container_image: str | None,
-        is_experimental: bool,
-    ) -> SandboxConfig:
-        if runtime_container_image is not None and base_container_image is not None:
-            raise ValueError('Cannot provide both runtime and base container images.')
-
-        if (
-            runtime_container_image is None
-            and base_container_image is None
-            and not is_experimental
-        ):
-            runtime_container_image = (
-                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
-            )
-
-        # Convert container image values to string or None
-        container_base = (
-            str(base_container_image) if base_container_image is not None else None
-        )
-        container_runtime = (
-            str(runtime_container_image)
-            if runtime_container_image is not None
-            else None
-        )
-
-        sandbox_config = SandboxConfig(
-            base_container_image=container_base,
-            runtime_container_image=container_runtime,
-            enable_auto_lint=False,
-            use_host_network=False,
-            timeout=300,
-        )
-
-        # Configure sandbox for GitLab CI environment
-        if cls.GITLAB_CI:
-            sandbox_config.local_runtime_url = os.getenv(
-                'LOCAL_RUNTIME_URL', 'http://localhost'
-            )
-            user_id = os.getuid() if hasattr(os, 'getuid') else 1000
-            if user_id == 0:
-                sandbox_config.user_id = get_unique_uid()
-
-        return sandbox_config
+        self.sandbox_config = sandbox_config
 
     def initialize_runtime(
         self,

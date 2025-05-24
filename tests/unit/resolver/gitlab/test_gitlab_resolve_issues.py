@@ -19,9 +19,8 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.issue_resolver import (
-    IssueResolver,
-)
+from openhands.resolver.issue_resolver import IssueResolver
+from openhands.resolver.resolve_issue import setup_sandbox_config
 from openhands.resolver.resolver_output import ResolverOutput
 
 
@@ -136,7 +135,12 @@ def test_initialize_runtime(default_mock_args, mock_gitlab_token):
         ]
 
     # Create resolver with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    sandbox_config = setup_sandbox_config(
+        default_mock_args.base_container_image,
+        default_mock_args.runtime_container_image,
+        default_mock_args.is_experimental
+    )
+    resolver = IssueResolver(default_mock_args,sandbox_config)
 
     resolver.initialize_runtime(mock_runtime)
 
@@ -166,7 +170,12 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_gitlab_toke
     default_mock_args.issue_number = 5432
 
     # Create a resolver instance with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    sandbox_config = setup_sandbox_config(
+        default_mock_args.base_container_image,
+        default_mock_args.runtime_container_image,
+        default_mock_args.is_experimental
+    )
+    resolver = IssueResolver(default_mock_args,sandbox_config)
 
     # Mock the issue handler
     resolver.issue_handler = mock_handler
@@ -396,7 +405,12 @@ async def test_complete_runtime(default_mock_args, mock_gitlab_token):
     ]
 
     # Create a resolver instance with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    sandbox_config = setup_sandbox_config(
+        default_mock_args.base_container_image,
+        default_mock_args.runtime_container_image,
+        default_mock_args.is_experimental
+    )
+    resolver = IssueResolver(default_mock_args,sandbox_config)
 
     result = await resolver.complete_runtime(mock_runtime, 'base_commit_hash')
 
@@ -483,7 +497,12 @@ async def test_process_issue(
     default_mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
     # Create a resolver instance with mocked token identification
-    resolver = IssueResolver(default_mock_args)
+    sandbox_config = setup_sandbox_config(
+        default_mock_args.base_container_image,
+        default_mock_args.runtime_container_image,
+        default_mock_args.is_experimental
+    )
+    resolver = IssueResolver(default_mock_args,sandbox_config)
     resolver.user_instructions_prompt_template = mock_user_instructions_template
 
     # Mock the handler with LLM config

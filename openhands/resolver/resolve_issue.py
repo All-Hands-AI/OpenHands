@@ -1,8 +1,59 @@
 # flake8: noqa: E501
 
 import asyncio
+import os
 
+import openhands
+from openhands.core.config import SandboxConfig
 from openhands.resolver.issue_resolver import IssueResolver
+from openhands.resolver.utils import (
+    get_unique_uid,
+)
+
+
+def setup_sandbox_config(
+    base_container_image: str | None,
+    runtime_container_image: str | None,
+    is_experimental: bool,
+) -> SandboxConfig:
+    if runtime_container_image is not None and base_container_image is not None:
+        raise ValueError('Cannot provide both runtime and base container images.')
+
+    if (
+        runtime_container_image is None
+        and base_container_image is None
+        and not is_experimental
+    ):
+        runtime_container_image = (
+            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+        )
+
+    # Convert container image values to string or None
+    container_base = (
+        str(base_container_image) if base_container_image is not None else None
+    )
+    container_runtime = (
+        str(runtime_container_image) if runtime_container_image is not None else None
+    )
+
+    sandbox_config = SandboxConfig(
+        base_container_image=container_base,
+        runtime_container_image=container_runtime,
+        enable_auto_lint=False,
+        use_host_network=False,
+        timeout=300,
+    )
+
+    # Configure sandbox for GitLab CI environment
+    if os.getenv('GITLAB_CI') == 'true':
+        sandbox_config.local_runtime_url = os.getenv(
+            'LOCAL_RUNTIME_URL', 'http://localhost'
+        )
+        user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+        if user_id == 0:
+            sandbox_config.user_id = get_unique_uid()
+
+    return sandbox_config
 
 
 def main() -> None:
@@ -121,7 +172,13 @@ def main() -> None:
 
     my_args = parser.parse_args()
 
-    issue_resolver = IssueResolver(my_args)
+    sandbox_config = setup_sandbox_config(
+        my_args.base_container_image,
+        my_args.runtime_container_image,
+        my_args.is_experimental,
+    )
+
+    issue_resolver = IssueResolver(my_args, sandbox_config)
     asyncio.run(issue_resolver.resolve_issue())
 
 
