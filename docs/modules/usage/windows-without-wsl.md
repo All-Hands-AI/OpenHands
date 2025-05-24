@@ -176,6 +176,16 @@ To resolve this issue:
 
 This error occurs because OpenHands uses the pythonnet package to interact with PowerShell, which requires the System.Management.Automation assembly from the .NET framework. A minimal PowerShell installation might not include all the necessary components for this integration.
 
+### Environment Variable Errors
+
+If you encounter errors related to environment variables, such as:
+
+```
+The term 'export' is not recognized as a name of a cmdlet, function, script file, or executable program.
+```
+
+This is likely because you're using an older version of OpenHands that doesn't properly handle PowerShell environment variables. Update to the latest version of OpenHands, which includes Windows-specific handling for environment variables.
+
 ## Additional Resources
 
 - [OpenHands Documentation](https://docs.all-hands.dev/)
