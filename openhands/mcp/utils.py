@@ -87,62 +87,13 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     Returns:
         A list of tool dictionaries. Returns an empty list if no connections could be established.
     """
-    # Check if we're on Windows - MCP client is not fully supported on Windows
+    # Check if we're on Windows - MCP client is not supported on Windows
     import os
     import sys
     if os.name == 'nt' or sys.platform == 'win32':
-        logger.warning('MCP client is not fully supported on Windows. Using default tools only.')
-        # Return a list of default MCP tools that are known to work on Windows
-        return [
-            {
-                "function": {
-                    "name": "create_pr",
-                    "description": "Create a pull request on GitHub",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "title": {
-                                "type": "string",
-                                "description": "Title of the pull request"
-                            },
-                            "body": {
-                                "type": "string",
-                                "description": "Body/description of the pull request"
-                            },
-                            "base": {
-                                "type": "string",
-                                "description": "The branch to merge into (default: main)"
-                            }
-                        },
-                        "required": ["title"]
-                    }
-                }
-            },
-            {
-                "function": {
-                    "name": "create_mr",
-                    "description": "Create a merge request on GitLab",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "title": {
-                                "type": "string",
-                                "description": "Title of the merge request"
-                            },
-                            "description": {
-                                "type": "string",
-                                "description": "Description of the merge request"
-                            },
-                            "target_branch": {
-                                "type": "string",
-                                "description": "The branch to merge into (default: main)"
-                            }
-                        },
-                        "required": ["title"]
-                    }
-                }
-            }
-        ]
+        logger.warning('MCP client is not supported on Windows. MCP tools will be disabled.')
+        # Return an empty list to disable MCP tools on Windows
+        return []
     
     mcp_clients = []
     mcp_tools = []
@@ -186,37 +137,16 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     Returns:
         The observation from the MCP server
     """
-    # Check if we're on Windows - MCP client is not fully supported on Windows
+    # Check if we're on Windows - MCP client is not supported on Windows
     import os
     import sys
     if os.name == 'nt' or sys.platform == 'win32':
-        logger.warning(f'MCP tool execution is not supported on Windows. Returning mock response for {action.name}.')
-        # Return a mock response for Windows
-        if action.name == "create_pr":
-            return MCPObservation(
-                content=json.dumps({
-                    "url": "https://github.com/example/repo/pull/123",
-                    "number": 123,
-                    "html_url": "https://github.com/example/repo/pull/123"
-                }),
-                name=action.name,
-                arguments=action.arguments,
-            )
-        elif action.name == "create_mr":
-            return MCPObservation(
-                content=json.dumps({
-                    "web_url": "https://gitlab.com/example/repo/-/merge_requests/123",
-                    "iid": 123
-                }),
-                name=action.name,
-                arguments=action.arguments,
-            )
-        else:
-            return MCPObservation(
-                content=json.dumps({"message": "This MCP tool is not supported on Windows"}),
-                name=action.name,
-                arguments=action.arguments,
-            )
+        logger.error(f'MCP tool execution is not supported on Windows. Tool {action.name} cannot be executed.')
+        return MCPObservation(
+            content=json.dumps({"error": "MCP tools are not supported on Windows"}),
+            name=action.name,
+            arguments=action.arguments,
+        )
     
     if not mcp_clients:
         raise ValueError('No MCP clients found')
