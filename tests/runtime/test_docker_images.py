@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -27,7 +27,7 @@ def test_bash_python_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for python-related images')
 
-    runtime, config = _load_runtime(
+    runtime, config = create_runtime_and_config(
         temp_dir, runtime_cls, base_container_image=base_container_image
     )
 
@@ -51,7 +51,7 @@ def test_bash_python_version(temp_dir, runtime_cls, base_container_image):
     assert obs.exit_code == 0
     assert 'pip' in obs.content  # Check that pip is available
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_nodejs_22_version(temp_dir, runtime_cls, base_container_image):
@@ -61,7 +61,7 @@ def test_nodejs_22_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for nodejs-related images')
 
-    runtime, config = _load_runtime(
+    runtime, config = create_runtime_and_config(
         temp_dir, runtime_cls, base_container_image=base_container_image
     )
 
@@ -72,7 +72,7 @@ def test_nodejs_22_version(temp_dir, runtime_cls, base_container_image):
     assert obs.exit_code == 0
     assert 'v22' in obs.content  # Check for specific version
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_go_version(temp_dir, runtime_cls, base_container_image):
@@ -82,7 +82,7 @@ def test_go_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for go-related images')
 
-    runtime, config = _load_runtime(
+    runtime, config = create_runtime_and_config(
         temp_dir, runtime_cls, base_container_image=base_container_image
     )
 
@@ -93,4 +93,4 @@ def test_go_version(temp_dir, runtime_cls, base_container_image):
     assert obs.exit_code == 0
     assert 'go1.23' in obs.content  # Check for specific version
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)

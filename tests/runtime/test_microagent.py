@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from conftest import (
-    _close_test_runtime,
-    _load_runtime,
+    close_test_runtime,
+    create_runtime_and_config,
 )
 
 from openhands.core.config import MCPConfig
@@ -68,7 +68,7 @@ def test_load_microagents_with_trailing_slashes(
     """Test loading microagents when directory paths have trailing slashes."""
     # Create test files
     _create_test_microagents(temp_dir)
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
@@ -93,7 +93,7 @@ def test_load_microagents_with_trailing_slashes(
         assert 'repo_legacy' in repo_names
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openhands):
@@ -103,7 +103,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
     repo_dir.mkdir(parents=True)
     _create_test_microagents(str(repo_dir))
 
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents with selected repository
         loaded_agents = runtime.get_microagents_from_selected_repo(
@@ -130,7 +130,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         assert 'repo_legacy' in repo_names
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_load_microagents_with_missing_files(temp_dir, runtime_cls, run_as_openhands):
@@ -152,7 +152,7 @@ Repository-specific test instructions.
 """
     (microagents_dir / 'repo.md').write_text(repo_agent)
 
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
@@ -170,7 +170,7 @@ Repository-specific test instructions.
         assert agent.name == 'repo'
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_default_tools_microagent_exists():
