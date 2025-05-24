@@ -283,6 +283,13 @@ class AgentController:
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
                 err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
                 self.state.last_error = err_id
+                # Create an ErrorObservation with the specific error_id
+                error_observation = ErrorObservation(
+                    content=str(e),
+                    error_id=err_id
+                )
+                # Add the ErrorObservation to the event stream
+                self.event_stream.add_event(error_observation, EventSource.AGENT)
             elif isinstance(e, ContentPolicyViolationError) or (
                 isinstance(e, BadRequestError)
                 and 'ContentPolicyViolationError' in str(e)
