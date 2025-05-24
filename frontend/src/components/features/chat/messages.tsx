@@ -70,6 +70,14 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       </>
     );
   },
+  (prevProps, nextProps) => {
+    // Prevent re-renders if messages are the same length
+    if (prevProps.messages.length !== nextProps.messages.length) {
+      return false;
+    }
+
+    return true;
+  },
 );
 
 Messages.displayName = "Messages";
