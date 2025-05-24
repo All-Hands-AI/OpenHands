@@ -146,6 +146,14 @@ The PyInstaller approach further simplifies the runtime building procedure by:
 - Include all plugins in the binary
 - Implement a mechanism to load plugins at runtime
 
+### Implementation
+
+The implementation consists of three main components:
+
+1. **PyInstaller Binary Builder**: Uses PyInstaller to bundle the action_execution_server and its dependencies
+2. **Browser Packager**: Extracts and packages the Playwright browser for use with the binary
+3. **Docker Image Builder**: Creates a minimal Docker image with the binary and browser components
+
 ## Implementation Plan
 
 ### Phase 1: Create PyInstaller Binary
@@ -244,6 +252,19 @@ USER openhands
 # Command to start the action execution server
 CMD ["/openhands/action-execution-server/action-execution-server", "8000", "/workspace"]
 ```
+
+### Usage
+
+To build a runtime image using the PyInstaller approach:
+
+```bash
+python runtime_build_pyinstaller.py --base-image ubuntu:22.04
+```
+
+This will:
+1. Build the PyInstaller binary
+2. Package the Playwright browser
+3. Create a Docker image with the binary and browser components
 
 ## Conclusion
 

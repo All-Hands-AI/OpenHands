@@ -168,3 +168,10 @@ lint.pydocstyle.convention = "google"
 
 [tool.coverage.run]
 concurrency = [ "gevent" ]
+
+[tool.poetry-pyinstaller-plugin]
+entry-point = "openhands.runtime.action_execution_server:main"
+name = "action-execution-server"
+strip = true
+onedir = true
+console = true
