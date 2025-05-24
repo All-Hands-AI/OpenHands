@@ -101,16 +101,15 @@ async def create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
     initial_message_action = None
-    if initial_user_msg or image_urls:
-        user_msg = (
-            initial_user_msg.format(conversation_id)
-            if attach_convo_id and initial_user_msg
-            else initial_user_msg
-        )
+    if initial_user_msg or image_urls:    
         initial_message_action = MessageAction(
-            content=user_msg or '',
+            content=initial_user_msg or '',
             image_urls=image_urls or [],
         )
+
+    if attach_convo_id and conversation_instructions:
+        conversation_instructions = conversation_instructions.format(conversation_id)
+        
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,

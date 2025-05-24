@@ -6,6 +6,8 @@ export const VERIFIED_MODELS = [
   "o4-mini-2025-04-16",
   "claude-3-5-sonnet-20241022",
   "claude-3-7-sonnet-20250219",
+  "claude-sonnet-4-20250514",
+  "claude-opus-4-20250514",
   "deepseek-chat",
 ];
 
@@ -39,4 +41,6 @@ export const VERIFIED_ANTHROPIC_MODELS = [
   "claude-3-opus-20240229",
   "claude-3-sonnet-20240229",
   "claude-3-7-sonnet-20250219",
+  "claude-sonnet-4-20250514",
+  "claude-opus-4-20250514",
 ];

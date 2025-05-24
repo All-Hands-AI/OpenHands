@@ -13,7 +13,7 @@ recommendations for model selection. Our latest benchmarking results can be foun
 
 Based on these findings and community feedback, these are the latest models that have been verified to work reasonably well with OpenHands:
 
-- [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api) (recommended)
+- [anthropic/claude-sonnet-4-20250514](https://www.anthropic.com/api) (recommended)
 - [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)

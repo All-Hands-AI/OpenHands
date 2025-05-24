@@ -19,13 +19,7 @@ if os.getenv('SERVE_FRONTEND', 'true').lower() == 'true':
         '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
     )
 
-base_app.add_middleware(
-    LocalhostCORSMiddleware,
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
-)
-
+base_app.add_middleware(LocalhostCORSMiddleware)
 base_app.add_middleware(CacheControlMiddleware)
 base_app.add_middleware(
     RateLimitMiddleware,

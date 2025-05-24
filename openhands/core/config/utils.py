@@ -305,6 +305,11 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the sandbox.volumes parameter
+    if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
+        logger.openhands_logger.warning(
+            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
+            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
+        )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
@@ -348,11 +353,6 @@ def finalize_config(cfg: AppConfig) -> None:
 
     # Handle the deprecated workspace_* parameters
     elif cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        logger.openhands_logger.warning(
-            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
-        )
-
         if cfg.workspace_base is not None:
             cfg.workspace_base = os.path.abspath(cfg.workspace_base)
             if cfg.workspace_mount_path is None:

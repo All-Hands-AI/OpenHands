@@ -8,6 +8,7 @@ import {
 import {
   CommandObservation,
   ErrorObservation,
+  MCPObservation,
   OpenHandsObservation,
 } from "./observations";
 
@@ -57,3 +58,8 @@ export const isRejectObservation = (
   event: OpenHandsParsedEvent,
 ): event is OpenHandsObservation =>
   isOpenHandsObservation(event) && event.observation === "user_rejected";
+
+export const isMcpObservation = (
+  event: OpenHandsParsedEvent,
+): event is MCPObservation =>
+  isOpenHandsObservation(event) && event.observation === "mcp";

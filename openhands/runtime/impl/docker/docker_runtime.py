@@ -147,7 +147,7 @@ class DockerRuntime(ActionExecutionClient):
         except docker.errors.NotFound as e:
             if self.attach_to_existing:
                 self.log(
-                    'error',
+                    'warning',
                     f'Container {self.container_name} not found.',
                 )
                 raise AgentRuntimeDisconnectedError from e

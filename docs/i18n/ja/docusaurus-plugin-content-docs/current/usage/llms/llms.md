@@ -13,7 +13,7 @@ OpenHandsはLiteLLMでサポートされているあらゆるLLMに接続でき�
 
 これらの調査結果とコミュニティからのフィードバックに基づき、以下のモデルはOpenHandsでうまく動作することが確認されています：
 
-- [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api) (推奨)
+- [anthropic/claude-sonnet-4-20250514](https://www.anthropic.com/api) (推奨)
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
 - [openai/o3-mini](https://openai.com/index/openai-o3-mini/)

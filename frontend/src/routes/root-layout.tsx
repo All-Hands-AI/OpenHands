@@ -22,7 +22,6 @@ import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
-import { useTrackLastPage } from "#/hooks/use-track-last-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 
@@ -85,9 +84,6 @@ export default function MainApp() {
   const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
-
-  // Track the last visited page
-  useTrackLastPage();
 
   // Auto-login if login method is stored in local storage
   useAutoLogin();

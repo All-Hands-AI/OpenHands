@@ -135,6 +135,7 @@ export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   source: "agent";
   extras: {
     name: string;
+    arguments: Record<string, unknown>;
   };
 }
 

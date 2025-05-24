@@ -15,6 +15,7 @@ import {
 } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -28,6 +29,7 @@ export function AgentStatusBar() {
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
   const { status } = useWsClient();
   const { notify } = useNotification();
+  const { data: conversation } = useActiveConversation();
 
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
@@ -78,7 +80,10 @@ export function AgentStatusBar() {
   );
 
   React.useEffect(() => {
-    if (status === WsClientProviderStatus.DISCONNECTED) {
+    if (conversation?.status === "STARTING") {
+      setStatusMessage(t(I18nKey.STATUS$STARTING_RUNTIME));
+      setIndicatorColor(IndicatorColor.RED);
+    } else if (status === WsClientProviderStatus.DISCONNECTED) {
       setStatusMessage(t(I18nKey.STATUS$CONNECTED)); // Using STATUS$CONNECTED instead of STATUS$CONNECTING
       setIndicatorColor(IndicatorColor.RED);
     } else {
@@ -97,7 +102,7 @@ export function AgentStatusBar() {
         }
       }
     }
-  }, [curAgentState, status, notify, t]);
+  }, [curAgentState, status, notify, t, conversation?.status]);
 
   return (
     <div className="flex flex-col items-center">

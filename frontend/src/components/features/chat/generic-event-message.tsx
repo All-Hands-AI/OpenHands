@@ -10,7 +10,7 @@ import { ObservationResultStatus } from "./event-content-helpers/get-observation
 
 interface GenericEventMessageProps {
   title: React.ReactNode;
-  details: string;
+  details: string | React.ReactNode;
   success?: ObservationResultStatus;
 }
 
@@ -44,18 +44,21 @@ export function GenericEventMessage({
         {success && <SuccessIndicator status={success} />}
       </div>
 
-      {showDetails && (
-        <Markdown
-          components={{
-            code,
-            ul,
-            ol,
-          }}
-          remarkPlugins={[remarkGfm]}
-        >
-          {details}
-        </Markdown>
-      )}
+      {showDetails &&
+        (typeof details === "string" ? (
+          <Markdown
+            components={{
+              code,
+              ul,
+              ol,
+            }}
+            remarkPlugins={[remarkGfm]}
+          >
+            {details}
+          </Markdown>
+        ) : (
+          details
+        ))}
     </div>
   );
 }

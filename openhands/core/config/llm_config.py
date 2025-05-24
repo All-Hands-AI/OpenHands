@@ -47,7 +47,7 @@ class LLMConfig(BaseModel):
         seed: The seed to use for the LLM.
     """
 
-    model: str = Field(default='claude-3-7-sonnet-20250219')
+    model: str = Field(default='claude-sonnet-4-20250514')
     api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)

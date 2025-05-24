@@ -12,7 +12,7 @@ OpenHands 可以连接到任何 LiteLLM 支持的 LLM。但是，它需要一个
 
 基于这些发现和社区反馈，以下模型已被验证可以与 OpenHands 合理地配合使用：
 
-- [anthropic/claude-3-7-sonnet-20250219](https://www.anthropic.com/api)（推荐）
+- [anthropic/claude-sonnet-4-20250514](https://www.anthropic.com/api)（推荐）
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
 - [openai/o3-mini](https://openai.com/index/openai-o3-mini/)

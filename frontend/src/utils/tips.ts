@@ -30,7 +30,7 @@ export const TIPS: Tip[] = [
   },
   {
     key: I18nKey.TIPS$GITHUB_HOOK,
-    link: "https://docs.all-hands.dev/modules/usage/cloud/cloud-github-resolver",
+    link: "https://docs.all-hands.dev/modules/usage/cloud/cloud-issue-resolver",
   },
   {
     key: I18nKey.TIPS$BLOG_SIGNUP,

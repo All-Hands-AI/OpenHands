@@ -67,7 +67,7 @@ docker run -it --rm --pull=always \
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
 When you open the application, you'll be asked to choose an LLM provider and add an API key.
-[Anthropic's Claude 3.7 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-7-sonnet-20250219`)
+[Anthropic's Claude Sonnet 4](https://www.anthropic.com/api) (`anthropic/claude-sonnet-4-20250514`)
 works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
 
 ## 💡 Other ways to run OpenHands
