@@ -178,13 +178,7 @@ This error occurs because OpenHands uses the pythonnet package to interact with 
 
 ### Environment Variable Errors
 
-If you encounter errors related to environment variables, such as:
-
-```
-The term 'export' is not recognized as a name of a cmdlet, function, script file, or executable program.
-```
-
-This is likely because you're using an older version of OpenHands that doesn't properly handle PowerShell environment variables. Update to the latest version of OpenHands, which includes Windows-specific handling for environment variables.
+If you encounter errors related to environment variables or shell commands, make sure you're using the latest version of OpenHands, which includes improved Windows compatibility.
 
 ## Additional Resources
 
