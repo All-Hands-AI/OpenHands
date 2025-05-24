@@ -436,27 +436,16 @@ class Runtime(FileEditRuntimeMixin):
             else f'git checkout -b {openhands_workspace_branch}'
         )
 
-        # Check if we're on Windows
-        import os
-        import sys
-        is_windows = os.name == 'nt' or sys.platform == 'win32'
+        # Execute commands separately for better cross-platform compatibility
+        # First clone the repository
+        clone_action = CmdRunAction(command=clone_command)
+        self.run_action(clone_action)
         
-        if is_windows:
-            # On Windows, execute commands separately
-            # First clone the repository
-            clone_action = CmdRunAction(command=clone_command)
-            self.run_action(clone_action)
-            
-            # Then change directory and checkout
-            cd_checkout_action = CmdRunAction(
-                command=f'cd {dir_name} && {checkout_command}'
-            )
-            action = cd_checkout_action
-        else:
-            # On Unix systems, we can combine commands
-            action = CmdRunAction(
-                command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
-            )
+        # Then change directory and checkout
+        cd_checkout_action = CmdRunAction(
+            command=f'cd {dir_name} && {checkout_command}'
+        )
+        action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
         return dir_name
@@ -698,24 +687,17 @@ fi
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
             
-            # Check if we're on Windows
-            import os
-            import sys
-            is_windows = os.name == 'nt' or sys.platform == 'win32'
-            
-            if is_windows:
-                # Windows doesn't have /dev/null, use NUL instead
-                clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>NUL || echo 'Org repo not found'"
-            else:
-                clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
+            # Use a platform-independent approach to handle errors
+            # First try to clone the repo
+            clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir}"
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
 
+            # Check if the clone was successful
             if (
                 isinstance(obs, CmdOutputObservation)
                 and obs.exit_code == 0
-                and 'Org repo not found' not in obs.content
             ):
                 self.log(
                     'info',
