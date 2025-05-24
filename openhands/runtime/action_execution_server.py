@@ -79,7 +79,13 @@ mcp_router_logger.setLevel(logger.getEffectiveLevel())
 
 
 if sys.platform == 'win32':
-    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+    try:
+        from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+        WINDOWS_POWERSHELL_AVAILABLE = True
+    except Exception as e:
+        logger.warning(f"Failed to import WindowsPowershellSession: {e}")
+        from openhands.runtime.utils.windows_bash_fallback import WindowsPowershellSessionFallback
+        WINDOWS_POWERSHELL_AVAILABLE = False
 
 
 class ActionRequest(BaseModel):
@@ -258,14 +264,25 @@ class ActionExecutor:
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
         if sys.platform == 'win32':
-            self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
-                work_dir=self._initial_cwd,
-                username=self.username,
-                no_change_timeout_seconds=int(
-                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
-                ),
-                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
-            )
+            if WINDOWS_POWERSHELL_AVAILABLE:
+                self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
+                    work_dir=self._initial_cwd,
+                    username=self.username,
+                    no_change_timeout_seconds=int(
+                        os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                    ),
+                    max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+                )
+            else:
+                logger.warning("Using fallback PowerShell implementation due to missing .NET Core Runtime")
+                self.bash_session = WindowsPowershellSessionFallback(  # type: ignore[name-defined]
+                    work_dir=self._initial_cwd,
+                    username=self.username,
+                    no_change_timeout_seconds=int(
+                        os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                    ),
+                    max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+                )
         else:
             self.bash_session = BashSession(
                 work_dir=self._initial_cwd,

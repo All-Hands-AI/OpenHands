@@ -22,19 +22,18 @@ from openhands.events.observation.commands import (
 )
 from openhands.utils.shutdown_listener import should_continue
 
+# This will raise an exception if .NET Core Runtime is not installed
+# The exception will be caught in action_execution_server.py
 pythonnet.load('coreclr')
 logger.info("Successfully called pythonnet.load('coreclr')")
 
 # Now that pythonnet is initialized, import clr and System
-try:
-    import clr
+import clr
 
-    logger.debug(f'Imported clr module from: {clr.__file__}')
-    # Load System assembly *after* pythonnet is initialized
-    clr.AddReference('System')
-    import System
-except Exception as clr_sys_ex:
-    raise RuntimeError(f'FATAL: Failed to import clr or System. Error: {clr_sys_ex}')
+logger.debug(f'Imported clr module from: {clr.__file__}')
+# Load System assembly *after* pythonnet is initialized
+clr.AddReference('System')
+import System
 
 # Attempt to load the PowerShell SDK assembly only if clr and System loaded
 ps_sdk_path = None
