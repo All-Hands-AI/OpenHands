@@ -10,6 +10,7 @@ interface ConversationCardContextMenuProps {
   onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onShowAgentTools?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDownloadViaVSCode?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onExportTrajectory?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   position?: "top" | "bottom";
 }
 
@@ -20,6 +21,7 @@ export function ConversationCardContextMenu({
   onDisplayCost,
   onShowAgentTools,
   onDownloadViaVSCode,
+  onExportTrajectory,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
@@ -66,6 +68,14 @@ export function ConversationCardContextMenu({
           onClick={onShowAgentTools}
         >
           Show Agent Tools & Metadata
+        </ContextMenuListItem>
+      )}
+      {onExportTrajectory && (
+        <ContextMenuListItem
+          testId="export-trajectory-button"
+          onClick={onExportTrajectory}
+        >
+          Export Trajectory
         </ContextMenuListItem>
       )}
     </ContextMenu>
