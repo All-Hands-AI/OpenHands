@@ -238,6 +238,7 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
+        env['VSCODE_PORT'] = str(self._vscode_port)
 
         # Derive environment paths using sys.executable
         interpreter_path = sys.executable
