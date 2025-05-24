@@ -48,6 +48,35 @@ def create_provider_tokens_object(
     return MappingProxyType(provider_information)
 
 
+async def setup_init_convo_settings(
+    user_id: str | None, providers_set: list[ProviderType]
+):
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+    settings = await settings_store.load()
+
+    secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
+    user_secrets: UserSecrets | None = await secrets_store.load()
+
+    if not settings:
+        raise ConnectionRefusedError(
+            'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
+        )
+
+    session_init_args: dict = {}
+    if settings:
+        session_init_args = {**settings.__dict__, **session_init_args}
+
+    git_provider_tokens = create_provider_tokens_object(providers_set)
+    if server_config.app_mode != AppMode.SAAS and user_secrets:
+        git_provider_tokens = user_secrets.provider_tokens
+
+    session_init_args['git_provider_tokens'] = git_provider_tokens
+    if user_secrets:
+        session_init_args['custom_secrets'] = user_secrets.custom_secrets
+
+    return session_init_args
+
+
 @sio.event
 async def connect(connection_id: str, environ: dict) -> None:
     try:
@@ -85,28 +114,7 @@ async def connect(connection_id: str, environ: dict) -> None:
             conversation_id, cookies_str, authorization_header
         )
 
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        settings = await settings_store.load()
-
-        secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-        user_secrets: UserSecrets | None = await secrets_store.load()
-
-        if not settings:
-            raise ConnectionRefusedError(
-                'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
-            )
-        session_init_args: dict = {}
-        if settings:
-            session_init_args = {**settings.__dict__, **session_init_args}
-
-        git_provider_tokens = create_provider_tokens_object(providers_set)
-        if server_config.app_mode != AppMode.SAAS and user_secrets:
-            git_provider_tokens = user_secrets.provider_tokens
-
-        session_init_args['git_provider_tokens'] = git_provider_tokens
-        if user_secrets:
-            session_init_args['custom_secrets'] = user_secrets.custom_secrets
-
+        session_init_args = await setup_init_convo_settings(user_id, providers_set)
         conversation_init_data = ConversationInitData(**session_init_args)
 
         agent_loop_info = await conversation_manager.join_conversation(
