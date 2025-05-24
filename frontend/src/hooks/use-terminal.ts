@@ -30,10 +30,6 @@ const renderCommand = (command: Command, terminal: Terminal) => {
   );
 };
 
-// Create a persistent reference that survives component unmounts
-// This ensures terminal history is preserved when navigating away and back
-const persistentLastCommandIndex = { current: 0 };
-
 export const useTerminal = ({
   commands,
 }: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
@@ -42,7 +38,7 @@ export const useTerminal = ({
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
-  const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
+  const lastCommandIndex = React.useRef<number>(0);
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
   const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
@@ -111,6 +107,8 @@ export const useTerminal = ({
 
   // Initialize terminal and handle cleanup
   React.useEffect(() => {
+    // Reset lastCommandIndex when terminal is re-initialized
+    lastCommandIndex.current = 0;
     terminal.current = createTerminal();
     fitAddon.current = new FitAddon();
 
@@ -133,25 +131,25 @@ export const useTerminal = ({
     return () => {
       terminal.current?.dispose();
     };
-  }, []);
+  }, []); // Empty dependency array since we want this to run only once on mount
 
   React.useEffect(() => {
-    if (
-      terminal.current &&
-      commands.length > 0 &&
-      lastCommandIndex.current < commands.length
-    ) {
-      let lastCommandType = "";
-      for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        lastCommandType = commands[i].type;
+    if (terminal.current && commands.length > 0) {
+      // Reset terminal content and re-render all commands
+      terminal.current.reset();
+      for (let i = 0; i < commands.length; i += 1) {
+        if (commands[i].type === "input") {
+          terminal.current.write("$ ");
+        }
         renderCommand(commands[i], terminal.current);
       }
       lastCommandIndex.current = commands.length;
-      if (lastCommandType === "output") {
+      // Add prompt if last command was output
+      if (commands[commands.length - 1].type === "output") {
         terminal.current.write("$ ");
       }
     }
-  }, [commands, disabled]);
+  }, [commands]);
 
   React.useEffect(() => {
     let resizeObserver: ResizeObserver | null = null;
