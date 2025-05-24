@@ -41,7 +41,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
         )
 
     def is_allowed_origin(self, origin: str) -> bool:
-        if origin:
+        if origin and not self.allow_origins and not self.allow_origin_regex:
             parsed = urlparse(origin)
             hostname = parsed.hostname or ''
 
