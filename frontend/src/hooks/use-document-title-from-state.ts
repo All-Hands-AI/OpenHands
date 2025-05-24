@@ -1,6 +1,5 @@
-import { useParams } from "react-router";
 import { useEffect, useRef } from "react";
-import { useUserConversation } from "./query/use-user-conversation";
+import { useActiveConversation } from "./query/use-active-conversation";
 
 /**
  * Hook that updates the document title based on the current conversation.
@@ -9,10 +8,7 @@ import { useUserConversation } from "./query/use-user-conversation";
  * @param suffix Optional suffix to append to the title (default: "OpenHands")
  */
 export function useDocumentTitleFromState(suffix = "OpenHands") {
-  const params = useParams();
-  const { data: conversation } = useUserConversation(
-    params.conversationId ?? null,
-  );
+  const { data: conversation } = useActiveConversation();
   const lastValidTitleRef = useRef<string | null>(null);
 
   useEffect(() => {
