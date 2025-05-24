@@ -163,7 +163,7 @@ To resolve this issue:
    ```powershell
    pwsh --version
    ```
-   
+
    You should see output indicating PowerShell 7.x.x
 
 4. **Run OpenHands using PowerShell 7** instead of Windows PowerShell:
