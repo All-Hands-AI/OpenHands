@@ -142,6 +142,21 @@ When running OpenHands on Windows without WSL or Docker, be aware of the followi
 
 ## Troubleshooting
 
+### "KeyError: 'VSCODE_PORT'" Error
+
+If you encounter an error message containing `KeyError: 'VSCODE_PORT'` when starting OpenHands, this is due to a missing environment variable that the VSCode plugin requires. To fix this issue:
+
+1. **Set the VSCODE_PORT environment variable before starting OpenHands**:
+   ```powershell
+   $env:VSCODE_PORT="40000"
+   $env:RUNTIME="local"
+   poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   ```
+
+2. **Alternatively, disable the VSCode plugin** by modifying your config.toml file to exclude the VSCode plugin from loading.
+
+This error occurs because the VSCode plugin expects this environment variable to be set, but the Windows local runtime doesn't automatically set it like the Docker runtime does.
+
 ### "System.Management.Automation" Not Found Error
 
 If you encounter an error message stating that "System.Management.Automation" was not found, this typically indicates that you have a minimal version of PowerShell installed or that the .NET components required for PowerShell integration are missing.
