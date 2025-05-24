@@ -29,6 +29,8 @@ from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeUnavailableError,
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -324,6 +326,45 @@ class AgentController:
                 or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
+            # Handle runtime-related errors (HTTP 502/503/404)
+            elif isinstance(e, AgentRuntimeDisconnectedError) or isinstance(
+                e, AgentRuntimeUnavailableError
+            ):
+                # Initialize runtime error counter if it doesn't exist
+                if not hasattr(self, '_runtime_error_count'):
+                    self._runtime_error_count = 0
+
+                # Increment the counter
+                self._runtime_error_count += 1
+
+                # Check if we've exceeded the maximum number of retries (3)
+                if self._runtime_error_count > 3:
+                    self.log(
+                        'error',
+                        f'Maximum runtime error retries exceeded ({self._runtime_error_count}). '
+                        f'Stopping retries and setting agent state to ERROR.',
+                    )
+                    # Reset the counter
+                    self._runtime_error_count = 0
+                    # Set the agent state to ERROR
+                    await self._react_to_exception(e)
+                    return
+
+                # Add an error observation to the event stream with retry count
+                self.event_stream.add_event(
+                    ErrorObservation(
+                        content=f'Your command may have consumed too much resources, and the previous runtime died. '
+                        f'You are connected to a new runtime container, all dependencies you have installed '
+                        f'outside /workspace are not persisted. (Retry {self._runtime_error_count} of 3)'
+                    ),
+                    EventSource.ENVIRONMENT,
+                )
+                self.log(
+                    'warning',
+                    f'Runtime error occurred. Retry {self._runtime_error_count} of 3.',
+                )
+                # Don't set the agent state to ERROR, let it continue
+                return
             else:
                 self.log(
                     'warning',
@@ -359,8 +400,7 @@ class AgentController:
             if (
                 isinstance(event, NullObservation)
                 and event.cause is not None
-                and event.cause
-                > 0  # NullObservation has cause > 0 (RecallAction), not 0 (user message)
+                and event.cause > 0
             ):
                 return True
             if isinstance(event, AgentStateChangedObservation) or isinstance(
@@ -784,6 +824,14 @@ class AgentController:
                 extra={'msg_type': 'STEP_BLOCKED_PENDING_ACTION'},
             )
             return
+
+        # Reset runtime error counter on successful step
+        if hasattr(self, '_runtime_error_count') and self._runtime_error_count > 0:
+            self.log(
+                'debug',
+                f'Resetting runtime error counter from {self._runtime_error_count} to 0 on successful step.',
+            )
+            self._runtime_error_count = 0
 
         self.log(
             'debug',
