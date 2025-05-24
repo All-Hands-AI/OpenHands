@@ -79,6 +79,21 @@ TRAFFIC_CONTROL_REMINDER = (
 ERROR_ACTION_NOT_EXECUTED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED'
 ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
+# TODO:
+# 1. Tune this prompt
+# 2. Should we add this prompt only when we detect loops? This will retain performance on previously solved tasks.
+PLANNING_PROMPT = """Based on the given task instructions and the conversation history containing your prior actions and their corresponding observations, please do the following:
+1. Prepare a list containing the following details:
+	(a) Facts given in the task
+	(b) Facts you have learnt in the previous steps that are crucial to solve this task
+	(c) Facts you need to look up using tools
+2. Develop a step-by-step high-level plan containing a list of sub-tasks you need to complete to solve this task. You MUST take into account the task instructions, your current progress, and the above list of facts.
+3. If you believe you have completed the task, STRICTLY follow the task instructions about generating your final answer using the finish tool.
+4. If you notice you've attempted the same action multiple times without success, analyze other alternatives to complete that sub-task.
+5. IMPORTANT: you should CONTINUE solving the task based on the above plan and the available tools. You should NEVER ask the user for help."""
+
+FINAL_ANSWER_PROMPT = """You have exhausted the maximum number of steps required to complete this task and now you MUST STRICTLY use the finish tool to provide your final answer for the given task. Do NOT use any other tool other than the finish tool. You MUST adhere to the output formatting instructions given by the user. You MUST provide a final answer even if you have are not sure about it or if you have not completed the verification steps."""
+
 
 class AgentController:
     id: str
@@ -821,6 +836,29 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
+                # if this is the last step, force the agent to finish the interaction
+                if self.state.iteration + 1 == self.state.max_iterations:
+                    self.event_stream.add_event(
+                        MessageAction(
+                            content=FINAL_ANSWER_PROMPT, wait_for_response=False
+                        ),
+                        EventSource.USER,
+                    )
+                    return
+                elif (
+                    hasattr(self.agent, 'planning_interval')
+                    and self.agent.planning_interval is not None
+                    and self.state.iteration
+                    != self.state.max_iterations  # do not add planning prompt if this is the final step taken by the agent
+                ):
+                    if self.state.iteration % self.agent.planning_interval == 0:
+                        self.event_stream.add_event(
+                            MessageAction(
+                                content=PLANNING_PROMPT, wait_for_response=False
+                            ),
+                            EventSource.USER,
+                        )
+                        return
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')

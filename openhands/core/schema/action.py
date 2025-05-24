@@ -86,6 +86,9 @@ class ActionType(str, Enum):
     SEND_PR = 'send_pr'
     """Send a PR to github."""
 
+    SEARCH = 'search'
+    """Queries a search engine."""
+
     RECALL = 'recall'
     """Retrieves content from a user workspace, microagent, or other source."""
 

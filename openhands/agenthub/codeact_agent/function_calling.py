@@ -14,6 +14,7 @@ from openhands.agenthub.codeact_agent.tools import (
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    SearchEngineTool,
     ThinkTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
@@ -34,6 +35,7 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    SearchAction,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
@@ -209,7 +211,19 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
-
+            
+            # ================================================
+            # SearchEngineTool (search the web using text queries)
+            # ================================================
+            elif tool_call.function.name == SearchEngineTool['function']['name']:
+                if 'query' not in arguments:
+                    raise FunctionCallNotExistsError(
+                        f'Missing required argument "query" in tool call {tool_call.function.name}'
+                    )
+                start_date = None
+                if 'start_date' in arguments:
+                    start_date = arguments['start_date']
+                action = SearchAction(query=arguments['query'], start_date=start_date)
             # ================================================
             # MCPAction (MCP)
             # ================================================

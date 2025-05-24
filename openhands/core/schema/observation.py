@@ -47,6 +47,12 @@ class ObservationType(str, Enum):
     CONDENSE = 'condense'
     """Result of a condensation operation."""
 
+    SEARCH = 'search'
+    """Result of querying a search engine."""
+
+    DOWNLOAD = 'download'
+    """Result of downloading/opening a file via the browser"""
+
     RECALL = 'recall'
     """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""
 

@@ -37,14 +37,21 @@ def get_config(
     llm_config: LLMConfig,
     agent_config: AgentConfig | None,
 ) -> AppConfig:
+    search_api_key = os.environ.get('SEARCH_API_KEY', None)
+    assert search_api_key is not None, 'Environment variable SEARCH_API_KEY is not set.'
+
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
+    sandbox_config.runtime_startup_env_vars = {
+        'SEARCH_API_KEY': search_api_key,
+    }
     sandbox_config.enable_auto_lint = True
     # If the web services are running on the host machine, this must be set to True
     sandbox_config.use_host_network = True
+
     config = AppConfig(
         run_as_openhands=False,
-        max_budget_per_task=4,
+        max_budget_per_task=10,
         max_iterations=100,
         save_trajectory_path=os.path.join(
             mount_path_on_host, f'traj_{task_short_name}.json'
@@ -64,6 +71,7 @@ def get_config(
             enable_prompt_extensions=False,
         )
         config.set_agent_config(agent_config)
+    print(agent_config)
     return config
 
 
@@ -93,33 +101,35 @@ def init_task_env(runtime: Runtime, hostname: str, env_llm_config: LLMConfig):
         'bash /utils/init.sh'
     )
     action = CmdRunAction(command=command)
-    action.set_hard_timeout(900)
+    action.set_hard_timeout(1800)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
 
+# TODO
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please finish the interaction.\n'
+        'If you think you have solved the task, please use the finish tool to end the interaction.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
 
-    if state.history:
-        # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-        user_msgs = [
-            event
-            for event in state.history
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
+    # Planner will add user messages to event stream, so we shouldn't encourage agent to exit!
+    # if state.history:
+    #     # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
+    #     user_msgs = [
+    #         event
+    #         for event in state.history
+    #         if isinstance(event, MessageAction) and event.source == 'user'
+    #     ]
+    #     if len(user_msgs) >= 2:
+    #         # let the agent know that it can give up when it has tried 3 times
+    #         return (
+    #             msg
+    #             + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
+    #         )
     return msg
 
 
@@ -133,10 +143,18 @@ def run_solver(
     save_screenshots: bool,
     screenshots_dir: str,
 ) -> State:
-    instruction = 'Complete the task in /instruction/task.md'
-
+    instruction = """Complete the following task: """
+    cmd_action = CmdRunAction(command='cat /instruction/task.md')
+    obs = runtime.run_action(cmd_action)
+    task_description: str = obs.content
+    instruction += task_description
+    instruction += '\n\nIMPORTANT: If there are the-agent-company.com websites mentioned in the task description, NOTE that these websites are privately hosted.\n'
+    instruction += (
+        'IMPORTANT: If you want to close pop-ups, please press the escape key.\n'
+    )
+    instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
     if 'gitlab' in dependencies:
-        instruction += "\n\nGitlab username is 'root' and password is 'theagentcompany'"
+        instruction += "IMPORTANT: You are already signed in to Gitlab, but here are the sign-in credentials for your reference - Gitlab username is 'root' and password is 'theagentcompany'"
 
     state: State | None = asyncio.run(
         run_controller(
@@ -154,6 +172,8 @@ def run_solver(
         os.makedirs(screenshots_dir, exist_ok=True)
         for image_id, obs in enumerate(state.history):
             if isinstance(obs, BrowserOutputObservation):
+                if obs.screenshot is None:
+                    continue
                 image_data = base64.b64decode(
                     obs.screenshot.replace('data:image/png;base64,', '')
                 )
@@ -181,6 +201,12 @@ def run_solver(
 def run_evaluator(
     runtime: Runtime, env_llm_config: LLMConfig, trajectory_path: str, result_path: str
 ):
+    # HACK: this allows us to use the anthropic API for evaluator LLM.
+    if 'sde-add-wiki-page' in trajectory_path:
+        command = 'python_default -m pip install -U litellm'
+        action = CmdRunAction(command=command)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     command = (
         f'LITELLM_API_KEY={env_llm_config.api_key.get_secret_value() if env_llm_config.api_key else None} '
         f'LITELLM_BASE_URL={env_llm_config.base_url} '

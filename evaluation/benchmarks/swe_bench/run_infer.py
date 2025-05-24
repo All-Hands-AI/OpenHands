@@ -6,6 +6,7 @@ import tempfile
 from typing import Any, Literal
 
 import pandas as pd
+import requests
 import toml
 from datasets import load_dataset
 
@@ -70,6 +71,39 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 
+# Helper function to only pass image URLs to LiteLLM
+def is_valid_image_url(url, allowed_types=None):
+    """
+    Check if a URL points to a valid image by examining the HTTP response content type.
+
+    Args:
+        url (str): The URL to check
+        allowed_types (list, optional): List of allowed MIME types. If None, defaults to common image types.
+
+    Returns:
+        tuple: (is_valid, mime_type)
+            - is_valid (bool): True if URL points to a valid image type, False otherwise
+            - mime_type (str): The content type from the response headers, or error message
+    """
+    if allowed_types is None:
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
+    try:
+        # Send a HEAD request first to check headers without downloading the entire file
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        response.raise_for_status()
+
+        # Get the content type from the response headers
+        content_type = response.headers.get('Content-Type', '')
+
+        # Check if the content type is in the allowed types
+        is_valid = any(content_type.startswith(t) for t in allowed_types)
+
+        return is_valid
+    except Exception as _:
+        return False
+
+
 def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
@@ -104,22 +138,18 @@ Follow these steps to reproduce the issue:
 4. Run the test framework and make sure your tests fail! Only submit FAILING tests! Never submit passing tests.
 {test_instructions}Your thinking should be thorough and so it's fine if it's very long.
 """
-    else:
+    elif 'multimodal' not in metadata.dataset.lower():
+        logger.info(f'Using SWE-Bench non-multimodal instruction')
         instruction = f"""
 <uploaded_files>
 /workspace/{workspace_dir_name}
 </uploaded_files>
-
 I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
 
 <issue_description>
 {instance.problem_statement}
 </issue_description>
 
-Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?
-I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
-Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
 
 Follow these phases to resolve the issue:
 
@@ -172,19 +202,106 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
 
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
 """
+    else:
+        assert 'multimodal' in metadata.dataset.lower(), 'multimodal dataset is required for multimodal instruction'
+        assert RUN_WITH_BROWSING, 'RUN_WITH_BROWSING must be true for SWE-Bench multimodal'
+        logger.info(f'Using SWE-Bench multimodal instruction')
+        instruction = f"""
+<uploaded_files>
+/workspace/{workspace_dir_name}
+</uploaded_files>
 
+I have uploaded a javascript code repository in your current working directory: /workspace/{workspace_dir_name}. Consider the following issue description:
+
+<issue_description>
+{instance.problem_statement}
+</issue_description>
+
+Please implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met. Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure that all the requirements in the <issue_description> are satisfied.
+
+Also, all the image URLs referenced in the <issue_description> have already been included as image inputs and are denoted as Image 1, Image 2, and so on for your reference. In addition, the <issue_description> may also contain links to online IDEs containing useful code to reproduce the issue. The development environment is already set up for you (i.e., all dependencies are already installed), so you do not need to install other packages.
+
+You MUST strictly follow all the instructions in the below phases to resolve the issue:
+
+Phase 1. READING: read the problem and reword it in clearer terms
+   1.1 If there are code or config snippets. Express in words any best practices or conventions in them.
+   1.2 Hightlight message errors, method names, variables, file names, stack traces, and technical details.
+   1.3 Explain the problem in clear terms.
+   1.4 Enumerate the steps to reproduce the problem.
+   1.5 Hightlight any best practices to take into account when testing and fixing the issue
+
+Phase 2. EXPLORATION: find the files that are related to the problem and possible solutions
+   2.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
+   2.2 Identify all files related to the problem statement.
+   2.3 Propose the methods and files to fix the issue and explain why.
+
+Phase 3. [IMPORTANT] REPRODUCTION: before you implement any fix, you MUST write comprehensive tests that will be used to analyse the issue and test your proposed changes. You MUST visually analyse the issue and the proposed fix whenever applicable. Do NOT assume that existing tests in the repository are sufficient for testing your implementation.
+   3.1 Create a comprehensive test file which checks all possible edge cases for your fix. Whenever applicable, you MUST visually verify the issue using the browser.
+   3.2 Run the test file to confirm that the issue exists.
+   3.3 If the issue description contains links to online IDEs containing code for reproducing the error, you should refer to these as well.
+
+Phase 4. FIX ANALYSIS: state clearly the problem and how to fix it
+   4.1 State clearly what the problem is.
+   4.2 State clearly where the problem is located.
+   4.3 State clearly how the tests in Phase 3 reproduce the issue. If possible, also provide visual analysis of the issue.
+   4.4 State clearly the best practices to take into account in the fix.
+   4.5 State clearly how to fix the problem.
+
+Phase 5. IMPLEMENTATION: Edit the source code to implement your chosen solution.
+   5.1 Make minimal, focused changes to fix the issue.
+   5.2 Check the versions of programming languages and packages to ensure that your code is syntactically correct.
+
+Phase 6. [IMPORTANT] VERIFICATION: Test your implementation thoroughly using tests from phase 3 and using the existing tests in the repository. Whenever applicable visually verify that your implementation is correct by launching the website or app, inspecting the relevant UI component, and ensuring the expected behavior or layout is achieved.
+   6.1 Run your tests from Phase 3 to verify your implementation.
+   6.2 Add more edge cases to your tests to ensure comprehensive coverage.
+   6.3 You MUST run existing tests in the repository which are related to the modified code to ensure you have not broken existing functionality. Do NOT modify existing test files in the repository.
+
+Phase 7. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
+   7.1 Ensure you have fully addressed all requirements given in the <issue_description>.
+   7.2 Make sure that you have run existing tests in the repository related to:
+     7.2.1 The issue you are fixing
+     7.2.2 The files you modified
+     7.2.3 The functions you changed
+   7.3 Make sure that you have thoroughly verified your implementation using the tests in Phase 3.
+   7.4 If any tests fail, you MUST revise your implementation until all tests pass.
+
+Be thorough in your exploration, testing, and reasoning. It is fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+"""
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
+            '<IMPORTANT!>\n'
+            'You SHOULD NEVER attempt to access GitHub.\n'
+            'Since you are dealing with front-end code, it is extremely important that you MUST visually verify the correctness of your implementation whenever applicable.\n'
+            'You MUST check the versions of programming languages and packages to ensure that all your code is syntactically correct.\n'
+            'The bash terminal may not generate any output for commands that run servers or host websites. You MUST access them using the browser.\n'
+            '</IMPORTANT!>\n'
         )
 
     if 'image_assets' in instance:
         assets = json.loads(instance['image_assets'])
-        assert 'problem_statement' in assets, (
-            'problem_statement is required in image_assets'
-        )
+        assert (
+            'problem_statement' in assets
+        ), 'problem_statement is required in image_assets'
         image_urls = assets['problem_statement']
-        return MessageAction(content=instruction, image_urls=image_urls)
+        valid_urls = []
+        index_dict = {}
+        for url in image_urls:
+            if is_valid_image_url(url):
+                valid_urls.append(url)
+                assert (
+                    url in instruction
+                ), f'Image URL {url} not present in {instruction}'
+                idx = instruction.find(url)
+                assert idx != -1
+                index_dict[url] = idx
+            else:
+                logger.info(f'{url} is marked invalid due to incompatible format')
+        sorted_urls = sorted(index_dict.items(), key=lambda x: x[1])
+        sorted_urls = [item[0] for item in sorted_urls]
+        for idx, url in enumerate(sorted_urls):
+            instruction = instruction.replace(url, f'{url} (Image: {idx+1})')
+        print(instruction)
+        return MessageAction(content=instruction, image_urls=sorted_urls)
     return MessageAction(content=instruction)
 
 
@@ -221,6 +338,8 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
+    search_api_key = os.environ.get('SEARCH_API_KEY', None)
+    assert search_api_key is not None, 'Environment variable SEARCH_API_KEY is not set.'
     # We use a different instance image for the each instance of swe-bench eval
     use_swebench_official_image = 'swe-gym' not in metadata.dataset.lower()
     base_container_image = get_instance_docker_image(
@@ -237,6 +356,9 @@ def get_config(
     sandbox_config.base_container_image = base_container_image
     sandbox_config.enable_auto_lint = True
     sandbox_config.use_host_network = False
+    sandbox_config.runtime_startup_env_vars = {
+        'SEARCH_API_KEY': search_api_key,
+    }
     # Add platform to the sandbox config to solve issue 4401
     sandbox_config.platform = 'linux/amd64'
     sandbox_config.remote_runtime_resource_factor = get_instance_resource_factor(
@@ -259,6 +381,7 @@ def get_config(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
     )
+    # TODO
     agent_config = AgentConfig(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
@@ -267,6 +390,7 @@ def get_config(
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
+    print(agent_config)
     config.set_agent_config(agent_config)
     return config
 
@@ -429,6 +553,37 @@ def initialize_runtime(
             f'Expected to find python interpreter from testbed, but got: {str(obs)}',
         )
 
+    action = CmdRunAction(command='mkdir -p /workspace/downloads')
+    obs = runtime.run_action(action)
+
+    # BLOCK github.com for the agent. Ensures fairness of evaluation
+    action = CmdRunAction(command='echo "0.0.0.0 github.com" >> /etc/hosts')
+    obs = runtime.run_action(action)
+
+    if 'chartjs' in workspace_dir_name.lower():
+        # action = CmdRunAction(command="python3 -m http.server 8000 &")
+        # obs = runtime.run_action(action)
+        # print(f"server observation: {obs}")
+        # import time
+        # time.sleep(10)
+        action = CmdRunAction(
+            command='wget -O firefox.tar.bz2 "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"     && tar xvf firefox.tar.bz2 -C /opt && ln -s /opt/firefox/firefox /usr/local/bin/firefox'
+        )
+        obs = runtime.run_action(action)
+        print(obs)
+
+        action = CmdRunAction(command='Xvfb :99 -screen 0 1024x768x16 &')
+        obs = runtime.run_action(action)
+        print(obs)
+
+        action = CmdRunAction(command='export DISPLAY=:99')
+        obs = runtime.run_action(action)
+        print(obs)
+
+        # action = CmdRunAction(command='cd /workspace/chartjs__Chart.js__3.0 && npm test -- --grep="Scale"')
+        # obs = runtime.run_action(action)
+        # print(obs)
+
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
     logger.info('-' * 30)
@@ -552,7 +707,7 @@ def complete_runtime(
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
+            command=f'git diff --no-color --cached {instance["base_commit"]} -- ":(exclude)package-lock.json" ":(exclude)**/package-lock.json" ":(exclude)*.pdf" ":(exclude)**/*.pdf" > patch.diff'
         )
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -665,6 +820,9 @@ def process_instance(
         logger.info(
             f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
         )
+    # except Exception:
+    #     # print(e)
+    #     runtime.close()
     finally:
         runtime.close()
     # ==========================================

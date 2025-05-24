@@ -2,6 +2,7 @@ from .bash import create_cmd_run_tool
 from .browser import BrowserTool
 from .finish import FinishTool
 from .ipython import IPythonTool
+from .search_engine import SearchEngineTool
 from .llm_based_edit import LLMBasedFileEditTool
 from .str_replace_editor import create_str_replace_editor_tool
 from .think import ThinkTool
@@ -14,4 +15,5 @@ __all__ = [
     'LLMBasedFileEditTool',
     'create_str_replace_editor_tool',
     'ThinkTool',
+    'SearchEngineTool',
 ]

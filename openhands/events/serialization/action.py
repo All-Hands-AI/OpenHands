@@ -22,6 +22,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.search_engine import SearchAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
 
@@ -41,6 +42,7 @@ actions = (
     RecallAction,
     ChangeAgentStateAction,
     MessageAction,
+    SearchAction,
     SystemMessageAction,
     CondensationAction,
     MCPAction,

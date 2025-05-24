@@ -85,6 +85,7 @@ class CodeActAgent(Agent):
         self.tools = self._get_tools()
 
         # Create a ConversationMemory instance
+        self.planning_interval = config.planning_interval
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)

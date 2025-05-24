@@ -29,6 +29,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    SearchAction,
 )
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource

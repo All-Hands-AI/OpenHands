@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -39,7 +39,7 @@ echo "LEVELS: $LEVELS"
 COMMAND="poetry run python ./evaluation/benchmarks/gaia/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 30 \
+  --max-iterations 54 \
   --level $LEVELS \
   --data-split validation \
   --eval-num-workers $NUM_WORKERS \
