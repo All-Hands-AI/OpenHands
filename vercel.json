@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/node",
+      "config": {
+        "buildCommand": "cd frontend && npm install && npm run build",
+        "outputDirectory": "frontend/build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/socket.io/(.*)",
+      "dest": "/socket.io/$1"
+    },
+    {
+      "src": "/ws/(.*)",
+      "dest": "/ws/$1"
+    },
+    {
+      "src": "/(.*\\.(js|json|css|ico|png|jpg|jpeg|svg|webp|woff|woff2|ttf|eot)$)",
+      "dest": "/frontend/build/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/build/index.html"
+    }
+  ],
+  "env": {
+    "VITE_BACKEND_HOST": "REPLACE_WITH_YOUR_BACKEND_URL",
+    "VITE_USE_TLS": "true",
+    "VITE_INSECURE_SKIP_VERIFY": "false"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}
