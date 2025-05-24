@@ -137,6 +137,7 @@ class UserSecrets(BaseModel):
                 new_data['custom_secrets'] = secrets
 
         return new_data
+    
 
     def set_event_stream_secrets(self, event_stream: EventStream) -> None:
         """
@@ -156,6 +157,7 @@ class UserSecrets(BaseModel):
             secrets[secret_name] = value['secret']
 
         return secrets
+
 
     def get_custom_secrets_descriptions(self) -> dict[str, str]:
         secrets = {}

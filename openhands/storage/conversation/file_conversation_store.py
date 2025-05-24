@@ -42,7 +42,7 @@ class FileConversationStore(ConversationStore):
         json_obj = json.loads(json_str)
         if 'created_at' not in json_obj:
             raise FileNotFoundError(path)
-
+            
         # Remove github_user_id if it exists
         if 'github_user_id' in json_obj:
             json_obj.pop('github_user_id')

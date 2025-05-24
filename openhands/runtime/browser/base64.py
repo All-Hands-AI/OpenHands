@@ -1,9 +1,7 @@
-import base64
 import io
-
-import numpy as np
+import base64
 from PIL import Image
-
+import numpy as np
 
 def image_to_png_base64_url(
     image: np.ndarray | Image.Image, add_data_prefix: bool = False
@@ -22,7 +20,6 @@ def image_to_png_base64_url(
         if add_data_prefix
         else f'{image_base64}'
     )
-
 
 def png_base64_url_to_image(png_base64_url: str) -> Image.Image:
     """Convert a base64 encoded png image url to a PIL Image."""
