@@ -6,10 +6,9 @@ import string
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import List
 
 import docker
-from dirhash import dirhash  # type: ignore
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -120,7 +119,8 @@ def build_deps_image(
     extra_deps: str | None = None,
     build_folder: str | None = None,
     dry_run: bool = False,
-    extra_build_args: List[str] | None = None,
+    force_rebuild: bool = False,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     """Build the dependencies image containing all OpenHands dependencies.
 
@@ -164,7 +164,7 @@ def build_deps_image_in_folder(
     extra_deps: str | None,
     dry_run: bool,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     """Prepares the build folder and builds the dependencies image.
 
@@ -384,8 +384,43 @@ def prep_build_folder(
         extra_deps=extra_deps,
         deps_image=deps_image,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:
-        file.write(dockerfile_content)
+    dockerfile_path = Path(build_folder, 'Dockerfile')
+    with open(str(dockerfile_path), 'w') as f:
+        f.write(dockerfile_content)
+
+
+_ALPHABET = string.digits + string.ascii_lowercase
+
+
+def truncate_hash(hash: str) -> str:
+    """Convert the base16 hash to base36 and truncate at 16 characters."""
+    value = int(hash, 16)
+    result: list[str] = []
+    while value > 0 and len(result) < 16:
+        value, remainder = divmod(value, len(_ALPHABET))
+        result.append(_ALPHABET[remainder])
+    return ''.join(result)
+
+
+def get_hash_for_lock_files(base_image: str) -> str:
+    openhands_source_dir = Path(openhands.__file__).parent
+    md5 = hashlib.md5()
+    md5.update(base_image.encode())
+    for file in ['pyproject.toml', 'poetry.lock']:
+        src = Path(openhands_source_dir, file)
+        if not src.exists():
+            src = Path(openhands_source_dir.parent, file)
+        with open(src, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b''):
+                md5.update(chunk)
+    # We get away with truncation because we want something that is unique
+    # rather than something that is cryptographically secure
+    result = truncate_hash(md5.hexdigest())
+    return result
+
+
+def get_tag_for_versioned_image(base_image: str) -> str:
+    return base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]
 
 
 def get_hash_for_source_files() -> str:
@@ -412,7 +447,7 @@ def build_runtime_image_from_deps(
     extra_deps: str | None = None,
     dry_run: bool = False,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
     force_rebuild: bool = False,
 ) -> str:
     """Build a runtime image using the dependencies image.
@@ -497,9 +532,9 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(
-            build_folder
-        ), f'Build folder {build_folder} does not exist'
+        assert os.path.exists(build_folder), (
+            f'Build folder {build_folder} does not exist'
+        )
         logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )

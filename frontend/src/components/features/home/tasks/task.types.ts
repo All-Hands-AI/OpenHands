@@ -1,3 +1,5 @@
+import { Provider } from "#/types/settings";
+
 export type SuggestedTaskType =
   | "MERGE_CONFLICTS"
   | "FAILING_CHECKS"
@@ -5,6 +7,7 @@ export type SuggestedTaskType =
   | "OPEN_ISSUE"; // This is a task type identifier, not a UI string
 
 export interface SuggestedTask {
+  git_provider: Provider;
   issue_number: number;
   repo: string;
   title: string;

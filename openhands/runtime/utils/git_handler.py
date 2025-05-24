@@ -28,7 +28,7 @@ class GitHandler:
         self.execute = execute_shell_fn
         self.cwd: str | None = None
 
-    def set_cwd(self, cwd: str):
+    def set_cwd(self, cwd: str) -> None:
         """
         Sets the current working directory for Git operations.
 
@@ -82,11 +82,20 @@ class GitHandler:
         Returns:
             str | None: A valid Git reference or None if no valid reference is found.
         """
-        ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{self._get_current_branch()})")'
-        ref_default_branch = 'origin/' + self._get_current_branch()
+        current_branch = self._get_current_branch()
+        default_branch = self._get_default_branch()
+
+        ref_current_branch = f'origin/{current_branch}'
+        ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{default_branch})")'
+        ref_default_branch = 'origin/' + default_branch
         ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
-        refs = [ref_non_default_branch, ref_default_branch, ref_new_repo]
+        refs = [
+            ref_current_branch,
+            ref_non_default_branch,
+            ref_default_branch,
+            ref_new_repo,
+        ]
         for ref in refs:
             if self._verify_ref_exists(ref):
                 return ref
@@ -111,7 +120,7 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 
-    def _get_current_branch(self) -> str:
+    def _get_default_branch(self) -> str:
         """
         Retrieves the primary Git branch name of the repository.
 
@@ -121,6 +130,17 @@ class GitHandler:
         cmd = 'git remote show origin | grep "HEAD branch"'
         output = self.execute(cmd, self.cwd)
         return output.content.split()[-1].strip()
+
+    def _get_current_branch(self) -> str:
+        """
+        Retrieves the currently selected Git branch.
+
+        Returns:
+            str: The name of the current branch.
+        """
+        cmd = 'git rev-parse --abbrev-ref HEAD'
+        output = self.execute(cmd, self.cwd)
+        return output.content.strip()
 
     def _get_changed_files(self) -> list[str]:
         """

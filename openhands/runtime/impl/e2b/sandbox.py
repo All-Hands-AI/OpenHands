@@ -40,9 +40,9 @@ class E2BBox:
 
     def _archive(self, host_src: str, recursive: bool = False):
         if recursive:
-            assert os.path.isdir(
-                host_src
-            ), 'Source must be a directory when recursive is True'
+            assert os.path.isdir(host_src), (
+                'Source must be a directory when recursive is True'
+            )
             files = glob(host_src + '/**/*', recursive=True)
             srcname = os.path.basename(host_src)
             tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
@@ -52,9 +52,9 @@ class E2BBox:
                         file, arcname=os.path.relpath(file, os.path.dirname(host_src))
                     )
         else:
-            assert os.path.isfile(
-                host_src
-            ), 'Source must be a file when recursive is False'
+            assert os.path.isfile(host_src), (
+                'Source must be a file when recursive is False'
+            )
             srcname = os.path.basename(host_src)
             tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
             with tarfile.open(tar_filename, mode='w') as tar:

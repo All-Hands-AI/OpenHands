@@ -15,11 +15,11 @@ This directory (`OpenHands/microagents/`) contains shareable microagents that ar
 Directory structure:
 ```
 OpenHands/microagents/
-├── knowledge/     # Keyword-triggered expertise
-│   ├── git.md      # Git operations
-│   ├── testing.md  # Testing practices
-│   └── docker.md   # Docker guidelines
-└── tasks/        # Interactive workflows
+├── # Keyword-triggered expertise
+│   ├── git.md         # Git operations
+│   ├── testing.md     # Testing practices
+│   └── docker.md      # Docker guidelines
+└── # These microagents are always loaded
     ├── pr_review.md   # PR review process
     ├── bug_fix.md     # Bug fixing workflow
     └── feature.md     # Feature implementation
@@ -37,8 +37,7 @@ your-repository/
 └── .openhands/
     └── microagents/
         └── repo.md    # Repository-specific instructions
-        └── knowledges/  # Private micro-agents that are only available inside this repo
-        └── tasks/       # Private micro-agents that are only available inside this repo
+        └── ...        # Private micro-agents that are only available inside this repo
 ```
 
 
@@ -47,7 +46,6 @@ your-repository/
 When OpenHands works with a repository, it:
 1. Loads repository-specific instructions from `.openhands/microagents/repo.md` if present
 2. Loads relevant knowledge agents based on keywords in conversations
-3. Enable task agent if user select one of them
 
 ## Types of Microagents
 
@@ -68,7 +66,7 @@ Key characteristics:
 - **Reusable**: Knowledge can be applied across multiple projects
 - **Versioned**: Support multiple versions of tools/frameworks
 
-You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/github.md).
+You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/github.md).
 
 ### 2. Repository Agents
 
@@ -86,22 +84,6 @@ Key features:
 
 You can see an example of a repo agent in [the agent for the OpenHands repo itself](https://github.com/All-Hands-AI/OpenHands/blob/main/.openhands/microagents/repo.md).
 
-### 3. Task Agents
-
-Task agents provide interactive workflows that guide users through common development tasks. They:
-- Accept user inputs
-- Follow predefined steps
-- Adapt to context
-- Provide consistent results
-
-Key capabilities:
-- **Interactive**: Guide users through complex processes
-- **Validating**: Check inputs and conditions
-- **Flexible**: Adapt to different scenarios
-- **Reproducible**: Ensure consistent outcomes
-
-Example workflow:
-You can see an example of a task-based agent in [OpenHands's pull request updating microagent](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/tasks/update_pr_description.md).
 
 ## Contributing
 
@@ -113,13 +95,8 @@ You can see an example of a task-based agent in [OpenHands's pull request updati
    - Common problem solutions
    - General development guidelines
 
-2. **Task Agents** - When you have:
-   - Repeatable workflows
-   - Multi-step processes
-   - Common development tasks
-   - Standard procedures
 
-3. **Repository Agents** - When you need:
+2. **Repository Agents** - When you need:
    - Project-specific guidelines
    - Team conventions and practices
    - Custom workflow documentation
@@ -134,14 +111,8 @@ You can see an example of a task-based agent in [OpenHands's pull request updati
    - Use file patterns when relevant
    - Keep knowledge general and reusable
 
-2. **For Task Agents**:
-   - Break workflows into clear steps
-   - Validate user inputs
-   - Provide helpful defaults
-   - Include usage examples
-   - Make steps adaptable
 
-3. **For Repository Agents**:
+2. **For Repository Agents**:
    - Document clear setup instructions
    - Include repository structure details
    - Specify testing and build procedures
@@ -152,9 +123,8 @@ You can see an example of a task-based agent in [OpenHands's pull request updati
 ### Submission Process
 
 1. Create your agent file in the appropriate directory:
-   - `knowledge/` for expertise (public, shareable)
-   - `tasks/` for workflows (public, shareable)
-   - Note: Repository agents should remain in their respective repositories' `.openhands/microagents/` directory
+   - `microagents/` for expertise (public, shareable)
+   - Note: Repository-specific agents should remain in their respective repositories' `.openhands/microagents/` directory
 2. Test thoroughly
 3. Submit a pull request to OpenHands
 

@@ -1,8 +1,8 @@
 from pydantic import Field
 
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.integrations.service_types import Repository
-from openhands.server.settings import Settings
+from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE
+from openhands.integrations.service_types import ProviderType
+from openhands.storage.data_models.settings import Settings
 
 
 class ConversationInitData(Settings):
@@ -11,9 +11,12 @@ class ConversationInitData(Settings):
     """
 
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None = Field(default=None, frozen=True)
-    selected_repository: Repository | None = Field(default=None)
+    custom_secrets: CUSTOM_SECRETS_TYPE | None = Field(default=None, frozen=True)
+    selected_repository: str | None = Field(default=None)
     replay_json: str | None = Field(default=None)
     selected_branch: str | None = Field(default=None)
+    conversation_instructions: str | None = Field(default=None)
+    git_provider: ProviderType | None = Field(default=None)
 
     model_config = {
         'arbitrary_types_allowed': True,

@@ -109,7 +109,7 @@ export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
-export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"  # Recommended
+export LLM_MODEL="anthropic/claude-sonnet-4-20250514"  # Recommended
 export LLM_API_KEY="your-llm-api-key"
 export LLM_BASE_URL="your-api-url"  # Optional, for API proxies
 ```
@@ -183,7 +183,7 @@ python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --use
 
 ## Providing Custom Instructions
 
-You can customize how the AI agent approaches issue resolution by adding a `.openhands_instructions` file to the root of your repository. If present, this file's contents will be injected into the prompt for openhands edits.
+You can customize how the AI agent approaches issue resolution by adding a repository microagent file at `.openhands/microagents/repo.md` in your repository. This file's contents will be automatically loaded in the prompt when working with your repository. For more information about repository microagents, see [Repository Instructions](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents#2-repository-instructions-private).
 
 ## Troubleshooting
 

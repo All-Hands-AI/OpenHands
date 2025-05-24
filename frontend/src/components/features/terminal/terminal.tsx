@@ -18,7 +18,7 @@ function Terminal() {
   return (
     <div className="h-full p-2 min-h-0 flex-grow">
       {isRuntimeInactive && (
-        <div className="text-sm text-gray-400 mb-2">
+        <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
           {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
         </div>
       )}
