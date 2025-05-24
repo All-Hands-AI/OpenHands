@@ -38,40 +38,16 @@ class VSCodePlugin(Plugin):
         # Set up VSCode settings.json
         self._setup_vscode_settings()
 
-        try:
-            self.vscode_port = int(os.environ.get('VSCODE_PORT', 0))
-            if self.vscode_port == 0:
-                logger.warning('VSCODE_PORT environment variable not set or invalid. VSCode plugin will be disabled.')
-                return
-        except (ValueError, TypeError):
-            logger.warning('Invalid VSCODE_PORT environment variable. VSCode plugin will be disabled.')
-            return
-            
+        self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
-        if not check_port_available(self.vscode_port):
-            logger.warning(f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.')
-            return
-        # Check if we're on Windows
-        if os.name == 'nt' or sys.platform == 'win32':
-            logger.warning('VSCode plugin is not fully supported on Windows. Some features may not work correctly.')
-            # Windows-specific command (simplified as Windows doesn't use su or bash)
-            cmd = (
-                f'cd /workspace && '
-                f'/openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 '
-                f'--connection-token {self.vscode_connection_token} --port {self.vscode_port} '
-                f'--disable-workspace-trust'
-            )
-        else:
-            # Linux/macOS command
-            cmd = (
-                f"su - {username} -s /bin/bash << 'EOF'\n"
-                f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
-                'cd /workspace\n'
-                f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 '
-                f'--connection-token {self.vscode_connection_token} --port {self.vscode_port} '
-                f'--disable-workspace-trust\n'
-                'EOF'
-            )
+        assert check_port_available(self.vscode_port)
+        cmd = (
+            f"su - {username} -s /bin/bash << 'EOF'\n"
+            f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
+            'cd /workspace\n'
+            f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port} --disable-workspace-trust\n'
+            'EOF'
+        )
 
         # Using asyncio.create_subprocess_shell instead of subprocess.Popen
         # to avoid ASYNC101 linting error
