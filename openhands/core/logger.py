@@ -18,7 +18,7 @@ DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
 
 # Structured logs with JSON, disabled by default
 LOG_JSON = os.getenv('LOG_JSON', 'False').lower() in ['true', '1', 'yes']
-LOG_JSON_LEVEL_KEY = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+LOG_JSON_LEVEL_KEY = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
 
 
 # Configure litellm logging based on DEBUG_LLM
