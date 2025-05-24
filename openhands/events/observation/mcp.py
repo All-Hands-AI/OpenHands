@@ -11,9 +11,7 @@ class MCPObservation(Observation):
 
     observation: str = ObservationType.MCP
     name: str = ''  # The name of the MCP tool that was called
-    arguments: dict[str, Any] = field(
-        default_factory=dict
-    )  # The arguments passed to the MCP tool
+    arguments: dict[str, Any] = field(default_factory=dict)  # The arguments passed to the MCP tool
 
     @property
     def message(self) -> str:

@@ -1,26 +1,16 @@
-import uuid
-from typing import Any
 
+
+from typing import Any
+import uuid
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.integrations.provider import (
-    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
-    PROVIDER_TOKEN_TYPE,
-)
+from openhands.integrations.provider import CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA, PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import (
-    ConversationStoreImpl,
-    SettingsStoreImpl,
-    config,
-    conversation_manager,
-)
+from openhands.server.shared import ConversationStoreImpl, SettingsStoreImpl, config, conversation_manager
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_metadata import (
-    ConversationMetadata,
-    ConversationTrigger,
-)
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata, ConversationTrigger
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 
@@ -111,7 +101,7 @@ async def create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
     initial_message_action = None
-    if initial_user_msg or image_urls:
+    if initial_user_msg or image_urls:    
         initial_message_action = MessageAction(
             content=initial_user_msg or '',
             image_urls=image_urls or [],
@@ -119,7 +109,7 @@ async def create_new_conversation(
 
     if attach_convo_id and conversation_instructions:
         conversation_instructions = conversation_instructions.format(conversation_id)
-
+        
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,

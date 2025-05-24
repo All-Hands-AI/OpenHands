@@ -1,12 +1,13 @@
-from typing import TYPE_CHECKING
-
-import openhands.agenthub.loc_agent.function_calling as locagent_function_calling
 from openhands.agenthub.codeact_agent import CodeActAgent
+import openhands.agenthub.loc_agent.function_calling as locagent_function_calling
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
+from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
+
     from openhands.events.action import Action
     from openhands.llm.llm import ModelResponse
 
@@ -34,6 +35,5 @@ class LocAgent(CodeActAgent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return locagent_function_calling.response_to_actions(
-            response,
-            mcp_tool_names=list(self.mcp_tools.keys()),
+            response, mcp_tool_names=list(self.mcp_tools.keys()),
         )

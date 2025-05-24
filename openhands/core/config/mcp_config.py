@@ -1,7 +1,6 @@
 import os
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
-
+from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 if TYPE_CHECKING:
@@ -148,7 +147,7 @@ class MCPConfig(BaseModel):
 
 class OpenHandsMCPConfig:
     @staticmethod
-    def add_search_engine(app_config: 'AppConfig') -> MCPStdioServerConfig | None:
+    def add_search_engine(app_config: "AppConfig") -> MCPStdioServerConfig | None:
         """Add search engine to the MCP config"""
         if (
             app_config.search_api_key
@@ -166,9 +165,10 @@ class OpenHandsMCPConfig:
         # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
         return None
 
+
     @staticmethod
     def create_default_mcp_server_config(
-        host: str, config: 'AppConfig', user_id: str | None = None
+        host: str, config: "AppConfig", user_id: str | None = None
     ) -> tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]:
         """
         Create a default MCP server configuration.

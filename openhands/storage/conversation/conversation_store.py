@@ -22,7 +22,9 @@ class ConversationStore(ABC):
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
         """Load conversation metadata."""
 
-    async def validate_metadata(self, conversation_id: str, user_id: str) -> bool:
+    async def validate_metadata(
+        self, conversation_id: str, user_id: str
+    ) -> bool:
         """Validate that conversation belongs to the current user."""
         metadata = await self.get_metadata(conversation_id)
         if not metadata.user_id or metadata.user_id != user_id:
