@@ -63,8 +63,7 @@ async def setup_init_convo_settings(
         )
 
     session_init_args: dict = {}
-    if settings:
-        session_init_args = {**settings.__dict__, **session_init_args}
+    session_init_args = {**settings.__dict__, **session_init_args}
 
     git_provider_tokens = create_provider_tokens_object(providers_set)
     if server_config.app_mode != AppMode.SAAS and user_secrets:
