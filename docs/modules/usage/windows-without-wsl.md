@@ -174,7 +174,7 @@ To resolve this issue:
    cd path\to\openhands
    $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
-   
+
    > **Note**: Make sure you're explicitly using `pwsh` (PowerShell 7) and not `powershell` (Windows PowerShell). The command prompt or terminal title should say "PowerShell 7" rather than just "Windows PowerShell".
 
 5. **If the issue persists**, ensure that you have the .NET Runtime installed:
