@@ -146,6 +146,8 @@ When running OpenHands on Windows without WSL or Docker, be aware of the followi
 
 If you encounter an error message stating that "System.Management.Automation" was not found, this typically indicates that you have a minimal version of PowerShell installed or that the .NET components required for PowerShell integration are missing.
 
+> **IMPORTANT**: This error is most commonly caused by using the built-in Windows PowerShell (powershell.exe) instead of PowerShell 7 (pwsh.exe). Even if you installed PowerShell 7 during the prerequisites, you may still be using the older Windows PowerShell by default.
+
 To resolve this issue:
 
 1. **Install the latest version of PowerShell 7** from the official Microsoft repository:
@@ -172,6 +174,8 @@ To resolve this issue:
    cd path\to\openhands
    $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
+   
+   > **Note**: Make sure you're explicitly using `pwsh` (PowerShell 7) and not `powershell` (Windows PowerShell). The command prompt or terminal title should say "PowerShell 7" rather than just "Windows PowerShell".
 
 5. **If the issue persists**, ensure that you have the .NET Runtime installed:
    - Download and install the latest .NET Runtime from [Microsoft's .NET download page](https://dotnet.microsoft.com/download)
