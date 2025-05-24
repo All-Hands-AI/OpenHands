@@ -50,7 +50,7 @@ def create_provider_tokens_object(
 
 async def setup_init_convo_settings(
     user_id: str | None, providers_set: list[ProviderType]
-):
+) -> ConversationInitData:
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
 
@@ -74,7 +74,7 @@ async def setup_init_convo_settings(
     if user_secrets:
         session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
-    return session_init_args
+    return ConversationInitData(**session_init_args)
 
 
 @sio.event
@@ -114,9 +114,7 @@ async def connect(connection_id: str, environ: dict) -> None:
             conversation_id, cookies_str, authorization_header
         )
 
-        session_init_args = await setup_init_convo_settings(user_id, providers_set)
-        conversation_init_data = ConversationInitData(**session_init_args)
-
+        conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
