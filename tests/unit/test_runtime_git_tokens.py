@@ -327,8 +327,20 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
 
     result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
-    cmd = runtime.run_action_calls[0].command
-    assert f'git clone https://{github_token}@github.com/owner/repo.git repo' in cmd
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
+
+    # Check that the first command is the git clone with the correct URL format with token
+    clone_cmd = runtime.run_action_calls[0].command
+    assert f'git clone https://{github_token}@github.com/owner/repo.git repo' in clone_cmd
+    
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+    
     assert result == 'repo'
 
 
@@ -346,15 +358,20 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
-    # Verify that git clone was called with the public URL
-    assert len(runtime.run_action_calls) == 1
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
 
-    # Check that the command contains the correct URL format without token
-    cmd = runtime.run_action_calls[0].command
-    assert 'git clone https://github.com/owner/repo.git repo' in cmd
-    assert 'cd repo' in cmd
-    assert 'git checkout -b openhands-workspace-' in cmd
+    # Check that the first command is the git clone with the correct URL format without token
+    clone_cmd = runtime.run_action_calls[0].command
+    assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
+    
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+    
     assert result == 'repo'
 
 
@@ -381,10 +398,22 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
 
     result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
-    cmd = runtime.run_action_calls[0].command
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
+
+    # Check that the first command is the git clone with the correct URL format with token
+    clone_cmd = runtime.run_action_calls[0].command
     assert (
-        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in cmd
+        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in clone_cmd
     )
+    
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+    
     assert result == 'repo'
 
 
@@ -402,14 +431,18 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')
 
-    # Verify that git clone was called with the correct branch checkout
-    assert len(runtime.run_action_calls) == 1
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
 
-    # Check that the command contains the correct branch checkout
-    cmd = runtime.run_action_calls[0].command
-    assert 'git clone https://github.com/owner/repo.git repo' in cmd
-    assert 'cd repo' in cmd
-    assert 'git checkout feature-branch' in cmd
-    assert 'git checkout -b' not in cmd  # Should not create a new branch
+    # Check that the first command is the git clone
+    clone_cmd = runtime.run_action_calls[0].command
+    
+    # Check that the second command contains the correct branch checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout feature-branch' in checkout_cmd
+    assert 'git checkout -b' not in checkout_cmd  # Should not create a new branch
     assert result == 'repo'
