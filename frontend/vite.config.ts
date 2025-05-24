@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
 
   return {
+    base: process.env.VERCEL ? '/' : process.env.NETLIFY ? '/' : '/',
     plugins: [
       !process.env.VITEST && reactRouter(),
       viteTsconfigPaths(),
