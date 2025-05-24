@@ -176,9 +176,15 @@ To resolve this issue:
 
 This error occurs because OpenHands uses the pythonnet package to interact with PowerShell, which requires the System.Management.Automation assembly from the .NET framework. A minimal PowerShell installation might not include all the necessary components for this integration.
 
-### Environment Variable Errors
+### Environment Variable and Command Errors
 
 If you encounter errors related to environment variables or shell commands, make sure you're using the latest version of OpenHands, which includes improved Windows compatibility.
+
+Common Windows-specific errors include:
+- `Detected multiple statements in the command. Only one is allowed` - Windows has stricter command parsing
+- `Could not find a part of the path 'C:\dev\null'` - Windows uses `NUL` instead of `/dev/null`
+
+These issues have been fixed in recent versions of OpenHands.
 
 ## Additional Resources
 

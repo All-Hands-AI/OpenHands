@@ -436,9 +436,27 @@ class Runtime(FileEditRuntimeMixin):
             else f'git checkout -b {openhands_workspace_branch}'
         )
 
-        action = CmdRunAction(
-            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
-        )
+        # Check if we're on Windows
+        import os
+        import sys
+        is_windows = os.name == 'nt' or sys.platform == 'win32'
+        
+        if is_windows:
+            # On Windows, execute commands separately
+            # First clone the repository
+            clone_action = CmdRunAction(command=clone_command)
+            self.run_action(clone_action)
+            
+            # Then change directory and checkout
+            cd_checkout_action = CmdRunAction(
+                command=f'cd {dir_name} && {checkout_command}'
+            )
+            action = cd_checkout_action
+        else:
+            # On Unix systems, we can combine commands
+            action = CmdRunAction(
+                command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
+            )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
         return dir_name
@@ -679,7 +697,17 @@ fi
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
-            clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
+            
+            # Check if we're on Windows
+            import os
+            import sys
+            is_windows = os.name == 'nt' or sys.platform == 'win32'
+            
+            if is_windows:
+                # Windows doesn't have /dev/null, use NUL instead
+                clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>NUL || echo 'Org repo not found'"
+            else:
+                clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
