@@ -708,8 +708,12 @@ def convert_non_fncall_messages_to_fncall_messages(
                 )
             elif isinstance(content, list):
                 if len(content) > 1:
-                    text_concatenated = "".join(item.get("text", "") for item in content if item.get('type') == 'text')
-                    content = [{"type": "text", "text": text_concatenated}]
+                    text_concatenated = ''.join(
+                        item.get('text', '')
+                        for item in content
+                        if item.get('type') == 'text'
+                    )
+                    content = [{'type': 'text', 'text': text_concatenated}]
 
                 tool_result_match = next(
                     (
