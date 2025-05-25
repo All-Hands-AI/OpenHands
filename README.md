@@ -1,5 +1,9 @@
 <a name="readme-top"></a>
 
+<div align="right">
+  <a href="./README_CN.md">中文文档</a>
+</div>
+
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200">
   <h1 align="center">OpenHands: Code Less, Make More</h1>

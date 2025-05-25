@@ -1,5 +1,8 @@
-
 <a name="readme-top"></a>
+
+<div align="right">
+  <a href="./README.md">English</a>
+</div>
 
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200">
