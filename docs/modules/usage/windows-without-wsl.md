@@ -113,11 +113,13 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
    > **Important**: Using PowerShell 7 (pwsh) instead of Windows PowerShell is recommended to avoid "System.Management.Automation" errors. If you encounter this error, see the Troubleshooting section below.
 
-3. **Alternatively, Run the Frontend in Development Mode (in a separate PowerShell window)**
+3. **Run the Frontend in Development Mode (in a separate PowerShell window)**
    ```powershell
    cd frontend
    npm run dev
    ```
+
+   This step is necessary because the previous step only starts the backend server. You need to run both the backend (step 2) and the frontend (step 3) to use OpenHands.
 
 4. **Access the OpenHands GUI**
 
