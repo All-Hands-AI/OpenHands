@@ -33,7 +33,7 @@ class ReplayManager:
             replay_events.append(event)
 
         if replay_events:
-            logger.debug(f'Replay events loaded, events length = {len(replay_events)}')
+            logger.info(f'Replay events loaded, events length = {len(replay_events)}')
             for index in range(len(replay_events) - 1):
                 event = replay_events[index]
                 if isinstance(event, MessageAction) and event.wait_for_response:
