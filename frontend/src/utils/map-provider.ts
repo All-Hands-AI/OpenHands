@@ -29,3 +29,13 @@ export const mapProvider = (provider: string) =>
   Object.keys(MAP_PROVIDER).includes(provider)
     ? MAP_PROVIDER[provider as keyof typeof MAP_PROVIDER]
     : provider;
+
+// Reverse mapping: Convert display name back to provider key
+export const getProviderKey = (displayName: string): string => {
+  for (const [key, value] of Object.entries(MAP_PROVIDER)) {
+    if (value === displayName) {
+      return key;
+    }
+  }
+  return displayName; // Return as-is if no mapping found
+};

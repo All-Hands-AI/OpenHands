@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { mapProvider } from "../../src/utils/map-provider";
+import { mapProvider, getProviderKey } from "../../src/utils/map-provider";
 
 test("mapProvider", () => {
   expect(mapProvider("azure")).toBe("Azure");
@@ -24,4 +24,54 @@ test("mapProvider", () => {
   expect(mapProvider("replicate")).toBe("Replicate");
   expect(mapProvider("voyage")).toBe("Voyage AI");
   expect(mapProvider("openrouter")).toBe("OpenRouter");
+});
+
+test("getProviderKey - reverse mapping from display name to provider key", () => {
+  // Test all known providers
+  expect(getProviderKey("OpenAI")).toBe("openai");
+  expect(getProviderKey("Azure")).toBe("azure");
+  expect(getProviderKey("Azure AI Studio")).toBe("azure_ai");
+  expect(getProviderKey("VertexAI")).toBe("vertex_ai");
+  expect(getProviderKey("PaLM")).toBe("palm");
+  expect(getProviderKey("Gemini")).toBe("gemini");
+  expect(getProviderKey("Anthropic")).toBe("anthropic");
+  expect(getProviderKey("AWS SageMaker")).toBe("sagemaker");
+  expect(getProviderKey("AWS Bedrock")).toBe("bedrock");
+  expect(getProviderKey("Mistral AI")).toBe("mistral");  // Our main fix
+  expect(getProviderKey("Anyscale")).toBe("anyscale");
+  expect(getProviderKey("Databricks")).toBe("databricks");
+  expect(getProviderKey("Ollama")).toBe("ollama");
+  expect(getProviderKey("Perplexity AI")).toBe("perlexity");
+  expect(getProviderKey("FriendliAI")).toBe("friendliai");
+  expect(getProviderKey("Groq")).toBe("groq");
+  expect(getProviderKey("Fireworks AI")).toBe("fireworks_ai");
+  expect(getProviderKey("Cloudflare Workers AI")).toBe("cloudflare");
+  expect(getProviderKey("DeepInfra")).toBe("deepinfra");
+  expect(getProviderKey("AI21")).toBe("ai21");
+  expect(getProviderKey("Replicate")).toBe("replicate");
+  expect(getProviderKey("Voyage AI")).toBe("voyage");
+  expect(getProviderKey("OpenRouter")).toBe("openrouter");
+});
+
+test("getProviderKey - handles unknown providers gracefully", () => {
+  // Should return the input as-is for unknown providers
+  expect(getProviderKey("Unknown Provider")).toBe("Unknown Provider");
+  expect(getProviderKey("custom-provider")).toBe("custom-provider");
+  expect(getProviderKey("")).toBe("");
+});
+
+test("getProviderKey - case sensitivity", () => {
+  expect(getProviderKey("mistral ai")).toBe("mistral ai");
+  expect(getProviderKey("MISTRAL AI")).toBe("MISTRAL AI");
+  expect(getProviderKey("Mistral AI")).toBe("mistral");
+});
+
+test("mapProvider and getProviderKey are inverse operations", () => {
+  const testProviders = ["openai", "mistral", "anthropic", "azure", "vertex_ai"];
+  
+  testProviders.forEach(providerKey => {
+    const displayName = mapProvider(providerKey);
+    const reversedKey = getProviderKey(displayName);
+    expect(reversedKey).toBe(providerKey);
+  });
 });

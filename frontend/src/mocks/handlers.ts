@@ -101,6 +101,9 @@ const openHandsHandlers = [
       "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-sonnet-4-20250514",
+      "mistral/devstral-small-2505",
+      "mistral/mistral-large-2407",
+      "mistral/mistral-small-2409",
     ]),
   ),
 
