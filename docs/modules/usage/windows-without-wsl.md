@@ -7,14 +7,14 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 1. **Windows 10/11** - A modern Windows operating system
 2. **PowerShell 7+** - While Windows PowerShell comes pre-installed on Windows 10/11, PowerShell 7+ is strongly recommended to avoid compatibility issues (see Troubleshooting section for "System.Management.Automation" errors)
 3. **.NET Core Runtime** - Required for the PowerShell integration via pythonnet
-4. **Python 3.12** - Python 3.12 is required (Python 3.14 is not supported due to pythonnet compatibility)
+4. **Python 3.12 or 3.13** - Python 3.12 or 3.13 is required (Python 3.14 is not supported due to pythonnet compatibility)
 5. **Git** - For cloning the repository and version control
 6. **Node.js and npm** - For running the frontend
 
 ## Step 1: Install Required Software
 
-1. **Install Python 3.12**
-   - Download Python 3.12.x from [python.org](https://www.python.org/downloads/)
+1. **Install Python 3.12 or 3.13**
+   - Download Python 3.12.x or 3.13.x from [python.org](https://www.python.org/downloads/)
    - During installation, check "Add Python to PATH"
    - Verify installation by opening PowerShell and running:
      ```powershell
