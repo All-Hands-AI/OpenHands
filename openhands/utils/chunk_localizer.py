@@ -66,7 +66,6 @@ def normalized_lcs(chunk: str, query: str) -> float:
     if len(chunk) == 0:
         return 0.0
 
-    # Use rapidfuzz's LCSseq implementation which works on all platforms
     _score = LCSseq.similarity(chunk, query)
 
     return _score / len(chunk)

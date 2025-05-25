@@ -138,8 +138,6 @@ When running OpenHands on Windows without WSL or Docker, be aware of the followi
 
 4. **Path Handling**: Windows uses backslashes (`\`) in paths, which may require adjustments when working with code examples designed for Unix-like systems.
 
-5. **Performance**: Some operations may be slower on Windows compared to Linux/macOS.
-
 ## Troubleshooting
 
 ### "System.Management.Automation" Not Found Error
@@ -192,28 +190,4 @@ To resolve this issue:
    - Make sure ".NET Framework 4.8 Advanced Services" is enabled
    - Click OK and restart if prompted
 
-7. **Manually install the System.Management.Automation module** if the issue persists:
-   - Open PowerShell 7 as Administrator
-   - Run the following command:
-     ```powershell
-     Install-Module -Name Microsoft.PowerShell.Management -Force
-     ```
-   - This will ensure the required PowerShell modules are available
-
 This error occurs because OpenHands uses the pythonnet package to interact with PowerShell, which requires the System.Management.Automation assembly from the .NET framework. A minimal PowerShell installation or older Windows PowerShell (rather than PowerShell 7+) might not include all the necessary components for this integration.
-
-### Environment Variable and Command Errors
-
-If you encounter errors related to environment variables or shell commands, make sure you're using the latest version of OpenHands, which includes improved Windows compatibility.
-
-Common Windows-specific errors that have been fixed in recent versions:
-- Command parsing errors with multiple statements
-- Path-related errors with redirections
-- Environment variable syntax differences
-
-## Additional Resources
-
-- [OpenHands Documentation](https://docs.all-hands.dev/)
-- [PowerShell Documentation](https://learn.microsoft.com/en-us/powershell/)
-- [Poetry Documentation](https://python-poetry.org/docs/)
-- [PowerShell GitHub Repository](https://github.com/PowerShell/PowerShell)

@@ -437,12 +437,9 @@ class Runtime(FileEditRuntimeMixin):
             else f'git checkout -b {openhands_workspace_branch}'
         )
 
-        # Execute commands separately for better cross-platform compatibility
-        # First clone the repository
         clone_action = CmdRunAction(command=clone_command)
         self.run_action(clone_action)
 
-        # Then change directory and checkout
         cd_checkout_action = CmdRunAction(
             command=f'cd {dir_name} && {checkout_command}'
         )
@@ -688,14 +685,11 @@ fi
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
 
-            # Use a platform-independent approach to handle errors
-            # First try to clone the repo
             clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
 
-            # Check if the clone was successful
             if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 self.log(
                     'info',
