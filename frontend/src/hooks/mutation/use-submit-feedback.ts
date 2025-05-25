@@ -11,8 +11,29 @@ type SubmitFeedbackArgs = {
 export const useSubmitFeedback = () => {
   const { conversationId } = useConversationId();
   return useMutation({
-    mutationFn: ({ feedback }: SubmitFeedbackArgs) =>
-      OpenHands.submitFeedback(conversationId, feedback),
+    mutationFn: async ({ feedback }: SubmitFeedbackArgs) => {
+      // 添加重试逻辑
+      const maxRetries = 2;
+      let retryCount = 0;
+      let lastError;
+
+      while (retryCount < maxRetries) {
+        try {
+          return await OpenHands.submitFeedback(conversationId, feedback);
+        } catch (error) {
+          lastError = error;
+          retryCount++;
+          // 如果不是最后一次尝试，不显示错误提示
+          if (retryCount < maxRetries) {
+            console.warn(`提交反馈失败，正在重试 (${retryCount}/${maxRetries})`, error);
+            // 等待短暂时间后重试
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      }
+      // 所有重试都失败后抛出最后的错误
+      throw lastError;
+    },
     onError: (error) => {
       displayErrorToast(error.message);
     },
