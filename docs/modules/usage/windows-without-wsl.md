@@ -193,3 +193,37 @@ To resolve this issue:
    - Click OK and restart if prompted
 
 This error occurs because OpenHands uses the pythonnet package to interact with PowerShell, which requires the System.Management.Automation assembly from the .NET framework. A minimal PowerShell installation or older Windows PowerShell (rather than PowerShell 7+) might not include all the necessary components for this integration.
+
+### ASGI Middleware Assertion Error
+
+If you encounter an error like the following when running OpenHands on Windows:
+
+```
+assert message["type"] == "http.response.body"
+AssertionError
+```
+
+This is an issue with the ASGI middleware stack in Starlette (the web framework used by FastAPI). To resolve this issue:
+
+1. **Update your Python packages**:
+   ```powershell
+   poetry update starlette fastapi uvicorn
+   ```
+
+2. **Try using a specific version of Starlette**:
+   ```powershell
+   poetry add starlette==0.36.3
+   ```
+
+3. **Disable hot reloading** by removing the `--reload` flag when starting the server:
+   ```powershell
+   $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload-exclude "./workspace"
+   ```
+
+4. **If the issue persists**, try running with a different ASGI server:
+   ```powershell
+   $env:RUNTIME="local"; poetry run python -m hypercorn openhands.server.listen:app --bind 0.0.0.0:3000
+   ```
+   Note: You may need to install hypercorn first with `poetry add hypercorn`
+
+This error is typically caused by incompatibilities between ASGI middleware components when running on Windows. The solutions above address the most common causes of this issue.
