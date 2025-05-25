@@ -65,7 +65,23 @@ Repository-specific test instructions.
 """
         (root / 'repo.md').write_text(repo_agent)
 
+        # Create .cursorrules file (no triggers, will be inferred as REPO_KNOWLEDGE)
+        cursor_rules = """---
+name: cursor_rules
+version: 1.0.0
+agent: CodeActAgent
+---
+
+# Cursor Rules
+
+These are cursor-specific rules.
+"""
+        (root.parent / '.cursorrules').write_text(cursor_rules)
+
         yield root
+
+        # Clean up .cursorrules
+        (root.parent / '.cursorrules').unlink()
 
 
 def test_knowledge_agent():
@@ -200,3 +216,66 @@ This microagent has an invalid type.
     assert 'Valid types are:' in error_msg
     assert '"knowledge"' in error_msg
     assert '"repo"' in error_msg
+
+
+def test_load_microagents_with_cursorrules(temp_microagents_dir):
+    """Test loading microagents including .cursorrules file."""
+    # Load microagents
+    repo_agents, knowledge_agents = load_microagents_from_dir(temp_microagents_dir)
+
+    # Check that .cursorrules was loaded as a repo agent
+    assert len(repo_agents) == 2  # repo.md + .cursorrules
+    agent = repo_agents['cursor_rules']
+    assert isinstance(agent, RepoMicroagent)
+    assert agent.type == MicroagentType.REPO_KNOWLEDGE  # Inferred from lack of triggers
+
+
+def test_load_microagents_without_type_and_triggers(temp_microagents_dir):
+    """Test loading microagents without type and triggers fields."""
+    # Create a microagent without type and triggers
+    repo_agent = """---
+name: no_type_no_triggers
+version: 1.0.0
+agent: CodeActAgent
+---
+
+# No Type No Triggers Agent
+
+This agent has no type field and no triggers.
+"""
+    (temp_microagents_dir / 'no_type_no_triggers.md').write_text(repo_agent)
+
+    # Load microagents
+    repo_agents, knowledge_agents = load_microagents_from_dir(temp_microagents_dir)
+
+    # Check repo agent (inferred from lack of triggers)
+    assert 'no_type_no_triggers' in repo_agents
+    agent = repo_agents['no_type_no_triggers']
+    assert isinstance(agent, RepoMicroagent)
+    assert (
+        agent.type == MicroagentType.REPO_KNOWLEDGE
+    )  # Default to REPO_KNOWLEDGE when no triggers
+
+
+def test_load_microagents_without_frontmatter(temp_microagents_dir):
+    """Test loading microagents without frontmatter."""
+    # Create .cursorrules file without frontmatter
+    cursor_rules = """- Use our internal RPC pattern when defining services
+- Always use snake_case for service names.
+
+@service-template.ts
+"""
+    (temp_microagents_dir.parent / '.cursorrules').write_text(cursor_rules)
+
+    # Load microagents
+    repo_agents, knowledge_agents = load_microagents_from_dir(temp_microagents_dir)
+
+    # Check that .cursorrules was loaded as a repo agent
+    assert len(repo_agents) == 2  # repo.md + .cursorrules
+    agent = repo_agents['cursor_rules']
+    assert isinstance(agent, RepoMicroagent)
+    assert agent.type == MicroagentType.REPO_KNOWLEDGE  # Inferred from lack of triggers
+    assert 'Use our internal RPC pattern' in agent.content
+
+    # Clean up
+    (temp_microagents_dir.parent / '.cursorrules').unlink()

@@ -1,4 +1,5 @@
 import io
+from itertools import chain
 from pathlib import Path
 from typing import Union
 
@@ -193,7 +194,10 @@ def load_microagents_from_dir(
     # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
-        for file in microagent_dir.rglob('*.md'):
+        # Load both .cursorrules and .md files
+        for file in chain(
+            microagent_dir.parent.rglob('.cursorrules'), microagent_dir.rglob('*.md')
+        ):
             logger.debug(f'Checking file {file}...')
             # skip README.md
             if file.name == 'README.md':
