@@ -18,7 +18,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.integrations.service_types import ProviderType
-from openhands.mcp import add_mcp_tools_to_agent
+# from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
@@ -153,7 +153,8 @@ class AgentSession:
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
             if self.runtime and runtime_connected and agent.config.enable_mcp:
-                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config)
+                # await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config)
+                pass
 
             if replay_json:
                 initial_message = self._run_replay(

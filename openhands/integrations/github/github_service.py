@@ -334,17 +334,16 @@ class GitHubService(BaseGitService, GitService):
                 ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
-                # Only add the task if it's not OPEN_PR
-                if task_type != TaskType.OPEN_PR:
-                    tasks.append(
-                        SuggestedTask(
-                            git_provider=ProviderType.GITHUB,
-                            task_type=task_type,
-                            repo=repo_name,
-                            issue_number=pr['number'],
-                            title=pr['title'],
-                        )
+                # Add all PRs as suggested tasks
+                tasks.append(
+                    SuggestedTask(
+                        git_provider=ProviderType.GITHUB,
+                        task_type=task_type,
+                        repo=repo_name,
+                        issue_number=pr['number'],
+                        title=pr['title'],
                     )
+                )
 
         except Exception as e:
             logger.info(
@@ -362,13 +361,22 @@ class GitHubService(BaseGitService, GitService):
             )
             issue_data = issue_response['data']['user']
 
-            # Process issues
+            # Process issues (includes both authored and assigned)
             for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
+                
+                # Determine if this is an assigned issue or just authored
+                is_assigned = any(
+                    assignee['login'] == login 
+                    for assignee in issue['assignees']['nodes']
+                )
+                
+                task_type = TaskType.ASSIGNED_ISSUE if is_assigned else TaskType.OPEN_ISSUE
+                
                 tasks.append(
                     SuggestedTask(
                         git_provider=ProviderType.GITHUB,
-                        task_type=TaskType.OPEN_ISSUE,
+                        task_type=task_type,
                         repo=repo_name,
                         issue_number=issue['number'],
                         title=issue['title'],

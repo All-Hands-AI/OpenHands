@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Protocol
@@ -20,6 +21,7 @@ class TaskType(str, Enum):
     FAILING_CHECKS = 'FAILING_CHECKS'
     UNRESOLVED_COMMENTS = 'UNRESOLVED_COMMENTS'
     OPEN_ISSUE = 'OPEN_ISSUE'
+    ASSIGNED_ISSUE = 'ASSIGNED_ISSUE'
     OPEN_PR = 'OPEN_PR'
 
 
@@ -61,8 +63,9 @@ class SuggestedTask(BaseModel):
         issue_number = self.issue_number
         repo = self.repo
 
+        template_path = os.path.join(os.path.dirname(__file__), 'templates', 'suggested_task')
         env = Environment(
-            loader=FileSystemLoader('openhands/integrations/templates/suggested_task')
+            loader=FileSystemLoader(template_path)
         )
 
         template = None
@@ -74,6 +77,10 @@ class SuggestedTask(BaseModel):
             template = env.get_template('unresolved_comments_prompt.j2')
         elif task_type == TaskType.OPEN_ISSUE:
             template = env.get_template('open_issue_prompt.j2')
+        elif task_type == TaskType.ASSIGNED_ISSUE:
+            template = env.get_template('assigned_issue_prompt.j2')
+        elif task_type == TaskType.OPEN_PR:
+            template = env.get_template('open_pr_prompt.j2')
         else:
             raise ValueError(f'Unsupported task type: {task_type}')
 

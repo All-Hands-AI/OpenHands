@@ -28,6 +28,8 @@ from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
+from openhands.server.static import SPAStaticFiles
+import os
 
 
 @asynccontextmanager
@@ -56,3 +58,10 @@ app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
 add_health_endpoints(app)
+
+# Mount static files for frontend  
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'frontend', 'build')
+if os.path.exists(frontend_dir):
+    app.mount(
+        '/', SPAStaticFiles(directory=frontend_dir, html=True), name='dist'
+    )
