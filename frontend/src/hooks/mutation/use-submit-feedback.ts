@@ -25,7 +25,6 @@ export const useSubmitFeedback = () => {
           retryCount++;
           // 如果不是最后一次尝试，不显示错误提示
           if (retryCount < maxRetries) {
-            console.warn(`提交反馈失败，正在重试 (${retryCount}/${maxRetries})`, error);
             // 等待短暂时间后重试
             await new Promise(resolve => setTimeout(resolve, 500));
           }

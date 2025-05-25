@@ -134,7 +134,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           className="grow"
           isDisabled={isPending}
         >
-          {isPending ? "提交中..." : t(I18nKey.FEEDBACK$SHARE_LABEL)}
+          {isPending ? t(I18nKey.FEEDBACK$SUBMITTING_LABEL) : t(I18nKey.FEEDBACK$SHARE_LABEL)}
         </BrandButton>
         <BrandButton
           type="button"
@@ -148,7 +148,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
       </div>
       {submitAttempted && isPending && (
         <p className="text-sm text-center text-neutral-400">
-          {"正在提交反馈，请稍候..."}
+          {t(I18nKey.FEEDBACK$SUBMITTING_MESSAGE)}
         </p>
       )}
     </form>
