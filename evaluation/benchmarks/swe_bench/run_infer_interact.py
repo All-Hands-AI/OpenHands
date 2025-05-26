@@ -110,7 +110,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     instance_copy = instance.copy()
-    instance_copy.problem_statement = f'{instance.problem_statement}\n\nHints:\nAsk the user a clarification question at the beginning of the task.'
+    instance_copy.problem_statement = f"{instance.problem_statement}\n\nHints:\nAsk the user a clarification question at the beginning of the task (i.e., don't use any tools for now)."
     return base_get_instruction(instance_copy, metadata)
 
 
