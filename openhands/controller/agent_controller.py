@@ -189,7 +189,7 @@ class AgentController:
         # Add the system message to the event stream
         # This should be done for all agents, including delegates
         system_message = self.agent.get_system_message()
-        if system_message:
+        if system_message and system_message.content:
             logger.debug(
                 f'System message got from agent: {system_message.content[50]}...'
             )
