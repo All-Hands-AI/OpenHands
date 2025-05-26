@@ -536,8 +536,12 @@ def convert_fncall_messages_to_non_fncall_messages(
             if isinstance(content, str):
                 content = prefix + content
             elif isinstance(content, list):
-                if content and content[-1]['type'] == 'text':
-                    content[-1]['text'] = prefix + content[-1]['text']
+                if content and (
+                    first_text_content := next(
+                        (c for c in content if c['type'] == 'text'), None
+                    )
+                ):
+                    first_text_content['text'] = prefix + first_text_content['text']
                 else:
                     content = [{'type': 'text', 'text': prefix}] + content
             else:
