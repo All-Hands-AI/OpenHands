@@ -298,7 +298,7 @@ def reusable_runtime_and_config(runtime_cls, run_as_openhands, tmp_path_factory)
     os.chmod(temp_dir_, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777 permissions
 
     runtime, config = create_runtime_and_config(
-        temp_dir_,
+        str(temp_dir_),
         runtime_cls,
         run_as_openhands,
     )
