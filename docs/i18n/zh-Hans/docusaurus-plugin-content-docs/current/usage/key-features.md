@@ -1,6 +1,6 @@
 # OpenHands 功能概览
 
-![overview](/img/oh-features.png)
+![概览](/img/oh-features.png)
 
 ### 聊天面板
 - 显示用户与 OpenHands 之间的对话。
@@ -22,7 +22,7 @@
 
 ### 应用
 - 当 OpenHands 运行应用程序时显示网络服务器。
-- 用户可以与运行中的应用程序交互。
+- 用户可以与正在运行的应用程序交互。
 
 ### 浏览器
 - 由 OpenHands 用于浏览网站。

@@ -134,16 +134,15 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
 export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   source: "agent";
   extras: {
-    // Add any specific fields for MCP observations
+    name: string;
+    arguments: Record<string, unknown>;
   };
 }
 
 export interface UserRejectedObservation
   extends OpenHandsObservationEvent<"user_rejected"> {
   source: "agent";
-  extras: {
-    // Add any specific fields for MCP observations
-  };
+  extras: Record<string, unknown>;
 }
 
 export type OpenHandsObservation =

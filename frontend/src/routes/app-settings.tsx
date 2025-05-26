@@ -73,6 +73,7 @@ function AppSettingsScreen() {
           setLanguageInputHasChanged(false);
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
+          setProactiveConversationsSwitchHasChanged(false);
         },
       },
     );
