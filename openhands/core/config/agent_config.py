@@ -13,13 +13,15 @@ class AgentConfig(BaseModel):
     classpath: str | None = Field(default=None)
     """The classpath of the agent to use. To be used for custom agents that are not defined in the openhands.agenthub package."""
     enable_browsing: bool = Field(default=True)
-    """Whether to enable browsing tool"""
+    """Whether to enable browsing tool.
+    Note: If using CLIRuntime, browsing is not implemented and should be disabled."""
     enable_llm_editor: bool = Field(default=False)
     """Whether to enable LLM editor tool"""
     enable_editor: bool = Field(default=True)
     """Whether to enable the standard editor tool (str_replace_editor), only has an effect if enable_llm_editor is False."""
     enable_jupyter: bool = Field(default=True)
-    """Whether to enable Jupyter tool"""
+    """Whether to enable Jupyter tool.
+    Note: If using CLIRuntime, Jupyter use is not implemented and should be disabled."""
     enable_cmd: bool = Field(default=True)
     """Whether to enable bash tool"""
     enable_think: bool = Field(default=True)
@@ -28,6 +30,8 @@ class AgentConfig(BaseModel):
     """Whether to enable finish tool"""
     enable_prompt_extensions: bool = Field(default=True)
     """Whether to enable prompt extensions"""
+    enable_mcp: bool = Field(default=True)
+    """Whether to enable MCP tools"""
     disabled_microagents: list[str] = Field(default_factory=list)
     """A list of microagents to disable (by name, without .py extension, e.g. ["github", "lint"]). Default is None."""
     enable_history_truncation: bool = Field(default=True)

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 
 from prompt_toolkit.shortcuts import clear
@@ -21,6 +22,7 @@ from openhands.cli.tui import (
     process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    update_streaming_output,
 )
 from openhands.cli.utils import (
     update_usage_metrics,
@@ -33,6 +35,7 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -70,31 +73,30 @@ async def cleanup_session(
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
+
+    event_stream = runtime.event_stream
+    end_state = controller.get_state()
+    end_state.save_to_session(
+        event_stream.sid,
+        event_stream.file_store,
+        event_stream.user_id,
+    )
+
     try:
-        # Cancel all running tasks except the current one
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
+
+        if pending:
+            done, pending_set = await asyncio.wait(set(pending), timeout=2.0)
+            pending = list(pending_set)
+
         for task in pending:
             task.cancel()
 
-        # Wait for all tasks to complete with a timeout
-        if pending:
-            await asyncio.wait(pending, timeout=5.0)
-
-        event_stream = runtime.event_stream
-
-        # Save the final state
-        end_state = controller.get_state()
-        end_state.save_to_session(
-            event_stream.sid,
-            event_stream.file_store,
-            event_stream.user_id,
-        )
-
-        # Reset agent, close runtime and controller
         agent.reset()
         runtime.close()
         await controller.close()
+
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
 
@@ -105,6 +107,7 @@ async def run_session(
     settings_store: FileSettingsStore,
     current_dir: str,
     task_content: str | None = None,
+    conversation_instructions: str | None = None,
     session_name: str | None = None,
 ) -> bool:
     reload_microagents = False
@@ -130,6 +133,12 @@ async def run_session(
         headless_mode=True,
         agent=agent,
     )
+
+    def stream_to_console(output: str) -> None:
+        # Instead of printing to stdout, pass the string to the TUI module
+        update_streaming_output(output)
+
+    runtime.subscribe_to_shell_stream(stream_to_console)
 
     controller, initial_state = create_controller(agent, runtime, config)
 
@@ -248,10 +257,23 @@ async def run_session(
         sid=sid,
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
+        conversation_instructions=conversation_instructions,
     )
 
     # Add MCP tools to the agent
-    await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+    if agent.config.enable_mcp:
+        # Add OpenHands' MCP server by default
+        openhands_mcp_server, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                config.mcp_host, config, None
+            )
+        )
+        # FIXME: OpenHands' SSE server may not be running when CLI mode is started
+        # if openhands_mcp_server:
+        #     config.mcp.sse_servers.append(openhands_mcp_server)
+        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        await add_mcp_tools_to_agent(agent, runtime, memory, config)
 
     # Clear loading animation
     is_loaded.set()
@@ -352,6 +374,20 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
             agent_config.condenser = NoOpCondenserConfig(type='noop')
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
+
+    # Determine if CLI defaults should be overridden
+    val_override = args.override_cli_mode
+    should_override_cli_defaults = (
+        val_override is True
+        or (isinstance(val_override, str) and val_override.lower() in ('true', '1'))
+        or (isinstance(val_override, int) and val_override == 1)
+    )
+
+    if not should_override_cli_defaults:
+        config.runtime = 'cli'
+        if not config.workspace_base:
+            config.workspace_base = os.getcwd()
+        config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
