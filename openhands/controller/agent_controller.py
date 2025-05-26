@@ -190,9 +190,12 @@ class AgentController:
         # This should be done for all agents, including delegates
         system_message = self.agent.get_system_message()
         if system_message and system_message.content:
-            logger.debug(
-                f'System message got from agent: {system_message.content[50]}...'
+            preview = (
+                system_message.content[:50] + '...'
+                if len(system_message.content) > 50
+                else system_message.content
             )
+            logger.debug(f'System message: {preview}')
             self.event_stream.add_event(system_message, EventSource.AGENT)
 
     async def close(self, set_stop_state: bool = True) -> None:
