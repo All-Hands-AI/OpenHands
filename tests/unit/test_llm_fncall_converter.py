@@ -944,3 +944,31 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
         input_messages
     )
     assert result == input_messages
+
+
+def test_convert_fncall_messages_with_image_url():
+    """Test that convert_fncall_messages_to_non_fncall_messages handles image URLs correctly."""
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'browser',
+            'content': [
+                {
+                    'type': 'text',
+                    'text': 'some browser tool results',
+                },
+                {
+                    'type': 'image_url',
+                    'image_url': {'url': 'data:image/gif;base64,R0lGODlhAQABAAAAACw='},
+                },
+            ],
+        }
+    ]
+    converted_messages = convert_fncall_messages_to_non_fncall_messages(messages, [])
+    assert len(converted_messages) == 1
+    assert converted_messages[0]['role'] == 'user'
+    assert len(converted_messages[0]['content']) == len(messages[0]['content'])
+    assert (
+        next(c for c in converted_messages[0]['content'] if c['type'] == 'text')['text']
+        == f'EXECUTION RESULT of [{messages[0]["name"]}]:\n{messages[0]["content"][0]["text"]}'
+    )
