@@ -33,9 +33,12 @@ export const useAuthCallback = () => {
     const loginMethod = searchParams.get("login_method");
 
     // Set the login method if it's valid
-    if (loginMethod === LoginMethod.GITHUB || loginMethod === LoginMethod.GITLAB) {
+    if (
+      loginMethod === LoginMethod.GITHUB ||
+      loginMethod === LoginMethod.GITLAB
+    ) {
       setLoginMethod(loginMethod as LoginMethod);
-      
+
       // Clean up the URL by removing the login_method parameter
       searchParams.delete("login_method");
       const newUrl = `${location.pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;

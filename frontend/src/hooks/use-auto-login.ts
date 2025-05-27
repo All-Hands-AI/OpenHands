@@ -48,7 +48,7 @@ export const useAutoLogin = () => {
     }
 
     // Get the appropriate auth URL based on the stored login method
-    let authUrl =
+    const authUrl =
       loginMethod === LoginMethod.GITHUB ? githubAuthUrl : gitlabAuthUrl;
 
     // If we have an auth URL, redirect to it
@@ -56,7 +56,7 @@ export const useAutoLogin = () => {
       // Add the login method as a query parameter
       const url = new URL(authUrl);
       url.searchParams.append("login_method", loginMethod);
-      
+
       // After successful login, the user will be redirected back and can navigate to the last page
       window.location.href = url.toString();
     }

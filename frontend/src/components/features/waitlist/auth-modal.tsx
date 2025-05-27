@@ -9,7 +9,6 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { LoginMethod, setLoginMethod } from "#/utils/local-storage";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
@@ -26,23 +25,15 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
-      // Add a query parameter to identify the login method
-      const url = new URL(githubAuthUrl);
-      url.searchParams.append("login_method", LoginMethod.GITHUB);
-      
       // Always start the OIDC flow, let the backend handle TOS check
-      window.location.href = url.toString();
+      window.location.href = githubAuthUrl;
     }
   };
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
-      // Add a query parameter to identify the login method
-      const url = new URL(gitlabAuthUrl);
-      url.searchParams.append("login_method", LoginMethod.GITLAB);
-      
       // Always start the OIDC flow, let the backend handle TOS check
-      window.location.href = url.toString();
+      window.location.href = gitlabAuthUrl;
     }
   };
 

@@ -88,7 +88,7 @@ export default function MainApp() {
 
   // Auto-login if login method is stored in local storage
   useAutoLogin();
-  
+
   // Handle authentication callback and set login method after successful authentication
   useAuthCallback();
 
