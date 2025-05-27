@@ -183,7 +183,7 @@ export function ChatInterface() {
         {errorMessage && (
           <ErrorMessageBanner
             message={errorMessage}
-            billingUrl="https://app.all-hands.dev/billing"
+            billingUrl="/settings/credits"
           />
         )}
 

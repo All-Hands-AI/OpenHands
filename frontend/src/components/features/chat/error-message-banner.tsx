@@ -1,4 +1,5 @@
 import { Trans } from "react-i18next";
+import { Link } from "react-router";
 import i18n from "#/i18n";
 
 interface ErrorMessageBannerProps {
@@ -8,7 +9,7 @@ interface ErrorMessageBannerProps {
 
 export function ErrorMessageBanner({
   message,
-  billingUrl = "https://app.all-hands.dev/billing",
+  billingUrl = "/settings/credits",
 }: ErrorMessageBannerProps) {
   return (
     <div className="w-full rounded-lg p-2 text-black border border-red-800 bg-red-500">
@@ -17,14 +18,12 @@ export function ErrorMessageBanner({
           i18nKey={message}
           components={{
             a: (
-              <a
+              <Link
                 className="underline font-bold cursor-pointer"
-                href={billingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                to={billingUrl}
               >
                 link
-              </a>
+              </Link>
             ),
           }}
         />
