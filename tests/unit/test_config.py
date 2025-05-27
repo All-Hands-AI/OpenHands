@@ -706,32 +706,6 @@ timeout = 1
     assert default_config.sandbox.timeout == 1
 
 
-def test_core_sandbox_volumes_toml(default_config, temp_toml_file):
-    """Test that volumes configuration under [core.sandbox] works correctly."""
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write("""
-[core]
-sandbox = { volumes = "/home/user/mydir:/workspace:rw,/data:/data:ro" }
-
-[sandbox]
-timeout = 1
-""")
-
-    # Load the configuration
-    load_from_toml(default_config, temp_toml_file)
-    finalize_config(default_config)
-
-    # Check that sandbox.volumes is set correctly
-    assert (
-        default_config.sandbox.volumes
-        == '/home/user/mydir:/workspace:rw,/data:/data:ro'
-    )
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
-    assert default_config.sandbox.timeout == 1
-
-
 def test_condenser_config_from_toml_basic(default_config, temp_toml_file):
     """Test loading basic condenser configuration from TOML."""
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:

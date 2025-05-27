@@ -330,14 +330,9 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Multiple mounts can be specified using commas
 # e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
 
-# You can configure volumes in two ways:
-# 1. Under the [sandbox] section:
+# Configure volumes under the [sandbox] section:
 # [sandbox]
 # volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro"
-#
-# 2. Or under the [core.sandbox] section:
-# [core]
-# sandbox = { volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro" }
 
 #################################### Security ###################################
 # Configuration for security features
