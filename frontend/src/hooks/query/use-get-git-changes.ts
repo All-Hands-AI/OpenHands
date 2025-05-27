@@ -17,7 +17,7 @@ export const useGetGitChanges = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const enabled =
     conversation?.status === "RUNNING" &&
-    RUNTIME_INACTIVE_STATES.includes(curAgentState);
+    !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const result = useQuery({
     queryKey: ["file_changes", conversationId],

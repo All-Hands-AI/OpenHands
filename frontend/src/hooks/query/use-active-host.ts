@@ -15,7 +15,7 @@ export const useActiveHost = () => {
   const { data: conversation } = useActiveConversation();
   const enabled =
     conversation?.status === "RUNNING" &&
-    RUNTIME_INACTIVE_STATES.includes(curAgentState);
+    !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const { data } = useQuery({
     queryKey: [conversationId, "hosts"],
