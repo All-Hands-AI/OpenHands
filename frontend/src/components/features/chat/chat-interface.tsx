@@ -183,7 +183,7 @@ export function ChatInterface() {
 
         {errorMessage && (
           <ErrorMessageBanner
-            message={i18n.exists(errorMessage) ? t(errorMessage) : errorMessage}
+            message={i18n.exists(errorMessage) ? errorMessage : errorMessage}
           />
         )}
 
