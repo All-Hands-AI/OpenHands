@@ -42,7 +42,7 @@ from openhands.server.user_auth import (
     get_user_settings_store,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_context_events, get_conversation_state, get_conversation_store
+from openhands.server.utils import get_conversation_state, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -273,17 +273,14 @@ async def get_prompt(
 
     # get event stream for the conversation
     event_stream = conversation.event_stream
-    events = event_stream.get_events()
 
     # find the specified events to learn from
     # Get X events around the target event
     context_size = 4
     start_index = max(0, event_id - context_size)
-    end_index = min(
-        len(list(events)), event_id + context_size + 1  # +1 to include the target event
-    ) 
+    end_index = event_id + context_size + 1  # +1 to include the target event
 
-    context_events = event_stream.get_events(
+    context_events = event_stream.search_events(
         start_id=start_index,
         end_id=end_index,
         )
