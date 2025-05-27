@@ -72,7 +72,7 @@ from openhands.runtime.utils.log_capture import capture_logs
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
-from openhands.utils.async_utils import call_sync_from_async, wait_all
+from openhands.utils.async_utils import call_sync_from_async
 
 # Set MCP router logger to the same level as the main logger
 mcp_router_logger.setLevel(logger.getEffectiveLevel())
@@ -255,7 +255,7 @@ class ActionExecutor:
         logger.debug('Browser is ready')
 
     async def ainit(self):
-        # bash needs to be initialized first
+        # Initialize bash session first as it's required by other components
         logger.debug('Initializing bash session')
         if sys.platform == 'win32':
             self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
@@ -278,30 +278,74 @@ class ActionExecutor:
             self.bash_session.initialize()
         logger.debug('Bash session initialized')
 
-        # Start browser initialization in the background
-        self.browser_init_task = asyncio.create_task(self._init_browser_async())
+        # Start all initializations concurrently
+        init_tasks = []
+
+        # Start browser initialization
+        browser_task = asyncio.create_task(self._init_browser_async())
+        init_tasks.append(browser_task)
+        self.browser_init_task = browser_task
         logger.debug('Browser initialization started in background')
 
-        await wait_all(
-            (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=60,
-        )
-        logger.debug('All plugins initialized')
+        # Start plugin initializations concurrently
+        plugin_tasks = [
+            asyncio.create_task(self._init_plugin(plugin))
+            for plugin in self.plugins_to_load
+        ]
+        init_tasks.extend(plugin_tasks)
+        logger.debug(f'Started {len(plugin_tasks)} plugin initialization tasks')
+
+        # Wait for all plugin initializations to complete first
+        # This is necessary because other initializations may depend on plugins
+        try:
+            await asyncio.gather(*plugin_tasks)
+            logger.debug('All plugins initialized')
+        except Exception as e:
+            logger.error(f'Error initializing plugins: {e}')
+            # Re-raise to prevent further initialization if plugins fail
+            raise
+
+        # Start remaining initializations concurrently now that plugins are ready
+        remaining_tasks = []
+
+        # Start bash commands initialization
+        bash_commands_task = asyncio.create_task(self._init_bash_commands())
+        remaining_tasks.append(bash_commands_task)
+        logger.debug('Bash commands initialization started in background')
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
-        logger.debug('Initializing AgentSkills')
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
-            obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
+            logger.debug('Initializing AgentSkills in background')
+            agent_skills_task = asyncio.create_task(
+                self.run_ipython(
+                    IPythonRunCellAction(
+                        code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
+                    )
                 )
             )
-            logger.debug(f'AgentSkills initialized: {obs}')
+            remaining_tasks.append(agent_skills_task)
 
-        logger.debug('Initializing bash commands')
-        await self._init_bash_commands()
+        # Wait for all remaining initialization tasks to complete
+        if remaining_tasks:
+            try:
+                await asyncio.gather(*remaining_tasks)
+                logger.debug('All remaining initialization tasks completed')
+            except Exception as e:
+                logger.error(f'Error in remaining initialization tasks: {e}')
+                # Continue execution even if these tasks fail
+                # as they're not critical for basic functionality
+
+        # Wait for browser initialization to complete if it hasn't already
+        if not browser_task.done():
+            try:
+                await browser_task
+                logger.debug('Browser initialization completed')
+            except Exception as e:
+                logger.error(f'Error completing browser initialization: {e}')
+                # Browser is not critical for basic functionality
+        logger.debug('All initialization tasks completed')
 
         logger.debug('Runtime client initialized.')
         self._initialized = True
