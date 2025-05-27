@@ -325,6 +325,16 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Useful when deploying OpenHands in a remote machine where you need to expose a specific port.
 #vscode_port = 41234
 
+# Volume mounts in the format 'host_path:container_path[:mode]'
+# e.g. '/my/host/dir:/workspace:rw'
+# Multiple mounts can be specified using commas
+# e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
+#volumes = ""
+
+# You can also configure volumes under [core.sandbox] section:
+# [core]
+# sandbox = { volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro" }
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################
