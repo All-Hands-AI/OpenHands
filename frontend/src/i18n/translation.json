@@ -1,4 +1,36 @@
 {
+    "HOME$LAUNCH_FROM_SCRATCH": {
+        "en": "Launch from Scratch",
+        "ja": "ゼロから始める",
+        "zh-CN": "从零开始",
+        "zh-TW": "從零開始",
+        "ko-KR": "처음부터 시작",
+        "no": "Start fra bunnen",
+        "it": "Inizia da zero",
+        "pt": "Começar do zero",
+        "es": "Comenzar desde cero",
+        "ar": "البدء من الصفر",
+        "fr": "Démarrer de zéro",
+        "tr": "Sıfırdan başla",
+        "de": "Von Grund auf starten",
+        "uk": "Почати з нуля"
+    },
+    "HOME$READ_THIS": {
+        "en": "Read this",
+        "ja": "こちらを読む",
+        "zh-CN": "阅读此内容",
+        "zh-TW": "閱讀此內容",
+        "ko-KR": "이것을 읽어보세요",
+        "no": "Les dette",
+        "it": "Leggi questo",
+        "pt": "Leia isto",
+        "es": "Leer esto",
+        "ar": "اقرأ هذا",
+        "fr": "Lire ceci",
+        "tr": "Bunu oku",
+        "de": "Lies dies",
+        "uk": "Прочитайте це"
+    },
     "AUTH$LOGGING_BACK_IN": {
         "en": "Logging back into OpenHands...",
         "ja": "OpenHandsに再ログインしています...",
