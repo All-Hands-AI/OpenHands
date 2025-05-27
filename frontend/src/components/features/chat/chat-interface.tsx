@@ -180,12 +180,7 @@ export function ChatInterface() {
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
 
-        {errorMessage && (
-          <ErrorMessageBanner
-            message={errorMessage}
-            billingUrl="/settings/credits"
-          />
-        )}
+        {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
         <InteractiveChatBox
           onSubmit={handleSendMessage}
