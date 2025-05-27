@@ -152,9 +152,27 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     else:
         core_config = toml_config['core']
 
+    # Save sandbox volumes from core.sandbox if present
+    sandbox_volumes = None
+    if (
+        'sandbox' in core_config
+        and isinstance(core_config['sandbox'], dict)
+        and 'volumes' in core_config['sandbox']
+    ):
+        sandbox_volumes = core_config['sandbox']['volumes']
+
     # Process core section if present
     for key, value in core_config.items():
-        if hasattr(cfg, key):
+        if key == 'sandbox' and isinstance(value, dict):
+            # Handle nested sandbox configuration under [core.sandbox]
+            for sandbox_key, sandbox_value in value.items():
+                if hasattr(cfg.sandbox, sandbox_key):
+                    setattr(cfg.sandbox, sandbox_key, sandbox_value)
+                else:
+                    logger.openhands_logger.warning(
+                        f'Unknown config key "sandbox.{sandbox_key}" in [core.sandbox] section'
+                    )
+        elif hasattr(cfg, key):
             setattr(cfg, key, value)
         else:
             logger.openhands_logger.warning(
@@ -290,6 +308,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     for key in toml_config:
         if key.lower() not in known_sections:
             logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
+
+    # Set sandbox volumes from core.sandbox if it was found
+    if sandbox_volumes is not None:
+        cfg.sandbox.volumes = sandbox_volumes
 
 
 def get_or_create_jwt_secret(file_store: FileStore) -> str:

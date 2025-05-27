@@ -717,6 +717,7 @@ sandbox = { volumes = "/home/user/mydir:/workspace:rw,/data:/data:ro" }
 timeout = 1
 """)
 
+    # Load the configuration
     load_from_toml(default_config, temp_toml_file)
     finalize_config(default_config)
 

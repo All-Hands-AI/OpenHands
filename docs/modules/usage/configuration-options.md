@@ -104,7 +104,7 @@ The core configuration options are defined in the `[core]` section of the `confi
 - `volumes`
   - Type: `str`
   - Default: `None`
-  - Description: Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
+  - Description: Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'. Can be configured either under `[sandbox]` section or as `[core] sandbox = { volumes = "..." }`
 
 - `workspace_mount_path_in_sandbox` **(Deprecated)**
   - Type: `str`
@@ -330,6 +330,13 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
 ## Sandbox Configuration
 
 The sandbox configuration options are defined in the `[sandbox]` section of the `config.toml` file.
+
+Alternatively, you can also configure sandbox options under the `[core]` section using the `sandbox` key with a nested table:
+
+```toml
+[core]
+sandbox = { volumes = "/home/user/mydir:/workspace:rw,/data:/data:ro" }
+```
 
 To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-e SANDBOX_TIMEOUT`.
 
