@@ -305,6 +305,11 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the sandbox.volumes parameter
+    if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
+        logger.openhands_logger.warning(
+            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
+            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
+        )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
@@ -348,11 +353,6 @@ def finalize_config(cfg: AppConfig) -> None:
 
     # Handle the deprecated workspace_* parameters
     elif cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        logger.openhands_logger.warning(
-            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
-        )
-
         if cfg.workspace_base is not None:
             cfg.workspace_base = os.path.abspath(cfg.workspace_base)
             if cfg.workspace_mount_path is None:
@@ -382,6 +382,19 @@ def finalize_config(cfg: AppConfig) -> None:
             get_or_create_jwt_secret(
                 get_file_store(cfg.file_store, cfg.file_store_path)
             )
+        )
+
+    # If CLIRuntime is selected, disable Jupyter for all agents
+    # Assuming 'cli' is the identifier for CLIRuntime
+    if cfg.runtime and cfg.runtime.lower() == 'cli':
+        for age_nt_name, agent_config in cfg.agents.items():
+            if agent_config.enable_jupyter:
+                agent_config.enable_jupyter = False
+            if agent_config.enable_browsing:
+                agent_config.enable_browsing = False
+        logger.openhands_logger.debug(
+            'Automatically disabled Jupyter plugin and browsing for all agents '
+            'because CLIRuntime is selected and does not support IPython execution.'
         )
 
 
@@ -724,6 +737,12 @@ def get_parser() -> argparse.ArgumentParser:
         help='GitHub repository to clone (format: owner/repo)',
         type=str,
         default=None,
+    )
+    parser.add_argument(
+        '--override-cli-mode',
+        help='Override the default settings for CLI mode',
+        type=bool,
+        default=False,
     )
     return parser
 

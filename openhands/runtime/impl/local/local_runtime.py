@@ -200,8 +200,8 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-        #If there is an API key in the environment we use this in requests to the runtime
-        session_api_key = os.getenv("SESSION_API_KEY")
+        # If there is an API key in the environment we use this in requests to the runtime
+        session_api_key = os.getenv('SESSION_API_KEY')
         if session_api_key:
             self.session.headers['X-Session-API-Key'] = session_api_key
 

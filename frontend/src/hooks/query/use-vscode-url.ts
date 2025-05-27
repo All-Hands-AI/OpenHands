@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import { useActiveConversation } from "./use-active-conversation";
 
 // Define the return type for the VS Code URL query
 interface VSCodeUrlResult {
@@ -16,9 +17,12 @@ interface VSCodeUrlResult {
 
 export const useVSCodeUrl = () => {
   const { t } = useTranslation();
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
+  const { data: conversation } = useActiveConversation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const enabled =
+    conversation?.status === "RUNNING" &&
+    RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   return useQuery<VSCodeUrlResult>({
     queryKey: ["vscode_url", conversationId],
@@ -36,7 +40,7 @@ export const useVSCodeUrl = () => {
         error: t(I18nKey.VSCODE$URL_NOT_AVAILABLE),
       };
     },
-    enabled: !!conversationId && !isRuntimeInactive,
+    enabled,
     refetchOnMount: true,
     retry: 3,
   });

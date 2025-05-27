@@ -17,6 +17,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
   llm_api_key: null,
   llm_api_key_set: DEFAULT_SETTINGS.LLM_API_KEY_SET,
+  search_api_key_set: DEFAULT_SETTINGS.SEARCH_API_KEY_SET,
   agent: DEFAULT_SETTINGS.AGENT,
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
@@ -99,7 +100,7 @@ const openHandsHandlers = [
       "gpt-4o",
       "gpt-4o-mini",
       "anthropic/claude-3.5",
-      "anthropic/claude-3-7-sonnet-20250219",
+      "anthropic/claude-sonnet-4-20250514",
     ]),
   ),
 

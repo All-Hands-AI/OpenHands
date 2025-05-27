@@ -6,10 +6,13 @@ import {
   SystemMessageAction,
 } from "./actions";
 import {
+  AgentStateChangeObservation,
   CommandObservation,
   ErrorObservation,
+  MCPObservation,
   OpenHandsObservation,
 } from "./observations";
+import { StatusUpdate } from "./variances";
 
 export const isOpenHandsAction = (
   event: OpenHandsParsedEvent,
@@ -38,6 +41,11 @@ export const isErrorObservation = (
 ): event is ErrorObservation =>
   isOpenHandsObservation(event) && event.observation === "error";
 
+export const isAgentStateChangeObservation = (
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
+  isOpenHandsObservation(event) && event.observation === "agent_state_changed";
+
 export const isCommandObservation = (
   event: OpenHandsParsedEvent,
 ): event is CommandObservation =>
@@ -57,3 +65,13 @@ export const isRejectObservation = (
   event: OpenHandsParsedEvent,
 ): event is OpenHandsObservation =>
   isOpenHandsObservation(event) && event.observation === "user_rejected";
+
+export const isMcpObservation = (
+  event: OpenHandsParsedEvent,
+): event is MCPObservation =>
+  isOpenHandsObservation(event) && event.observation === "mcp";
+
+export const isStatusUpdate = (
+  event: OpenHandsParsedEvent,
+): event is StatusUpdate =>
+  "status_update" in event && "type" in event && "id" in event;

@@ -153,7 +153,7 @@ class AgentSession:
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
             if self.runtime and runtime_connected and agent.config.enable_mcp:
-                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config.mcp)
+                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config)
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -411,12 +411,9 @@ class AgentSession:
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
-        )
-
-        msg += (
             f'Agent: {agent.name}\n'
             f'Runtime: {self.runtime.__class__.__name__}\n'
-            f'Plugins: {agent.sandbox_plugins}\n'
+            f'Plugins: {[p.name for p in agent.sandbox_plugins] if agent.sandbox_plugins else "None"}\n'
             '-------------------------------------------------------------------------------------------'
         )
         self.logger.debug(msg)

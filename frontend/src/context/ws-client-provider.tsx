@@ -16,12 +16,14 @@ import {
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
+  isAgentStateChangeObservation,
   isErrorObservation,
   isOpenHandsAction,
   isOpenHandsObservation,
+  isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
@@ -68,6 +70,7 @@ const isMessageAction = (
 export enum WsClientProviderStatus {
   CONNECTED,
   DISCONNECTED,
+  CONNECTING,
 }
 
 interface UseWsClient {
@@ -147,7 +150,7 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
-  const { data: conversation } = useUserConversation(conversationId);
+  const { data: conversation } = useActiveConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -159,10 +162,33 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    removeErrorMessage();
   }
 
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event)) {
+      const isStatusUpdateError =
+        isStatusUpdate(event) && event.type === "error";
+
+      const isAgentStateChangeError =
+        isAgentStateChangeObservation(event) &&
+        event.extras.agent_state === "error";
+
+      if (isStatusUpdateError || isAgentStateChangeError) {
+        const errorMessage = isStatusUpdate(event)
+          ? event.message
+          : event.extras.reason || "Unknown error";
+
+        trackError({
+          message: errorMessage,
+          source: "chat",
+          metadata: { msgId: event.id },
+        });
+        setErrorMessage(errorMessage);
+
+        return;
+      }
+
       if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
         setParsedEvents((prevEvents) => [...prevEvents, event]);
       }
