@@ -203,6 +203,7 @@ async def run_controller(
         AgentState.PAUSED,
         AgentState.STOPPED,
     ]
+
     try:
         await run_agent_until_done(controller, runtime, memory, end_states)
     except Exception as e:
