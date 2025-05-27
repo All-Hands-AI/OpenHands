@@ -6,19 +6,21 @@ from openhands.runtime.base import CommandResult
 
 class AsyncBashSession:
     @staticmethod
-    async def execute(command: str, work_dir: str, username: str | None = None) -> CommandResult:
+    async def execute(
+        command: str, work_dir: str, username: str | None = None
+    ) -> CommandResult:
         """Execute a command in the bash session asynchronously."""
         work_dir = os.path.abspath(work_dir)
 
         if not os.path.exists(work_dir):
-            raise ValueError(f'Work directory {work_dir} does not exist.')
+            raise ValueError(f"Work directory {work_dir} does not exist.")
 
         command = command.strip()
         if not command:
-            return CommandResult(content='', exit_code=0)
+            return CommandResult(content="", exit_code=0)
 
         # Handle username similar to BashSession
-        if username in ['root', 'openhands']:
+        if username in ["root", "openhands"]:
             # This starts a non-login (new) shell for the given user
             # Escape double quotes in the command
             escaped_command = command.replace('"', '\\"')
@@ -36,11 +38,11 @@ class AsyncBashSession:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(), timeout=30
                 )
-                output = stdout.decode('utf-8')
+                output = stdout.decode("utf-8")
 
                 if stderr:
-                    output = stderr.decode('utf-8')
-                    print(f'!##! Error running command: {stderr.decode("utf-8")}')
+                    output = stderr.decode("utf-8")
+                    print(f"!##! Error running command: {stderr.decode('utf-8')}")
 
                 return CommandResult(content=output, exit_code=process.returncode or 0)
 
@@ -53,9 +55,9 @@ class AsyncBashSession:
                 except asyncio.TimeoutError:
                     process.kill()  # Force kill if it doesn't terminate cleanly
 
-                return CommandResult(content='Command timed out.', exit_code=-1)
+                return CommandResult(content="Command timed out.", exit_code=-1)
 
         except Exception as e:
             return CommandResult(
-                content=f'Error running command: {str(e)}', exit_code=-1
+                content=f"Error running command: {str(e)}", exit_code=-1
             )
