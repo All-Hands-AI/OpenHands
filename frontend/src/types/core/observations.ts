@@ -6,11 +6,12 @@ export interface AgentStateChangeObservation
   source: "agent";
   extras: {
     agent_state: AgentState;
+    reason?: string;
   };
 }
 
 export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
-  source: "agent";
+  source: "agent" | "user";
   extras: {
     command: string;
     hidden?: boolean;
