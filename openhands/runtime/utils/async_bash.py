@@ -6,7 +6,7 @@ from openhands.runtime.base import CommandResult
 
 class AsyncBashSession:
     @staticmethod
-    async def execute(command: str, work_dir: str) -> CommandResult:
+    async def execute(command: str, work_dir: str, username: str | None = None) -> CommandResult:
         """Execute a command in the bash session asynchronously."""
         work_dir = os.path.abspath(work_dir)
 
@@ -16,6 +16,13 @@ class AsyncBashSession:
         command = command.strip()
         if not command:
             return CommandResult(content='', exit_code=0)
+
+        # Handle username similar to BashSession
+        if username in ['root', 'openhands']:
+            # This starts a non-login (new) shell for the given user
+            # Escape double quotes in the command
+            escaped_command = command.replace('"', '\\"')
+            command = f'su {username} -c "{escaped_command}"'
 
         try:
             process = await asyncio.subprocess.create_subprocess_shell(
