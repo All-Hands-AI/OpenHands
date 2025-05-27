@@ -23,6 +23,7 @@ import { SetupPaymentModal } from "#/components/features/payment/setup-payment-m
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
+import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
@@ -87,6 +88,9 @@ export default function MainApp() {
 
   // Auto-login if login method is stored in local storage
   useAutoLogin();
+  
+  // Handle authentication callback and set login method after successful authentication
+  useAuthCallback();
 
   React.useEffect(() => {
     // Don't change language when on TOS page
