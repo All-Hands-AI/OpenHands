@@ -131,14 +131,53 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
-  // Check if login method exists in local storage
-  const loginMethodExists = React.useMemo(() => {
+  // Function to check if login method exists in local storage
+  const checkLoginMethodExists = React.useCallback(() => {
     // Only check localStorage if we're in a browser environment
     if (typeof window !== "undefined" && window.localStorage) {
       return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
     }
     return false;
   }, []);
+
+  // State to track if login method exists
+  const [loginMethodExists, setLoginMethodExists] = React.useState(
+    checkLoginMethodExists(),
+  );
+
+  // Listen for storage events to update loginMethodExists when logout happens
+  React.useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === LOCAL_STORAGE_KEYS.LOGIN_METHOD) {
+        setLoginMethodExists(checkLoginMethodExists());
+      }
+    };
+
+    // Also check on window focus, as logout might happen in another tab
+    const handleWindowFocus = () => {
+      setLoginMethodExists(checkLoginMethodExists());
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [checkLoginMethodExists]);
+
+  // Check login method status when auth status changes
+  React.useEffect(() => {
+    // When auth status changes (especially on logout), recheck login method
+    setLoginMethodExists(checkLoginMethodExists());
+  }, [isAuthed, checkLoginMethodExists]);
+
+  // Recheck on component mount to ensure we have the latest value after page reload
+  React.useEffect(() => {
+    // This will run once when the component mounts, ensuring we have the latest value
+    setLoginMethodExists(checkLoginMethodExists());
+  }, [checkLoginMethodExists]);
 
   const renderAuthModal =
     !isAuthed &&
