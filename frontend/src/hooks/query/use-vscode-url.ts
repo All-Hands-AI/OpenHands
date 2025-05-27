@@ -22,7 +22,7 @@ export const useVSCodeUrl = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const enabled =
     conversation?.status === "RUNNING" &&
-    RUNTIME_INACTIVE_STATES.includes(curAgentState);
+    !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   return useQuery<VSCodeUrlResult>({
     queryKey: ["vscode_url", conversationId],
