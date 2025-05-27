@@ -411,12 +411,9 @@ class AgentSession:
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
-        )
-
-        msg += (
             f'Agent: {agent.name}\n'
             f'Runtime: {self.runtime.__class__.__name__}\n'
-            f'Plugins: {agent.sandbox_plugins}\n'
+            f'Plugins: {[p.name for p in agent.sandbox_plugins] if agent.sandbox_plugins else "None"}\n'
             '-------------------------------------------------------------------------------------------'
         )
         self.logger.debug(msg)
