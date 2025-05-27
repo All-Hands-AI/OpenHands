@@ -853,7 +853,7 @@ if __name__ == '__main__':
         async with capture_logs('mcpm.router.router') as log_capture:
             await mcp_router.update_servers(servers_wait_for_update)
         router_error_log = log_capture.getvalue()
-        
+
         logger.info(
             f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
         )
