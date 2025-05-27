@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import hotToast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -16,7 +16,6 @@ interface FeedbackFormProps {
 
 export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
   const { t } = useTranslation();
-  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const copiedToClipboardToast = () => {
     hotToast(t(I18nKey.FEEDBACK$PASSWORD_COPIED_MESSAGE), {
@@ -63,7 +62,6 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    setSubmitAttempted(true);
     const formData = new FormData(event.currentTarget);
 
     const email = formData.get("email")?.toString() || "";
@@ -86,12 +84,8 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           const { message, feedback_id, password } = data.body; // eslint-disable-line
           const link = `${VIEWER_PAGE}?share_id=${feedback_id}`;
           shareFeedbackToast(message, link, password);
-          setSubmitAttempted(false);
           onClose();
         },
-        onError: () => {
-          setSubmitAttempted(false);
-        }
       },
     );
   };
@@ -134,7 +128,9 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           className="grow"
           isDisabled={isPending}
         >
-          {isPending ? t(I18nKey.FEEDBACK$SUBMITTING_LABEL) : t(I18nKey.FEEDBACK$SHARE_LABEL)}
+          {isPending
+            ? t(I18nKey.FEEDBACK$SUBMITTING_LABEL) || "Submitting..."
+            : t(I18nKey.FEEDBACK$SHARE_LABEL)}
         </BrandButton>
         <BrandButton
           type="button"
@@ -146,9 +142,10 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           {t(I18nKey.FEEDBACK$CANCEL_LABEL)}
         </BrandButton>
       </div>
-      {submitAttempted && isPending && (
+      {isPending && (
         <p className="text-sm text-center text-neutral-400">
-          {t(I18nKey.FEEDBACK$SUBMITTING_MESSAGE)}
+          {t(I18nKey.FEEDBACK$SUBMITTING_MESSAGE) ||
+            "Submitting your feedback, please wait..."}
         </p>
       )}
     </form>
