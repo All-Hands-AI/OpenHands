@@ -213,11 +213,12 @@ export function WsClientProvider({
 
       // Invalidate diffs cache when a file is edited or written
       if (
-        isFileEditAction(event) ||
-        isFileWriteAction(event) ||
-        isCommandAction(event)
+        !messageRateHandler.isUnderThreshold &&
+        (isFileEditAction(event) ||
+          isFileWriteAction(event) ||
+          isCommandAction(event))
       ) {
-        queryClient.removeQueries({
+        queryClient.invalidateQueries({
           queryKey: ["file_changes", conversationId],
         });
 
