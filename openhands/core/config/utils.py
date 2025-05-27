@@ -154,24 +154,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
 
     # Process core section if present
     for key, value in core_config.items():
-        if key == 'sandbox' and isinstance(value, dict):
-            # Handle [core.sandbox] section
-            print(f'DEBUG: Found [core.sandbox] section: {value}')
-            for sandbox_key, sandbox_value in value.items():
-                print(
-                    f'DEBUG: Processing [core.sandbox] key: {sandbox_key}={sandbox_value}'
-                )
-                if hasattr(cfg.sandbox, sandbox_key):
-                    print(f'DEBUG: Setting cfg.sandbox.{sandbox_key} = {sandbox_value}')
-                    setattr(cfg.sandbox, sandbox_key, sandbox_value)
-                    print(
-                        f'DEBUG: After setting, cfg.sandbox.{sandbox_key} = {getattr(cfg.sandbox, sandbox_key)}'
-                    )
-                else:
-                    logger.openhands_logger.warning(
-                        f'Unknown config key "{sandbox_key}" in [core.sandbox] section'
-                    )
-        elif hasattr(cfg, key):
+        if hasattr(cfg, key):
             setattr(cfg, key, value)
         else:
             logger.openhands_logger.warning(
@@ -218,17 +201,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process sandbox section if present
     if 'sandbox' in toml_config:
         try:
-            # Save any values set from [core.sandbox] section
-            core_sandbox_volumes = cfg.sandbox.volumes
-
             sandbox_mapping = SandboxConfig.from_toml_section(toml_config['sandbox'])
             # We only use the base sandbox config for now
             if 'sandbox' in sandbox_mapping:
                 cfg.sandbox = sandbox_mapping['sandbox']
-
-                # Restore values from [core.sandbox] section if they were set and not overridden
-                if core_sandbox_volumes is not None and cfg.sandbox.volumes is None:
-                    cfg.sandbox.volumes = core_sandbox_volumes
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
@@ -329,15 +305,7 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 def finalize_config(cfg: AppConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the sandbox.volumes parameter
-    if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        logger.openhands_logger.warning(
-            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
-        )
     if cfg.sandbox.volumes is not None:
-        # Store the original volumes value
-        original_volumes = cfg.sandbox.volumes
-
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
 
@@ -378,11 +346,13 @@ def finalize_config(cfg: AppConfig) -> None:
                     f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
                 )
 
-        # Restore the original volumes value
-        cfg.sandbox.volumes = original_volumes
-
     # Handle the deprecated workspace_* parameters
     elif cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
+        logger.openhands_logger.warning(
+            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
+            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
+        )
+
         if cfg.workspace_base is not None:
             cfg.workspace_base = os.path.abspath(cfg.workspace_base)
             if cfg.workspace_mount_path is None:
@@ -412,19 +382,6 @@ def finalize_config(cfg: AppConfig) -> None:
             get_or_create_jwt_secret(
                 get_file_store(cfg.file_store, cfg.file_store_path)
             )
-        )
-
-    # If CLIRuntime is selected, disable Jupyter for all agents
-    # Assuming 'cli' is the identifier for CLIRuntime
-    if cfg.runtime and cfg.runtime.lower() == 'cli':
-        for age_nt_name, agent_config in cfg.agents.items():
-            if agent_config.enable_jupyter:
-                agent_config.enable_jupyter = False
-            if agent_config.enable_browsing:
-                agent_config.enable_browsing = False
-        logger.openhands_logger.debug(
-            'Automatically disabled Jupyter plugin and browsing for all agents '
-            'because CLIRuntime is selected and does not support IPython execution.'
         )
 
 
@@ -767,12 +724,6 @@ def get_parser() -> argparse.ArgumentParser:
         help='GitHub repository to clone (format: owner/repo)',
         type=str,
         default=None,
-    )
-    parser.add_argument(
-        '--override-cli-mode',
-        help='Override the default settings for CLI mode',
-        type=bool,
-        default=False,
     )
     return parser
 
