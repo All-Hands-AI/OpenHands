@@ -26,7 +26,6 @@ import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
-import i18n from "#/i18n";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 
@@ -183,7 +182,8 @@ export function ChatInterface() {
 
         {errorMessage && (
           <ErrorMessageBanner
-            message={i18n.exists(errorMessage) ? errorMessage : errorMessage}
+            message={errorMessage}
+            billingUrl="https://app.all-hands.dev/billing"
           />
         )}
 
