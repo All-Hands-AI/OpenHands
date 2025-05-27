@@ -24,7 +24,14 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     while using standard CORS rules for other origins.
     """
 
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(
+        self,
+        app,
+        allow_origins=None,
+        allow_credentials=False,
+        allow_methods=None,
+        allow_headers=None,
+    ):
         allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
         if allow_origins_str:
             allow_origins = tuple(
