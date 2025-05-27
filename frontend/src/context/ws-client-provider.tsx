@@ -160,6 +160,7 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    removeErrorMessage();
   }
 
   function handleMessage(event: Record<string, unknown>) {
