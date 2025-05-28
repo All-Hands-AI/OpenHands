@@ -1,8 +1,9 @@
 import json
+import os
 import urllib.parse
-from typing import Optional, Union
+from typing import Union
 
-import requests
+import httpx
 from requests.exceptions import RequestException
 
 from openhands.core.logger import openhands_logger as logger
@@ -19,21 +20,18 @@ class HTTPFileStore(FileStore):
     The server should implement the following endpoints:
     - POST /files/{path} - Write a file
     - GET /files/{path} - Read a file
-    - GET /files/{path}/list - List files in a directory
+    - OPTIONS /files/{path} - List files in a directory
     - DELETE /files/{path} - Delete a file or directory
 
     Authentication can be provided via API key, basic auth, or bearer token.
     """
+    base_url: str
+    client: httpx.Client
 
     def __init__(
         self,
         base_url: str,
-        api_key: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        bearer_token: Optional[str] = None,
-        timeout: int = 30,
-        verify_ssl: bool = True,
+        client: httpx.Client | None = None,
     ) -> None:
         """
         Initialize the HTTP file store.
@@ -48,22 +46,12 @@ class HTTPFileStore(FileStore):
             verify_ssl: Whether to verify SSL certificates
         """
         self.base_url = base_url.rstrip('/')
-        self.timeout = timeout
-        self.verify_ssl = verify_ssl
-
-        # Set up authentication
-        self.auth = None
-        self.headers = {}
-
-        if api_key:
-            self.headers['X-API-Key'] = api_key
-        elif username and password:
-            self.auth = (username, password)
-        elif bearer_token:
-            self.headers['Authorization'] = f'Bearer {bearer_token}'
-
-        # Create a session for connection pooling
-        self.session = requests.Session()
+        if not client:
+            headers = {}
+            if os.getenv('SESSION_API_KEY'):
+                headers['X-Session-API-Key'] = os.getenv('SESSION_API_KEY')
+            client = httpx.Client(headers=headers)
+        self.client = client
 
     def _get_file_url(self, path: str) -> str:
         """
@@ -101,14 +89,7 @@ class HTTPFileStore(FileStore):
             if isinstance(contents, str):
                 contents = contents.encode('utf-8')
 
-            response = self.session.post(
-                url,
-                data=contents,
-                headers=self.headers,
-                auth=self.auth,
-                timeout=self.timeout,
-                verify=self.verify_ssl,
-            )
+            response = self.client.post(url, data=contents)
 
             if response.status_code not in (200, 201, 204):
                 raise FileNotFoundError(
@@ -137,13 +118,7 @@ class HTTPFileStore(FileStore):
         url = self._get_file_url(path)
 
         try:
-            response = self.session.get(
-                url,
-                headers=self.headers,
-                auth=self.auth,
-                timeout=self.timeout,
-                verify=self.verify_ssl,
-            )
+            response = self.client.get(url)
 
             if response.status_code != 200:
                 raise FileNotFoundError(
@@ -169,16 +144,10 @@ class HTTPFileStore(FileStore):
         Raises:
             FileNotFoundError: If the directory cannot be listed
         """
-        url = f'{self._get_file_url(path)}/list'
+        url = f'{self._get_file_url(path)}'
 
         try:
-            response = self.session.get(
-                url,
-                headers=self.headers,
-                auth=self.auth,
-                timeout=self.timeout,
-                verify=self.verify_ssl,
-            )
+            response = self.client.options(url)
 
             if response.status_code != 200:
                 if response.status_code == 404:
@@ -219,13 +188,7 @@ class HTTPFileStore(FileStore):
         url = self._get_file_url(path)
 
         try:
-            response = self.session.delete(
-                url,
-                headers=self.headers,
-                auth=self.auth,
-                timeout=self.timeout,
-                verify=self.verify_ssl,
-            )
+            response = self.client.delete(url)
 
             # 404 is acceptable for delete operations
             if response.status_code not in (200, 202, 204, 404):
