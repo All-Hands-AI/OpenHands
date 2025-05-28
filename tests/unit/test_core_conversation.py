@@ -36,12 +36,12 @@ class TestOpenHands(unittest.TestCase):
     @patch('openhands.core.openhands.create_runtime')
     @patch('openhands.core.openhands.EventStream')
     @patch('openhands.core.openhands.LLM')
-    @patch('openhands.core.openhands.Agent')
+    @patch('openhands.core.openhands.create_agent')
     @patch('openhands.core.openhands.AgentController')
     def test_create_conversation(
         self,
         mock_agent_controller,
-        mock_agent,
+        mock_create_agent,
         mock_llm,
         mock_event_stream,
         mock_create_runtime,
@@ -60,7 +60,7 @@ class TestOpenHands(unittest.TestCase):
         mock_llm.return_value = mock_llm_instance
 
         mock_agent_instance = MagicMock()
-        mock_agent.return_value = mock_agent_instance
+        mock_create_agent.return_value = mock_agent_instance
 
         mock_agent_controller_instance = MagicMock()
         mock_agent_controller.return_value = mock_agent_controller_instance
@@ -73,7 +73,7 @@ class TestOpenHands(unittest.TestCase):
         mock_create_runtime.assert_called_with(config)
         mock_event_stream.assert_called_once()
         mock_llm.assert_called_once()
-        mock_agent.assert_called_once()
+        mock_create_agent.assert_called_once()
         mock_agent_controller.assert_called_once()
 
         # Verify that the returned Conversation has the expected attributes
@@ -86,12 +86,12 @@ class TestOpenHands(unittest.TestCase):
     @patch('openhands.core.openhands.create_runtime')
     @patch('openhands.core.openhands.EventStream')
     @patch('openhands.core.openhands.LLM')
-    @patch('openhands.core.openhands.Agent')
+    @patch('openhands.core.openhands.create_agent')
     @patch('openhands.core.openhands.AgentController')
     def test_create_conversation_with_id(
         self,
         mock_agent_controller,
-        mock_agent,
+        mock_create_agent,
         mock_llm,
         mock_event_stream,
         mock_create_runtime,
@@ -111,7 +111,7 @@ class TestOpenHands(unittest.TestCase):
         mock_llm.return_value = mock_llm_instance
 
         mock_agent_instance = MagicMock()
-        mock_agent.return_value = mock_agent_instance
+        mock_create_agent.return_value = mock_agent_instance
 
         mock_agent_controller_instance = MagicMock()
         mock_agent_controller.return_value = mock_agent_controller_instance
@@ -121,7 +121,8 @@ class TestOpenHands(unittest.TestCase):
         conversation = openhands.create_conversation(conversation_id=conversation_id)
 
         # Verify that the EventStream and AgentController were created with the custom ID
-        mock_event_stream.assert_called_once_with(sid=conversation_id)
+        # The EventStream is called with both sid and file_store
+        self.assertEqual(mock_event_stream.call_args.kwargs['sid'], conversation_id)
         mock_agent_controller.assert_called_once_with(
             agent=mock_agent_instance,
             event_stream=mock_event_stream_instance,
