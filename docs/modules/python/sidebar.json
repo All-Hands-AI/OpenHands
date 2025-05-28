@@ -1,5 +1,5 @@
 {
-  "items": ["python/python"],
+  "items": ["python/python", "python/using-openhands-as-library"],
   "label": "Backend",
   "type": "category"
 }
