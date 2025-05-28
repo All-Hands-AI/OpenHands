@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import uuid
 from typing import TYPE_CHECKING
 
@@ -9,7 +10,6 @@ from openhands.llm.llm import LLM
 from openhands.storage import get_file_store
 
 if TYPE_CHECKING:
-    from openhands.controller.agent_controller import AgentController
     from openhands.core.conversation import Conversation
 
 
@@ -70,6 +70,7 @@ class OpenHands:
 
         # Create an agent controller
         from openhands.controller.agent_controller import AgentController
+
         agent_controller = AgentController(
             agent=agent,
             event_stream=event_stream,
@@ -82,6 +83,7 @@ class OpenHands:
 
         # Create and return a Conversation object
         from openhands.core.conversation import Conversation
+
         return Conversation(
             conversation_id=conversation_id or event_stream.sid,
             runtime=runtime,

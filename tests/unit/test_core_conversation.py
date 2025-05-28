@@ -37,7 +37,7 @@ class TestOpenHands(unittest.TestCase):
     @patch('openhands.core.openhands.EventStream')
     @patch('openhands.core.openhands.LLM')
     @patch('openhands.core.openhands.create_agent')
-    @patch('openhands.core.openhands.AgentController')
+    @patch('openhands.controller.agent_controller.AgentController')
     def test_create_conversation(
         self,
         mock_agent_controller,
@@ -87,7 +87,7 @@ class TestOpenHands(unittest.TestCase):
     @patch('openhands.core.openhands.EventStream')
     @patch('openhands.core.openhands.LLM')
     @patch('openhands.core.openhands.create_agent')
-    @patch('openhands.core.openhands.AgentController')
+    @patch('openhands.controller.agent_controller.AgentController')
     def test_create_conversation_with_id(
         self,
         mock_agent_controller,
