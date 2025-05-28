@@ -284,7 +284,7 @@ class _MockS3Object:
 
 
 @dataclass
-class MockHttpxClient():
+class MockHttpxClient:
     base_url: str
     file_store: FileStore = field(default_factory=InMemoryFileStore)
 

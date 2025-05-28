@@ -27,6 +27,7 @@ class HTTPFileStore(FileStore):
     A (mock) server implementation is available in the MockHttpxClient class
     located at /tests/unit/test_storage.py
     """
+
     base_url: str
     client: httpx.Client
 
