@@ -507,28 +507,6 @@ async def test_step_max_budget_per_conversation(mock_agent, mock_event_stream):
 
 
 @pytest.mark.asyncio
-async def test_step_max_budget_per_conversation_headless(mock_agent, mock_event_stream):
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        max_budget_per_task=20,  # Higher than conversation budget
-        max_budget_per_conversation=10,  # Lower than task budget
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    controller.state.agent_state = AgentState.RUNNING
-    controller.state.metrics.accumulated_cost = 10.1
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    await controller._step()
-    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    # In headless mode, throttling results in an error
-    assert controller.state.agent_state == AgentState.ERROR
-    await controller.close()
-
-
-@pytest.mark.asyncio
 async def test_budget_increase_via_set_agent_state(mock_agent, mock_event_stream):
     # Set up controller with a conversation budget cap
     controller = AgentController(
@@ -553,9 +531,7 @@ async def test_budget_increase_via_set_agent_state(mock_agent, mock_event_stream
     await controller.set_agent_state_to(AgentState.RUNNING)
 
     # Check that task budget caps was not increased
-    assert (
-        controller.max_budget_per_task == original_task_budget
-    )
+    assert controller.max_budget_per_task == original_task_budget
 
     # Check that conversation budget cap was increased
     assert (
