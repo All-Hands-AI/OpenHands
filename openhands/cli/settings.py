@@ -158,18 +158,33 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    provider = None
-    model = None
+    # Set default provider to anthropic
+    provider = 'anthropic'
+    # Set default model to claude-sonnet-4-20250514
+    model = 'claude-sonnet-4-20250514'
     api_key = None
 
     try:
-        provider = await get_validated_input(
-            session,
-            '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
-            completer=provider_completer,
-            validator=lambda x: x in organized_models,
-            error_message='Invalid provider selected',
+        # Show the default provider but allow changing it
+        print_formatted_text(
+            HTML('\n<grey>Default provider: </grey><green>anthropic</green>')
         )
+        change_provider = (
+            cli_confirm(
+                'Do you want to use a different provider?',
+                ['No, use anthropic', 'Yes, select another provider'],
+            )
+            == 1
+        )
+
+        if change_provider:
+            provider = await get_validated_input(
+                session,
+                '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
+                completer=provider_completer,
+                validator=lambda x: x in organized_models,
+                error_message='Invalid provider selected',
+            )
 
         provider_models = organized_models[provider]['models']
         if provider == 'openai':
@@ -183,14 +198,40 @@ async def modify_llm_settings_basic(
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
-        model_completer = FuzzyWordCompleter(provider_models)
-        model = await get_validated_input(
-            session,
-            '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
-            completer=model_completer,
-            validator=lambda x: x in provider_models,
-            error_message=f'Invalid model selected for provider {provider}',
-        )
+        # Show the default model but allow changing it
+        if provider == 'anthropic':
+            print_formatted_text(
+                HTML(
+                    '\n<grey>Default model: </grey><green>claude-sonnet-4-20250514</green>'
+                )
+            )
+            change_model = (
+                cli_confirm(
+                    'Do you want to use a different model?',
+                    ['No, use claude-sonnet-4-20250514', 'Yes, select another model'],
+                )
+                == 1
+            )
+
+            if change_model:
+                model_completer = FuzzyWordCompleter(provider_models)
+                model = await get_validated_input(
+                    session,
+                    '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
+                    completer=model_completer,
+                    validator=lambda x: x in provider_models,
+                    error_message=f'Invalid model selected for provider {provider}',
+                )
+        else:
+            # For other providers, always prompt for model selection
+            model_completer = FuzzyWordCompleter(provider_models)
+            model = await get_validated_input(
+                session,
+                '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
+                completer=model_completer,
+                validator=lambda x: x in provider_models,
+                error_message=f'Invalid model selected for provider {provider}',
+            )
 
         api_key = await get_validated_input(
             session,
