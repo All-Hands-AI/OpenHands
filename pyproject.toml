@@ -64,7 +64,17 @@ browsergym-core = "0.13.3"                        # integrate browsergym-core as
 # FIXME: These should no longer be required
 json-repair = "*"
 
-# These are integrations that should probably be optional
+# TODO: Should these go into the runtime group?
+ipywidgets = "^8.1.5"
+qtconsole = "^5.6.1"
+PyPDF2 = "*"
+python-pptx = "*"
+pylatexenc = "*"
+python-docx = "*"
+html2text = "*"
+libtmux = ">=0.37,<0.40"
+
+# TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
 daytona-sdk = "0.18.1"
@@ -110,14 +120,6 @@ jupyterlab = "*"
 notebook = "*"
 jupyter_kernel_gateway = "*"
 flake8 = "*"
-ipywidgets = "^8.1.5"
-qtconsole = "^5.6.1"
-PyPDF2 = "*"
-python-pptx = "*"
-pylatexenc = "*"
-python-docx = "*"
-html2text = "*"
-libtmux = ">=0.37,<0.40"
 
 [tool.poetry.group.evaluation]
 optional = true
