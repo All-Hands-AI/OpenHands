@@ -103,7 +103,7 @@ async def search_events(
     end_id: int | None = None,
     reverse: bool = False,
     filter: EventFilter | None = None,
-    limit: int = 20
+    limit: int = 20,
 ):
     """Search through the event stream with filtering and pagination.
     Args:
@@ -123,22 +123,24 @@ async def search_events(
     """
     if not request.state.conversation:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='ServerConversation not found'
         )
     if limit < 0 or limit > 100:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
         )
-    
+
     # Get matching events from the stream
     event_stream = request.state.conversation.event_stream
-    events = list(event_stream.search_events(
-        start_id=start_id,
-        end_id=end_id,
-        reverse=reverse,
-        filter=filter,
-        limit=limit + 1,
-    ))
+    events = list(
+        event_stream.search_events(
+            start_id=start_id,
+            end_id=end_id,
+            reverse=reverse,
+            filter=filter,
+            limit=limit + 1,
+        )
+    )
 
     # Check if there are more events
     has_more = len(events) > limit
@@ -156,4 +158,4 @@ async def search_events(
 async def add_event(request: Request):
     data = request.json()
     conversation_manager.send_to_event_stream(request.state.sid, data)
-    return JSONResponse({"success": True})
+    return JSONResponse({'success': True})
