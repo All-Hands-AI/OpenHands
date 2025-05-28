@@ -61,6 +61,9 @@ mcpm = "1.12.0"
 python-frontmatter = "^1.1.0"
 
 [tool.poetry.group.integrations]
+optional = true
+
+[tool.poetry.group.integrations.dependencies]
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
 daytona-sdk = "0.18.1"
