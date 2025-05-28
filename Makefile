@@ -151,7 +151,7 @@ install-python-dependencies:
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
-		poetry install; \
+		poetry install --with dev,test; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
