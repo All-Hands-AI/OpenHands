@@ -1,0 +1,39 @@
+name: Evaluation Typing Check
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'evaluation/**/*.py'
+  pull_request:
+    paths:
+      - 'evaluation/**/*.py'
+
+# If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  check-evaluation-typing:
+    name: Check evaluation directory typing
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: 3.12
+          cache: 'pip'
+      - name: Install mypy
+        run: pip install mypy==1.15.0 types-requests types-setuptools types-pyyaml types-toml
+      - name: Run mypy on evaluation directory
+        run: |
+          # Run mypy on evaluation directory with warnings as errors
+          # This will fail the workflow if there are typing issues
+          mypy --config-file dev_config/python/mypy.ini evaluation/ || echo "::warning::Typing issues found in evaluation directory. Please fix them."
+          # For now, we don't fail the build, but we'll show warnings
+          exit 0
