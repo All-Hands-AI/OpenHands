@@ -342,7 +342,7 @@ def test_exception_during_execution(windows_bash_session):
     mock_powershell_class = MagicMock()
     # Configure its Create method (which is called in execute) to raise an exception
     # This simulates an error during the creation of the PowerShell object itself.
-    mock_powershell_class.Create.conversation_ide_effect = Exception(
+    mock_powershell_class.Create.side_effect = Exception(
         'Test exception from mocked Create'
     )
 
