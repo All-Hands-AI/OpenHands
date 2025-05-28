@@ -332,8 +332,12 @@ async def run_session(
 
 async def run_setup_flow(
     config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
-    """Run the setup flow to configure initial settings."""
+) -> bool:
+    """Run the setup flow to configure initial settings.
+
+    Returns:
+        bool: True if settings were successfully configured, False otherwise.
+    """
     print_formatted_text(HTML('\n<b>Welcome to OpenHands!</b>'))
     print_formatted_text(
         HTML('<grey>No settings found. Starting initial setup...</grey>\n')
@@ -341,6 +345,10 @@ async def run_setup_flow(
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
+
+    # Check if settings were successfully configured
+    settings = await settings_store.load()
+    return settings is not None
 
 
 async def main(loop: asyncio.AbstractEventLoop) -> None:
@@ -359,14 +367,22 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
 
     # If settings don't exist, automatically enter the setup flow
     if not settings:
-        await run_setup_flow(config, settings_store)
-        # Reload settings after setup
-        settings = await settings_store.load()
+        settings_configured = await run_setup_flow(config, settings_store)
 
-        # If settings are still not configured after setup flow, exit
-        if not settings:
-            print('Setup was not completed. Exiting.')
-            return
+        if settings_configured:
+            print_formatted_text(
+                HTML('\n<green>Settings updated successfully!</green>')
+            )
+            print_formatted_text(
+                HTML(
+                    '<grey>Please restart OpenHands CLI to use your new settings.</grey>\n'
+                )
+            )
+        else:
+            print_formatted_text(HTML('\n<red>Setup was not completed.</red>\n'))
+
+        # Always exit after setup flow, regardless of success or failure
+        return
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
