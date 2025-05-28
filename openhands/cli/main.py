@@ -346,9 +346,6 @@ async def run_setup_flow(
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
 
-    # Check if settings were successfully configured
-    settings = await settings_store.load()
-    return settings is not None
 
 
 async def main(loop: asyncio.AbstractEventLoop) -> None:
@@ -369,20 +366,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     if not settings:
         settings_configured = await run_setup_flow(config, settings_store)
 
-        if settings_configured:
-            print_formatted_text(
-                HTML('\n<green>Settings updated successfully!</green>')
-            )
-            print_formatted_text(
-                HTML(
-                    '<grey>Please restart OpenHands CLI to use your new settings.</grey>\n'
-                )
-            )
-        else:
-            print_formatted_text(HTML('\n<red>Setup was not completed.</red>\n'))
-
-        # Always exit after setup flow, regardless of success or failure
-        return
+        settings = await settings_store.load()
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
