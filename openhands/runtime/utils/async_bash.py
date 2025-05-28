@@ -20,6 +20,15 @@ class AsyncBashSession:
         if not command:
             return CommandResult(content='', exit_code=0)
 
+        env = {}
+        if username:
+            try:
+                user_info = pwd.getpwnam(username)
+                env['HOME'] = user_info.pw_dir
+                env['USER'] = username
+                env['LOGNAME'] = username
+            except KeyError:
+                raise ValueError(f'User {username} does not exist.')
         # Prepare to run the command
         try:
             process = await asyncio.subprocess.create_subprocess_shell(
@@ -28,6 +37,7 @@ class AsyncBashSession:
                 stderr=asyncio.subprocess.PIPE,
                 cwd=work_dir,
                 user=username,
+                env=env,
             )
 
             try:
