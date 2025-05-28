@@ -551,13 +551,14 @@ async def test_budget_increase_after_user_message(mock_agent, mock_event_stream)
 
     # Original budget cap
     original_budget = controller.max_budget_per_conversation
+    initial_budget = controller._initial_max_budget_per_conversation
 
     # Simulate user sending a message after hitting the budget cap
     user_message = MessageAction(content='Please continue', source=EventSource.USER)
     await controller._on_event(user_message)
 
-    # Check that the budget cap was increased by 50%
-    assert controller.max_budget_per_conversation == original_budget * 1.5
+    # Check that the budget cap was increased by adding the initial budget
+    assert controller.max_budget_per_conversation == original_budget + initial_budget
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     assert controller._last_limit_hit is None
 

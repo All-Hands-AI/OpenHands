@@ -164,6 +164,7 @@ class AgentController:
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
+        self._initial_max_budget_per_conversation = max_budget_per_conversation
         self._last_limit_hit: str | None = (
             None  # Track the last limit type that was hit
         )
@@ -423,12 +424,13 @@ class AgentController:
             and self._last_limit_hit is not None
             and 'budget' in self._last_limit_hit
         ):
-            # Increase the budget cap by 50%
+            # Increase the budget cap by adding the initial budget
             if (
                 self._last_limit_hit == 'task budget'
                 and self.max_budget_per_task is not None
+                and self._initial_max_budget_per_task is not None
             ):
-                self.max_budget_per_task *= 1.5
+                self.max_budget_per_task += self._initial_max_budget_per_task
                 self.log(
                     'info',
                     f'Increasing task budget cap to {self.max_budget_per_task:.2f} after user continued conversation',
@@ -436,8 +438,11 @@ class AgentController:
             elif (
                 self._last_limit_hit == 'conversation budget'
                 and self.max_budget_per_conversation is not None
+                and self._initial_max_budget_per_conversation is not None
             ):
-                self.max_budget_per_conversation *= 1.5
+                self.max_budget_per_conversation += (
+                    self._initial_max_budget_per_conversation
+                )
                 self.log(
                     'info',
                     f'Increasing conversation budget cap to {self.max_budget_per_conversation:.2f} after user continued conversation',
@@ -665,6 +670,20 @@ class AgentController:
             ):
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
                     self.max_budget_per_task += self._initial_max_budget_per_task
+
+            # Handle conversation budget cap
+            if (
+                self.state.metrics.accumulated_cost is not None
+                and self.max_budget_per_conversation is not None
+                and self._initial_max_budget_per_conversation is not None
+            ):
+                if (
+                    self.state.metrics.accumulated_cost
+                    >= self.max_budget_per_conversation
+                ):
+                    self.max_budget_per_conversation += (
+                        self._initial_max_budget_per_conversation
+                    )
         elif self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
