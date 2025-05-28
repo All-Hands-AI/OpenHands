@@ -242,7 +242,10 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
@@ -263,7 +266,10 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
