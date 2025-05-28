@@ -1,15 +1,19 @@
-import { RefObject, useEffect, useState, useCallback } from "react";
+import { RefObject, useEffect, useState, useCallback, useRef } from "react";
 
 export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
   // Track whether we should auto-scroll to the bottom when content changes
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+  const [autoscroll, setAutoscroll] = useState(true);
 
   // Track whether the user is currently at the bottom of the scroll area
   const [hitBottom, setHitBottom] = useState(true);
 
+  // Store previous scroll position to detect scroll direction
+  const prevScrollTopRef = useRef<number>(0);
+
   // Check if the scroll position is at the bottom
   const isAtBottom = useCallback((element: HTMLElement): boolean => {
-    const bottomThreshold = 10; // Pixels from bottom to consider "at bottom"
+    // Use a fixed 20px buffer
+    const bottomThreshold = 20;
     const bottomPosition = element.scrollTop + element.clientHeight;
     return bottomPosition >= element.scrollHeight - bottomThreshold;
   }, []);
@@ -20,9 +24,24 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
       const isCurrentlyAtBottom = isAtBottom(e);
       setHitBottom(isCurrentlyAtBottom);
 
-      // Only update shouldScrollToBottom when user manually scrolls
-      // This prevents content changes from affecting our scroll behavior decision
-      setShouldScrollToBottom(isCurrentlyAtBottom);
+      // Get current scroll position
+      const currentScrollTop = e.scrollTop;
+
+      // Detect scroll direction
+      const isScrollingUp = currentScrollTop < prevScrollTopRef.current;
+
+      // Update previous scroll position for next comparison
+      prevScrollTopRef.current = currentScrollTop;
+
+      // Turn off autoscroll only when scrolling up
+      if (isScrollingUp) {
+        setAutoscroll(false);
+      }
+
+      // Turn on autoscroll when scrolled to the bottom
+      if (isCurrentlyAtBottom) {
+        setAutoscroll(true);
+      }
     },
     [isAtBottom],
   );
@@ -32,8 +51,8 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
     const dom = scrollRef.current;
     if (dom) {
       requestAnimationFrame(() => {
-        // Set shouldScrollToBottom to true when manually scrolling to bottom
-        setShouldScrollToBottom(true);
+        // Set autoscroll to true when manually scrolling to bottom
+        setAutoscroll(true);
         setHitBottom(true);
 
         // Use smooth scrolling but with a fast duration
@@ -47,8 +66,8 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
 
   // Auto-scroll effect that runs when content changes
   useEffect(() => {
-    // Only auto-scroll if the user was already at the bottom
-    if (shouldScrollToBottom) {
+    // Only auto-scroll if autoscroll is enabled
+    if (autoscroll) {
       const dom = scrollRef.current;
       if (dom) {
         requestAnimationFrame(() => {
@@ -63,8 +82,8 @@ export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
 
   return {
     scrollRef,
-    autoScroll: shouldScrollToBottom,
-    setAutoScroll: setShouldScrollToBottom,
+    autoScroll: autoscroll,
+    setAutoScroll: setAutoscroll,
     scrollDomToBottom,
     hitBottom,
     setHitBottom,

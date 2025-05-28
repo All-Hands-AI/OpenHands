@@ -536,14 +536,20 @@ def convert_fncall_messages_to_non_fncall_messages(
             if isinstance(content, str):
                 content = prefix + content
             elif isinstance(content, list):
-                if content and content[-1]['type'] == 'text':
-                    content[-1]['text'] = prefix + content[-1]['text']
+                if content and (
+                    first_text_content := next(
+                        (c for c in content if c['type'] == 'text'), None
+                    )
+                ):
+                    first_text_content['text'] = prefix + first_text_content['text']
                 else:
                     content = [{'type': 'text', 'text': prefix}] + content
             else:
                 raise FunctionCallConversionError(
                     f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                 )
+            if 'cache_control' in message:
+                content[-1]['cache_control'] = {'type': 'ephemeral'}
             converted_messages.append({'role': 'user', 'content': content})
         else:
             raise FunctionCallConversionError(
@@ -576,7 +582,7 @@ def _extract_and_validate_params(
     found_params = set()
     for param_match in param_matches:
         param_name = param_match.group(1)
-        param_value = param_match.group(2).strip()
+        param_value = param_match.group(2)
 
         # Validate parameter is allowed
         if allowed_params and param_name not in allowed_params:

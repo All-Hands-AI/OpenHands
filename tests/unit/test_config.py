@@ -683,6 +683,29 @@ def test_agent_config_condenser_with_no_enabled():
     assert isinstance(agent_config.condenser, NoOpCondenserConfig)
 
 
+def test_sandbox_volumes_toml(default_config, temp_toml_file):
+    """Test that volumes configuration under [sandbox] works correctly."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[sandbox]
+volumes = "/home/user/mydir:/workspace:rw,/data:/data:ro"
+timeout = 1
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+    finalize_config(default_config)
+
+    # Check that sandbox.volumes is set correctly
+    assert (
+        default_config.sandbox.volumes
+        == '/home/user/mydir:/workspace:rw,/data:/data:ro'
+    )
+    assert default_config.workspace_mount_path == '/home/user/mydir'
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_config.workspace_base == '/home/user/mydir'
+    assert default_config.sandbox.timeout == 1
+
+
 def test_condenser_config_from_toml_basic(default_config, temp_toml_file):
     """Test loading basic condenser configuration from TOML."""
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -995,6 +1018,7 @@ def test_api_keys_repr_str():
         'modal_api_token_secret',
         'runloop_api_key',
         'daytona_api_key',
+        'search_api_key',
     ]
     for attr_name in AppConfig.model_fields.keys():
         if (

@@ -25,6 +25,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     mcp_config: settings.MCP_CONFIG,
     enable_proactive_conversation_starters:
       settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
+    search_api_key: settings.SEARCH_API_KEY?.trim() || "",
   };
 
   await OpenHands.saveSettings(apiSettings);

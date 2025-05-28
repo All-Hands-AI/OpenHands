@@ -207,6 +207,8 @@ def test_default_tools_microagent_exists():
 async def test_add_mcp_tools_from_microagents():
     """Test that add_mcp_tools_to_agent adds tools from microagents."""
     # Import ActionExecutionClient for mocking
+
+    from openhands.core.config.app_config import AppConfig
     from openhands.runtime.impl.action_execution.action_execution_client import (
         ActionExecutionClient,
     )
@@ -217,6 +219,9 @@ async def test_add_mcp_tools_from_microagents():
     mock_memory = MagicMock()
     mock_mcp_config = MCPConfig()
 
+    # Create a mock AppConfig with the MCP config
+    mock_app_config = AppConfig(mcp=mock_mcp_config, search_api_key=None)
+
     # Configure the mock memory to return a microagent MCP config
     mock_stdio_server = MCPStdioServerConfig(
         name='test-tool', command='test-command', args=['test-arg1', 'test-arg2']
@@ -226,7 +231,7 @@ async def test_add_mcp_tools_from_microagents():
 
     # Configure the mock runtime
     mock_runtime.runtime_initialized = True
-    mock_runtime.get_updated_mcp_config.return_value = mock_microagent_mcp_config
+    mock_runtime.get_mcp_config.return_value = mock_microagent_mcp_config
 
     # Mock the fetch_mcp_tools_from_config function to return a mock tool
     mock_tool = {
@@ -242,17 +247,17 @@ async def test_add_mcp_tools_from_microagents():
         'openhands.mcp.utils.fetch_mcp_tools_from_config',
         new=AsyncMock(return_value=[mock_tool]),
     ):
-        # Call the function
+        # Call the function with the AppConfig instead of MCPConfig
         await add_mcp_tools_to_agent(
-            mock_agent, mock_runtime, mock_memory, mock_mcp_config
+            mock_agent, mock_runtime, mock_memory, mock_app_config
         )
 
         # Verify that the memory's get_microagent_mcp_tools was called
         mock_memory.get_microagent_mcp_tools.assert_called_once()
 
-        # Verify that the runtime's get_updated_mcp_config was called with the extra stdio servers
-        mock_runtime.get_updated_mcp_config.assert_called_once()
-        args, kwargs = mock_runtime.get_updated_mcp_config.call_args
+        # Verify that the runtime's get_mcp_config was called with the extra stdio servers
+        mock_runtime.get_mcp_config.assert_called_once()
+        args, kwargs = mock_runtime.get_mcp_config.call_args
         assert len(args) == 1
         assert len(args[0]) == 1
         assert args[0][0].name == 'test-tool'
