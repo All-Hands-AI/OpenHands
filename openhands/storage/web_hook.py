@@ -2,7 +2,7 @@ import httpx
 import tenacity
 
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import EXECUTOR, call_async_from_sync
+from openhands.utils.async_utils import EXECUTOR
 
 
 class WebHookFileStore(FileStore):
