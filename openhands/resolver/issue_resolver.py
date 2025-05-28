@@ -340,7 +340,6 @@ class IssueResolver:
             n_retries += 1
             if isinstance(obs, CmdOutputObservation):
                 if obs.exit_code == 0:
-                    logger.info(f'Got diff of length {len(obs.content.strip())}')
                     git_patch = obs.content.strip()
                     break
                 else:
