@@ -26,23 +26,23 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
-      // Store the login method in local storage (only in SAAS mode)
-      if (appMode === "saas") {
-        setLoginMethod(LoginMethod.GITHUB);
-      }
+      // Add a query parameter to identify the login method
+      const url = new URL(githubAuthUrl);
+      url.searchParams.append("login_method", LoginMethod.GITHUB);
+      
       // Always start the OIDC flow, let the backend handle TOS check
-      window.location.href = githubAuthUrl;
+      window.location.href = url.toString();
     }
   };
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
-      // Store the login method in local storage (only in SAAS mode)
-      if (appMode === "saas") {
-        setLoginMethod(LoginMethod.GITLAB);
-      }
+      // Add a query parameter to identify the login method
+      const url = new URL(gitlabAuthUrl);
+      url.searchParams.append("login_method", LoginMethod.GITLAB);
+      
       // Always start the OIDC flow, let the backend handle TOS check
-      window.location.href = gitlabAuthUrl;
+      window.location.href = url.toString();
     }
   };
 
