@@ -5,7 +5,7 @@ import pytest
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events import EventSource
 from openhands.events.action import CmdRunAction, MessageAction, RecallAction
 from openhands.events.action.message import SystemMessageAction
@@ -90,8 +90,8 @@ def controller_fixture():
     mock_agent = MagicMock(spec=Agent)
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = AppConfig().get_llm_config()
-    mock_agent.config = AppConfig().get_agent_config('CodeActAgent')
+    mock_agent.llm.config = OpenHandsConfig().get_llm_config()
+    mock_agent.config = OpenHandsConfig().get_agent_config('CodeActAgent')
 
     mock_event_stream = MagicMock(spec=EventStream)
     mock_event_stream.conversation_id = 'test_sid'

@@ -1,6 +1,6 @@
 from typing import Callable
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
@@ -22,7 +22,7 @@ from openhands.runtime.utils.files import insert_lines, read_lines
 class E2BRuntime(Runtime):
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,

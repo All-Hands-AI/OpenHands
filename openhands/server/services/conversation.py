@@ -79,7 +79,7 @@ async def create_new_conversation(
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    logger.info('Conversation store loaded')
+    logger.info('ServerConversation store loaded')
 
     # For nested runtimes, we allow a single conversation id, passed in on container creation
     if conversation_id is None:

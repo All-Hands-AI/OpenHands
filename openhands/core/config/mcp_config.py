@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 if TYPE_CHECKING:
-    from openhands.core.config.app_config import AppConfig
+    from openhands.core.config.openhands_config import OpenHandsConfig
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
@@ -148,7 +148,7 @@ class MCPConfig(BaseModel):
 
 class OpenHandsMCPConfig:
     @staticmethod
-    def add_search_engine(app_config: 'AppConfig') -> MCPStdioServerConfig | None:
+    def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
         """Add search engine to the MCP config"""
         if (
             app_config.search_api_key
@@ -168,14 +168,14 @@ class OpenHandsMCPConfig:
 
     @staticmethod
     def create_default_mcp_server_config(
-        host: str, config: 'AppConfig', user_id: str | None = None
+        host: str, config: 'OpenHandsConfig', user_id: str | None = None
     ) -> tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]:
         """
         Create a default MCP server configuration.
 
         Args:
             host: Host string
-            config: AppConfig
+            config: OpenHandsConfig
         Returns:
             tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]: A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
         """

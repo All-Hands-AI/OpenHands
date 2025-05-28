@@ -63,7 +63,7 @@ async def create_pr(
 
     request = get_http_request()
     headers = request.headers
-    conversation_id = headers.get('X-OpenHands-Conversation-ID', None)
+    conversation_id = headers.get('X-OpenHands-ServerConversation-ID', None)
 
     provider_tokens = await get_provider_tokens(request)
     access_token = await get_access_token(request)
@@ -118,7 +118,7 @@ async def create_mr(
 
     request = get_http_request()
     headers = request.headers
-    conversation_id = headers.get('X-OpenHands-Conversation-ID', None)
+    conversation_id = headers.get('X-OpenHands-ServerConversation-ID', None)
 
     provider_tokens = await get_provider_tokens(request)
     access_token = await get_access_token(request)

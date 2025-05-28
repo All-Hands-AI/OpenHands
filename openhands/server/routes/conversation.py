@@ -125,7 +125,7 @@ async def search_events(
     """
     if not request.state.conversation:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='ServerConversation not found'
         )
     if limit < 0 or limit > 100:
         raise HTTPException(

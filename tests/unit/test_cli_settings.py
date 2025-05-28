@@ -10,7 +10,7 @@ from openhands.cli.settings import (
     modify_llm_settings_basic,
 )
 from openhands.cli.tui import UserCancelledError
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -30,7 +30,7 @@ class MockNoOpCondenserConfig:
 class TestDisplaySettings:
     @pytest.fixture
     def app_config(self):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
         llm_config.base_url = None
         llm_config.model = 'openai/gpt-4'
@@ -48,7 +48,7 @@ class TestDisplaySettings:
 
     @pytest.fixture
     def advanced_app_config(self):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
         llm_config.base_url = 'https://custom-api.com'
         llm_config.model = 'custom-model'
@@ -114,7 +114,7 @@ class TestDisplaySettings:
 class TestModifyLLMSettingsBasic:
     @pytest.fixture
     def app_config(self):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
         llm_config.model = 'openai/gpt-4'
         llm_config.api_key = SecretStr('test-api-key')
@@ -313,7 +313,7 @@ class TestModifyLLMSettingsBasic:
 class TestModifyLLMSettingsAdvanced:
     @pytest.fixture
     def app_config(self):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
         llm_config.model = 'custom-model'
         llm_config.api_key = SecretStr('test-api-key')

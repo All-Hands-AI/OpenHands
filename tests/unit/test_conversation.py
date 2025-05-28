@@ -46,7 +46,7 @@ def _patch_store():
         get_conversation_metadata_filename('some_conversation_id'),
         json.dumps(
             {
-                'title': 'Some Conversation',
+                'title': 'Some ServerConversation',
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
                 'user_id': '12345',
@@ -140,7 +140,7 @@ async def test_search_conversations():
                             results=[
                                 ConversationMetadata(
                                     conversation_id='some_conversation_id',
-                                    title='Some Conversation',
+                                    title='Some ServerConversation',
                                     created_at=datetime.fromisoformat(
                                         '2025-01-01T00:00:00+00:00'
                                     ),
@@ -164,7 +164,7 @@ async def test_search_conversations():
                         results=[
                             ConversationInfo(
                                 conversation_id='some_conversation_id',
-                                title='Some Conversation',
+                                title='Some ServerConversation',
                                 created_at=datetime.fromisoformat(
                                     '2025-01-01T00:00:00+00:00'
                                 ),
@@ -189,7 +189,7 @@ async def test_get_conversation():
         mock_store.get_metadata = AsyncMock(
             return_value=ConversationMetadata(
                 conversation_id='some_conversation_id',
-                title='Some Conversation',
+                title='Some ServerConversation',
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 selected_repository='foobar',
@@ -211,7 +211,7 @@ async def test_get_conversation():
 
             expected = ConversationInfo(
                 conversation_id='some_conversation_id',
-                title='Some Conversation',
+                title='Some ServerConversation',
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 status=ConversationStatus.STOPPED,
@@ -418,7 +418,7 @@ async def test_delete_conversation():
             mock_store.get_metadata = AsyncMock(
                 return_value=ConversationMetadata(
                     conversation_id='some_conversation_id',
-                    title='Some Conversation',
+                    title='Some ServerConversation',
                     created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                     last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                     selected_repository='foobar',

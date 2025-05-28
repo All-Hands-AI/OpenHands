@@ -8,7 +8,7 @@ import httpx
 import tenacity
 from tenacity import RetryCallState
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
     AgentRuntimeError,
@@ -48,7 +48,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,

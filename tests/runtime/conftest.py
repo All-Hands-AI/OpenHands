@@ -7,7 +7,7 @@ import time
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import AppConfig, MCPConfig, load_app_config
+from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
@@ -218,14 +218,14 @@ def _load_runtime(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
-) -> tuple[Runtime, AppConfig]:
+) -> tuple[Runtime, OpenHandsConfig]:
     conversation_id = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
-    config = load_app_config()
+    config = load_openhands_config()
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False

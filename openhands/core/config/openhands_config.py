@@ -16,7 +16,7 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
 
-class AppConfig(BaseModel):
+class OpenHandsConfig(BaseModel):
     """Configuration for the app.
 
     Attributes:
@@ -151,5 +151,5 @@ class AppConfig(BaseModel):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
 
-        if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
-            AppConfig.defaults_dict = model_defaults_to_dict(self)
+        if not OpenHandsConfig.defaults_dict:  # Only set defaults_dict if it's empty
+            OpenHandsConfig.defaults_dict = model_defaults_to_dict(self)

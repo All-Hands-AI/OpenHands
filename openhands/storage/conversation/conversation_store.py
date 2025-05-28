@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Iterable
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
@@ -55,6 +55,6 @@ class ConversationStore(ABC):
     @classmethod
     @abstractmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: OpenHandsConfig, user_id: str | None
     ) -> ConversationStore:
         """Get a store for the user represented by the token given."""

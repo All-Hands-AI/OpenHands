@@ -8,7 +8,7 @@ import httpx
 import tenacity
 from docker.models.containers import Container
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
     AgentRuntimeNotFoundError,
@@ -65,7 +65,7 @@ class DockerRuntime(ActionExecutionClient):
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         conversation_id (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -76,7 +76,7 @@ class DockerRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,

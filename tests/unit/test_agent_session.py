@@ -5,7 +5,7 @@ import pytest
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
-from openhands.core.config import AppConfig, LLMConfig
+from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
@@ -110,7 +110,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     ):
         await session.start(
             runtime_name='test-runtime',
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
         )
@@ -203,7 +203,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     ):
         await session.start(
             runtime_name='test-runtime',
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
         )

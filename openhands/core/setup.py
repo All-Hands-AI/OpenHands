@@ -10,7 +10,7 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
@@ -28,7 +28,7 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
-    config: AppConfig,
+    config: OpenHandsConfig,
     conversation_id: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
@@ -172,7 +172,7 @@ def create_memory(
     return memory
 
 
-def create_agent(config: AppConfig) -> Agent:
+def create_agent(config: OpenHandsConfig) -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
@@ -188,7 +188,7 @@ def create_agent(config: AppConfig) -> Agent:
 def create_controller(
     agent: Agent,
     runtime: Runtime,
-    config: AppConfig,
+    config: OpenHandsConfig,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -218,7 +218,9 @@ def create_controller(
     return (controller, initial_state)
 
 
-def generate_conversation_id(config: AppConfig, session_name: str | None = None) -> str:
+def generate_conversation_id(
+    config: OpenHandsConfig, session_name: str | None = None
+) -> str:
     """Generate a conversation id based on the session name and the jwt secret."""
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret

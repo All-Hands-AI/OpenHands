@@ -22,7 +22,7 @@ from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
 from pydantic import SecretStr
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
@@ -57,7 +57,7 @@ class CLIRuntime(Runtime):
     file operations using Python's standard library. It does not implement browser functionality.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         conversation_id (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -71,7 +71,7 @@ class CLIRuntime(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,

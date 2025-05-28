@@ -6,7 +6,7 @@ from runloop_api_client import Runloop
 from runloop_api_client.types import DevboxView
 from runloop_api_client.types.shared_params import LaunchParameters
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
@@ -27,7 +27,7 @@ class RunloopRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,

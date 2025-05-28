@@ -6,7 +6,7 @@ from logging import LoggerAdapter
 import socketio
 
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
@@ -43,7 +43,7 @@ class Session:
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
-    config: AppConfig
+    config: OpenHandsConfig
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
@@ -51,7 +51,7 @@ class Session:
     def __init__(
         self,
         conversation_id: str,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,

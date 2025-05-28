@@ -9,7 +9,7 @@ import httpcore
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
@@ -65,7 +65,7 @@ class ActionExecutionClient(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,

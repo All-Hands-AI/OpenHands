@@ -1,7 +1,7 @@
 import os
 import re
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config as shared_config
 
@@ -30,7 +30,7 @@ def sanitize_filename(filename: str) -> str:
 
 
 def load_file_upload_config(
-    config: AppConfig = shared_config,
+    config: OpenHandsConfig = shared_config,
 ) -> tuple[int, bool, list[str]]:
     """Load file upload configuration from the config object.
 

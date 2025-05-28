@@ -8,7 +8,7 @@ import pytest
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import RecallAction
@@ -75,7 +75,7 @@ def mock_agent():
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
-    agent.llm.config = AppConfig().get_llm_config()
+    agent.llm.config = OpenHandsConfig().get_llm_config()
 
     # Add a proper system message mock
     system_message = SystemMessageAction(content='Test system message')
@@ -101,7 +101,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream, mock_age
         memory, '_on_workspace_context_recall', side_effect=Exception('Test error')
     ):
         state = await run_controller(
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             conversation_id='test',
@@ -132,7 +132,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
         side_effect=Exception('Test error from _find_microagent_knowledge'),
     ):
         state = await run_controller(
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             conversation_id='test',
@@ -626,7 +626,7 @@ async def test_conversation_instructions_plumbed_to_memory(
     ):
         await session.start(
             runtime_name='test-runtime',
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
             conversation_instructions='instructions for conversation',
