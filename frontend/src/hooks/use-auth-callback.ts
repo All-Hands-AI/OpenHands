@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import { useIsAuthed } from "./query/use-is-authed";
 import { LoginMethod, setLoginMethod } from "#/utils/local-storage";
 import { useConfig } from "./query/use-config";
@@ -31,8 +31,7 @@ export const useAuthCallback = () => {
     // Check if we have a login_method query parameter
     const searchParams = new URLSearchParams(location.search);
     const loginMethod = searchParams.get("login_method");
-    const navigate = useNavigate();
-    
+
     // Set the login method if it's valid
     if (
       loginMethod === LoginMethod.GITHUB ||
@@ -43,7 +42,7 @@ export const useAuthCallback = () => {
       // Clean up the URL by removing the login_method parameter
       searchParams.delete("login_method");
       const newUrl = `${location.pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
-      navigate(newUrl, { replace: true });
+      window.history.replaceState({}, "", newUrl);
     }
   }, [isAuthed, isAuthLoading, location.search, config?.APP_MODE]);
 };
