@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useIsAuthed } from "./query/use-is-authed";
 import { LoginMethod, setLoginMethod } from "#/utils/local-storage";
 import { useConfig } from "./query/use-config";
@@ -11,6 +11,7 @@ export const useAuthCallback = () => {
   const location = useLocation();
   const { data: isAuthed, isLoading: isAuthLoading } = useIsAuthed();
   const { data: config } = useConfig();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Only run in SAAS mode
@@ -42,7 +43,7 @@ export const useAuthCallback = () => {
       // Clean up the URL by removing the login_method parameter
       searchParams.delete("login_method");
       const newUrl = `${location.pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
-      window.history.replaceState({}, "", newUrl);
+      navigate(newUrl, { replace: true });
     }
   }, [isAuthed, isAuthLoading, location.search, config?.APP_MODE]);
 };
