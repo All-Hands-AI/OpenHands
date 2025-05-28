@@ -65,7 +65,7 @@ class AppConfig(BaseModel):
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
     file_store_web_hook_url: str | None = Field(default=None)
-    file_store_web_hook_headers: dict = Field(default_factory=dict)
+    file_store_web_hook_headers: dict | None = Field(default=None)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)

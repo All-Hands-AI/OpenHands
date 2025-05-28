@@ -1,3 +1,4 @@
+import os
 import httpx
 
 from openhands.storage.files import FileStore
@@ -26,6 +27,11 @@ def get_file_store(
     else:
         store = InMemoryFileStore()
     if file_store_web_hook_url:
+        if file_store_web_hook_headers is None:
+            # Fallback to default headers. Use the session api key if it is defined in the env.
+            file_store_web_hook_headers = {}
+            if os.getenv('SESSION_API_KEY'):
+                file_store_web_hook_headers['X-Session-API-Key'] = os.getenv('SESSION_API_KEY')
         store = WebHookFileStore(
             store,
             file_store_web_hook_url,
