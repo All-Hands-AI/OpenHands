@@ -346,7 +346,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
+                    command='git init',
                 )
                 self.run_action(action)
             else:
