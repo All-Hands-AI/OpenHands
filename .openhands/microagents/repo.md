@@ -26,6 +26,7 @@ Backend:
 - Located in the `openhands` directory
 - Testing:
   - All tests are in `tests/unit/test_*.py`
+  - To run all the unit tests, run `poetry run pytest --forked -n auto -svv ./tests/unit`
   - To test new code, run `poetry run pytest tests/unit/test_xxx.py` where `xxx` is the appropriate file for the current functionality
   - Write all tests with pytest
 
