@@ -11,9 +11,11 @@ from unittest.mock import patch
 
 import botocore.exceptions
 from google.api_core.exceptions import NotFound
+from httpx import Response
 
 from openhands.storage.files import FileStore
 from openhands.storage.google_cloud import GoogleCloudFileStore
+from openhands.storage.http import HTTPFileStore
 from openhands.storage.local import LocalFileStore
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.s3 import S3FileStore
@@ -138,6 +140,11 @@ class TestS3FileStore(TestCase, _StorageTest):
     def setUp(self):
         with patch('boto3.client', lambda service, **kwargs: _MockS3Client()):
             self.store = S3FileStore('dear-liza')
+
+
+class TestHTTPFileStore(TestCase, _StorageTest):
+    def setUp(self):
+        self.store = HTTPFileStore('http://foo.com', MockHttpxClient('http://foo.com/'))
 
 
 # I would have liked to use cloud-storage-mocker here but the python versions were incompatible :(
@@ -274,3 +281,37 @@ class _MockS3Client:
 class _MockS3Object:
     key: str
     content: str | bytes
+
+
+@dataclass
+class MockHttpxClient:
+    base_url: str
+    file_store: FileStore = field(default_factory=InMemoryFileStore)
+
+    def options(self, url: str):
+        path = self._get_path(url)
+        files = self.file_store.list(path)
+        return Response(200, json=files)
+
+    def delete(self, url: str):
+        path = self._get_path(url)
+        self.file_store.delete(path)
+        return Response(200)
+
+    def post(self, url: str, content: str | bytes):
+        path = self._get_path(url)
+        self.file_store.write(path, content)
+        return Response(200)
+
+    def get(self, url: str):
+        path = self._get_path(url)
+        try:
+            content = self.file_store.read(path)
+            return Response(200, content=content)
+        except FileNotFoundError:
+            return Response(404)
+
+    def _get_path(self, url: str):
+        assert url.startswith(self.base_url)
+        path = url[len(self.base_url) :]
+        return path
