@@ -43,7 +43,7 @@ def test_handle_nonexistent_issue_reference():
 
     # Mock the requests.get to simulate a 404 error
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPError(
+    mock_response.raise_for_status.conversation_ide_effect = httpx.HTTPError(
         '404 Client Error: Not Found'
     )
 
@@ -70,7 +70,7 @@ def test_handle_rate_limit_error():
 
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPError(
+    mock_response.raise_for_status.conversation_ide_effect = httpx.HTTPError(
         '403 Client Error: Rate Limit Exceeded'
     )
 
@@ -195,7 +195,7 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
 
     with patch('time.sleep') as mock_sleep:
         # Simulate a rate limit error followed by a successful response
-        mock_litellm_completion.side_effect = [
+        mock_litellm_completion.conversation_ide_effect = [
             RateLimitError(
                 'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),
@@ -251,7 +251,7 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
 def test_guess_success_exhausts_retries(mock_completion, default_config):
     """Test the retry mechanism in guess_success exhausts retries and raises an error."""
     # Simulate persistent rate limit errors by always raising RateLimitError
-    mock_completion.side_effect = RateLimitError(
+    mock_completion.conversation_ide_effect = RateLimitError(
         'Rate limit exceeded', llm_provider='test_provider', model='test_model'
     )
 

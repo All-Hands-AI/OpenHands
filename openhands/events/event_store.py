@@ -46,7 +46,7 @@ class EventStore(EventStoreABC):
     A stored list of events backing a conversation
     """
 
-    sid: str
+    conversation_id: str
     file_store: FileStore
     user_id: str | None
     cur_id: int = -1  # We fix this in post init if it is not specified
@@ -57,10 +57,12 @@ class EventStore(EventStoreABC):
             return
         events = []
         try:
-            events_dir = get_conversation_events_dir(self.sid, self.user_id)
+            events_dir = get_conversation_events_dir(self.conversation_id, self.user_id)
             events = self.file_store.list(events_dir)
         except FileNotFoundError:
-            logger.debug(f'No events found for session {self.sid} at {events_dir}')
+            logger.debug(
+                f'No events found for session {self.conversation_id} at {events_dir}'
+            )
 
         if not events:
             self.cur_id = 0
@@ -145,10 +147,10 @@ class EventStore(EventStoreABC):
                 yield event
 
     def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
-        return get_conversation_event_filename(self.sid, id, user_id)
+        return get_conversation_event_filename(self.conversation_id, id, user_id)
 
     def _get_filename_for_cache(self, start: int, end: int) -> str:
-        return f'{get_conversation_dir(self.sid, self.user_id)}event_cache/{start}-{end}.json'
+        return f'{get_conversation_dir(self.conversation_id, self.user_id)}event_cache/{start}-{end}.json'
 
     def _load_cache_page(self, start: int, end: int) -> _CachePage:
         """Read a page from the cache. Reading individual events is slow when there are a lot of them, so we use pages."""

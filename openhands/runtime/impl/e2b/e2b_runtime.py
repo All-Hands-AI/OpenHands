@@ -24,7 +24,7 @@ class E2BRuntime(Runtime):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
         status_callback: Callable | None = None,
@@ -32,7 +32,7 @@ class E2BRuntime(Runtime):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             status_callback=status_callback,
         )

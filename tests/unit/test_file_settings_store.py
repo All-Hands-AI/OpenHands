@@ -24,7 +24,9 @@ async def test_load_nonexistent_data(file_settings_store):
         'openhands.storage.data_models.settings.load_app_config',
         MagicMock(return_value=AppConfig()),
     ):
-        file_settings_store.file_store.read.side_effect = FileNotFoundError()
+        file_settings_store.file_store.read.conversation_ide_effect = (
+            FileNotFoundError()
+        )
         assert await file_settings_store.load() is None
 
 

@@ -63,7 +63,7 @@ def conversation_memory(agent_config):
             return ''
         return '\n'.join(agent.content for agent in triggered_agents)
 
-    prompt_manager.build_microagent_info.side_effect = build_microagent_info
+    prompt_manager.build_microagent_info.conversation_ide_effect = build_microagent_info
     return ConversationMemory(agent_config, prompt_manager)
 
 

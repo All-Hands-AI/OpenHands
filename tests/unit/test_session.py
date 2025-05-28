@@ -40,7 +40,7 @@ async def test_notify_on_llm_retry(
     config = AppConfig()
     config.set_llm_config(default_llm_config)
     session = Session(
-        sid='..sid..',
+        conversation_id='..conversation_id..',
         file_store=InMemoryFileStore({}),
         config=config,
         sio=mock_sio,
@@ -49,7 +49,7 @@ async def test_notify_on_llm_retry(
     session.queue_status_message = AsyncMock()
 
     with patch('time.sleep') as _mock_sleep:
-        mock_litellm_completion.side_effect = [
+        mock_litellm_completion.conversation_ide_effect = [
             RateLimitError(
                 'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),

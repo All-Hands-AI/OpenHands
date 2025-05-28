@@ -32,10 +32,12 @@ class EventStreamSubscriber(str, Enum):
 
 
 async def session_exists(
-    sid: str, file_store: FileStore, user_id: str | None = None
+    conversation_id: str, file_store: FileStore, user_id: str | None = None
 ) -> bool:
     try:
-        await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
+        await call_sync_from_async(
+            file_store.list, get_conversation_dir(conversation_id, user_id)
+        )
         return True
     except FileNotFoundError:
         return False
@@ -54,8 +56,10 @@ class EventStream(EventStore):
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
     _write_page_cache: list[dict]
 
-    def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
-        super().__init__(sid, file_store, user_id)
+    def __init__(
+        self, conversation_id: str, file_store: FileStore, user_id: str | None = None
+    ):
+        super().__init__(conversation_id, file_store, user_id)
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools = {}

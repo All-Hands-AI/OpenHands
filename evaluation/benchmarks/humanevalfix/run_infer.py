@@ -201,7 +201,7 @@ def process_instance(
 ) -> EvalOutput:
     config = get_config(metadata)
     # use a session id for concurrent evaluation
-    sid = _get_instance_id(instance)
+    conversation_id = _get_instance_id(instance)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -218,7 +218,7 @@ def process_instance(
 
     # Prepare instruction
     instruction = (
-        f'Please fix the function in {sid}.py such that all test cases pass.\n'
+        f'Please fix the function in {conversation_id}.py such that all test cases pass.\n'
         'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
         '# Problem Statement\n'
         f'{problem_statement}\n\n'

@@ -92,7 +92,7 @@ def runtime(temp_dir):
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
-        sid='test',
+        conversation_id='test',
         user_id='test_user',
         git_provider_tokens=git_provider_tokens,
     )
@@ -119,7 +119,9 @@ async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
     config = AppConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test')
+    runtime = TestRuntime(
+        config=config, event_stream=event_stream, conversation_id='test'
+    )
 
     # Create a command that would normally trigger token export
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
@@ -138,7 +140,10 @@ async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+        config=config,
+        event_stream=event_stream,
+        conversation_id='test',
+        user_id='test_user',
     )
 
     # Create a command that doesn't reference any tokens
@@ -180,7 +185,7 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
-        sid='test',
+        conversation_id='test',
         user_id='test_user',
         git_provider_tokens=git_provider_tokens,
     )
@@ -225,7 +230,10 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+        config=config,
+        event_stream=event_stream,
+        conversation_id='test',
+        user_id='test_user',
     )
 
     # Call the function with no repository
@@ -246,7 +254,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id=None
+        config=config, event_stream=event_stream, conversation_id='test', user_id=None
     )
 
     # Call the function with no repository
@@ -267,7 +275,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_di
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id=None
+        config=config, event_stream=event_stream, conversation_id='test', user_id=None
     )
 
     # Call the function with no repository
@@ -285,7 +293,10 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+        config=config,
+        event_stream=event_stream,
+        conversation_id='test',
+        user_id='test_user',
     )
 
     # Mock the verify_repo_provider method to raise AuthenticationError
@@ -318,7 +329,7 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
-        sid='test',
+        conversation_id='test',
         user_id='test_user',
         git_provider_tokens=git_provider_tokens,
     )
@@ -340,7 +351,10 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     event_stream = EventStream('abc', file_store)
 
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+        config=config,
+        event_stream=event_stream,
+        conversation_id='test',
+        user_id='test_user',
     )
 
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
@@ -372,7 +386,7 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     runtime = TestRuntime(
         config=config,
         event_stream=event_stream,
-        sid='test',
+        conversation_id='test',
         user_id='test_user',
         git_provider_tokens=git_provider_tokens,
     )
@@ -396,7 +410,10 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     event_stream = EventStream('abc', file_store)
 
     runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+        config=config,
+        event_stream=event_stream,
+        conversation_id='test',
+        user_id='test_user',
     )
 
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)

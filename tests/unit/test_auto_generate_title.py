@@ -114,7 +114,7 @@ async def test_auto_generate_title_fallback():
         # Mock the LLM to raise an exception
         with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
             mock_llm = mock_llm_cls.return_value
-            mock_llm.completion.side_effect = Exception('Test error')
+            mock_llm.completion.conversation_ide_effect = Exception('Test error')
 
             # Create test settings with LLM config
             settings = Settings(

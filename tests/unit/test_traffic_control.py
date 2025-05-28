@@ -26,13 +26,13 @@ def agent_controller():
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
 
-    event_stream = EventStream(sid='test', file_store=InMemoryFileStore())
+    event_stream = EventStream(conversation_id='test', file_store=InMemoryFileStore())
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
         max_iterations=100,
         max_budget_per_task=10.0,
-        sid='test',
+        conversation_id='test',
         headless_mode=False,
     )
     return controller

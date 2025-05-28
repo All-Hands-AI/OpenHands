@@ -59,7 +59,7 @@ class CLIRuntime(Runtime):
     Args:
         config (AppConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
-        sid (str, optional): The session ID. Defaults to 'default'.
+        conversation_id (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
         status_callback (Callable | None, optional): Callback for status updates. Defaults to None.
@@ -73,7 +73,7 @@ class CLIRuntime(Runtime):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, str, str], None] | None = None,
@@ -85,7 +85,7 @@ class CLIRuntime(Runtime):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,
@@ -106,7 +106,7 @@ class CLIRuntime(Runtime):
         else:
             # Create a temporary directory for the workspace
             self._workspace_path = tempfile.mkdtemp(
-                prefix=f'openhands_workspace_{sid}_'
+                prefix=f'openhands_workspace_{conversation_id}_'
             )
             logger.info(f'Created temporary workspace at {self._workspace_path}')
 

@@ -10,20 +10,24 @@ from openhands.utils.async_utils import call_sync_from_async
 
 
 class Conversation:
-    sid: str
+    conversation_id: str
     file_store: FileStore
     event_stream: EventStream
     runtime: Runtime
     user_id: str | None
 
     def __init__(
-        self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
+        self,
+        conversation_id: str,
+        file_store: FileStore,
+        config: AppConfig,
+        user_id: str | None,
     ):
-        self.sid = sid
+        self.conversation_id = conversation_id
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
-        self.event_stream = EventStream(sid, file_store, user_id)
+        self.event_stream = EventStream(conversation_id, file_store, user_id)
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
@@ -33,7 +37,7 @@ class Conversation:
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
-            sid=self.sid,
+            conversation_id=self.conversation_id,
             attach_to_existing=True,
             headless_mode=False,
         )

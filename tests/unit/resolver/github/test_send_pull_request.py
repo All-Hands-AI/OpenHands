@@ -363,12 +363,12 @@ def test_send_pull_request(
 
     # Mock API responses based on whether target_branch is specified
     if target_branch:
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             MagicMock(status_code=404),  # Branch doesn't exist
             MagicMock(status_code=200),  # Target branch exists
         ]
     else:
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             MagicMock(status_code=404),  # Branch doesn't exist
             MagicMock(json=lambda: {'default_branch': 'main'}),  # Get default branch
         ]
@@ -378,7 +378,7 @@ def test_send_pull_request(
     }
 
     # Mock subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=0),  # git push
     ]
@@ -450,13 +450,13 @@ def test_send_pull_request_with_reviewer(
     reviewer = 'test-reviewer'
 
     # Mock API responses
-    mock_get.side_effect = [
+    mock_get.conversation_ide_effect = [
         MagicMock(status_code=404),  # Branch doesn't exist
         MagicMock(json=lambda: {'default_branch': 'main'}),  # Get default branch
     ]
 
     # Mock PR creation response
-    mock_post.side_effect = [
+    mock_post.conversation_ide_effect = [
         MagicMock(
             status_code=201,
             json=lambda: {
@@ -468,7 +468,7 @@ def test_send_pull_request_with_reviewer(
     ]
 
     # Mock subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=0),  # git push
     ]
@@ -516,7 +516,7 @@ def test_send_pull_request_target_branch_with_fork(
     target_branch = 'custom-target'
 
     # Mock API responses
-    mock_get.side_effect = [
+    mock_get.conversation_ide_effect = [
         MagicMock(status_code=404),  # Branch doesn't exist
         MagicMock(status_code=200),  # Target branch exists
     ]
@@ -526,7 +526,7 @@ def test_send_pull_request_target_branch_with_fork(
     }
 
     # Mock subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=0),  # git push
     ]
@@ -580,7 +580,7 @@ def test_send_pull_request_target_branch_with_additional_message(
     additional_message = 'Additional PR context'
 
     # Mock API responses
-    mock_get.side_effect = [
+    mock_get.conversation_ide_effect = [
         MagicMock(status_code=404),  # Branch doesn't exist
         MagicMock(status_code=200),  # Target branch exists
     ]
@@ -590,7 +590,7 @@ def test_send_pull_request_target_branch_with_additional_message(
     }
 
     # Mock subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=0),  # git push
     ]
@@ -626,7 +626,7 @@ def test_send_pull_request_invalid_target_branch(
     repo_path = os.path.join(mock_output_dir, 'repo')
 
     # Mock API response for non-existent branch
-    mock_get.side_effect = [
+    mock_get.conversation_ide_effect = [
         MagicMock(status_code=404),  # Branch doesn't exist
         MagicMock(status_code=404),  # Target branch doesn't exist
     ]
@@ -661,7 +661,7 @@ def test_send_pull_request_git_push_failure(
     mock_get.return_value = MagicMock(json=lambda: {'default_branch': 'main'})
 
     # Mock the subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=1, stderr='Error: failed to push some refs'),  # git push
     ]
@@ -721,7 +721,7 @@ def test_send_pull_request_permission_error(
     mock_post.return_value.status_code = 403
 
     # Mock subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=0),  # git push
     ]
@@ -1036,7 +1036,7 @@ def test_send_pull_request_branch_naming(
     repo_path = os.path.join(mock_output_dir, 'repo')
 
     # Mock API responses
-    mock_get.side_effect = [
+    mock_get.conversation_ide_effect = [
         MagicMock(status_code=200),  # First branch exists
         MagicMock(status_code=200),  # Second branch exists
         MagicMock(status_code=404),  # Third branch doesn't exist
@@ -1044,7 +1044,7 @@ def test_send_pull_request_branch_naming(
     ]
 
     # Mock subprocess.run calls
-    mock_run.side_effect = [
+    mock_run.conversation_ide_effect = [
         MagicMock(returncode=0),  # git checkout -b
         MagicMock(returncode=0),  # git push
     ]
@@ -1124,7 +1124,7 @@ def test_main(
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
-    mock_getenv.side_effect = (
+    mock_getenv.conversation_ide_effect = (
         lambda key, default=None: 'mock_token' if key == 'GITHUB_TOKEN' else default
     )
 
@@ -1178,7 +1178,7 @@ def test_main(
 
     # Test for invalid token
     mock_args.issue_number = '42'  # Reset to valid issue number
-    mock_getenv.side_effect = (
+    mock_getenv.conversation_ide_effect = (
         lambda key, default=None: None
     )  # Return None for all env vars
     with pytest.raises(ValueError, match='token is not set'):
@@ -1238,7 +1238,7 @@ def test_make_commit_no_changes(mock_subprocess_run):
     )
 
     # Mock subprocess.run to simulate no changes in the repo
-    mock_subprocess_run.side_effect = [
+    mock_subprocess_run.conversation_ide_effect = [
         MagicMock(returncode=0),
         MagicMock(returncode=0),
         MagicMock(returncode=1, stdout=''),  # git status --porcelain (no changes)

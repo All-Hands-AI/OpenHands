@@ -15,7 +15,7 @@ Before using the Local Runtime, ensure that:
 1. You can run OpenHands using the [Development workflow](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 2. For Linux and Mac, tmux is available on your system.
 3. For Windows, PowerShell is available on your system.
-    - Only [CLI mode](../how-to/cli-mode) and [headless mode](../how-to/headless-mode) are supported in Windows with Local Runtime. 
+    - Only [CLI mode](../how-to/cli-mode) and [headless mode](../how-to/headless-mode) are supported in Windows with Local Runtime.
 
 ## Configuration
 

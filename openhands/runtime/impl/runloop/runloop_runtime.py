@@ -29,7 +29,7 @@ class RunloopRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
@@ -42,11 +42,11 @@ class RunloopRuntime(ActionExecutionClient):
         self.runloop_api_client = Runloop(
             bearer_token=config.runloop_api_key.get_secret_value(),
         )
-        self.container_name = CONTAINER_NAME_PREFIX + sid
+        self.container_name = CONTAINER_NAME_PREFIX + conversation_id
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,
@@ -99,7 +99,7 @@ class RunloopRuntime(ActionExecutionClient):
 
         devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,
-            name=self.sid,
+            name=self.conversation_id,
             environment_variables={'DEBUG': 'true'} if self.config.debug else {},
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
@@ -121,7 +121,12 @@ class RunloopRuntime(ActionExecutionClient):
                 status='running'
             ).devboxes
             self.devbox = next(
-                (devbox for devbox in active_devboxes if devbox.name == self.sid), None
+                (
+                    devbox
+                    for devbox in active_devboxes
+                    if devbox.name == self.conversation_id
+                ),
+                None,
             )
 
         if self.devbox is None:

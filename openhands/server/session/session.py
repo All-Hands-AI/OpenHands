@@ -33,11 +33,11 @@ from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
-ROOM_KEY = 'room:{sid}'
+ROOM_KEY = 'room:{conversation_id}'
 
 
 class Session:
-    sid: str
+    conversation_id: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
     is_alive: bool = True
@@ -50,25 +50,25 @@ class Session:
 
     def __init__(
         self,
-        sid: str,
+        conversation_id: str,
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
     ):
-        self.sid = sid
+        self.conversation_id = conversation_id
         self.sio = sio
         self.last_active_ts = int(time.time())
         self.file_store = file_store
-        self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+        self.logger = OpenHandsLoggerAdapter(extra={'session_id': conversation_id})
         self.agent_session = AgentSession(
-            sid,
+            conversation_id,
             file_store,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event, self.sid
+            EventStreamSubscriber.SERVER, self.on_event, self.conversation_id
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
@@ -82,7 +82,7 @@ class Session:
                 event_to_dict(
                     AgentStateChangedObservation('', AgentState.STOPPED.value)
                 ),
-                to=ROOM_KEY.format(sid=self.sid),
+                to=ROOM_KEY.format(conversation_id=self.conversation_id),
             )
         self.is_alive = False
         await self.agent_session.close()
@@ -128,9 +128,15 @@ class Session:
         self.config.search_api_key = settings.search_api_key
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        self.config.mcp = settings.mcp_config or MCPConfig(sse_servers=[], stdio_servers=[])
+        self.config.mcp = settings.mcp_config or MCPConfig(
+            sse_servers=[], stdio_servers=[]
+        )
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = OpenHandsMCPConfigImpl.create_default_mcp_server_config(self.config.mcp_host, self.config, self.user_id)
+        openhands_mcp_server, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                self.config.mcp_host, self.config, self.user_id
+            )
+        )
         if openhands_mcp_server:
             self.config.mcp.sse_servers.append(openhands_mcp_server)
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
@@ -154,7 +160,7 @@ class Session:
                     ),
                 ]
             )
-            
+
             self.logger.info(
                 f'Enabling pipeline condenser with:'
                 f' browser_output_masking(attention_window=2), '
@@ -303,7 +309,11 @@ class Session:
             if not self.is_alive:
                 return False
             if self.sio:
-                await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
+                await self.sio.emit(
+                    'oh_event',
+                    data,
+                    to=ROOM_KEY.format(conversation_id=self.conversation_id),
+                )
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

@@ -13,7 +13,7 @@ class EventStoreABC:
     A stored list of events backing a conversation
     """
 
-    sid: str
+    conversation_id: str
     user_id: str | None
 
     @abstractmethod

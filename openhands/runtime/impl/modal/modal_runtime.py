@@ -33,20 +33,20 @@ class ModalRuntime(ActionExecutionClient):
     Args:
         config (AppConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
-        sid (str, optional): The session ID. Defaults to 'default'.
+        conversation_id (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
     container_name_prefix = 'openhands-sandbox-'
     sandbox: modal.Sandbox | None
-    sid: str
+    conversation_id: str
 
     def __init__(
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
@@ -58,7 +58,7 @@ class ModalRuntime(ActionExecutionClient):
 
         self.config = config
         self.sandbox = None
-        self.sid = sid
+        self.conversation_id = conversation_id
 
         self.modal_client = modal.Client.from_credentials(
             config.modal_api_token_id.get_secret_value(),
@@ -93,7 +93,7 @@ class ModalRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,
@@ -104,7 +104,7 @@ class ModalRuntime(ActionExecutionClient):
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        self.log('debug', f'ModalRuntime `{self.sid}`')
+        self.log('debug', f'ModalRuntime `{self.conversation_id}`')
 
         self.image = self._get_image_definition(
             self.base_container_image_id,
@@ -113,8 +113,8 @@ class ModalRuntime(ActionExecutionClient):
         )
 
         if self.attach_to_existing:
-            if self.sid in MODAL_RUNTIME_IDS:
-                sandbox_id = MODAL_RUNTIME_IDS[self.sid]
+            if self.conversation_id in MODAL_RUNTIME_IDS:
+                sandbox_id = MODAL_RUNTIME_IDS[self.conversation_id]
                 self.log('debug', f'Attaching to existing Modal sandbox: {sandbox_id}')
                 self.sandbox = modal.Sandbox.from_id(
                     sandbox_id, client=self.modal_client
@@ -236,12 +236,13 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 client=self.modal_client,
                 timeout=60 * 60,
             )
-            MODAL_RUNTIME_IDS[self.sid] = self.sandbox.object_id
+            MODAL_RUNTIME_IDS[self.conversation_id] = self.sandbox.object_id
             self.log('debug', 'Container started')
 
         except Exception as e:
             self.log(
-                'error', f'Error: Instance {self.sid} FAILED to start container!\n'
+                'error',
+                f'Error: Instance {self.conversation_id} FAILED to start container!\n',
             )
             self.log('error', str(e))
             self.close()

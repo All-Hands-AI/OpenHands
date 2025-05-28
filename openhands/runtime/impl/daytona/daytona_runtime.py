@@ -35,7 +35,7 @@ class DaytonaRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
@@ -45,8 +45,8 @@ class DaytonaRuntime(ActionExecutionClient):
         assert config.daytona_api_key, 'Daytona API key is required'
 
         self.config = config
-        self.sid = sid
-        self.workspace_id = WORKSPACE_PREFIX + sid
+        self.conversation_id = conversation_id
+        self.workspace_id = WORKSPACE_PREFIX + conversation_id
         self.workspace: Workspace | None = None
         self._vscode_url: str | None = None
 
@@ -67,7 +67,7 @@ class DaytonaRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,

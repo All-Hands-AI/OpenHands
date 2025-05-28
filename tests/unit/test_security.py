@@ -62,7 +62,7 @@ async def test_msg(temp_dir: str):
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
         [],  # Second check
@@ -117,7 +117,7 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
         ['PolicyViolation(Disallow rm -rf [risk=medium], ranges=[<2 ranges>])']
@@ -171,7 +171,7 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
         ['PolicyViolation(Disallow writing secrets [risk=medium], ranges=[<2 ranges>])']
@@ -223,7 +223,7 @@ async def test_unsafe_python_code(temp_dir: str):
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
         [
@@ -268,7 +268,7 @@ async def test_unsafe_bash_command(temp_dir: str):
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
         [
@@ -572,7 +572,7 @@ async def test_check_usertask(
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
         [
@@ -634,7 +634,7 @@ async def test_check_fillaction(
 
     mock_httpx = MagicMock()
     mock_httpx.get().json.return_value = {'id': 'mock-session-id'}
-    mock_httpx.post().json.side_effect = [
+    mock_httpx.post().json.conversation_ide_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
         [

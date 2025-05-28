@@ -18,7 +18,9 @@ async def get_remote_runtime_config(request: Request) -> JSONResponse:
     """
     runtime = request.state.conversation.runtime
     runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
-    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    session_id = (
+        runtime.conversation_id if hasattr(runtime, 'conversation_id') else None
+    )
     return JSONResponse(
         content={
             'runtime_id': runtime_id,
@@ -103,7 +105,7 @@ async def search_events(
     end_id: int | None = None,
     reverse: bool = False,
     filter: EventFilter | None = None,
-    limit: int = 20
+    limit: int = 20,
 ):
     """Search through the event stream with filtering and pagination.
     Args:
@@ -129,16 +131,18 @@ async def search_events(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
         )
-    
+
     # Get matching events from the stream
     event_stream = request.state.conversation.event_stream
-    events = list(event_stream.search_events(
-        start_id=start_id,
-        end_id=end_id,
-        reverse=reverse,
-        filter=filter,
-        limit=limit + 1,
-    ))
+    events = list(
+        event_stream.search_events(
+            start_id=start_id,
+            end_id=end_id,
+            reverse=reverse,
+            filter=filter,
+            limit=limit + 1,
+        )
+    )
 
     # Check if there are more events
     has_more = len(events) > limit
@@ -155,5 +159,5 @@ async def search_events(
 @app.post('/events')
 async def add_event(request: Request):
     data = request.json()
-    conversation_manager.send_to_event_stream(request.state.sid, data)
-    return JSONResponse({"success": True})
+    conversation_manager.send_to_event_stream(request.state.conversation_id, data)
+    return JSONResponse({'success': True})

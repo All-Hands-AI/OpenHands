@@ -351,7 +351,7 @@ class TestReadConfirmationInput:
         self, mock_create_session
     ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.side_effect = KeyboardInterrupt
+        mock_session.prompt_async.conversation_ide_effect = KeyboardInterrupt
         mock_create_session.return_value = mock_session
 
         result = await read_confirmation_input()
@@ -361,7 +361,7 @@ class TestReadConfirmationInput:
     @patch('openhands.cli.tui.create_prompt_session')
     async def test_read_confirmation_input_eof_error(self, mock_create_session):
         mock_session = AsyncMock()
-        mock_session.prompt_async.side_effect = EOFError
+        mock_session.prompt_async.conversation_ide_effect = EOFError
         mock_create_session.return_value = mock_session
 
         result = await read_confirmation_input()

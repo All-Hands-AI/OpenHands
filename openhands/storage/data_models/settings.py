@@ -41,7 +41,6 @@ class Settings(BaseModel):
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
 
-
     model_config = {
         'validate_assignment': True,
     }
@@ -54,7 +53,7 @@ class Settings(BaseModel):
         """
         if api_key is None:
             return None
-        
+
         context = info.context
         if context and context.get('expose_secrets', False):
             return api_key.get_secret_value()

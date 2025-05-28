@@ -42,14 +42,14 @@ async def test_iteration_limit_extends_on_user_message():
     from openhands.storage.memory import InMemoryFileStore
 
     file_store = InMemoryFileStore()
-    event_stream = EventStream(sid='test', file_store=file_store)
+    event_stream = EventStream(conversation_id='test', file_store=file_store)
     agent = DummyAgent()
     initial_max_iterations = 100
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
         max_iterations=initial_max_iterations,
-        sid='test',
+        conversation_id='test',
         headless_mode=False,
     )
 

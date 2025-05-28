@@ -141,7 +141,7 @@ def run_solver(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            sid=task_name,
+            conversation_id=task_name,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=codeact_user_response,

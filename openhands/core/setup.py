@@ -29,7 +29,7 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 def create_runtime(
     config: AppConfig,
-    sid: str | None = None,
+    conversation_id: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
 ) -> Runtime:
@@ -37,7 +37,7 @@ def create_runtime(
 
     Args:
         config: The app config.
-        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+        conversation_id: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
             where we don't want to have the VSCode UI open, so it defaults to True.
@@ -46,10 +46,10 @@ def create_runtime(
     Returns:
         The created Runtime instance (not yet connected or initialized).
     """
-    # if sid is provided on the command line, use it as the name of the event stream
+    # if conversation_id is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
-    # we can do this better, this is just so that the sid is retrieved when we want to restore the session
-    session_id = sid or generate_sid(config)
+    # we can do this better, this is just so that the conversation_id is retrieved when we want to restore the session
+    session_id = conversation_id or generate_conversation_id(config)
 
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -73,7 +73,7 @@ def create_runtime(
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
-        sid=session_id,
+        conversation_id=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
     )
@@ -131,7 +131,7 @@ def initialize_repository_for_runtime(
 def create_memory(
     runtime: Runtime,
     event_stream: EventStream,
-    sid: str,
+    conversation_id: str,
     selected_repository: str | None = None,
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
@@ -142,7 +142,7 @@ def create_memory(
     Args:
         runtime: The runtime to use.
         event_stream: The event stream it will subscribe to.
-        sid: The session id.
+        conversation_id: The session id.
         selected_repository: The repository to clone and start with, if any.
         repo_directory: The repository directory, if any.
         status_callback: Optional callback function to handle status updates.
@@ -150,7 +150,7 @@ def create_memory(
     """
     memory = Memory(
         event_stream=event_stream,
-        sid=sid,
+        conversation_id=conversation_id,
         status_callback=status_callback,
     )
 
@@ -196,10 +196,10 @@ def create_controller(
     initial_state = None
     try:
         logger.debug(
-            f'Trying to restore agent state from session {event_stream.sid} if available'
+            f'Trying to restore agent state from session {event_stream.conversation_id} if available'
         )
         initial_state = State.restore_from_session(
-            event_stream.sid, event_stream.file_store
+            event_stream.conversation_id, event_stream.file_store
         )
     except Exception as e:
         logger.debug(f'Cannot restore agent state: {e}')
@@ -218,8 +218,8 @@ def create_controller(
     return (controller, initial_state)
 
 
-def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
-    """Generate a session id based on the session name and the jwt secret."""
+def generate_conversation_id(config: AppConfig, session_name: str | None = None) -> str:
+    """Generate a conversation id based on the session name and the jwt secret."""
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret
 

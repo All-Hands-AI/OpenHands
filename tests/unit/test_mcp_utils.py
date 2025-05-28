@@ -56,7 +56,7 @@ async def test_create_mcp_clients_connection_failure(mock_mcp_client):
     mock_mcp_client.return_value = mock_client_instance
 
     # First connection succeeds, second fails
-    mock_client_instance.connect_sse.side_effect = [
+    mock_client_instance.connect_sse.conversation_ide_effect = [
         None,  # Success
         Exception('Connection failed'),  # Failure
     ]

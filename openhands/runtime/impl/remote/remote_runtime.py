@@ -24,7 +24,10 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
+from openhands.runtime.utils.command import (
+    DEFAULT_MAIN_MODULE,
+    get_action_execution_server_startup_command,
+)
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -47,7 +50,7 @@ class RemoteRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[..., None] | None = None,
@@ -60,7 +63,7 @@ class RemoteRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,
@@ -97,7 +100,7 @@ class RemoteRuntime(ActionExecutionClient):
         self.available_hosts: dict[str, int] = {}
 
     def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
-        message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
+        message = f'[runtime session_id={self.conversation_id} runtime_id={self.runtime_id or "unknown"}] {message}'
         getattr(logger, level)(message, stacklevel=2, exc_info=exc_info)
 
     @property
@@ -122,7 +125,7 @@ class RemoteRuntime(ActionExecutionClient):
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
             raise AgentRuntimeNotFoundError(
-                f'Could not find existing runtime for SID: {self.sid}'
+                f'Could not find existing runtime for SID: {self.conversation_id}'
             )
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
@@ -157,7 +160,7 @@ class RemoteRuntime(ActionExecutionClient):
         try:
             response = self._send_runtime_api_request(
                 'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+                f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.conversation_id}',
             )
             data = response.json()
             status = data.get('status')
@@ -171,7 +174,7 @@ class RemoteRuntime(ActionExecutionClient):
         except json.decoder.JSONDecodeError as e:
             self.log(
                 'error',
-                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
+                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.conversation_id}. Response: {response}',
             )
             raise
 
@@ -244,7 +247,7 @@ class RemoteRuntime(ActionExecutionClient):
             'command': command,
             'working_dir': '/openhands/code/',
             'environment': environment,
-            'session_id': self.sid,
+            'session_id': self.conversation_id,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
         if self.config.sandbox.remote_runtime_class == 'sysbox':

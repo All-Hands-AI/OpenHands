@@ -137,7 +137,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_llm_init_without_model_info(mock_get_model_info, default_config):
-    mock_get_model_info.side_effect = Exception('Model info not available')
+    mock_get_model_info.conversation_ide_effect = Exception('Model info not available')
     llm = LLM(default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 4096
@@ -176,7 +176,7 @@ def test_llm_top_k_in_completion_when_set(mock_litellm_completion):
         assert kwargs['top_k'] == 50
         return {'choices': [{'message': {'content': 'Mocked response'}}]}
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     # Call completion
     llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
@@ -193,7 +193,7 @@ def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion):
         assert 'top_k' not in kwargs
         return {'choices': [{'message': {'content': 'Mocked response'}}]}
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     # Call completion
     llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
@@ -213,7 +213,10 @@ def test_llm_init_with_metrics():
 @patch('time.time')
 def test_response_latency_tracking(mock_time, mock_litellm_completion):
     # Mock time.time() to return controlled values
-    mock_time.side_effect = [1000.0, 1002.5]  # Start time, end time (2.5s difference)
+    mock_time.conversation_ide_effect = [
+        1000.0,
+        1002.5,
+    ]  # Start time, end time (2.5s difference)
 
     # Mock the completion response with a specific ID
     mock_response = {
@@ -241,7 +244,7 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert response['choices'][0]['message']['content'] == 'Test response'
 
     # To make sure the metrics fail gracefully, set the start/end time to go backwards.
-    mock_time.side_effect = [1000.0, 999.0]
+    mock_time.conversation_ide_effect = [1000.0, 999.0]
     llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
 
     # There should now be 2 latencies, the last of which has the value clipped to 0
@@ -323,7 +326,7 @@ def test_completion_retries(
     extra_args,
     expected_retries,
 ):
-    mock_litellm_completion.side_effect = [
+    mock_litellm_completion.conversation_ide_effect = [
         exception_class('Test error message', **extra_args),
         {'choices': [{'message': {'content': 'Retry successful'}}]},
     ]
@@ -341,7 +344,7 @@ def test_completion_retries(
 @patch('openhands.llm.llm.litellm_completion')
 def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config):
     with patch('time.sleep') as mock_sleep:
-        mock_litellm_completion.side_effect = [
+        mock_litellm_completion.conversation_ide_effect = [
             RateLimitError(
                 'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),
@@ -368,7 +371,9 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
 
 @patch('openhands.llm.llm.litellm_completion')
 def test_completion_operation_cancelled(mock_litellm_completion, default_config):
-    mock_litellm_completion.side_effect = OperationCancelled('Operation cancelled')
+    mock_litellm_completion.conversation_ide_effect = OperationCancelled(
+        'Operation cancelled'
+    )
 
     llm = LLM(config=default_config)
     with pytest.raises(OperationCancelled):
@@ -385,7 +390,7 @@ def test_completion_keyboard_interrupt(mock_litellm_completion, default_config):
     def side_effect(*args, **kwargs):
         raise KeyboardInterrupt('Simulated KeyboardInterrupt')
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     llm = LLM(config=default_config)
     with pytest.raises(OperationCancelled):
@@ -409,7 +414,7 @@ def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_
         _should_exit = True
         return {'choices': [{'message': {'content': 'Simulated interrupt response'}}]}
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     llm = LLM(config=default_config)
     result = llm.completion(
@@ -450,7 +455,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
                 ]
             }
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     # Create LLM instance and make a completion call
     llm = LLM(config=default_config)
@@ -490,7 +495,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     2. The temperature remains unchanged (not set to 0.2)
     3. After all retries are exhausted, the error is raised
     """
-    mock_litellm_completion.side_effect = LLMNoResponseError(
+    mock_litellm_completion.conversation_ide_effect = LLMNoResponseError(
         'LLM did not return a response'
     )
 
@@ -601,7 +606,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
                 ]
             }
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     # Create LLM instance and make a completion call with non-zero temperature
     llm = LLM(config=default_config)
@@ -662,7 +667,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
                 ]
             }
 
-    mock_litellm_completion.side_effect = side_effect
+    mock_litellm_completion.conversation_ide_effect = side_effect
 
     # Create LLM instance and make a completion call with explicit temperature=0
     llm = LLM(config=default_config)
@@ -776,7 +781,7 @@ def test_get_token_count_with_message_objects(
     message_dict = {'role': 'user', 'content': 'Hello!'}
 
     # Mock token counter to return different values for each call
-    mock_token_counter.side_effect = [42, 42]  # Same value for both cases
+    mock_token_counter.conversation_ide_effect = [42, 42]  # Same value for both cases
 
     # Get token counts for both formats
     token_count_obj = llm.get_token_count([message_obj])
@@ -814,7 +819,7 @@ def test_get_token_count_with_custom_tokenizer(
 def test_get_token_count_error_handling(
     mock_token_counter, default_config, mock_logger
 ):
-    mock_token_counter.side_effect = Exception('Token counting failed')
+    mock_token_counter.conversation_ide_effect = Exception('Token counting failed')
     llm = LLM(default_config)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
@@ -855,7 +860,7 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
     }
 
     # We'll make mock_litellm_completion return these responses in sequence
-    mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
+    mock_litellm_completion.conversation_ide_effect = [mock_response_1, mock_response_2]
 
     llm = LLM(config=default_config)
 
@@ -913,7 +918,7 @@ def test_accumulated_token_usage(mock_litellm_completion, default_config):
     }
 
     # Set up the mock to return these responses in sequence
-    mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
+    mock_litellm_completion.conversation_ide_effect = [mock_response_1, mock_response_2]
 
     # Create LLM instance
     llm = LLM(config=default_config)

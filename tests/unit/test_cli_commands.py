@@ -26,7 +26,7 @@ class TestHandleCommands:
     def mock_dependencies(self):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
         config = MagicMock(spec=AppConfig)
         current_dir = '/test/dir'
         settings_store = MagicMock(spec=FileSettingsStore)
@@ -34,7 +34,7 @@ class TestHandleCommands:
         return {
             'event_stream': event_stream,
             'usage_metrics': usage_metrics,
-            'sid': sid,
+            'conversation_id': conversation_id,
             'config': config,
             'current_dir': current_dir,
             'settings_store': settings_store,
@@ -52,7 +52,7 @@ class TestHandleCommands:
         mock_handle_exit.assert_called_once_with(
             mock_dependencies['event_stream'],
             mock_dependencies['usage_metrics'],
-            mock_dependencies['sid'],
+            mock_dependencies['conversation_id'],
         )
         assert close_repl is True
         assert reload_microagents is False
@@ -100,7 +100,7 @@ class TestHandleCommands:
         )
 
         mock_handle_status.assert_called_once_with(
-            mock_dependencies['usage_metrics'], mock_dependencies['sid']
+            mock_dependencies['usage_metrics'], mock_dependencies['conversation_id']
         )
         assert close_repl is False
         assert reload_microagents is False
@@ -118,7 +118,7 @@ class TestHandleCommands:
         mock_handle_new.assert_called_once_with(
             mock_dependencies['event_stream'],
             mock_dependencies['usage_metrics'],
-            mock_dependencies['sid'],
+            mock_dependencies['conversation_id'],
         )
         assert close_repl is True
         assert reload_microagents is False
@@ -168,13 +168,13 @@ class TestHandleExitCommand:
     def test_exit_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
 
         # Mock user confirming exit
         mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
 
         # Call the function under test
-        result = handle_exit_command(event_stream, usage_metrics, sid)
+        result = handle_exit_command(event_stream, usage_metrics, conversation_id)
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -185,7 +185,7 @@ class TestHandleExitCommand:
         assert args[0].agent_state == AgentState.STOPPED
         assert args[1] == EventSource.ENVIRONMENT
 
-        mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
+        mock_display_shutdown.assert_called_once_with(usage_metrics, conversation_id)
         assert result is True
 
     @patch('openhands.cli.commands.cli_confirm')
@@ -193,13 +193,13 @@ class TestHandleExitCommand:
     def test_exit_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
 
         # Mock user rejecting exit
         mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
 
         # Call the function under test
-        result = handle_exit_command(event_stream, usage_metrics, sid)
+        result = handle_exit_command(event_stream, usage_metrics, conversation_id)
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -219,11 +219,11 @@ class TestHandleStatusCommand:
     @patch('openhands.cli.commands.display_status')
     def test_status_command(self, mock_display_status):
         usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
 
-        handle_status_command(usage_metrics, sid)
+        handle_status_command(usage_metrics, conversation_id)
 
-        mock_display_status.assert_called_once_with(usage_metrics, sid)
+        mock_display_status.assert_called_once_with(usage_metrics, conversation_id)
 
 
 class TestHandleNewCommand:
@@ -232,13 +232,15 @@ class TestHandleNewCommand:
     def test_new_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
 
         # Mock user confirming new session
         mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
 
         # Call the function under test
-        close_repl, new_session = handle_new_command(event_stream, usage_metrics, sid)
+        close_repl, new_session = handle_new_command(
+            event_stream, usage_metrics, conversation_id
+        )
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -249,7 +251,7 @@ class TestHandleNewCommand:
         assert args[0].agent_state == AgentState.STOPPED
         assert args[1] == EventSource.ENVIRONMENT
 
-        mock_display_shutdown.assert_called_once_with(usage_metrics, sid)
+        mock_display_shutdown.assert_called_once_with(usage_metrics, conversation_id)
         assert close_repl is True
         assert new_session is True
 
@@ -258,13 +260,15 @@ class TestHandleNewCommand:
     def test_new_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
 
         # Mock user rejecting new session
         mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
 
         # Call the function under test
-        close_repl, new_session = handle_new_command(event_stream, usage_metrics, sid)
+        close_repl, new_session = handle_new_command(
+            event_stream, usage_metrics, conversation_id
+        )
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()

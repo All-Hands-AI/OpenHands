@@ -6,10 +6,8 @@ import socketio
 
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
-from openhands.events.event_store import EventStore
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
-from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -40,7 +38,7 @@ class ConversationManager(ABC):
 
     @abstractmethod
     async def attach_to_conversation(
-        self, sid: str, user_id: str | None = None
+        self, conversation_id: str, user_id: str | None = None
     ) -> Conversation | None:
         """Attach to an existing conversation or create a new one."""
 
@@ -51,16 +49,16 @@ class ConversationManager(ABC):
     @abstractmethod
     async def join_conversation(
         self,
-        sid: str,
+        conversation_id: str,
         connection_id: str,
         settings: Settings,
         user_id: str | None,
     ) -> AgentLoopInfo | None:
         """Join a conversation and return its event stream."""
 
-    async def is_agent_loop_running(self, sid: str) -> bool:
+    async def is_agent_loop_running(self, conversation_id: str) -> bool:
         """Check if an agent loop is running for the given session ID."""
-        sids = await self.get_running_agent_loops(filter_to_sids={sid})
+        sids = await self.get_running_agent_loops(filter_to_sids={conversation_id})
         return bool(sids)
 
     @abstractmethod
@@ -78,7 +76,7 @@ class ConversationManager(ABC):
     @abstractmethod
     async def maybe_start_agent_loop(
         self,
-        sid: str,
+        conversation_id: str,
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
@@ -95,7 +93,7 @@ class ConversationManager(ABC):
         """Disconnect from a session."""
 
     @abstractmethod
-    async def close_session(self, sid: str):
+    async def close_session(self, conversation_id: str):
         """Close a session."""
 
     @abstractmethod

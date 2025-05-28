@@ -30,7 +30,7 @@ def test_runtime_timeout_error(runtime, mock_session):
     action.set_hard_timeout(120)
 
     # Mock the runtime to raise a timeout error
-    runtime.send_action_for_execution.side_effect = AgentRuntimeTimeoutError(
+    runtime.send_action_for_execution.conversation_ide_effect = AgentRuntimeTimeoutError(
         'Runtime failed to return execute_action before the requested timeout of 120s'
     )
 
@@ -74,8 +74,8 @@ def test_runtime_disconnected_error(
     )
 
     # Mock the runtime to raise the error
-    runtime.send_action_for_execution.side_effect = AgentRuntimeDisconnectedError(
-        expected_message
+    runtime.send_action_for_execution.conversation_ide_effect = (
+        AgentRuntimeDisconnectedError(expected_message)
     )
 
     # Create a command action

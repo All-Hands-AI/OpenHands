@@ -46,15 +46,15 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self,
         event_stream: EventStream,
         policy: str | None = None,
-        sid: str | None = None,
+        conversation_id: str | None = None,
     ) -> None:
         """Initializes a new instance of the InvariantAnalzyer class."""
         super().__init__(event_stream)
         self.trace = []
         self.input = []
         self.settings = {}
-        if sid is None:
-            self.sid = str(uuid.uuid4())
+        if conversation_id is None:
+            self.conversation_id = str(uuid.uuid4())
 
         try:
             self.docker_client = docker.from_env()
@@ -101,7 +101,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         )
 
         self.api_server = f'{self.api_host}:{self.api_port}'
-        self.client = InvariantClient(self.api_server, self.sid)
+        self.client = InvariantClient(self.api_server, self.conversation_id)
         if policy is None:
             policy, _ = self.client.Policy.get_template()
             if policy is None:

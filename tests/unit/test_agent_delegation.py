@@ -30,9 +30,9 @@ from openhands.storage.memory import InMemoryFileStore
 @pytest.fixture
 def mock_event_stream():
     """Creates an event stream in memory."""
-    sid = f'test-{uuid4()}'
+    conversation_id = f'test-{uuid4()}'
     file_store = InMemoryFileStore({})
-    return EventStream(sid=sid, file_store=file_store)
+    return EventStream(conversation_id=conversation_id, file_store=file_store)
 
 
 @pytest.fixture
@@ -92,7 +92,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='parent',
+        conversation_id='parent',
         confirmation_mode=False,
         headless_mode=True,
         initial_state=parent_state,
@@ -191,7 +191,7 @@ async def test_delegate_step_different_states(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )

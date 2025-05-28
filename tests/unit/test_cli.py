@@ -99,7 +99,7 @@ async def test_cleanup_session_handles_exceptions(
 ):
     """Test that cleanup_session handles exceptions during cleanup gracefully."""
     loop = asyncio.get_running_loop()
-    mock_controller.close.side_effect = Exception('Test cleanup error')
+    mock_controller.close.conversation_ide_effect = Exception('Test cleanup error')
     with patch('openhands.cli.main.logger.error') as mock_log_error:
         await cli.cleanup_session(loop, mock_agent, mock_runtime, mock_controller)
 
@@ -455,7 +455,7 @@ async def test_main_with_task(
     mock_read_task.return_value = task_str
 
     # Mock run_session to return True and then False (one new session requested)
-    mock_run_session.side_effect = [True, False]
+    mock_run_session.conversation_ide_effect = [True, False]
 
     # Run the function
     await cli.main(loop)
@@ -623,7 +623,7 @@ async def test_run_session_with_name_attempts_state_restore(
 
     mock_runtime = AsyncMock()
     mock_runtime.event_stream = MagicMock()  # This is the EventStream instance
-    mock_runtime.event_stream.sid = expected_sid
+    mock_runtime.event_stream.conversation_id = expected_sid
     mock_runtime.event_stream.file_store = (
         MagicMock()
     )  # Mock the file_store attribute on the EventStream
@@ -660,7 +660,7 @@ async def test_run_session_with_name_attempts_state_restore(
     mock_generate_sid.assert_called_once_with(mock_config, test_session_name)
 
     # State.restore_from_session is called from within core.setup.create_controller,
-    # which receives the runtime object (and thus its event_stream with sid and file_store).
+    # which receives the runtime object (and thus its event_stream with conversation_id and file_store).
     mock_restore_from_session.assert_called_once_with(
         expected_sid, mock_runtime.event_stream.file_store
     )

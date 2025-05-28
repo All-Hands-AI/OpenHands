@@ -23,7 +23,10 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
+from openhands.runtime.utils.command import (
+    DEFAULT_MAIN_MODULE,
+    get_action_execution_server_startup_command,
+)
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -64,7 +67,7 @@ class DockerRuntime(ActionExecutionClient):
     Args:
         config (AppConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
-        sid (str, optional): The session ID. Defaults to 'default'.
+        conversation_id (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
@@ -75,7 +78,7 @@ class DockerRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
@@ -109,7 +112,7 @@ class DockerRuntime(ActionExecutionClient):
 
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.container_name = CONTAINER_NAME_PREFIX + sid
+        self.container_name = CONTAINER_NAME_PREFIX + conversation_id
         self.container: Container | None = None
         self.main_module = main_module
 
@@ -121,7 +124,7 @@ class DockerRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,
@@ -129,7 +132,7 @@ class DockerRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-        # Log runtime_extra_deps after base class initialization so self.sid is available
+        # Log runtime_extra_deps after base class initialization so self.conversation_id is available
         if self.config.sandbox.runtime_extra_deps:
             self.log(
                 'debug',

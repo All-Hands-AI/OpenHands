@@ -93,10 +93,10 @@ class Runtime(FileEditRuntimeMixin):
     """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
-    sid is the session id, which is used to identify the current user session.
+    conversation_id is the session id, which is used to identify the current user session.
     """
 
-    sid: str
+    conversation_id: str
     config: AppConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
@@ -107,7 +107,7 @@ class Runtime(FileEditRuntimeMixin):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, str, str], None] | None = None,
@@ -119,11 +119,11 @@ class Runtime(FileEditRuntimeMixin):
         self.git_handler = GitHandler(
             execute_shell_fn=self._execute_shell_fn_git_handler
         )
-        self.sid = sid
+        self.conversation_id = conversation_id
         self.event_stream = event_stream
         if event_stream:
             event_stream.subscribe(
-                EventStreamSubscriber.RUNTIME, self.on_event, self.sid
+                EventStreamSubscriber.RUNTIME, self.on_event, self.conversation_id
             )
         self.plugins = (
             copy.deepcopy(plugins) if plugins is not None and len(plugins) > 0 else []
@@ -189,7 +189,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     def log(self, level: str, message: str) -> None:
-        message = f'[runtime {self.sid}] {message}'
+        message = f'[runtime {self.conversation_id}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
     def send_status_message(self, message_id: str):
@@ -266,7 +266,9 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
+        logger.info(
+            f'Fetching latest provider tokens for runtime: {self.conversation_id}'
+        )
         env_vars = await self.provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
@@ -282,7 +284,7 @@ class Runtime(FileEditRuntimeMixin):
             self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
-                f'Failed export latest github token to runtime: {self.sid}, {e}'
+                f'Failed export latest github token to runtime: {self.conversation_id}, {e}'
             )
 
     async def _handle_action(self, event: Action) -> None:

@@ -76,7 +76,9 @@ def mock_agent():
 def mock_event_stream():
     mock = MagicMock(
         spec=EventStream,
-        event_stream=EventStream(sid='test', file_store=InMemoryFileStore({})),
+        event_stream=EventStream(
+            conversation_id='test', file_store=InMemoryFileStore({})
+        ),
     )
     mock.get_latest_event_id.return_value = 0
     return mock
@@ -84,7 +86,7 @@ def mock_event_stream():
 
 @pytest.fixture
 def test_event_stream():
-    event_stream = EventStream(sid='test', file_store=InMemoryFileStore({}))
+    event_stream = EventStream(conversation_id='test', file_store=InMemoryFileStore({}))
     return event_stream
 
 
@@ -129,7 +131,7 @@ async def test_set_agent_state(mock_agent, mock_event_stream):
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -147,7 +149,7 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -164,7 +166,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -182,7 +184,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -202,7 +204,7 @@ async def test_react_to_content_policy_violation(
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -274,7 +276,7 @@ async def test_run_controller_with_fatal_error(
         config=config,
         initial_user_action=MessageAction(content='Test message'),
         runtime=runtime,
-        sid='test',
+        conversation_id='test',
         agent=mock_agent,
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
@@ -341,7 +343,7 @@ async def test_run_controller_stop_with_stuck(
         config=config,
         initial_user_action=MessageAction(content='Test message'),
         runtime=runtime,
-        sid='test',
+        conversation_id='test',
         agent=mock_agent,
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
@@ -384,7 +386,7 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=False,
         initial_state=initial_state,
@@ -419,7 +421,7 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
         initial_state=initial_state,
@@ -451,7 +453,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
         event_stream=mock_event_stream,
         max_iterations=10,
         max_budget_per_task=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=False,
     )
@@ -471,7 +473,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
         event_stream=mock_event_stream,
         max_iterations=10,
         max_budget_per_task=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -492,7 +494,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -541,7 +543,7 @@ async def test_reset_with_pending_action_existing_observation(
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -583,7 +585,7 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -614,7 +616,7 @@ async def test_reset_with_pending_action_no_metadata(
         agent=mock_agent,
         event_stream=mock_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -701,7 +703,7 @@ async def test_run_controller_max_iterations_has_metrics(
         config=config,
         initial_user_action=MessageAction(content='Test message'),
         runtime=runtime,
-        sid='test',
+        conversation_id='test',
         agent=mock_agent,
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
@@ -735,7 +737,7 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -808,7 +810,7 @@ async def test_context_window_exceeded_error_handling(
             config=AppConfig(max_iterations=max_iterations),
             initial_user_action=MessageAction(content='INITIAL'),
             runtime=mock_runtime,
-            sid='test',
+            conversation_id='test',
             agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
@@ -946,7 +948,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
                 config=AppConfig(max_iterations=5),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
-                sid='test',
+                conversation_id='test',
                 agent=mock_agent,
                 fake_user_response_fn=lambda _: 'repeat',
                 memory=mock_memory,
@@ -1022,7 +1024,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
                 config=AppConfig(max_iterations=3),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
-                sid='test',
+                conversation_id='test',
                 agent=mock_agent,
                 fake_user_response_fn=lambda _: 'repeat',
                 memory=mock_memory,
@@ -1081,7 +1083,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
     runtime.event_stream = event_stream
 
     # Create a real Memory instance
-    memory = Memory(event_stream=event_stream, sid='test-memory')
+    memory = Memory(event_stream=event_stream, conversation_id='test-memory')
 
     # Patch the _find_microagent_knowledge method to raise our test exception
     def mock_find_microagent_knowledge(*args, **kwargs):
@@ -1094,7 +1096,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
             config=config,
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
-            sid='test',
+            conversation_id='test',
             agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
@@ -1109,7 +1111,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
 async def test_action_metrics_copy(mock_agent):
     # Setup
     file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
+    event_stream = EventStream(conversation_id='test', file_store=file_store)
 
     # Create agent with metrics
     mock_agent.llm = MagicMock(spec=LLM)
@@ -1169,7 +1171,7 @@ async def test_action_metrics_copy(mock_agent):
         agent=mock_agent,
         event_stream=event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -1278,7 +1280,7 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
         agent=mock_agent,
         event_stream=test_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -1336,7 +1338,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
         agent=mock_agent,
         event_stream=test_event_stream,
         max_iterations=10,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
     )
@@ -1388,10 +1390,10 @@ async def test_agent_controller_processes_null_observation_with_cause():
     """
     # Create an in-memory file store and real event stream
     file_store = InMemoryFileStore()
-    event_stream = EventStream(sid='test-session', file_store=file_store)
+    event_stream = EventStream(conversation_id='test-session', file_store=file_store)
 
     # Create a Memory instance - not used directly in this test but needed for setup
-    Memory(event_stream=event_stream, sid='test-session')
+    Memory(event_stream=event_stream, conversation_id='test-session')
 
     # Create a mock agent with necessary attributes
     mock_agent = MagicMock(spec=Agent)
@@ -1404,7 +1406,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
         agent=mock_agent,
         event_stream=event_stream,
         max_iterations=10,
-        sid='test-session',
+        conversation_id='test-session',
     )
 
     # Patch the controller's step method to track calls
@@ -1468,14 +1470,14 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     """Test that AgentController's should_step method returns False for NullObservation with cause = 0."""
     # Create a mock event stream
     file_store = InMemoryFileStore()
-    event_stream = EventStream(sid='test-session', file_store=file_store)
+    event_stream = EventStream(conversation_id='test-session', file_store=file_store)
 
     # Create an agent controller
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
         max_iterations=10,
-        sid='test-session',
+        conversation_id='test-session',
     )
 
     # Create a NullObservation with cause = 0
@@ -1548,7 +1550,7 @@ async def test_openrouter_context_window_exceeded_error(
         agent=mock_agent,
         event_stream=test_event_stream,
         max_iterations=max_iterations,
-        sid='test',
+        conversation_id='test',
         confirmation_mode=False,
         headless_mode=True,
         status_callback=mock_status_callback,

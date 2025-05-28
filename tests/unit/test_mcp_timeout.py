@@ -18,7 +18,7 @@ async def test_sse_connection_timeout():
         await asyncio.sleep(0.1)  # Simulate some delay
         raise asyncio.TimeoutError('Connection timed out')
 
-    mock_client.connect_sse.side_effect = mock_connect_sse
+    mock_client.connect_sse.conversation_ide_effect = mock_connect_sse
     mock_client.disconnect = mock.AsyncMock()
 
     # Mock the MCPClient constructor to return our mock

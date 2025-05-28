@@ -23,7 +23,7 @@ def test_get_converted_issues_initializes_review_comments():
 
         # Set up the mock to return different responses for different calls
         # First call is for issues, second call is for comments
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_issues_response,
             mock_comments_response,
             mock_comments_response,
@@ -64,7 +64,7 @@ def test_get_converted_issues_handles_empty_body():
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
         # Set up the mock to return different responses
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_issues_response,
             mock_comments_response,
             mock_comments_response,
@@ -141,7 +141,7 @@ def test_pr_handler_get_converted_issues_with_comments():
             'body': 'This is additional context from an externally referenced issue.'
         }
 
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
             mock_comments_response,  # Third call for PR comments
@@ -271,7 +271,7 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
         mock_empty_response = MagicMock()
         mock_empty_response.json.return_value = []
 
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
             mock_comments_response,  # Third call for PR comments
@@ -376,7 +376,7 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
         mock_empty_response = MagicMock()
         mock_empty_response.json.return_value = []
 
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
             mock_comments_response,  # Third call for PR comments
@@ -499,7 +499,7 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
             'body': 'External context #2.'
         }
 
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
             mock_comments_response,  # Third call for PR comments
@@ -601,7 +601,7 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
             'body': 'External context #2.'
         }
 
-        mock_get.side_effect = [
+        mock_get.conversation_ide_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
             mock_comments_response,  # Third call for PR comments

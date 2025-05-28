@@ -16,8 +16,11 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.integrations.service_types import ProviderType
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE,
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+)
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -41,7 +44,7 @@ class AgentSession:
         controller: The AgentController instance for controlling the agent.
     """
 
-    sid: str
+    conversation_id: str
     user_id: str | None
     event_stream: EventStream
     file_store: FileStore
@@ -56,7 +59,7 @@ class AgentSession:
 
     def __init__(
         self,
-        sid: str,
+        conversation_id: str,
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
@@ -64,17 +67,17 @@ class AgentSession:
         """Initializes a new instance of the Session class
 
         Parameters:
-        - sid: The session ID
+        - conversation_id: The session ID
         - file_store: Instance of the FileStore
         """
 
-        self.sid = sid
-        self.event_stream = EventStream(sid, file_store, user_id)
+        self.conversation_id = conversation_id
+        self.event_stream = EventStream(conversation_id, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
         self.logger = OpenHandsLoggerAdapter(
-            extra={'session_id': sid, 'user_id': user_id}
+            extra={'session_id': conversation_id, 'user_id': user_id}
         )
 
     async def start(
@@ -118,7 +121,9 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets if custom_secrets else {})
+        custom_secrets_handler = UserSecrets(
+            custom_secrets=custom_secrets if custom_secrets else {}
+        )
 
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -147,7 +152,7 @@ class AgentSession:
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
                 conversation_instructions=conversation_instructions,
-                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
+                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
             )
 
             # NOTE: this needs to happen before controller is created
@@ -208,19 +213,21 @@ class AgentSession:
         self._closed = True
         while self._starting and should_continue():
             self.logger.debug(
-                f'Waiting for initialization to finish before closing session {self.sid}'
+                f'Waiting for initialization to finish before closing session {self.conversation_id}'
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
             if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
                 self.logger.error(
-                    f'Waited too long for initialization to finish before closing session {self.sid}'
+                    f'Waited too long for initialization to finish before closing session {self.conversation_id}'
                 )
                 break
         if self.event_stream is not None:
             self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store, self.user_id)
+            end_state.save_to_session(
+                self.conversation_id, self.file_store, self.user_id
+            )
             await self.controller.close()
         if self.runtime is not None:
             EXECUTOR.submit(self.runtime.close)
@@ -271,11 +278,10 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-
     def override_provider_tokens_with_custom_secret(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-        custom_secrets: CUSTOM_SECRETS_TYPE | None
+        custom_secrets: CUSTOM_SECRETS_TYPE | None,
     ):
         if git_provider_tokens and custom_secrets:
             tokens = dict(git_provider_tokens)
@@ -283,10 +289,9 @@ class AgentSession:
                 token_name = ProviderHandler.get_provider_env_key(provider)
                 if token_name in custom_secrets or token_name.upper() in custom_secrets:
                     del tokens[provider]
-        
+
             return MappingProxyType(tokens)
         return git_provider_tokens
-
 
     async def _create_runtime(
         self,
@@ -317,15 +322,19 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        if runtime_cls == RemoteRuntime:    
+        if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            provider_tokens_without_gitlab = self.override_provider_tokens_with_custom_secret(git_provider_tokens, custom_secrets)
+            provider_tokens_without_gitlab = (
+                self.override_provider_tokens_with_custom_secret(
+                    git_provider_tokens, custom_secrets
+                )
+            )
 
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
-                sid=self.sid,
+                conversation_id=self.conversation_id,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
                 headless_mode=False,
@@ -339,13 +348,13 @@ class AgentSession:
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
-            
+
             # Merge git provider tokens with custom secrets before passing over to runtime
             env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
-                sid=self.sid,
+                conversation_id=self.conversation_id,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
                 headless_mode=False,
@@ -419,7 +428,7 @@ class AgentSession:
         self.logger.debug(msg)
 
         controller = AgentController(
-            sid=self.sid,
+            conversation_id=self.conversation_id,
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
@@ -436,15 +445,15 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, 
-        selected_repository: str | None, 
-        repo_directory: str | None, 
+        self,
+        selected_repository: str | None,
+        repo_directory: str | None,
         conversation_instructions: str | None,
-        custom_secrets_descriptions: dict[str, str]
+        custom_secrets_descriptions: dict[str, str],
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
-            sid=self.sid,
+            conversation_id=self.conversation_id,
             status_callback=self._status_callback,
         )
 
@@ -461,10 +470,7 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(
-                    selected_repository, 
-                    repo_directory
-                )
+                memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:
@@ -476,9 +482,11 @@ class AgentSession:
         # if we have events in the stream.
         try:
             restored_state = State.restore_from_session(
-                self.sid, self.file_store, self.user_id
+                self.conversation_id, self.file_store, self.user_id
             )
-            self.logger.debug(f'Restored state from session, sid: {self.sid}')
+            self.logger.debug(
+                f'Restored state from session, conversation_id: {self.conversation_id}'
+            )
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
                 # if we have events, we should have a state

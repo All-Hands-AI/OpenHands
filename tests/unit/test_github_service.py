@@ -69,7 +69,7 @@ async def test_github_service_fetch_data():
 
         # Test error handling with 401 status code
         mock_response.status_code = 401
-        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        mock_response.raise_for_status.conversation_ide_effect = httpx.HTTPStatusError(
             message='401 Unauthorized', request=Mock(), response=mock_response
         )
 

@@ -40,7 +40,7 @@ class Memory:
     (a RecallAction) and publishes observations with the content (such as RecallObservation).
     """
 
-    sid: str
+    conversation_id: str
     event_stream: EventStream
     status_callback: Callable | None
     loop: asyncio.AbstractEventLoop | None
@@ -48,18 +48,18 @@ class Memory:
     def __init__(
         self,
         event_stream: EventStream,
-        sid: str,
+        conversation_id: str,
         status_callback: Callable | None = None,
     ):
         self.event_stream = event_stream
-        self.sid = sid if sid else str(uuid.uuid4())
+        self.conversation_id = conversation_id if conversation_id else str(uuid.uuid4())
         self.status_callback = status_callback
         self.loop = None
 
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
             self.on_event,
-            self.sid,
+            self.conversation_id,
         )
 
         # Additional placeholders to store user workspace microagents

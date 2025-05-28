@@ -100,7 +100,6 @@ def mock_conversation_instructions_template():
     return 'Instructions: {{ repo_instruction }}'
 
 
-
 @pytest.fixture
 def mock_followup_prompt_template():
     return 'Issue context: {{ issues }}\n\nReview comments: {{ review_comments }}\n\nReview threads: {{ review_threads }}\n\nFiles: {{ files }}\n\nThread comments: {{ thread_context }}\n\nPlease fix this issue.'
@@ -116,7 +115,7 @@ def create_cmd_output(exit_code: int, content: str, command: str):
 
 def test_initialize_runtime(default_mock_args, mock_github_token):
     mock_runtime = MagicMock()
-    mock_runtime.run_action.side_effect = [
+    mock_runtime.run_action.conversation_ide_effect = [
         create_cmd_output(exit_code=0, content='', command='cd /workspace'),
         create_cmd_output(
             exit_code=0, content='', command='git config --global core.pager ""'
@@ -171,7 +170,7 @@ def test_download_issues_from_github():
     )
 
     mock_issues_response = MagicMock()
-    mock_issues_response.json.side_effect = [
+    mock_issues_response.json.conversation_ide_effect = [
         [
             {'number': 1, 'title': 'Issue 1', 'body': 'This is an issue'},
             {
@@ -212,7 +211,7 @@ def test_download_pr_from_github():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(GithubPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
-    mock_pr_response.json.side_effect = [
+    mock_pr_response.json.conversation_ide_effect = [
         [
             {
                 'number': 1,
@@ -239,7 +238,7 @@ def test_download_pr_from_github():
 
     # Mock for GraphQL request (for download_pr_metadata)
     mock_graphql_response = MagicMock()
-    mock_graphql_response.json.side_effect = lambda: {
+    mock_graphql_response.json.conversation_ide_effect = lambda: {
         'data': {
             'repository': {
                 'pullRequest': {
@@ -338,7 +337,7 @@ def test_download_pr_from_github():
 async def test_complete_runtime(default_mock_args, mock_github_token):
     """Test the complete_runtime method."""
     mock_runtime = MagicMock()
-    mock_runtime.run_action.side_effect = [
+    mock_runtime.run_action.conversation_ide_effect = [
         create_cmd_output(exit_code=0, content='', command='cd /workspace'),
         create_cmd_output(
             exit_code=0, content='', command='git config --global core.pager ""'
@@ -483,7 +482,7 @@ async def test_process_issue(
     # Mock the run_controller function
     mock_run_controller = AsyncMock()
     if test_case['run_controller_raises']:
-        mock_run_controller.side_effect = test_case['run_controller_raises']
+        mock_run_controller.conversation_ide_effect = test_case['run_controller_raises']
     else:
         mock_run_controller.return_value = test_case['run_controller_return']
 
@@ -532,7 +531,11 @@ async def test_process_issue(
             handler_instance.guess_success.assert_not_called()
 
 
-def test_get_instruction(mock_user_instructions_template, mock_conversation_instructions_template, mock_followup_prompt_template):
+def test_get_instruction(
+    mock_user_instructions_template,
+    mock_conversation_instructions_template,
+    mock_followup_prompt_template,
+):
     issue = Issue(
         owner='test_owner',
         repo='test_repo',
@@ -545,7 +548,10 @@ def test_get_instruction(mock_user_instructions_template, mock_conversation_inst
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, mock_user_instructions_template, mock_conversation_instructions_template,  None
+        issue,
+        mock_user_instructions_template,
+        mock_conversation_instructions_template,
+        None,
     )
     expected_instruction = 'Issue: Test Issue\n\nThis is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)\n\nPlease fix this issue.'
 
@@ -576,7 +582,10 @@ def test_get_instruction(mock_user_instructions_template, mock_conversation_inst
         GithubPRHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = pr_handler.get_instruction(
-        issue, mock_followup_prompt_template, mock_conversation_instructions_template, None
+        issue,
+        mock_followup_prompt_template,
+        mock_conversation_instructions_template,
+        None,
     )
     expected_instruction = "Issue context: [\n    \"Issue 1 fix the type\"\n]\n\nReview comments: None\n\nReview threads: [\n    \"There is still a typo 'pthon' instead of 'python'\"\n]\n\nFiles: []\n\nThread comments: I've left review comments, please address them\n---\nThis is a valid concern.\n\nPlease fix this issue."
 
@@ -601,7 +610,9 @@ def test_file_instruction():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
         conversation_instructions_template = f.read()
 
     # Test without thread comments
@@ -610,7 +621,7 @@ def test_file_instruction():
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, prompt,conversation_instructions_template,  None
+        issue, prompt, conversation_instructions_template, None
     )
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -619,7 +630,6 @@ An environment has been set up for you to start working. You may assume all nece
 Test Issue
 
 This is a test issue ![image](https://sampleimage.com/sample.png)"""
-
 
     expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
 You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
@@ -644,7 +654,9 @@ def test_file_instruction_with_repo_instruction():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
         conversation_instructions_prompt = f.read()
 
     # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
@@ -661,7 +673,6 @@ def test_file_instruction_with_repo_instruction():
     instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
         issue, prompt, conversation_instructions_prompt, repo_instruction
     )
-
 
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -682,7 +693,6 @@ This is a Python repo for openhands-resolver, a library that attempts to resolve
 
 
 When you think you have fixed the issue through code changes, please finish the interaction."""
-
 
     assert instruction == expected_instruction
     assert conversation_instructions == expected_conversation_instructions
@@ -785,7 +795,9 @@ def test_instruction_with_thread_comments():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
         conversation_instructions_template = f.read()
 
     llm_config = LLMConfig(model='test', api_key='test')
@@ -917,7 +929,7 @@ def test_download_pr_with_review_comments():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(GithubPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
-    mock_pr_response.json.side_effect = [
+    mock_pr_response.json.conversation_ide_effect = [
         [
             {
                 'number': 1,
@@ -937,7 +949,7 @@ def test_download_pr_with_review_comments():
 
     # Mock for GraphQL request with review comments but no threads
     mock_graphql_response = MagicMock()
-    mock_graphql_response.json.side_effect = lambda: {
+    mock_graphql_response.json.conversation_ide_effect = lambda: {
         'data': {
             'repository': {
                 'pullRequest': {
@@ -991,7 +1003,7 @@ def test_download_issue_with_specific_comment():
 
     # Mock issue and comment responses
     mock_issue_response = MagicMock()
-    mock_issue_response.json.side_effect = [
+    mock_issue_response.json.conversation_ide_effect = [
         [
             {'number': 1, 'title': 'Issue 1', 'body': 'This is an issue'},
         ],

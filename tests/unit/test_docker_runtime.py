@@ -45,14 +45,18 @@ def test_container_stopped_when_keep_runtime_alive_false(
     mock_stop_containers, mock_docker_client, config, event_stream
 ):
     # Arrange
-    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime = DockerRuntime(
+        config, event_stream, conversation_id='test-conversation_id'
+    )
     runtime.container = mock_docker_client.containers.get.return_value
 
     # Act
     runtime.close()
 
     # Assert
-    mock_stop_containers.assert_called_once_with('openhands-runtime-test-sid')
+    mock_stop_containers.assert_called_once_with(
+        'openhands-runtime-test-conversation_id'
+    )
 
 
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
@@ -61,7 +65,9 @@ def test_container_not_stopped_when_keep_runtime_alive_true(
 ):
     # Arrange
     config.sandbox.keep_runtime_alive = True
-    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime = DockerRuntime(
+        config, event_stream, conversation_id='test-conversation_id'
+    )
     runtime.container = mock_docker_client.containers.get.return_value
 
     # Act

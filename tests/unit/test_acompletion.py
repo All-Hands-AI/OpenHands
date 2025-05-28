@@ -122,7 +122,7 @@ async def test_async_completion_with_user_cancellation(cancel_delay):
     with patch.object(
         AsyncLLM, '_call_acompletion', new_callable=AsyncMock
     ) as mock_call_acompletion:
-        mock_call_acompletion.side_effect = mock_acompletion
+        mock_call_acompletion.conversation_ide_effect = mock_acompletion
         test_llm = _get_llm(AsyncLLM)
 
         async def cancel_after_delay():

@@ -56,7 +56,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        conversation_id='test-session',
         file_store=file_store,
     )
 
@@ -90,7 +90,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
             super().set_initial_state(*args, state=state, **kwargs)
 
     # Create a real Memory instance with the mock event stream
-    memory = Memory(event_stream=mock_event_stream, sid='test-session')
+    memory = Memory(event_stream=mock_event_stream, conversation_id='test-session')
     memory.microagents_dir = 'test-dir'
 
     # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession
@@ -144,7 +144,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        conversation_id='test-session',
         file_store=file_store,
     )
 

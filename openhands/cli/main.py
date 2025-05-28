@@ -44,7 +44,7 @@ from openhands.core.setup import (
     create_controller,
     create_memory,
     create_runtime,
-    generate_sid,
+    generate_conversation_id,
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
@@ -77,7 +77,7 @@ async def cleanup_session(
     event_stream = runtime.event_stream
     end_state = controller.get_state()
     end_state.save_to_session(
-        event_stream.sid,
+        event_stream.conversation_id,
         event_stream.file_store,
         event_stream.user_id,
     )
@@ -113,7 +113,7 @@ async def run_session(
     reload_microagents = False
     new_session_requested = False
 
-    sid = generate_sid(config, session_name)
+    conversation_id = generate_conversation_id(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
@@ -129,7 +129,7 @@ async def run_session(
     agent = create_agent(config)
     runtime = create_runtime(
         config,
-        sid=sid,
+        conversation_id=conversation_id,
         headless_mode=True,
         agent=agent,
     )
@@ -164,7 +164,7 @@ async def run_session(
                 next_message,
                 event_stream,
                 usage_metrics,
-                sid,
+                conversation_id,
                 config,
                 current_dir,
                 settings_store,
@@ -238,7 +238,7 @@ async def run_session(
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, conversation_id)
 
     await runtime.connect()
 
@@ -254,7 +254,7 @@ async def run_session(
     memory = create_memory(
         runtime=runtime,
         event_stream=event_stream,
-        sid=sid,
+        conversation_id=conversation_id,
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
         conversation_instructions=conversation_instructions,
@@ -282,7 +282,7 @@ async def run_session(
     clear()
 
     # Show OpenHands banner and session ID
-    display_banner(session_id=sid)
+    display_banner(session_id=conversation_id)
 
     welcome_message = 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
@@ -292,7 +292,7 @@ async def run_session(
 
     # If we loaded a state, we are resuming a previous session
     if initial_state is not None:
-        logger.info(f'Resuming session: {sid}')
+        logger.info(f'Resuming session: {conversation_id}')
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.

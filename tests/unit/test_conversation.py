@@ -353,7 +353,7 @@ async def test_new_conversation_missing_settings(provider_handler_mock):
             'openhands.server.routes.manage_conversations.create_new_conversation'
         ) as mock_create_conversation:
             # Set up the mock to raise MissingSettingsError
-            mock_create_conversation.side_effect = MissingSettingsError(
+            mock_create_conversation.conversation_ide_effect = MissingSettingsError(
                 'Settings not found'
             )
 
@@ -382,7 +382,7 @@ async def test_new_conversation_invalid_session_api_key(provider_handler_mock):
             'openhands.server.routes.manage_conversations.create_new_conversation'
         ) as mock_create_conversation:
             # Set up the mock to raise LLMAuthenticationError
-            mock_create_conversation.side_effect = LLMAuthenticationError(
+            mock_create_conversation.conversation_ide_effect = LLMAuthenticationError(
                 'Error authenticating with the LLM provider. Please check your API key'
             )
 

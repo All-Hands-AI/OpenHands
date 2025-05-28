@@ -109,7 +109,7 @@ class LocalRuntime(ActionExecutionClient):
     Args:
         config (AppConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
-        sid (str, optional): The session ID. Defaults to 'default'.
+        conversation_id (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): list of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
@@ -118,7 +118,7 @@ class LocalRuntime(ActionExecutionClient):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        conversation_id: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, str, str], None] | None = None,
@@ -147,7 +147,7 @@ class LocalRuntime(ActionExecutionClient):
             # A temporary directory is created for the agent to run in
             # This is used for the local runtime only
             self._temp_workspace = tempfile.mkdtemp(
-                prefix=f'openhands_workspace_{sid}',
+                prefix=f'openhands_workspace_{conversation_id}',
             )
             self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
@@ -192,7 +192,7 @@ class LocalRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
-            sid,
+            conversation_id,
             plugins,
             env_vars,
             status_callback,

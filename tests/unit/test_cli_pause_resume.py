@@ -44,7 +44,7 @@ class TestProcessAgentPause:
             keys_ready_func = callback
             return mock_attach
 
-        mock_input.attach.side_effect = fake_attach
+        mock_input.attach.conversation_ide_effect = fake_attach
 
         # Create a task to run process_agent_pause
         task = asyncio.create_task(process_agent_pause(done, event_stream=MagicMock()))
@@ -244,7 +244,7 @@ class TestCliCommandsPauseResume:
         message = '/resume'
         event_stream = MagicMock()
         usage_metrics = MagicMock()
-        sid = 'test-session-id'
+        conversation_id = 'test-session-id'
         config = MagicMock()
         current_dir = '/test/dir'
         settings_store = MagicMock()
@@ -257,7 +257,7 @@ class TestCliCommandsPauseResume:
             message,
             event_stream,
             usage_metrics,
-            sid,
+            conversation_id,
             config,
             current_dir,
             settings_store,

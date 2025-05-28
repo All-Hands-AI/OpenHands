@@ -22,7 +22,7 @@ from openhands.core.setup import (
     create_controller,
     create_memory,
     create_runtime,
-    generate_sid,
+    generate_conversation_id,
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
@@ -49,7 +49,7 @@ class FakeUserResponseFunc(Protocol):
 async def run_controller(
     config: AppConfig,
     initial_user_action: Action,
-    sid: str | None = None,
+    conversation_id: str | None = None,
     runtime: Runtime | None = None,
     agent: Agent | None = None,
     exit_on_message: bool = False,
@@ -65,7 +65,7 @@ async def run_controller(
     Args:
         config: The app config.
         initial_user_action: An Action object containing initial user input
-        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+        conversation_id: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
@@ -94,7 +94,7 @@ async def run_controller(
         >>> action = MessageAction(content="Write a hello world program")
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
-    sid = sid or generate_sid(config)
+    conversation_id = conversation_id or generate_conversation_id(config)
 
     if agent is None:
         agent = create_agent(config)
@@ -104,7 +104,7 @@ async def run_controller(
     if runtime is None:
         runtime = create_runtime(
             config,
-            sid=sid,
+            conversation_id=conversation_id,
             headless_mode=headless_mode,
             agent=agent,
         )
@@ -125,7 +125,7 @@ async def run_controller(
         memory = create_memory(
             runtime=runtime,
             event_stream=event_stream,
-            sid=sid,
+            conversation_id=conversation_id,
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
@@ -194,7 +194,7 @@ async def run_controller(
                 action = MessageAction(content=message)
                 event_stream.add_event(action, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, conversation_id)
 
     end_states = [
         AgentState.FINISHED,
@@ -214,7 +214,7 @@ async def run_controller(
         end_state = controller.get_state()
         # NOTE: the saved state does not include delegates events
         end_state.save_to_session(
-            event_stream.sid, event_stream.file_store, event_stream.user_id
+            event_stream.conversation_id, event_stream.file_store, event_stream.user_id
         )
 
     await controller.close(set_stop_state=False)
@@ -225,7 +225,9 @@ async def run_controller(
     if config.save_trajectory_path is not None:
         # if save_trajectory_path is a folder, use session id as file name
         if os.path.isdir(config.save_trajectory_path):
-            file_path = os.path.join(config.save_trajectory_path, sid + '.json')
+            file_path = os.path.join(
+                config.save_trajectory_path, conversation_id + '.json'
+            )
         else:
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -299,13 +301,13 @@ if __name__ == '__main__':
 
     # Set session name
     session_name = args.name
-    sid = generate_sid(config, session_name)
+    conversation_id = generate_conversation_id(config, session_name)
 
     asyncio.run(
         run_controller(
             config=config,
             initial_user_action=initial_user_action,
-            sid=sid,
+            conversation_id=conversation_id,
             fake_user_response_fn=None
             if args.no_auto_continue
             else auto_continue_response,

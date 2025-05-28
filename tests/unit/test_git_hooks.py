@@ -30,7 +30,7 @@ class TestGitHooks:
                 return ErrorObservation(content='File not found')
             return ErrorObservation(content='Unexpected path')
 
-        mock_runtime.read.side_effect = mock_read
+        mock_runtime.read.conversation_ide_effect = mock_read
 
         mock_runtime.run_action.return_value = CmdOutputObservation(
             content='', exit_code=0, command='test command'
@@ -69,7 +69,7 @@ class TestGitHooks:
 
     def test_maybe_setup_git_hooks_no_script(self, mock_runtime):
         # Test when pre-commit script doesn't exist
-        mock_runtime.read.side_effect = lambda action: ErrorObservation(
+        mock_runtime.read.conversation_ide_effect = lambda action: ErrorObservation(
             content='File not found'
         )
 
@@ -98,7 +98,7 @@ class TestGitHooks:
                 )
             return CmdOutputObservation(content='', exit_code=0, command=action.command)
 
-        mock_runtime.run_action.side_effect = mock_run_action
+        mock_runtime.run_action.conversation_ide_effect = mock_run_action
 
         Runtime.maybe_setup_git_hooks(mock_runtime)
 
@@ -129,7 +129,7 @@ class TestGitHooks:
                 )
             return ErrorObservation(content='Unexpected path')
 
-        mock_runtime.read.side_effect = mock_read
+        mock_runtime.read.conversation_ide_effect = mock_read
 
         Runtime.maybe_setup_git_hooks(mock_runtime)
 

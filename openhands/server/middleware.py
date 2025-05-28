@@ -159,7 +159,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         if not conversation_id:
             return False
 
-        request.state.sid = conversation_id
+        request.state.conversation_id = conversation_id
 
         return True
 
@@ -170,7 +170,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         user_id = await get_user_id(request)
         request.state.conversation = (
             await shared.conversation_manager.attach_to_conversation(
-                request.state.sid, user_id
+                request.state.conversation_id, user_id
             )
         )
         if not request.state.conversation:

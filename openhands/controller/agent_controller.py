@@ -109,7 +109,7 @@ class AgentController:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        sid: str | None = None,
+        conversation_id: str | None = None,
         confirmation_mode: bool = False,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -128,7 +128,7 @@ class AgentController:
                 we delegate to a different agent.
             agent_configs: A dictionary mapping agent names to agent configurations in the case that
                 we delegate to a different agent.
-            sid: The session ID of the agent.
+            conversation_id: The session ID of the agent.
             confirmation_mode: Whether to enable confirmation mode for agent actions.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
@@ -136,7 +136,7 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
-        self.id = sid or event_stream.sid
+        self.id = conversation_id or event_stream.conversation_id
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
@@ -700,7 +700,7 @@ class AgentController:
 
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
         self.delegate = AgentController(
-            sid=self.id + '-delegate',
+            conversation_id=self.id + '-delegate',
             agent=delegate_agent,
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,

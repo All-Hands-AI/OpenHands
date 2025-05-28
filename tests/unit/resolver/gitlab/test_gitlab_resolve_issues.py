@@ -118,7 +118,7 @@ def test_initialize_runtime(default_mock_args, mock_gitlab_token):
     mock_runtime = MagicMock()
 
     if os.getenv('GITLAB_CI') == 'true':
-        mock_runtime.run_action.side_effect = [
+        mock_runtime.run_action.conversation_ide_effect = [
             create_cmd_output(exit_code=0, content='', command='cd /workspace'),
             create_cmd_output(
                 exit_code=0, content='', command='sudo chown -R 1001:0 /workspace/*'
@@ -128,7 +128,7 @@ def test_initialize_runtime(default_mock_args, mock_gitlab_token):
             ),
         ]
     else:
-        mock_runtime.run_action.side_effect = [
+        mock_runtime.run_action.conversation_ide_effect = [
             create_cmd_output(exit_code=0, content='', command='cd /workspace'),
             create_cmd_output(
                 exit_code=0, content='', command='git config --global core.pager ""'
@@ -191,7 +191,7 @@ def test_download_issues_from_gitlab():
     )
 
     mock_issues_response = MagicMock()
-    mock_issues_response.json.side_effect = [
+    mock_issues_response.json.conversation_ide_effect = [
         [
             {'iid': 1, 'title': 'Issue 1', 'description': 'This is an issue'},
             {
@@ -232,7 +232,7 @@ def test_download_pr_from_gitlab():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(GitlabPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
-    mock_pr_response.json.side_effect = [
+    mock_pr_response.json.conversation_ide_effect = [
         [
             {
                 'iid': 1,
@@ -272,7 +272,7 @@ def test_download_pr_from_gitlab():
 
     # Mock for GraphQL request (for download_pr_metadata)
     mock_graphql_response = MagicMock()
-    mock_graphql_response.json.side_effect = lambda: {
+    mock_graphql_response.json.conversation_ide_effect = lambda: {
         'data': {
             'project': {
                 'mergeRequest': {
@@ -377,7 +377,7 @@ def test_download_pr_from_gitlab():
 @pytest.mark.asyncio
 async def test_complete_runtime(default_mock_args, mock_gitlab_token):
     mock_runtime = MagicMock()
-    mock_runtime.run_action.side_effect = [
+    mock_runtime.run_action.conversation_ide_effect = [
         create_cmd_output(exit_code=0, content='', command='cd /workspace'),
         create_cmd_output(
             exit_code=0, content='', command='git config --global core.pager ""'
@@ -510,7 +510,7 @@ async def test_process_issue(
     # Configure run_controller mock based on test case
     mock_run_controller = AsyncMock()
     if test_case.get('run_controller_raises'):
-        mock_run_controller.side_effect = test_case['run_controller_raises']
+        mock_run_controller.conversation_ide_effect = test_case['run_controller_raises']
     else:
         mock_run_controller.return_value = test_case['run_controller_return']
 
@@ -955,7 +955,7 @@ def test_download_issue_with_specific_comment():
 
     # Mock issue and comment responses
     mock_issue_response = MagicMock()
-    mock_issue_response.json.side_effect = [
+    mock_issue_response.json.conversation_ide_effect = [
         [
             {'iid': 1, 'title': 'Issue 1', 'description': 'This is an issue'},
         ],

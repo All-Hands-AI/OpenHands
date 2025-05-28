@@ -366,7 +366,7 @@ class TestModifyLLMSettingsAdvanced:
         mock_session.return_value = session_instance
 
         # Mock user confirmations
-        mock_confirm.side_effect = [
+        mock_confirm.conversation_ide_effect = [
             0,  # Enable confirmation mode
             0,  # Enable memory condensation
             0,  # Save settings
@@ -498,7 +498,7 @@ class TestModifyLLMSettingsAdvanced:
         mock_session.return_value = session_instance
 
         # Mock user confirmations
-        mock_confirm.side_effect = [
+        mock_confirm.conversation_ide_effect = [
             0,  # Enable confirmation mode
             0,  # Enable memory condensation
             1,  # Reject saving settings

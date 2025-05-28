@@ -17,7 +17,7 @@ def mock_log_fn():
 
 def test_init_failure_handling(mock_container, mock_log_fn):
     """Test that LogStreamer handles initialization failures gracefully."""
-    mock_container.logs.side_effect = Exception('Test error')
+    mock_container.logs.conversation_ide_effect = Exception('Test error')
 
     streamer = LogStreamer(mock_container, mock_log_fn)
     assert streamer.stdout_thread is None

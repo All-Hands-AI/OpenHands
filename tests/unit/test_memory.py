@@ -45,7 +45,7 @@ def file_store():
 @pytest.fixture
 def event_stream(file_store):
     """Create a test event stream."""
-    return EventStream(sid='test_sid', file_store=file_store)
+    return EventStream(conversation_id='test_sid', file_store=file_store)
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream, mock_age
             config=AppConfig(),
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
-            sid='test',
+            conversation_id='test',
             agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
@@ -135,7 +135,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
             config=AppConfig(),
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
-            sid='test',
+            conversation_id='test',
             agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
@@ -161,7 +161,7 @@ async def test_memory_with_microagents():
     # Initialize Memory to use the global microagents dir
     memory = Memory(
         event_stream=event_stream,
-        sid='test-session',
+        conversation_id='test-session',
     )
 
     # Verify microagents were loaded - at least one microagent should be loaded
@@ -225,7 +225,7 @@ async def test_memory_with_microagents():
 def test_memory_repository_info(prompt_dir, file_store):
     """Test that Memory adds repository info to RecallObservations."""
     # real event stream
-    event_stream = EventStream(sid='test-session', file_store=file_store)
+    event_stream = EventStream(conversation_id='test-session', file_store=file_store)
 
     # Create a test repo microagent first
     repo_microagent_name = 'test_repo_microagent'
@@ -251,7 +251,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         # Initialize Memory
         memory = Memory(
             event_stream=event_stream,
-            sid='test-session',
+            conversation_id='test-session',
         )
 
         # Set repository info
@@ -303,7 +303,7 @@ async def test_memory_with_agent_microagents():
     # Initialize Memory to use the global microagents dir
     memory = Memory(
         event_stream=event_stream,
-        sid='test-session',
+        conversation_id='test-session',
     )
 
     # Verify microagents were loaded - at least one microagent should be loaded
@@ -373,7 +373,7 @@ async def test_custom_secrets_descriptions():
     # Initialize Memory
     memory = Memory(
         event_stream=event_stream,
-        sid='test-session',
+        conversation_id='test-session',
     )
 
     # Create a mock runtime with custom secrets descriptions
@@ -507,7 +507,7 @@ def test_serialization_deserialization_with_custom_secrets():
 def test_memory_multiple_repo_microagents(prompt_dir, file_store):
     """Test that Memory loads and concatenates multiple repo microagents correctly."""
     # Create real event stream
-    event_stream = EventStream(sid='test-session', file_store=file_store)
+    event_stream = EventStream(conversation_id='test-session', file_store=file_store)
 
     # Create two test repo microagents
     repo_microagent1_name = 'test_repo_microagent1'
@@ -543,7 +543,7 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
         # Initialize Memory
         memory = Memory(
             event_stream=event_stream,
-            sid='test-session',
+            conversation_id='test-session',
         )
 
         # Set repository info
@@ -594,7 +594,7 @@ async def test_conversation_instructions_plumbed_to_memory(
 ):
     # Setup
     session = AgentSession(
-        sid='test-session',
+        conversation_id='test-session',
         file_store=file_store,
     )
 

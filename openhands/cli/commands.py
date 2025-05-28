@@ -41,7 +41,7 @@ async def handle_commands(
     command: str,
     event_stream: EventStream,
     usage_metrics: UsageMetrics,
-    sid: str,
+    conversation_id: str,
     config: AppConfig,
     current_dir: str,
     settings_store: FileSettingsStore,
@@ -54,7 +54,7 @@ async def handle_commands(
         close_repl = handle_exit_command(
             event_stream,
             usage_metrics,
-            sid,
+            conversation_id,
         )
     elif command == '/help':
         handle_help_command()
@@ -63,10 +63,10 @@ async def handle_commands(
             config, event_stream, current_dir
         )
     elif command == '/status':
-        handle_status_command(usage_metrics, sid)
+        handle_status_command(usage_metrics, conversation_id)
     elif command == '/new':
         close_repl, new_session_requested = handle_new_command(
-            event_stream, usage_metrics, sid
+            event_stream, usage_metrics, conversation_id
         )
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
@@ -81,7 +81,7 @@ async def handle_commands(
 
 
 def handle_exit_command(
-    event_stream: EventStream, usage_metrics: UsageMetrics, sid: str
+    event_stream: EventStream, usage_metrics: UsageMetrics, conversation_id: str
 ) -> bool:
     close_repl = False
 
@@ -94,7 +94,7 @@ def handle_exit_command(
             ChangeAgentStateAction(AgentState.STOPPED),
             EventSource.ENVIRONMENT,
         )
-        display_shutdown_message(usage_metrics, sid)
+        display_shutdown_message(usage_metrics, conversation_id)
         close_repl = True
 
     return close_repl
@@ -135,12 +135,12 @@ async def handle_init_command(
     return close_repl, reload_microagents
 
 
-def handle_status_command(usage_metrics: UsageMetrics, sid: str) -> None:
-    display_status(usage_metrics, sid)
+def handle_status_command(usage_metrics: UsageMetrics, conversation_id: str) -> None:
+    display_status(usage_metrics, conversation_id)
 
 
 def handle_new_command(
-    event_stream: EventStream, usage_metrics: UsageMetrics, sid: str
+    event_stream: EventStream, usage_metrics: UsageMetrics, conversation_id: str
 ) -> tuple[bool, bool]:
     close_repl = False
     new_session_requested = False
@@ -160,7 +160,7 @@ def handle_new_command(
             ChangeAgentStateAction(AgentState.STOPPED),
             EventSource.ENVIRONMENT,
         )
-        display_shutdown_message(usage_metrics, sid)
+        display_shutdown_message(usage_metrics, conversation_id)
 
     return close_repl, new_session_requested
 

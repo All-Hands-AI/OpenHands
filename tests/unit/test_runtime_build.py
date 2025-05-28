@@ -306,7 +306,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
         else:
             raise ValueError(f'Unexpected image name: {image_name}')
 
-    mock_runtime_builder.image_exists.side_effect = image_exists_side_effect
+    mock_runtime_builder.image_exists.conversation_ide_effect = image_exists_side_effect
     mock_runtime_builder.build.return_value = (
         f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
     )
@@ -365,7 +365,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
         else:
             raise ValueError(f'Unexpected image name: {image_name}')
 
-    mock_runtime_builder.image_exists.side_effect = image_exists_side_effect
+    mock_runtime_builder.image_exists.conversation_ide_effect = image_exists_side_effect
     mock_runtime_builder.build.return_value = (
         f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
     )
@@ -628,10 +628,10 @@ def test_image_exists_not_found():
         'Version': '20.10.0',
         'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
     }  # Ensure version is >= 18.09
-    mock_client.images.get.side_effect = docker.errors.ImageNotFound(
+    mock_client.images.get.conversation_ide_effect = docker.errors.ImageNotFound(
         "He doesn't like you!"
     )
-    mock_client.api.pull.side_effect = docker.errors.ImageNotFound(
+    mock_client.api.pull.conversation_ide_effect = docker.errors.ImageNotFound(
         "I don't like you either!"
     )
     builder = DockerRuntimeBuilder(mock_client)

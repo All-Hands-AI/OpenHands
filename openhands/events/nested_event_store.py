@@ -17,7 +17,7 @@ class NestedEventStore(EventStoreABC):
     """
 
     base_url: str
-    sid: str
+    conversation_id: str
     user_id: str | None
 
     def search_events(

@@ -32,8 +32,8 @@ sandbox_test_folder = '/workspace'
 
 
 def _get_runtime_sid(runtime: Runtime) -> str:
-    logger.debug(f'\nruntime.sid: {runtime.sid}')
-    return runtime.sid
+    logger.debug(f'\nruntime.conversation_id: {runtime.conversation_id}')
+    return runtime.conversation_id
 
 
 def _get_host_folder(runtime: Runtime) -> str:
@@ -219,7 +219,7 @@ def _load_runtime(
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
 ) -> tuple[Runtime, AppConfig]:
-    sid = 'rt_' + str(random.randint(100000, 999999))
+    conversation_id = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
@@ -264,12 +264,12 @@ def _load_runtime(
         config.mcp = override_mcp_config
 
     file_store = get_file_store(config.file_store, config.file_store_path)
-    event_stream = EventStream(sid, file_store)
+    event_stream = EventStream(conversation_id, file_store)
 
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
-        sid=sid,
+        conversation_id=conversation_id,
         plugins=plugins,
     )
 
