@@ -23,7 +23,9 @@ class HTTPFileStore(FileStore):
     - OPTIONS /files/{path} - List files in a directory
     - DELETE /files/{path} - Delete a file or directory
 
-    Authentication can be provided via API key, basic auth, or bearer token.
+    Authentication can be provided by customizing the provided httpx client.
+    A (mock) server implementation is available in the MockHttpxClient class
+    located at /tests/unit/test_storage.py
     """
     base_url: str
     client: httpx.Client
@@ -69,7 +71,7 @@ class HTTPFileStore(FileStore):
 
         # URL encode the path
         encoded_path = urllib.parse.quote(path)
-        return f'{self.base_url}/files{encoded_path}'
+        return f'{self.base_url}{encoded_path}'
 
     def write(self, path: str, contents: Union[str, bytes]) -> None:
         """
@@ -89,7 +91,7 @@ class HTTPFileStore(FileStore):
             if isinstance(contents, str):
                 contents = contents.encode('utf-8')
 
-            response = self.client.post(url, data=contents)
+            response = self.client.post(url, content=contents)
 
             if response.status_code not in (200, 201, 204):
                 raise FileNotFoundError(
