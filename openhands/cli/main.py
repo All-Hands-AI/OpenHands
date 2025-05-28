@@ -3,6 +3,8 @@ import logging
 import os
 import sys
 
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -10,6 +12,7 @@ from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
+from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.tui import (
     UsageMetrics,
     display_agent_running_message,
@@ -331,17 +334,12 @@ async def run_setup_flow(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
     """Run the setup flow to configure initial settings."""
-    from prompt_toolkit import print_formatted_text
-    from prompt_toolkit.formatted_text import HTML
-
     print_formatted_text(HTML('\n<b>Welcome to OpenHands!</b>'))
     print_formatted_text(
         HTML('<grey>No settings found. Starting initial setup...</grey>\n')
     )
 
     # Use the existing settings modification function for basic setup
-    from openhands.cli.settings import modify_llm_settings_basic
-
     await modify_llm_settings_basic(config, settings_store)
 
 
