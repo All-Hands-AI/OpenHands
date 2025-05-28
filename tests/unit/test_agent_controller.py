@@ -529,7 +529,7 @@ async def test_step_max_budget_per_conversation_headless(mock_agent, mock_event_
 
 
 @pytest.mark.asyncio
-async def test_budget_increase_after_user_message(mock_agent, mock_event_stream):
+async def test_budget_increase_via_set_agent_state(mock_agent, mock_event_stream):
     # Set up controller with a conversation budget cap
     controller = AgentController(
         agent=mock_agent,
@@ -541,26 +541,28 @@ async def test_budget_increase_after_user_message(mock_agent, mock_event_stream)
         confirmation_mode=False,
         headless_mode=False,
     )
-    controller.state.agent_state = AgentState.RUNNING
+    controller.state.agent_state = AgentState.PAUSED
+    controller.state.traffic_control_state = TrafficControlState.THROTTLING
     controller.state.metrics.accumulated_cost = 10.1
 
-    # Hit the budget cap
-    await controller._step()
-    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller._last_limit_hit == 'conversation budget'
+    # Original budget caps
+    original_task_budget = controller.max_budget_per_task
+    original_conversation_budget = controller.max_budget_per_conversation
 
-    # Original budget cap
-    original_budget = controller.max_budget_per_conversation
-    initial_budget = controller._initial_max_budget_per_conversation
+    # Simulate user clicking "Resume" button
+    await controller.set_agent_state_to(AgentState.RUNNING)
 
-    # Simulate user sending a message after hitting the budget cap
-    user_message = MessageAction(content='Please continue', source=EventSource.USER)
-    await controller._on_event(user_message)
+    # Check that task budget caps was not increased
+    assert (
+        controller.max_budget_per_task == original_task_budget
+    )
 
-    # Check that the budget cap was increased by adding the initial budget
-    assert controller.max_budget_per_conversation == original_budget + initial_budget
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    assert controller._last_limit_hit is None
+    # Check that conversation budget cap was increased
+    assert (
+        controller.max_budget_per_conversation
+        == original_conversation_budget
+        + controller._initial_max_budget_per_conversation
+    )
 
     await controller.close()
 
