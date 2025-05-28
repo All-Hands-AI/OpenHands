@@ -26,7 +26,12 @@ assert isinstance(server_config_interface, ServerConfig), (
     'Loaded server config interface is not a ServerConfig, despite this being assumed'
 )
 server_config: ServerConfig = server_config_interface
-file_store: FileStore = get_file_store(config.file_store, config.file_store_path, config.file_store_web_hook_url, config.file_store_web_hook_headers)
+file_store: FileStore = get_file_store(
+    config.file_store,
+    config.file_store_path,
+    config.file_store_web_hook_url,
+    config.file_store_web_hook_headers,
+)
 
 client_manager = None
 redis_host = os.environ.get('REDIS_HOST')
