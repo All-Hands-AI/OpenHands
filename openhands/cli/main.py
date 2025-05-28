@@ -327,6 +327,24 @@ async def run_session(
     return new_session_requested
 
 
+async def run_setup_flow(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
+    """Run the setup flow to configure initial settings."""
+    from prompt_toolkit import print_formatted_text
+    from prompt_toolkit.formatted_text import HTML
+
+    print_formatted_text(HTML('\n<b>Welcome to OpenHands!</b>'))
+    print_formatted_text(
+        HTML('<grey>No settings found. Starting initial setup...</grey>\n')
+    )
+
+    # Use the existing settings modification function for basic setup
+    from openhands.cli.settings import modify_llm_settings_basic
+
+    await modify_llm_settings_basic(config, settings_store)
+
+
 async def main(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
@@ -340,6 +358,17 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     # TODO: Make this generic?
     settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
     settings = await settings_store.load()
+
+    # If settings don't exist, automatically enter the setup flow
+    if not settings:
+        await run_setup_flow(config, settings_store)
+        # Reload settings after setup
+        settings = await settings_store.load()
+
+        # If settings are still not configured after setup flow, exit
+        if not settings:
+            print('Setup was not completed. Exiting.')
+            return
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
