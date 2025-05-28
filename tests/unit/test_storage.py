@@ -313,5 +313,5 @@ class MockHttpxClient():
 
     def _get_path(self, url: str):
         assert url.startswith(self.base_url)
-        path = url[len(self.base_url):]
+        path = url[len(self.base_url) :]
         return path
