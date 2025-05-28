@@ -529,6 +529,42 @@ async def test_step_max_budget_per_conversation_headless(mock_agent, mock_event_
 
 
 @pytest.mark.asyncio
+async def test_budget_increase_after_user_message(mock_agent, mock_event_stream):
+    # Set up controller with a conversation budget cap
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        max_budget_per_task=20,
+        max_budget_per_conversation=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=False,
+    )
+    controller.state.agent_state = AgentState.RUNNING
+    controller.state.metrics.accumulated_cost = 10.1
+
+    # Hit the budget cap
+    await controller._step()
+    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
+    assert controller._last_limit_hit == 'conversation budget'
+
+    # Original budget cap
+    original_budget = controller.max_budget_per_conversation
+
+    # Simulate user sending a message after hitting the budget cap
+    user_message = MessageAction(content='Please continue', source=EventSource.USER)
+    await controller._on_event(user_message)
+
+    # Check that the budget cap was increased by 50%
+    assert controller.max_budget_per_conversation == original_budget * 1.5
+    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
+    assert controller._last_limit_hit is None
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
 async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_stream):
     """Test reset() when there's a pending action with tool call metadata but no observation."""
     controller = AgentController(

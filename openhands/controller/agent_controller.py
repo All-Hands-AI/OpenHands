@@ -164,6 +164,9 @@ class AgentController:
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
+        self._last_limit_hit: str | None = (
+            None  # Track the last limit type that was hit
+        )
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -411,6 +414,38 @@ class AgentController:
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             self.state.history.append(event)
+
+        # Check if this is a user message after hitting a budget cap
+        if (
+            isinstance(event, MessageAction)
+            and event.source == EventSource.USER
+            and self.state.traffic_control_state == TrafficControlState.THROTTLING
+            and self._last_limit_hit is not None
+            and 'budget' in self._last_limit_hit
+        ):
+            # Increase the budget cap by 50%
+            if (
+                self._last_limit_hit == 'task budget'
+                and self.max_budget_per_task is not None
+            ):
+                self.max_budget_per_task *= 1.5
+                self.log(
+                    'info',
+                    f'Increasing task budget cap to {self.max_budget_per_task:.2f} after user continued conversation',
+                )
+            elif (
+                self._last_limit_hit == 'conversation budget'
+                and self.max_budget_per_conversation is not None
+            ):
+                self.max_budget_per_conversation *= 1.5
+                self.log(
+                    'info',
+                    f'Increasing conversation budget cap to {self.max_budget_per_conversation:.2f} after user continued conversation',
+                )
+
+            # Reset the traffic control state
+            self.state.traffic_control_state = TrafficControlState.NORMAL
+            self._last_limit_hit = None
 
         if isinstance(event, Action):
             await self._handle_action(event)
@@ -931,6 +966,9 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
+            # Store the limit type that was hit
+            self._last_limit_hit = limit_type
+
             # Format values as integers for iterations, keep decimals for budget
             if limit_type == 'iteration':
                 current_str = str(int(current_value))
@@ -949,6 +987,7 @@ class AgentController:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '
                     f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
+                    f'If you continue the conversation, the budget cap will be increased.'
                 )
                 # FIXME: this isn't really an exception--we should have a different path
                 await self._react_to_exception(e)
