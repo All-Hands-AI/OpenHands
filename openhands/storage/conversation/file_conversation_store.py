@@ -42,7 +42,7 @@ class FileConversationStore(ConversationStore):
         json_obj = json.loads(json_str)
         if 'created_at' not in json_obj:
             raise FileNotFoundError(path)
-            
+
         # Remove github_user_id if it exists
         if 'github_user_id' in json_obj:
             json_obj.pop('github_user_id')
@@ -105,7 +105,7 @@ class FileConversationStore(ConversationStore):
     async def get_instance(
         cls, config: AppConfig, user_id: str | None
     ) -> FileConversationStore:
-        file_store = get_file_store(config.file_store, config.file_store_path)
+        file_store = get_file_store(config.file_store, config.file_store_path, config.file_store_web_hook_url, config.file_store_web_hook_headers)
         return FileConversationStore(file_store)
 
 
