@@ -40,7 +40,7 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
-
+    max_budget_per_conversation: float | None = None
 
     model_config = {
         'validate_assignment': True,
@@ -54,7 +54,7 @@ class Settings(BaseModel):
         """
         if api_key is None:
             return None
-        
+
         context = info.context
         if context and context.get('expose_secrets', False):
             return api_key.get_secret_value()
@@ -130,5 +130,6 @@ class Settings(BaseModel):
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
+            max_budget_per_conversation=app_config.max_budget_per_conversation,
         )
         return settings

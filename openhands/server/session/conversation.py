@@ -15,6 +15,7 @@ class Conversation:
     event_stream: EventStream
     runtime: Runtime
     user_id: str | None
+    accumulated_cost: float
 
     def __init__(
         self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
@@ -23,6 +24,7 @@ class Conversation:
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
+        self.accumulated_cost = 0.0
         self.event_stream = EventStream(sid, file_store, user_id)
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(

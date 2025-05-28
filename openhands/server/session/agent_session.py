@@ -16,8 +16,11 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.integrations.service_types import ProviderType
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE,
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+)
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -86,6 +89,7 @@ class AgentSession:
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         max_budget_per_task: float | None = None,
+        max_budget_per_conversation: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         selected_repository: str | None = None,
@@ -118,7 +122,9 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets if custom_secrets else {})
+        custom_secrets_handler = UserSecrets(
+            custom_secrets=custom_secrets if custom_secrets else {}
+        )
 
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -147,7 +153,7 @@ class AgentSession:
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
                 conversation_instructions=conversation_instructions,
-                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
+                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
             )
 
             # NOTE: this needs to happen before controller is created
@@ -163,6 +169,7 @@ class AgentSession:
                     config,
                     max_iterations,
                     max_budget_per_task,
+                    max_budget_per_conversation,
                     agent_to_llm_config,
                     agent_configs,
                 )
@@ -172,6 +179,7 @@ class AgentSession:
                     config.security.confirmation_mode,
                     max_iterations,
                     max_budget_per_task=max_budget_per_task,
+                    max_budget_per_conversation=max_budget_per_conversation,
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
                 )
@@ -235,6 +243,7 @@ class AgentSession:
         config: AppConfig,
         max_iterations: int,
         max_budget_per_task: float | None,
+        max_budget_per_conversation: float | None,
         agent_to_llm_config: dict[str, LLMConfig] | None,
         agent_configs: dict[str, AgentConfig] | None,
     ) -> MessageAction:
@@ -251,6 +260,7 @@ class AgentSession:
             config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
+            max_budget_per_conversation=max_budget_per_conversation,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             replay_events=replay_events[1:],
@@ -271,11 +281,10 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-
     def override_provider_tokens_with_custom_secret(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-        custom_secrets: CUSTOM_SECRETS_TYPE | None
+        custom_secrets: CUSTOM_SECRETS_TYPE | None,
     ):
         if git_provider_tokens and custom_secrets:
             tokens = dict(git_provider_tokens)
@@ -283,10 +292,9 @@ class AgentSession:
                 token_name = ProviderHandler.get_provider_env_key(provider)
                 if token_name in custom_secrets or token_name.upper() in custom_secrets:
                     del tokens[provider]
-        
+
             return MappingProxyType(tokens)
         return git_provider_tokens
-
 
     async def _create_runtime(
         self,
@@ -317,10 +325,14 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        if runtime_cls == RemoteRuntime:    
+        if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            provider_tokens_without_gitlab = self.override_provider_tokens_with_custom_secret(git_provider_tokens, custom_secrets)
+            provider_tokens_without_gitlab = (
+                self.override_provider_tokens_with_custom_secret(
+                    git_provider_tokens, custom_secrets
+                )
+            )
 
             self.runtime = runtime_cls(
                 config=config,
@@ -339,7 +351,7 @@ class AgentSession:
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
-            
+
             # Merge git provider tokens with custom secrets before passing over to runtime
             env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
             self.runtime = runtime_cls(
@@ -385,6 +397,7 @@ class AgentSession:
         confirmation_mode: bool,
         max_iterations: int,
         max_budget_per_task: float | None = None,
+        max_budget_per_conversation: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
@@ -395,7 +408,8 @@ class AgentSession:
         - agent:
         - confirmation_mode: Whether to use confirmation mode
         - max_iterations:
-        - max_budget_per_task:
+        - max_budget_per_task: Maximum budget per task, agent stops if exceeded
+        - max_budget_per_conversation: Maximum budget per conversation, agent stops if exceeded
         - agent_to_llm_config:
         - agent_configs:
         """
@@ -424,6 +438,7 @@ class AgentSession:
             agent=agent,
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
+            max_budget_per_conversation=max_budget_per_conversation,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
@@ -436,11 +451,11 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, 
-        selected_repository: str | None, 
-        repo_directory: str | None, 
+        self,
+        selected_repository: str | None,
+        repo_directory: str | None,
         conversation_instructions: str | None,
-        custom_secrets_descriptions: dict[str, str]
+        custom_secrets_descriptions: dict[str, str],
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -461,10 +476,7 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(
-                    selected_repository, 
-                    repo_directory
-                )
+                memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:

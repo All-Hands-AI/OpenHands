@@ -41,6 +41,7 @@ class AppConfig(BaseModel):
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
+        max_budget_per_conversation: Maximum budget per conversation, agent stops if exceeded.
         e2b_api_key: E2B API key.
         disable_color: Whether to disable terminal colors. For terminals that don't support color.
         debug: Whether to enable debugging mode.
@@ -65,7 +66,10 @@ class AppConfig(BaseModel):
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
-    search_api_key: SecretStr | None = Field(default=None, description="API key for Tavily search engine (https://tavily.com/). Required for search functionality.")
+    search_api_key: SecretStr | None = Field(
+        default=None,
+        description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
+    )
 
     # Deprecated parameters - will be removed in a future version
     workspace_base: str | None = Field(default=None, deprecated=True)
@@ -73,11 +77,12 @@ class AppConfig(BaseModel):
     workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     # End of deprecated parameters
-    
+
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
+    max_budget_per_conversation: float | None = Field(default=None)
     e2b_api_key: SecretStr | None = Field(default=None)
     modal_api_token_id: SecretStr | None = Field(default=None)
     modal_api_token_secret: SecretStr | None = Field(default=None)
