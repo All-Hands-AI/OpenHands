@@ -133,11 +133,11 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 def display_banner(session_id: str) -> None:
     cards = HTML(r"""<gold>
-    🟨🟨🟨🟨  🟨🟨🟨🟨  🟨🟨🟨🟨  🟨    🟨  🟨    🟨  🟨🟨🟨🟨  🟨    🟨  🟨🟨🟨      🟨🟨🟨
-    🟨    🟨  🟨    🟨  🟨        🟨🟨  🟨  🟨    🟨  🟨    🟨  🟨🟨  🟨  🟨    🟨  🟨
-    🟨    🟨  🟨🟨🟨🟨  🟨🟨🟨🟨  🟨 🟨 🟨  🟨🟨🟨🟨  🟨🟨🟨🟨  🟨 🟨 🟨  🟨    🟨    🟨🟨
-    🟨    🟨  🟨        🟨        🟨  🟨🟨  🟨    🟨  🟨    🟨  🟨  🟨🟨  🟨    🟨        🟨
-    🟨🟨🟨🟨  🟨        🟨🟨🟨🟨  🟨    🟨  🟨    🟨  🟨    🟨  🟨    🟨  🟨🟨🟨    🟨🟨🟨
+    🙌🙌🙌🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌    🙌  🙌    🙌  🙌🙌🙌🙌  🙌    🙌  🙌🙌🙌      🙌🙌🙌
+    🙌    🙌  🙌    🙌  🙌        🙌🙌  🙌  🙌    🙌  🙌    🙌  🙌🙌  🙌  🙌    🙌  🙌
+    🙌    🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌  🙌    🙌    🙌🙌
+    🙌    🙌  🙌        🙌        🙌  🙌🙌  🙌    🙌  🙌    🙌  🙌  🙌🙌  🙌    🙌        🙌
+    🙌🙌🙌🙌  🙌        🙌🙌🙌🙌  🙌    🙌  🙌    🙌  🙌    🙌  🙌    🙌  🙌🙌🙌    🙌🙌🙌
     </gold>""")
 
     print_formatted_text(
