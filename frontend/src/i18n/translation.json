@@ -6400,20 +6400,20 @@
         "uk": "Запит не вдалося виконати через внутрішню помилку сервера."
     },
     "STATUS$ERROR_LLM_OUT_OF_CREDITS": {
-        "en": "You're out of OpenHands Credits",
-        "ja": "OpenHandsクレジットが不足しています",
-        "zh-CN": "您的OpenHands点数已用完",
-        "zh-TW": "您的OpenHands點數已用完",
-        "ko-KR": "OpenHands 크레딧이 소진되었습니다",
-        "no": "Du er tom for OpenHands-kreditter",
-        "it": "Hai esaurito i crediti OpenHands",
-        "pt": "Você está sem créditos OpenHands",
-        "es": "Te has quedado sin créditos de OpenHands",
-        "ar": "لقد نفدت رصيدك من OpenHands",
-        "fr": "Vous n'avez plus de crédits OpenHands",
-        "tr": "OpenHands kredileriniz tükendi",
-        "de": "Ihre OpenHands-Guthaben sind aufgebraucht",
-        "uk": "У вас закінчилися кредити OpenHands"
+        "en": "You're out of OpenHands Credits. <a>Add funds</a>",
+        "ja": "OpenHandsクレジットが不足しています。<a>資金を追加</a>",
+        "zh-CN": "您的OpenHands点数已用完。<a>添加资金</a>",
+        "zh-TW": "您的OpenHands點數已用完。<a>添加資金</a>",
+        "ko-KR": "OpenHands 크레딧이 소진되었습니다. <a>자금 추가</a>",
+        "no": "Du er tom for OpenHands-kreditter. <a>Legg til midler</a>",
+        "it": "Hai esaurito i crediti OpenHands. <a>Aggiungi fondi</a>",
+        "pt": "Você está sem créditos OpenHands. <a>Adicionar fundos</a>",
+        "es": "Te has quedado sin créditos de OpenHands. <a>Añadir fondos</a>",
+        "ar": "لقد نفدت رصيدك من OpenHands. <a>إضافة رصيد</a>",
+        "fr": "Vous n'avez plus de crédits OpenHands. <a>Ajouter des fonds</a>",
+        "tr": "OpenHands kredileriniz tükendi. <a>Bakiye ekle</a>",
+        "de": "Ihre OpenHands-Guthaben sind aufgebraucht. <a>Guthaben hinzufügen</a>",
+        "uk": "У вас закінчилися кредити OpenHands. <a>Додати кошти</a>"
     },
     "STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION": {
         "en": "Content policy violation. The output was blocked by content filtering policy.",
@@ -8780,7 +8780,7 @@
         "ar": "إرسال...",
         "fr": "Envoi...",
         "tr": "Gönderiliyor...",
-        "de": "Senden...",  
+        "de": "Senden...",
         "uk": "Відправляємо..."
     },
     "FEEDBACK$SUBMITTING_MESSAGE": {
