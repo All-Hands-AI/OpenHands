@@ -16,7 +16,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
+from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -377,7 +377,7 @@ class IssueResolver:
             shutil.rmtree(workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
 
-        config = AppConfig(
+        config = OpenHandsConfig(
             default_agent='CodeActAgent',
             runtime='docker',
             max_budget_per_task=4,

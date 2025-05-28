@@ -6,7 +6,7 @@ from typing import Any
 
 from openhands_aci.utils.diff import get_diff
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileEditAction,
@@ -83,7 +83,7 @@ def get_new_file_contents(
 
 
 class FileEditRuntimeInterface(ABC):
-    config: AppConfig
+    config: OpenHandsConfig
 
     @abstractmethod
     def read(self, action: FileReadAction) -> Observation:

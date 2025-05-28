@@ -1,4 +1,4 @@
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.event import Event
 
 
@@ -33,6 +33,6 @@ class MonitoringListener:
     @classmethod
     def get_instance(
         cls,
-        config: AppConfig,
+        config: OpenHandsConfig,
     ) -> 'MonitoringListener':
         return cls()

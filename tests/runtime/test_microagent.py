@@ -208,7 +208,7 @@ async def test_add_mcp_tools_from_microagents():
     """Test that add_mcp_tools_to_agent adds tools from microagents."""
     # Import ActionExecutionClient for mocking
 
-    from openhands.core.config.app_config import AppConfig
+    from openhands.core.config.openhands_config import OpenHandsConfig
     from openhands.runtime.impl.action_execution.action_execution_client import (
         ActionExecutionClient,
     )
@@ -219,8 +219,8 @@ async def test_add_mcp_tools_from_microagents():
     mock_memory = MagicMock()
     mock_mcp_config = MCPConfig()
 
-    # Create a mock AppConfig with the MCP config
-    mock_app_config = AppConfig(mcp=mock_mcp_config, search_api_key=None)
+    # Create a mock OpenHandsConfig with the MCP config
+    mock_app_config = OpenHandsConfig(mcp=mock_mcp_config, search_api_key=None)
 
     # Configure the mock memory to return a microagent MCP config
     mock_stdio_server = MCPStdioServerConfig(
@@ -247,7 +247,7 @@ async def test_add_mcp_tools_from_microagents():
         'openhands.mcp.utils.fetch_mcp_tools_from_config',
         new=AsyncMock(return_value=[mock_tool]),
     ):
-        # Call the function with the AppConfig instead of MCPConfig
+        # Call the function with the OpenHandsConfig instead of MCPConfig
         await add_mcp_tools_to_agent(
             mock_agent, mock_runtime, mock_memory, mock_app_config
         )
