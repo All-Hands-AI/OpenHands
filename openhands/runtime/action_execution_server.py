@@ -1015,12 +1015,12 @@ if __name__ == '__main__':
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
-            return []
+            return JSONResponse(content=[])
 
         try:
             # Check if the directory exists
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
-                return []
+                return JSONResponse(content=[])
 
             entries = os.listdir(full_path)
 
@@ -1049,11 +1049,11 @@ if __name__ == '__main__':
 
             # Combine sorted directories and files
             sorted_entries = directories + files
-            return sorted_entries
+            return JSONResponse(content=sorted_entries)
 
         except Exception as e:
             logger.error(f'Error listing files: {e}')
-            return []
+            return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
