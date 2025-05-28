@@ -223,7 +223,7 @@ export function WsClientProvider({
           },
           // Do not refetch if we are still receiving messages at a high rate (e.g., loading an existing conversation)
           // This prevents unnecessary refetches when the user is still receiving messages
-          { cancelRefetch: messageRateHandler.isUnderThreshold },
+          { cancelRefetch: false },
         );
 
         // Invalidate file diff cache when a file is edited or written
