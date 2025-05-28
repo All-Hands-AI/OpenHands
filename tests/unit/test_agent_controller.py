@@ -1044,7 +1044,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'LLMContextWindowExceedError: ServerConversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
+        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
     )
 
     error_observations = test_event_stream.get_matching_events(
