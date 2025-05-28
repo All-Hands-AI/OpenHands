@@ -112,6 +112,7 @@ async def run_session(
     task_content: str | None = None,
     conversation_instructions: str | None = None,
     session_name: str | None = None,
+    skip_banner: bool = False,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
@@ -284,8 +285,9 @@ async def run_session(
     # Clear the terminal
     clear()
 
-    # Show OpenHands banner and session ID
-    display_banner(session_id=sid)
+    # Show OpenHands banner and session ID if not skipped
+    if not skip_banner:
+        display_banner(session_id=sid)
 
     welcome_message = 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
@@ -336,6 +338,9 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     Returns:
         bool: True if settings were successfully configured, False otherwise.
     """
+    # Display the banner with ASCII art first
+    display_banner(session_id='setup')
+
     print_formatted_text(HTML('\n<b>Welcome to OpenHands!</b>'))
     print_formatted_text(
         HTML('<grey>No settings found. Starting initial setup...</grey>\n')
@@ -359,9 +364,16 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
     settings = await settings_store.load()
 
+    # Track if we've shown the banner during setup
+    banner_shown = False
+
     # If settings don't exist, automatically enter the setup flow
     if not settings:
+        # Clear the terminal before showing the banner
+        clear()
+
         await run_setup_flow(config, settings_store)
+        banner_shown = True
 
         settings = await settings_store.load()
 
@@ -434,6 +446,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         current_dir,
         task_str,
         session_name=args.name,
+        skip_banner=banner_shown,  # Skip banner if already shown during setup
     )
 
     # If a new session was requested, run it
