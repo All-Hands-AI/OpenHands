@@ -68,6 +68,7 @@ runloop-api-client = "0.33.0"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
+openhands-aci = "0.2.14"
 python-socketio = "^5.11.4"
 redis = ">=5.2,<7.0"
 sse-starlette = "^2.1.3"
@@ -113,7 +114,6 @@ gevent = ">=24.2.1,<26.0.0"
 optional = true
 
 [tool.poetry.group.runtime.dependencies]
-openhands-aci = "0.2.14"
 jupyterlab = "*"
 notebook = "*"
 jupyter_kernel_gateway = "*"
