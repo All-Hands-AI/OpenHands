@@ -139,6 +139,39 @@ async def test_add_custom_secret(test_client, file_secrets_store):
 
 
 @pytest.mark.asyncio
+async def test_create_custom_secret_with_no_existing_secrets(
+    test_client, file_secrets_store
+):
+    """Test creating a custom secret when there are no existing secrets at all."""
+
+    # Don't store any initial settings - this simulates a completely new user
+    # or a situation where the secrets store is empty
+
+    # Make the POST request to add a custom secret
+    add_secret_data = {
+        'name': 'NEW_API_KEY',
+        'value': 'new-api-key-value',
+        'description': 'Test API Key',
+    }
+    response = test_client.post('/api/secrets', json=add_secret_data)
+    assert response.status_code == 201
+
+    # Verify that the settings were stored with the new secret
+    stored_settings = await file_secrets_store.load()
+
+    # Check that the secret was added
+    assert 'NEW_API_KEY' in stored_settings.custom_secrets
+    assert (
+        stored_settings.custom_secrets['NEW_API_KEY'].secret.get_secret_value()
+        == 'new-api-key-value'
+    )
+    assert stored_settings.custom_secrets['NEW_API_KEY'].description == 'Test API Key'
+
+    # Check that provider_tokens is an empty dict, not None
+    assert stored_settings.provider_tokens == {}
+
+
+@pytest.mark.asyncio
 async def test_update_existing_custom_secret(test_client, file_secrets_store):
     """Test updating an existing custom secret's name and description (cannot change value once set)."""
 

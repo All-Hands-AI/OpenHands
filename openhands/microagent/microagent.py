@@ -194,7 +194,6 @@ def load_microagents_from_dir(
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
         for file in microagent_dir.rglob('*.md'):
-            logger.debug(f'Checking file {file}...')
             # skip README.md
             if file.name == 'README.md':
                 continue
@@ -204,9 +203,6 @@ def load_microagents_from_dir(
                     repo_agents[agent.name] = agent
                 elif isinstance(agent, KnowledgeMicroagent):
                     knowledge_agents[agent.name] = agent
-                logger.debug(
-                    f'Loaded agent {agent.name} from {file}. Type: {type(agent)}'
-                )
             except MicroagentValidationError as e:
                 # For validation errors, include the original exception
                 error_msg = f'Error loading microagent from {file}: {str(e)}'
@@ -216,4 +212,8 @@ def load_microagents_from_dir(
                 error_msg = f'Error loading microagent from {file}: {str(e)}'
                 raise ValueError(error_msg) from e
 
+    logger.debug(
+        f'Loaded {len(repo_agents) + len(knowledge_agents)} microagents: '
+        f'{[*repo_agents.keys(), *knowledge_agents.keys()]}'
+    )
     return repo_agents, knowledge_agents
