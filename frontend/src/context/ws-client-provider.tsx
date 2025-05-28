@@ -289,14 +289,14 @@ export function WsClientProvider({
 
   React.useEffect(() => {
     lastEventRef.current = null;
-  }, [conversationId]);
 
-  React.useEffect(() => {
     // reset events when conversationId changes
     setEvents([]);
     setParsedEvents([]);
     setStatus(WsClientProviderStatus.DISCONNECTED);
+  }, [conversationId]);
 
+  React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
