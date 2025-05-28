@@ -162,10 +162,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-.cursorignore
-.rooignore
-.clineignore
-
 # VS Code: Ignore all but certain files that specify repo-specific settings.
 # https://stackoverflow.com/questions/32964920/should-i-commit-the-vscode-folder-to-source-control
 .vscode/**/*
@@ -173,6 +169,20 @@ cython_debug/
 !.vscode/launch.json
 !.vscode/settings.json
 !.vscode/tasks.json
+
+# VS Code extensions/forks:
+.cursorignore
+.rooignore
+.clineignore
+.windsurfignore
+.cursorrules
+.roorules
+.clinerules
+.windsurfrules
+.cursor/rules
+.roo/rules
+.cline/rules
+.windsurf/rules
 
 # evaluation
 evaluation/evaluation_outputs
