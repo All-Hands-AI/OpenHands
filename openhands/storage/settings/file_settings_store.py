@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
@@ -31,7 +31,7 @@ class FileSettingsStore(SettingsStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: OpenHandsConfig, user_id: str | None
     ) -> FileSettingsStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileSettingsStore(file_store)

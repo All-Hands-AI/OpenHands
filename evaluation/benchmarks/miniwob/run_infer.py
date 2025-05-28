@@ -21,7 +21,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -54,10 +54,10 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 def get_config(
     metadata: EvalMetadata,
     env_id: str,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'xingyaoww/od-eval-miniwob:v1.0'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),

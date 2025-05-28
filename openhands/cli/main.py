@@ -30,7 +30,7 @@ from openhands.cli.utils import (
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     parse_arguments,
     setup_config_from_args,
 )
@@ -103,7 +103,7 @@ async def cleanup_session(
 
 async def run_session(
     loop: asyncio.AbstractEventLoop,
-    config: AppConfig,
+    config: OpenHandsConfig,
     settings_store: FileSettingsStore,
     current_dir: str,
     task_content: str | None = None,
@@ -334,7 +334,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     logger.setLevel(logging.WARNING)
 
     # Load config from toml and override with command line arguments
-    config: AppConfig = setup_config_from_args(args)
+    config: OpenHandsConfig = setup_config_from_args(args)
 
     # Load settings from Settings Store
     # TODO: Make this generic?

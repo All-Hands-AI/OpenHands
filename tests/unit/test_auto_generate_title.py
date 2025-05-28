@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
@@ -201,13 +201,13 @@ async def test_update_conversation_with_title():
     # Mock the conversation store and metadata
     mock_conversation_store = AsyncMock()
     mock_metadata = MagicMock()
-    mock_metadata.title = f'Conversation {conversation_id[:5]}'  # Default title
+    mock_metadata.title = f'ServerConversation {conversation_id[:5]}'  # Default title
     mock_conversation_store.get_metadata.return_value = mock_metadata
 
     # Create the conversation manager
     manager = StandaloneConversationManager(
         sio=sio,
-        config=AppConfig(),
+        config=OpenHandsConfig(),
         file_store=file_store,
         server_config=server_config,
         monitoring_listener=MonitoringListener(),

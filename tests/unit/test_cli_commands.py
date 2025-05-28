@@ -13,7 +13,7 @@ from openhands.cli.commands import (
     handle_status_command,
 )
 from openhands.cli.tui import UsageMetrics
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction, MessageAction
@@ -27,7 +27,7 @@ class TestHandleCommands:
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
         sid = 'test-session-id'
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         current_dir = '/test/dir'
         settings_store = MagicMock(spec=FileSettingsStore)
 
@@ -278,7 +278,7 @@ class TestHandleInitCommand:
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.init_repository')
     async def test_init_local_runtime_successful(self, mock_init_repository):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         config.runtime = 'local'
         event_stream = MagicMock(spec=EventStream)
         current_dir = '/test/dir'
@@ -306,7 +306,7 @@ class TestHandleInitCommand:
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.init_repository')
     async def test_init_local_runtime_unsuccessful(self, mock_init_repository):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         config.runtime = 'local'
         event_stream = MagicMock(spec=EventStream)
         current_dir = '/test/dir'
@@ -330,7 +330,7 @@ class TestHandleInitCommand:
     @patch('openhands.cli.commands.print_formatted_text')
     @patch('openhands.cli.commands.init_repository')
     async def test_init_non_local_runtime(self, mock_init_repository, mock_print):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         config.runtime = 'remote'  # Not local
         event_stream = MagicMock(spec=EventStream)
         current_dir = '/test/dir'
@@ -360,7 +360,7 @@ class TestHandleSettingsCommand:
         mock_cli_confirm,
         mock_display_settings,
     ):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
         # Mock user selecting "Basic" settings
@@ -384,7 +384,7 @@ class TestHandleSettingsCommand:
         mock_cli_confirm,
         mock_display_settings,
     ):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
         # Mock user selecting "Basic" settings
@@ -408,7 +408,7 @@ class TestHandleSettingsCommand:
         mock_cli_confirm,
         mock_display_settings,
     ):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
         # Mock user selecting "Advanced" settings
@@ -432,7 +432,7 @@ class TestHandleSettingsCommand:
         mock_cli_confirm,
         mock_display_settings,
     ):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
         # Mock user selecting "Advanced" settings
@@ -450,7 +450,7 @@ class TestHandleSettingsCommand:
     @patch('openhands.cli.commands.display_settings')
     @patch('openhands.cli.commands.cli_confirm')
     async def test_settings_go_back(self, mock_cli_confirm, mock_display_settings):
-        config = MagicMock(spec=AppConfig)
+        config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
         # Mock user selecting "Go back"

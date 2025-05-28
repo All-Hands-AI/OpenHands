@@ -9,7 +9,7 @@ import httpcore
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
@@ -65,7 +65,7 @@ class ActionExecutionClient(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -409,7 +409,7 @@ class ActionExecutionClient(Runtime):
                         'warning',
                         f'Some MCP servers failed to be added: {result["router_error_log"]}',
                     )
-                
+
                 # Update our cached list with combined servers after successful update
                 self._last_updated_mcp_stdio_servers = combined_servers.copy()
                 self.log(
