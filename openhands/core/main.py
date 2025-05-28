@@ -218,7 +218,7 @@ async def run_controller(
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
-        with open(file_path, 'w') as f:  # noqa: ASYNC101
+        with open(file_path, 'w') as f:
             json.dump(histories, f, indent=4)
 
     return state

@@ -42,52 +42,33 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
 
     # Add a patch to handle router_error_log key in MCPObservation
     from unittest.mock import patch
-    from openhands.events.observation.mcp import MCPObservation
+
     from openhands.events.serialization import event_from_dict
 
     # Create a patched version of event_from_dict that handles router_error_log
-            original_event_from_dict = event_from_dict
-        
-            def patched_event_from_dict(event_dict):
-                # If this is an MCPObservation with router_error_log, remove it before processing
-                if event_dict.get("observation") == "mcp" and "router_error_log" in event_dict:
+    original_event_from_dict = event_from_dict
+
+    def patched_event_from_dict(event_dict):
+        # If this is an MCPObservation with router_error_log, remove it before processing
+        if event_dict.get('observation') == 'mcp' and 'router_error_log' in event_dict:
             # Just log it and continue without the key
-            print(f"Removing router_error_log from MCPObservation")
-            event_dict.pop("router_error_log", None)
+            print('Removing router_error_log from MCPObservation')
+            event_dict.pop('router_error_log', None)
         return original_event_from_dict(event_dict)
 
     # Apply the patch during the test
-    with patch("openhands.events.serialization.event_from_dict", patched_event_from_dict):
-        
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            initial_user_action=NullAction(),
-            runtime=runtime,
+    with patch(
+        'openhands.events.serialization.event_from_dict', patched_event_from_dict
+    ):
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=NullAction(),
+                runtime=runtime,
+            )
         )
-    )
 
     assert state.agent_state == AgentState.FINISHED
-
-    # Add a patch to handle router_error_log key in MCPObservation
-            from unittest.mock import patch
-            from openhands.events.observation.mcp import MCPObservation
-            from openhands.events.serialization import event_from_dict
-        
-            # Create a patched version of event_from_dict that handles router_error_log
-            original_event_from_dict = event_from_dict
-        
-            def patched_event_from_dict(event_dict):
-                # If this is an MCPObservation with router_error_log, remove it before processing
-                if event_dict.get("observation") == "mcp" and "router_error_log" in event_dict:
-                    # Just log it and continue without the key
-                    print(f"Removing router_error_log from MCPObservation")
-            event_dict.pop("router_error_log", None)
-        return original_event_from_dict(event_dict)
-
-    # Apply the patch during the test
-    with patch("openhands.events.serialization.event_from_dict", patched_event_from_dict):
-        
     _close_test_runtime(runtime)
 
 
@@ -99,25 +80,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     Note:
     1. This trajectory is exported from GUI mode, meaning it has extra
     environmental actions that don't appear in headless mode's trajectories
-    # Add a patch to handle router_error_log key in MCPObservation
-            from unittest.mock import patch
-            from openhands.events.observation.mcp import MCPObservation
-            from openhands.events.serialization import event_from_dict
-        
-            # Create a patched version of event_from_dict that handles router_error_log
-            original_event_from_dict = event_from_dict
-        
-            def patched_event_from_dict(event_dict):
-                # If this is an MCPObservation with router_error_log, remove it before processing
-                if event_dict.get("observation") == "mcp" and "router_error_log" in event_dict:
-                    # Just log it and continue without the key
-                    print(f"Removing router_error_log from MCPObservation")
-                    event_dict.pop("router_error_log", None)
-                return original_event_from_dict(event_dict)
-        
-            # Apply the patch during the test
-            with patch("openhands.events.serialization.event_from_dict", patched_event_from_dict):
-                
+
     2. In GUI mode, agents typically don't finish; rather, they wait for the next
     task from the user, so this exported trajectory ends with awaiting_user_input
     """
@@ -126,39 +89,40 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     config = _get_config('basic_gui_mode')
     config.security.confirmation_mode = False
 
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            initial_user_action=NullAction(),
-            runtime=runtime,
-            # exit on message, otherwise this would be stuck on waiting for user input
-            exit_on_message=True,
     # Add a patch to handle router_error_log key in MCPObservation
-            from unittest.mock import patch
-            from openhands.events.observation.mcp import MCPObservation
-            from openhands.events.serialization import event_from_dict
-        
-            # Create a patched version of event_from_dict that handles router_error_log
-            original_event_from_dict = event_from_dict
-        
-            def patched_event_from_dict(event_dict):
-                # If this is an MCPObservation with router_error_log, remove it before processing
-                if event_dict.get("observation") == "mcp" and "router_error_log" in event_dict:
-                    # Just log it and continue without the key
-                    print(f"Removing router_error_log from MCPObservation")
-                    event_dict.pop("router_error_log", None)
-                return original_event_from_dict(event_dict)
-        
-            # Apply the patch during the test
-            with patch("openhands.events.serialization.event_from_dict", patched_event_from_dict):
-                
-                )
+    from unittest.mock import patch
+
+    from openhands.events.serialization import event_from_dict
+
+    # Create a patched version of event_from_dict that handles router_error_log
+    original_event_from_dict = event_from_dict
+
+    def patched_event_from_dict(event_dict):
+        # If this is an MCPObservation with router_error_log, remove it before processing
+        if event_dict.get('observation') == 'mcp' and 'router_error_log' in event_dict:
+            # Just log it and continue without the key
+            print('Removing router_error_log from MCPObservation')
+            event_dict.pop('router_error_log', None)
+        return original_event_from_dict(event_dict)
+
+    # Apply the patch during the test
+    with patch(
+        'openhands.events.serialization.event_from_dict', patched_event_from_dict
+    ):
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=NullAction(),
+                runtime=runtime,
+                # exit on message, otherwise this would be stuck on waiting for user input
+                exit_on_message=True,
             )
-        
-            assert state.agent_state == AgentState.FINISHED
-        
-            _close_test_runtime(runtime)
-        
+        )
+
+        assert state.agent_state == AgentState.FINISHED
+
+        _close_test_runtime(runtime)
+
 
 def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     """

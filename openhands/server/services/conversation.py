@@ -1,16 +1,26 @@
-
-
-from typing import Any
 import uuid
+from typing import Any
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA, PROVIDER_TOKEN_TYPE
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
+    PROVIDER_TOKEN_TYPE,
+)
 from openhands.integrations.service_types import ProviderType
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import ConversationStoreImpl, SettingsStoreImpl, config, conversation_manager
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    SettingsStoreImpl,
+    config,
+    conversation_manager,
+)
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata, ConversationTrigger
+from openhands.storage.data_models.conversation_metadata import (
+    ConversationMetadata,
+    ConversationTrigger,
+)
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 

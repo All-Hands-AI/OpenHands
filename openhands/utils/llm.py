@@ -46,7 +46,7 @@ def get_supported_llm_models(config: AppConfig) -> list[str]:
         if ollama_base_url:
             ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
-                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']  # noqa: ASYNC100
+                ollama_models_list = httpx.get(ollama_url, timeout=3).json()['models']
                 for model in ollama_models_list:
                     model_list.append('ollama/' + model['name'])
                 break

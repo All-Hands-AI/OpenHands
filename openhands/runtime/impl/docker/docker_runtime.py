@@ -23,7 +23,10 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.command import DEFAULT_MAIN_MODULE, get_action_execution_server_startup_command
+from openhands.runtime.utils.command import (
+    DEFAULT_MAIN_MODULE,
+    get_action_execution_server_startup_command,
+)
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async

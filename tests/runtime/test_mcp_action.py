@@ -155,8 +155,10 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
     result_json = json.loads(obs.content)
     # Check if router_error_log exists, but don't fail if it doesn't
     if 'router_error_log' in result_json:
-        assert isinstance(result_json['router_error_log'], str), 'router_error_log should be a string'
-    
+        assert isinstance(result_json['router_error_log'], str), (
+            'router_error_log should be a string'
+        )
+
     assert not result_json['isError']
     assert len(result_json['content']) == 1
     assert result_json['content'][0]['type'] == 'text'
@@ -191,16 +193,18 @@ async def test_filesystem_mcp_via_sse(
         assert isinstance(obs, MCPObservation), (
             'The observation should be a MCPObservation.'
         )
-        
+
         # Check if router_error_log exists in the JSON content, but don't fail if it doesn't
         try:
             result_json = json.loads(obs.content)
             if 'router_error_log' in result_json:
-                assert isinstance(result_json['router_error_log'], str), 'router_error_log should be a string'
+                assert isinstance(result_json['router_error_log'], str), (
+                    'router_error_log should be a string'
+                )
         except json.JSONDecodeError:
             # If content is not JSON, just continue with the test
             pass
-            
+
         assert '[FILE] .dockerenv' in obs.content
 
     finally:
@@ -241,16 +245,18 @@ async def test_both_stdio_and_sse_mcp(
         assert isinstance(obs_sse, MCPObservation), (
             'The observation should be a MCPObservation.'
         )
-        
+
         # Check if router_error_log exists in the JSON content, but don't fail if it doesn't
         try:
             result_json = json.loads(obs_sse.content)
             if 'router_error_log' in result_json:
-                assert isinstance(result_json['router_error_log'], str), 'router_error_log should be a string'
+                assert isinstance(result_json['router_error_log'], str), (
+                    'router_error_log should be a string'
+                )
         except json.JSONDecodeError:
             # If content is not JSON, just continue with the test
             pass
-            
+
         assert '[FILE] .dockerenv' in obs_sse.content
 
         # ======= Test stdio server =======
@@ -283,8 +289,10 @@ async def test_both_stdio_and_sse_mcp(
 
         # Check if router_error_log exists, but don't fail if it doesn't
         if 'router_error_log' in result_json:
-            assert isinstance(result_json['router_error_log'], str), 'router_error_log should be a string'
-            
+            assert isinstance(result_json['router_error_log'], str), (
+                'router_error_log should be a string'
+            )
+
         result_json = json.loads(obs_fetch.content)
         assert not result_json['isError']
         assert len(result_json['content']) == 1
@@ -338,16 +346,18 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         assert isinstance(obs_sse, MCPObservation), (
             'The observation should be a MCPObservation.'
         )
-        
+
         # Check if router_error_log exists in the JSON content, but don't fail if it doesn't
         try:
             result_json = json.loads(obs_sse.content)
             if 'router_error_log' in result_json:
-                assert isinstance(result_json['router_error_log'], str), 'router_error_log should be a string'
+                assert isinstance(result_json['router_error_log'], str), (
+                    'router_error_log should be a string'
+                )
         except json.JSONDecodeError:
             # If content is not JSON, just continue with the test
             pass
-            
+
         assert '[FILE] .dockerenv' in obs_sse.content
 
         # ======= Test the stdio server added by the microagent =======
@@ -366,8 +376,10 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         action_cmd_cat = CmdRunAction(command='sleep 3 && cat server.log')
         # Check if router_error_log exists, but don't fail if it doesn't
         if 'router_error_log' in result_json:
-            assert isinstance(result_json['router_error_log'], str), 'router_error_log should be a string'
-            
+            assert isinstance(result_json['router_error_log'], str), (
+                'router_error_log should be a string'
+            )
+
         logger.info(action_cmd_cat, extra={'msg_type': 'ACTION'})
         obs_cat = runtime.run_action(action_cmd_cat)
         logger.info(obs_cat, extra={'msg_type': 'OBSERVATION'})

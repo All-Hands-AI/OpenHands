@@ -474,7 +474,7 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                with open(filepath, 'rb') as file:  # noqa: ASYNC101
+                with open(filepath, 'rb') as file:
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -484,13 +484,13 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_image)
             elif filepath.lower().endswith('.pdf'):
-                with open(filepath, 'rb') as file:  # noqa: ASYNC101
+                with open(filepath, 'rb') as file:
                     pdf_data = file.read()
                     encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
                     encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
                 return FileReadObservation(path=filepath, content=encoded_pdf)
             elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
-                with open(filepath, 'rb') as file:  # noqa: ASYNC101
+                with open(filepath, 'rb') as file:
                     video_data = file.read()
                     encoded_video = base64.b64encode(video_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -500,7 +500,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
+            with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
@@ -533,7 +533,7 @@ class ActionExecutor:
 
         mode = 'w' if not file_exists else 'r+'
         try:
-            with open(filepath, mode, encoding='utf-8') as file:  # noqa: ASYNC101
+            with open(filepath, mode, encoding='utf-8') as file:
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
@@ -883,7 +883,7 @@ if __name__ == '__main__':
                     )
 
                 zip_path = os.path.join(full_dest_path, file.filename)
-                with open(zip_path, 'wb') as buffer:  # noqa: ASYNC101
+                with open(zip_path, 'wb') as buffer:
                     shutil.copyfileobj(file.file, buffer)
 
                 # Extract the zip file
@@ -896,7 +896,7 @@ if __name__ == '__main__':
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
-                with open(file_path, 'wb') as buffer:  # noqa: ASYNC101
+                with open(file_path, 'wb') as buffer:
                     shutil.copyfileobj(file.file, buffer)
                 logger.debug(f'Uploaded file {file.filename} to {destination}')
 
