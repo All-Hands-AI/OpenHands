@@ -16,5 +16,7 @@ def get_file_store(file_store: str, file_store_path: str | None = None) -> FileS
     elif file_store == 'google_cloud':
         return GoogleCloudFileStore(file_store_path)
     elif file_store == 'http':
+        if file_store_path is None:
+            raise ValueError('file_store_path is required for HTTP file store')
         return HTTPFileStore(file_store_path)
     return InMemoryFileStore()
