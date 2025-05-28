@@ -16,5 +16,7 @@ export const useSubmitFeedback = () => {
     onError: (error) => {
       displayErrorToast(error.message);
     },
+    retry: 2,
+    retryDelay: 500,
   });
 };

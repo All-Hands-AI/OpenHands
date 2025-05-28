@@ -582,7 +582,7 @@ def _extract_and_validate_params(
     found_params = set()
     for param_match in param_matches:
         param_name = param_match.group(1)
-        param_value = param_match.group(2).strip()
+        param_value = param_match.group(2)
 
         # Validate parameter is allowed
         if allowed_params and param_name not in allowed_params:
