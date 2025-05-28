@@ -1,12 +1,16 @@
+from __future__ import annotations
 import uuid
+from typing import TYPE_CHECKING
 
-from openhands.controller.agent_controller import AgentController
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.core.conversation import Conversation
 from openhands.core.setup import create_agent, create_runtime
 from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
 from openhands.storage import get_file_store
+
+if TYPE_CHECKING:
+    from openhands.controller.agent_controller import AgentController
+    from openhands.core.conversation import Conversation
 
 
 class OpenHands:
@@ -28,7 +32,7 @@ class OpenHands:
         """
         self.config = config
 
-    def create_conversation(self, conversation_id: str | None = None) -> Conversation:
+    def create_conversation(self, conversation_id: str | None = None) -> 'Conversation':
         """Create a new conversation with all necessary components.
 
         This method creates a Runtime, LLM, EventStream, and AgentController according
@@ -65,6 +69,7 @@ class OpenHands:
         agent = create_agent(self.config)
 
         # Create an agent controller
+        from openhands.controller.agent_controller import AgentController
         agent_controller = AgentController(
             agent=agent,
             event_stream=event_stream,
@@ -76,6 +81,7 @@ class OpenHands:
         )
 
         # Create and return a Conversation object
+        from openhands.core.conversation import Conversation
         return Conversation(
             conversation_id=conversation_id or event_stream.sid,
             runtime=runtime,

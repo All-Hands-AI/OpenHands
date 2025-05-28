@@ -1,9 +1,12 @@
+from __future__ import annotations
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from openhands.controller.agent_controller import AgentController
-from openhands.events.stream import EventStream
-from openhands.llm.llm import LLM
-from openhands.runtime.base import Runtime
+if TYPE_CHECKING:
+    from openhands.controller.agent_controller import AgentController
+    from openhands.events.stream import EventStream
+    from openhands.llm.llm import LLM
+    from openhands.runtime.base import Runtime
 
 
 @dataclass
@@ -22,7 +25,7 @@ class Conversation:
     """
 
     conversation_id: str
-    runtime: Runtime
-    llm: LLM
-    event_stream: EventStream
-    agent_controller: AgentController
+    runtime: 'Runtime'
+    llm: 'LLM'
+    event_stream: 'EventStream'
+    agent_controller: 'AgentController'

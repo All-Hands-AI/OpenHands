@@ -1,13 +1,16 @@
 import os
+from typing import TYPE_CHECKING
 
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
 
 from openhands.agenthub.browsing_agent.response_parser import BrowsingResponseParser
-from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
+
+# Import Agent for both type checking and runtime
+from openhands.controller.agent import Agent
 from openhands.core.message import Message, TextContent
 from openhands.events.action import (
     Action,
@@ -89,6 +92,8 @@ In order to accomplish my goal I need to click on the button with bid 12
     if USE_CONCISE_ANSWER:
         prompt += CONCISE_INSTRUCTION
     return prompt
+
+
 
 
 class BrowsingAgent(Agent):
