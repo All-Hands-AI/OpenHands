@@ -59,6 +59,7 @@ pythonnet = "*"
 fastmcp = "^2.3.3"
 mcpm = "1.12.0"
 python-frontmatter = "^1.1.0"
+browsergym-core = "0.13.3"                        # integrate browsergym-core as the browsing interface
 
 [tool.poetry.group.integrations]
 optional = true
@@ -117,7 +118,6 @@ PyPDF2 = "*"
 python-pptx = "*"
 pylatexenc = "*"
 python-docx = "*"
-browsergym-core = "0.13.3"   # integrate browsergym-core as the browsing interface
 html2text = "*"
 libtmux = ">=0.37,<0.40"
 
