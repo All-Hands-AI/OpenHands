@@ -61,10 +61,7 @@ mcpm = "1.12.0"
 python-frontmatter = "^1.1.0"
 browsergym-core = "0.13.3"                        # integrate browsergym-core as the browsing interface
 
-[tool.poetry.group.integrations]
-optional = true
-
-[tool.poetry.group.integrations.dependencies]
+# These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
 daytona-sdk = "0.18.1"
@@ -73,10 +70,8 @@ modal = ">=0.66.26,<0.78.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
 google-generativeai = "*"                            # To use litellm with Gemini Pro API
-google-api-python-client = "^2.164.0"                # For Google Sheets API
-google-auth-httplib2 = "*"                           # For Google Sheets authentication
-google-auth-oauthlib = "*"                           # For Google Sheets OAuth
 e2b = ">=1.0.5,<1.4.0"
+google-api-python-client = "^2.164.0"
 runloop-api-client = "0.33.0"
 
 [tool.poetry.group.dev]
