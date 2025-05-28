@@ -53,8 +53,12 @@ export const useAutoLogin = () => {
 
     // If we have an auth URL, redirect to it
     if (authUrl) {
+      // Add the login method as a query parameter
+      const url = new URL(authUrl);
+      url.searchParams.append("login_method", loginMethod);
+
       // After successful login, the user will be redirected back and can navigate to the last page
-      window.location.href = authUrl;
+      window.location.href = url.toString();
     }
   }, [
     config?.APP_MODE,
