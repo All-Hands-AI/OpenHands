@@ -22,27 +22,12 @@ class AsyncBashSession:
 
         # Prepare to run the command
         try:
-            # If a specific username is provided, use preexec_fn to set the user
-            preexec_fn = None
-            if username in ['root', 'openhands']:
-                # We'll use the subprocess directly with the correct user
-                # This avoids any command escaping issues
-                def set_user():
-                    # Get user info
-                    user_info = pwd.getpwnam(username)
-                    # Set the user and group IDs
-                    os.setgid(user_info.pw_gid)
-                    os.setuid(user_info.pw_uid)
-
-                preexec_fn = set_user
-
-            # Create the subprocess with the appropriate user if specified
             process = await asyncio.subprocess.create_subprocess_shell(
                 command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=work_dir,
-                preexec_fn=preexec_fn,
+                user=username,
             )
 
             try:
