@@ -19,9 +19,11 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
+  isAgentStateChangeObservation,
   isErrorObservation,
   isOpenHandsAction,
   isOpenHandsObservation,
+  isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
@@ -160,10 +162,33 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    removeErrorMessage();
   }
 
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event)) {
+      const isStatusUpdateError =
+        isStatusUpdate(event) && event.type === "error";
+
+      const isAgentStateChangeError =
+        isAgentStateChangeObservation(event) &&
+        event.extras.agent_state === "error";
+
+      if (isStatusUpdateError || isAgentStateChangeError) {
+        const errorMessage = isStatusUpdate(event)
+          ? event.message
+          : event.extras.reason || "Unknown error";
+
+        trackError({
+          message: errorMessage,
+          source: "chat",
+          metadata: { msgId: event.id },
+        });
+        setErrorMessage(errorMessage);
+
+        return;
+      }
+
       if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
         setParsedEvents((prevEvents) => [...prevEvents, event]);
       }

@@ -8766,5 +8766,37 @@
         "tr": "Uzman ipucu",
         "de": "Profi-Tipp",
         "uk": "Порада професіонала"
+    },
+    "FEEDBACK$SUBMITTING_LABEL": {
+        "en": "Submitting...",
+        "ja": "送信中...",
+        "zh-CN": "提交中...",
+        "zh-TW": "提交中...",
+        "ko-KR": "제출 중...",
+        "no": "Sender...",
+        "it": "Inviando...",
+        "pt": "Enviando...",
+        "es": "Enviando...",
+        "ar": "إرسال...",
+        "fr": "Envoi...",
+        "tr": "Gönderiliyor...",
+        "de": "Senden...",  
+        "uk": "Відправляємо..."
+    },
+    "FEEDBACK$SUBMITTING_MESSAGE": {
+        "en": "Submitting feedback, please wait...",
+        "ja": "フィードバックを送信中です。しばらくお待ちください...",
+        "zh-CN": "正在提交反馈，请稍候...",
+        "zh-TW": "正在提交回饋，請稍候...",
+        "ko-KR": "피드백을 제출하고 있습니다. 잠시만 기다려주세요...",
+        "no": "Sender inn feedback, vennligst vent...",
+        "it": "Invio feedback, attendi...",
+        "pt": "Enviando feedback, por favor aguarde...",
+        "es": "Enviando comentarios, por favor espere...",
+        "ar": "إرسال التغذية الرجعية، يرجى الإنتظار...",
+        "fr": "Envoi de commentaires, veuillez patienter...",
+        "tr": "Geri bildirim gönderiliyor, lütfen bekleyin...",
+        "de": "Feedback senden, bitte warten...",
+        "uk": "Відправляємо відгук, будь ласка, почекайте..."
     }
 }
