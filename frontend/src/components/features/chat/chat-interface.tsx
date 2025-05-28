@@ -26,7 +26,6 @@ import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
-import i18n from "#/i18n";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 
@@ -181,11 +180,7 @@ export function ChatInterface() {
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
 
-        {errorMessage && (
-          <ErrorMessageBanner
-            message={i18n.exists(errorMessage) ? t(errorMessage) : errorMessage}
-          />
-        )}
+        {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
         <InteractiveChatBox
           onSubmit={handleSendMessage}
