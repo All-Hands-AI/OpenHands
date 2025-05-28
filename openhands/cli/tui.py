@@ -3,6 +3,7 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import shutil
 import sys
 import threading
 import time
@@ -132,16 +133,34 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 
 def display_banner(session_id: str) -> None:
-    cards = HTML(r"""<gold>
-    🙌🙌🙌🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌    🙌  🙌    🙌  🙌🙌🙌🙌  🙌    🙌  🙌🙌🙌      🙌🙌🙌
-    🙌    🙌  🙌    🙌  🙌        🙌🙌  🙌  🙌    🙌  🙌    🙌  🙌🙌  🙌  🙌    🙌  🙌
-    🙌    🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌  🙌    🙌    🙌🙌
-    🙌    🙌  🙌        🙌        🙌  🙌🙌  🙌    🙌  🙌    🙌  🙌  🙌🙌  🙌    🙌        🙌
-    🙌🙌🙌🙌  🙌        🙌🙌🙌🙌  🙌    🙌  🙌    🙌  🙌    🙌  🙌    🙌  🙌🙌🙌    🙌🙌🙌
-    </gold>""")
+    width, _ = shutil.get_terminal_size()
+    cards = """
+🙌🙌🙌🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌    🙌|🙌    🙌  🙌🙌🙌🙌  🙌    🙌  🙌🙌🙌      🙌🙌🙌
+🙌    🙌  🙌    🙌  🙌        🙌🙌  🙌|🙌    🙌  🙌    🙌  🙌🙌  🙌  🙌    🙌  🙌
+🙌    🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌|🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌  🙌    🙌    🙌🙌
+🙌    🙌  🙌        🙌        🙌  🙌🙌|🙌    🙌  🙌    🙌  🙌  🙌🙌  🙌    🙌        🙌
+🙌🙌🙌🙌  🙌        🙌🙌🙌🙌  🙌    🙌|🙌    🙌  🙌    🙌  🙌    🙌  🙌🙌🙌    🙌🙌🙌
+    """
+    if width < 90:
+        card_lines = cards.split('\n')
+        cards = ''
+        for i, line in enumerate(card_lines):
+            if '|' not in line:
+                cards += line + '\n'
+                continue
+            first_half = line.split('|')[0]
+            cards += first_half + '\n'
+        for i, line in enumerate(card_lines):
+            if '|' not in line:
+                cards += line + '\n'
+                continue
+            second_half = line.split('|')[1]
+            cards += second_half + '\n'
+    else:
+        cards = cards.replace('|', '  ')
 
     print_formatted_text(
-        cards,
+        HTML(cards),
         style=DEFAULT_STYLE,
     )
 
