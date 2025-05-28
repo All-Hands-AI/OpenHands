@@ -330,9 +330,7 @@ async def run_session(
     return new_session_requested
 
 
-async def run_setup_flow(
-    config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> bool:
+async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsStore):
     """Run the setup flow to configure initial settings.
 
     Returns:
@@ -345,7 +343,6 @@ async def run_setup_flow(
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
-
 
 
 async def main(loop: asyncio.AbstractEventLoop) -> None:
@@ -364,7 +361,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
 
     # If settings don't exist, automatically enter the setup flow
     if not settings:
-        settings_configured = await run_setup_flow(config, settings_store)
+        await run_setup_flow(config, settings_store)
 
         settings = await settings_store.load()
 

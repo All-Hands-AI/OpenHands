@@ -172,7 +172,7 @@ async def modify_llm_settings_basic(
         change_provider = (
             cli_confirm(
                 'Do you want to use a different provider?',
-                ['No, use anthropic', 'Yes, select another provider'],
+                ['Use anthropic', 'Select another provider'],
             )
             == 1
         )
@@ -208,7 +208,7 @@ async def modify_llm_settings_basic(
             change_model = (
                 cli_confirm(
                     'Do you want to use a different model?',
-                    ['No, use claude-sonnet-4-20250514', 'Yes, select another model'],
+                    ['Use claude-sonnet-4-20250514', 'Select another model'],
                 )
                 == 1
             )
