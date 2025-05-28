@@ -177,12 +177,6 @@ export default function MainApp() {
     setLoginMethodExists(checkLoginMethodExists());
   }, [isAuthed, checkLoginMethodExists]);
 
-  // Recheck on component mount to ensure we have the latest value after page reload
-  React.useEffect(() => {
-    // This will run once when the component mounts, ensuring we have the latest value
-    setLoginMethodExists(checkLoginMethodExists());
-  }, [checkLoginMethodExists]);
-
   const renderAuthModal =
     !isAuthed &&
     !isAuthError &&
