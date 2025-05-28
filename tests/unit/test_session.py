@@ -49,7 +49,7 @@ async def test_notify_on_llm_retry(
     session.queue_status_message = AsyncMock()
 
     with patch('time.sleep') as _mock_sleep:
-        mock_litellm_completion.conversation_ide_effect = [
+        mock_litellm_completion.side_effect = [
             RateLimitError(
                 'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),
