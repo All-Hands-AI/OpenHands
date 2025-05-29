@@ -89,7 +89,6 @@ class AgentSession:
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         max_budget_per_task: float | None = None,
-        max_budget_per_conversation: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         selected_repository: str | None = None,
@@ -169,7 +168,6 @@ class AgentSession:
                     config,
                     max_iterations,
                     max_budget_per_task,
-                    max_budget_per_conversation,
                     agent_to_llm_config,
                     agent_configs,
                 )
@@ -179,7 +177,6 @@ class AgentSession:
                     config.security.confirmation_mode,
                     max_iterations,
                     max_budget_per_task=max_budget_per_task,
-                    max_budget_per_conversation=max_budget_per_conversation,
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
                 )
@@ -243,7 +240,6 @@ class AgentSession:
         config: AppConfig,
         max_iterations: int,
         max_budget_per_task: float | None,
-        max_budget_per_conversation: float | None,
         agent_to_llm_config: dict[str, LLMConfig] | None,
         agent_configs: dict[str, AgentConfig] | None,
     ) -> MessageAction:
@@ -260,7 +256,6 @@ class AgentSession:
             config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
-            max_budget_per_conversation=max_budget_per_conversation,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             replay_events=replay_events[1:],
@@ -397,7 +392,6 @@ class AgentSession:
         confirmation_mode: bool,
         max_iterations: int,
         max_budget_per_task: float | None = None,
-        max_budget_per_conversation: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
@@ -409,7 +403,6 @@ class AgentSession:
         - confirmation_mode: Whether to use confirmation mode
         - max_iterations:
         - max_budget_per_task: Maximum budget per task, agent stops if exceeded
-        - max_budget_per_conversation: Maximum budget per conversation, agent stops if exceeded
         - agent_to_llm_config:
         - agent_configs:
         """
@@ -438,7 +431,6 @@ class AgentSession:
             agent=agent,
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
-            max_budget_per_conversation=max_budget_per_conversation,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,

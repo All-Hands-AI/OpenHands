@@ -41,7 +41,6 @@ class AppConfig(BaseModel):
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
-        max_budget_per_conversation: Maximum budget per conversation, agent stops if exceeded.
         e2b_api_key: E2B API key.
         disable_color: Whether to disable terminal colors. For terminals that don't support color.
         debug: Whether to enable debugging mode.
@@ -82,7 +81,6 @@ class AppConfig(BaseModel):
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
-    max_budget_per_conversation: float | None = Field(default=None)
     e2b_api_key: SecretStr | None = Field(default=None)
     modal_api_token_id: SecretStr | None = Field(default=None)
     modal_api_token_secret: SecretStr | None = Field(default=None)

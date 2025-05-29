@@ -107,7 +107,6 @@ class AgentController:
         event_stream: EventStream,
         max_iterations: int,
         max_budget_per_task: float | None = None,
-        max_budget_per_conversation: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         sid: str | None = None,
@@ -125,7 +124,6 @@ class AgentController:
             event_stream: The event stream to publish events to.
             max_iterations: The maximum number of iterations the agent can run.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
-            max_budget_per_conversation: The maximum budget (in USD) allowed per conversation, beyond which the agent will stop.
             agent_to_llm_config: A dictionary mapping agent names to LLM configurations in the case that
                 we delegate to a different agent.
             agent_configs: A dictionary mapping agent names to agent configurations in the case that
@@ -159,12 +157,10 @@ class AgentController:
             confirmation_mode=confirmation_mode,
         )
         self.max_budget_per_task = max_budget_per_task
-        self.max_budget_per_conversation = max_budget_per_conversation
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
-        self._initial_max_budget_per_conversation = max_budget_per_conversation
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -620,31 +616,18 @@ class AgentController:
                 and self.state.max_iterations is not None
                 and self._initial_max_iterations is not None
                 and not self.headless_mode
+                and self.state.iteration >= self.state.max_iterations
             ):
-                if self.state.iteration >= self.state.max_iterations:
-                    self.state.max_iterations += self._initial_max_iterations
+                self.state.max_iterations += self._initial_max_iterations
 
             if (
                 self.state.metrics.accumulated_cost is not None
                 and self.max_budget_per_task is not None
                 and self._initial_max_budget_per_task is not None
+                and self.state.metrics.accumulated_cost >= self.max_budget_per_task
             ):
-                if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
-                    self.max_budget_per_task += self._initial_max_budget_per_task
+                self.max_budget_per_task += self._initial_max_budget_per_task
 
-            # Handle conversation budget cap
-            if (
-                self.state.metrics.accumulated_cost is not None
-                and self.max_budget_per_conversation is not None
-                and self._initial_max_budget_per_conversation is not None
-            ):
-                if (
-                    self.state.metrics.accumulated_cost
-                    >= self.max_budget_per_conversation
-                ):
-                    self.max_budget_per_conversation += (
-                        self._initial_max_budget_per_conversation
-                    )
         elif self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
@@ -723,7 +706,6 @@ class AgentController:
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
-            max_budget_per_conversation=self.max_budget_per_conversation,
             agent_to_llm_config=self.agent_to_llm_config,
             agent_configs=self.agent_configs,
             initial_state=state,
@@ -821,20 +803,11 @@ class AgentController:
             )
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
-            if current_cost > self.max_budget_per_task:
+            if current_cost >= self.max_budget_per_task:
                 stop_step = await self._handle_traffic_control(
                     'task budget', current_cost, self.max_budget_per_task
                 )
 
-        if self.max_budget_per_conversation is not None:
-            # Get the total accumulated cost for the entire conversation
-            current_cost = self.state.metrics.accumulated_cost
-            if current_cost > self.max_budget_per_conversation:
-                stop_step = await self._handle_traffic_control(
-                    'conversation budget',
-                    current_cost,
-                    self.max_budget_per_conversation,
-                )
         if stop_step:
             logger.warning('Stopping agent due to traffic control')
             return
