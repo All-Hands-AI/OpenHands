@@ -218,7 +218,9 @@ async def create_custom_secret(
 ) -> JSONResponse:
     try:
         existing_secrets = await secrets_store.load()
-        custom_secrets = dict(existing_secrets.custom_secrets) if existing_secrets else {}
+        custom_secrets = (
+            dict(existing_secrets.custom_secrets) if existing_secrets else {}
+        )
 
         secret_name = incoming_secret.name
         secret_value = incoming_secret.value
@@ -238,7 +240,9 @@ async def create_custom_secret(
         # Create a new UserSecrets that preserves provider tokens
         updated_user_secrets = UserSecrets(
             custom_secrets=custom_secrets,
-            provider_tokens=existing_secrets.provider_tokens if existing_secrets else {},
+            provider_tokens=existing_secrets.provider_tokens
+            if existing_secrets
+            else {},
         )
 
         await secrets_store.store(updated_user_secrets)
