@@ -39,5 +39,10 @@ class FileSecretsStore(SecretsStore):
     async def get_instance(
         cls, config: OpenHandsConfig, user_id: str | None
     ) -> FileSecretsStore:
-        file_store = get_file_store(config.file_store, config.file_store_path)
+        file_store = file_store = get_file_store(
+            config.file_store,
+            config.file_store_path,
+            config.file_store_web_hook_url,
+            config.file_store_web_hook_headers
+        )
         return FileSecretsStore(file_store)
