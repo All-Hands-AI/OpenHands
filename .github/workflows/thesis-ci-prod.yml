@@ -1,0 +1,99 @@
+name: Build Thesis Prod
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and push"
+        required: true
+        type: string
+        default: "v0.1.10"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Extract tag
+        id: extract-tag
+        shell: bash
+        run: |
+          temp=${{ inputs.tag || github.ref }}
+          temp=${temp#refs/tags/}
+          echo temp=$temp
+          echo "TAG=${temp#v}" >> $GITHUB_OUTPUT
+
+      # Extract branch name and short SHA for tagging
+      - name: Extract branch name and short SHA
+        id: extract-sha
+        shell: bash
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Docker meta
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKER_IMAGE_NAME }}
+          tags: |
+            ${{ steps.extract-tag.outputs.TAG }}-${{ steps.extract-sha.outputs.SHORT_SHA }}
+
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PAT }}
+
+      - name: Check if image exists
+        id: image_exists
+        run: |
+          if docker manifest inspect ${{ steps.metadata.outputs.tags }} 2>/dev/null; then
+            echo "Image exists"
+            echo "image_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Image does not exist"
+            echo "image_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+
+      # Build and push using the custom Dockerfile path
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # Specify custom Dockerfile path (relative to repo root)
+          file: ./containers/app/app.Dockerfile
+          push: true
+          tags: |
+            ${{ steps.metadata.outputs.tags }}
+            ${{ vars.DOCKER_IMAGE_NAME }}:latest
+          # Optional: Add cache settings for faster builds
+          cache-from: type=registry,ref=${{ vars.DOCKER_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ vars.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+          platforms: linux/amd64
+
+      # Share the short SHA as output for potential downstream jobs
+      - name: Output image tag
+        id: image-tag
+        run: |
+          echo "Image pushed: ${{ steps.metadata.outputs.tags }}"
+          echo "image-tag=${{ steps.metadata.outputs.tags }}" >> $GITHUB_OUTPUT
+
+    # TODO: Auto update chart

@@ -5,7 +5,6 @@ config.toml
 .git
 frontend/
 openhands/tests/
-openhands/evaluation
 docs/
 *.md
 *.log
