@@ -22,7 +22,8 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.services.conversation import create_new_conversation
+from openhands.server.dependencies import get_dependencies
+from openhands.server.services.conversation_service import create_new_conversation
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
@@ -47,7 +48,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 class InitSessionRequest(BaseModel):
@@ -102,8 +103,10 @@ async def new_conversation(
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
-
-    if conversation_trigger == ConversationTrigger.REMOTE_API_KEY and not initial_user_msg:
+    if (
+        conversation_trigger == ConversationTrigger.REMOTE_API_KEY
+        and not initial_user_msg
+    ):
         return JSONResponse(
             content={
                 'status': 'error',
@@ -192,19 +195,27 @@ async def search_conversations(
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_results
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
-    agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
-    agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info = await conversation_manager.get_agent_loop_info(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info_by_conversation_id = {
+        info.conversation_id: info for info in agent_loop_info
+    }
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
                 num_connections=sum(
-                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
-                agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),
-
+                agent_loop_info=agent_loop_info_by_conversation_id.get(
+                    conversation.conversation_id
+                ),
             )
             for conversation in filtered_results
         ),
@@ -220,10 +231,16 @@ async def get_conversation(
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        num_connections = len(
+            await conversation_manager.get_connections(filter_to_sids={conversation_id})
+        )
+        agent_loop_infos = await conversation_manager.get_agent_loop_info(
+            filter_to_sids={conversation_id}
+        )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
-        conversation_info = await _get_conversation_info(metadata, num_connections, agent_loop_info)
+        conversation_info = await _get_conversation_info(
+            metadata, num_connections, agent_loop_info
+        )
         return conversation_info
     except FileNotFoundError:
         return None
@@ -267,11 +284,15 @@ async def _get_conversation_info(
             selected_branch=conversation.selected_branch,
             git_provider=conversation.git_provider,
             status=(
-                agent_loop_info.status if agent_loop_info else ConversationStatus.STOPPED
+                agent_loop_info.status
+                if agent_loop_info
+                else ConversationStatus.STOPPED
             ),
             num_connections=num_connections,
             url=agent_loop_info.url if agent_loop_info else None,
-            session_api_key=agent_loop_info.session_api_key if agent_loop_info else None,
+            session_api_key=agent_loop_info.session_api_key
+            if agent_loop_info
+            else None,
         )
     except Exception as e:
         logger.error(

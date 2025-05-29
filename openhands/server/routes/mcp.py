@@ -10,6 +10,7 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
+from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import ConversationStoreImpl, config
 from openhands.server.user_auth import (
     get_access_token,
@@ -18,7 +19,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP('mcp')
+mcp_server = FastMCP('mcp', dependencies=get_dependencies())
 
 
 async def save_pr_metadata(
