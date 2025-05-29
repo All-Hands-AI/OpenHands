@@ -58,7 +58,7 @@ async def create_pr(
     title: Annotated[str, Field(description='PR Title')],
     body: Annotated[str | None, Field(description='PR body')],
 ) -> str:
-    """Open a draft PR in GitHub"""
+    """Open a PR in GitHub"""
 
     logger.info('Calling OpenHands MCP create_pr')
 
@@ -113,7 +113,7 @@ async def create_mr(
     title: Annotated[str, Field(description='MR Title')],
     description: Annotated[str | None, Field(description='MR description')],
 ) -> str:
-    """Open a draft MR in GitLab"""
+    """Open a MR in GitLab"""
 
     logger.info('Calling OpenHands MCP create_mr')
 
