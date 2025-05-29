@@ -370,8 +370,7 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
         if isinstance(param_value, list) or isinstance(param_value, dict):
             ret += json.dumps(param_value)
         else:
-            ret += f"{param_value}"
-        ret += f'{param_value}'
+            ret += f'{param_value}'
         if is_multiline:
             ret += '\n'
         ret += '</parameter>\n'
