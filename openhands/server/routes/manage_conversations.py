@@ -22,7 +22,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.services.conversation import create_new_conversation
+from openhands.server.services.conversation_service import create_new_conversation
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
