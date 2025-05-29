@@ -103,6 +103,7 @@ async def create_new_conversation(
             user_id=user_id,
             selected_repository=selected_repository,
             selected_branch=selected_branch,
+            git_provider=git_provider,
         )
     )
 

@@ -52,6 +52,8 @@ const conversations: Conversation[] = [
     conversation_id: "1",
     title: "My New Project",
     selected_repository: null,
+    git_provider: null,
+    selected_branch: null,
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
@@ -62,6 +64,8 @@ const conversations: Conversation[] = [
     conversation_id: "2",
     title: "Repo Testing",
     selected_repository: "octocat/hello-world",
+    git_provider: "github",
+    selected_branch: null,
     // 2 days ago
     last_updated_at: new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
@@ -75,6 +79,8 @@ const conversations: Conversation[] = [
     conversation_id: "3",
     title: "Another Project",
     selected_repository: "octocat/earth",
+    git_provider: null,
+    selected_branch: "main",
     // 5 days ago
     last_updated_at: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000,
@@ -271,6 +277,8 @@ export const handlers = [
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",
       selected_repository: null,
+      git_provider: null,
+      selected_branch: null,
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",

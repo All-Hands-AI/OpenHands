@@ -36,6 +36,8 @@ Vous pouvez accorder à OpenHands l'accès à des dépôts spécifiques :
      - Permissions GitHub de l'utilisateur (propriétaire/collaborateur)
 3. Cliquez sur `Installer & Autoriser`
 
+![Ajout de l'accès au dépôt à OpenHands](/img/cloud/add-repo.png)
+
 ## Modification de l'Accès au Dépôt
 
 Vous pouvez modifier l'accès au dépôt à tout moment :

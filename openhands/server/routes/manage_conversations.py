@@ -70,10 +70,6 @@ class InitSessionResponse(BaseModel):
     message: str | None = None
 
 
-# Temporary alias since the private variable was referenced publicly - delete once deploy project is updated.
-_create_new_conversation = create_new_conversation
-
-
 @app.post('/conversations')
 async def new_conversation(
     data: InitSessionRequest,
@@ -268,6 +264,8 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
+            selected_branch=conversation.selected_branch,
+            git_provider=conversation.git_provider,
             status=(
                 agent_loop_info.status if agent_loop_info else ConversationStatus.STOPPED
             ),

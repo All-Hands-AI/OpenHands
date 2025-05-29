@@ -7,6 +7,7 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
+import { Conversation } from "#/api/open-hands.types";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -37,11 +38,13 @@ describe("ConversationPanel", () => {
     }));
   });
 
-  const mockConversations = [
+  const mockConversations: Conversation[] = [
     {
       conversation_id: "1",
       title: "Conversation 1",
       selected_repository: null,
+      git_provider: null,
+      selected_branch: null,
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "STOPPED" as const,
@@ -52,6 +55,8 @@ describe("ConversationPanel", () => {
       conversation_id: "2",
       title: "Conversation 2",
       selected_repository: null,
+      git_provider: null,
+      selected_branch: null,
       last_updated_at: "2021-10-02T12:00:00Z",
       created_at: "2021-10-02T12:00:00Z",
       status: "STOPPED" as const,
@@ -62,6 +67,8 @@ describe("ConversationPanel", () => {
       conversation_id: "3",
       title: "Conversation 3",
       selected_repository: null,
+      git_provider: null,
+      selected_branch: null,
       last_updated_at: "2021-10-03T12:00:00Z",
       created_at: "2021-10-03T12:00:00Z",
       status: "STOPPED" as const,
@@ -141,11 +148,13 @@ describe("ConversationPanel", () => {
 
   it("should delete a conversation", async () => {
     const user = userEvent.setup();
-    const mockData = [
+    const mockData: Conversation[] = [
       {
         conversation_id: "1",
         title: "Conversation 1",
         selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
@@ -156,6 +165,8 @@ describe("ConversationPanel", () => {
         conversation_id: "2",
         title: "Conversation 2",
         selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
         last_updated_at: "2021-10-02T12:00:00Z",
         created_at: "2021-10-02T12:00:00Z",
         status: "STOPPED" as const,
@@ -166,6 +177,8 @@ describe("ConversationPanel", () => {
         conversation_id: "3",
         title: "Conversation 3",
         selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
         last_updated_at: "2021-10-03T12:00:00Z",
         created_at: "2021-10-03T12:00:00Z",
         status: "STOPPED" as const,
