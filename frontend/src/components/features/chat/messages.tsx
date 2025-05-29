@@ -15,7 +15,7 @@ import {
 } from "#/hooks/use-subscribe-to-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 interface LaunchToMicroagentButtonProps {
   onClick: () => void;
@@ -44,7 +44,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
     const { providers } = useUserProviders();
     const { mutate: createConversation } = useCreateConversation();
-    const { conversationId } = useConversation();
+    const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId);
 
     const { connect } = useSubscribeToConversation();
