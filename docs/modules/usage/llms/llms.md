@@ -18,6 +18,7 @@ Based on these findings and community feedback, these are the latest models that
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
 - [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
+- [mistral/mistral-large](https://docs.mistral.ai/) - Good performance with adjusted safety settings
 
 
 :::warning
@@ -25,7 +26,7 @@ OpenHands will issue many prompts to the LLM you configure. Most of these LLMs c
 limits and monitor usage.
 :::
 
-If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process 
+If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process
 to help others using the same provider!
 
 For a full list of the providers and models available, please consult the
@@ -66,6 +67,16 @@ We have a few guides for running OpenHands with specific model providers:
 - [LiteLLM Proxy](llms/litellm-proxy)
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
+
+## Model-Specific Settings
+
+Some LLM providers have specific settings that can be customized to optimize their performance with OpenHands, particularly for code generation tasks:
+
+- **Safety Settings**: For models like Mistral AI and Gemini, you can adjust safety settings to prevent unnecessary filtering of code generation tasks
+- **Custom Tokenizers**: For specialized models, you can configure custom tokenizers
+- **Native Tool Calling**: Toggle native function/tool calling capabilities
+
+For detailed information about model-specific settings, see our [Model Settings Guide](llms/model_settings).
 
 ### API retries and rate limits
 

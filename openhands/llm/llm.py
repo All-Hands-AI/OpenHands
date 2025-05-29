@@ -82,6 +82,10 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-pro',
     'gpt-4.1',
+    'mistral-large',
+    'mistral-medium',
+    'mistral-small',
+    'mistral-tiny',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -180,6 +184,36 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
+
+        # Add safety settings for models that support them
+        if 'mistral' in self.config.model.lower() and self.config.safety_settings:
+            logger.info(f'Using custom safety settings for Mistral model: {self.config.model}')
+            kwargs['safety_settings'] = self.config.safety_settings
+        elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
+            logger.info(f'Using custom safety settings for Gemini model: {self.config.model}')
+            kwargs['safety_settings'] = self.config.safety_settings
+
+        # Default safety settings for Mistral models if none provided
+        if 'mistral' in self.config.model.lower() and not self.config.safety_settings:
+            logger.info(f'Setting default safety settings for Mistral model: {self.config.model}')
+            kwargs['safety_settings'] = [
+                {
+                    "category": "hate",
+                    "threshold": "low"
+                },
+                {
+                    "category": "harassment",
+                    "threshold": "low"
+                },
+                {
+                    "category": "sexual",
+                    "threshold": "low"
+                },
+                {
+                    "category": "dangerous",
+                    "threshold": "low"
+                }
+            ]
 
         self._completion = partial(
             litellm_completion,
