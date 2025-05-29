@@ -188,10 +188,7 @@ async def load_custom_secrets_names(
 ) -> GETCustomSecrets | JSONResponse:
     try:
         if not user_secrets:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'User secrets not found'},
-            )
+            return GETCustomSecrets(custom_secrets=[])
 
         custom_secrets: list[CustomSecretWithoutValueModel] = []
         if user_secrets.custom_secrets:
@@ -220,31 +217,30 @@ async def create_custom_secret(
 ) -> JSONResponse:
     try:
         existing_secrets = await secrets_store.load()
-        if existing_secrets:
-            custom_secrets = dict(existing_secrets.custom_secrets)
+        custom_secrets = dict(existing_secrets.custom_secrets) if existing_secrets else {}
 
-            secret_name = incoming_secret.name
-            secret_value = incoming_secret.value
-            secret_description = incoming_secret.description
+        secret_name = incoming_secret.name
+        secret_value = incoming_secret.value
+        secret_description = incoming_secret.description
 
-            if secret_name in custom_secrets:
-                return JSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content={'message': f'Secret {secret_name} already exists'},
-                )
-
-            custom_secrets[secret_name] = CustomSecret(
-                secret=secret_value,
-                description=secret_description or '',
+        if secret_name in custom_secrets:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={'message': f'Secret {secret_name} already exists'},
             )
 
-            # Create a new UserSecrets that preserves provider tokens
-            updated_user_secrets = UserSecrets(
-                custom_secrets=custom_secrets,
-                provider_tokens=existing_secrets.provider_tokens,
-            )
+        custom_secrets[secret_name] = CustomSecret(
+            secret=secret_value,
+            description=secret_description or '',
+        )
 
-            await secrets_store.store(updated_user_secrets)
+        # Create a new UserSecrets that preserves provider tokens
+        updated_user_secrets = UserSecrets(
+            custom_secrets=custom_secrets,
+            provider_tokens=existing_secrets.provider_tokens if existing_secrets else {},
+        )
+
+        await secrets_store.store(updated_user_secrets)
 
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,

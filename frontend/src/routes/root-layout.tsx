@@ -23,6 +23,7 @@ import { SetupPaymentModal } from "#/components/features/payment/setup-payment-m
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
+import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 
 export function ErrorBoundary() {
@@ -88,6 +89,9 @@ export default function MainApp() {
   // Auto-login if login method is stored in local storage
   useAutoLogin();
 
+  // Handle authentication callback and set login method after successful authentication
+  useAuthCallback();
+
   React.useEffect(() => {
     // Don't change language when on TOS page
     if (!isOnTosPage && settings?.LANGUAGE) {
@@ -131,14 +135,47 @@ export default function MainApp() {
     }
   }, [error?.status, pathname, isOnTosPage]);
 
-  // Check if login method exists in local storage
-  const loginMethodExists = React.useMemo(() => {
+  // Function to check if login method exists in local storage
+  const checkLoginMethodExists = React.useCallback(() => {
     // Only check localStorage if we're in a browser environment
     if (typeof window !== "undefined" && window.localStorage) {
       return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
     }
     return false;
   }, []);
+
+  // State to track if login method exists
+  const [loginMethodExists, setLoginMethodExists] = React.useState(
+    checkLoginMethodExists(),
+  );
+
+  // Listen for storage events to update loginMethodExists when logout happens
+  React.useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === LOCAL_STORAGE_KEYS.LOGIN_METHOD) {
+        setLoginMethodExists(checkLoginMethodExists());
+      }
+    };
+
+    // Also check on window focus, as logout might happen in another tab
+    const handleWindowFocus = () => {
+      setLoginMethodExists(checkLoginMethodExists());
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [checkLoginMethodExists]);
+
+  // Check login method status when auth status changes
+  React.useEffect(() => {
+    // When auth status changes (especially on logout), recheck login method
+    setLoginMethodExists(checkLoginMethodExists());
+  }, [isAuthed, checkLoginMethodExists]);
 
   const renderAuthModal =
     !isAuthed &&
