@@ -145,6 +145,18 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
+        # filter out events that are not relevant to the agent
+        # so they will not be included in the agent history
+        self.agent_history_filter = EventFilter(
+            exclude_types=(
+                NullAction,
+                NullObservation,
+                ChangeAgentStateAction,
+                AgentStateChangedObservation,
+            ),
+            exclude_hidden=True,
+        )
+
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
