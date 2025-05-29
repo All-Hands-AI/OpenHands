@@ -27,7 +27,7 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.services.conversation import create_new_conversation
-from openhands.server.session.conversation import Conversation
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
@@ -263,7 +263,7 @@ async def delete_conversation(
 async def get_prompt(
     event_id: int,
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation: Conversation | None = Depends(get_conversation_state),
+    conversation: ServerConversation | None = Depends(get_conversation_state),
 ):
     if conversation is None:
         return JSONResponse(

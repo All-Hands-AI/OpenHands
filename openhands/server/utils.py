@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import Request
 
-from openhands.server.session.conversation import Conversation
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import ConversationStoreImpl, config
 from openhands.server.user_auth import get_user_auth
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -21,7 +21,7 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     return conversation_store
 
 
-def get_conversation_state(request: Request) -> Conversation | None:
+def get_conversation_state(request: Request) -> ServerConversation | None:
     """
     Get the conversation object from the request state.
 
