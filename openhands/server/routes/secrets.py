@@ -5,6 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, CustomSecret
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
+from openhands.server.dependencies import get_dependencies
 from openhands.server.settings import (
     CustomSecretModel,
     CustomSecretWithoutValueModel,
@@ -21,7 +22,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 # =================================================
