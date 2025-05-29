@@ -302,7 +302,7 @@ async def get_prompt(
     event_stream = conversation.event_stream
 
     # retrieve the relevant events
-    stringified_events = _get_events_around_event(event_stream, event_id)
+    stringified_events = _get_contextual_events(event_stream, event_id)
 
     # generate a prompt
     settings = await user_settings.load()
@@ -391,7 +391,7 @@ async def _get_conversation_info(
         return None
 
 
-def _get_events_around_event(event_stream: EventStream, event_id: int) -> str:
+def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     # find the specified events to learn from
     # Get X events around the target event
     context_size = 4
