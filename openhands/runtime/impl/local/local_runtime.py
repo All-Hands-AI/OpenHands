@@ -389,16 +389,34 @@ class LocalRuntime(ActionExecutionClient):
         super().close()
 
     @property
+    def base_url(self) -> str:
+
+        runtime_url = os.getenv('RUNTIME_URL')
+        if runtime_url:
+            return runtime_url
+
+        #TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
+        runtime_url_pattern = os.getenv('RUNTIME_URL_PATTERN')
+        hostname = os.getenv('HOSTNAME')
+        if runtime_url_pattern and hostname:
+            runtime_id = hostname.split('-')[1]
+            runtime_url = runtime_url_pattern.format(runtime_id=runtime_id)
+            return runtime_url
+
+        # Fallback to localhost
+        return 'http://localhost'
+
+    @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
         if not token:
             return None
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'{self.base_url}:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
         for port in self._app_ports:
-            hosts[f'http://localhost:{port}'] = port
+            hosts[f'{self.base_url}:{port}'] = port
         return hosts
