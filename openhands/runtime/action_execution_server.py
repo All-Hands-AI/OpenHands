@@ -825,6 +825,23 @@ if __name__ == '__main__':
 
     @app.post('/update_mcp_server')
     async def update_mcp_server(request: Request):
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        if is_windows:
+            # On Windows, just return a success response without doing anything
+            logger.info(
+                'MCP server update request received on Windows - skipping as MCP is disabled'
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    'detail': 'MCP server update skipped (MCP is disabled on Windows)',
+                    'router_error_log': '',
+                },
+            )
+
+        # Non-Windows implementation
         assert mcp_router is not None
         assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
 
