@@ -12,7 +12,7 @@ def check_session_api_key(
 ):
     """
     Check the session API key and throw an exception if incorrect. Having this as a dependency
-    means is appears in OpenAPI Docs
+    means it appears in OpenAPI Docs
     """
     if session_api_key != _SESSION_API_KEY:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
