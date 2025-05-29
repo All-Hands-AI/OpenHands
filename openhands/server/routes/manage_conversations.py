@@ -9,6 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, Field
 
 from openhands.events.event_filter import EventFilter
+from openhands.events.stream import EventStream
 from openhands.events.action import (
     ChangeAgentStateAction,
     NullAction,
@@ -300,37 +301,8 @@ async def get_prompt(
     # get event stream for the conversation
     event_stream = conversation.event_stream
 
-    # find the specified events to learn from
-    # Get X events around the target event
-    context_size = 4
-
-    agent_event_filter = EventFilter(
-        exclude_hidden=True,
-        exclude_types=(NullAction, NullObservation, ChangeAgentStateAction, AgentStateChangedObservation
-        ),
-    ) # the types of events that can be in an agent's history
-
-    # from event_id - context_size to event_id..
-    context_before = event_stream.search_events(
-        start_id=event_id,
-        filter=agent_event_filter,
-        reverse=True,
-        limit=context_size,
-    )
-
-    # from event_id to event_id + context_size + 1
-    context_after = event_stream.search_events(
-        start_id=event_id + 1,
-        filter=agent_event_filter,
-        limit=context_size + 1,
-    )
-
-    # context_before is in reverse chronological order, so convert to list and reverse it.
-    ordered_context_before = list(context_before)
-    ordered_context_before.reverse()
-
-    all_events = itertools.chain(ordered_context_before, context_after)
-    stringified_events = '\n'.join(str(event) for event in all_events)
+    # retrieve the relevant events
+    stringified_events = _get_events_around_event(event_stream, event_id)
 
     # generate a prompt
     settings = await user_settings.load()
@@ -417,3 +389,38 @@ async def _get_conversation_info(
             extra={'session_id': conversation.conversation_id},
         )
         return None
+
+
+def _get_events_around_event(event_stream: EventStream, event_id: int) -> str:
+    # find the specified events to learn from
+    # Get X events around the target event
+    context_size = 4
+
+    agent_event_filter = EventFilter(
+        exclude_hidden=True,
+        exclude_types=(NullAction, NullObservation, ChangeAgentStateAction, AgentStateChangedObservation
+        ),
+    ) # the types of events that can be in an agent's history
+
+    # from event_id - context_size to event_id..
+    context_before = event_stream.search_events(
+        start_id=event_id,
+        filter=agent_event_filter,
+        reverse=True,
+        limit=context_size,
+    )
+
+    # from event_id to event_id + context_size + 1
+    context_after = event_stream.search_events(
+        start_id=event_id + 1,
+        filter=agent_event_filter,
+        limit=context_size + 1,
+    )
+
+    # context_before is in reverse chronological order, so convert to list and reverse it.
+    ordered_context_before = list(context_before)
+    ordered_context_before.reverse()
+
+    all_events = itertools.chain(ordered_context_before, context_after)
+    stringified_events = '\n'.join(str(event) for event in all_events)
+    return stringified_events
