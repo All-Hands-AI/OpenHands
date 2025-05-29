@@ -69,9 +69,12 @@ async def load_settings(
             search_api_key_set=settings.search_api_key is not None
             and bool(settings.search_api_key),
             provider_tokens_set=provider_tokens_set,
+            sandbox_api_key=settings.sandbox_api_key is not None
+            and bool(settings.sandbox_api_key)
         )
         settings_with_token_data.llm_api_key = None
         settings_with_token_data.search_api_key = None
+        settings_with_token_data.sandbox_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
