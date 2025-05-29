@@ -169,7 +169,7 @@ class GitLabService(BaseGitService, GitService):
 
         # Use a default avatar URL if not provided
         # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
-        avatar_url = response.get('avatar_url') or 'https://about.gitlab.com/images/ico/favicon-32x32.png'
+        avatar_url = response.get('avatar_url') or ''
 
         return User(
             id=response.get('id'),
