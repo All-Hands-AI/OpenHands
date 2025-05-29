@@ -34,5 +34,4 @@ class ConversationInfo:
     url: str | None = None
     session_api_key: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    # Repository information
     repository: RepositoryInfo | None = None
