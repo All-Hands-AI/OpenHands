@@ -9,7 +9,7 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
@@ -83,7 +83,7 @@ class AgentSession:
     async def start(
         self,
         runtime_name: str,
-        config: AppConfig,
+        config: OpenHandsConfig,
         agent: Agent,
         max_iterations: int,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
@@ -237,7 +237,7 @@ class AgentSession:
         initial_message: MessageAction | None,
         replay_json: str,
         agent: Agent,
-        config: AppConfig,
+        config: OpenHandsConfig,
         max_iterations: int,
         max_budget_per_task: float | None,
         agent_to_llm_config: dict[str, LLMConfig] | None,
@@ -294,7 +294,7 @@ class AgentSession:
     async def _create_runtime(
         self,
         runtime_name: str,
-        config: AppConfig,
+        config: OpenHandsConfig,
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         custom_secrets: CUSTOM_SECRETS_TYPE | None = None,

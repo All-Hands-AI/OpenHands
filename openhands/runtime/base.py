@@ -15,7 +15,7 @@ from zipfile import ZipFile
 
 import httpx
 
-from openhands.core.config import AppConfig, SandboxConfig
+from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
@@ -97,7 +97,7 @@ class Runtime(FileEditRuntimeMixin):
     """
 
     sid: str
-    config: AppConfig
+    config: OpenHandsConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
@@ -105,7 +105,7 @@ class Runtime(FileEditRuntimeMixin):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -346,7 +346,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
+                    command='git init',
                 )
                 self.run_action(action)
             else:

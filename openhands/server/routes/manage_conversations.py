@@ -22,6 +22,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation import create_new_conversation
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -47,7 +48,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 class InitSessionRequest(BaseModel):
@@ -68,10 +69,6 @@ class InitSessionResponse(BaseModel):
     status: str
     conversation_id: str
     message: str | None = None
-
-
-# Temporary alias since the private variable was referenced publicly - delete once deploy project is updated.
-_create_new_conversation = create_new_conversation
 
 
 @app.post('/conversations')
@@ -268,6 +265,8 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
+            selected_branch=conversation.selected_branch,
+            git_provider=conversation.git_provider,
             status=(
                 agent_loop_info.status if agent_loop_info else ConversationStatus.STOPPED
             ),

@@ -12,7 +12,7 @@ import httpx
 import tenacity
 
 import openhands
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
@@ -107,7 +107,7 @@ class LocalRuntime(ActionExecutionClient):
     When receiving an event, it will send the event to the server via HTTP.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): list of plugin requirements. Defaults to None.
@@ -116,7 +116,7 @@ class LocalRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,

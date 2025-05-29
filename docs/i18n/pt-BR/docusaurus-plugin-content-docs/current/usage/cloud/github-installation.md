@@ -36,6 +36,8 @@ Você pode conceder ao OpenHands acesso a repositórios específicos:
      - Permissões do GitHub do usuário (proprietário/colaborador)
 3. Clique em `Instalar e Autorizar`
 
+![Adicionando acesso ao repositório ao OpenHands](/img/cloud/add-repo.png)
+
 ## Modificando o Acesso ao Repositório
 
 Você pode modificar o acesso ao repositório a qualquer momento:

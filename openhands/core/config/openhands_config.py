@@ -16,7 +16,7 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
 
-class AppConfig(BaseModel):
+class OpenHandsConfig(BaseModel):
     """Configuration for the app.
 
     Attributes:
@@ -29,6 +29,8 @@ class AppConfig(BaseModel):
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
+        file_store_web_hook_url: Optional url for file store web hook
+        file_store_web_hook_headers: Optional headers for file_store web hook
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
@@ -62,6 +64,8 @@ class AppConfig(BaseModel):
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
+    file_store_web_hook_url: str | None = Field(default=None)
+    file_store_web_hook_headers: dict | None = Field(default=None)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
@@ -151,5 +155,5 @@ class AppConfig(BaseModel):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
 
-        if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
-            AppConfig.defaults_dict = model_defaults_to_dict(self)
+        if not OpenHandsConfig.defaults_dict:  # Only set defaults_dict if it's empty
+            OpenHandsConfig.defaults_dict = model_defaults_to_dict(self)

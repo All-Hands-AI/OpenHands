@@ -12,7 +12,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.utils import load_app_config
+from openhands.core.config.utils import load_openhands_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 
 
@@ -105,7 +105,7 @@ class Settings(BaseModel):
 
     @staticmethod
     def from_config() -> Settings | None:
-        app_config = load_app_config()
+        app_config = load_openhands_config()
         llm_config: LLMConfig = app_config.get_llm_config()
         if llm_config.api_key is None:
             # If no api key has been set, we take this to mean that there is no reasonable default

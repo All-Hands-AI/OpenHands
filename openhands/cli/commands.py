@@ -25,7 +25,7 @@ from openhands.cli.utils import (
     write_to_file,
 )
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
 )
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
@@ -42,7 +42,7 @@ async def handle_commands(
     event_stream: EventStream,
     usage_metrics: UsageMetrics,
     sid: str,
-    config: AppConfig,
+    config: OpenHandsConfig,
     current_dir: str,
     settings_store: FileSettingsStore,
 ) -> tuple[bool, bool, bool]:
@@ -105,7 +105,7 @@ def handle_help_command() -> None:
 
 
 async def handle_init_command(
-    config: AppConfig, event_stream: EventStream, current_dir: str
+    config: OpenHandsConfig, event_stream: EventStream, current_dir: str
 ) -> tuple[bool, bool]:
     REPO_MD_CREATE_PROMPT = """
         Please explore this repository. Create the file .openhands/microagents/repo.md with:
@@ -166,7 +166,7 @@ def handle_new_command(
 
 
 async def handle_settings_command(
-    config: AppConfig,
+    config: OpenHandsConfig,
     settings_store: FileSettingsStore,
 ) -> None:
     display_settings(config)
@@ -264,7 +264,7 @@ async def init_repository(current_dir: str) -> bool:
     return init_repo
 
 
-def check_folder_security_agreement(config: AppConfig, current_dir: str) -> bool:
+def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -> bool:
     # Directories trusted by user for the CLI to use as workspace
     # Config from ~/.openhands/config.toml overrides the app config
 

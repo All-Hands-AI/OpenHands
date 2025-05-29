@@ -31,7 +31,7 @@ export function HomeHeader() {
           onClick={() => createConversation({})}
           isDisabled={isCreatingConversation}
         >
-          {!isCreatingConversation && "Launch from Scratch"}
+          {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
           {isCreatingConversation && t("HOME$LOADING")}
         </BrandButton>
       </div>
@@ -48,7 +48,7 @@ export function HomeHeader() {
             rel="noopener noreferrer"
             className="underline underline-offset-2"
           >
-            Read this
+            {t("HOME$READ_THIS")}
           </a>
         </p>
       </div>
