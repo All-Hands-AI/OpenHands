@@ -66,8 +66,18 @@ The core configuration options are defined in the `[core]` section of the `confi
 
 - `file_store`
   - Type: `str`
-  - Default: `"memory"`
+  - Default: `"local"`
   - Description: File store type
+
+- `file_store_web_hook_url`
+  - Type: `str`
+  - Default: `None`
+  - Description: Optional url for a webhook to invoke after file store writes / deletes
+
+- `file_store_web_hook_headers`
+  - Type: `str`
+  - Default: `None`
+  - Description: HTTP Headers to include in web hook requests.
 
 - `file_uploads_allowed_extensions`
   - Type: `list of str`

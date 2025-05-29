@@ -263,7 +263,12 @@ def _load_runtime(
     if override_mcp_config is not None:
         config.mcp = override_mcp_config
 
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = file_store = get_file_store(
+        config.file_store,
+        config.file_store_path,
+        config.file_store_web_hook_url,
+        config.file_store_web_hook_headers,
+    )
     event_stream = EventStream(sid, file_store)
 
     runtime = runtime_cls(
