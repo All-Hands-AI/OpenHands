@@ -4,11 +4,11 @@ import pprint
 
 import tqdm
 
-from openhands.core.config import get_llm_config_arg, get_parser, load_app_config
+from openhands.core.config import get_llm_config_arg, get_parser, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
 
-config = load_app_config()
+config = load_openhands_config()
 
 
 def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
