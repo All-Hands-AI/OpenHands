@@ -12,12 +12,13 @@ from browsergym.utils.obs import flatten_dom_to_str, overlay_som
 
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.browser.base64 import image_to_png_base64_url
 from openhands.utils.shutdown_listener import should_continue, should_exit
 from openhands.utils.tenacity_stop import stop_if_should_exit
-from openhands.runtime.browser.base64 import image_to_png_base64_url
 
 BROWSER_EVAL_GET_GOAL_ACTION = 'GET_EVAL_GOAL'
 BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
+
 
 class BrowserEnv:
     def __init__(self, browsergym_eval_env: str | None = None):
