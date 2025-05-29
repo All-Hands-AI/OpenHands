@@ -77,6 +77,5 @@ updates:
   - package-ecosystem: "docker"
     directories:
       - "containers/*"
-      - "evaluation/benchmarks/*"
     schedule:
       interval: "weekly"
