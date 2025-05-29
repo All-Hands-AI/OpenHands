@@ -73,3 +73,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "containers/*"
+      - "evaluation/benchmarks/*"
+    schedule:
+      interval: "weekly"
