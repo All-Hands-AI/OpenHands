@@ -1,4 +1,5 @@
 import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
+import { Provider } from "#/types/settings";
 
 export interface ErrorResponse {
   error: string;
@@ -72,10 +73,17 @@ export interface AuthenticateResponse {
 
 export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
 
+export interface RepositoryInfo {
+  full_name: string;
+  id: number | null;
+  git_provider: Provider | null;
+  is_public: boolean | null;
+}
+
 export interface Conversation {
   conversation_id: string;
   title: string;
-  selected_repository: string | null;
+  repository: RepositoryInfo | null;
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;

@@ -29,7 +29,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         showOptions
         title={conversation?.title ?? ""}
         lastUpdatedAt={conversation?.created_at ?? ""}
-        selectedRepository={conversation?.selected_repository ?? null}
+        selectedRepository={conversation?.repository?.full_name ?? null}
         status={conversation?.status}
         conversationId={conversation?.conversation_id}
       />

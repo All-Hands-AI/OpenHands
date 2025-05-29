@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
 
 from openhands.integrations.service_types import ProviderType
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
@@ -13,7 +12,7 @@ class RepositoryInfo:
     Information about a repository associated with a conversation
     """
 
-    full_name: str | None = None
+    full_name: str
     id: int | None = None
     git_provider: ProviderType | None = None
     is_public: bool | None = None
@@ -36,4 +35,4 @@ class ConversationInfo:
     session_api_key: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     # Repository information
-    repository: Optional[RepositoryInfo] = None
+    repository: RepositoryInfo | None = None

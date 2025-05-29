@@ -72,9 +72,9 @@ describe("ActionSuggestions", () => {
 
   it("should render both GitHub buttons when GitHub token is set and repository is selected", async () => {
     const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
-    // @ts-expect-error - only required for testing
     getConversationSpy.mockResolvedValue({
-      selected_repository: "test-repo",
+      // @ts-expect-error - only required for testing
+      repository: { full_name: "test-repo" },
     });
     renderActionSuggestions();
 

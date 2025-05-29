@@ -41,7 +41,7 @@ describe("ConversationPanel", () => {
     {
       conversation_id: "1",
       title: "Conversation 1",
-      selected_repository: null,
+      repository: null,
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "STOPPED" as const,
@@ -51,7 +51,7 @@ describe("ConversationPanel", () => {
     {
       conversation_id: "2",
       title: "Conversation 2",
-      selected_repository: null,
+      repository: null,
       last_updated_at: "2021-10-02T12:00:00Z",
       created_at: "2021-10-02T12:00:00Z",
       status: "STOPPED" as const,
@@ -61,7 +61,7 @@ describe("ConversationPanel", () => {
     {
       conversation_id: "3",
       title: "Conversation 3",
-      selected_repository: null,
+      repository: null,
       last_updated_at: "2021-10-03T12:00:00Z",
       created_at: "2021-10-03T12:00:00Z",
       status: "STOPPED" as const,
@@ -145,7 +145,7 @@ describe("ConversationPanel", () => {
       {
         conversation_id: "1",
         title: "Conversation 1",
-        selected_repository: null,
+        repository: null,
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
@@ -155,7 +155,7 @@ describe("ConversationPanel", () => {
       {
         conversation_id: "2",
         title: "Conversation 2",
-        selected_repository: null,
+        repository: null,
         last_updated_at: "2021-10-02T12:00:00Z",
         created_at: "2021-10-02T12:00:00Z",
         status: "STOPPED" as const,
@@ -165,7 +165,7 @@ describe("ConversationPanel", () => {
       {
         conversation_id: "3",
         title: "Conversation 3",
-        selected_repository: null,
+        repository: null,
         last_updated_at: "2021-10-03T12:00:00Z",
         created_at: "2021-10-03T12:00:00Z",
         status: "STOPPED" as const,

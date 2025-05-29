@@ -88,7 +88,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               isActive={isActive}
               onDelete={() => handleDeleteProject(project.conversation_id)}
               title={project.title}
-              selectedRepository={project.selected_repository}
+              selectedRepository={project.repository?.full_name ?? null}
               lastUpdatedAt={project.last_updated_at}
               createdAt={project.created_at}
               status={project.status}
