@@ -17,7 +17,10 @@ from openhands.integrations.service_types import (
 )
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
-from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_info import (
+    ConversationInfo,
+    RepositoryInfo,
+)
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
@@ -291,13 +294,23 @@ async def _get_conversation_info(
         title = conversation.title
         if not title:
             title = get_default_conversation_title(conversation.conversation_id)
+
+        # Create repository info if a repository is selected
+        repository = None
+        if conversation.selected_repository:
+            repository = RepositoryInfo(
+                full_name=conversation.selected_repository,
+                id=conversation.repository_id,
+                git_provider=conversation.git_provider,
+                is_public=conversation.is_public,
+            )
+
         return ConversationInfo(
             trigger=conversation.trigger,
             conversation_id=conversation.conversation_id,
             title=title,
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
-            selected_repository=conversation.selected_repository,
             status=(
                 agent_loop_info.status
                 if agent_loop_info
@@ -308,10 +321,7 @@ async def _get_conversation_info(
             session_api_key=agent_loop_info.session_api_key
             if agent_loop_info
             else None,
-            # Include additional repository fields
-            repository_id=conversation.repository_id,
-            git_provider=conversation.git_provider,
-            is_public=conversation.is_public,
+            repository=repository,
         )
     except Exception as e:
         logger.error(
