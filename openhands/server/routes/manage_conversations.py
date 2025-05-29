@@ -1,3 +1,4 @@
+import itertools
 import re
 import uuid
 from datetime import datetime, timezone
@@ -6,6 +7,16 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, Field
+
+from openhands.events.event_filter import EventFilter
+from openhands.events.action import (
+    ChangeAgentStateAction,
+    NullAction,
+)
+from openhands.events.observation import (
+    NullObservation,
+    AgentStateChangedObservation,
+)
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -25,7 +36,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.services.conversation import create_new_conversation
+from openhands.server.services.conversation_service import create_new_conversation
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -292,14 +303,34 @@ async def get_prompt(
     # find the specified events to learn from
     # Get X events around the target event
     context_size = 4
-    start_index = max(0, event_id - context_size)
-    end_index = event_id + context_size + 1  # +1 to include the target event
 
-    context_events = event_stream.search_events(
-        start_id=start_index,
-        end_id=end_index,
+    agent_event_filter = EventFilter(
+        exclude_hidden=True,
+        exclude_types=(NullAction, NullObservation, ChangeAgentStateAction, AgentStateChangedObservation
+        ),
+    ) # the types of events that can be in an agent's history
+
+    # from event_id - context_size to event_id..
+    context_before = event_stream.search_events(
+        start_id=event_id,
+        filter=agent_event_filter,
+        reverse=True,
+        limit=context_size,
     )
-    stringified_events = '\n'.join([str(event) for event in context_events])
+
+    # from event_id to event_id + context_size + 1
+    context_after = event_stream.search_events(
+        start_id=event_id + 1,
+        filter=agent_event_filter,
+        limit=context_size + 1,
+    )
+
+    # context_before is in reverse chronological order, so convert to list and reverse it.
+    ordered_context_before = list(context_before)
+    ordered_context_before.reverse()
+
+    all_events = itertools.chain(ordered_context_before, context_after)
+    stringified_events = '\n'.join(str(event) for event in all_events)
 
     # generate a prompt
     settings = await user_settings.load()
