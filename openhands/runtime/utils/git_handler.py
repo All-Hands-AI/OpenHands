@@ -58,7 +58,8 @@ class GitHandler:
         Returns:
             str: The file content.
         """
-        output = self.execute(f'cat {file_path}', self.cwd)
+        escaped_path = self._escape_path(file_path)
+        output = self.execute(f'cat {escaped_path}', self.cwd)
         return output.content
 
     def _verify_ref_exists(self, ref: str) -> bool:
@@ -102,6 +103,19 @@ class GitHandler:
 
         return None
 
+    def _escape_path(self, path: str) -> str:
+        """
+        Escapes special characters in a file path to prevent shell interpretation.
+
+        Args:
+            path (str): The file path to escape.
+
+        Returns:
+            str: The escaped file path.
+        """
+        # Escape special characters that could be interpreted by the shell
+        return "'" + path.replace("'", "'\\''") + "'"
+
     def _get_ref_content(self, file_path: str) -> str:
         """
         Retrieves the content of a file from a valid Git reference.
@@ -116,7 +130,9 @@ class GitHandler:
         if not ref:
             return ''
 
-        cmd = f'git show {ref}:{file_path}'
+        # Escape the file path to handle special characters like parentheses
+        escaped_path = self._escape_path(file_path)
+        cmd = f'git show {ref}:{escaped_path}'
         output = self.execute(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 

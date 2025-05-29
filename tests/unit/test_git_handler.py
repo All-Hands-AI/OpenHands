@@ -267,9 +267,9 @@ class TestGitHandler(unittest.TestCase):
         content = self.git_handler._get_current_file_content('file1.txt')
         self.assertEqual(content.strip(), 'Modified content again')
 
-        # Verify the command was executed
+        # Verify the command was executed with proper escaping
         self.assertTrue(
-            any(cmd == 'cat file1.txt' for cmd, _ in self.executed_commands)
+            any(cmd == "cat 'file1.txt'" for cmd, _ in self.executed_commands)
         )
 
     def test_get_changed_files(self):
@@ -347,15 +347,52 @@ class TestGitHandler(unittest.TestCase):
         self.assertEqual(diff['modified'].strip(), 'Modified content again')
         self.assertEqual(diff['original'].strip(), 'Modified content')
 
-        # Should have called _get_current_file_content and _get_ref_content
+        # Should have called _get_current_file_content and _get_ref_content with proper escaping
         self.assertTrue(
-            any('cat file1.txt' in cmd for cmd, _ in self.executed_commands)
+            any("cat 'file1.txt'" in cmd for cmd, _ in self.executed_commands)
         )
         self.assertTrue(
             any(
-                'git show' in cmd and 'file1.txt' in cmd
+                'git show' in cmd and "'file1.txt'" in cmd
                 for cmd, _ in self.executed_commands
             )
+        )
+
+    def test_file_path_with_special_chars(self):
+        """Test that file paths with special characters are handled correctly."""
+        # Create a file with parentheses in its name
+        special_path = 'apps/backend/src/(main)/teams/page.tsx'
+        special_file = os.path.join(self.local_dir, *special_path.split('/'))
+        os.makedirs(os.path.dirname(special_file), exist_ok=True)
+        with open(special_file, 'w') as f:
+            f.write('Content in file with special chars')
+
+        # Add and commit the file
+        self._execute_command(f"git add '{special_path}'", self.local_dir)
+        self._execute_command('git commit -m "Add file with special chars"', self.local_dir)
+        self._execute_command('git push -u origin feature-branch', self.local_dir)
+
+        # Modify the file
+        with open(special_file, 'w') as f:
+            f.write('Modified content in file with special chars')
+
+        # Test getting the diff
+        diff = self.git_handler.get_git_diff(special_path)
+        self.assertEqual(diff['modified'].strip(), 'Modified content in file with special chars')
+        self.assertEqual(diff['original'].strip(), 'Content in file with special chars')
+
+        # Verify that the commands were properly escaped
+        cat_commands = [cmd for cmd, _ in self.executed_commands if cmd.startswith('cat')]
+        show_commands = [cmd for cmd, _ in self.executed_commands if cmd.startswith('git show')]
+
+        # Check that the path is properly quoted in commands
+        self.assertTrue(
+            any(cmd == f"cat '{special_path}'" for cmd in cat_commands),
+            f"No properly escaped cat command found in {cat_commands}"
+        )
+        self.assertTrue(
+            any(cmd.endswith(f"'{special_path}'") for cmd in show_commands),
+            f"No properly escaped git show command found in {show_commands}"
         )
 
 
