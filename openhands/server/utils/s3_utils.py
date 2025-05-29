@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import mimetypes
 import os
 from typing import Optional
 
@@ -20,6 +21,51 @@ class S3Handler:
             region_name=os.getenv('S3_REGION', 'ap-southeast-1'),
         )
         self.bucket_name = os.getenv('S3_BUCKET')
+
+    def _get_content_type(self, filename: str) -> str:
+        """Determine the content type based on file extension."""
+        content_type, _ = mimetypes.guess_type(filename)
+        if content_type is None:
+            # Default content types for common file extensions
+            ext = os.path.splitext(filename)[1].lower()
+            content_type_map = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.pdf': 'application/pdf',
+                '.mp4': 'video/mp4',
+                '.webm': 'video/webm',
+                '.ogg': 'video/ogg',
+                '.txt': 'text/plain',
+                '.json': 'application/json',
+                '.zip': 'application/zip',
+            }
+            content_type = content_type_map.get(ext, 'application/octet-stream')
+        return content_type
+
+    async def upload_raw_file(
+        self, file_content: bytes, folder_path: str, filename: str
+    ):
+        try:
+            content_type = self._get_content_type(filename)
+            logger.info(f'Content type: {content_type}')
+            s3_key = f'{folder_path}/{filename}' if folder_path else filename
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=s3_key,
+                Body=file_content,
+                ContentType=content_type,
+            )
+            s3_url = f'https://{self.bucket_name}.s3.amazonaws.com/{s3_key}'
+            return s3_url
+        except ClientError as e:
+            logger.error(f'Error uploading file to S3: {str(e)}')
+            return None
+        except Exception as e:
+            logger.error(f'Unexpected error uploading to S3: {str(e)}')
+            return None
 
     async def upload_file(
         self, file: UploadFile, folder_path: str, filename: Optional[str] = None
