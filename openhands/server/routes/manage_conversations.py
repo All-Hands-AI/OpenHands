@@ -264,6 +264,8 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
+            selected_branch=conversation.selected_branch,
+            git_provider=conversation.git_provider,
             status=(
                 agent_loop_info.status if agent_loop_info else ConversationStatus.STOPPED
             ),
