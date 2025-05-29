@@ -38,6 +38,8 @@ async def create_new_conversation(
     attach_convo_id: bool = False,
     git_provider: ProviderType | None = None,
     conversation_id: str | None = None,
+    repository_id: int | None = None,
+    is_public: bool | None = None,
 ) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
@@ -103,6 +105,9 @@ async def create_new_conversation(
             user_id=user_id,
             selected_repository=selected_repository,
             selected_branch=selected_branch,
+            git_provider=git_provider,
+            repository_id=repository_id,
+            is_public=is_public,
         )
     )
 
