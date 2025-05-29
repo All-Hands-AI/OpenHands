@@ -71,10 +71,6 @@ class InitSessionResponse(BaseModel):
     message: str | None = None
 
 
-# Temporary alias since the private variable was referenced publicly - delete once deploy project is updated.
-_create_new_conversation = create_new_conversation
-
-
 @app.post('/conversations')
 async def new_conversation(
     data: InitSessionRequest,
