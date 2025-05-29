@@ -8,10 +8,12 @@ on:
   push:
     branches:
       - main
+      - release
       - staging
   pull_request:
     branches:
       - main
+      - release
       - staging
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
