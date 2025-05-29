@@ -176,16 +176,6 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-        self.agent_history_filter = EventFilter(
-            exclude_types=(
-                NullAction,
-                NullObservation,
-                ChangeAgentStateAction,
-                AgentStateChangedObservation,
-            ),
-            exclude_hidden=True,
-        )
-
         # Add the system message to the event stream
         self._add_system_message()
 
