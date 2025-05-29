@@ -153,6 +153,7 @@ async def select_file(file: str, request: Request):
     runtime: Runtime = request.state.conversation.runtime
 
     workspace_path = runtime.config.workspace_mount_path_in_sandbox or ''
+    raw_file = file
     file = os.path.join(workspace_path + '/' + runtime.sid, file)
     read_action = FileReadAction(file)
     try:
@@ -174,7 +175,7 @@ async def select_file(file: str, request: Request):
             try:
                 workspace_base = config_app.workspace_base or ''
                 openhand_file_path = os.path.join(
-                    workspace_base + '/' + runtime.sid, file
+                    workspace_base + '/' + runtime.sid, raw_file
                 )
                 async with aiofiles.open(openhand_file_path, 'rb') as f:
                     binary_data = await f.read()
