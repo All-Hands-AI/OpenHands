@@ -22,6 +22,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation import create_new_conversation
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -47,7 +48,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 class InitSessionRequest(BaseModel):

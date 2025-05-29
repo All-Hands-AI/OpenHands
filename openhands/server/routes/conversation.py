@@ -5,9 +5,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.event_filter import EventFilter
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
+from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import conversation_manager
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get('/config')
