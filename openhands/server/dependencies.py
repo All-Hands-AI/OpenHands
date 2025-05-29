@@ -15,7 +15,7 @@ def check_session_api_key(
     means is appears in OpenAPI Docs
     """
     if session_api_key != _SESSION_API_KEY:
-        raise HTTPException(status)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
 
 def get_dependencies() -> list[Depends]:
