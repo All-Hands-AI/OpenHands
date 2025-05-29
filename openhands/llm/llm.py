@@ -56,6 +56,8 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
 ]
 
 # function calling supporting models
@@ -67,6 +69,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20241022',
     'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
@@ -235,12 +239,17 @@ class LLM(RetryMixin, DebugMixin):
             mock_fncall_tools = None
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
+                add_in_context_learning_example = True
+                if (
+                    'openhands-lm' in self.config.model
+                    or 'devstral' in self.config.model
+                ):
+                    add_in_context_learning_example = False
+
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages,
                     kwargs['tools'],
-                    add_in_context_learning_example=bool(
-                        'openhands-lm' not in self.config.model
-                    ),
+                    add_in_context_learning_example=add_in_context_learning_example,
                 )
                 kwargs['messages'] = messages
 
@@ -441,7 +450,9 @@ class LLM(RetryMixin, DebugMixin):
                 pass
         from openhands.io import json
 
-        logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
+        logger.debug(
+            f'Model info: {json.dumps({"model": self.config.model, "base_url": self.config.base_url}, indent=2)}'
+        )
 
         if self.config.model.startswith('huggingface'):
             # HF doesn't support the OpenAI default value for top_p (1)

@@ -28,7 +28,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
         {suggestedTasks?.map((taskGroup, index) => (
           <TaskGroup
             key={index}
-            title={taskGroup.title}
+            title={decodeURIComponent(taskGroup.title)}
             tasks={taskGroup.tasks}
           />
         ))}

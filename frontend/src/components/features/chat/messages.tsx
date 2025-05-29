@@ -4,7 +4,6 @@ import { createPortal } from "react-dom";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
-import { OpenHandsEventType } from "#/types/core/base";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
@@ -34,27 +33,6 @@ function LaunchToMicroagentButton({ onClick }: LaunchToMicroagentButtonProps) {
     </button>
   );
 }
-
-const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
-  "system",
-  "agent_state_changed",
-  "change_agent_state",
-];
-
-const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall"];
-
-const shouldRenderEvent = (event: OpenHandsAction | OpenHandsObservation) => {
-  if (isOpenHandsAction(event)) {
-    const noRenderList = COMMON_NO_RENDER_LIST.concat(ACTION_NO_RENDER_LIST);
-    return !noRenderList.includes(event.action);
-  }
-
-  if (isOpenHandsObservation(event)) {
-    return !COMMON_NO_RENDER_LIST.includes(event.observation);
-  }
-
-  return true;
-};
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -88,7 +66,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
         return false;
       },
-      [messages],
+      [],
     );
 
     const handleLaunchMicroagent = (
@@ -127,7 +105,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     return (
       <>
-        {messages.filter(shouldRenderEvent).map((message, index) => (
+        {messages.map((message, index) => (
           <EventMessage
             key={index}
             event={message}
@@ -161,6 +139,14 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           )}
       </>
     );
+  },
+  (prevProps, nextProps) => {
+    // Prevent re-renders if messages are the same length
+    if (prevProps.messages.length !== nextProps.messages.length) {
+      return false;
+    }
+
+    return true;
   },
 );
 

@@ -68,6 +68,7 @@ from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.log_capture import capture_logs
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
@@ -849,13 +850,22 @@ if __name__ == '__main__':
         # Manually reload the profile and update the servers
         mcp_router.profile_manager.reload()
         servers_wait_for_update = mcp_router.get_unique_servers()
-        await mcp_router.update_servers(servers_wait_for_update)
+        async with capture_logs('mcpm.router.router') as log_capture:
+            await mcp_router.update_servers(servers_wait_for_update)
+        router_error_log = log_capture.getvalue()
+
         logger.info(
             f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
         )
+        if router_error_log:
+            logger.warning(f'Some MCP servers failed to be added: {router_error_log}')
 
         return JSONResponse(
-            status_code=200, content={'detail': 'MCP server updated successfully'}
+            status_code=200,
+            content={
+                'detail': 'MCP server updated successfully',
+                'router_error_log': router_error_log,
+            },
         )
 
     @app.post('/upload_file')
@@ -1003,12 +1013,12 @@ if __name__ == '__main__':
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
-            return []
+            return JSONResponse(content=[])
 
         try:
             # Check if the directory exists
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
-                return []
+                return JSONResponse(content=[])
 
             entries = os.listdir(full_path)
 
@@ -1037,11 +1047,11 @@ if __name__ == '__main__':
 
             # Combine sorted directories and files
             sorted_entries = directories + files
-            return sorted_entries
+            return JSONResponse(content=sorted_entries)
 
         except Exception as e:
             logger.error(f'Error listing files: {e}')
-            return []
+            return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

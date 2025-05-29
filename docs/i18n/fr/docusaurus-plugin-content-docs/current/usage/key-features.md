@@ -1,8 +1,8 @@
-# Aperçu des fonctionnalités d'OpenHands
+# Aperçu des Fonctionnalités d'OpenHands
 
 ![aperçu](/img/oh-features.png)
 
-### Panneau de discussion
+### Panneau de Discussion
 - Affiche la conversation entre l'utilisateur et OpenHands.
 - OpenHands explique ses actions dans ce panneau.
 
@@ -10,8 +10,8 @@
 - Montre les modifications de fichiers effectuées par OpenHands.
 
 ### VS Code
-- VS Code intégré pour parcourir et modifier des fichiers.
-- Peut également être utilisé pour télécharger et importer des fichiers.
+- VS Code intégré pour parcourir et modifier les fichiers.
+- Peut également être utilisé pour télécharger et envoyer des fichiers.
 
 ### Terminal
 - Un espace permettant à OpenHands et aux utilisateurs d'exécuter des commandes terminal.
@@ -25,5 +25,5 @@
 - Les utilisateurs peuvent interagir avec l'application en cours d'exécution.
 
 ### Navigateur
-- Utilisé par OpenHands pour naviguer sur des sites web.
+- Utilisé par OpenHands pour naviguer sur les sites web.
 - Le navigateur n'est pas interactif.

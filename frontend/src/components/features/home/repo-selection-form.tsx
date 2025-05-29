@@ -84,7 +84,7 @@ export function RepositorySelectionForm({
   const allRepositories = repositories?.concat(searchedRepos || []);
   const repositoriesItems = allRepositories?.map((repo) => ({
     key: repo.id,
-    label: repo.full_name,
+    label: decodeURIComponent(repo.full_name),
   }));
 
   const branchesItems = branches?.map((branch) => ({
