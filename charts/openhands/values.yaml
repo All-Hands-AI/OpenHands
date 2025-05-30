@@ -1,0 +1,151 @@
+# Default values for openhands.
+
+
+image:
+  # -- The container image to use for the deployment.
+  repository: docker.all-hands.dev/all-hands-ai/openhands
+  # -- The tag to use for the deployment.
+  tag: "0.40.0"
+  # -- The image pull policy to use for the deployment.
+  pullPolicy: IfNotPresent
+
+# -- Optional image pull secrets for private registries.
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# -- Additional environment variables for the deployment.
+env: []
+  # - name: FOO
+  #   value: bar
+  # - name: BAR
+  #   value: "baz"
+
+# Kubernetes runtime configuration
+# These values will be converted to environment variables in the format:
+# SANDBOX__KUBERNETES__<OPTION_NAME>=<value>
+kubernetesConfig:
+  # -- The Kubernetes namespace to use for openhands runtime.
+  namespace: "default"
+  # -- Domain for runtime ingress resources
+  ingressDomain: "localhost"
+  # -- Size of the persistent volume claim for runtime pods.
+  pvcStorageSize: "2Gi"
+  # -- Storage class for runtime persistent volume claims
+  pvcStorageClass: null
+  # -- CPU request for runtime pods
+  resourceCpuRequest: "1"
+  # -- Memory request for runtime pods
+  resourceMemoryRequest: "1Gi"
+  # -- Memory limit for runtime pods
+  resourceMemoryLimit: "2Gi"
+  # -- Optional name of image pull secret for private registries
+  imagePullSecret: null
+  # -- Optional name of TLS secret for ingress
+  ingressTlsSecret: null
+  # -- Optional node selector key for runtime pod scheduling
+  nodeSelectorKey: null
+  # -- Optional node selector value for runtimepod scheduling
+  nodeSelectorVal: null
+  # -- Pod tolerations for runtime pods
+  # Will be converted to YAML string for SANDBOX__KUBERNETES__TOLERATIONS_YAML
+  tolerations: []
+  # - effect: NoSchedule
+  #   key: arch
+  #   operator: Equal
+  #   value: arm
+
+  # -- Runtime pods runs with root access for Docker support.
+  privileged: true
+
+# Configuration for the OpenHands controller/server.
+config:
+  # -- Set the RUNTIME env var to use kubernetes runtime.
+  runtime: "kubernetes"
+  # -- Image to use for runtime pods. Required.
+  sandboxRuntimeContainerImage: "ghcr.io/all-hands-ai/runtime:oh_v0.40.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22"
+
+# -- Additional command line arguments for the OpenHands controller/server.
+args: []
+  #- arg1
+  #- arg2
+
+serviceAccount:
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /alive
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+
+# -- Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "openhands.fullname" . }}
+  labels:
+    {{- include "openhands.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "openhands.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "openhands.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "openhands.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            {{- if .Values.env }}
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.config.runtime }}
+            - name: "RUNTIME"
+              value: {{ .Values.config.runtime | quote }}
+            {{- end }}
+            {{- if .Values.config.sandboxRuntimeContainerImage }}
+            - name: "SANDBOX_RUNTIME_CONTAINER_IMAGE"
+              value: {{ .Values.config.sandboxRuntimeContainerImage | quote }}
+            {{- end }}
+            {{- with .Values.kubernetesConfig }}
+            {{- if .namespace }}
+            - name: SANDBOX_KUBERNETES_NAMESPACE
+              value: {{ .namespace | quote }}
+            {{- end }}
+            {{- if .ingressDomain }}
+            - name: SANDBOX_KUBERNETES_INGRESS_DOMAIN
+              value: {{ .ingressDomain | quote }}
+            {{- end }}
+            {{- if .pvcStorageSize }}
+            - name: SANDBOX_KUBERNETES_PVC_STORAGE_SIZE
+              value: {{ .pvcStorageSize | quote }}
+            {{- end }}
+            {{- if .resourceCpuRequest }}
+            - name: SANDBOX_KUBERNETES_RESOURCE_CPU_REQUEST
+              value: {{ .resourceCpuRequest | quote }}
+            {{- end }}
+            {{- if .resourceMemoryRequest }}
+            - name: SANDBOX_KUBERNETES_RESOURCE_MEMORY_REQUEST
+              value: {{ .resourceMemoryRequest | quote }}
+            {{- end }}
+            {{- if .resourceMemoryLimit }}
+            - name: SANDBOX_KUBERNETES_RESOURCE_MEMORY_LIMIT
+              value: {{ .resourceMemoryLimit | quote }}
+            {{- end }}
+            {{- if .pvcStorageClass }}
+            - name: SANDBOX_KUBERNETES_PVC_STORAGE_CLASS
+              value: {{ .pvcStorageClass | quote }}
+            {{- end }}
+            {{- if .imagePullSecret }}
+            - name: SANDBOX_KUBERNETES_IMAGE_PULL_SECRET
+              value: {{ .imagePullSecret | quote }}
+            {{- end }}
+            {{- if .ingressTlsSecret }}
+            - name: SANDBOX_KUBERNETES_INGRESS_TLS_SECRET
+              value: {{ .ingressTlsSecret | quote }}
+            {{- end }}
+            {{- if .nodeSelectorKey }}
+            - name: SANDBOX_KUBERNETES_NODE_SELECTOR_KEY
+              value: {{ .nodeSelectorKey | quote }}
+            {{- end }}
+            {{- if .nodeSelectorVal }}
+            - name: SANDBOX_KUBERNETES_NODE_SELECTOR_VAL
+              value: {{ .nodeSelectorVal | quote }}
+            {{- end }}
+            {{- if .tolerations }}
+            - name: SANDBOX_KUBERNETES_TOLERATIONS_YAML
+              value: {{ .tolerations | toYaml | quote }}
+            {{- end }}
+            {{- if .privileged }}
+            - name: SANDBOX_KUBERNETES_PRIVILEGED
+              value: {{ .privileged | quote }}
+            {{- end }}
+            {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
