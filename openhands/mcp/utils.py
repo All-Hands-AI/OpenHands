@@ -50,6 +50,15 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 async def create_mcp_clients(
     sse_servers: list[MCPSSEServerConfig], conversation_id: str | None = None
 ) -> list[MCPClient]:
+    import sys
+
+    # Skip MCP clients on Windows
+    if sys.platform == 'win32':
+        logger.info(
+            'MCP functionality is disabled on Windows, skipping client creation'
+        )
+        return []
+
     mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
     if sse_servers:
@@ -87,6 +96,13 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
     Returns:
         A list of tool dictionaries. Returns an empty list if no connections could be established.
     """
+    import sys
+
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows, skipping tool fetching')
+        return []
+
     mcp_clients = []
     mcp_tools = []
     try:
@@ -129,6 +145,15 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     Returns:
         The observation from the MCP server
     """
+    import sys
+
+    from openhands.events.observation import ErrorObservation
+
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows')
+        return ErrorObservation('MCP functionality is not available on Windows')
+
     if not mcp_clients:
         raise ValueError('No MCP clients found')
 
@@ -167,6 +192,13 @@ async def add_mcp_tools_to_agent(
     """
     Add MCP tools to an agent.
     """
+    import sys
+
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows, skipping MCP tools')
+        agent.set_mcp_tools([])
+        return
 
     assert runtime.runtime_initialized, (
         'Runtime must be initialized before adding MCP tools'
