@@ -6,7 +6,7 @@ for a given query (e.g. edit draft produced by the agent).
 
 import pylcs
 from pydantic import BaseModel
-from tree_sitter_languages import get_parser
+from tree_sitter_language_pack import get_parser
 
 from openhands.core.logger import openhands_logger as logger
 
