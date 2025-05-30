@@ -234,7 +234,7 @@ class LocalRuntime(ActionExecutionClient):
             self.log('info', f'Connecting to existing server for session {self.sid}')
             server_info = _RUNNING_SERVERS[self.sid]
             self.server_process = server_info.process
-            self._host_port = server_info.port
+            self._execution_server_port = server_info.port
             self._log_thread = server_info.log_thread
             self._log_thread_exit_event = server_info.log_thread_exit_event
             self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
@@ -242,7 +242,7 @@ class LocalRuntime(ActionExecutionClient):
                 int(os.getenv('WORK_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
                 int(os.getenv('WORK_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
             ]
-            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
         elif self.attach_to_existing:
             # If we're supposed to attach to an existing server but none exists, raise an error
             self.log('error', f'No existing server found for session {self.sid}')
@@ -251,17 +251,17 @@ class LocalRuntime(ActionExecutionClient):
             )
         else:
             # Start a new server
-            self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+            self._execution_server_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
             self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
             self._app_ports = [
                 self._find_available_port(APP_PORT_RANGE_1),
                 self._find_available_port(APP_PORT_RANGE_2),
             ]
-            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
 
             # Start the server process
             cmd = get_action_execution_server_startup_command(
-                server_port=self._host_port,
+                server_port=self._execution_server_port,
                 plugins=self.plugins,
                 app_config=self.config,
                 python_prefix=['poetry', 'run'],
@@ -353,7 +353,7 @@ class LocalRuntime(ActionExecutionClient):
             # Store the server process in the global dictionary
             _RUNNING_SERVERS[self.sid] = ActionExecutionServerInfo(
                 process=self.server_process,
-                port=self._host_port,
+                port=self._execution_server_port,
                 log_thread=self._log_thread,
                 log_thread_exit_event=self._log_thread_exit_event,
             )
