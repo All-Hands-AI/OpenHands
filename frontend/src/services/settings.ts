@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: false,
   SEARCH_API_KEY: "",
   IS_NEW_USER: true,
+  MAX_BUDGET_PER_TASK: null,
   MCP_CONFIG: {
     sse_servers: [],
     stdio_servers: [],
