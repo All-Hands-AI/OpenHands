@@ -100,7 +100,6 @@ class RemoteRuntime(ActionExecutionClient):
         self.available_hosts: dict[str, int] = {}
 
     def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
-        message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
         getattr(logger, level)(
             message,
             stacklevel=2,
