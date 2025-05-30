@@ -126,6 +126,7 @@ class LocalRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ) -> None:
+        logger.info("TRACE:LocalRuntime:__init__", stack_info=True)
         self.is_windows = sys.platform == 'win32'
         if self.is_windows:
             logger.warning(
@@ -175,11 +176,11 @@ class LocalRuntime(ActionExecutionClient):
             self._temp_workspace = tempfile.mkdtemp()
             self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
-        self._host_port = -1
+        self._execution_server_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
 
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
         self.status_callback = status_callback
         self.server_process: subprocess.Popen[str] | None = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -218,18 +219,19 @@ class LocalRuntime(ActionExecutionClient):
         logger.info(f"TRACE:connect:{self.sid}")
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        self._execution_server_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        logger.info(f"TRACE:_execution_server_port:{self._execution_server_port}")
         self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
         self._app_ports = [
             int(os.getenv('WORK_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
             int(os.getenv('WORK_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
         ]
-        logger.info(f"TRACE:ports:{self._host_port}:{self._vscode_port}:{self._app_ports}")
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+        logger.info(f"TRACE:ports:{self._execution_server_port}:{self._vscode_port}:{self._app_ports}")
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
 
         # Start the server process
         cmd = get_action_execution_server_startup_command(
-            server_port=self._host_port,
+            server_port=self._execution_server_port,
             plugins=self.plugins,
             app_config=self.config,
             python_prefix=['poetry', 'run'],
@@ -350,6 +352,7 @@ class LocalRuntime(ActionExecutionClient):
             raise RuntimeError('Server process died')
 
         try:
+            logger.info(f"TRACE:polling_url:{self.api_url}")
             response = self.session.get(f'{self.api_url}/alive')
             response.raise_for_status()
             return True
