@@ -3,7 +3,6 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
-import shutil
 import sys
 import threading
 import time
@@ -133,34 +132,15 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 
 def display_banner(session_id: str) -> None:
-    width, _ = shutil.get_terminal_size()
-    cards = """
-🙌🙌🙌🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌    🙌|🙌    🙌  🙌🙌🙌🙌  🙌    🙌  🙌🙌🙌      🙌🙌🙌
-🙌    🙌  🙌    🙌  🙌        🙌🙌  🙌|🙌    🙌  🙌    🙌  🙌🙌  🙌  🙌    🙌  🙌
-🙌    🙌  🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌|🙌🙌🙌🙌  🙌🙌🙌🙌  🙌 🙌 🙌  🙌    🙌    🙌🙌
-🙌    🙌  🙌        🙌        🙌  🙌🙌|🙌    🙌  🙌    🙌  🙌  🙌🙌  🙌    🙌        🙌
-🙌🙌🙌🙌  🙌        🙌🙌🙌🙌  🙌    🙌|🙌    🙌  🙌    🙌  🙌    🙌  🙌🙌🙌    🙌🙌🙌
-    """
-    if width < 90:
-        card_lines = cards.split('\n')
-        cards = ''
-        for i, line in enumerate(card_lines):
-            if '|' not in line:
-                cards += line + '\n'
-                continue
-            first_half = line.split('|')[0]
-            cards += first_half + '\n'
-        for i, line in enumerate(card_lines):
-            if '|' not in line:
-                cards += line + '\n'
-                continue
-            second_half = line.split('|')[1]
-            cards += second_half + '\n'
-    else:
-        cards = cards.replace('|', '  ')
-
     print_formatted_text(
-        HTML(cards),
+        HTML(r"""<gold>
+     ___                    _   _                 _
+    /  _ \ _ __   ___ _ __ | | | | __ _ _ __   __| |___
+    | | | | '_ \ / _ \ '_ \| |_| |/ _` | '_ \ / _` / __|
+    | |_| | |_) |  __/ | | |  _  | (_| | | | | (_| \__ \
+    \___ /| .__/ \___|_| |_|_| |_|\__,_|_| |_|\__,_|___/
+          |_|
+    </gold>"""),
         style=DEFAULT_STYLE,
     )
 
