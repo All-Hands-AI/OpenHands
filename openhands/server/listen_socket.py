@@ -119,19 +119,20 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'User {user_id} is allowed to connect to conversation {conversation_id}'
         )
 
+        # First, get the conversation initialization data
         conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
-        agent_loop_info = await conversation_manager.join_conversation(
-            conversation_id,
-            connection_id,
-            conversation_init_data,
-            user_id,
+
+        # Create an EventStore to access the events before joining the conversation
+        from openhands.events.event_store import EventStore
+
+        event_store = EventStore(
+            conversation_id, conversation_manager.file_store, user_id
         )
+
         logger.info(
-            f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
+            f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
         )
         agent_state_changed = None
-        if agent_loop_info is None:
-            raise ConnectionRefusedError('Failed to join conversation')
         # Keep track of the highest event ID we've seen
         current_latest_event_id = latest_event_id
 
@@ -139,7 +140,7 @@ async def connect(connection_id: str, environ: dict) -> None:
         while True:
             # Create a new async store starting from the next event after the latest one we've processed
             async_store = AsyncEventStoreWrapper(
-                agent_loop_info.event_store, current_latest_event_id + 1
+                event_store, current_latest_event_id + 1
             )
 
             # Flag to check if we processed any new events in this iteration
@@ -177,6 +178,21 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         logger.info(
             f'Finished replaying event stream for conversation {conversation_id}'
+        )
+
+        # Now join the conversation after replaying the event stream
+        agent_loop_info = await conversation_manager.join_conversation(
+            conversation_id,
+            connection_id,
+            conversation_init_data,
+            user_id,
+        )
+
+        if agent_loop_info is None:
+            raise ConnectionRefusedError('Failed to join conversation')
+
+        logger.info(
+            f'Successfully joined conversation {conversation_id} with connection_id {connection_id}'
         )
     except ConnectionRefusedError:
         # Close the broken connection after sending an error message
