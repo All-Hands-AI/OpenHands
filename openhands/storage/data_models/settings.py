@@ -130,5 +130,6 @@ class Settings(BaseModel):
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
+            max_budget_per_task=app_config.max_budget_per_task,
         )
         return settings
