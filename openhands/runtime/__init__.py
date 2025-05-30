@@ -5,6 +5,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
 )
 from openhands.runtime.impl.e2b.e2b_runtime import E2BRuntime
+from openhands.runtime.impl.kubernetes.kubernetes_runtime import KubernetesRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -21,6 +22,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'runloop': RunloopRuntime,
     'local': LocalRuntime,
     'daytona': DaytonaRuntime,
+    'kubernetes': KubernetesRuntime,
     'cli': CLIRuntime,
 }
 
@@ -50,6 +52,7 @@ __all__ = [
     'RunloopRuntime',
     'DockerRuntime',
     'DaytonaRuntime',
+    'KubernetesRuntime',
     'CLIRuntime',
     'get_runtime_cls',
 ]

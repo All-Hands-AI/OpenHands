@@ -85,6 +85,8 @@ anyio = "4.9.0"
 pythonnet = "*"
 fastmcp = "^2.3.3"
 mcpm = "1.12.0"
+kubernetes = "^32.0.1"
+pyyaml = "^6.0.2"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.11"
