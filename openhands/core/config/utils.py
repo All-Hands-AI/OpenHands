@@ -75,7 +75,7 @@ def load_from_env(
             env_var_name = (prefix + field_name).upper()
 
             if isinstance(field_value, BaseModel):
-                set_attr_from_env(field_value, prefix=field_name + '_')
+                set_attr_from_env(field_value, prefix=prefix + field_name + '_')
 
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
