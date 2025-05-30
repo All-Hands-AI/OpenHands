@@ -31,11 +31,9 @@ uvicorn = "*"
 numpy = "*"
 jinja2 = "^3.1.3"
 python-multipart = "*"
-boto3 = "*"
 tenacity = ">=8.5,<10.0"
 zope-interface = "7.2"
 pathspec = "^0.12.1"
-bashlex = "^0.18"
 pyjwt = "^2.9.0"
 dirhash = "*"
 tornado = "*"
@@ -73,6 +71,7 @@ pylatexenc = "*"
 python-docx = "*"
 html2text = "*"
 libtmux = ">=0.37,<0.40"
+bashlex = "^0.18"
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
@@ -86,6 +85,7 @@ google-generativeai = "*"                            # To use litellm with Gemin
 e2b = ">=1.0.5,<1.4.0"
 google-api-python-client = "^2.164.0"
 runloop-api-client = "0.33.0"
+boto3 = "*"
 
 [tool.poetry.group.dev]
 optional = true
