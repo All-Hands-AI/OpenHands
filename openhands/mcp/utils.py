@@ -69,7 +69,9 @@ async def create_mcp_clients(
                 mcp_clients.append(client)
                 logger.info(f'Connected to MCP server {server_url} via SSE')
             except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
+                logger.error(
+                    f'Failed to connect to {server_url}: {str(e)}', exc_info=True
+                )
                 try:
                     await client.disconnect()
                 except Exception as disconnect_error:
