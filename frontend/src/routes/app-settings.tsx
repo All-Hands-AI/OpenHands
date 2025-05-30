@@ -59,9 +59,12 @@ function AppSettingsScreen() {
     const maxBudgetPerTaskValue = formData
       .get("max-budget-per-task-input")
       ?.toString();
-    const maxBudgetPerTask = maxBudgetPerTaskValue
-      ? parseFloat(maxBudgetPerTaskValue)
-      : null;
+    let maxBudgetPerTask = null;
+    if (maxBudgetPerTaskValue) {
+      const parsedValue = parseFloat(maxBudgetPerTaskValue);
+      // Ensure the value is at least 1 dollar
+      maxBudgetPerTask = parsedValue && parsedValue >= 1 ? parsedValue : null;
+    }
 
     saveSettings(
       {
@@ -123,7 +126,12 @@ function AppSettingsScreen() {
   };
 
   const checkIfMaxBudgetPerTaskHasChanged = (value: string) => {
-    const newValue = value ? parseFloat(value) : null;
+    let newValue = null;
+    if (value) {
+      const parsedValue = parseFloat(value);
+      // Ensure the value is at least 1 dollar
+      newValue = parsedValue && parsedValue >= 1 ? parsedValue : null;
+    }
     const currentValue = settings?.MAX_BUDGET_PER_TASK;
     setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
   };
@@ -191,8 +199,8 @@ function AppSettingsScreen() {
             defaultValue={settings.MAX_BUDGET_PER_TASK?.toString() || ""}
             onChange={checkIfMaxBudgetPerTaskHasChanged}
             placeholder="Maximum budget per task in USD"
-            min={0}
-            step={0.01}
+            min={1}
+            step={1}
           />
         </div>
       )}
