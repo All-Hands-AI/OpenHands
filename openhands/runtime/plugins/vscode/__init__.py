@@ -31,16 +31,19 @@ class VSCodePlugin(Plugin):
             self.vscode_connection_token = None
             logger.warning(
                 'VSCodePlugin is only supported for root or openhands user. '
-                'It is not yet supported for other users (i.e., when running LocalRuntime).'
+                'It is not yet supported for other users (i.e., when running LocalRuntime).',
+                extra={'username': username}
             )
             return
 
         # Set up VSCode settings.json
         self._setup_vscode_settings()
 
+        logger.info(f"getting_vscode_port_from_env:{os.environ.get('VSCODE_PORT')}")
         self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
-        assert check_port_available(self.vscode_port)
+        assert check_port_available(self.vscode_port) # The port check fails here
+        logger.info(f"TRACE:starting_vscode_process:{self.vscode_port}")
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
