@@ -9,7 +9,7 @@ class LocalFileStore(FileStore):
     root: str
 
     def __init__(self, root: str):
-        self.root = root
+        self.root = os.path.expanduser(root)
         os.makedirs(self.root, exist_ok=True)
 
     def get_full_path(self, path: str) -> str:
