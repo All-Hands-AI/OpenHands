@@ -341,7 +341,6 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     # Display the banner with ASCII art first
     display_banner(session_id='setup')
 
-    print_formatted_text(HTML('\n<b>Welcome to OpenHands!</b>'))
     print_formatted_text(
         HTML('<grey>No settings found. Starting initial setup...</grey>\n')
     )
