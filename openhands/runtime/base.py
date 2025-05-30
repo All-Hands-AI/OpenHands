@@ -360,15 +360,16 @@ class Runtime(FileEditRuntimeMixin):
             return ''
 
         provider = repository.git_provider
-
-        # default domain
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
         }
 
-        # If host does not exist, default domain will be used.
-        domain = git_provider_tokens[provider].host if git_provider_tokens[provider].host else provider_domains[provider]
+        domain = provider_domains[provider]
+
+        # If git_provider_tokens is provided, use the host from the token if available
+        if git_provider_tokens and provider in git_provider_tokens:
+            domain = git_provider_tokens[provider].host or domain
 
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
