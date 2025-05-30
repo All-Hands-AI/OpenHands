@@ -1,16 +1,9 @@
 import os
 import tempfile
 import time
-from unittest.mock import MagicMock
-
-import pytest
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
-from openhands.events.observation.commands import (
-    CmdOutputMetadata,
-    CmdOutputObservation,
-)
 from openhands.runtime.utils.bash import BashCommandStatus, BashSession
 
 
@@ -264,7 +257,6 @@ def test_empty_command_errors():
     session.close()
 
 
-@pytest.mark.skip('This test is flaky and has been replaced by a mock test')
 def test_command_output_continuation():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
     session.initialize()
@@ -272,165 +264,46 @@ def test_command_output_continuation():
     # Start a command that produces output slowly
     obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-    # With the 3-second sleep, we should only see the first number in the initial output
-    # because the no_change_timeout_seconds is set to 2
-    assert '1' in obs.content.strip()
-    assert obs.metadata.prefix == ''
-    assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
-    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-
-    # Continue getting output
-    obs = session.execute(CmdRunAction('', is_input=True))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-
-    # The content should contain the next number(s)
-    content = obs.content.strip()
-    assert '2' in content
-    assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
-    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-
-    # Continue getting more output
-    obs = session.execute(CmdRunAction('', is_input=True))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-
-    # The content should contain the next number(s)
-    content = obs.content.strip()
-    assert '3' in content
-    assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
-    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-
-    # Continue getting more output
-    obs = session.execute(CmdRunAction('', is_input=True))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-
-    # The content should contain the next number(s)
-    content = obs.content.strip()
-    assert '4' in content
-    assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
-    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-
-    # Continue getting more output
-    obs = session.execute(CmdRunAction('', is_input=True))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-
-    # The content should contain the next number(s)
-    content = obs.content.strip()
-    assert '5' in content
-
-    # After all numbers are printed, we should see the command completion
-    # Either immediately or after one more empty input
-    if '[The command completed with exit code 0.]' in obs.metadata.suffix:
-        # Command already completed
-        assert session.prev_status == BashCommandStatus.COMPLETED
-    else:
-        # Command still running, need one more empty input
-        assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
-        assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-
-        obs = session.execute(CmdRunAction('', is_input=True))
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
-        assert session.prev_status == BashCommandStatus.COMPLETED
-
-    session.close()
-
-
-def test_command_output_continuation_mock():
-    """Mock version of test_command_output_continuation that doesn't rely on timing."""
-    # Create a mock BashSession
-    session = MagicMock(spec=BashSession)
-
-    # Set up the mock to return appropriate values for each call
-    metadata1 = CmdOutputMetadata(
-        prefix='',
-        suffix="\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]",
-    )
-    obs1 = CmdOutputObservation(
-        content='1',
-        command='for i in {1..5}; do echo $i; sleep 3; done',
-        metadata=metadata1,
-    )
-
-    metadata2 = CmdOutputMetadata(
-        prefix='[Below is the output of the previous command.]\n',
-        suffix="\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]",
-    )
-    obs2 = CmdOutputObservation(content='2', command='', metadata=metadata2)
-
-    metadata3 = CmdOutputMetadata(
-        prefix='[Below is the output of the previous command.]\n',
-        suffix="\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]",
-    )
-    obs3 = CmdOutputObservation(content='3', command='', metadata=metadata3)
-
-    metadata4 = CmdOutputMetadata(
-        prefix='[Below is the output of the previous command.]\n',
-        suffix="\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]",
-    )
-    obs4 = CmdOutputObservation(content='4', command='', metadata=metadata4)
-
-    metadata5 = CmdOutputMetadata(
-        prefix='[Below is the output of the previous command.]\n',
-        suffix="\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]",
-    )
-    obs5 = CmdOutputObservation(content='5', command='', metadata=metadata5)
-
-    metadata6 = CmdOutputMetadata(
-        prefix='[Below is the output of the previous command.]\n',
-        suffix='\n[The command completed with exit code 0.]',
-    )
-    obs6 = CmdOutputObservation(content='', command='', metadata=metadata6)
-
-    # Set up the mock to return the observations in sequence
-    session.execute.side_effect = [obs1, obs2, obs3, obs4, obs5, obs6]
-
-    # Set up the prev_status property to return the expected values
-    type(session).prev_status = type(
-        'obj',
-        (object,),
-        {'__get__': lambda self, obj, objtype: BashCommandStatus.NO_CHANGE_TIMEOUT},
-    )
-
-    # Test the first observation
-    obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
     assert obs.content.strip() == '1'
     assert obs.metadata.prefix == ''
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Test the second observation
     obs = session.execute(CmdRunAction('', is_input=True))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '2'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Test the third observation
     obs = session.execute(CmdRunAction('', is_input=True))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '3'
-    assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
 
-    # Test the fourth observation
+    assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+
     obs = session.execute(CmdRunAction('', is_input=True))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '4'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Test the fifth observation
     obs = session.execute(CmdRunAction('', is_input=True))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '5'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Test the sixth observation
     obs = session.execute(CmdRunAction('', is_input=True))
-    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
-    assert obs.content.strip() == ''
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    assert session.prev_status == BashCommandStatus.COMPLETED
+
+    session.close()
 
 
 def test_long_output():
