@@ -15,6 +15,16 @@ import {
 } from "./observations";
 import { StatusUpdate } from "./variances";
 
+export const isOpenHandsEvent = (
+  event: unknown,
+): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
+
 export const isOpenHandsAction = (
   event: OpenHandsParsedEvent,
 ): event is OpenHandsAction => "action" in event;
