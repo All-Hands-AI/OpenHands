@@ -101,7 +101,15 @@ class RemoteRuntime(ActionExecutionClient):
 
     def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
-        getattr(logger, level)(message, stacklevel=2, exc_info=exc_info)
+        getattr(logger, level)(
+            message,
+            stacklevel=2,
+            exc_info=exc_info,
+            extra={
+                'session_id': self.sid,
+                'runtime_id': self.runtime_id,
+            },
+        )
 
     @property
     def action_execution_server_url(self) -> str:
@@ -285,9 +293,10 @@ class RemoteRuntime(ActionExecutionClient):
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             json={'runtime_id': self.runtime_id},
         )
+        self.log('info', 'Runtime resumed, waiting for it to be alive...')
         self._wait_until_alive()
         self.setup_initial_env()
-        self.log('debug', 'Runtime resumed.')
+        self.log('info', 'Runtime resumed and alive.')
 
     def _parse_runtime_response(self, response: httpx.Response) -> None:
         start_response = response.json()
@@ -407,7 +416,7 @@ class RemoteRuntime(ActionExecutionClient):
                             f'{self.config.sandbox.remote_runtime_api_url}/pause',
                             json={'runtime_id': self.runtime_id},
                         )
-                        self.log('debug', 'Runtime paused.')
+                        self.log('info', 'Runtime paused.')
                 except Exception as e:
                     self.log('error', f'Unable to pause runtime: {str(e)}')
                     raise e
@@ -420,7 +429,7 @@ class RemoteRuntime(ActionExecutionClient):
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
                 )
-                self.log('debug', 'Runtime stopped.')
+                self.log('info', 'Runtime stopped.')
         except Exception as e:
             self.log('error', f'Unable to stop runtime: {str(e)}')
             raise e
