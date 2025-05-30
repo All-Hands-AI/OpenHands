@@ -42,7 +42,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 @dataclass
-class ServerInfo:
+class ActionExecutionServerInfo:
     """Information about a running server process."""
 
     process: subprocess.Popen
@@ -52,7 +52,7 @@ class ServerInfo:
 
 
 # Global dictionary to track running server processes by session ID
-_RUNNING_SERVERS: dict[str, ServerInfo] = {}
+_RUNNING_SERVERS: dict[str, ActionExecutionServerInfo] = {}
 
 
 def get_user_info() -> tuple[int, str | None]:
@@ -351,7 +351,7 @@ class LocalRuntime(ActionExecutionClient):
             self._log_thread.start()
 
             # Store the server process in the global dictionary
-            _RUNNING_SERVERS[self.sid] = ServerInfo(
+            _RUNNING_SERVERS[self.sid] = ActionExecutionServerInfo(
                 process=self.server_process,
                 port=self._host_port,
                 log_thread=self._log_thread,
