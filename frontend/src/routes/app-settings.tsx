@@ -195,12 +195,13 @@ function AppSettingsScreen() {
             testId="max-budget-per-task-input"
             name="max-budget-per-task-input"
             type="number"
-            label={t(I18nKey.SETTINGS$MAX_BUDGET_PER_TASK)}
+            label={t(I18nKey.SETTINGS$MAX_BUDGET_PER_CONVERSATION)}
             defaultValue={settings.MAX_BUDGET_PER_TASK?.toString() || ""}
             onChange={checkIfMaxBudgetPerTaskHasChanged}
-            placeholder="Maximum budget per task in USD"
+            placeholder="Maximum budget per conversation in USD"
             min={1}
             step={1}
+            className="w-full md:w-80" // Make the field wider
           />
         </div>
       )}

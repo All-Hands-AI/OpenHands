@@ -1935,6 +1935,22 @@
         "tr": "Görev Başına Maksimum Bütçe",
         "uk": "Максимальний бюджет на завдання"
     },
+    "SETTINGS$MAX_BUDGET_PER_CONVERSATION": {
+        "en": "Maximum Budget Per Conversation",
+        "ja": "会話ごとの最大予算",
+        "zh-CN": "每次对话的最大预算",
+        "zh-TW": "每次對話的最大預算",
+        "ko-KR": "대화당 최대 예산",
+        "de": "Maximales Budget pro Konversation",
+        "no": "Maksimalt budsjett per samtale",
+        "it": "Budget massimo per conversazione",
+        "pt": "Orçamento máximo por conversa",
+        "es": "Presupuesto máximo por conversación",
+        "ar": "الميزانية القصوى لكل محادثة",
+        "fr": "Budget maximum par conversation",
+        "tr": "Konuşma Başına Maksimum Bütçe",
+        "uk": "Максимальний бюджет на розмову"
+    },
     "SETTINGS$PROACTIVE_CONVERSATION_STARTERS": {
         "en": "Suggest Tasks on GitHub",
         "ja": "GitHubでタスクを提案",
