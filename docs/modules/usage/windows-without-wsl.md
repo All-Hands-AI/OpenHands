@@ -123,8 +123,10 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
    Open your browser and navigate to:
    ```
-   http://localhost:3001
+   http://localhost:3000
    ```
+
+   > **Note**: If you're running the frontend in development mode (using `npm run dev`), use port 3001 instead: `http://localhost:3001`
 
 ## Limitations on Windows
 
