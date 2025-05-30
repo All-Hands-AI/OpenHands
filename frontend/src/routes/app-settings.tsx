@@ -6,6 +6,7 @@ import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
@@ -36,6 +37,8 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
+  const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -53,12 +56,20 @@ function AppSettingsScreen() {
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
 
+    const maxBudgetPerTaskValue = formData
+      .get("max-budget-per-task-input")
+      ?.toString();
+    const maxBudgetPerTask = maxBudgetPerTaskValue
+      ? parseFloat(maxBudgetPerTaskValue)
+      : null;
+
     saveSettings(
       {
         LANGUAGE: language,
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
+        MAX_BUDGET_PER_TASK: maxBudgetPerTask,
       },
       {
         onSuccess: () => {
@@ -74,6 +85,7 @@ function AppSettingsScreen() {
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
+          setMaxBudgetPerTaskHasChanged(false);
         },
       },
     );
@@ -110,11 +122,18 @@ function AppSettingsScreen() {
     );
   };
 
+  const checkIfMaxBudgetPerTaskHasChanged = (value: string) => {
+    const newValue = value ? parseFloat(value) : null;
+    const currentValue = settings?.MAX_BUDGET_PER_TASK;
+    setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
-    !proactiveConversationsSwitchHasChanged;
+    !proactiveConversationsSwitchHasChanged &&
+    !maxBudgetPerTaskHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -163,6 +182,18 @@ function AppSettingsScreen() {
               {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
             </SettingsSwitch>
           )}
+
+          <SettingsInput
+            testId="max-budget-per-task-input"
+            name="max-budget-per-task-input"
+            type="number"
+            label={t(I18nKey.SETTINGS$MAX_BUDGET_PER_TASK)}
+            defaultValue={settings.MAX_BUDGET_PER_TASK?.toString() || ""}
+            onChange={checkIfMaxBudgetPerTaskHasChanged}
+            placeholder="Maximum budget per task in USD"
+            min={0}
+            step={0.01}
+          />
         </div>
       )}
 

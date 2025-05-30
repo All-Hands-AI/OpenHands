@@ -1919,6 +1919,22 @@
         "tr": "Ses Bildirimleri",
         "uk": "Звукові сповіщення"
     },
+    "SETTINGS$MAX_BUDGET_PER_TASK": {
+        "en": "Maximum Budget Per Task",
+        "ja": "タスクごとの最大予算",
+        "zh-CN": "每个任务的最大预算",
+        "zh-TW": "每個任務的最大預算",
+        "ko-KR": "작업당 최대 예산",
+        "de": "Maximales Budget pro Aufgabe",
+        "no": "Maksimalt budsjett per oppgave",
+        "it": "Budget massimo per attività",
+        "pt": "Orçamento máximo por tarefa",
+        "es": "Presupuesto máximo por tarea",
+        "ar": "الميزانية القصوى لكل مهمة",
+        "fr": "Budget maximum par tâche",
+        "tr": "Görev Başına Maksimum Bütçe",
+        "uk": "Максимальний бюджет на завдання"
+    },
     "SETTINGS$PROACTIVE_CONVERSATION_STARTERS": {
         "en": "Suggest Tasks on GitHub",
         "ja": "GitHubでタスクを提案",
