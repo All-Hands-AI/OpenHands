@@ -107,7 +107,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
    $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
 
-   This will start the OpenHands backend using the local runtime with PowerShell integration.
+   This will start the OpenHands app using the local runtime with PowerShell integration, available at `localhost:3000`.
 
    > **Note**: If you encounter a `RuntimeError: Directory './frontend/build' does not exist` error, make sure you've built the frontend first using the command above.
 
