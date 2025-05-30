@@ -1,6 +1,8 @@
 import asyncio
 import os
 import pwd
+import sys
+from typing import Any, Optional
 
 from openhands.runtime.base import CommandResult
 
@@ -8,7 +10,7 @@ from openhands.runtime.base import CommandResult
 class AsyncBashSession:
     @staticmethod
     async def execute(
-        command: str, work_dir: str, username: str | None = None
+        command: str, work_dir: str, username: Optional[str] = None
     ) -> CommandResult:
         """Execute a command in the bash session asynchronously."""
         work_dir = os.path.abspath(work_dir)
@@ -20,24 +22,31 @@ class AsyncBashSession:
         if not command:
             return CommandResult(content='', exit_code=0)
 
-        env = {}
-        if username:
+        # Create subprocess arguments
+        subprocess_kwargs: dict[str, Any] = {
+            'stdout': asyncio.subprocess.PIPE,
+            'stderr': asyncio.subprocess.PIPE,
+            'cwd': work_dir,
+        }
+
+        # Only apply user-specific settings on non-Windows platforms
+        if username and sys.platform != 'win32':
             try:
                 user_info = pwd.getpwnam(username)
-                env['HOME'] = user_info.pw_dir
-                env['USER'] = username
-                env['LOGNAME'] = username
+                env: dict[str, str] = {
+                    'HOME': user_info.pw_dir,
+                    'USER': username,
+                    'LOGNAME': username,
+                }
+                subprocess_kwargs['env'] = env
+                subprocess_kwargs['user'] = username
             except KeyError:
                 raise ValueError(f'User {username} does not exist.')
+
         # Prepare to run the command
         try:
             process = await asyncio.subprocess.create_subprocess_shell(
-                command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=work_dir,
-                user=username,
-                env=env,
+                command, **subprocess_kwargs
             )
 
             try:
