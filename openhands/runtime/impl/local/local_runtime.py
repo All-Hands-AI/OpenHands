@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+from dataclasses import dataclass
 from typing import Callable
 
 import httpx
@@ -37,6 +38,20 @@ from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
+
+
+@dataclass
+class ServerInfo:
+    """Information about a running server process."""
+
+    process: subprocess.Popen
+    port: int
+    log_thread: threading.Thread
+    log_thread_exit_event: threading.Event
+
+
+# Global dictionary to track running server processes by session ID
+_RUNNING_SERVERS: dict[str, ServerInfo] = {}
 
 
 def get_user_info() -> tuple[int, str | None]:
@@ -210,100 +225,136 @@ class LocalRuntime(ActionExecutionClient):
         return self.api_url
 
     async def connect(self) -> None:
-        """Start the action_execution_server on the local machine."""
+        """Start the action_execution_server on the local machine or connect to an existing one."""
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
-        self._app_ports = [
-            self._find_available_port(APP_PORT_RANGE_1),
-            self._find_available_port(APP_PORT_RANGE_2),
-        ]
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+        # Check if there's already a server running for this session ID
+        if self.sid in _RUNNING_SERVERS:
+            self.log('info', f'Connecting to existing server for session {self.sid}')
+            server_info = _RUNNING_SERVERS[self.sid]
+            self.server_process = server_info.process
+            self._host_port = server_info.port
+            self._log_thread = server_info.log_thread
+            self._log_thread_exit_event = server_info.log_thread_exit_event
+            self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+            self._app_ports = [
+                self._find_available_port(APP_PORT_RANGE_1),
+                self._find_available_port(APP_PORT_RANGE_2),
+            ]
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+        elif self.attach_to_existing:
+            # If we're supposed to attach to an existing server but none exists, raise an error
+            self.log('error', f'No existing server found for session {self.sid}')
+            raise AgentRuntimeDisconnectedError(
+                f'No existing server found for session {self.sid}'
+            )
+        else:
+            # Start a new server
+            self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+            self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+            self._app_ports = [
+                self._find_available_port(APP_PORT_RANGE_1),
+                self._find_available_port(APP_PORT_RANGE_2),
+            ]
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
 
-        # Start the server process
-        cmd = get_action_execution_server_startup_command(
-            server_port=self._host_port,
-            plugins=self.plugins,
-            app_config=self.config,
-            python_prefix=['poetry', 'run'],
-            override_user_id=self._user_id,
-            override_username=self._username,
-        )
+            # Start the server process
+            cmd = get_action_execution_server_startup_command(
+                server_port=self._host_port,
+                plugins=self.plugins,
+                app_config=self.config,
+                python_prefix=['poetry', 'run'],
+                override_user_id=self._user_id,
+                override_username=self._username,
+            )
 
-        self.log('debug', f'Starting server with command: {cmd}')
-        env = os.environ.copy()
-        # Get the code repo path
-        code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-        env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
-        env['OPENHANDS_REPO_PATH'] = code_repo_path
-        env['LOCAL_RUNTIME_MODE'] = '1'
+            self.log('debug', f'Starting server with command: {cmd}')
+            env = os.environ.copy()
+            # Get the code repo path
+            code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
+            env['PYTHONPATH'] = os.pathsep.join(
+                [code_repo_path, env.get('PYTHONPATH', '')]
+            )
+            env['OPENHANDS_REPO_PATH'] = code_repo_path
+            env['LOCAL_RUNTIME_MODE'] = '1'
 
-        # Derive environment paths using sys.executable
-        interpreter_path = sys.executable
-        python_bin_path = os.path.dirname(interpreter_path)
-        env_root_path = os.path.dirname(python_bin_path)
+            # Derive environment paths using sys.executable
+            interpreter_path = sys.executable
+            python_bin_path = os.path.dirname(interpreter_path)
+            env_root_path = os.path.dirname(python_bin_path)
 
-        # Prepend the interpreter's bin directory to PATH for subprocesses
-        env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
-        logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
+            # Prepend the interpreter's bin directory to PATH for subprocesses
+            env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
+            logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
-        # Check dependencies using the derived env_root_path
-        check_dependencies(code_repo_path, env_root_path)
-        self.server_process = subprocess.Popen(  # noqa: S603
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1,
-            env=env,
-            cwd=code_repo_path,  # Explicitly set the working directory
-        )
+            # Check dependencies using the derived env_root_path
+            check_dependencies(code_repo_path, env_root_path)
+            self.server_process = subprocess.Popen(  # noqa: S603
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                bufsize=1,
+                env=env,
+                cwd=code_repo_path,  # Explicitly set the working directory
+            )
 
-        # Start a thread to read and log server output
-        def log_output() -> None:
-            if not self.server_process or not self.server_process.stdout:
-                self.log('error', 'Server process or stdout not available for logging.')
-                return
+            # Start a thread to read and log server output
+            def log_output() -> None:
+                if not self.server_process or not self.server_process.stdout:
+                    self.log(
+                        'error', 'Server process or stdout not available for logging.'
+                    )
+                    return
 
-            try:
-                # Read lines while the process is running and stdout is available
-                while self.server_process.poll() is None:
-                    if self._log_thread_exit_event.is_set():  # Check exit event
-                        self.log('info', 'Log thread received exit signal.')
-                        break  # Exit loop if signaled
-                    line = self.server_process.stdout.readline()
-                    if not line:
-                        # Process might have exited between poll() and readline()
-                        break
-                    self.log('info', f'Server: {line.strip()}')
-
-                # Capture any remaining output after the process exits OR if signaled
-                if (
-                    not self._log_thread_exit_event.is_set()
-                ):  # Check again before reading remaining
-                    self.log('info', 'Server process exited, reading remaining output.')
-                    for line in self.server_process.stdout:
-                        if (
-                            self._log_thread_exit_event.is_set()
-                        ):  # Check inside loop too
-                            self.log(
-                                'info',
-                                'Log thread received exit signal while reading remaining output.',
-                            )
+                try:
+                    # Read lines while the process is running and stdout is available
+                    while self.server_process.poll() is None:
+                        if self._log_thread_exit_event.is_set():  # Check exit event
+                            self.log('info', 'Log thread received exit signal.')
+                            break  # Exit loop if signaled
+                        line = self.server_process.stdout.readline()
+                        if not line:
+                            # Process might have exited between poll() and readline()
                             break
-                        self.log('info', f'Server (remaining): {line.strip()}')
+                        self.log('info', f'Server: {line.strip()}')
 
-            except Exception as e:
-                # Log the error, but don't prevent the thread from potentially exiting
-                self.log('error', f'Error reading server output: {e}')
-            finally:
-                self.log(
-                    'info', 'Log output thread finished.'
-                )  # Add log for thread exit
+                    # Capture any remaining output after the process exits OR if signaled
+                    if (
+                        not self._log_thread_exit_event.is_set()
+                    ):  # Check again before reading remaining
+                        self.log(
+                            'info', 'Server process exited, reading remaining output.'
+                        )
+                        for line in self.server_process.stdout:
+                            if (
+                                self._log_thread_exit_event.is_set()
+                            ):  # Check inside loop too
+                                self.log(
+                                    'info',
+                                    'Log thread received exit signal while reading remaining output.',
+                                )
+                                break
+                            self.log('info', f'Server (remaining): {line.strip()}')
 
-        self._log_thread = threading.Thread(target=log_output, daemon=True)
-        self._log_thread.start()
+                except Exception as e:
+                    # Log the error, but don't prevent the thread from potentially exiting
+                    self.log('error', f'Error reading server output: {e}')
+                finally:
+                    self.log(
+                        'info', 'Log output thread finished.'
+                    )  # Add log for thread exit
+
+            self._log_thread = threading.Thread(target=log_output, daemon=True)
+            self._log_thread.start()
+
+            # Store the server process in the global dictionary
+            _RUNNING_SERVERS[self.sid] = ServerInfo(
+                process=self.server_process,
+                port=self._host_port,
+                log_thread=self._log_thread,
+                log_thread_exit_event=self._log_thread_exit_event,
+            )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
@@ -355,7 +406,19 @@ class LocalRuntime(ActionExecutionClient):
         if not self.runtime_initialized:
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
-        if self.server_process is None or self.server_process.poll() is not None:
+        # Check if our server process is still valid
+        if self.server_process is None:
+            # Check if there's a server in the global dictionary
+            if self.sid in _RUNNING_SERVERS:
+                self.server_process = _RUNNING_SERVERS[self.sid].process
+            else:
+                raise AgentRuntimeDisconnectedError('Server process not found')
+
+        # Check if the server process is still running
+        if self.server_process.poll() is not None:
+            # If the process died, remove it from the global dictionary
+            if self.sid in _RUNNING_SERVERS:
+                del _RUNNING_SERVERS[self.sid]
             raise AgentRuntimeDisconnectedError('Server process died')
 
         with self.action_semaphore:
@@ -371,8 +434,26 @@ class LocalRuntime(ActionExecutionClient):
                 raise AgentRuntimeDisconnectedError('Server connection lost')
 
     def close(self) -> None:
-        """Stop the server process."""
-        self._log_thread_exit_event.set()  # Signal the log thread to exit
+        """Stop the server process if not in attach_to_existing mode."""
+        # If we're in attach_to_existing mode, don't close the server
+        if self.attach_to_existing:
+            self.log(
+                'info',
+                f'Not closing server for session {self.sid} (attach_to_existing=True)',
+            )
+            # Just clean up our reference to the process, but leave it running
+            self.server_process = None
+            if self._temp_workspace:
+                shutil.rmtree(self._temp_workspace)
+            super().close()
+            return
+
+        # Signal the log thread to exit
+        self._log_thread_exit_event.set()
+
+        # Remove from global dictionary
+        if self.sid in _RUNNING_SERVERS:
+            del _RUNNING_SERVERS[self.sid]
 
         if self.server_process:
             self.server_process.terminate()
@@ -388,16 +469,38 @@ class LocalRuntime(ActionExecutionClient):
 
         super().close()
 
+    @classmethod
+    async def delete(cls, conversation_id: str) -> None:
+        """Delete the runtime for a conversation."""
+        if conversation_id in _RUNNING_SERVERS:
+            logger.info(f'Deleting LocalRuntime for conversation {conversation_id}')
+            server_info = _RUNNING_SERVERS[conversation_id]
+
+            # Signal the log thread to exit
+            server_info.log_thread_exit_event.set()
+
+            # Terminate the server process
+            if server_info.process:
+                server_info.process.terminate()
+                try:
+                    server_info.process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    server_info.process.kill()
+
+            # Wait for the log thread to finish
+            server_info.log_thread.join(timeout=5)
+
+            # Remove from global dictionary
+            del _RUNNING_SERVERS[conversation_id]
+            logger.info(f'LocalRuntime for conversation {conversation_id} deleted')
+
     @property
     def runtime_url(self) -> str:
-
         runtime_url = os.getenv('RUNTIME_URL')
         if runtime_url:
             return runtime_url
 
-
-
-        #TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
+        # TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
         runtime_url_pattern = os.getenv('RUNTIME_URL_PATTERN')
         hostname = os.getenv('HOSTNAME')
         if runtime_url_pattern and hostname:
