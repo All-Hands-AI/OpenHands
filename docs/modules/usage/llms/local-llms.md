@@ -25,7 +25,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
    - Option 2: Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](https://huggingface.co/mistralai/Devstral-Small-2505_gguf), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`. Then in bash terminal, run `lms import {model_name}` in the directory where you've downloaded the model checkpoint (e.g. run `lms import devstralQ4_K_M.gguf` in `mistralai/Devstral-Small-2505_gguf`)
 
 3. Open LM Studio application, you should first switch to `power user` mode, and then open the developer tab:
-  
+
 ![image](./screenshots/1_select_power_user.png)
 
 4. Then click `Select a model to load` on top of the application:
@@ -128,6 +128,18 @@ vllm serve all-hands/openhands-lm-32b-v0.1 \
     --enable-prefix-caching
 ```
 
+### Create an OpenAI-Compatible Endpoint with Ollama
+
+- Install Ollama following [the official documentation](https://ollama.com/download).
+- Example launch command for Devstral LM 24B:
+- For Ollama configuration, use `ollama/<modelname>` as custom model in web. Api key also can be set to `ollama`.
+
+```bash
+ollama pull devstral:latest
+OLLAMA_CONTEXT_LENGTH=32768 OLLAMA_HOST=0.0.0.0:11434 OLLAMA_KEEP_ALIVE=-1 nohup ollama serve&
+#The minimum context size is ~8196, even the system prompt won't fit smaller
+```
+
 ## Advanced: Run and Configure OpenHands
 
 ### Run OpenHands
@@ -152,9 +164,11 @@ ollama_base_url="http://localhost:8000"
 
 Start OpenHands using `make run`.
 
+Also, with a local launch, if Docker Runtime is selected, you should add `127.0.0.1 host.docker.internal` line to end of `/etc/hosts` on your Linux machine.
+
 ### Configure OpenHands
 
-Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab: 
+Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
 1. Enable `Advanced` options.
 2. Set the following:
 - `Custom Model` to `openai/<served-model-name>` (e.g. `openai/openhands-lm-32b-v0.1`)
