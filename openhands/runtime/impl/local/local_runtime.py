@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 from typing import Callable
+from urllib.parse import urlparse
 
 import httpx
 import tenacity
@@ -214,10 +215,10 @@ class LocalRuntime(ActionExecutionClient):
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+        self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
         self._app_ports = [
-            self._find_available_port(APP_PORT_RANGE_1),
-            self._find_available_port(APP_PORT_RANGE_2),
+            int(os.getenv('WORK_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
+            int(os.getenv('WORK_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
         ]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
 
@@ -238,6 +239,7 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
+        env['VSCODE_PORT'] = str(self._vscode_port)
 
         # Derive environment paths using sys.executable
         interpreter_path = sys.executable
@@ -413,7 +415,13 @@ class LocalRuntime(ActionExecutionClient):
         token = super().get_vscode_token()
         if not token:
             return None
-        vscode_url = f'{self.runtime_url}:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        runtime_url = self.runtime_url
+        if 'localhost' in runtime_url:
+            vscode_url = f'{self.runtime_url}:{self._vscode_port}'
+        else:
+            # Similar to remote runtime...
+            parsed_url = urlparse(runtime_url)
+            vscode_url = f'{parsed_url.scheme}://vscode-{parsed_url.netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
