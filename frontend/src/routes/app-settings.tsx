@@ -201,7 +201,7 @@ function AppSettingsScreen() {
             placeholder="Maximum budget per conversation in USD"
             min={1}
             step={1}
-            className="w-full md:w-80" // Make the field wider
+            className="w-[680px]" // Match the width of the language field
           />
         </div>
       )}
