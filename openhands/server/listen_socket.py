@@ -12,6 +12,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import RecallAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     NullObservation,
 )
@@ -123,8 +124,6 @@ async def connect(connection_id: str, environ: dict) -> None:
         conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
 
         # Create an EventStore to access the events before joining the conversation
-        from openhands.events.event_store import EventStore
-
         event_store = EventStore(
             conversation_id, conversation_manager.file_store, user_id
         )
@@ -133,48 +132,29 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
         )
         agent_state_changed = None
-        # Keep track of the highest event ID we've seen
-        current_latest_event_id = latest_event_id
 
-        # Continue replaying until no new events are available
-        while True:
-            # Create a new async store starting from the next event after the latest one we've processed
-            async_store = AsyncEventStoreWrapper(
-                event_store, current_latest_event_id + 1
+        # Create an async store to replay events
+        async_store = AsyncEventStoreWrapper(event_store, latest_event_id + 1)
+
+        # Process all available events
+        async for event in async_store:
+            logger.debug(f'oh_event: {event.__class__.__name__}')
+
+            if isinstance(
+                event,
+                (NullAction, NullObservation, RecallAction),
+            ):
+                continue
+            elif isinstance(event, AgentStateChangedObservation):
+                agent_state_changed = event
+            else:
+                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
+        # Send the agent state changed event last if we have one
+        if agent_state_changed:
+            await sio.emit(
+                'oh_event', event_to_dict(agent_state_changed), to=connection_id
             )
-
-            # Flag to check if we processed any new events in this iteration
-            new_events_processed = False
-            agent_state_changed = None
-
-            # Process all available events
-            async for event in async_store:
-                new_events_processed = True
-                logger.debug(f'oh_event: {event.__class__.__name__}')
-
-                # Update our tracking of the latest event ID
-                if hasattr(event, 'id') and event.id > current_latest_event_id:
-                    current_latest_event_id = event.id
-
-                if isinstance(
-                    event,
-                    (NullAction, NullObservation, RecallAction),
-                ):
-                    continue
-                elif isinstance(event, AgentStateChangedObservation):
-                    agent_state_changed = event
-                else:
-                    await sio.emit('oh_event', event_to_dict(event), to=connection_id)
-
-            # Send the agent state changed event last if we have one
-            if agent_state_changed:
-                await sio.emit(
-                    'oh_event', event_to_dict(agent_state_changed), to=connection_id
-                )
-
-            # If no new events were processed in this iteration, we're done
-            if not new_events_processed:
-                break
 
         logger.info(
             f'Finished replaying event stream for conversation {conversation_id}'
