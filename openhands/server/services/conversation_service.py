@@ -3,6 +3,7 @@ from typing import Any
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
@@ -77,6 +78,9 @@ async def create_new_conversation(
     session_init_args['git_provider'] = git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
+
+    conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(conversation_init_data)
+
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('ServerConversation store loaded')
