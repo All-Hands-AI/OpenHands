@@ -31,7 +31,8 @@ class VSCodePlugin(Plugin):
             self.vscode_connection_token = None
             logger.warning(
                 'VSCodePlugin is only supported for root or openhands user. '
-                'It is not yet supported for other users (i.e., when running LocalRuntime).'
+                'It is not yet supported for other users (i.e., when running LocalRuntime).',
+                extra={'username': username}
             )
             return
 
