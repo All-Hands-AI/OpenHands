@@ -158,9 +158,7 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Set default provider to anthropic
     provider = 'anthropic'
-    # Set default model to claude-sonnet-4-20250514
     model = 'claude-sonnet-4-20250514'
     api_key = None
 
