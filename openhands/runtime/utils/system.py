@@ -1,14 +1,16 @@
 import random
 import socket
 import time
-
+from openhands.core.logger import openhands_logger as logger
 
 def check_port_available(port: int) -> bool:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.bind(('0.0.0.0', port))
+        logger.info(f"check_port_available:{port}:True")
         return True
     except OSError:
+        logger.info(f"check_port_available:{port}:False")
         time.sleep(0.1)  # Short delay to further reduce chance of collisions
         return False
     finally:

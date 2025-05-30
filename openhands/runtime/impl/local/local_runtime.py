@@ -8,6 +8,7 @@ import tempfile
 import threading
 from dataclasses import dataclass
 from typing import Callable
+from urllib.parse import urlparse
 
 import httpx
 import tenacity
@@ -189,11 +190,11 @@ class LocalRuntime(ActionExecutionClient):
             self._temp_workspace = tempfile.mkdtemp()
             self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
-        self._host_port = -1
+        self._execution_server_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
 
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
         self.status_callback = status_callback
         self.server_process: subprocess.Popen[str] | None = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -236,10 +237,10 @@ class LocalRuntime(ActionExecutionClient):
             self._host_port = server_info.port
             self._log_thread = server_info.log_thread
             self._log_thread_exit_event = server_info.log_thread_exit_event
-            self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+            self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
             self._app_ports = [
-                self._find_available_port(APP_PORT_RANGE_1),
-                self._find_available_port(APP_PORT_RANGE_2),
+                int(os.getenv('WORK_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
+                int(os.getenv('WORK_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
             ]
             self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
         elif self.attach_to_existing:
@@ -277,6 +278,7 @@ class LocalRuntime(ActionExecutionClient):
             )
             env['OPENHANDS_REPO_PATH'] = code_repo_path
             env['LOCAL_RUNTIME_MODE'] = '1'
+            env['VSCODE_PORT'] = str(self._vscode_port)
 
             # Derive environment paths using sys.executable
             interpreter_path = sys.executable
@@ -516,7 +518,13 @@ class LocalRuntime(ActionExecutionClient):
         token = super().get_vscode_token()
         if not token:
             return None
-        vscode_url = f'{self.runtime_url}:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        runtime_url = self.runtime_url
+        if 'localhost' in runtime_url:
+            vscode_url = f'{self.runtime_url}:{self._vscode_port}'
+        else:
+            # Similar to remote runtime...
+            parsed_url = urlparse(runtime_url)
+            vscode_url = f'{parsed_url.scheme}://vscode-{parsed_url.netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
