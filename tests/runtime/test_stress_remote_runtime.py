@@ -37,8 +37,8 @@ from openhands.agenthub import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
     LLMConfig,
+    OpenHandsConfig,
     SandboxConfig,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -60,8 +60,8 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 
-def get_config() -> AppConfig:
-    config = AppConfig(
+def get_config() -> OpenHandsConfig:
+    config = OpenHandsConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'remote'),
         sandbox=SandboxConfig(

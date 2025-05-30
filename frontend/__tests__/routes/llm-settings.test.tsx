@@ -48,7 +48,7 @@ describe("Content", () => {
 
       await waitFor(() => {
         expect(provider).toHaveValue("Anthropic");
-        expect(model).toHaveValue("claude-3-7-sonnet-20250219");
+        expect(model).toHaveValue("claude-sonnet-4-20250514");
 
         expect(apiKey).toHaveValue("");
         expect(apiKey).toHaveProperty("placeholder", "");
@@ -105,7 +105,7 @@ describe("Content", () => {
       within(advancedForm).getByTestId("llm-custom-model-input");
       within(advancedForm).getByTestId("base-url-input");
       within(advancedForm).getByTestId("llm-api-key-input");
-      within(advancedForm).getByTestId("llm-api-key-help-anchor");
+      within(advancedForm).getByTestId("llm-api-key-help-anchor-advanced");
       within(advancedForm).getByTestId("agent-input");
       within(advancedForm).getByTestId("enable-confirmation-mode-switch");
       within(advancedForm).getByTestId("enable-memory-condenser-switch");
@@ -135,7 +135,7 @@ describe("Content", () => {
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-3-7-sonnet-20250219");
+      expect(model).toHaveValue("anthropic/claude-sonnet-4-20250514");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
@@ -542,7 +542,7 @@ describe("Form submission", () => {
 
     // select model
     await userEvent.click(model);
-    const modelOption = screen.getByText("claude-3-7-sonnet-20250219");
+    const modelOption = screen.getByText("claude-sonnet-4-20250514");
     await userEvent.click(modelOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-3-7-sonnet-20250219",
+        llm_model: "anthropic/claude-sonnet-4-20250514",
         llm_base_url: "",
         confirmation_mode: false,
       }),

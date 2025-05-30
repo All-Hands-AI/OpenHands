@@ -23,23 +23,20 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
-from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
-    conversation_manager,
 )
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get(

@@ -42,6 +42,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
         posthog.capture("settings_saved", {
           LLM_MODEL: newSettings.LLM_MODEL,
           LLM_API_KEY_SET: newSettings.LLM_API_KEY_SET ? "SET" : "UNSET",
+          SEARCH_API_KEY_SET: newSettings.SEARCH_API_KEY ? "SET" : "UNSET",
           REMOTE_RUNTIME_RESOURCE_FACTOR:
             newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
         });
@@ -86,7 +87,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             name="llm-api-key-input"
             label={t(I18nKey.SETTINGS_FORM$API_KEY)}
             type="password"
-            className="w-[680px]"
+            className="w-full"
             placeholder={isLLMKeySet ? "<hidden>" : ""}
             startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />

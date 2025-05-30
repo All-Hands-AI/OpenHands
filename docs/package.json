@@ -17,10 +17,10 @@
   },
   "// Note": "The OpenAPI spec is stored in docs/static/openapi.json so it's accessible at /openapi.json in the deployed site",
   "dependencies": {
-    "@docusaurus/core": "^3.7.0",
-    "@docusaurus/plugin-content-pages": "^3.7.0",
-    "@docusaurus/preset-classic": "^3.7.0",
-    "@docusaurus/theme-mermaid": "^3.7.0",
+    "@docusaurus/core": "^3.8.0",
+    "@docusaurus/plugin-content-pages": "^3.8.0",
+    "@docusaurus/preset-classic": "^3.8.0",
+    "@docusaurus/theme-mermaid": "^3.8.0",
     "@mdx-js/react": "^3.1.0",
     "@node-rs/jieba": "^2.0.1",
     "clsx": "^2.0.0",
@@ -33,10 +33,10 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.5.1",
-    "@docusaurus/tsconfig": "^3.7.0",
+    "@docusaurus/tsconfig": "^3.8.0",
     "@docusaurus/types": "^3.5.1",
     "swagger-cli": "^4.0.4",
-    "swagger-ui-dist": "^5.21.0",
+    "swagger-ui-dist": "^5.22.0",
     "typescript": "~5.8.3"
   },
   "browserslist": {

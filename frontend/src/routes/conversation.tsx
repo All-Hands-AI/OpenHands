@@ -8,10 +8,7 @@ import { DiGit } from "react-icons/di";
 import { VscCode } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import {
-  ConversationProvider,
-  useConversation,
-} from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { Controls } from "#/components/features/controls/controls";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
@@ -30,7 +27,7 @@ import {
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { RootState } from "#/store";
@@ -39,15 +36,15 @@ import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
-  const { conversationId } = useConversation();
-  const { data: conversation, isFetched } = useUserConversation(
-    conversationId || null,
-  );
+  const { conversationId } = useConversationId();
+  const { data: conversation, isFetched } = useActiveConversation();
+  const { data: isAuthed } = useIsAuthed();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
@@ -59,13 +56,13 @@ function AppContent() {
   const [width, setWidth] = React.useState(window.innerWidth);
 
   React.useEffect(() => {
-    if (isFetched && !conversation) {
+    if (isFetched && !conversation && isAuthed) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
     }
-  }, [conversation, isFetched]);
+  }, [conversation, isFetched, isAuthed]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());
@@ -213,11 +210,7 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <ConversationProvider>
-      <AppContent />
-    </ConversationProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;

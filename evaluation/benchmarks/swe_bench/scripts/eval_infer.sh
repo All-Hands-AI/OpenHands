@@ -16,10 +16,18 @@ fi
 INSTANCE_ID=$2
 DATASET_NAME=${3:-"princeton-nlp/SWE-bench_Lite"}
 SPLIT=${4:-"test"}
+ENVIRONMENT=${5:-"local"}
 
 echo "INSTANCE_ID: $INSTANCE_ID"
 echo "DATASET_NAME: $DATASET_NAME"
 echo "SPLIT: $SPLIT"
+
+if [[ "$ENVIRONMENT" != "local" && "$ENVIRONMENT" != "modal" ]]; then
+    echo "Error: ENVIRONMENT must be either 'local' or 'modal'"
+    exit 1
+fi
+
+echo "ENVIRONMENT: $ENVIRONMENT"
 
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
@@ -78,6 +86,12 @@ echo "=============================================================="
 RUN_ID=$(date +"%Y%m%d_%H%M%S")
 N_PROCESS=4
 
+
+MODAL_FLAG=""
+if [[ "$ENVIRONMENT" == "modal" ]]; then
+    MODAL_FLAG="--modal true"
+fi
+
 if [ -z "$INSTANCE_ID" ]; then
     echo "Running SWE-bench evaluation on the whole input file..."
     # Default to SWE-Bench-lite
@@ -90,7 +104,8 @@ if [ -z "$INSTANCE_ID" ]; then
         --timeout 3600 \
         --cache_level instance \
         --max_workers $N_PROCESS \
-        --run_id $RUN_ID
+        --run_id $RUN_ID \
+        $MODAL_FLAG
 
     # get the "model_name_or_path" from the first line of the SWEBENCH_FORMAT_JSONL
     MODEL_NAME_OR_PATH=$(jq -r '.model_name_or_path' $SWEBENCH_FORMAT_JSONL | head -n 1)
@@ -137,5 +152,6 @@ else
         --instance_ids $INSTANCE_ID \
         --cache_level instance \
         --max_workers $N_PROCESS \
-        --run_id $RUN_ID
+        --run_id $RUN_ID \
+        $MODAL_FLAG
 fi

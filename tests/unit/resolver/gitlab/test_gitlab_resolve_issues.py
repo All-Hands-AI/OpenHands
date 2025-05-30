@@ -19,7 +19,7 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.resolve_issue import (
+from openhands.resolver.issue_resolver import (
     IssueResolver,
 )
 from openhands.resolver.resolver_output import ResolverOutput
@@ -58,7 +58,7 @@ def mock_gitlab_token():
     This eliminates the need for repeated patching in each test function.
     """
     with patch(
-        'openhands.resolver.resolve_issue.identify_token',
+        'openhands.resolver.issue_resolver.identify_token',
         return_value=ProviderType.GITLAB,
     ) as patched:
         yield patched
@@ -516,16 +516,19 @@ async def test_process_issue(
 
     # Patch the necessary functions and methods
     with (
-        patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime),
-        patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller),
+        patch('openhands.resolver.issue_resolver.create_runtime', mock_create_runtime),
+        patch('openhands.resolver.issue_resolver.run_controller', mock_run_controller),
         patch.object(
             resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}
         ),
         patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime,
         patch(
-            'openhands.resolver.resolve_issue.SandboxConfig', return_value=MagicMock()
+            'openhands.resolver.issue_resolver.SandboxConfig', return_value=MagicMock()
         ),
-        patch('openhands.resolver.resolve_issue.AppConfig', return_value=MagicMock()),
+        patch(
+            'openhands.resolver.issue_resolver.OpenHandsConfig',
+            return_value=MagicMock(),
+        ),
     ):
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
