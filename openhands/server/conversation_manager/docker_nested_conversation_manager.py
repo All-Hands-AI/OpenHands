@@ -421,7 +421,7 @@ class DockerNestedConversationManager(ConversationManager):
         )
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
-        env_vars['USER'] = 'CURRENT_USER'
+        env_vars['USER'] = 'root'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
 
         # Set up mounted volume for conversation directory within workspace

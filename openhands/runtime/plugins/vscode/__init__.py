@@ -39,10 +39,11 @@ class VSCodePlugin(Plugin):
         # Set up VSCode settings.json
         self._setup_vscode_settings()
 
-        logger.info("getting_vscode_port_from_env", extra={"vscode_port": os.environ.get('VSCODE_PORT')})
+        logger.info(f"getting_vscode_port_from_env:{os.environ.get('VSCODE_PORT')}")
         self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
         assert check_port_available(self.vscode_port) # The port check fails here
+        logger.info(f"TRACE:starting_vscode_process:{self.vscode_port}")
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'

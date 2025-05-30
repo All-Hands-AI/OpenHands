@@ -211,7 +211,11 @@ class LocalRuntime(ActionExecutionClient):
         return self.api_url
 
     async def connect(self) -> None:
-        """Start the action_execution_server on the local machine."""
+        """Start the action_execution_server on the local machine if it is not already running"""
+        if self.server_process:
+            logger.info(f"TRACE:connect:{self.sid}:already_running")
+            return
+        logger.info(f"TRACE:connect:{self.sid}")
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
@@ -220,6 +224,7 @@ class LocalRuntime(ActionExecutionClient):
             int(os.getenv('WORK_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
             int(os.getenv('WORK_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
         ]
+        logger.info(f"TRACE:ports:{self._host_port}:{self._vscode_port}:{self._app_ports}")
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
 
         # Start the server process
