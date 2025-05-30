@@ -5,6 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, CustomSecret
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
+from openhands.server.dependencies import get_dependencies
 from openhands.server.settings import (
     CustomSecretModel,
     CustomSecretWithoutValueModel,
@@ -21,7 +22,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 # =================================================
@@ -217,7 +218,9 @@ async def create_custom_secret(
 ) -> JSONResponse:
     try:
         existing_secrets = await secrets_store.load()
-        custom_secrets = dict(existing_secrets.custom_secrets) if existing_secrets else {}
+        custom_secrets = (
+            dict(existing_secrets.custom_secrets) if existing_secrets else {}
+        )
 
         secret_name = incoming_secret.name
         secret_value = incoming_secret.value
@@ -237,7 +240,9 @@ async def create_custom_secret(
         # Create a new UserSecrets that preserves provider tokens
         updated_user_secrets = UserSecrets(
             custom_secrets=custom_secrets,
-            provider_tokens=existing_secrets.provider_tokens if existing_secrets else {},
+            provider_tokens=existing_secrets.provider_tokens
+            if existing_secrets
+            else {},
         )
 
         await secrets_store.store(updated_user_secrets)

@@ -166,6 +166,8 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    handleAssistantMessage(event);
+
     if (isOpenHandsEvent(event)) {
       const isStatusUpdateError =
         isStatusUpdate(event) && event.type === "error";
@@ -255,8 +257,6 @@ export function WsClientProvider({
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
-
-    handleAssistantMessage(event);
   }
 
   function handleDisconnect(data: unknown) {

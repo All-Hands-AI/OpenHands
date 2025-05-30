@@ -16,5 +16,8 @@ export const generateAuthUrl = (identityProvider: string, requestUrl: URL) => {
     authUrl = `auth.${requestUrl.hostname}`;
   }
   const scope = "openid email profile"; // OAuth scope - not user-facing
-  return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=allhands&kc_idp_hint=${identityProvider}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(requestUrl.href)}`;
+  const separator = requestUrl.search ? "&" : "?";
+  const cleanHref = requestUrl.href.replace(/\/$/, "");
+  const state = `${cleanHref}${separator}login_method=${identityProvider}`;
+  return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=allhands&kc_idp_hint=${identityProvider}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
 };
