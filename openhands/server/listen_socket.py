@@ -132,24 +132,49 @@ async def connect(connection_id: str, environ: dict) -> None:
         agent_state_changed = None
         if agent_loop_info is None:
             raise ConnectionRefusedError('Failed to join conversation')
-        async_store = AsyncEventStoreWrapper(
-            agent_loop_info.event_store, latest_event_id + 1
-        )
-        async for event in async_store:
-            logger.debug(f'oh_event: {event.__class__.__name__}')
-            if isinstance(
-                event,
-                (NullAction, NullObservation, RecallAction),
-            ):
-                continue
-            elif isinstance(event, AgentStateChangedObservation):
-                agent_state_changed = event
-            else:
-                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
-        if agent_state_changed:
-            await sio.emit(
-                'oh_event', event_to_dict(agent_state_changed), to=connection_id
+        # Keep track of the highest event ID we've seen
+        current_latest_event_id = latest_event_id
+
+        # Continue replaying until no new events are available
+        while True:
+            # Create a new async store starting from the next event after the latest one we've processed
+            async_store = AsyncEventStoreWrapper(
+                agent_loop_info.event_store, current_latest_event_id + 1
             )
+
+            # Flag to check if we processed any new events in this iteration
+            new_events_processed = False
+            agent_state_changed = None
+
+            # Process all available events
+            async for event in async_store:
+                new_events_processed = True
+                logger.debug(f'oh_event: {event.__class__.__name__}')
+
+                # Update our tracking of the latest event ID
+                if hasattr(event, 'id') and event.id > current_latest_event_id:
+                    current_latest_event_id = event.id
+
+                if isinstance(
+                    event,
+                    (NullAction, NullObservation, RecallAction),
+                ):
+                    continue
+                elif isinstance(event, AgentStateChangedObservation):
+                    agent_state_changed = event
+                else:
+                    await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
+            # Send the agent state changed event last if we have one
+            if agent_state_changed:
+                await sio.emit(
+                    'oh_event', event_to_dict(agent_state_changed), to=connection_id
+                )
+
+            # If no new events were processed in this iteration, we're done
+            if not new_events_processed:
+                break
+
         logger.info(
             f'Finished replaying event stream for conversation {conversation_id}'
         )
