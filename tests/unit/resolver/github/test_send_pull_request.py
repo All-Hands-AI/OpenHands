@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from unittest.mock import ANY, MagicMock, call, patch
 
@@ -438,6 +439,46 @@ def test_send_pull_request(
         assert post_data['head'] == 'openhands-fix-issue-42'
         assert post_data['base'] == (target_branch if target_branch else 'main')
         assert post_data['draft'] == (pr_type == 'draft')
+
+
+def test_make_commit_failed_add(mock_output_dir, mock_issue):
+    """Test that make_commit returns False when git add fails."""
+    # Create a test file
+    test_file = os.path.join(mock_output_dir, 'test.txt')
+    with open(test_file, 'w') as f:
+        f.write('test content')
+
+    # Initialize git repo
+    os.system(f'git init {mock_output_dir}')
+
+    # Mock a failed add by making the directory not a git repo
+    shutil.rmtree(os.path.join(mock_output_dir, '.git'))
+
+    # Try to make a commit
+    result = make_commit(mock_output_dir, mock_issue, 'issue')
+
+    # Assert that the function returned False
+    assert result is False
+
+
+def test_make_commit_failed_commit(mock_output_dir, mock_issue):
+    """Test that make_commit returns False when git commit fails."""
+    # Create a test file
+    test_file = os.path.join(mock_output_dir, 'test.txt')
+    with open(test_file, 'w') as f:
+        f.write('test content')
+
+    # Initialize git repo
+    os.system(f'git init {mock_output_dir}')
+
+    # Mock a failed commit by making the directory not a git repo
+    shutil.rmtree(os.path.join(mock_output_dir, '.git'))
+
+    # Try to make a commit
+    result = make_commit(mock_output_dir, mock_issue, 'issue')
+
+    # Assert that the function returned False
+    assert result is False
 
 
 @patch('subprocess.run')
@@ -1025,6 +1066,137 @@ def test_process_single_issue_unsuccessful(
     mock_initialize_repo.assert_not_called()
     mock_apply_patch.assert_not_called()
     mock_make_commit.assert_not_called()
+
+
+@patch('openhands.resolver.send_pull_request.initialize_repo')
+@patch('openhands.resolver.send_pull_request.apply_patch')
+@patch('openhands.resolver.send_pull_request.update_existing_pull_request')
+@patch('openhands.resolver.send_pull_request.make_commit')
+@patch('openhands.resolver.interfaces.github.GithubIssueHandler.send_comment_msg')
+def test_process_single_pr_no_changes(
+    mock_send_comment_msg,
+    mock_make_commit,
+    mock_update_existing_pull_request,
+    mock_apply_patch,
+    mock_initialize_repo,
+    mock_output_dir,
+    mock_llm_config,
+):
+    """Test that process_single_issue handles PR with no changes correctly."""
+    # Setup
+    resolver_output = ResolverOutput(
+        issue=Issue(
+            owner='test-owner',
+            repo='test-repo',
+            number=1,
+            title='Test PR',
+            body='Test body',
+            head_branch='branch 1',
+        ),
+        success=True,
+        git_patch='',
+        issue_type='pr',
+        base_commit='def456',
+        result_explanation='No changes needed',
+        history=[],
+        metrics={},
+        instruction='Test instruction',
+        comment_success=None,
+        error=None,
+    )
+    token = 'test-token'
+    username = 'test-user'
+    platform = ProviderType.GITHUB
+
+    # Mock make_commit to return False (no changes)
+    mock_make_commit.return_value = False
+
+    # Mock initialize_repo to return the expected path
+    expected_path = f'{mock_output_dir}/patches/pr_1'
+    mock_initialize_repo.return_value = expected_path
+
+    # Call the function
+    process_single_issue(
+        mock_output_dir,
+        resolver_output,
+        token,
+        username,
+        platform,
+        'ready',
+        mock_llm_config,
+        None,
+        False,
+    )
+
+    # Assert that the mocked functions were called correctly
+    mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'pr', 'branch 1')
+    mock_apply_patch.assert_called_once_with(expected_path, resolver_output.git_patch)
+    mock_make_commit.assert_called_once_with(expected_path, resolver_output.issue, 'pr')
+    mock_update_existing_pull_request.assert_not_called()
+    mock_send_comment_msg.assert_called_once_with(1, 'No changes needed')
+
+
+@patch('openhands.resolver.send_pull_request.initialize_repo')
+@patch('openhands.resolver.send_pull_request.apply_patch')
+@patch('openhands.resolver.send_pull_request.send_pull_request')
+@patch('openhands.resolver.send_pull_request.make_commit')
+def test_process_single_issue_no_changes(
+    mock_make_commit,
+    mock_send_pull_request,
+    mock_apply_patch,
+    mock_initialize_repo,
+    mock_output_dir,
+    mock_llm_config,
+):
+    """Test that process_single_issue handles issue with no changes correctly."""
+    # Setup
+    resolver_output = ResolverOutput(
+        issue=Issue(
+            owner='test-owner',
+            repo='test-repo',
+            number=1,
+            title='Test Issue',
+            body='Test body',
+        ),
+        success=True,
+        git_patch='',
+        issue_type='issue',
+        base_commit='def456',
+        result_explanation='No changes needed',
+        history=[],
+        metrics={},
+        instruction='Test instruction',
+        comment_success=None,
+        error=None,
+    )
+    token = 'test-token'
+    username = 'test-user'
+    platform = ProviderType.GITHUB
+
+    # Mock make_commit to return False (no changes)
+    mock_make_commit.return_value = False
+
+    # Mock initialize_repo to return the expected path
+    expected_path = f'{mock_output_dir}/patches/issue_1'
+    mock_initialize_repo.return_value = expected_path
+
+    # Call the function
+    process_single_issue(
+        mock_output_dir,
+        resolver_output,
+        token,
+        username,
+        platform,
+        'ready',
+        mock_llm_config,
+        None,
+        False,
+    )
+
+    # Assert that the mocked functions were called correctly
+    mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'issue', 'def456')
+    mock_apply_patch.assert_called_once_with(expected_path, resolver_output.git_patch)
+    mock_make_commit.assert_called_once_with(expected_path, resolver_output.issue, 'issue')
     mock_send_pull_request.assert_not_called()
 
 
@@ -1197,18 +1369,22 @@ def test_make_commit_escapes_issue_title(mock_subprocess_run):
         body='Test body',
     )
 
-    # Mock subprocess.run to return success for all calls
-    mock_subprocess_run.return_value = MagicMock(
-        returncode=0, stdout='sample output', stderr=''
-    )
+    # Mock subprocess.run to simulate changes in the repo
+    mock_subprocess_run.side_effect = [
+        MagicMock(returncode=0, stdout='openhands'),  # git config check
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='M file1.txt\nA file2.txt'),  # git status --porcelain (has changes)
+        MagicMock(returncode=0),  # git commit
+    ]
 
     # Call the function
     issue_type = 'issue'
-    make_commit(repo_dir, issue, issue_type)
+    result = make_commit(repo_dir, issue, issue_type)
+    assert result is True
 
     # Assert that subprocess.run was called with the correct arguments
     calls = mock_subprocess_run.call_args_list
-    assert len(calls) == 4  # git config check, git add, git commit
+    assert len(calls) == 4  # git config check, git add, git status, git commit
 
     # Check the git commit call
     git_commit_call = calls[3][0][0]
@@ -1239,15 +1415,23 @@ def test_make_commit_no_changes(mock_subprocess_run):
 
     # Mock subprocess.run to simulate no changes in the repo
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0),
-        MagicMock(returncode=0),
-        MagicMock(returncode=1, stdout=''),  # git status --porcelain (no changes)
+        MagicMock(returncode=0, stdout='openhands'),  # git config check
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout=''),  # git status --porcelain (no changes)
     ]
 
-    with pytest.raises(
-        RuntimeError, match='ERROR: Openhands failed to make code changes.'
-    ):
-        make_commit(repo_dir, issue, 'issue')
+    # Should not raise an error and return False
+    result = make_commit(repo_dir, issue, 'issue')
+    assert result is False
+
+    # Verify that git commit was not called
+    assert len(mock_subprocess_run.call_args_list) == 3  # git config check, git add, git status
+
+    # Check the specific calls
+    calls = mock_subprocess_run.call_args_list
+    assert calls[0][0][0] == f'git -C {repo_dir} config user.name'  # git config check
+    assert calls[1][0][0] == f'git -C {repo_dir} add .'  # git add
+    assert calls[2][0][0] == f'git -C {repo_dir} status --porcelain'  # git status
 
     # Check that subprocess.run was called for checking git status and add, but not commit
     assert mock_subprocess_run.call_count == 3
