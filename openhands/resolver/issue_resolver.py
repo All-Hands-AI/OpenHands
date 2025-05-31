@@ -187,7 +187,9 @@ class IssueResolver:
         self.workspace_base = self.build_workspace_base(
             args.output_dir, args.issue_type, args.issue_number
         )
-        self.app_config = self.create_app_config(self.workspace_base)
+        self.app_config = self.create_app_config(
+            self.max_iterations, self.sandbox_config, self.workspace_base
+        )
 
     @classmethod
     def _setup_sandbox_config(
@@ -358,13 +360,15 @@ class IssueResolver:
         logger.info('-' * 30)
         return {'git_patch': git_patch}
 
-    def create_app_config(self, workspace_base: str) -> OpenHandsConfig:
+    def create_app_config(
+        self, max_iterations: int, sandbox_config: SandboxConfig, workspace_base: str
+    ) -> OpenHandsConfig:
         config = load_openhands_config()
         config.default_agent = 'CodeActAgent'
         config.runtime = 'docker'
         config.max_budget_per_task = 4
-        config.max_iterations = self.max_iterations
-        config.sandbox = self.sandbox_config
+        config.max_iterations = max_iterations
+        config.sandbox = sandbox_config
 
         # do not mount workspace
         config.workspace_base = workspace_base
