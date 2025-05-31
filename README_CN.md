@@ -16,7 +16,7 @@
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="加入我们的Discord社区"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="致谢"></a>
   <br/>
-  <a href="https://docs.all-hands.dev/modules/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="查看文档"></a>
+  <a href="https://docs.all-hands.dev/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="查看文档"></a>
   <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Arxiv论文"></a>
   <a href="https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0#gid=0"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="评估基准分数"></a>
   <hr>
@@ -42,11 +42,11 @@ OpenHands代理可以完成人类开发者能做的任何事情：修改代码�
 ## 💻 在本地运行OpenHands
 
 OpenHands也可以使用Docker在本地系统上运行。
-查看[运行OpenHands](https://docs.all-hands.dev/modules/usage/installation)指南了解
+查看[运行OpenHands](https://docs.all-hands.dev/usage/installation)指南了解
 系统要求和更多信息。
 
 > [!WARNING]
-> 在公共网络上？请参阅我们的[强化Docker安装指南](https://docs.all-hands.dev/modules/usage/runtimes/docker#hardened-docker-installation)
+> 在公共网络上？请参阅我们的[强化Docker安装指南](https://docs.all-hands.dev/usage/runtimes/docker#hardened-docker-installation)
 > 通过限制网络绑定和实施其他安全措施来保护您的部署。
 
 
@@ -68,7 +68,7 @@ docker run -it --rm --pull=always \
 
 打开应用程序时，您将被要求选择一个LLM提供商并添加API密钥。
 [Anthropic的Claude Sonnet 4](https://www.anthropic.com/api)（`anthropic/claude-sonnet-4-20250514`）
-效果最佳，但您还有[许多选择](https://docs.all-hands.dev/modules/usage/llms)。
+效果最佳，但您还有[许多选择](https://docs.all-hands.dev/usage/llms)。
 
 ## 💡 运行OpenHands的其他方式
 
@@ -80,22 +80,22 @@ docker run -it --rm --pull=always \
 > [与我们联系](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
 > 了解高级部署选项。
 
-您还可以[将OpenHands连接到本地文件系统](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem)，
-以可编程的[无头模式](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)运行OpenHands，
-通过[友好的CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)与其交互，
-或使用[GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action)在标记的问题上运行它。
+您还可以[将OpenHands连接到本地文件系统](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem)，
+以可编程的[无头模式](https://docs.all-hands.dev/usage/how-to/headless-mode)运行OpenHands，
+通过[友好的CLI](https://docs.all-hands.dev/usage/how-to/cli-mode)与其交互，
+或使用[GitHub Action](https://docs.all-hands.dev/usage/how-to/github-action)在标记的问题上运行它。
 
-访问[运行OpenHands](https://docs.all-hands.dev/modules/usage/installation)获取更多信息和设置说明。
+访问[运行OpenHands](https://docs.all-hands.dev/usage/installation)获取更多信息和设置说明。
 
 如果您想修改OpenHands源代码，请查看[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)。
 
-遇到问题？[故障排除指南](https://docs.all-hands.dev/modules/usage/troubleshooting)可以提供帮助。
+遇到问题？[故障排除指南](https://docs.all-hands.dev/usage/troubleshooting)可以提供帮助。
 
 ## 📖 文档
   <a href="https://deepwiki.com/All-Hands-AI/OpenHands"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" title="DeepWiki自动生成文档"></a>
 
 要了解有关项目的更多信息，以及使用OpenHands的技巧，
-请查看我们的[文档](https://docs.all-hands.dev/modules/usage/getting-started)。
+请查看我们的[文档](https://docs.all-hands.dev/usage/getting-started)。
 
 在那里，您将找到有关如何使用不同LLM提供商、
 故障排除资源和高级配置选项的资源。
