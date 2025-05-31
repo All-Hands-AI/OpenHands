@@ -9,16 +9,12 @@ function UserSettingsScreen() {
   return (
     <div data-testid="user-settings-screen" className="flex flex-col h-full">
       <div className="p-9 flex flex-col gap-6">
-        <h2 className="text-lg font-medium">{t("SETTINGS$USER_TITLE")}</h2>
-
         {isLoading ? (
           <div className="animate-pulse h-8 w-64 bg-tertiary rounded" />
         ) : (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm text-secondary">
-                {t("SETTINGS$USER_EMAIL")}
-              </label>
+              <label className="text-sm">{t("SETTINGS$USER_EMAIL")}</label>
               <div className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary">
                 {settings?.EMAIL || t("SETTINGS$USER_EMAIL_NOT_AVAILABLE")}
               </div>
