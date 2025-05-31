@@ -133,12 +133,10 @@ class IssueResolver:
 
         self.max_iterations = args.max_iterations
 
-        self.app_config = self.create_app_config(
-            self.max_iterations, self.workspace_base
-        )
-
-        self.update_sandbox_config(
-            self.app_config,
+        self.app_config = self.update_openhands_config(
+            load_openhands_config(),
+            self.max_iterations,
+            self.workspace_base,
             args.base_container_image,
             args.runtime_container_image,
             args.is_experimental,
@@ -166,12 +164,16 @@ class IssueResolver:
         )
         self.issue_handler = factory.create()
 
-    @staticmethod
-    def create_app_config(
+    @classmethod
+    def update_openhands_config(
+        cls,
+        config: OpenHandsConfig,
         max_iterations: int,
         workspace_base: str,
+        base_container_image: str | None,
+        runtime_container_image: str | None,
+        is_experimental: bool,
     ) -> OpenHandsConfig:
-        config = load_openhands_config()
         config.default_agent = 'CodeActAgent'
         config.runtime = 'docker'
         config.max_budget_per_task = 4
@@ -181,6 +183,13 @@ class IssueResolver:
         config.workspace_base = workspace_base
         config.workspace_mount_path = workspace_base
         config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
+
+        cls.update_sandbox_config(
+            config,
+            base_container_image,
+            runtime_container_image,
+            is_experimental,
+        )
 
         return config
 
