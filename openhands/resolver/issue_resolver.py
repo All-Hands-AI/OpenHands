@@ -72,13 +72,6 @@ class IssueResolver:
             base_domain: The base domain for the git server.
         """
 
-        # Setup and validate container images
-        self.sandbox_config = self._setup_sandbox_config(
-            args.base_container_image,
-            args.runtime_container_image,
-            args.is_experimental,
-        )
-
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
             raise ValueError('Invalid repository format. Expected owner/repo')
@@ -98,32 +91,6 @@ class IssueResolver:
             token,
             args.base_domain,
         )
-
-        api_key = args.llm_api_key or os.environ['LLM_API_KEY']
-        model = args.llm_model or os.environ['LLM_MODEL']
-        base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
-        api_version = os.environ.get('LLM_API_VERSION', None)
-        llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
-        llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT', '5'))
-        llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT', '30'))
-        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER', 2))
-        llm_timeout = int(os.environ.get('LLM_TIMEOUT', 0))
-
-        # Create LLMConfig instance
-        llm_config = LLMConfig(
-            model=model,
-            api_key=SecretStr(api_key) if api_key else None,
-            base_url=base_url,
-            num_retries=llm_num_retries,
-            retry_min_wait=llm_retry_min_wait,
-            retry_max_wait=llm_retry_max_wait,
-            retry_multiplier=llm_retry_multiplier,
-            timeout=llm_timeout,
-        )
-
-        # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
-        if api_version is not None:
-            llm_config.api_version = api_version
 
         repo_instruction = None
         if args.repo_instruction_file:
@@ -157,19 +124,38 @@ class IssueResolver:
                 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
             )
 
+
+        self.output_dir = args.output_dir
+        self.issue_type = issue_type
+        self.issue_number = args.issue_number
+
+        self.workspace_base = self.build_workspace_base(
+            self.output_dir, self.issue_type, self.issue_number
+        )
+
+        self.max_iterations = args.max_iterations
+
+        # Setup and validate container images
+        self.sandbox_config = self._setup_sandbox_config(
+            args.base_container_image,
+            args.runtime_container_image,
+            args.is_experimental,
+        )
+
+        self.app_config = self.create_app_config(
+            self.max_iterations,
+            self.sandbox_config,
+            self.workspace_base
+        )
+
         self.owner = owner
         self.repo = repo
         self.platform = platform
-        self.max_iterations = args.max_iterations
-        self.output_dir = args.output_dir
-        self.llm_config = llm_config
         self.user_instructions_prompt_template = user_instructions_prompt_template
         self.conversation_instructions_prompt_template = (
             conversation_instructions_prompt_template
         )
-        self.issue_type = issue_type
         self.repo_instruction = repo_instruction
-        self.issue_number = args.issue_number
         self.comment_id = args.comment_id
 
         factory = IssueHandlerFactory(
@@ -180,19 +166,9 @@ class IssueResolver:
             platform=self.platform,
             base_domain=base_domain,
             issue_type=self.issue_type,
-            llm_config=self.llm_config,
+            llm_config=self.app_config.get_llm_config(),
         )
         self.issue_handler = factory.create()
-
-        self.workspace_base = self.build_workspace_base(
-            args.output_dir, args.issue_type, args.issue_number
-        )
-        self.app_config = self.create_app_config(
-            self.max_iterations,
-            self.sandbox_config,
-            self.workspace_base,
-            self.llm_config,
-        )
 
     @classmethod
     def _setup_sandbox_config(
@@ -368,7 +344,6 @@ class IssueResolver:
         max_iterations: int,
         sandbox_config: SandboxConfig,
         workspace_base: str,
-        llm_config: LLMConfig,
     ) -> OpenHandsConfig:
         config = load_openhands_config()
         config.default_agent = 'CodeActAgent'
@@ -381,8 +356,6 @@ class IssueResolver:
         config.workspace_base = workspace_base
         config.workspace_mount_path = workspace_base
         config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
-
-        config.set_llm_config(llm_config)
 
         return config
 
@@ -561,7 +534,7 @@ class IssueResolver:
                 )
 
         # TEST METADATA
-        model_name = self.llm_config.model.split('/')[-1]
+        model_name = self.app_config.get_llm_config().model.split('/')[-1]
 
         pathlib.Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         pathlib.Path(os.path.join(self.output_dir, 'infer_logs')).mkdir(
