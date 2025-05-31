@@ -525,22 +525,22 @@ class IssueResolver:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
 
-        self.issue = self.extract_issue()
+        issue = self.extract_issue()
 
         if self.comment_id is not None:
             if (
                 self.issue_type == 'pr'
-                and not self.issue.review_comments
-                and not self.issue.review_threads
-                and not self.issue.thread_comments
+                and not issue.review_comments
+                and not issue.review_threads
+                and not issue.thread_comments
             ):
                 raise ValueError(
-                    f'Comment ID {self.comment_id} did not have a match for issue {self.issue.number}'
+                    f'Comment ID {self.comment_id} did not have a match for issue {issue.number}'
                 )
 
-            if self.issue_type == 'issue' and not self.issue.thread_comments:
+            if self.issue_type == 'issue' and not issue.thread_comments:
                 raise ValueError(
-                    f'Comment ID {self.comment_id} did not have a match for issue {self.issue.number}'
+                    f'Comment ID {self.comment_id} did not have a match for issue {issue.number}'
                 )
 
         # TEST METADATA
@@ -607,9 +607,9 @@ class IssueResolver:
         try:
             # checkout to pr branch if needed
             if self.issue_type == 'pr':
-                branch_to_use = self.issue.head_branch
+                branch_to_use = issue.head_branch
                 logger.info(
-                    f'Checking out to PR branch {branch_to_use} for issue {self.issue.number}'
+                    f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
                 )
 
                 if not branch_to_use:
@@ -636,7 +636,7 @@ class IssueResolver:
                 )
 
             output = await self.process_issue(
-                self.issue,
+                issue,
                 base_commit,
                 self.issue_handler,
                 reset_logger,
