@@ -391,18 +391,12 @@ class IssueResolver:
         else:
             logger.info(f'Starting fixing issue {issue.number}.')
 
-        workspace_base = os.path.join(
-            self.output_dir, 'workspace', f'{self.issue_type}_{self.issue_number}'
-        )
-
-        # Get the absolute path of the workspace base
-        workspace_base = self.workspace_base
         # write the repo to the workspace
-        if os.path.exists(workspace_base):
-            shutil.rmtree(workspace_base)
-        shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
+        if os.path.exists(self.workspace_base):
+            shutil.rmtree(self.workspace_base)
+        shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        config = self.create_app_config(workspace_base)
+        config = self.create_app_config(self.workspace_base)
         runtime = create_runtime(config)
         await runtime.connect()
 
