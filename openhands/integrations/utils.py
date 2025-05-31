@@ -2,7 +2,6 @@ import traceback
 
 from pydantic import SecretStr
 
-from openhands.core import logger
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
