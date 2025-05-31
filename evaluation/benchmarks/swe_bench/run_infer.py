@@ -42,8 +42,7 @@ from openhands.core.config import (
     AgentConfig,
     AppConfig,
     get_llm_config_arg,
-    get_parser,
-    load_from_toml
+    get_parser
 )
 from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.config.condenser_config import NoOpCondenserConfig
@@ -63,6 +62,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+ENABLE_LLM_EDITOR = os.environ.get('ENABLE_LLM_EDITOR', 'false').lower() == 'true'
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 
@@ -255,8 +255,7 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config_copy = copy.deepcopy(config)
-    load_from_toml(config_copy)
+
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
@@ -268,7 +267,7 @@ def get_config(
     agent_config = AgentConfig(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
-        enable_llm_editor=config_copy.agent.get('enable_llm_editor', False),
+        enable_llm_editor=ENABLE_LLM_EDITOR,
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
@@ -735,7 +734,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset["repo"].isin(selected_repos)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
-                
+
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')

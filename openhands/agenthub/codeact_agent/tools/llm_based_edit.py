@@ -2,7 +2,7 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * The assistant can edit files by specifying the file path and providing a draft of the new file content.
-* The draft content doesn't need to be exactly the same as the existing file; the assistant may skip unchanged lines using commments like `# ... existing code ...` to indicate unchanged sections.
+* The draft content doesn't need to be exactly the same as the existing file; the assistant may skip unchanged lines using comments like `# ... existing code ...` to indicate unchanged sections.
 * IMPORTANT: For large files (e.g., > 300 lines), specify the range of lines to edit using `start` and `end` (1-indexed, inclusive). The range should be smaller than 300 lines.
 * -1 indicates the last line of the file when used as the `start` or `end` value.
 * Keep at least one unchanged line before the changed section and after the changed section wherever possible.
