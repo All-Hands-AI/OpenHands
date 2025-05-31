@@ -2,10 +2,10 @@ import traceback
 
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
-from openhands.core.logger import openhands_logger as logger
 
 
 async def validate_provider_token(
@@ -29,7 +29,9 @@ async def validate_provider_token(
         await github_service.verify_access()
         return ProviderType.GITHUB
     except Exception as e:
-        logger.debug(f'Failed to validate Github token: {e} \n {traceback.format_exc()}')
+        logger.debug(
+            f'Failed to validate Github token: {e} \n {traceback.format_exc()}'
+        )
 
     # Try GitLab next
     try:
@@ -37,6 +39,8 @@ async def validate_provider_token(
         await gitlab_service.get_user()
         return ProviderType.GITLAB
     except Exception as e:
-        logger.debug(f'Failed to validate GitLab token: {e} \n {traceback.format_exc()}')
+        logger.debug(
+            f'Failed to validate GitLab token: {e} \n {traceback.format_exc()}'
+        )
 
     return None
