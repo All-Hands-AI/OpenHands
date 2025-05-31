@@ -402,7 +402,7 @@ class AgentSession:
         - agent:
         - confirmation_mode: Whether to use confirmation mode
         - max_iterations:
-        - max_budget_per_task:
+        - max_budget_per_task: Maximum budget per task, agent stops if exceeded
         - agent_to_llm_config:
         - agent_configs:
         """
