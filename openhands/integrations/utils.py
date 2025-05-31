@@ -30,7 +30,6 @@ async def validate_provider_token(
         return ProviderType.GITHUB
     except Exception as e:
         logger.debug(f'Failed to validate Github token: {e} \n {traceback.format_exc()}')
-        pass
 
     # Try GitLab next
     try:
@@ -39,6 +38,5 @@ async def validate_provider_token(
         return ProviderType.GITLAB
     except Exception as e:
         logger.debug(f'Failed to validate GitLab token: {e} \n {traceback.format_exc()}')
-        pass
 
     return None
