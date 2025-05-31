@@ -16,7 +16,8 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig, SandboxConfig
+from openhands.core.config import AgentConfig, LLMConfig, SandboxConfig
+from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -377,17 +378,18 @@ class IssueResolver:
             shutil.rmtree(workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
 
-        config = OpenHandsConfig(
-            default_agent='CodeActAgent',
-            runtime='docker',
-            max_budget_per_task=4,
-            max_iterations=self.max_iterations,
-            sandbox=self.sandbox_config,
-            # do not mount workspace
-            workspace_base=workspace_base,
-            workspace_mount_path=workspace_base,
-            agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
-        )
+        config = load_openhands_config()
+        config.default_agent = 'CodeActAgent'
+        config.runtime = 'docker'
+        config.max_budget_per_task = 4
+        config.max_iterations = self.max_iterations
+        config.sandbox = self.sandbox_config
+
+        # do not mount workspace
+        config.workspace_base = workspace_base
+        config.workspace_mount_path = workspace_base
+        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
+
         config.set_llm_config(self.llm_config)
 
         runtime = create_runtime(config)
