@@ -183,7 +183,10 @@ class IssueResolver:
             llm_config=self.llm_config,
         )
         self.issue_handler = factory.create()
-        self.workspace_base = self.build_workspace_base()
+
+        self.workspace_base = self.build_workspace_base(
+            args.output_dir, args.issue_type, args.issue_number
+        )
         self.app_config = self.create_app_config(self.workspace_base)
 
     @classmethod
@@ -372,9 +375,12 @@ class IssueResolver:
 
         return config
 
-    def build_workspace_base(self) -> str:
+    @staticmethod
+    def build_workspace_base(
+        output_dir: str, issue_type: str, issue_number: int
+    ) -> str:
         workspace_base = os.path.join(
-            self.output_dir, 'workspace', f'{self.issue_type}_{self.issue_number}'
+            output_dir, 'workspace', f'{issue_type}_{issue_number}'
         )
         return os.path.abspath(workspace_base)
 
