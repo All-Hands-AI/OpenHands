@@ -498,16 +498,7 @@ class IssueResolver:
         )
         return output
 
-    async def resolve_issue(
-        self,
-        reset_logger: bool = False,
-    ) -> None:
-        """Resolve a single issue.
-
-        Args:
-            reset_logger: Whether to reset the logger for multiprocessing.
-        """
-
+    def extract_issue(self) -> Issue:
         # Load dataset
         issues: list[Issue] = self.issue_handler.get_converted_issues(
             issue_numbers=[self.issue_number], comment_id=self.comment_id
@@ -521,7 +512,19 @@ class IssueResolver:
                 f'3. The repository name is spelled correctly'
             )
 
-        issue = issues[0]
+        return issues[0]
+
+    async def resolve_issue(
+        self,
+        reset_logger: bool = False,
+    ) -> None:
+        """Resolve a single issue.
+
+        Args:
+            reset_logger: Whether to reset the logger for multiprocessing.
+        """
+
+        issue = self.extract_issue()
 
         if self.comment_id is not None:
             if (
