@@ -27,6 +27,9 @@ class MockUserAuth(UserAuth):
     async def get_user_id(self) -> str | None:
         return 'test-user'
 
+    async def get_user_email(self) -> str | None:
+        return 'test-email@whatever.com'
+
     async def get_access_token(self) -> SecretStr | None:
         return SecretStr('test-token')
 
