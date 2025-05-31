@@ -8894,5 +8894,53 @@
         "tr": "E-posta mevcut değil",
         "de": "E-Mail nicht verfügbar",
         "uk": "Електронна пошта недоступна"
+    },
+    "SETTINGS$SAVE": {
+        "en": "Save",
+        "ja": "保存",
+        "zh-CN": "保存",
+        "zh-TW": "儲存",
+        "ko-KR": "저장",
+        "no": "Lagre",
+        "it": "Salva",
+        "pt": "Salvar",
+        "es": "Guardar",
+        "ar": "حفظ",
+        "fr": "Enregistrer",
+        "tr": "Kaydet",
+        "de": "Speichern",
+        "uk": "Зберегти"
+    },
+    "SETTINGS$EMAIL_SAVED_SUCCESSFULLY": {
+        "en": "Email saved successfully",
+        "ja": "メールが正常に保存されました",
+        "zh-CN": "邮箱保存成功",
+        "zh-TW": "郵箱儲存成功",
+        "ko-KR": "이메일이 성공적으로 저장되었습니다",
+        "no": "E-post lagret",
+        "it": "Email salvata con successo",
+        "pt": "Email salvo com sucesso",
+        "es": "Correo electrónico guardado con éxito",
+        "ar": "تم حفظ البريد الإلكتروني بنجاح",
+        "fr": "Email enregistré avec succès",
+        "tr": "E-posta başarıyla kaydedildi",
+        "de": "E-Mail erfolgreich gespeichert",
+        "uk": "Електронну пошту успішно збережено"
+    },
+    "SETTINGS$FAILED_TO_SAVE_EMAIL": {
+        "en": "Failed to save email",
+        "ja": "メールの保存に失敗しました",
+        "zh-CN": "保存邮箱失败",
+        "zh-TW": "儲存郵箱失敗",
+        "ko-KR": "이메일 저장 실패",
+        "no": "Kunne ikke lagre e-post",
+        "it": "Impossibile salvare l'email",
+        "pt": "Falha ao salvar email",
+        "es": "Error al guardar el correo electrónico",
+        "ar": "فشل في حفظ البريد الإلكتروني",
+        "fr": "Échec de l'enregistrement de l'email",
+        "tr": "E-posta kaydedilemedi",
+        "de": "E-Mail konnte nicht gespeichert werden",
+        "uk": "Не вдалося зберегти електронну пошту"
     }
 }
