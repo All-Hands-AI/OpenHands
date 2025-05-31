@@ -11,12 +11,11 @@ from argparse import Namespace
 from typing import Any
 from uuid import uuid4
 
-from pydantic import SecretStr
 from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig, SandboxConfig
+from openhands.core.config import AgentConfig, OpenHandsConfig
 from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -124,7 +123,6 @@ class IssueResolver:
                 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
             )
 
-
         self.output_dir = args.output_dir
         self.issue_type = issue_type
         self.issue_number = args.issue_number
@@ -135,17 +133,15 @@ class IssueResolver:
 
         self.max_iterations = args.max_iterations
 
-        # Setup and validate container images
-        self.sandbox_config = self._setup_sandbox_config(
+        self.app_config = self.create_app_config(
+            self.max_iterations, self.workspace_base
+        )
+
+        self.update_sandbox_config(
+            self.app_config,
             args.base_container_image,
             args.runtime_container_image,
             args.is_experimental,
-        )
-
-        self.app_config = self.create_app_config(
-            self.max_iterations,
-            self.sandbox_config,
-            self.workspace_base
         )
 
         self.owner = owner
@@ -170,13 +166,34 @@ class IssueResolver:
         )
         self.issue_handler = factory.create()
 
+    @staticmethod
+    def create_app_config(
+        max_iterations: int,
+        workspace_base: str,
+    ) -> OpenHandsConfig:
+        config = load_openhands_config()
+        config.default_agent = 'CodeActAgent'
+        config.runtime = 'docker'
+        config.max_budget_per_task = 4
+        config.max_iterations = max_iterations
+
+        # do not mount workspace
+        config.workspace_base = workspace_base
+        config.workspace_mount_path = workspace_base
+        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
+
+        return config
+
     @classmethod
-    def _setup_sandbox_config(
+    def update_sandbox_config(
         cls,
+        openhands_config: OpenHandsConfig,
         base_container_image: str | None,
         runtime_container_image: str | None,
         is_experimental: bool,
-    ) -> SandboxConfig:
+    ) -> None:
+        sandbox_config = openhands_config.sandbox
+
         if runtime_container_image is not None and base_container_image is not None:
             raise ValueError('Cannot provide both runtime and base container images.')
 
@@ -199,13 +216,11 @@ class IssueResolver:
             else None
         )
 
-        sandbox_config = SandboxConfig(
-            base_container_image=container_base,
-            runtime_container_image=container_runtime,
-            enable_auto_lint=False,
-            use_host_network=False,
-            timeout=300,
-        )
+        sandbox_config.base_container_image = container_base
+        sandbox_config.runtime_container_image = container_runtime
+        sandbox_config.enable_auto_lint = False
+        sandbox_config.use_host_network = False
+        sandbox_config.timeout = 300
 
         # Configure sandbox for GitLab CI environment
         if cls.GITLAB_CI:
@@ -216,7 +231,7 @@ class IssueResolver:
             if user_id == 0:
                 sandbox_config.user_id = get_unique_uid()
 
-        return sandbox_config
+        openhands_config.sandbox = sandbox_config
 
     def initialize_runtime(
         self,
@@ -338,26 +353,6 @@ class IssueResolver:
         logger.info('END Runtime Completion Fn')
         logger.info('-' * 30)
         return {'git_patch': git_patch}
-
-    @staticmethod
-    def create_app_config(
-        max_iterations: int,
-        sandbox_config: SandboxConfig,
-        workspace_base: str,
-    ) -> OpenHandsConfig:
-        config = load_openhands_config()
-        config.default_agent = 'CodeActAgent'
-        config.runtime = 'docker'
-        config.max_budget_per_task = 4
-        config.max_iterations = max_iterations
-        config.sandbox = sandbox_config
-
-        # do not mount workspace
-        config.workspace_base = workspace_base
-        config.workspace_mount_path = workspace_base
-        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
-
-        return config
 
     @staticmethod
     def build_workspace_base(
