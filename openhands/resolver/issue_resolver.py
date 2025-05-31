@@ -16,7 +16,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, LLMConfig, SandboxConfig
+from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig, SandboxConfig
 from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -353,6 +353,23 @@ class IssueResolver:
         logger.info('-' * 30)
         return {'git_patch': git_patch}
 
+    def create_app_config(self, workspace_base: str) -> OpenHandsConfig:
+        config = load_openhands_config()
+        config.default_agent = 'CodeActAgent'
+        config.runtime = 'docker'
+        config.max_budget_per_task = 4
+        config.max_iterations = self.max_iterations
+        config.sandbox = self.sandbox_config
+
+        # do not mount workspace
+        config.workspace_base = workspace_base
+        config.workspace_mount_path = workspace_base
+        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
+
+        config.set_llm_config(self.llm_config)
+
+        return config
+
     async def process_issue(
         self,
         issue: Issue,
@@ -378,20 +395,7 @@ class IssueResolver:
             shutil.rmtree(workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
 
-        config = load_openhands_config()
-        config.default_agent = 'CodeActAgent'
-        config.runtime = 'docker'
-        config.max_budget_per_task = 4
-        config.max_iterations = self.max_iterations
-        config.sandbox = self.sandbox_config
-
-        # do not mount workspace
-        config.workspace_base = workspace_base
-        config.workspace_mount_path = workspace_base
-        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
-
-        config.set_llm_config(self.llm_config)
-
+        config = self.create_app_config(workspace_base)
         runtime = create_runtime(config)
         await runtime.connect()
 
