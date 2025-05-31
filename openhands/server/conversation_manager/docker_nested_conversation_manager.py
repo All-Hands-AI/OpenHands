@@ -447,7 +447,7 @@ class DockerNestedConversationManager(ConversationManager):
             plugins=agent.sandbox_plugins,
             headless_mode=False,
             attach_to_existing=False,
-            env_vars=env_vars,
+            #env_vars=env_vars,
             main_module='openhands.server',
         )
 

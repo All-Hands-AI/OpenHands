@@ -321,6 +321,8 @@ class DockerRuntime(ActionExecutionClient):
             'port': str(self._container_port),
             'PYTHONUNBUFFERED': '1',
             'VSCODE_PORT': str(self._vscode_port),
+            'APP_PORT_1': self._app_ports[0],
+            'APP_PORT_2': self._app_ports[1],
             'PIP_BREAK_SYSTEM_PACKAGES': '1',
         }
         if self.config.debug or DEBUG:

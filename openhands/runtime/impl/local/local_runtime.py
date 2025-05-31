@@ -251,10 +251,10 @@ class LocalRuntime(ActionExecutionClient):
         else:
             # Start a new server
             self._execution_server_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-            self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+            self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
             self._app_ports = [
-                self._find_available_port(APP_PORT_RANGE_1),
-                self._find_available_port(APP_PORT_RANGE_2),
+                int(os.getenv('APP_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
+                int(os.getenv('APP_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
             ]
             self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
 
