@@ -46,7 +46,9 @@ class ActionExecutionServerInfo:
     """Information about a running server process."""
 
     process: subprocess.Popen
-    port: int
+    execution_server_port: int
+    vscode_port: int
+    app_ports: list[int]
     log_thread: threading.Thread
     log_thread_exit_event: threading.Event
 
@@ -234,14 +236,11 @@ class LocalRuntime(ActionExecutionClient):
             self.log('info', f'Connecting to existing server for session {self.sid}')
             server_info = _RUNNING_SERVERS[self.sid]
             self.server_process = server_info.process
-            self._execution_server_port = server_info.port
+            self._execution_server_port = server_info.execution_server_port
             self._log_thread = server_info.log_thread
             self._log_thread_exit_event = server_info.log_thread_exit_event
-            self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
-            self._app_ports = [
-                int(os.getenv('WORK_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
-                int(os.getenv('WORK_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
-            ]
+            self._vscode_port = server_info.vscode_port
+            self._app_ports = server_info.app_ports
             self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
         elif self.attach_to_existing:
             # If we're supposed to attach to an existing server but none exists, raise an error
@@ -353,7 +352,9 @@ class LocalRuntime(ActionExecutionClient):
             # Store the server process in the global dictionary
             _RUNNING_SERVERS[self.sid] = ActionExecutionServerInfo(
                 process=self.server_process,
-                port=self._execution_server_port,
+                execution_server_port=self._execution_server_port,
+                vscode_port=self._vscode_port,
+                app_ports=self._app_ports,
                 log_thread=self._log_thread,
                 log_thread_exit_event=self._log_thread_exit_event,
             )
