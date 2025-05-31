@@ -184,6 +184,7 @@ class IssueResolver:
         )
         self.issue_handler = factory.create()
         self.workspace_base = self.build_workspace_base()
+        self.app_config = self.create_app_config(self.workspace_base)
 
     @classmethod
     def _setup_sandbox_config(
@@ -396,8 +397,7 @@ class IssueResolver:
             shutil.rmtree(self.workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        config = self.create_app_config(self.workspace_base)
-        runtime = create_runtime(config)
+        runtime = create_runtime(self.app_config)
         await runtime.connect()
 
         def on_event(evt: Event) -> None:
@@ -421,7 +421,7 @@ class IssueResolver:
         action = MessageAction(content=instruction, image_urls=images_urls)
         try:
             state: State | None = await run_controller(
-                config=config,
+                config=self.app_config,
                 initial_user_action=action,
                 runtime=runtime,
                 fake_user_response_fn=codeact_user_response,
