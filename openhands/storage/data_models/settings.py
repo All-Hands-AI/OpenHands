@@ -40,6 +40,7 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
+    email: str | None = None
 
     model_config = {
         'validate_assignment': True,
