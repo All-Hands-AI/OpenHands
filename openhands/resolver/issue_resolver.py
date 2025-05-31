@@ -188,7 +188,10 @@ class IssueResolver:
             args.output_dir, args.issue_type, args.issue_number
         )
         self.app_config = self.create_app_config(
-            self.max_iterations, self.sandbox_config, self.workspace_base
+            self.max_iterations,
+            self.sandbox_config,
+            self.workspace_base,
+            self.llm_config,
         )
 
     @classmethod
@@ -360,8 +363,12 @@ class IssueResolver:
         logger.info('-' * 30)
         return {'git_patch': git_patch}
 
+    @staticmethod
     def create_app_config(
-        self, max_iterations: int, sandbox_config: SandboxConfig, workspace_base: str
+        max_iterations: int,
+        sandbox_config: SandboxConfig,
+        workspace_base: str,
+        llm_config: LLMConfig,
     ) -> OpenHandsConfig:
         config = load_openhands_config()
         config.default_agent = 'CodeActAgent'
@@ -375,7 +382,7 @@ class IssueResolver:
         config.workspace_mount_path = workspace_base
         config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
 
-        config.set_llm_config(self.llm_config)
+        config.set_llm_config(llm_config)
 
         return config
 
