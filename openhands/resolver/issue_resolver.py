@@ -183,6 +183,7 @@ class IssueResolver:
             llm_config=self.llm_config,
         )
         self.issue_handler = factory.create()
+        self.workspace_base = self.build_workspace_base()
 
     @classmethod
     def _setup_sandbox_config(
@@ -370,6 +371,12 @@ class IssueResolver:
 
         return config
 
+    def build_workspace_base(self) -> str:
+        workspace_base = os.path.join(
+            self.output_dir, 'workspace', f'{self.issue_type}_{self.issue_number}'
+        )
+        return os.path.abspath(workspace_base)
+
     async def process_issue(
         self,
         issue: Issue,
@@ -385,11 +392,11 @@ class IssueResolver:
             logger.info(f'Starting fixing issue {issue.number}.')
 
         workspace_base = os.path.join(
-            self.output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
+            self.output_dir, 'workspace', f'{self.issue_type}_{self.issue_number}'
         )
 
         # Get the absolute path of the workspace base
-        workspace_base = os.path.abspath(workspace_base)
+        workspace_base = self.workspace_base
         # write the repo to the workspace
         if os.path.exists(workspace_base):
             shutil.rmtree(workspace_base)
