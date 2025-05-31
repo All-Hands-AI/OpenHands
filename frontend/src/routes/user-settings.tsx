@@ -31,8 +31,8 @@ function UserSettingsScreen() {
     try {
       setIsSaving(true);
       
-      // Send email as a query parameter
-      await openHands.post(`/api/email?email=${encodeURIComponent(email)}`);
+      // Send email as part of settings update
+      await openHands.post('/api/settings', { email });
 
       setOriginalEmail(email);
       setSaveSuccess(true);
