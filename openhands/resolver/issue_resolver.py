@@ -15,7 +15,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, OpenHandsConfig
+from openhands.core.config import AgentConfig, OpenHandsConfig, SandboxConfig
 from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -201,8 +201,6 @@ class IssueResolver:
         runtime_container_image: str | None,
         is_experimental: bool,
     ) -> None:
-        sandbox_config = openhands_config.sandbox
-
         if runtime_container_image is not None and base_container_image is not None:
             raise ValueError('Cannot provide both runtime and base container images.')
 
@@ -225,11 +223,13 @@ class IssueResolver:
             else None
         )
 
-        sandbox_config.base_container_image = container_base
-        sandbox_config.runtime_container_image = container_runtime
-        sandbox_config.enable_auto_lint = False
-        sandbox_config.use_host_network = False
-        sandbox_config.timeout = 300
+        sandbox_config = SandboxConfig(
+            base_container_image=container_base,
+            runtime_container_image=container_runtime,
+            enable_auto_lint=False,
+            use_host_network=False,
+            timeout=300,
+        )
 
         # Configure sandbox for GitLab CI environment
         if cls.GITLAB_CI:
@@ -240,7 +240,17 @@ class IssueResolver:
             if user_id == 0:
                 sandbox_config.user_id = get_unique_uid()
 
-        openhands_config.sandbox = sandbox_config
+        openhands_config.sandbox.base_container_image = (
+            sandbox_config.base_container_image
+        )
+        openhands_config.sandbox.runtime_container_image = (
+            sandbox_config.runtime_container_image
+        )
+        openhands_config.sandbox.enable_auto_lint = sandbox_config.enable_auto_lint
+        openhands_config.sandbox.use_host_network = sandbox_config.use_host_network
+        openhands_config.sandbox.timeout = sandbox_config.timeout
+        openhands_config.sandbox.local_runtime_url = sandbox_config.local_runtime_url
+        openhands_config.sandbox.user_id = sandbox_config.user_id
 
     def initialize_runtime(
         self,
