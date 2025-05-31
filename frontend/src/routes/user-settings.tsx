@@ -30,10 +30,9 @@ function UserSettingsScreen() {
 
     try {
       setIsSaving(true);
-      const formData = new FormData();
-      formData.append("email", email);
-
-      await openHands.post("/api/email", formData);
+      
+      // Send email as a query parameter
+      await openHands.post(`/api/email?email=${encodeURIComponent(email)}`);
 
       setOriginalEmail(email);
       setSaveSuccess(true);
