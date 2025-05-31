@@ -28,7 +28,7 @@ export function LanguageInput({
       }))}
       defaultSelectedKey={defaultKey}
       isClearable={false}
-      wrapperClassName="w-[680px]"
+      wrapperClassName="w-full max-w-[680px]"
     />
   );
 }

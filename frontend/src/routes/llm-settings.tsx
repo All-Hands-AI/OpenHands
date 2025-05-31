@@ -290,7 +290,7 @@ function LlmSettingsScreen() {
                 name="llm-api-key-input"
                 label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                 type="password"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
                 startContent={
@@ -312,7 +312,7 @@ function LlmSettingsScreen() {
                 name="search-api-key-input"
                 label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
                 type="password"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
                 placeholder="sk-tavily-..."
@@ -346,7 +346,7 @@ function LlmSettingsScreen() {
                 }
                 placeholder="anthropic/claude-sonnet-4-20250514"
                 type="text"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 onChange={handleCustomModelIsDirty}
               />
 
@@ -357,7 +357,7 @@ function LlmSettingsScreen() {
                 defaultValue={settings.LLM_BASE_URL}
                 placeholder="https://api.openai.com"
                 type="text"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 onChange={handleBaseUrlIsDirty}
               />
 
@@ -366,7 +366,7 @@ function LlmSettingsScreen() {
                 name="llm-api-key-input"
                 label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                 type="password"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
                 startContent={
@@ -387,7 +387,7 @@ function LlmSettingsScreen() {
                 name="search-api-key-input"
                 label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
                 type="password"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
                 placeholder="tvly-..."
@@ -418,7 +418,7 @@ function LlmSettingsScreen() {
                 defaultSelectedKey={settings.AGENT}
                 isClearable={false}
                 onInputChange={handleAgentIsDirty}
-                wrapperClassName="w-[680px]"
+                wrapperClassName="w-full max-w-[680px]"
               />
 
               {config?.APP_MODE === "saas" && (
@@ -431,11 +431,11 @@ function LlmSettingsScreen() {
                       <a href="mailto:contact@all-hands.dev">
                         {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
                       </a>
-                      )
                     </>
                   }
                   items={[]}
                   isDisabled
+                  wrapperClassName="w-full max-w-[680px]"
                 />
               )}
 
@@ -473,7 +473,7 @@ function LlmSettingsScreen() {
                   isClearable
                   showOptionalTag
                   onInputChange={handleSecurityAnalyzerIsDirty}
-                  wrapperClassName="w-[680px]"
+                  wrapperClassName="w-full max-w-[680px]"
                 />
               )}
             </div>
