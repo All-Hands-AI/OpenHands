@@ -8,6 +8,29 @@ import userEvent from "@testing-library/user-event";
 import { HomeHeader } from "#/components/features/home/home-header";
 import OpenHands from "#/api/open-hands";
 
+// Mock the translation function
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => {
+        // Return a mock translation for the test
+        const translations: Record<string, string> = {
+          "HOME$LETS_START_BUILDING": "Let's start building",
+          "HOME$LAUNCH_FROM_SCRATCH": "Launch from Scratch",
+          "HOME$LOADING": "Loading...",
+          "HOME$OPENHANDS_DESCRIPTION": "OpenHands is an AI software engineer",
+          "HOME$NOT_SURE_HOW_TO_START": "Not sure how to start?",
+          "HOME$READ_THIS": "Read this"
+        };
+        return translations[key] || key;
+      },
+      i18n: { language: "en" },
+    }),
+  };
+});
+
 const renderHomeHeader = () => {
   const RouterStub = createRoutesStub([
     {
@@ -38,7 +61,7 @@ describe("HomeHeader", () => {
     renderHomeHeader();
 
     const launchButton = screen.getByRole("button", {
-      name: /launch from scratch/i,
+      name: /Launch from Scratch/i,
     });
     await userEvent.click(launchButton);
 
@@ -60,11 +83,11 @@ describe("HomeHeader", () => {
     renderHomeHeader();
 
     const launchButton = screen.getByRole("button", {
-      name: /launch from scratch/i,
+      name: /Launch from Scratch/i,
     });
     await userEvent.click(launchButton);
 
-    expect(launchButton).toHaveTextContent(/Loading/i);
+    expect(launchButton).toHaveTextContent(/Loading.../i);
     expect(launchButton).toBeDisabled();
   });
 });

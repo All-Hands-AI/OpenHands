@@ -1,6 +1,14 @@
+import os
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
+if TYPE_CHECKING:
+    from openhands.core.config.openhands_config import OpenHandsConfig
+
+from openhands.core.logger import openhands_logger as logger
+from openhands.utils.import_utils import get_impl
 
 
 class MCPSSEServerConfig(BaseModel):
@@ -29,6 +37,22 @@ class MCPStdioServerConfig(BaseModel):
     command: str
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
+
+    def __eq__(self, other):
+        """Override equality operator to compare server configurations.
+
+        Two server configurations are considered equal if they have the same
+        name, command, args, and env values. The order of args is important,
+        but the order of env variables is not.
+        """
+        if not isinstance(other, MCPStdioServerConfig):
+            return False
+        return (
+            self.name == other.name
+            and self.command == other.command
+            and self.args == other.args
+            and set(self.env.items()) == set(other.env.items())
+        )
 
 
 class MCPConfig(BaseModel):
@@ -120,3 +144,52 @@ class MCPConfig(BaseModel):
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
         return mcp_mapping
+
+
+class OpenHandsMCPConfig:
+    @staticmethod
+    def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
+        """Add search engine to the MCP config"""
+        if (
+            app_config.search_api_key
+            and app_config.search_api_key.get_secret_value().startswith('tvly-')
+        ):
+            logger.info('Adding search engine to MCP config')
+            return MCPStdioServerConfig(
+                name='tavily',
+                command='npx',
+                args=['-y', 'tavily-mcp@0.1.4'],
+                env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
+            )
+        else:
+            logger.warning('No search engine API key found, skipping search engine')
+        # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
+        return None
+
+    @staticmethod
+    def create_default_mcp_server_config(
+        host: str, config: 'OpenHandsConfig', user_id: str | None = None
+    ) -> tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]:
+        """
+        Create a default MCP server configuration.
+
+        Args:
+            host: Host string
+            config: OpenHandsConfig
+        Returns:
+            tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]: A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
+        """
+        sse_server = MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)
+        stdio_servers = []
+        search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
+        if search_engine_stdio_server:
+            stdio_servers.append(search_engine_stdio_server)
+        return sse_server, stdio_servers
+
+
+openhands_mcp_config_cls = os.environ.get(
+    'OPENHANDS_MCP_CONFIG_CLS',
+    'openhands.core.config.mcp_config.OpenHandsMCPConfig',
+)
+
+OpenHandsMCPConfigImpl = get_impl(OpenHandsMCPConfig, openhands_mcp_config_cls)

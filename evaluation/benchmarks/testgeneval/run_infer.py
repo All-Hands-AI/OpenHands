@@ -35,7 +35,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
@@ -117,7 +117,7 @@ def get_instance_docker_image(instance_id: str) -> str:
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of TestGenEval
     base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     logger.info(
@@ -126,7 +126,7 @@ def get_config(
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,

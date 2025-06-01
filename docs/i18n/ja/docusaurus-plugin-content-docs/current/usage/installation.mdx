@@ -58,25 +58,25 @@ OpenHandsを実行するには、最新のプロセッサと最低**4GB RAM**を
 OpenHandsを実行する最も簡単な方法はDockerを使用することです。
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.38
+    docker.all-hands.dev/all-hands-ai/openhands:0.39
 ```
 
 OpenHandsは http://localhost:3000 で実行されています！
 
-また、[OpenHandsをローカルファイルシステムに接続](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem)したり、
-OpenHandsを[ヘッドレスモード](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)でスクリプト実行したり、
-[使いやすいCLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)を介して操作したり、
-[GitHubアクション](https://docs.all-hands.dev/modules/usage/how-to/github-action)でタグ付けされた課題に対して実行したりすることもできます。
+また、[OpenHandsをローカルファイルシステムに接続](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem)したり、
+OpenHandsを[ヘッドレスモード](https://docs.all-hands.dev/usage/how-to/headless-mode)でスクリプト実行したり、
+[使いやすいCLI](https://docs.all-hands.dev/usage/how-to/cli-mode)を介して操作したり、
+[GitHubアクション](https://docs.all-hands.dev/usage/how-to/github-action)でタグ付けされた課題に対して実行したりすることもできます。
 
 ## セットアップ
 
@@ -117,4 +117,4 @@ SemVerを使用しているため、`0.9`は自動的に最新の`0.9.x`リリ�
 
 開発ワークフローについては、[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)を参照してください。
 
-問題がありますか？[トラブルシューティングガイド](https://docs.all-hands.dev/modules/usage/troubleshooting)をご確認ください。
+問題がありますか？[トラブルシューティングガイド](https://docs.all-hands.dev/usage/troubleshooting)をご確認ください。

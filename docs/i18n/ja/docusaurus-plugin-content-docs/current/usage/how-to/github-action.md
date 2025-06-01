@@ -47,5 +47,5 @@ GitHub resolverは、動作をカスタマイズするために有効な[リポ�
 | `LLM_MODEL`                      | 変数       | OpenHandsで使用するLLMを設定                                                                      | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
 | `OPENHANDS_MAX_ITER`             | 変数       | エージェントの反復回数の最大制限を設定                                                            | `OPENHANDS_MAX_ITER=10`                            |
 | `OPENHANDS_MACRO`                | 変数       | リゾルバーを呼び出すためのデフォルトマクロをカスタマイズ                                          | `OPENHANDS_MACRO=@resolveit`                       |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | 変数       | カスタムサンドボックス（[詳細](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)） | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | 変数       | カスタムサンドボックス（[詳細](https://docs.all-hands.dev/usage/how-to/custom-sandbox-guide)） | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
 | `TARGET_BRANCH`                  | 変数       | `main`以外のブランチにマージ                                                                      | `TARGET_BRANCH="dev"`                              |

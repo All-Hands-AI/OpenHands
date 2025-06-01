@@ -58,25 +58,25 @@ Un système avec un processeur moderne et un minimum de **4 Go de RAM** est reco
 La façon la plus simple d'exécuter OpenHands est dans Docker.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.38
+    docker.all-hands.dev/all-hands-ai/openhands:0.39
 ```
 
 Vous trouverez OpenHands en cours d'exécution à l'adresse http://localhost:3000 !
 
-Vous pouvez également [connecter OpenHands à votre système de fichiers local](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem),
-exécuter OpenHands en [mode headless](https://docs.all-hands.dev/modules/usage/how-to/headless-mode) scriptable,
-interagir avec lui via une [CLI conviviale](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-ou l'exécuter sur des problèmes étiquetés avec [une action GitHub](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+Vous pouvez également [connecter OpenHands à votre système de fichiers local](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
+exécuter OpenHands en [mode headless](https://docs.all-hands.dev/usage/how-to/headless-mode) scriptable,
+interagir avec lui via une [CLI conviviale](https://docs.all-hands.dev/usage/how-to/cli-mode),
+ou l'exécuter sur des problèmes étiquetés avec [une action GitHub](https://docs.all-hands.dev/usage/how-to/github-action).
 
 ## Configuration
 
@@ -118,4 +118,4 @@ Cette version est instable et est recommandée uniquement à des fins de test ou
 
 Pour le flux de travail de développement, consultez [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-Vous rencontrez des problèmes ? Consultez notre [Guide de dépannage](https://docs.all-hands.dev/modules/usage/troubleshooting).
+Vous rencontrez des problèmes ? Consultez notre [Guide de dépannage](https://docs.all-hands.dev/usage/troubleshooting).
