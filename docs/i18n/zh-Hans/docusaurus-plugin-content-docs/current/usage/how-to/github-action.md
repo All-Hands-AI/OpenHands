@@ -47,5 +47,5 @@ GitHub resolver 将自动检查有效的[仓库密钥](https://docs.github.com/e
 | `LLM_MODEL`                      | 变量     | 设置与 OpenHands 一起使用的 LLM                                                         | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
 | `OPENHANDS_MAX_ITER`             | 变量     | 设置代理迭代的最大限制                                                                  | `OPENHANDS_MAX_ITER=10`                            |
 | `OPENHANDS_MACRO`                | 变量     | 自定义用于调用 resolver 的默认宏                                                        | `OPENHANDS_MACRO=@resolveit`                       |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | 变量     | 自定义沙箱（[了解更多](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)） | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | 变量     | 自定义沙箱（[了解更多](https://docs.all-hands.dev/usage/how-to/custom-sandbox-guide)） | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
 | `TARGET_BRANCH`                  | 变量     | 合并到 `main` 以外的分支                                                                | `TARGET_BRANCH="dev"`                              |

@@ -50,7 +50,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 
 ### Start OpenHands with locally served model
 
-Check [the installation guide](https://docs.all-hands.dev/modules/usage/installation) to make sure you have all the prerequisites for running OpenHands.
+Check [the installation guide](https://docs.all-hands.dev/usage/installation) to make sure you have all the prerequisites for running OpenHands.
 
 ```bash
 export LMSTUDIO_MODEL_NAME="imported-models/uncategorized/devstralq4_k_m.gguf" # <- Replace this with the model name you copied from LMStudio

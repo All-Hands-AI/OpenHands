@@ -35,7 +35,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <a
-            href="https://docs.all-hands.dev/modules/usage/mcp"
+            href="https://docs.all-hands.dev/usage/mcp"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-blue-400 hover:underline mr-3"

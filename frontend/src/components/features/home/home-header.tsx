@@ -43,7 +43,7 @@ export function HomeHeader() {
         <p className="text-sm">
           {t("HOME$NOT_SURE_HOW_TO_START")}{" "}
           <a
-            href="https://docs.all-hands.dev/modules/usage/getting-started"
+            href="https://docs.all-hands.dev/usage/getting-started"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2"
