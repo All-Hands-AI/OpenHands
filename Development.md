@@ -76,7 +76,7 @@ variables in your terminal. The final configurations are set from highest to low
 Environment variables > config.toml variables > default variables
 
 **Note on Alternative Models:**
-See [our documentation](https://docs.all-hands.dev/modules/usage/llms) for recommended models.
+See [our documentation](https://docs.all-hands.dev/usage/llms) for recommended models.
 
 ### 4. Running the application
 
