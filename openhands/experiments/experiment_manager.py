@@ -5,9 +5,8 @@ from openhands.utils.import_utils import get_impl
 
 
 class ExperimentManager:
-    def run_conversation_variant_test(
-        self, conversation_settings: ConversationInitData
-    ):
+    @staticmethod
+    def run_conversation_variant_test(conversation_settings: ConversationInitData):
         return conversation_settings
 
 
