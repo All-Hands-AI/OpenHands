@@ -75,7 +75,6 @@ COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${V
 COPY --chown=openhands:app --chmod=770 ./microagents ./microagents
 COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
 COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
-COPY --chown=openhands:app --chmod=770 ./openhands/agenthub ./openhands/agenthub
 COPY --chown=openhands:app pyproject.toml poetry.lock README.md MANIFEST.in LICENSE ./
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
