@@ -164,8 +164,6 @@ ollama_base_url="http://localhost:8000"
 
 Start OpenHands using `make run`.
 
-Also, with a local launch, if Docker Runtime is selected, you should add `127.0.0.1 host.docker.internal` line to end of `/etc/hosts` on your Linux machine.
-
 ### Configure OpenHands
 
 Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
