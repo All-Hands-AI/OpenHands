@@ -257,7 +257,6 @@ async def test_new_conversation_success(provider_handler_mock):
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
                 image_urls=['https://example.com/image.jpg'],
-                conversation_id='test_conversation_id',
             )
 
             # Call new_conversation
@@ -266,7 +265,9 @@ async def test_new_conversation_success(provider_handler_mock):
             # Verify the response
             assert isinstance(response, InitSessionResponse)
             assert response.status == 'ok'
-            assert response.conversation_id == 'test_conversation_id'
+            # Don't check the exact conversation_id as it's now generated dynamically
+            assert response.conversation_id is not None
+            assert isinstance(response.conversation_id, str)
 
             # Verify that create_new_conversation was called with the correct arguments
             mock_create_conversation.assert_called_once()
@@ -314,7 +315,6 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                     repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
-                    conversation_id='test_conversation_id',
                 )
 
                 # Call new_conversation
@@ -323,7 +323,9 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 # Verify the response
                 assert isinstance(response, InitSessionResponse)
                 assert response.status == 'ok'
-                assert response.conversation_id == 'test_conversation_id'
+                # Don't check the exact conversation_id as it's now generated dynamically
+                assert response.conversation_id is not None
+                assert isinstance(response.conversation_id, str)
 
                 # Verify that create_new_conversation was called with the correct arguments
                 mock_create_conversation.assert_called_once()
@@ -582,18 +584,20 @@ async def test_new_conversation_with_provider_authentication_error(
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_with_unsupported_params(test_client):
-    test_request_data = {
-        'repository': 'test/repo',  # This is valid
-        'selected_branch': 'main',  # This is valid
-        'initial_user_msg': 'Hello, agent!',  # Valid parameter
-        'unsupported_param': 'unsupported param',  # Invalid, unsupported parameter
-    }
+async def test_new_conversation_with_unsupported_params():
+    """Test that unsupported parameters are rejected."""
+    # Create a test request with an unsupported parameter
+    with _patch_store():
+        # Create a direct instance of InitSessionRequest to test validation
+        with pytest.raises(Exception) as excinfo:
+            # This should raise a validation error because of the extra parameter
+            InitSessionRequest(
+                repository='test/repo',
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+                unsupported_param='unsupported param',  # This should cause validation to fail
+            )
 
-    # Send the POST request to the appropriate endpoint
-    response = test_client.post('/api/conversations', json=test_request_data)
-
-    assert response.status_code == 422  # Validation error
-
-    assert 'Extra inputs are not permitted' in response.text
-    assert 'unsupported param' in response.text
+        # Verify that the error message mentions the unsupported parameter
+        assert 'Extra inputs are not permitted' in str(excinfo.value)
+        assert 'unsupported_param' in str(excinfo.value)
