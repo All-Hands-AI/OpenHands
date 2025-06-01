@@ -51,6 +51,8 @@ class ActionExecutionServerInfo:
     app_ports: list[int]
     log_thread: threading.Thread
     log_thread_exit_event: threading.Event
+    temp_workspace: str | None
+    workspace_mount_path: str
 
 
 # Global dictionary to track running server processes by session ID
@@ -153,50 +155,25 @@ class LocalRuntime(ActionExecutionClient):
         self.config = config
         self._user_id, self._username = get_user_info()
 
-        if self.config.workspace_base is not None:
-            logger.warning(
-                f'Workspace base path is set to {self.config.workspace_base}. '
-                'It will be used as the path for the agent to run in. '
-                'Be careful, the agent can EDIT files in this directory!'
-            )
-            self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
-            self._temp_workspace = None
-        else:
-            # A temporary directory is created for the agent to run in
-            # This is used for the local runtime only
-            self._temp_workspace = tempfile.mkdtemp(
-                prefix=f'openhands_workspace_{sid}',
-            )
-            self.config.workspace_mount_path_in_sandbox = self._temp_workspace
-
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
             'This is an experimental feature, please report issues to https://github.com/All-Hands-AI/OpenHands/issues. '
             '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
-            f'Temp workspace: {self._temp_workspace}. '
             f'User ID: {self._user_id}. '
             f'Username: {self._username}.'
         )
 
-        if self.config.workspace_base is not None:
-            logger.warning(
-                f'Workspace base path is set to {self.config.workspace_base}. It will be used as the path for the agent to run in.'
-            )
-            self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
-        else:
-            logger.warning(
-                'Workspace base path is NOT set. Agent will run in a temporary directory.'
-            )
-            self._temp_workspace = tempfile.mkdtemp()
-            self.config.workspace_mount_path_in_sandbox = self._temp_workspace
-
+        # Initialize these values to be set in connect()
+        self._temp_workspace: str | None = None
         self._execution_server_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
 
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+        self.api_url = (
+            f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+        )
         self.status_callback = status_callback
         self.server_process: subprocess.Popen[str] | None = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -241,7 +218,13 @@ class LocalRuntime(ActionExecutionClient):
             self._log_thread_exit_event = server_info.log_thread_exit_event
             self._vscode_port = server_info.vscode_port
             self._app_ports = server_info.app_ports
-            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+            self._temp_workspace = server_info.temp_workspace
+            self.config.workspace_mount_path_in_sandbox = (
+                server_info.workspace_mount_path
+            )
+            self.api_url = (
+                f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+            )
         elif self.attach_to_existing:
             # If we're supposed to attach to an existing server but none exists, raise an error
             self.log('error', f'No existing server found for session {self.sid}')
@@ -249,14 +232,50 @@ class LocalRuntime(ActionExecutionClient):
                 f'No existing server found for session {self.sid}'
             )
         else:
+            # Set up workspace directory
+            if self.config.workspace_base is not None:
+                logger.warning(
+                    f'Workspace base path is set to {self.config.workspace_base}. '
+                    'It will be used as the path for the agent to run in. '
+                    'Be careful, the agent can EDIT files in this directory!'
+                )
+                self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
+                self._temp_workspace = None
+            else:
+                # A temporary directory is created for the agent to run in
+                logger.warning(
+                    'Workspace base path is NOT set. Agent will run in a temporary directory.'
+                )
+                self._temp_workspace = tempfile.mkdtemp(
+                    prefix=f'openhands_workspace_{self.sid}',
+                )
+                self.config.workspace_mount_path_in_sandbox = self._temp_workspace
+
+            logger.info(
+                f'Using workspace directory: {self.config.workspace_mount_path_in_sandbox}'
+            )
+
             # Start a new server
-            self._execution_server_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-            self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
+            self._execution_server_port = self._find_available_port(
+                EXECUTION_SERVER_PORT_RANGE
+            )
+            self._vscode_port = int(
+                os.getenv('VSCODE_PORT')
+                or str(self._find_available_port(VSCODE_PORT_RANGE))
+            )
             self._app_ports = [
-                int(os.getenv('APP_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
-                int(os.getenv('APP_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
+                int(
+                    os.getenv('APP_PORT_1')
+                    or str(self._find_available_port(APP_PORT_RANGE_1))
+                ),
+                int(
+                    os.getenv('APP_PORT_2')
+                    or str(self._find_available_port(APP_PORT_RANGE_2))
+                ),
             ]
-            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+            self.api_url = (
+                f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+            )
 
             # Start the server process
             cmd = get_action_execution_server_startup_command(
@@ -357,6 +376,8 @@ class LocalRuntime(ActionExecutionClient):
                 app_ports=self._app_ports,
                 log_thread=self._log_thread,
                 log_thread_exit_event=self._log_thread_exit_event,
+                temp_workspace=self._temp_workspace,
+                workspace_mount_path=self.config.workspace_mount_path_in_sandbox,
             )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
@@ -446,8 +467,7 @@ class LocalRuntime(ActionExecutionClient):
             )
             # Just clean up our reference to the process, but leave it running
             self.server_process = None
-            if self._temp_workspace:
-                shutil.rmtree(self._temp_workspace)
+            # Don't clean up temp workspace when attach_to_existing=True
             super().close()
             return
 
@@ -467,8 +487,10 @@ class LocalRuntime(ActionExecutionClient):
             self.server_process = None
             self._log_thread.join(timeout=5)  # Add timeout to join
 
-        if self._temp_workspace:
+        # Clean up temp workspace if it exists and we created it
+        if self._temp_workspace and not self.attach_to_existing:
             shutil.rmtree(self._temp_workspace)
+            self._temp_workspace = None
 
         super().close()
 
