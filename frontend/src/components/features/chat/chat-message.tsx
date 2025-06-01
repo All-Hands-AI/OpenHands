@@ -21,11 +21,16 @@ export function ChatMessage({
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
   const [isCopy, setIsCopy] = React.useState(false);
+  const [time, setTime] = React.useState<Date>();
 
   const handleCopyToClipboard = async () => {
     await navigator.clipboard.writeText(message);
     setIsCopy(true);
   };
+
+  React.useEffect(() => {
+    setTime(new Date());
+  }, [setTime])
 
   React.useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -43,6 +48,7 @@ export function ChatMessage({
 
   return (
     <article
+      title={time && `${time.toLocaleDateString()} ${time.toLocaleTimeString()}`}
       data-testid={`${type}-message`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
