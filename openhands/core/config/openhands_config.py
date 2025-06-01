@@ -16,7 +16,7 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
 
-class AppConfig(BaseModel):
+class OpenHandsConfig(BaseModel):
     """Configuration for the app.
 
     Attributes:
@@ -29,13 +29,16 @@ class AppConfig(BaseModel):
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
+        file_store_web_hook_url: Optional url for file store web hook
+        file_store_web_hook_headers: Optional headers for file_store web hook
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
-        workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
-        workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
-        workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
-        workspace_mount_rewrite: Path to rewrite the workspace mount path.
+        search_api_key: API key for Tavily search engine (https://tavily.com/).
+        workspace_base (deprecated): Base path for the workspace. Defaults to `./workspace` as absolute path.
+        workspace_mount_path (deprecated): Path to mount the workspace. Defaults to `workspace_base`.
+        workspace_mount_path_in_sandbox (deprecated): Path to mount the workspace in sandbox. Defaults to `/workspace`.
+        workspace_mount_rewrite (deprecated): Path to rewrite the workspace mount path.
         cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
@@ -48,7 +51,7 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
-        mcp_host: Host for OpenHands' default MCP server 
+        mcp_host: Host for OpenHands' default MCP server
         mcp: MCP configuration settings.
     """
 
@@ -61,15 +64,23 @@ class AppConfig(BaseModel):
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
+    file_store_web_hook_url: str | None = Field(default=None)
+    file_store_web_hook_headers: dict | None = Field(default=None)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
+    search_api_key: SecretStr | None = Field(
+        default=None,
+        description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
+    )
 
     # Deprecated parameters - will be removed in a future version
     workspace_base: str | None = Field(default=None, deprecated=True)
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
     workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
+    # End of deprecated parameters
+
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
@@ -144,5 +155,5 @@ class AppConfig(BaseModel):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
 
-        if not AppConfig.defaults_dict:  # Only set defaults_dict if it's empty
-            AppConfig.defaults_dict = model_defaults_to_dict(self)
+        if not OpenHandsConfig.defaults_dict:  # Only set defaults_dict if it's empty
+            OpenHandsConfig.defaults_dict = model_defaults_to_dict(self)

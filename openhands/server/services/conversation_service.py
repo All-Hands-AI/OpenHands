@@ -1,16 +1,26 @@
-
-
-from typing import Any
 import uuid
+from typing import Any
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA, PROVIDER_TOKEN_TYPE
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
+    PROVIDER_TOKEN_TYPE,
+)
 from openhands.integrations.service_types import ProviderType
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import ConversationStoreImpl, SettingsStoreImpl, config, conversation_manager
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    SettingsStoreImpl,
+    config,
+    conversation_manager,
+)
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata, ConversationTrigger
+from openhands.storage.data_models.conversation_metadata import (
+    ConversationMetadata,
+    ConversationTrigger,
+)
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 
@@ -69,7 +79,7 @@ async def create_new_conversation(
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    logger.info('Conversation store loaded')
+    logger.info('ServerConversation store loaded')
 
     # For nested runtimes, we allow a single conversation id, passed in on container creation
     if conversation_id is None:
@@ -93,6 +103,7 @@ async def create_new_conversation(
             user_id=user_id,
             selected_repository=selected_repository,
             selected_branch=selected_branch,
+            git_provider=git_provider,
         )
     )
 
@@ -102,15 +113,14 @@ async def create_new_conversation(
     )
     initial_message_action = None
     if initial_user_msg or image_urls:
-        user_msg = (
-            initial_user_msg.format(conversation_id)
-            if attach_convo_id and initial_user_msg
-            else initial_user_msg
-        )
         initial_message_action = MessageAction(
-            content=user_msg or '',
+            content=initial_user_msg or '',
             image_urls=image_urls or [],
         )
+
+    if attach_convo_id and conversation_instructions:
+        conversation_instructions = conversation_instructions.format(conversation_id)
+
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
         conversation_init_data,

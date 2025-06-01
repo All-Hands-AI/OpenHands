@@ -4,8 +4,9 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.serialization import event_to_trajectory
+from openhands.server.dependencies import get_dependencies
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get('/trajectory')

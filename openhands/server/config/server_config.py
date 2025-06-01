@@ -27,10 +27,12 @@ class ServerConfig(ServerConfigInterface):
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
     conversation_manager_class: ClassVar[str] = os.environ.get(
-        "CONVERSATION_MANAGER_CLASS",
+        'CONVERSATION_MANAGER_CLASS',
         'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager',
     )
-    monitoring_listener_class: ClassVar[str] = 'openhands.server.monitoring.MonitoringListener'
+    monitoring_listener_class: ClassVar[str] = (
+        'openhands.server.monitoring.MonitoringListener'
+    )
     user_auth_class: ClassVar[str] = (
         'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
     )
