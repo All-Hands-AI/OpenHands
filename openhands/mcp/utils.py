@@ -209,7 +209,8 @@ async def add_mcp_tools_to_agent(
     extra_stdio_servers = []
 
     # Add microagent MCP tools if available
-    mcp_config: MCPConfig = app_config.mcp
+    # Handle both config and config.mcp cases for backward compatibility
+    mcp_config: MCPConfig = getattr(app_config, "mcp", app_config)
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
