@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
@@ -210,7 +210,10 @@ async def add_mcp_tools_to_agent(
 
     # Add microagent MCP tools if available
     # Handle both config and config.mcp cases for backward compatibility
-    mcp_config: MCPConfig = getattr(app_config, "mcp", app_config)
+    mcp_config = getattr(app_config, 'mcp', app_config)
+    if not isinstance(mcp_config, MCPConfig):
+        # If we got the app_config itself, it should be an MCPConfig already
+        mcp_config = cast(MCPConfig, mcp_config)
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
