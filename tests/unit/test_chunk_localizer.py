@@ -12,7 +12,7 @@ def test_chunk_creation():
     chunk = Chunk(text='test chunk', line_range=(1, 1))
     assert chunk.text == 'test chunk'
     assert chunk.line_range == (1, 1)
-    assert chunk.normalized_lcs is None
+    assert chunk.normalized_lcs == 0.0
 
 
 def test_chunk_visualization(capsys):
