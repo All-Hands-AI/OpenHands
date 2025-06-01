@@ -129,13 +129,13 @@ vllm serve all-hands/openhands-lm-32b-v0.1 \
 ### Create an OpenAI-Compatible Endpoint with Ollama
 
 - Install Ollama following [the official documentation](https://ollama.com/download).
-- Example launch command for Devstral LM 24B:
 - For Ollama configuration, use `ollama/<modelname>` as custom model in web. Api key also can be set to `ollama`.
+- Example launch command for Devstral LM 24B:
 
 ```bash
-ollama pull devstral:latest
 OLLAMA_CONTEXT_LENGTH=32768 OLLAMA_HOST=0.0.0.0:11434 OLLAMA_KEEP_ALIVE=-1 nohup ollama serve&
 #The minimum context size is ~8196, even the system prompt won't fit smaller
+ollama pull devstral:latest
 ```
 
 ## Advanced: Run and Configure OpenHands
@@ -161,8 +161,6 @@ ollama_base_url="http://localhost:8000"
 ```
 
 Start OpenHands using `make run`.
-
-Also, with a local launch, if Docker Runtime is selected, you should add `127.0.0.1 host.docker.internal` line to end of `/etc/hosts` on your Linux machine.
 
 ### Configure OpenHands
 
