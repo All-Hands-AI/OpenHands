@@ -1,6 +1,6 @@
 # Using the OpenHands GitHub Action
 
-This guide explains how to use the OpenHands GitHub Action, both within the OpenHands repository and in your own projects.
+This guide explains how to use the OpenHands GitHub Action in your own projects.
 
 ## Using the Action in the OpenHands Repository
 
@@ -47,5 +47,6 @@ The customization options you can set are:
 | `LLM_MODEL`                      | Variable | Set the LLM to use with OpenHands                                                                   | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
 | `OPENHANDS_MAX_ITER`             | Variable | Set max limit for agent iterations                                                                  | `OPENHANDS_MAX_ITER=10`                            |
 | `OPENHANDS_MACRO`                | Variable | Customize default macro for invoking the resolver                                                   | `OPENHANDS_MACRO=@resolveit`                       |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | Custom Sandbox ([learn more](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | Custom Sandbox ([learn more](https://docs.all-hands.dev/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
 | `TARGET_BRANCH`                  | Variable | Merge to branch other than `main`                                                                   | `TARGET_BRANCH="dev"`                              |
+| `TARGET_RUNNER`                  | Variable | Target runner to execute the agent workflow (default ubuntu-latest)                                 | `TARGET_RUNNER="custom-runner"`                    |

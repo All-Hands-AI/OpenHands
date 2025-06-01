@@ -4,14 +4,14 @@ from abc import ABC, abstractmethod
 
 import socketio
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events.action import MessageAction
-from openhands.events.stream import EventStream
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.conversation import Conversation
-from openhands.server.settings import Settings
+from openhands.server.session.conversation import ServerConversation
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
@@ -24,7 +24,7 @@ class ConversationManager(ABC):
     """
 
     sio: socketio.AsyncServer
-    config: AppConfig
+    config: OpenHandsConfig
     file_store: FileStore
     conversation_store: ConversationStore
 
@@ -39,11 +39,11 @@ class ConversationManager(ABC):
     @abstractmethod
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
-    ) -> Conversation | None:
+    ) -> ServerConversation | None:
         """Attach to an existing conversation or create a new one."""
 
     @abstractmethod
-    async def detach_from_conversation(self, conversation: Conversation):
+    async def detach_from_conversation(self, conversation: ServerConversation):
         """Detach from a conversation."""
 
     @abstractmethod
@@ -53,8 +53,7 @@ class ConversationManager(ABC):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
-    ) -> EventStream | None:
+    ) -> AgentLoopInfo | None:
         """Join a conversation and return its event stream."""
 
     async def is_agent_loop_running(self, sid: str) -> bool:
@@ -82,8 +81,7 @@ class ConversationManager(ABC):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
-    ) -> EventStream:
+    ) -> AgentLoopInfo:
         """Start an event loop if one is not already running"""
 
     @abstractmethod
@@ -98,12 +96,18 @@ class ConversationManager(ABC):
     async def close_session(self, sid: str):
         """Close a session."""
 
+    @abstractmethod
+    async def get_agent_loop_info(
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+    ) -> list[AgentLoopInfo]:
+        """Get the AgentLoopInfo for conversations."""
+
     @classmethod
     @abstractmethod
     def get_instance(
         cls,
         sio: socketio.AsyncServer,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener,

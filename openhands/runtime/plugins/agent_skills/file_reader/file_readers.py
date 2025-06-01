@@ -19,6 +19,7 @@ Note:
 """
 
 import base64
+from typing import Any
 
 import docx
 import PyPDF2
@@ -103,7 +104,7 @@ def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
     return base64_frames
 
 
-def _prepare_image_messages(task: str, base64_image: str):
+def _prepare_image_messages(task: str, base64_image: str) -> list[dict[str, Any]]:
     return [
         {
             'role': 'user',

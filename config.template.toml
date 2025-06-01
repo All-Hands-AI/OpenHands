@@ -216,13 +216,26 @@ model = "gpt-4o"
 [agent]
 
 # Whether the browsing tool is enabled
-codeact_enable_browsing = true
+enable_browsing = true
 
 # Whether the LLM draft editor is enabled
-codeact_enable_llm_editor = false
+enable_llm_editor = false
+
+# Whether the standard editor tool (str_replace_editor) is enabled
+# Only has an effect if enable_llm_editor is False
+enable_editor = true
 
 # Whether the IPython tool is enabled
-codeact_enable_jupyter = true
+enable_jupyter = true
+
+# Whether the command tool is enabled
+enable_cmd = true
+
+# Whether the think tool is enabled
+enable_think = true
+
+# Whether the finish tool is enabled
+enable_finish = true
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
@@ -241,6 +254,11 @@ enable_history_truncation = true
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3'
+
+[agent.CustomAgent]
+# Example: use a custom agent from a different package
+# This will be automatically be registered as a new agent named "CustomAgent"
+classpath = "my_package.my_module.MyCustomAgent"
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox
@@ -302,6 +320,19 @@ llm_config = 'gpt3'
 
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
+
+# Specific port to use for VSCode. If not set, a random port will be chosen.
+# Useful when deploying OpenHands in a remote machine where you need to expose a specific port.
+#vscode_port = 41234
+
+# Volume mounts in the format 'host_path:container_path[:mode]'
+# e.g. '/my/host/dir:/workspace:rw'
+# Multiple mounts can be specified using commas
+# e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
+
+# Configure volumes under the [sandbox] section:
+# [sandbox]
+# volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro"
 
 #################################### Security ###################################
 # Configuration for security features
@@ -378,7 +409,7 @@ type = "noop"
 #[llm.condenser]
 #model = "gpt-4o"
 #temperature = 0.1
-#max_tokens = 1024
+#max_input_tokens = 1024
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation

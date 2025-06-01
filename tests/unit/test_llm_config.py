@@ -2,14 +2,14 @@ import pathlib
 
 import pytest
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.utils import load_from_toml
 
 
 @pytest.fixture
 def default_config(monkeypatch):
-    # Fixture to provide a default AppConfig instance
-    yield AppConfig()
+    # Fixture to provide a default OpenHandsConfig instance
+    yield OpenHandsConfig()
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ api_key = "custom-api-key-3"
 
 
 def test_load_from_toml_llm_with_fallback(
-    default_config: AppConfig, generic_llm_toml: str
+    default_config: OpenHandsConfig, generic_llm_toml: str
 ) -> None:
     """Test that custom LLM configurations fallback non-overridden attributes
     like 'num_retries' from the generic [llm] section.
@@ -81,7 +81,7 @@ def test_load_from_toml_llm_with_fallback(
 
 
 def test_load_from_toml_llm_custom_overrides_all(
-    default_config: AppConfig, tmp_path: pathlib.Path
+    default_config: OpenHandsConfig, tmp_path: pathlib.Path
 ) -> None:
     """Test that a custom LLM can fully override all attributes from the generic [llm] section."""
     toml_content = """
@@ -117,7 +117,7 @@ num_retries = 10
 
 
 def test_load_from_toml_llm_custom_partial_override(
-    default_config: AppConfig, generic_llm_toml: str
+    default_config: OpenHandsConfig, generic_llm_toml: str
 ) -> None:
     """Test that custom LLM configurations can partially override attributes
     from the generic [llm] section while inheriting others.
@@ -138,7 +138,7 @@ def test_load_from_toml_llm_custom_partial_override(
 
 
 def test_load_from_toml_llm_custom_no_override(
-    default_config: AppConfig, generic_llm_toml: str
+    default_config: OpenHandsConfig, generic_llm_toml: str
 ) -> None:
     """Test that custom LLM configurations with no additional overrides
     inherit all non-specified attributes from the generic [llm] section.
@@ -153,7 +153,7 @@ def test_load_from_toml_llm_custom_no_override(
 
 
 def test_load_from_toml_llm_missing_generic(
-    default_config: AppConfig, tmp_path: pathlib.Path
+    default_config: OpenHandsConfig, tmp_path: pathlib.Path
 ) -> None:
     """Test that custom LLM configurations without a generic [llm] section
     use only their own attributes and fallback to defaults for others.
@@ -179,7 +179,7 @@ api_key = "custom-only-api-key"
 
 
 def test_load_from_toml_llm_invalid_config(
-    default_config: AppConfig, tmp_path: pathlib.Path
+    default_config: OpenHandsConfig, tmp_path: pathlib.Path
 ) -> None:
     """Test that invalid custom LLM configurations do not override the generic
     and raise appropriate warnings.
@@ -212,3 +212,45 @@ unknown_attr = "should_not_exist"
     assert custom_invalid.model == 'base-model'
     assert custom_invalid.api_key.get_secret_value() == 'base-api-key'
     assert custom_invalid.num_retries == 3  # default value
+
+
+def test_azure_model_api_version(
+    default_config: OpenHandsConfig, tmp_path: pathlib.Path
+) -> None:
+    """Test that Azure models get the correct API version by default."""
+    toml_content = """
+[core]
+workspace_base = "./workspace"
+
+[llm]
+model = "azure/o3-mini"
+api_key = "test-api-key"
+    """
+    toml_file = tmp_path / 'azure_llm.toml'
+    toml_file.write_text(toml_content)
+
+    load_from_toml(default_config, str(toml_file))
+
+    # Verify Azure model gets default API version
+    azure_llm = default_config.get_llm_config('llm')
+    assert azure_llm.model == 'azure/o3-mini'
+    assert azure_llm.api_version == '2024-12-01-preview'
+
+    # Test that non-Azure models don't get default API version
+    toml_content = """
+[core]
+workspace_base = "./workspace"
+
+[llm]
+model = "anthropic/claude-3-sonnet"
+api_key = "test-api-key"
+    """
+    toml_file = tmp_path / 'non_azure_llm.toml'
+    toml_file.write_text(toml_content)
+
+    load_from_toml(default_config, str(toml_file))
+
+    # Verify non-Azure model doesn't get default API version
+    non_azure_llm = default_config.get_llm_config('llm')
+    assert non_azure_llm.model == 'anthropic/claude-3-sonnet'
+    assert non_azure_llm.api_version is None

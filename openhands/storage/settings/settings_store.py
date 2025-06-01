@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from openhands.core.config.app_config import AppConfig
-from openhands.server.settings import Settings
+from openhands.core.config.openhands_config import OpenHandsConfig
+from openhands.storage.data_models.settings import Settings
 
 
 class SettingsStore(ABC):
@@ -20,6 +20,6 @@ class SettingsStore(ABC):
     @classmethod
     @abstractmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: OpenHandsConfig, user_id: str | None
     ) -> SettingsStore:
         """Get a store for the user represented by the token given."""

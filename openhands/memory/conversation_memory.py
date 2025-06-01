@@ -1,3 +1,5 @@
+from typing import Generator
+
 from litellm import ModelResponse
 
 from openhands.core.config.agent_config import AgentConfig
@@ -17,6 +19,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.mcp import MCPAction
+from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -34,9 +38,15 @@ from openhands.events.observation.agent import (
     RecallObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 class ConversationMemory:
@@ -49,7 +59,7 @@ class ConversationMemory:
     def process_events(
         self,
         condensed_history: list[Event],
-        initial_messages: list[Message],
+        initial_user_action: MessageAction,
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
@@ -59,19 +69,23 @@ class ConversationMemory:
 
         Args:
             condensed_history: The condensed history of events to convert
-            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
+            initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
 
         events = condensed_history
 
+        # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
+        self._ensure_system_message(events)
+        self._ensure_initial_user_message(events, initial_user_action)
+
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
-        # Process special events first (system prompts, etc.)
-        messages = initial_messages
+        # Initialize empty messages list
+        messages = []
 
         # Process regular events
         pending_tool_call_action_messages: dict[str, Message] = {}
@@ -126,21 +140,31 @@ class ConversationMemory:
 
             messages += messages_to_add
 
-        return self.verify_messages(messages)
+        # Apply final filtering so that the messages in context don't have unmatched tool calls
+        # and tool responses, for example
+        messages = list(ConversationMemory._filter_unmatched_tool_calls(messages))
 
-    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
-        """Create the initial messages for the conversation."""
-        return [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=with_caching,
-                    )
-                ],
-            )
-        ]
+        # Apply final formatting
+        messages = self._apply_user_message_formatting(messages)
+
+        return messages
+
+    def _apply_user_message_formatting(self, messages: list[Message]) -> list[Message]:
+        """Applies formatting rules, such as adding newlines between consecutive user messages."""
+        formatted_messages = []
+        prev_role = None
+        for msg in messages:
+            # Add double newline between consecutive user messages
+            if msg.role == 'user' and prev_role == 'user' and len(msg.content) > 0:
+                # Find the first TextContent in the message to add newlines
+                for content_item in msg.content:
+                    if isinstance(content_item, TextContent):
+                        # Prepend two newlines to ensure visual separation
+                        content_item.text = '\n\n' + content_item.text
+                        break
+            formatted_messages.append(msg)
+            prev_role = msg.role  # Update prev_role after processing each message
+        return formatted_messages
 
     def _process_action(
         self,
@@ -165,7 +189,7 @@ class ConversationMemory:
                 - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
-
+                - MCPAction: For interacting with the MCP server
             pending_tool_call_action_messages: Dictionary mapping response IDs to their corresponding messages.
                 Used in function calling mode to track tool calls that are waiting for their results.
 
@@ -191,12 +215,13 @@ class ConversationMemory:
                 FileReadAction,
                 BrowseInteractiveAction,
                 BrowseURLAction,
+                MCPAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
             assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                + str(action)
+                'Tool call metadata should NOT be None when function calling is enabled. Action: ' +
+                str(action)
             )
 
             llm_response: ModelResponse = tool_metadata.model_response
@@ -210,8 +235,8 @@ class ConversationMemory:
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
-                content=[TextContent(text=assistant_msg.content or '')]
-                if assistant_msg.content is not None
+                content=[TextContent(text=assistant_msg.content)]
+                if assistant_msg.content and assistant_msg.content.strip()
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
@@ -270,6 +295,16 @@ class ConversationMemory:
                     content=content,
                 )
             ]
+        elif isinstance(action, SystemMessageAction):
+            # Convert SystemMessageAction to a system message
+            return [
+                Message(
+                    role='system',
+                    content=[TextContent(text=action.content)],
+                    # Include tools if function calling is enabled
+                    tool_calls=None,
+                )
+            ]
         return []
 
     def _process_observation(
@@ -324,9 +359,13 @@ class ConversationMemory:
             else:
                 text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, MCPObservation):
+            # logger.warning(f'MCPObservation: {obs}')
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
-            # replace base64 images with a placeholder
+            # Clean up any remaining base64 images in text content
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
@@ -335,7 +374,15 @@ class ConversationMemory:
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+
+            # Create message content with text
+            content = [TextContent(text=text)]
+
+            # Add image URLs if available and vision is active
+            if vision_is_active and obs.image_urls:
+                content.append(ImageContent(image_urls=obs.image_urls))
+
+            message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
@@ -346,9 +393,9 @@ class ConversationMemory:
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
             if (
-                obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
-                and enable_som_visual_browsing
-                and vision_is_active
+                obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE and
+                enable_som_visual_browsing and
+                vision_is_active
             ):
                 text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
                 message = Message(
@@ -360,8 +407,8 @@ class ConversationMemory:
                                 # show set of marks if it exists
                                 # otherwise, show raw screenshot when using vision-supported model
                                 obs.set_of_marks
-                                if obs.set_of_marks is not None
-                                and len(obs.set_of_marks) > 0
+                                if obs.set_of_marks is not None and
+                                len(obs.set_of_marks) > 0
                                 else obs.screenshot
                             ]
                         ),
@@ -378,7 +425,7 @@ class ConversationMemory:
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                obs.outputs.get('content', obs.content),
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
@@ -397,8 +444,8 @@ class ConversationMemory:
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
-            isinstance(obs, RecallObservation)
-            and self.agent_config.enable_prompt_extensions
+            isinstance(obs, RecallObservation) and
+            self.agent_config.enable_prompt_extensions
         ):
             if obs.recall_type == RecallType.WORKSPACE_CONTEXT:
                 # everything is optional, check if they are present
@@ -417,9 +464,20 @@ class ConversationMemory:
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(date=date)
+                    runtime_info = RuntimeInfo(
+                        date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                    )
+
+                conversation_instructions = None
+
+                if obs.conversation_instructions:
+                    conversation_instructions = ConversationInstructions(
+                        content=obs.conversation_instructions
+                    )
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
@@ -430,10 +488,10 @@ class ConversationMemory:
                     repo_info.repo_name or repo_info.repo_directory
                 )
                 has_runtime_info = runtime_info is not None and (
-                    runtime_info.available_hosts
-                    or runtime_info.additional_agent_instructions
+                    runtime_info.date or runtime_info.custom_secrets_descriptions
                 )
                 has_repo_instructions = bool(repo_instructions.strip())
+                has_conversation_instructions = conversation_instructions is not None
 
                 # Filter and process microagent knowledge
                 filtered_agents = []
@@ -451,11 +509,17 @@ class ConversationMemory:
                 message_content = []
 
                 # Build the workspace context information
-                if has_repo_info or has_runtime_info or has_repo_instructions:
+                if (
+                    has_repo_info or
+                    has_runtime_info or
+                    has_repo_instructions or
+                    has_conversation_instructions
+                ):
                     formatted_workspace_text = (
                         self.prompt_manager.build_workspace_context(
                             repository_info=repo_info,
                             runtime_info=runtime_info,
+                            conversation_instructions=conversation_instructions,
                             repo_instructions=repo_instructions,
                         )
                     )
@@ -506,8 +570,8 @@ class ConversationMemory:
                 # Return empty list if no microagents to include or all were disabled
                 return []
         elif (
-            isinstance(obs, RecallObservation)
-            and not self.agent_config.enable_prompt_extensions
+            isinstance(obs, RecallObservation) and
+            not self.agent_config.enable_prompt_extensions
         ):
             # If prompt extensions are disabled, we don't add any additional info
             # TODO: test this
@@ -537,6 +601,8 @@ class ConversationMemory:
 
         For new Anthropic API, we only need to mark the last user or tool message as cacheable.
         """
+        if len(messages) > 0 and messages[0].role == 'system':
+            messages[0].content[-1].cache_prompt = True
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
             if message.role in ('user', 'tool'):
@@ -623,3 +689,117 @@ class ConversationMemory:
                 valid_messages.append(message)
 
         return valid_messages
+
+    @staticmethod
+    def _filter_unmatched_tool_calls(
+        messages: list[Message],
+    ) -> Generator[Message, None, None]:
+        """Filter out tool calls that don't have matching tool responses and vice versa.
+
+        This ensures that every tool_call_id in a tool message has a corresponding tool_calls[].id
+        in an assistant message, and vice versa. The original list is unmodified, when tool_calls is
+        updated the message is copied.
+
+        This does not remove items with id set to None.
+        """
+        tool_call_ids = {
+            tool_call.id
+            for message in messages
+            if message.tool_calls
+            for tool_call in message.tool_calls
+            if message.role == 'assistant' and tool_call.id
+        }
+        tool_response_ids = {
+            message.tool_call_id
+            for message in messages
+            if message.role == 'tool' and message.tool_call_id
+        }
+
+        for message in messages:
+            # Remove tool messages with no matching assistant tool call
+            if message.role == 'tool' and message.tool_call_id:
+                if message.tool_call_id in tool_call_ids:
+                    yield message
+
+            # Remove assistant tool calls with no matching tool response
+            elif message.role == 'assistant' and message.tool_calls:
+                all_tool_calls_match = all(
+                    tool_call.id in tool_response_ids
+                    for tool_call in message.tool_calls
+                )
+                if all_tool_calls_match:
+                    yield message
+                else:
+                    matched_tool_calls = [
+                        tool_call
+                        for tool_call in message.tool_calls
+                        if tool_call.id in tool_response_ids
+                    ]
+
+                    if matched_tool_calls:
+                        # Keep an updated message if there are tools calls left
+                        yield message.model_copy(
+                            update={'tool_calls': matched_tool_calls}
+                        )
+            else:
+                # Any other case is kept
+                yield message
+
+    def _ensure_system_message(self, events: list[Event]) -> None:
+        """Checks if a SystemMessageAction exists and adds one if not (for legacy compatibility)."""
+        # Check if there's a SystemMessageAction in the events
+        has_system_message = any(
+            isinstance(event, SystemMessageAction) for event in events
+        )
+
+        # Legacy behavior: If no SystemMessageAction is found, add one
+        if not has_system_message:
+            logger.debug(
+                '[ConversationMemory] No SystemMessageAction found in events. '
+                'Adding one for backward compatibility. '
+            )
+            system_prompt = self.prompt_manager.get_system_message()
+            if system_prompt:
+                system_message = SystemMessageAction(content=system_prompt)
+                # Insert the system message directly at the beginning of the events list
+                events.insert(0, system_message)
+                logger.info(
+                    '[ConversationMemory] Added SystemMessageAction for backward compatibility'
+                )
+
+    def _ensure_initial_user_message(
+        self, events: list[Event], initial_user_action: MessageAction
+    ) -> None:
+        """Checks if the second event is a user MessageAction and inserts the provided one if needed."""
+        if (
+            not events
+        ):  # Should have system message from previous step, but safety check
+            logger.error('Cannot ensure initial user message: event list is empty.')
+            # Or raise? Let's log for now, _ensure_system_message should handle this.
+            return
+
+        # We expect events[0] to be SystemMessageAction after _ensure_system_message
+        if len(events) == 1:
+            # Only system message exists
+            logger.info(
+                'Initial user message action was missing. Inserting the initial user message.'
+            )
+            events.insert(1, initial_user_action)
+        elif not isinstance(events[1], MessageAction) or events[1].source != 'user':
+            # The second event exists but is not the correct initial user message action.
+            # We will insert the correct one provided.
+            logger.info(
+                'Second event was not the initial user message action. Inserting correct one at index 1.'
+            )
+
+            # Insert the user message event at index 1. This will be the second message as LLM APIs expect
+            # but something was wrong with the history, so log all we can.
+            events.insert(1, initial_user_action)
+
+        # Else: events[1] is already a user MessageAction.
+        # Check if it matches the one provided (if any discrepancy, log warning but proceed).
+        elif events[1] != initial_user_action:
+            logger.debug(
+                'The user MessageAction at index 1 does not match the provided initial_user_action. '
+                'Proceeding with the one found in condensed history.'
+            )

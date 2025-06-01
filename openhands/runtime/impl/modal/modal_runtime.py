@@ -7,7 +7,7 @@ import httpx
 import modal
 import tenacity
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -31,7 +31,7 @@ class ModalRuntime(ActionExecutionClient):
     When receive an event, it will send the event to runtime-client which run inside the Modal sandbox environment.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -44,7 +44,7 @@ class ModalRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -146,7 +146,8 @@ class ModalRuntime(ActionExecutionClient):
             self.send_status_message(' ')
         self._runtime_initialized = True
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     @tenacity.retry(

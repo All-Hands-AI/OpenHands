@@ -19,13 +19,13 @@ class Test(BaseIntegrationTest):
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
-        # create README.md
+        # create file
         action = CmdRunAction(command='echo \'print("hello world")\' > hello.py')
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
-        # git add README.md
-        action = CmdRunAction(command='git add hello.py')
+        # git add
+        action = CmdRunAction(command='git add hello.py .vscode/')
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
@@ -38,6 +38,15 @@ class Test(BaseIntegrationTest):
             return TestResult(
                 success=False,
                 reason=f'Failed to cat /workspace/hello.py: {obs.content}.',
+            )
+
+        # check if the file /workspace/.vscode/settings.json exists
+        action = CmdRunAction(command='cat /workspace/.vscode/settings.json')
+        obs = runtime.run_action(action)
+        if obs.exit_code != 0:
+            return TestResult(
+                success=False,
+                reason=f'Failed to cat /workspace/.vscode/settings.json: {obs.content}.',
             )
 
         # check if the staging area is empty

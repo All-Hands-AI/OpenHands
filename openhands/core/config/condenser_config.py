@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal, cast
 
 from pydantic import BaseModel, Field, ValidationError
@@ -75,6 +77,10 @@ class LLMSummarizingCondenserConfig(BaseModel):
         description='Maximum size of the condensed history before triggering forgetting.',
         ge=2,
     )
+    max_event_length: int = Field(
+        default=10_000,
+        description='Maximum length of the event representations to be passed to the LLM.',
+    )
 
     model_config = {'extra': 'forbid'}
 
@@ -122,6 +128,48 @@ class LLMAttentionCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class StructuredSummaryCondenserConfig(BaseModel):
+    """Configuration for StructuredSummaryCondenser instances."""
+
+    type: Literal['structured'] = Field('structured')
+    llm_config: LLMConfig = Field(
+        ..., description='Configuration for the LLM to use for condensing.'
+    )
+
+    # at least one event by default, because the best guess is that it's the user task
+    keep_first: int = Field(
+        default=1,
+        description='Number of initial events to always keep in history.',
+        ge=0,
+    )
+    max_size: int = Field(
+        default=100,
+        description='Maximum size of the condensed history before triggering forgetting.',
+        ge=2,
+    )
+    max_event_length: int = Field(
+        default=10_000,
+        description='Maximum length of the event representations to be passed to the LLM.',
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
+class CondenserPipelineConfig(BaseModel):
+    """Configuration for the CondenserPipeline.
+
+    Not currently supported by the TOML or ENV_VAR configuration strategies.
+    """
+
+    type: Literal['pipeline'] = Field('pipeline')
+    condensers: list[CondenserConfig] = Field(
+        default_factory=list,
+        description='List of condenser configurations to be used in the pipeline.',
+    )
+
+    model_config = {'extra': 'forbid'}
+
+
 class TokenAwareCondenserConfig(BaseModel):
     """Configuration for TokenAwareCondenser."""
 
@@ -148,14 +196,16 @@ class TokenAwareCondenserConfig(BaseModel):
 
 # Type alias for convenience
 CondenserConfig = (
-    NoOpCondenserConfig
-    | ObservationMaskingCondenserConfig
-    | BrowserOutputCondenserConfig
-    | RecentEventsCondenserConfig
-    | LLMSummarizingCondenserConfig
-    | AmortizedForgettingCondenserConfig
-    | LLMAttentionCondenserConfig
-    | TokenAwareCondenserConfig
+    NoOpCondenserConfig |
+    ObservationMaskingCondenserConfig |
+    BrowserOutputCondenserConfig |
+    RecentEventsCondenserConfig |
+    LLMSummarizingCondenserConfig |
+    AmortizedForgettingCondenserConfig |
+    LLMAttentionCondenserConfig |
+    TokenAwareCondenserConfig |
+    StructuredSummaryCondenserConfig |
+    CondenserPipelineConfig
 )
 
 
@@ -196,9 +246,9 @@ def condenser_config_from_toml_section(
 
         # Handle LLM config reference if needed
         if (
-            condenser_type in ('llm', 'llm_attention', 'token_aware')
-            and 'llm_config' in data
-            and isinstance(data['llm_config'], str)
+            condenser_type in ('llm', 'llm_attention', 'token_aware') and
+            'llm_config' in data and
+            isinstance(data['llm_config'], str)
         ):
             llm_config_name = data['llm_config']
             if llm_configs and llm_config_name in llm_configs:
@@ -259,6 +309,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'token_aware': TokenAwareCondenserConfig,
+        'structured': StructuredSummaryCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:

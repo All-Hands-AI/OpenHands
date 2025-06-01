@@ -35,7 +35,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
@@ -95,9 +95,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
 
     return instruction
@@ -119,7 +117,7 @@ def get_instance_docker_image(instance_id: str) -> str:
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of TestGenEval
     base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     logger.info(
@@ -128,7 +126,7 @@ def get_config(
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
@@ -158,9 +156,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -243,7 +241,7 @@ def initialize_runtime(
 
             # Copy the file to the desired location
             action = CmdRunAction(
-                command=f"cp /tmp/test_suite.py /testbed/{instance['test_file']}"
+                command=f'cp /tmp/test_suite.py /testbed/{instance["test_file"]}'
             )
             action.set_hard_timeout(600)
             logger.info(action, extra={'msg_type': 'ACTION'})

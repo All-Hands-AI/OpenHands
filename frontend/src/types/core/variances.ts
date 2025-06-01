@@ -17,7 +17,7 @@ export interface InitConfig {
     AGENT: string;
     CONFIRMATION_MODE: boolean;
     LANGUAGE: string;
-    LLM_API_KEY: string;
+    LLM_API_KEY_SET: boolean;
     LLM_MODEL: string;
   };
   token?: string;
@@ -33,7 +33,15 @@ interface LocalUserMessageAction {
   };
 }
 
+export interface StatusUpdate {
+  status_update: true;
+  type: "error";
+  id: string;
+  message: string;
+}
+
 export type OpenHandsVariance =
   | TokenConfig
   | InitConfig
-  | LocalUserMessageAction;
+  | LocalUserMessageAction
+  | StatusUpdate;

@@ -11,7 +11,7 @@ from daytona_sdk import (
     Workspace,
 )
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.stream import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -33,7 +33,7 @@ class DaytonaRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -115,19 +115,20 @@ class DaytonaRuntime(ActionExecutionClient):
 
     def _construct_api_url(self, port: int) -> str:
         assert self.workspace is not None, 'Workspace is not initialized'
-        assert (
-            self.workspace.instance.info is not None
-        ), 'Workspace info is not available'
-        assert (
-            self.workspace.instance.info.provider_metadata is not None
-        ), 'Provider metadata is not available'
+        assert self.workspace.instance.info is not None, (
+            'Workspace info is not available'
+        )
+        assert self.workspace.instance.info.provider_metadata is not None, (
+            'Provider metadata is not available'
+        )
 
         node_domain = json.loads(self.workspace.instance.info.provider_metadata)[
             'nodeDomain'
         ]
         return f'https://{port}-{self.workspace.id}.{node_domain}'
 
-    def _get_action_execution_server_host(self) -> str:
+    @property
+    def action_execution_server_url(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:

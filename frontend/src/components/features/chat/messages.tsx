@@ -1,50 +1,61 @@
 import React from "react";
-import type { Message } from "#/message";
-import { ChatMessage } from "#/components/features/chat/chat-message";
-import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
-import { ImageCarousel } from "../images/image-carousel";
-import { ExpandableMessage } from "./expandable-message";
+import { OpenHandsAction } from "#/types/core/actions";
+import { OpenHandsObservation } from "#/types/core/observations";
+import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
+import { EventMessage } from "./event-message";
+import { ChatMessage } from "./chat-message";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
 interface MessagesProps {
-  messages: Message[];
+  messages: (OpenHandsAction | OpenHandsObservation)[];
   isAwaitingUserConfirmation: boolean;
 }
 
 export const Messages: React.FC<MessagesProps> = React.memo(
-  ({ messages, isAwaitingUserConfirmation }) =>
-    messages.map((message, index) => {
-      const shouldShowConfirmationButtons =
-        messages.length - 1 === index &&
-        message.sender === "assistant" &&
-        isAwaitingUserConfirmation;
+  ({ messages, isAwaitingUserConfirmation }) => {
+    const { getOptimisticUserMessage } = useOptimisticUserMessage();
 
-      if (message.type === "error" || message.type === "action") {
-        return (
-          <div key={index}>
-            <ExpandableMessage
-              type={message.type}
-              id={message.translationID}
-              message={message.content}
-              success={message.success}
-            />
-            {shouldShowConfirmationButtons && <ConfirmationButtons />}
-          </div>
-        );
-      }
+    const optimisticUserMessage = getOptimisticUserMessage();
 
-      return (
-        <ChatMessage
-          key={index}
-          type={message.sender}
-          message={message.content}
-        >
-          {message.imageUrls && message.imageUrls.length > 0 && (
-            <ImageCarousel size="small" images={message.imageUrls} />
-          )}
-          {shouldShowConfirmationButtons && <ConfirmationButtons />}
-        </ChatMessage>
-      );
-    }),
+    const actionHasObservationPair = React.useCallback(
+      (event: OpenHandsAction | OpenHandsObservation): boolean => {
+        if (isOpenHandsAction(event)) {
+          return !!messages.some(
+            (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
+          );
+        }
+
+        return false;
+      },
+      [messages],
+    );
+
+    return (
+      <>
+        {messages.map((message, index) => (
+          <EventMessage
+            key={index}
+            event={message}
+            hasObservationPair={actionHasObservationPair(message)}
+            isAwaitingUserConfirmation={isAwaitingUserConfirmation}
+            isLastMessage={messages.length - 1 === index}
+          />
+        ))}
+
+        {optimisticUserMessage && (
+          <ChatMessage type="user" message={optimisticUserMessage} />
+        )}
+      </>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Prevent re-renders if messages are the same length
+    if (prevProps.messages.length !== nextProps.messages.length) {
+      return false;
+    }
+
+    return true;
+  },
 );
 
 Messages.displayName = "Messages";

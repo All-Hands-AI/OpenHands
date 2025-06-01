@@ -21,7 +21,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -41,10 +41,10 @@ FAKE_RESPONSES = {
 def get_config(
     metadata: EvalMetadata,
     instance_id: str,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.platform = 'linux/amd64'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
@@ -62,9 +62,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=True,
-        codeact_enable_browsing=True,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=True,
+        enable_browsing=True,
+        enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
     return config
@@ -93,14 +93,14 @@ def process_instance(
     spec = importlib.util.spec_from_file_location(instance_id, instance.file_path)
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
-    assert hasattr(
-        test_module, 'Test'
-    ), f'Test module {instance_id} does not have a Test class'
+    assert hasattr(test_module, 'Test'), (
+        f'Test module {instance_id} does not have a Test class'
+    )
 
     test_class: type[BaseIntegrationTest] = test_module.Test
-    assert issubclass(
-        test_class, BaseIntegrationTest
-    ), f'Test class {instance_id} does not inherit from BaseIntegrationTest'
+    assert issubclass(test_class, BaseIntegrationTest), (
+        f'Test class {instance_id} does not inherit from BaseIntegrationTest'
+    )
 
     instruction = test_class.INSTRUCTION
 

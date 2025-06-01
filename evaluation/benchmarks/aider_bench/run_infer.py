@@ -24,7 +24,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     load_from_toml,
     parse_arguments,
@@ -46,10 +46,10 @@ SKIP_NUM = (
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.11-bookworm'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
@@ -80,7 +80,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -110,7 +110,7 @@ def initialize_runtime(
                 file_path,
                 '/workspace',
             )
-    logger.info(f"\n{'-' * 50} END Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Initialization Fn {"-" * 50}\n')
 
 
 def complete_runtime(
@@ -123,7 +123,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Rewriting the test file to ignore any changes Agent may have made.
@@ -147,7 +147,7 @@ def complete_runtime(
     if isinstance(obs, CmdOutputObservation):
         exit_code = obs.exit_code
 
-    logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Completion Fn {"-" * 50}\n')
 
     runtime.close()
 

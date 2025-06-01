@@ -37,8 +37,8 @@ from openhands.agenthub import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
     LLMConfig,
+    OpenHandsConfig,
     SandboxConfig,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -60,8 +60,8 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 
-def get_config() -> AppConfig:
-    config = AppConfig(
+def get_config() -> OpenHandsConfig:
+    config = OpenHandsConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'remote'),
         sandbox=SandboxConfig(
@@ -82,9 +82,9 @@ def get_config() -> AppConfig:
         workspace_mount_path=None,
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=False,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=False,
+        enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
     return config
@@ -468,9 +468,9 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
                 new_str=f'-content_{i:03d}',
             )
             obs = runtime.run_action(edit_action)
-            assert (
-                f'The file {test_file} has been edited' in obs.content
-            ), f'Edit failed at iteration {i}'
+            assert f'The file {test_file} has been edited' in obs.content, (
+                f'Edit failed at iteration {i}'
+            )
             logger.info(f'finished iteration {i}')
 
         # Verify final file state using FileEditAction view command

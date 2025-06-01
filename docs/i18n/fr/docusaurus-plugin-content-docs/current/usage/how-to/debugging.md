@@ -1,12 +1,10 @@
-
-
 # Débogage
 
 Ce qui suit est destiné à servir d'introduction au débogage d'OpenHands à des fins de développement.
 
 ## Serveur / VSCode
 
-Le `launch.json` suivant permettra de déboguer les éléments agent, contrôleur et serveur, mais pas le bac à sable (qui s'exécute dans docker). Il ignorera toutes les modifications à l'intérieur du répertoire `workspace/` :
+Le fichier `launch.json` suivant permettra de déboguer les éléments de l'agent, du contrôleur et du serveur, mais pas le bac à sable (qui s'exécute dans Docker). Il ignorera tous les changements dans le répertoire `workspace/` :
 
 ```
 {
@@ -38,7 +36,7 @@ Le `launch.json` suivant permettra de déboguer les éléments agent, contrôleu
 }
 ```
 
-Des configurations de débogage plus spécifiques qui incluent plus de paramètres peuvent être spécifiées :
+Des configurations de débogage plus spécifiques qui incluent davantage de paramètres peuvent être spécifiées :
 
 ```
     ...
@@ -49,7 +47,7 @@ Des configurations de débogage plus spécifiques qui incluent plus de paramètr
       "module": "openhands.core.main",
       "args": [
         "-t",
-        "Demandez-moi quelle est votre tâche.",
+        "Ask me what your task is.",
         "-d",
         "${workspaceFolder}/workspace",
         "-c",
@@ -64,10 +62,10 @@ Des configurations de débogage plus spécifiques qui incluent plus de paramètr
     ...
 ```
 
-Les valeurs dans l'extrait ci-dessus peuvent être mises à jour de telle sorte que :
+Les valeurs dans l'extrait ci-dessus peuvent être mises à jour de sorte que :
 
     * *t* : la tâche
-    * *d* : le répertoire de l'espace de travail openhands
+    * *d* : le répertoire de travail openhands
     * *c* : l'agent
     * *l* : la configuration LLM (prédéfinie dans config.toml)
-    * *n* : le nom de la session (par exemple, le nom du flux d'événements)
+    * *n* : nom de session (par exemple, nom d'eventstream)

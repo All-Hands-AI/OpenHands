@@ -1,3 +1,5 @@
+from typing import Any, Callable
+
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -5,6 +7,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -12,7 +15,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 class RetryMixin:
     """Mixin class for retry logic."""
 
-    def retry_decorator(self, **kwargs):
+    def retry_decorator(self, **kwargs: Any) -> Callable:
         """
         Create a LLM retry decorator with customizable parameters. This is used for 429 errors, and a few other exceptions in LLM classes.
 
@@ -30,12 +33,28 @@ class RetryMixin:
         retry_multiplier = kwargs.get('retry_multiplier')
         retry_listener = kwargs.get('retry_listener')
 
-        def before_sleep(retry_state):
+        def before_sleep(retry_state: Any) -> None:
             self.log_retry_attempt(retry_state)
             if retry_listener:
                 retry_listener(retry_state.attempt_number, num_retries)
 
-        return retry(
+            # Check if the exception is LLMNoResponseError
+            exception = retry_state.outcome.exception()
+            if isinstance(exception, LLMNoResponseError):
+                if hasattr(retry_state, 'kwargs'):
+                    # Only change temperature if it's zero or not set
+                    current_temp = retry_state.kwargs.get('temperature', 0)
+                    if current_temp == 0:
+                        retry_state.kwargs['temperature'] = 1.0
+                        logger.warning(
+                            'LLMNoResponseError detected with temperature=0, setting temperature to 1.0 for next attempt.'
+                        )
+                    else:
+                        logger.warning(
+                            f'LLMNoResponseError detected with temperature={current_temp}, keeping original temperature'
+                        )
+
+        retry_decorator: Callable = retry(
             before_sleep=before_sleep,
             stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
             reraise=True,
@@ -48,8 +67,9 @@ class RetryMixin:
                 max=retry_max_wait,
             ),
         )
+        return retry_decorator
 
-    def log_retry_attempt(self, retry_state):
+    def log_retry_attempt(self, retry_state: Any) -> None:
         """Log retry attempts."""
         exception = retry_state.outcome.exception()
         logger.error(

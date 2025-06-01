@@ -16,10 +16,15 @@ on:
         type: string
         default: "main"
         description: "Target branch to pull and create PR against"
+      pr_type:
+        required: false
+        type: string
+        default: "draft"
+        description: "The PR type that is going to be created (draft, ready)"
       LLM_MODEL:
         required: false
         type: string
-        default: "anthropic/claude-3-5-sonnet-20241022"
+        default: "anthropic/claude-sonnet-4-20250514"
       LLM_API_VERSION:
         required: false
         type: string
@@ -29,6 +34,10 @@ on:
         type: string
         default: ""
         description: "Custom sandbox env"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-latest"
     secrets:
       LLM_MODEL:
         required: false
@@ -74,7 +83,7 @@ jobs:
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
-    runs-on: ubuntu-latest
+    runs-on: "${{ inputs.runner || 'ubuntu-latest' }}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,6 +92,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
 
       - name: Get latest versions and create requirements.txt
         run: |
@@ -145,13 +157,15 @@ jobs:
           fi
 
       - name: Set environment variables
+        env:
+          REVIEW_BODY: ${{ github.event.review.body || '' }}
         run: |
           # Handle pull request events first
           if [ -n "${{ github.event.pull_request.number }}" ]; then
             echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
           # Handle pull request review events
-          elif [ -n "${{ github.event.review.body }}" ]; then
+          elif [ -n "$REVIEW_BODY" ]; then
             echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
           # Handle issue comment events that reference a PR
@@ -164,7 +178,7 @@ jobs:
             echo "ISSUE_TYPE=issue" >> $GITHUB_ENV
           fi
 
-          if [ -n "${{ github.event.review.body }}" ]; then
+          if [ -n "$REVIEW_BODY" ]; then
             echo "COMMENT_ID=${{ github.event.review.id || 'None' }}" >> $GITHUB_ENV
           else
             echo "COMMENT_ID=${{ github.event.comment.id || 'None' }}" >> $GITHUB_ENV
@@ -172,7 +186,7 @@ jobs:
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.PAT_TOKEN || github.token }}" >> $GITHUB_ENV
-          echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
+          echo "SANDBOX_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
           echo "TARGET_BRANCH=${{ inputs.target_branch || 'main' }}" >> $GITHUB_ENV
@@ -218,11 +232,11 @@ jobs:
             // Perform package installation
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
               console.log("Installing experimental OpenHands...");
-              await exec.exec("python -m pip install --upgrade pip");
+
               await exec.exec("pip install git+https://github.com/all-hands-ai/openhands.git");
             } else {
               console.log("Installing from requirements.txt...");
-              await exec.exec("python -m pip install --upgrade pip");
+
               await exec.exec("pip install -r /tmp/requirements.txt");
             }
 
@@ -278,9 +292,9 @@ jobs:
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --target-branch ${{ env.TARGET_BRANCH }} \
-              --pr-type draft \
+              --pr-type ${{ inputs.pr_type || 'draft' }} \
               --reviewer ${{ github.actor }} | tee pr_result.txt && \
-              grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
+              grep "PR created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \

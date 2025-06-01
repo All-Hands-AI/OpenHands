@@ -8,7 +8,6 @@ import json
 import os
 import shutil
 import tempfile
-from typing import List
 
 import yaml
 from browsing import pre_login
@@ -16,8 +15,8 @@ from browsing import pre_login
 from evaluation.utils.shared import get_default_sandbox_config_for_eval
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
     LLMConfig,
+    OpenHandsConfig,
     get_agent_config_arg,
     get_llm_config_arg,
     get_parser,
@@ -37,10 +36,13 @@ def get_config(
     mount_path_on_host: str,
     llm_config: LLMConfig,
     agent_config: AgentConfig | None,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
-    config = AppConfig(
+    sandbox_config.enable_auto_lint = True
+    # If the web services are running on the host machine, this must be set to True
+    sandbox_config.use_host_network = True
+    config = OpenHandsConfig(
         run_as_openhands=False,
         max_budget_per_task=4,
         max_iterations=100,
@@ -65,7 +67,7 @@ def get_config(
     return config
 
 
-def load_dependencies(runtime: Runtime) -> List[str]:
+def load_dependencies(runtime: Runtime) -> list[str]:
     """
     Every task has a dependencies.yml file, which lists all the services that the
     task depends on. This function loads the file and returns all dependent service names.
@@ -124,8 +126,8 @@ def codeact_user_response(state: State) -> str:
 def run_solver(
     runtime: Runtime,
     task_name: str,
-    config: AppConfig,
-    dependencies: List[str],
+    config: OpenHandsConfig,
+    dependencies: list[str],
     save_final_state: bool,
     state_dir: str,
     save_screenshots: bool,
@@ -272,7 +274,7 @@ if __name__ == '__main__':
         temp_dir = os.path.abspath(os.getenv('TMPDIR'))
     else:
         temp_dir = tempfile.mkdtemp()
-    config: AppConfig = get_config(
+    config: OpenHandsConfig = get_config(
         args.task_image_name, task_short_name, temp_dir, agent_llm_config, agent_config
     )
     runtime: Runtime = create_runtime(config)

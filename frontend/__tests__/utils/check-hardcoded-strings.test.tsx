@@ -3,7 +3,6 @@ import { test, expect, describe, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { ChatInput } from "#/components/features/chat/chat-input";
 
-// Mock react-i18next
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -13,10 +12,7 @@ vi.mock("react-i18next", () => ({
 describe("Check for hardcoded English strings", () => {
   test("InteractiveChatBox should not have hardcoded English strings", () => {
     const { container } = render(
-      <InteractiveChatBox
-        onSubmit={() => {}}
-        onStop={() => {}}
-      />
+      <InteractiveChatBox onSubmit={() => {}} onStop={() => {}} />,
     );
 
     // Get all text content
@@ -25,10 +21,12 @@ describe("Check for hardcoded English strings", () => {
     // List of English strings that should be translated
     const hardcodedStrings = [
       "What do you want to build?",
+      "Launch from Scratch",
+      "Read this"
     ];
 
     // Check each string
-    hardcodedStrings.forEach(str => {
+    hardcodedStrings.forEach((str) => {
       expect(text).not.toContain(str);
     });
   });

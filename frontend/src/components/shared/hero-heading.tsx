@@ -17,7 +17,7 @@ export function HeroHeading() {
           <a
             rel="noopener noreferrer"
             target="_blank"
-            href="https://docs.all-hands.dev/modules/usage/getting-started"
+            href="https://docs.all-hands.dev/usage/getting-started"
             className="text-white underline underline-offset-[3px]"
           >
             {t(I18nKey.LANDING$START_HELP_LINK)}

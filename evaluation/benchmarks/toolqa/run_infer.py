@@ -18,7 +18,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -40,10 +40,10 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
@@ -64,7 +64,7 @@ def initialize_runtime(runtime: Runtime):
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -80,7 +80,7 @@ def initialize_runtime(runtime: Runtime):
 
     runtime.add_env_vars({'WOLFRAM_ALPHA_APPID': args.wolfram_alpha_appid})
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):

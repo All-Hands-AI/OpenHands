@@ -17,18 +17,18 @@ class BrowserOutputCondenser(Condenser):
         self.attention_window = attention_window
         super().__init__()
 
-    def condense(self, events: list[Event]) -> View | Condensation:
+    def condense(self, view: View) -> View | Condensation:
         """Replace the content of browser observations outside of the attention window with a placeholder."""
         results: list[Event] = []
         cnt: int = 0
-        for event in reversed(events):
+        for event in reversed(view):
             if (
                 isinstance(event, BrowserOutputObservation)
                 and cnt >= self.attention_window
             ):
                 results.append(
                     AgentCondensationObservation(
-                        f'Current URL: {event.url}\nContent Omitted'
+                        f'Visited URL {event.url}\nContent omitted'
                     )
                 )
             else:

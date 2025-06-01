@@ -16,6 +16,16 @@ def agent_controller():
     agent.name = 'test_agent'
     agent.llm = llm
     agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    from openhands.events import EventSource
+    from openhands.events.action.message import SystemMessageAction
+
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
     event_stream = EventStream(sid='test', file_store=InMemoryFileStore())
     controller = AgentController(
         agent=agent,

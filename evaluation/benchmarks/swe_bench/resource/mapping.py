@@ -28,7 +28,7 @@ def get_resource_mapping(dataset_name: str) -> dict[str, float]:
 
         with open(file_path, 'r') as f:
             _global_resource_mapping[dataset_name] = json.load(f)
-        logger.info(f'Loaded resource mapping for {dataset_name}')
+        logger.debug(f'Loaded resource mapping for {dataset_name}')
     return _global_resource_mapping[dataset_name]
 
 

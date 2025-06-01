@@ -70,16 +70,35 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
+
 export interface Conversation {
   conversation_id: string;
   title: string;
   selected_repository: string | null;
+  selected_branch: string | null;
+  git_provider: string | null;
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
+  trigger?: ConversationTrigger;
+  url: string | null;
+  session_api_key: string | null;
 }
 
 export interface ResultSet<T> {
   results: T[];
   next_page_id: string | null;
+}
+
+export type GitChangeStatus = "M" | "A" | "D" | "R" | "U";
+
+export interface GitChange {
+  status: GitChangeStatus;
+  path: string;
+}
+
+export interface GitChangeDiff {
+  modified: string;
+  original: string;
 }

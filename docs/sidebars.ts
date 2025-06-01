@@ -20,12 +20,65 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'OpenHands Cloud',
+      items: [
+        {
+          type: 'doc',
+          label: 'Getting Started',
+          id: 'usage/cloud/openhands-cloud',
+        },
+        {
+          type: 'category',
+          label: 'Installation',
+          items: [
+            {
+              type: 'doc',
+              label: 'GitHub Installation',
+              id: 'usage/cloud/github-installation',
+            },
+            {
+              type: 'doc',
+              label: 'GitLab Installation',
+              id: 'usage/cloud/gitlab-installation',
+            },
+          ],
+        },
+        {
+          type: 'doc',
+          label: 'Cloud UI',
+          id: 'usage/cloud/cloud-ui',
+        },
+        {
+          type: 'doc',
+          label: 'Cloud Issue Resolver',
+          id: 'usage/cloud/cloud-issue-resolver',
+        },
+        {
+          type: 'doc',
+          label: 'Cloud API',
+          id: 'usage/cloud/cloud-api',
+        },
+      ],
+    },
+    {
+      type: 'category',
       label: 'Prompting',
       items: [
         {
           type: 'doc',
           label: 'Best Practices',
           id: 'usage/prompting/prompting-best-practices',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Customization',
+      items: [
+        {
+          type: 'doc',
+          label: 'Repository Customization',
+          id: 'usage/customization/repository',
         },
         {
           type: 'category',
@@ -38,31 +91,25 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Repository-specific',
+              label: 'General Microagents',
               id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
+              label: 'Keyword-Triggered Microagents',
+              id: 'usage/prompting/microagents-keyword',
             },
             {
               type: 'doc',
-              label: 'Syntax',
-              id: 'usage/prompting/microagents-syntax',
+              label: 'Organization and User Microagents',
+              id: 'usage/prompting/microagents-org',
+            },
+            {
+              type: 'doc',
+              label: 'Global Microagents',
+              id: 'usage/prompting/microagents-public',
             },
           ],
-        },
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Customization',
-      items: [
-        {
-          type: 'doc',
-          label: 'Repository Customization',
-          id: 'usage/customization/repository',
         },
       ],
     },
@@ -89,23 +136,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Github Action',
           id: 'usage/how-to/github-action',
-        },
-        {
-          type: 'category',
-          label: 'Cloud',
-          items: [
-            {
-              type: 'doc',
-              label: 'Openhands Cloud',
-              id: 'usage/cloud/openhands-cloud',
-            },
-
-            {
-              type: 'doc',
-              label: 'Cloud GitHub Resolver',
-              id: 'usage/cloud/cloud-github-resolver',
-            },
-          ],
         },
       ],
     },
@@ -140,6 +170,11 @@ const sidebars: SidebarsConfig = {
                   type: 'doc',
                   label: 'Groq',
                   id: 'usage/llms/groq',
+                },
+                {
+                  type: 'doc',
+                  label: 'Local LLMs with SGLang or vLLM',
+                  id: 'usage/llms/local-llms',
                 },
                 {
                   type: 'doc',
@@ -206,6 +241,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'MCP',
+          id: 'usage/mcp',
+        }
       ],
     },
     {
@@ -252,6 +292,11 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Evaluation',
           id: 'usage/how-to/evaluation-harness',
+        },
+        {
+          type: 'doc',
+          label: 'WebSocket Connection',
+          id: 'usage/how-to/websocket-connection',
         },
       ],
     },

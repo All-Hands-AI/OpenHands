@@ -130,7 +130,7 @@ class DummyAgent(Agent):
 
             if 'observations' in prev_step and prev_step['observations']:
                 expected_observations = prev_step['observations']
-                hist_events = state.history[-len(expected_observations) :]
+                hist_events = state.view[-len(expected_observations) :]
 
                 if len(hist_events) < len(expected_observations):
                     print(

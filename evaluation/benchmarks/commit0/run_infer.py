@@ -25,7 +25,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -82,9 +82,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
     return instruction
 
@@ -103,7 +101,7 @@ def get_instance_docker_image(repo_name: str) -> str:
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     repo_name = instance['repo'].split('/')[1]
     base_container_image = get_instance_docker_image(repo_name)
     logger.info(
@@ -115,7 +113,7 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
@@ -131,9 +129,9 @@ def get_config(
         )
     )
     agent_config = AgentConfig(
-        codeact_enable_jupyter=False,
-        codeact_enable_browsing=RUN_WITH_BROWSING,
-        codeact_enable_llm_editor=False,
+        enable_jupyter=False,
+        enable_browsing=RUN_WITH_BROWSING,
+        enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
     return config
@@ -265,7 +263,7 @@ def complete_runtime(
 
     test_dir = instance['test']['test_dir']
     action = CmdRunAction(
-        command=f"{instance['test']['test_cmd']} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1"
+        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})

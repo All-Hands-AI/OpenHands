@@ -1,5 +1,9 @@
 # 🤖 LLM Backends
 
+:::note
+This section is for users who want to connect OpenHands to different LLMs.
+:::
+
 OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
 
 ## Model Recommendations
@@ -7,20 +11,22 @@ OpenHands can connect to any LLM supported by LiteLLM. However, it requires a po
 Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
 recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
-Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
+Based on these findings and community feedback, these are the latest models that have been verified to work reasonably well with OpenHands:
 
-- anthropic/claude-3-5-sonnet-20241022 (recommended)
-- anthropic/claude-3-5-haiku-20241022
-- deepseek/deepseek-chat
-- gpt-4o
+- [anthropic/claude-sonnet-4-20250514](https://www.anthropic.com/api) (recommended)
+- [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
+- [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
+- [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
+- [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
+
 
 :::warning
 OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
 limits and monitor usage.
 :::
 
-If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
-also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
+If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process 
+to help others using the same provider!
 
 For a full list of the providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
@@ -56,6 +62,7 @@ We have a few guides for running OpenHands with specific model providers:
 - [Azure](llms/azure-llms)
 - [Google](llms/google-llms)
 - [Groq](llms/groq)
+- [Local LLMs with SGLang or vLLM](llms/../local-llms.md)
 - [LiteLLM Proxy](llms/litellm-proxy)
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
