@@ -46,14 +46,6 @@ const getBrowseObservationContent = (event: BrowseObservation) => {
   return contentDetails;
 };
 
-const getMcpObservationContent = (event: OpenHandsObservation): string => {
-  let { content } = event;
-  if (content.length > MAX_CONTENT_LENGTH) {
-    content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
-  }
-  return `**Output:**\n\`\`\`\n${content.trim() || i18n.t("OBSERVATION$MCP_NO_OUTPUT")}\n\`\`\``;
-};
-
 const getRecallObservationContent = (event: RecallObservation): string => {
   let content = "";
 
@@ -124,8 +116,6 @@ export const getObservationContent = (event: OpenHandsObservation): string => {
       return getCommandObservationContent(event);
     case "browse":
       return getBrowseObservationContent(event);
-    case "mcp":
-      return getMcpObservationContent(event);
     case "recall":
       return getRecallObservationContent(event);
     default:

@@ -120,7 +120,7 @@ You can start your own fork of [our huggingface evaluation outputs](https://hugg
 
 ## For Benchmark Developers
 
-To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/how-to/evaluation-harness). Briefly,
+To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/usage/how-to/evaluation-harness). Briefly,
 
 - Each subfolder contains a specific benchmark or experiment. For example, [`evaluation/benchmarks/swe_bench`](./benchmarks/swe_bench) should contain
 all the preprocessing/evaluation/analysis scripts.

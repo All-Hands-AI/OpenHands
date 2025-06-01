@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { Feedback } from "#/api/open-hands.types";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 type SubmitFeedbackArgs = {
@@ -9,12 +9,14 @@ type SubmitFeedbackArgs = {
 };
 
 export const useSubmitFeedback = () => {
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
   return useMutation({
     mutationFn: ({ feedback }: SubmitFeedbackArgs) =>
       OpenHands.submitFeedback(conversationId, feedback),
     onError: (error) => {
       displayErrorToast(error.message);
     },
+    retry: 2,
+    retryDelay: 500,
   });
 };

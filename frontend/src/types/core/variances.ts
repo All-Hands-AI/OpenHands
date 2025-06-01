@@ -33,7 +33,15 @@ interface LocalUserMessageAction {
   };
 }
 
+export interface StatusUpdate {
+  status_update: true;
+  type: "error";
+  id: string;
+  message: string;
+}
+
 export type OpenHandsVariance =
   | TokenConfig
   | InitConfig
-  | LocalUserMessageAction;
+  | LocalUserMessageAction
+  | StatusUpdate;

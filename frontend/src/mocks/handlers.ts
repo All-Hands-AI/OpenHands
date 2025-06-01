@@ -17,6 +17,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
   llm_api_key: null,
   llm_api_key_set: DEFAULT_SETTINGS.LLM_API_KEY_SET,
+  search_api_key_set: DEFAULT_SETTINGS.SEARCH_API_KEY_SET,
   agent: DEFAULT_SETTINGS.AGENT,
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
@@ -51,6 +52,8 @@ const conversations: Conversation[] = [
     conversation_id: "1",
     title: "My New Project",
     selected_repository: null,
+    git_provider: null,
+    selected_branch: null,
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
@@ -61,6 +64,8 @@ const conversations: Conversation[] = [
     conversation_id: "2",
     title: "Repo Testing",
     selected_repository: "octocat/hello-world",
+    git_provider: "github",
+    selected_branch: null,
     // 2 days ago
     last_updated_at: new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
@@ -74,6 +79,8 @@ const conversations: Conversation[] = [
     conversation_id: "3",
     title: "Another Project",
     selected_repository: "octocat/earth",
+    git_provider: null,
+    selected_branch: "main",
     // 5 days ago
     last_updated_at: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000,
@@ -99,7 +106,7 @@ const openHandsHandlers = [
       "gpt-4o",
       "gpt-4o-mini",
       "anthropic/claude-3.5",
-      "anthropic/claude-3-7-sonnet-20250219",
+      "anthropic/claude-sonnet-4-20250514",
     ]),
   ),
 
@@ -270,6 +277,8 @@ export const handlers = [
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",
       selected_repository: null,
+      git_provider: null,
+      selected_branch: null,
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",

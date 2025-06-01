@@ -1,12 +1,7 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
 import { useConfig } from "./query/use-config";
 import { useIsAuthed } from "./query/use-is-authed";
-import {
-  getLoginMethod,
-  getLastPage,
-  LoginMethod,
-} from "#/utils/local-storage";
+import { getLoginMethod, LoginMethod } from "#/utils/local-storage";
 import { useAuthUrl } from "./use-auth-url";
 
 /**
@@ -14,7 +9,6 @@ import { useAuthUrl } from "./use-auth-url";
  * Only works in SAAS mode and when the user is not already logged in
  */
 export const useAutoLogin = () => {
-  const navigate = useNavigate();
   const { data: config, isLoading: isConfigLoading } = useConfig();
   const { data: isAuthed, isLoading: isAuthLoading } = useIsAuthed();
 
@@ -59,8 +53,12 @@ export const useAutoLogin = () => {
 
     // If we have an auth URL, redirect to it
     if (authUrl) {
+      // Add the login method as a query parameter
+      const url = new URL(authUrl);
+      url.searchParams.append("login_method", loginMethod);
+
       // After successful login, the user will be redirected back and can navigate to the last page
-      window.location.href = authUrl;
+      window.location.href = url.toString();
     }
   }, [
     config?.APP_MODE,
@@ -71,30 +69,4 @@ export const useAutoLogin = () => {
     githubAuthUrl,
     gitlabAuthUrl,
   ]);
-
-  // Handle navigation to last page after login
-  useEffect(() => {
-    // Only navigate in SAAS mode
-    if (config?.APP_MODE !== "saas") {
-      return;
-    }
-
-    // Wait for auth to load
-    if (isAuthLoading) {
-      return;
-    }
-
-    // Only navigate if authenticated
-    if (!isAuthed) {
-      return;
-    }
-
-    // Get the last page from local storage
-    const lastPage = getLastPage();
-
-    // Navigate to the last page if it exists
-    if (lastPage) {
-      navigate(lastPage);
-    }
-  }, [config?.APP_MODE, isAuthed, isAuthLoading, navigate]);
 };

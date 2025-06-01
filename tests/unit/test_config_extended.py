@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from openhands.core.config.app_config import AppConfig
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.utils import load_from_toml
 
 
@@ -83,7 +83,7 @@ def test_extended_config_invalid_key():
 def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
     """Test that the [extended] section in a TOML file is correctly loaded.
 
-    This test verifies that the [extended] section is loaded into AppConfig.extended
+    This test verifies that the [extended] section is loaded into OpenHandsConfig.extended
     and that it accepts arbitrary keys.
     """
     # Create a temporary TOML file with multiple sections including [extended]
@@ -106,8 +106,8 @@ enable_prompt_extensions = true
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
 
-    # Load the TOML into the AppConfig instance
-    config = AppConfig()
+    # Load the TOML into the OpenHandsConfig instance
+    config = OpenHandsConfig()
     load_from_toml(config, str(config_file))
 
     # Verify that extended section is applied
@@ -121,7 +121,7 @@ def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
     """Test default behavior when no [extended] section exists.
 
     This test verifies that if there is no [extended] section in the TOML file,
-    AppConfig.extended remains its default (empty) ExtendedConfig.
+    OpenHandsConfig.extended remains its default (empty) ExtendedConfig.
     """
     config_content = """
 [core]
@@ -137,7 +137,7 @@ enable_prompt_extensions = true
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
 
-    config = AppConfig()
+    config = OpenHandsConfig()
     load_from_toml(config, str(config_file))
 
     # Extended config should be empty
@@ -161,7 +161,7 @@ another_key = 3.14
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
 
-    config = AppConfig()
+    config = OpenHandsConfig()
     load_from_toml(config, str(config_file))
 
     # Verify that extended config holds the arbitrary keys with correct values.
