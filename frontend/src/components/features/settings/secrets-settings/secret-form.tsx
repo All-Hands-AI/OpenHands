@@ -141,7 +141,7 @@ export function SecretForm({
         name="secret-name"
         type="text"
         label="Name"
-        className="w-[350px]"
+        className="w-full max-w-[350px]"
         required
         defaultValue={mode === "edit" && selectedSecret ? selectedSecret : ""}
         placeholder="e.g. OpenAI_API_Key"
@@ -150,14 +150,14 @@ export function SecretForm({
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {mode === "add" && (
-        <label className="flex flex-col gap-2.5 w-fit">
+        <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
           <span className="text-sm">Value</span>
           <textarea
             data-testid="value-input"
             name="secret-value"
             required
             className={cn(
-              "resize-none w-[680px]",
+              "resize-none",
               "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
               "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
             )}
@@ -166,7 +166,7 @@ export function SecretForm({
         </label>
       )}
 
-      <label className="flex flex-col gap-2.5 w-fit">
+      <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
         <div className="flex items-center gap-2">
           <span className="text-sm">Description</span>
           <OptionalTag />
@@ -176,7 +176,7 @@ export function SecretForm({
           name="secret-description"
           defaultValue={secretDescription}
           className={cn(
-            "resize-none w-[680px]",
+            "resize-none",
             "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
             "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
           )}
