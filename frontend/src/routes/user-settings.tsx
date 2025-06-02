@@ -54,9 +54,9 @@ function UserSettingsScreen() {
     try {
       setIsResendingVerification(true);
       setResendSuccess(false);
-      
+
       await openHands.put("/api/email/verify");
-      
+
       setResendSuccess(true);
     } catch (error) {
       // Log error but don't show to user
@@ -87,6 +87,9 @@ function UserSettingsScreen() {
                   placeholder={t("SETTINGS$USER_EMAIL_NOT_AVAILABLE")}
                   data-testid="email-input"
                 />
+              </div>
+
+              <div className="flex items-center gap-3 mt-2">
                 <button
                   type="button"
                   onClick={handleSaveEmail}
@@ -100,14 +103,7 @@ function UserSettingsScreen() {
                 >
                   {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
                 </button>
-              </div>
-              {saveSuccess && (
-                <div className="text-sm text-green-500 mt-1">
-                  {t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY")}
-                </div>
-              )}
-              
-              <div className="mt-4">
+
                 <button
                   type="button"
                   onClick={handleResendVerification}
@@ -121,12 +117,19 @@ function UserSettingsScreen() {
                 >
                   {isResendingVerification ? t("SETTINGS$SENDING") : "Resend verification"}
                 </button>
-                {resendSuccess && (
-                  <div className="text-sm text-green-500 mt-1">
-                    {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
-                  </div>
-                )}
               </div>
+
+              {saveSuccess && (
+                <div className="text-sm text-green-500 mt-1">
+                  {t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY")}
+                </div>
+              )}
+
+              {resendSuccess && (
+                <div className="text-sm text-green-500 mt-1">
+                  {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
+                </div>
+              )}
             </div>
           </div>
         )}
