@@ -44,7 +44,7 @@ from openhands.resolver.utils import (
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
-# Don't make this confgurable for now, unless we have other competitive agents
+# Don't make this configurable for now, unless we have other competitive agents
 AGENT_CLASS = 'CodeActAgent'
 
 
