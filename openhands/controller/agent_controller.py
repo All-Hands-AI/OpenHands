@@ -1365,7 +1365,7 @@ class AgentController:
         metrics.accumulated_cost = agent_metrics.accumulated_cost
         if condenser_metrics:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
-            
+
         # Add max_budget_per_task to metrics
         metrics.max_budget_per_task = self.max_budget_per_task
 

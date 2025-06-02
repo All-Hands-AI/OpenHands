@@ -79,11 +79,11 @@ class Metrics:
         if value < 0:
             raise ValueError('Total cost cannot be negative.')
         self._accumulated_cost = value
-        
+
     @property
     def max_budget_per_task(self) -> float | None:
         return self._max_budget_per_task
-        
+
     @max_budget_per_task.setter
     def max_budget_per_task(self, value: float | None) -> None:
         self._max_budget_per_task = value
@@ -181,11 +181,11 @@ class Metrics:
     def merge(self, other: 'Metrics') -> None:
         """Merge 'other' metrics into this one."""
         self._accumulated_cost += other.accumulated_cost
-        
+
         # Keep the max_budget_per_task from other if it's set and this one isn't
         if self._max_budget_per_task is None and other.max_budget_per_task is not None:
             self._max_budget_per_task = other.max_budget_per_task
-            
+
         self._costs += other._costs
         # use the property so older picked objects that lack the field won't crash
         self.token_usages += other.token_usages
