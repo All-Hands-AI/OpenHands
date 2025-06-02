@@ -5,6 +5,7 @@
 - MacOS with [Docker Desktop support](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)
 - Linux
 - Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and [Docker Desktop support](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)
+- Windows without WSL (see [Windows Without WSL Guide](./windows-without-wsl))
 
 A system with a modern processor and a minimum of **4GB RAM** is recommended to run OpenHands.
 
@@ -51,6 +52,10 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
   The docker command below to start the app must be run inside the WSL terminal.
   :::
 
+  **Alternative: Windows without WSL**
+
+  If you prefer to run OpenHands on Windows without WSL or Docker, see our [Windows Without WSL Guide](./windows-without-wsl).
+
 </details>
 
 ## Start the App
@@ -58,25 +63,25 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
 The easiest way to run OpenHands is in Docker.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.40-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.40-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.39
+    docker.all-hands.dev/all-hands-ai/openhands:0.40
 ```
 
 You'll find OpenHands running at http://localhost:3000!
 
-You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem),
-run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
-interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-or run it on tagged issues with [a GitHub action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
+run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/usage/how-to/headless-mode),
+interact with it via a [friendly CLI](https://docs.all-hands.dev/usage/how-to/cli-mode),
+or run it on tagged issues with [a GitHub action](https://docs.all-hands.dev/usage/how-to/github-action).
 
 ## Setup
 
@@ -118,4 +123,4 @@ This version is unstable and is recommended for testing or development purposes 
 
 For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
+Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/usage/troubleshooting).
