@@ -180,6 +180,7 @@ class DaytonaRuntime(ActionExecutionClient):
             self.send_status_message('STATUS$PREPARING_CONTAINER')
             self.sandbox = await call_sync_from_async(self._create_sandbox)
             self.sandbox_id = self.sandbox.id
+            assert self.sandbox_id is not None, 'Sandbox ID is not available'
             os.environ[f'DAYTONA_SANDBOX_ID_{self.sid}'] = self.sandbox_id
             self.log('info', f'Created new sandbox with id: {self.sandbox_id}')
 
