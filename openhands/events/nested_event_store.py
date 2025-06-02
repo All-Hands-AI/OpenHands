@@ -45,7 +45,7 @@ class NestedEventStore(EventStoreABC):
             result_set = response.json()
             for result in result_set['results']:
                 event = event_from_dict(result)
-                start_id = event.id
+                start_id = max(start_id, event.id + 1)
                 if end_id == event.id:
                     if not filter or filter.include(event):
                         yield event
