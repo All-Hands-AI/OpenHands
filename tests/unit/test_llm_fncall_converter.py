@@ -654,6 +654,34 @@ NON_FNCALL_RESPONSE_MESSAGE = {
 <parameter=view_range>[1, 10]</parameter>
 </function>""",
         ),
+        # Test case with indented code block to verify indentation is preserved
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "str_replace", "path": "/test/file.py", "old_str": "def example():\\n    pass", "new_str": "def example():\\n    # This is indented\\n    print(\\"hello\\")\\n    return True"}',
+                        'name': 'str_replace_editor',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=str_replace_editor>
+<parameter=command>str_replace</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=old_str>
+def example():
+    pass
+</parameter>
+<parameter=new_str>
+def example():
+    # This is indented
+    print("hello")
+    return True
+</parameter>
+</function>""",
+        ),
     ],
 )
 def test_convert_tool_call_to_string(tool_calls, expected):

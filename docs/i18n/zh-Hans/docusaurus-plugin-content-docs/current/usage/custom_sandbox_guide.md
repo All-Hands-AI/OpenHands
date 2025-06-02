@@ -78,7 +78,7 @@ base_container_image="custom_image"
 
 ## 技术解释
 
-请参考[运行时文档中自定义 Docker 镜像的章节](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images)获取更详细的解释。
+请参考[运行时文档中自定义 Docker 镜像的章节](https://docs.all-hands.dev/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images)获取更详细的解释。
 
 ## 故障排除 / 错误
 

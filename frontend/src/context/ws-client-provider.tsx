@@ -166,6 +166,8 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    handleAssistantMessage(event);
+
     if (isOpenHandsEvent(event)) {
       const isStatusUpdateError =
         isStatusUpdate(event) && event.type === "error";
@@ -217,9 +219,14 @@ export function WsClientProvider({
         isFileWriteAction(event) ||
         isCommandAction(event)
       ) {
-        queryClient.removeQueries({
-          queryKey: ["file_changes", conversationId],
-        });
+        queryClient.invalidateQueries(
+          {
+            queryKey: ["file_changes", conversationId],
+          },
+          // Do not refetch if we are still receiving messages at a high rate (e.g., loading an existing conversation)
+          // This prevents unnecessary refetches when the user is still receiving messages
+          { cancelRefetch: false },
+        );
 
         // Invalidate file diff cache when a file is edited or written
         if (!isCommandAction(event)) {
@@ -250,8 +257,6 @@ export function WsClientProvider({
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
-
-    handleAssistantMessage(event);
   }
 
   function handleDisconnect(data: unknown) {
@@ -284,14 +289,14 @@ export function WsClientProvider({
 
   React.useEffect(() => {
     lastEventRef.current = null;
-  }, [conversationId]);
 
-  React.useEffect(() => {
     // reset events when conversationId changes
     setEvents([]);
     setParsedEvents([]);
     setStatus(WsClientProviderStatus.DISCONNECTED);
+  }, [conversationId]);
 
+  React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }

@@ -36,6 +36,7 @@ import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 function AppContent() {
   useConversationConfig();
@@ -43,6 +44,7 @@ function AppContent() {
   const { data: settings } = useSettings();
   const { conversationId } = useConversationId();
   const { data: conversation, isFetched } = useActiveConversation();
+  const { data: isAuthed } = useIsAuthed();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
@@ -54,13 +56,13 @@ function AppContent() {
   const [width, setWidth] = React.useState(window.innerWidth);
 
   React.useEffect(() => {
-    if (isFetched && !conversation) {
+    if (isFetched && !conversation && isAuthed) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
     }
-  }, [conversation, isFetched]);
+  }, [conversation, isFetched, isAuthed]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());

@@ -19,7 +19,11 @@ describe("Check for hardcoded English strings", () => {
     const text = container.textContent;
 
     // List of English strings that should be translated
-    const hardcodedStrings = ["What do you want to build?"];
+    const hardcodedStrings = [
+      "What do you want to build?",
+      "Launch from Scratch",
+      "Read this"
+    ];
 
     // Check each string
     hardcodedStrings.forEach((str) => {

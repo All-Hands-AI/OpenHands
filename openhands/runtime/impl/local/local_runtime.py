@@ -12,7 +12,7 @@ import httpx
 import tenacity
 
 import openhands
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
@@ -107,7 +107,7 @@ class LocalRuntime(ActionExecutionClient):
     When receiving an event, it will send the event to the server via HTTP.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): list of plugin requirements. Defaults to None.
@@ -116,7 +116,7 @@ class LocalRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -238,6 +238,7 @@ class LocalRuntime(ActionExecutionClient):
         env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
         env['OPENHANDS_REPO_PATH'] = code_repo_path
         env['LOCAL_RUNTIME_MODE'] = '1'
+        env['VSCODE_PORT'] = str(self._vscode_port)
 
         # Derive environment paths using sys.executable
         interpreter_path = sys.executable
@@ -389,16 +390,36 @@ class LocalRuntime(ActionExecutionClient):
         super().close()
 
     @property
+    def runtime_url(self) -> str:
+
+        runtime_url = os.getenv('RUNTIME_URL')
+        if runtime_url:
+            return runtime_url
+
+
+
+        #TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
+        runtime_url_pattern = os.getenv('RUNTIME_URL_PATTERN')
+        hostname = os.getenv('HOSTNAME')
+        if runtime_url_pattern and hostname:
+            runtime_id = hostname.split('-')[1]
+            runtime_url = runtime_url_pattern.format(runtime_id=runtime_id)
+            return runtime_url
+
+        # Fallback to localhost
+        return self.config.sandbox.local_runtime_url
+
+    @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
         if not token:
             return None
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'{self.runtime_url}:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
         for port in self._app_ports:
-            hosts[f'http://localhost:{port}'] = port
+            hosts[f'{self.runtime_url}:{port}'] = port
         return hosts

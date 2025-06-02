@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
@@ -30,7 +30,7 @@ def mock_docker_client():
 
 @pytest.fixture
 def config():
-    config = AppConfig()
+    config = OpenHandsConfig()
     config.sandbox.keep_runtime_alive = False
     return config
 

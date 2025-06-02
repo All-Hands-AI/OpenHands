@@ -25,7 +25,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
    - Option 2: Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](https://huggingface.co/mistralai/Devstral-Small-2505_gguf), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`. Then in bash terminal, run `lms import {model_name}` in the directory where you've downloaded the model checkpoint (e.g. run `lms import devstralQ4_K_M.gguf` in `mistralai/Devstral-Small-2505_gguf`)
 
 3. Open LM Studio application, you should first switch to `power user` mode, and then open the developer tab:
-  
+
 ![image](./screenshots/1_select_power_user.png)
 
 4. Then click `Select a model to load` on top of the application:
@@ -50,31 +50,31 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
 
 ### Start OpenHands with locally served model
 
-Check [the installation guide](https://docs.all-hands.dev/modules/usage/installation) to make sure you have all the prerequisites for running OpenHands.
+Check [the installation guide](https://docs.all-hands.dev/usage/installation) to make sure you have all the prerequisites for running OpenHands.
 
 ```bash
 export LMSTUDIO_MODEL_NAME="imported-models/uncategorized/devstralq4_k_m.gguf" # <- Replace this with the model name you copied from LMStudio
 export LMSTUDIO_URL="http://host.docker.internal:1234"  # <- Replace this with the port from LMStudio
 
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.40-nikolaik
 
 mkdir -p ~/.openhands-state && echo '{"language":"en","agent":"CodeActAgent","max_iterations":null,"security_analyzer":null,"confirmation_mode":false,"llm_model":"lm_studio/'$LMSTUDIO_MODEL_NAME'","llm_api_key":"dummy","llm_base_url":"'$LMSTUDIO_URL/v1'","remote_runtime_resource_factor":null,"github_token":null,"enable_default_condenser":true,"user_consents_to_analytics":true}' > ~/.openhands-state/settings.json
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.40-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.39
+    docker.all-hands.dev/all-hands-ai/openhands:0.40
 ```
 
 Once your server is running -- you can visit `http://localhost:3000` in your browser to use OpenHands with local Devstral model:
 ```
 Digest: sha256:e72f9baecb458aedb9afc2cd5bc935118d1868719e55d50da73190d3a85c674f
-Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.39
+Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.40
 Starting OpenHands...
 Running OpenHands as root
 14:22:13 - openhands:INFO: server_config.py:50 - Using config class None
@@ -154,7 +154,7 @@ Start OpenHands using `make run`.
 
 ### Configure OpenHands
 
-Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab: 
+Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
 1. Enable `Advanced` options.
 2. Set the following:
 - `Custom Model` to `openai/<served-model-name>` (e.g. `openai/openhands-lm-32b-v0.1`)
