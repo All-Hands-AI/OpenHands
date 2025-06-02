@@ -115,7 +115,7 @@ function UserSettingsScreen() {
                   }`}
                   data-testid="resend-verification-button"
                 >
-                  {isResendingVerification ? t("SETTINGS$SENDING") : "Resend verification"}
+                  {isResendingVerification ? t("SETTINGS$SENDING") : t("SETTINGS$RESEND_VERIFICATION")}
                 </button>
               </div>
 
