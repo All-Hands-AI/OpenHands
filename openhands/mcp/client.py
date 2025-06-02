@@ -48,6 +48,7 @@ class MCPClient(BaseModel):
                 headers = (
                     {
                         'Authorization': f'Bearer {api_key}',
+                        's': api_key,  # We need this for action execution server's MCP Router
                         'X-Session-API-Key': api_key,  # We need this for Remote Runtime
                     }
                     if api_key
