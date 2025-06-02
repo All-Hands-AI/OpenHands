@@ -1,12 +1,17 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "./suggestion-box";
 
 interface ReplaySuggestionBoxProps {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
-export function ReplaySuggestionBox({ onChange }: ReplaySuggestionBoxProps) {
+export function ReplaySuggestionBox({
+  onChange,
+  fileInputRef,
+}: ReplaySuggestionBoxProps) {
   const { t } = useTranslation();
   return (
     <SuggestionBox
@@ -20,6 +25,7 @@ export function ReplaySuggestionBox({ onChange }: ReplaySuggestionBoxProps) {
             {t(I18nKey.LANDING$UPLOAD_TRAJECTORY)}
           </span>
           <input
+            ref={fileInputRef}
             hidden
             type="file"
             accept="application/json"

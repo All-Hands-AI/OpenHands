@@ -26,7 +26,7 @@ from openhands.core.setup import (
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
-from openhands.events.action import MessageAction, NullAction
+from openhands.events.action import MessageAction, NullAction, SystemMessageAction
 from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
@@ -270,8 +270,14 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
 
         with open(path, 'r', encoding='utf-8') as file:
             events = ReplayManager.get_replay_events(json.load(file))
-            assert isinstance(events[0], MessageAction)
-            return events[1:], events[0]
+            if isinstance(events[0], SystemMessageAction):
+                logger.debug('Trajectory starts with SystemMessageAction')
+                assert isinstance(events[1], MessageAction)
+                return events[2:], events[1]
+            else:
+                assert isinstance(events[0], MessageAction)
+                logger.debug('Trajectory starts with MessageAction')
+                return events[1:], events[0]
     except json.JSONDecodeError as e:
         raise ValueError(f'Invalid JSON format in {trajectory_path}: {e}')
 
