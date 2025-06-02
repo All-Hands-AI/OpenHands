@@ -439,6 +439,10 @@ class DockerNestedConversationManager(ConversationManager):
 
         # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
         event_stream = EventStream(sid, self.file_store, user_id)
+        
+        # Get provider tokens from settings to pass to the runtime
+        provider_handler = self._get_provider_handler(settings)
+        current_git_provider_tokens = provider_handler.provider_tokens
 
         runtime = DockerRuntime(
             config=config,
@@ -448,6 +452,7 @@ class DockerNestedConversationManager(ConversationManager):
             headless_mode=False,
             attach_to_existing=False,
             env_vars=env_vars,
+            git_provider_tokens=current_git_provider_tokens,
             main_module='openhands.server',
         )
 
