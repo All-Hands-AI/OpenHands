@@ -7,7 +7,7 @@ import time
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
+from openhands.core.config import MCPConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
@@ -206,7 +206,7 @@ def base_container_image(request):
     return request.param
 
 
-def _load_runtime(
+def create_test_runtime(
     temp_dir,
     runtime_cls,
     run_as_openhands: bool = True,
@@ -218,7 +218,7 @@ def _load_runtime(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
-) -> tuple[Runtime, OpenHandsConfig]:
+) -> Runtime:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
@@ -289,12 +289,12 @@ def _load_runtime(
 
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime, config
+    return runtime
 
 
 # Export necessary function
 __all__ = [
-    '_load_runtime',
+    'create_test_runtime',
     '_get_host_folder',
     '_remove_folder',
 ]
