@@ -298,18 +298,24 @@ export function ConversationCard({
                         </div>
                         <div className="flex justify-end">
                           <span className="text-xs text-neutral-400">
-                            ${metrics.cost.toFixed(4)} / ${metrics.max_budget_per_task.toFixed(4)} (
-                            {((metrics.cost / metrics.max_budget_per_task) * 100).toFixed(2)}% {t(I18nKey.CONVERSATION$USED)})
+                            ${metrics.cost.toFixed(4)} / $
+                            {metrics.max_budget_per_task.toFixed(4)} (
+                            {(
+                              (metrics.cost / metrics.max_budget_per_task) *
+                              100
+                            ).toFixed(2)}
+                            % {t(I18nKey.CONVERSATION$USED)})
                           </span>
                         </div>
                       </>
                     )}
 
-                  {metrics?.max_budget_per_task === null && metrics?.cost !== null && (
-                    <span className="text-xs text-neutral-400">
-                      {t(I18nKey.CONVERSATION$NO_BUDGET_LIMIT)}
-                    </span>
-                  )}
+                  {metrics?.max_budget_per_task === null &&
+                    metrics?.cost !== null && (
+                      <span className="text-xs text-neutral-400">
+                        {t(I18nKey.CONVERSATION$NO_BUDGET_LIMIT)}
+                      </span>
+                    )}
                 </div>
 
                 {metrics?.usage !== null && (
