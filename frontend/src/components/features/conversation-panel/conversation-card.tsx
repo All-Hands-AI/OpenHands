@@ -275,9 +275,7 @@ export function ConversationCard({
                       {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
                     <span className="font-semibold">
-                      ${metrics.cost.toFixed(4)}/
-                      {metrics?.max_budget_per_task &&
-                        metrics.max_budget_per_task.toFixed(4)}
+                      ${metrics.cost.toFixed(4)}
                     </span>
                   </div>
                 )}
@@ -298,17 +296,16 @@ export function ConversationCard({
                             }}
                           />
                         </div>
-                        <span className="text-xs text-neutral-400">
-                          {(
-                            (metrics.cost / metrics.max_budget_per_task) *
-                            100
-                          ).toFixed(2)}{" "}
-                          {t(I18nKey.CONVERSATION$BUDGET_USAGE)}
-                        </span>
+                        <div className="flex justify-end">
+                          <span className="text-xs text-neutral-400">
+                            ${metrics.cost.toFixed(4)} / ${metrics.max_budget_per_task.toFixed(4)} (
+                            {((metrics.cost / metrics.max_budget_per_task) * 100).toFixed(2)}% {t(I18nKey.CONVERSATION$USED)})
+                          </span>
+                        </div>
                       </>
                     )}
 
-                  {metrics?.max_budget_per_task === null && (
+                  {metrics?.max_budget_per_task === null && metrics?.cost !== null && (
                     <span className="text-xs text-neutral-400">
                       {t(I18nKey.CONVERSATION$NO_BUDGET_LIMIT)}
                     </span>
