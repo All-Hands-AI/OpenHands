@@ -11,6 +11,8 @@ function UserSettingsScreen() {
   const [originalEmail, setOriginalEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -45,6 +47,23 @@ function UserSettingsScreen() {
       console.error(t("SETTINGS$FAILED_TO_SAVE_EMAIL"), error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      setIsResendingVerification(true);
+      setResendSuccess(false);
+      
+      await openHands.put("/api/email/verify");
+      
+      setResendSuccess(true);
+    } catch (error) {
+      // Log error but don't show to user
+      // eslint-disable-next-line no-console
+      console.error(t("SETTINGS$FAILED_TO_RESEND_VERIFICATION"), error);
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -87,6 +106,27 @@ function UserSettingsScreen() {
                   {t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY")}
                 </div>
               )}
+              
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={isResendingVerification}
+                  className={`px-4 py-2 rounded ${
+                    !isResendingVerification
+                      ? "bg-primary text-white hover:bg-primary-dark"
+                      : "bg-tertiary text-secondary cursor-not-allowed"
+                  }`}
+                  data-testid="resend-verification-button"
+                >
+                  {isResendingVerification ? t("SETTINGS$SENDING") : "Resend verification"}
+                </button>
+                {resendSuccess && (
+                  <div className="text-sm text-green-500 mt-1">
+                    {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
