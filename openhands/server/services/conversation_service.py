@@ -79,7 +79,6 @@ async def create_new_conversation(
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
 
-    conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(conversation_init_data)
 
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -96,6 +95,7 @@ async def create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
+    conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(conversation_id, conversation_init_data)
     conversation_title = get_default_conversation_title(conversation_id)
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
