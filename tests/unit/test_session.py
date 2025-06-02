@@ -5,8 +5,8 @@ from litellm.exceptions import (
     RateLimitError,
 )
 
-from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.openhands_config import OpenHandsConfig
+from openhands.core.runtime.config.llm_config import LLMConfig
+from openhands.core.runtime.config.openhands_config import OpenHandsConfig
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore
 
@@ -38,7 +38,7 @@ async def test_notify_on_llm_retry(
     mock_litellm_completion, mock_sio, default_llm_config
 ):
     config = OpenHandsConfig()
-    config.set_llm_config(default_llm_config)
+    runtime.config.set_llm_config(default_llm_config)
     session = Session(
         sid='..sid..',
         file_store=InMemoryFileStore({}),

@@ -62,7 +62,7 @@ def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     agent = agent_class(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
-    agent.llm.config.max_message_chars = 1000
+    agent.llm.runtime.config.max_message_chars = 1000
     return agent
 
 
@@ -242,7 +242,7 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_response.choices[0].message.tool_calls = []
 
     mock_config = Mock()
-    mock_config.model = 'mock_model'
+    mock_runtime.config.model = 'mock_model'
 
     llm = Mock()
     llm.config = mock_config
@@ -252,7 +252,7 @@ def test_step_with_no_pending_actions(mock_state: State):
 
     # Create agent with mocked LLM
     config = AgentConfig()
-    config.enable_prompt_extensions = False
+    runtime.config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
 
     # Test step with no pending actions
@@ -280,7 +280,7 @@ def test_correct_tool_description_loaded_based_on_model_name(
 ):
     """Tests that the simplified tool descriptions are loaded for specific models."""
     o3_mock_config = Mock()
-    o3_mock_config.model = 'mock_o3_model'
+    o3_mock_runtime.config.model = 'mock_o3_model'
 
     llm = Mock()
     llm.config = o3_mock_config
@@ -300,7 +300,7 @@ def test_correct_tool_description_loaded_based_on_model_name(
         assert len(tool['function']['description']) < 1024
 
     sonnet_mock_config = Mock()
-    sonnet_mock_config.model = 'mock_sonnet_model'
+    sonnet_mock_runtime.config.model = 'mock_sonnet_model'
 
     llm.config = sonnet_mock_config
     agent = agent_class(llm=llm, config=AgentConfig())

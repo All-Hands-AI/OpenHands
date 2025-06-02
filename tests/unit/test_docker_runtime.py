@@ -31,7 +31,7 @@ def mock_docker_client():
 @pytest.fixture
 def config():
     config = OpenHandsConfig()
-    config.sandbox.keep_runtime_alive = False
+    runtime.config.sandbox.keep_runtime_alive = False
     return config
 
 
@@ -60,7 +60,7 @@ def test_container_not_stopped_when_keep_runtime_alive_true(
     mock_stop_containers, mock_docker_client, config, event_stream
 ):
     # Arrange
-    config.sandbox.keep_runtime_alive = True
+    runtime.config.sandbox.keep_runtime_alive = True
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
 
@@ -80,9 +80,9 @@ def test_volumes_mode_extraction():
     # Create a DockerRuntime instance with a mock config
     runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
-    runtime.config.sandbox.volumes = '/host/path:/container/path:ro'
-    runtime.config.workspace_mount_path = '/host/path'
-    runtime.config.workspace_mount_path_in_sandbox = '/container/path'
+    runtime.runtime.config.sandbox.volumes = '/host/path:/container/path:ro'
+    runtime.runtime.config.workspace_mount_path = '/host/path'
+    runtime.runtime.config.workspace_mount_path_in_sandbox = '/container/path'
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
@@ -103,12 +103,12 @@ def test_volumes_multiple_mounts():
     # Create a DockerRuntime instance with a mock config
     runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
-    runtime.config.runtime_mount = None
-    runtime.config.sandbox.volumes = (
+    runtime.runtime.config.runtime_mount = None
+    runtime.runtime.config.sandbox.volumes = (
         '/host/path1:/container/path1,/host/path2:/container/path2:ro'
     )
-    runtime.config.workspace_mount_path = '/host/path1'
-    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    runtime.runtime.config.workspace_mount_path = '/host/path1'
+    runtime.runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
@@ -130,9 +130,9 @@ def test_multiple_volumes():
     # Create a DockerRuntime instance with a mock config
     runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
-    runtime.config.sandbox.volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
-    runtime.config.workspace_mount_path = '/host/path1'
-    runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    runtime.runtime.config.sandbox.volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
+    runtime.runtime.config.workspace_mount_path = '/host/path1'
+    runtime.runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
@@ -156,9 +156,9 @@ def test_volumes_default_mode():
     # Create a DockerRuntime instance with a mock config
     runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
-    runtime.config.sandbox.volumes = '/host/path:/container/path'
-    runtime.config.workspace_mount_path = '/host/path'
-    runtime.config.workspace_mount_path_in_sandbox = '/container/path'
+    runtime.runtime.config.sandbox.volumes = '/host/path:/container/path'
+    runtime.runtime.config.workspace_mount_path = '/host/path'
+    runtime.runtime.config.workspace_mount_path_in_sandbox = '/container/path'
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()

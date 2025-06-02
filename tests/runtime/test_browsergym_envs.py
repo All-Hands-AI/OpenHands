@@ -5,7 +5,7 @@ import pytest
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.browse import BrowseInteractiveAction
 from openhands.events.observation.browse import BrowserOutputObservation
-from tests.runtime.conftest import _close_test_runtime, _load_runtime
+from tests.runtime.conftest import _close_test_runtime, create_test_runtime
 
 
 def has_miniwob():
@@ -29,7 +29,7 @@ def has_miniwob():
     reason='Requires browsergym-miniwob package to be installed',
 )
 def test_browsergym_eval_env(runtime_cls, temp_dir):
-    runtime, config = _load_runtime(
+    runtime = create_test_runtime(
         temp_dir,
         runtime_cls=runtime_cls,
         run_as_openhands=False,  # need root permission to access file

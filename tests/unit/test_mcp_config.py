@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from openhands.core.config.mcp_config import (
+from openhands.core.runtime.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
@@ -16,20 +16,20 @@ def test_valid_sse_config():
             MCPSSEServerConfig(url='http://server2:8080'),
         ]
     )
-    config.validate_servers()  # Should not raise any exception
+    runtime.config.validate_servers()  # Should not raise any exception
 
 
 def test_empty_sse_config():
     """Test SSE configuration with empty servers list."""
     config = MCPConfig(sse_servers=[])
-    config.validate_servers()
+    runtime.config.validate_servers()
 
 
 def test_invalid_sse_url():
     """Test SSE configuration with invalid URL format."""
     config = MCPConfig(sse_servers=[MCPSSEServerConfig(url='not_a_url')])
     with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
+        runtime.config.validate_servers()
     assert 'Invalid URL' in str(exc_info.value)
 
 
@@ -42,7 +42,7 @@ def test_duplicate_sse_urls():
         ]
     )
     with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
+        runtime.config.validate_servers()
     assert 'Duplicate MCP server URLs are not allowed' in str(exc_info.value)
 
 
@@ -76,30 +76,30 @@ def test_complex_urls():
             MCPSSEServerConfig(url='http://subdomain.example.com:9090'),
         ]
     )
-    config.validate_servers()  # Should not raise any exception
+    runtime.config.validate_servers()  # Should not raise any exception
 
 
 def test_mcp_sse_server_config_with_api_key():
     """Test MCPSSEServerConfig with API key."""
     config = MCPSSEServerConfig(url='http://server1:8080', api_key='test-api-key')
-    assert config.url == 'http://server1:8080'
-    assert config.api_key == 'test-api-key'
+    assert runtime.config.url == 'http://server1:8080'
+    assert runtime.config.api_key == 'test-api-key'
 
 
 def test_mcp_sse_server_config_without_api_key():
     """Test MCPSSEServerConfig without API key."""
     config = MCPSSEServerConfig(url='http://server1:8080')
-    assert config.url == 'http://server1:8080'
-    assert config.api_key is None
+    assert runtime.config.url == 'http://server1:8080'
+    assert runtime.config.api_key is None
 
 
 def test_mcp_stdio_server_config_basic():
     """Test basic MCPStdioServerConfig."""
     config = MCPStdioServerConfig(name='test-server', command='python')
-    assert config.name == 'test-server'
-    assert config.command == 'python'
-    assert config.args == []
-    assert config.env == {}
+    assert runtime.config.name == 'test-server'
+    assert runtime.config.command == 'python'
+    assert runtime.config.args == []
+    assert runtime.config.env == {}
 
 
 def test_mcp_stdio_server_config_with_args_and_env():
@@ -110,10 +110,10 @@ def test_mcp_stdio_server_config_with_args_and_env():
         args=['-m', 'server'],
         env={'DEBUG': 'true', 'PORT': '8080'},
     )
-    assert config.name == 'test-server'
-    assert config.command == 'python'
-    assert config.args == ['-m', 'server']
-    assert config.env == {'DEBUG': 'true', 'PORT': '8080'}
+    assert runtime.config.name == 'test-server'
+    assert runtime.config.command == 'python'
+    assert runtime.config.args == ['-m', 'server']
+    assert runtime.config.env == {'DEBUG': 'true', 'PORT': '8080'}
 
 
 def test_mcp_config_with_stdio_servers():
@@ -125,11 +125,11 @@ def test_mcp_config_with_stdio_servers():
         env={'DEBUG': 'true'},
     )
     config = MCPConfig(stdio_servers=[stdio_server])
-    assert len(config.stdio_servers) == 1
-    assert config.stdio_servers[0].name == 'test-server'
-    assert config.stdio_servers[0].command == 'python'
-    assert config.stdio_servers[0].args == ['-m', 'server']
-    assert config.stdio_servers[0].env == {'DEBUG': 'true'}
+    assert len(runtime.config.stdio_servers) == 1
+    assert runtime.config.stdio_servers[0].name == 'test-server'
+    assert runtime.config.stdio_servers[0].command == 'python'
+    assert runtime.config.stdio_servers[0].args == ['-m', 'server']
+    assert runtime.config.stdio_servers[0].env == {'DEBUG': 'true'}
 
 
 def test_from_toml_section_with_stdio_servers():
@@ -166,12 +166,12 @@ def test_mcp_config_with_both_server_types():
         env={'DEBUG': 'true'},
     )
     config = MCPConfig(sse_servers=[sse_server], stdio_servers=[stdio_server])
-    assert len(config.sse_servers) == 1
-    assert config.sse_servers[0].url == 'http://server1:8080'
-    assert config.sse_servers[0].api_key == 'test-api-key'
-    assert len(config.stdio_servers) == 1
-    assert config.stdio_servers[0].name == 'test-server'
-    assert config.stdio_servers[0].command == 'python'
+    assert len(runtime.config.sse_servers) == 1
+    assert runtime.config.sse_servers[0].url == 'http://server1:8080'
+    assert runtime.config.sse_servers[0].api_key == 'test-api-key'
+    assert len(runtime.config.stdio_servers) == 1
+    assert runtime.config.stdio_servers[0].name == 'test-server'
+    assert runtime.config.stdio_servers[0].command == 'python'
 
 
 def test_mcp_config_model_validation_error():

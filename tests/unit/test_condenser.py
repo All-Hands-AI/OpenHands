@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from openhands.controller.state.state import State
-from openhands.core.config.condenser_config import (
+from openhands.core.runtime.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
@@ -16,7 +16,7 @@ from openhands.core.config.condenser_config import (
     RecentEventsCondenserConfig,
     StructuredSummaryCondenserConfig,
 )
-from openhands.core.config.llm_config import LLMConfig
+from openhands.core.runtime.config.llm_config import LLMConfig
 from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType
 from openhands.events.event import Event, EventSource
@@ -344,14 +344,14 @@ def test_llm_summarizing_condenser_from_config():
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, LLMSummarizingCondenser)
-    assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.llm.runtime.config.model == 'gpt-4o'
+    assert condenser.llm.runtime.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
     # Since this condenser can't take advantage of caching, we intercept the
     # passed config and manually flip the caching prompt to False.
-    assert not condenser.llm.config.caching_prompt
+    assert not condenser.llm.runtime.config.caching_prompt
 
 
 def test_llm_summarizing_condenser_invalid_config():
@@ -489,14 +489,14 @@ def test_llm_attention_condenser_from_config():
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, LLMAttentionCondenser)
-    assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.llm.runtime.config.model == 'gpt-4o'
+    assert condenser.llm.runtime.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
     # Since this condenser can't take advantage of caching, we intercept the
     # passed config and manually flip the caching prompt to False.
-    assert not condenser.llm.config.caching_prompt
+    assert not condenser.llm.runtime.config.caching_prompt
 
 
 def test_llm_attention_condenser_invalid_config():
@@ -634,14 +634,14 @@ def test_structured_summary_condenser_from_config():
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, StructuredSummaryCondenser)
-    assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.llm.runtime.config.model == 'gpt-4o'
+    assert condenser.llm.runtime.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
     # Since this condenser can't take advantage of caching, we intercept the
     # passed config and manually flip the caching prompt to False.
-    assert not condenser.llm.config.caching_prompt
+    assert not condenser.llm.runtime.config.caching_prompt
 
 
 def test_structured_summary_condenser_invalid_config():

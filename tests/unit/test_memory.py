@@ -84,7 +84,7 @@ def mock_agent():
     agent.get_system_message.return_value = system_message
 
     agent.config = MagicMock()
-    agent.config.enable_mcp = False
+    agent.runtime.config.enable_mcp = False
 
     return agent
 

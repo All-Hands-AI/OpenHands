@@ -107,7 +107,7 @@ async def test_search_conversations():
         with patch(
             'openhands.server.routes.manage_conversations.config'
         ) as mock_config:
-            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            mock_runtime.config.conversation_max_age_seconds = 864000  # 10 days
             with patch(
                 'openhands.server.routes.manage_conversations.conversation_manager'
             ) as mock_manager:

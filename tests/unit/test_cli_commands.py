@@ -279,7 +279,7 @@ class TestHandleInitCommand:
     @patch('openhands.cli.commands.init_repository')
     async def test_init_local_runtime_successful(self, mock_init_repository):
         config = MagicMock(spec=OpenHandsConfig)
-        config.runtime = 'local'
+        runtime.config.runtime = 'local'
         event_stream = MagicMock(spec=EventStream)
         current_dir = '/test/dir'
 
@@ -307,7 +307,7 @@ class TestHandleInitCommand:
     @patch('openhands.cli.commands.init_repository')
     async def test_init_local_runtime_unsuccessful(self, mock_init_repository):
         config = MagicMock(spec=OpenHandsConfig)
-        config.runtime = 'local'
+        runtime.config.runtime = 'local'
         event_stream = MagicMock(spec=EventStream)
         current_dir = '/test/dir'
 
@@ -331,7 +331,7 @@ class TestHandleInitCommand:
     @patch('openhands.cli.commands.init_repository')
     async def test_init_non_local_runtime(self, mock_init_repository, mock_print):
         config = MagicMock(spec=OpenHandsConfig)
-        config.runtime = 'remote'  # Not local
+        runtime.config.runtime = 'remote'  # Not local
         event_stream = MagicMock(spec=EventStream)
         current_dir = '/test/dir'
 

@@ -20,7 +20,7 @@ def test_llm():
 
 def _get_llm(type_: type[LLM]):
     with _patch_http():
-        return type_(config=config.get_llm_config())
+        return type_(config=runtime.config.get_llm_config())
 
 
 @pytest.fixture

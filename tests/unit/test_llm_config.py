@@ -3,7 +3,7 @@ import pathlib
 import pytest
 
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.utils import load_from_toml
+from openhands.core.runtime.config.utils import load_from_toml
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ model = "custom-model-3"
 api_key = "custom-api-key-3"
 # No overrides for additional attributes
     """
-    toml_file = tmp_path / 'llm_config.toml'
+    toml_file = tmp_path / 'llm_runtime.config.toml'
     toml_file.write_text(toml_content)
     return str(toml_file)
 
@@ -56,25 +56,25 @@ def test_load_from_toml_llm_with_fallback(
     load_from_toml(default_config, generic_llm_toml)
 
     # Verify generic LLM configuration
-    generic_llm = default_config.get_llm_config('llm')
+    generic_llm = default_runtime.config.get_llm_config('llm')
     assert generic_llm.model == 'base-model'
     assert generic_llm.api_key.get_secret_value() == 'base-api-key'
     assert generic_llm.num_retries == 3
 
     # Verify custom1 LLM falls back 'num_retries' from base
-    custom1 = default_config.get_llm_config('custom1')
+    custom1 = default_runtime.config.get_llm_config('custom1')
     assert custom1.model == 'custom-model-1'
     assert custom1.api_key.get_secret_value() == 'custom-api-key-1'
     assert custom1.num_retries == 3  # from [llm]
 
     # Verify custom2 LLM overrides 'num_retries'
-    custom2 = default_config.get_llm_config('custom2')
+    custom2 = default_runtime.config.get_llm_config('custom2')
     assert custom2.model == 'custom-model-2'
     assert custom2.api_key.get_secret_value() == 'custom-api-key-2'
     assert custom2.num_retries == 5  # overridden value
 
     # Verify custom3 LLM inherits all attributes except 'model' and 'api_key'
-    custom3 = default_config.get_llm_config('custom3')
+    custom3 = default_runtime.config.get_llm_config('custom3')
     assert custom3.model == 'custom-model-3'
     assert custom3.api_key.get_secret_value() == 'custom-api-key-3'
     assert custom3.num_retries == 3  # from [llm]
@@ -104,13 +104,13 @@ num_retries = 10
     load_from_toml(default_config, str(toml_file))
 
     # Verify generic LLM configuration remains unchanged
-    generic_llm = default_config.get_llm_config('llm')
+    generic_llm = default_runtime.config.get_llm_config('llm')
     assert generic_llm.model == 'base-model'
     assert generic_llm.api_key.get_secret_value() == 'base-api-key'
     assert generic_llm.num_retries == 3
 
     # Verify custom_full LLM overrides all attributes
-    custom_full = default_config.get_llm_config('custom_full')
+    custom_full = default_runtime.config.get_llm_config('custom_full')
     assert custom_full.model == 'full-custom-model'
     assert custom_full.api_key.get_secret_value() == 'full-custom-api-key'
     assert custom_full.num_retries == 10  # overridden value
@@ -125,13 +125,13 @@ def test_load_from_toml_llm_custom_partial_override(
     load_from_toml(default_config, generic_llm_toml)
 
     # Verify custom1 LLM overrides 'model' and 'api_key' but inherits 'num_retries'
-    custom1 = default_config.get_llm_config('custom1')
+    custom1 = default_runtime.config.get_llm_config('custom1')
     assert custom1.model == 'custom-model-1'
     assert custom1.api_key.get_secret_value() == 'custom-api-key-1'
     assert custom1.num_retries == 3  # from [llm]
 
     # Verify custom2 LLM overrides 'model', 'api_key', and 'num_retries'
-    custom2 = default_config.get_llm_config('custom2')
+    custom2 = default_runtime.config.get_llm_config('custom2')
     assert custom2.model == 'custom-model-2'
     assert custom2.api_key.get_secret_value() == 'custom-api-key-2'
     assert custom2.num_retries == 5  # Overridden value
@@ -146,7 +146,7 @@ def test_load_from_toml_llm_custom_no_override(
     load_from_toml(default_config, generic_llm_toml)
 
     # Verify custom3 LLM inherits 'num_retries' from generic
-    custom3 = default_config.get_llm_config('custom3')
+    custom3 = default_runtime.config.get_llm_config('custom3')
     assert custom3.model == 'custom-model-3'
     assert custom3.api_key.get_secret_value() == 'custom-api-key-3'
     assert custom3.num_retries == 3  # from [llm]
@@ -172,7 +172,7 @@ api_key = "custom-only-api-key"
     load_from_toml(default_config, str(toml_file))
 
     # Verify custom_only LLM uses its own attributes and defaults for others
-    custom_only = default_config.get_llm_config('custom_only')
+    custom_only = default_runtime.config.get_llm_config('custom_only')
     assert custom_only.model == 'custom-only-model'
     assert custom_only.api_key.get_secret_value() == 'custom-only-api-key'
     assert custom_only.num_retries == 4  # default value
@@ -202,13 +202,13 @@ unknown_attr = "should_not_exist"
     load_from_toml(default_config, str(toml_file))
 
     # Verify generic LLM is loaded correctly
-    generic_llm = default_config.get_llm_config('llm')
+    generic_llm = default_runtime.config.get_llm_config('llm')
     assert generic_llm.model == 'base-model'
     assert generic_llm.api_key.get_secret_value() == 'base-api-key'
     assert generic_llm.num_retries == 3
 
     # Verify invalid_custom LLM does not override generic attributes
-    custom_invalid = default_config.get_llm_config('invalid_custom')
+    custom_invalid = default_runtime.config.get_llm_config('invalid_custom')
     assert custom_invalid.model == 'base-model'
     assert custom_invalid.api_key.get_secret_value() == 'base-api-key'
     assert custom_invalid.num_retries == 3  # default value
@@ -232,7 +232,7 @@ api_key = "test-api-key"
     load_from_toml(default_config, str(toml_file))
 
     # Verify Azure model gets default API version
-    azure_llm = default_config.get_llm_config('llm')
+    azure_llm = default_runtime.config.get_llm_config('llm')
     assert azure_llm.model == 'azure/o3-mini'
     assert azure_llm.api_version == '2024-12-01-preview'
 
@@ -251,6 +251,6 @@ api_key = "test-api-key"
     load_from_toml(default_config, str(toml_file))
 
     # Verify non-Azure model doesn't get default API version
-    non_azure_llm = default_config.get_llm_config('llm')
+    non_azure_llm = default_runtime.config.get_llm_config('llm')
     assert non_azure_llm.model == 'anthropic/claude-3-sonnet'
     assert non_azure_llm.api_version is None

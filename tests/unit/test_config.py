@@ -15,7 +15,7 @@ from openhands.core.config import (
     load_from_toml,
     load_openhands_config,
 )
-from openhands.core.config.condenser_config import (
+from openhands.core.runtime.config.condenser_config import (
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
@@ -26,23 +26,23 @@ from openhands.core.logger import openhands_logger
 @pytest.fixture
 def setup_env():
     # Create old-style and new-style TOML files
-    with open('old_style_config.toml', 'w') as f:
+    with open('old_style_runtime.config.toml', 'w') as f:
         f.write('[default]\nLLM_MODEL="GPT-4"\n')
 
-    with open('new_style_config.toml', 'w') as f:
+    with open('new_style_runtime.config.toml', 'w') as f:
         f.write('[app]\nLLM_MODEL="GPT-3"\n')
 
     yield
 
     # Cleanup TOML files after the test
-    os.remove('old_style_config.toml')
-    os.remove('new_style_config.toml')
+    os.remove('old_style_runtime.config.toml')
+    os.remove('new_style_runtime.config.toml')
 
 
 @pytest.fixture
 def temp_toml_file(tmp_path):
     # Fixture to create a temporary directory and TOML file for testing
-    tmp_toml_file = os.path.join(tmp_path, 'config.toml')
+    tmp_toml_file = os.path.join(tmp_path, 'runtime.config.toml')
     yield tmp_toml_file
 
 
@@ -64,17 +64,17 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     load_from_env(config, os.environ)
     finalize_config(config)
 
-    assert config.sandbox.volumes == '/repos/openhands/workspace:/workspace:rw'
+    assert runtime.config.sandbox.volumes == '/repos/openhands/workspace:/workspace:rw'
     # Check that the old parameters are set for backward compatibility
-    assert config.workspace_base == os.path.abspath('/repos/openhands/workspace')
-    assert config.workspace_mount_path == os.path.abspath('/repos/openhands/workspace')
-    assert config.workspace_mount_path_in_sandbox == '/workspace'
-    assert isinstance(config.get_llm_config(), LLMConfig)
-    assert config.get_llm_config().api_key.get_secret_value() == 'sk-proj-rgMV0...'
-    assert config.get_llm_config().model == 'gpt-4o'
-    assert isinstance(config.get_agent_config(), AgentConfig)
-    assert config.default_agent == 'CodeActAgent'
-    assert config.sandbox.timeout == 10
+    assert runtime.config.workspace_base == os.path.abspath('/repos/openhands/workspace')
+    assert runtime.config.workspace_mount_path == os.path.abspath('/repos/openhands/workspace')
+    assert runtime.config.workspace_mount_path_in_sandbox == '/workspace'
+    assert isinstance(runtime.config.get_llm_config(), LLMConfig)
+    assert runtime.config.get_llm_config().api_key.get_secret_value() == 'sk-proj-rgMV0...'
+    assert runtime.config.get_llm_config().model == 'gpt-4o'
+    assert isinstance(runtime.config.get_agent_config(), AgentConfig)
+    assert runtime.config.default_agent == 'CodeActAgent'
+    assert runtime.config.sandbox.timeout == 10
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
@@ -87,13 +87,13 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 
     load_from_env(default_config, os.environ)
 
-    assert default_config.get_llm_config().api_key.get_secret_value() == 'test-api-key'
-    assert default_config.default_agent == 'BrowsingAgent'
+    assert default_runtime.config.get_llm_config().api_key.get_secret_value() == 'test-api-key'
+    assert default_runtime.config.default_agent == 'BrowsingAgent'
     # Verify deprecated variables still work
-    assert default_config.workspace_base == '/opt/files/workspace'
-    assert default_config.workspace_mount_path is None  # before finalize_config
-    assert default_config.workspace_mount_path_in_sandbox is not None
-    assert default_config.sandbox.base_container_image == 'custom_image'
+    assert default_runtime.config.workspace_base == '/opt/files/workspace'
+    assert default_runtime.config.workspace_mount_path is None  # before finalize_config
+    assert default_runtime.config.workspace_mount_path_in_sandbox is not None
+    assert default_runtime.config.sandbox.base_container_image == 'custom_image'
 
 
 def test_load_from_new_style_toml(default_config, temp_toml_file):
@@ -128,52 +128,52 @@ default_agent = "TestAgent"
     load_from_toml(default_config, temp_toml_file)
 
     # default llm & agent configs
-    assert default_config.default_agent == 'TestAgent'
-    assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
-    assert default_config.get_agent_config().enable_prompt_extensions is True
+    assert default_runtime.config.default_agent == 'TestAgent'
+    assert default_runtime.config.get_llm_config().model == 'test-model'
+    assert default_runtime.config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
+    assert default_runtime.config.get_agent_config().enable_prompt_extensions is True
 
     # undefined agent config inherits default ones
     assert (
-        default_config.get_llm_config_from_agent('CodeActAgent')
-        == default_config.get_llm_config()
+        default_runtime.config.get_llm_config_from_agent('CodeActAgent')
+        == default_runtime.config.get_llm_config()
     )
     assert (
-        default_config.get_agent_config('CodeActAgent').enable_prompt_extensions is True
+        default_runtime.config.get_agent_config('CodeActAgent').enable_prompt_extensions is True
     )
 
     # defined agent config overrides default ones
-    assert default_config.get_llm_config_from_agent(
+    assert default_runtime.config.get_llm_config_from_agent(
         'BrowsingAgent'
-    ) == default_config.get_llm_config('cheap')
+    ) == default_runtime.config.get_llm_config('cheap')
     assert (
-        default_config.get_llm_config_from_agent('BrowsingAgent').model
+        default_runtime.config.get_llm_config_from_agent('BrowsingAgent').model
         == 'some-cheap-model'
     )
     assert (
-        default_config.get_agent_config('BrowsingAgent').enable_prompt_extensions
+        default_runtime.config.get_agent_config('BrowsingAgent').enable_prompt_extensions
         is False
     )
 
-    assert default_config.sandbox.volumes == '/opt/files2/workspace:/workspace:rw'
-    assert default_config.sandbox.timeout == 1
+    assert default_runtime.config.sandbox.volumes == '/opt/files2/workspace:/workspace:rw'
+    assert default_runtime.config.sandbox.timeout == 1
 
-    assert default_config.workspace_mount_path is None
-    assert default_config.workspace_mount_path_in_sandbox is not None
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_mount_path is None
+    assert default_runtime.config.workspace_mount_path_in_sandbox is not None
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
 
     finalize_config(default_config)
 
     # after finalize_config, workspace_mount_path is set based on sandbox.volumes
-    assert default_config.workspace_mount_path == os.path.abspath(
+    assert default_runtime.config.workspace_mount_path == os.path.abspath(
         '/opt/files2/workspace'
     )
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
 
 
 def test_llm_config_native_tool_calling(default_config, temp_toml_file, monkeypatch):
     # default is None
-    assert default_config.get_llm_config().native_tool_calling is None
+    assert default_runtime.config.get_llm_config().native_tool_calling is None
 
     # set to false
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -186,8 +186,8 @@ native_tool_calling = false
 """
         )
     load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config().native_tool_calling is None
-    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is False
+    assert default_runtime.config.get_llm_config().native_tool_calling is None
+    assert default_runtime.config.get_llm_config('gpt4o-mini').native_tool_calling is False
 
     # set to true using string
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -200,15 +200,15 @@ native_tool_calling = true
 """
         )
     load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
+    assert default_runtime.config.get_llm_config('gpt4o-mini').native_tool_calling is True
 
     # override to false by env
     # see utils.set_attr_from_env
     monkeypatch.setenv('LLM_NATIVE_TOOL_CALLING', 'false')
     load_from_env(default_config, os.environ)
-    assert default_config.get_llm_config().native_tool_calling is False
+    assert default_runtime.config.get_llm_config().native_tool_calling is False
     assert (
-        default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
+        default_runtime.config.get_llm_config('gpt4o-mini').native_tool_calling is True
     )  # load_from_env didn't override the named config set in the toml file under [llm.gpt4o-mini]
 
 
@@ -238,28 +238,28 @@ user_id = 1001
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.workspace_mount_path is None
+    assert default_runtime.config.workspace_mount_path is None
 
     load_from_env(default_config, os.environ)
 
     assert os.environ.get('LLM_MODEL') is None
-    assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config('llm').model == 'test-model'
-    assert default_config.get_llm_config_from_agent().model == 'test-model'
-    assert default_config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
+    assert default_runtime.config.get_llm_config().model == 'test-model'
+    assert default_runtime.config.get_llm_config('llm').model == 'test-model'
+    assert default_runtime.config.get_llm_config_from_agent().model == 'test-model'
+    assert default_runtime.config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
 
     # Environment variable should override TOML value
-    assert default_config.sandbox.volumes == '/tmp/test:/workspace:ro'
-    assert default_config.workspace_mount_path is None
+    assert default_runtime.config.sandbox.volumes == '/tmp/test:/workspace:ro'
+    assert default_runtime.config.workspace_mount_path is None
 
-    assert default_config.disable_color is True
-    assert default_config.sandbox.timeout == 1000
-    assert default_config.sandbox.user_id == 1002
+    assert default_runtime.config.disable_color is True
+    assert default_runtime.config.sandbox.timeout == 1000
+    assert default_runtime.config.sandbox.user_id == 1002
 
     finalize_config(default_config)
     # after finalize_config, workspace_mount_path is set based on the sandbox.volumes
-    assert default_config.workspace_mount_path == os.path.abspath('/tmp/test')
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_mount_path == os.path.abspath('/tmp/test')
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
 
 
 def test_env_overrides_sandbox_toml(monkeypatch, default_config, temp_toml_file):
@@ -287,28 +287,28 @@ user_id = 1001
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.workspace_mount_path is None
+    assert default_runtime.config.workspace_mount_path is None
 
     # before load_from_env, values are set to the values from the toml file
-    assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
-    assert default_config.sandbox.volumes == '/opt/files3/workspace:/workspace:rw'
-    assert default_config.sandbox.timeout == 500
-    assert default_config.sandbox.user_id == 1001
+    assert default_runtime.config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
+    assert default_runtime.config.sandbox.volumes == '/opt/files3/workspace:/workspace:rw'
+    assert default_runtime.config.sandbox.timeout == 500
+    assert default_runtime.config.sandbox.user_id == 1001
 
     load_from_env(default_config, os.environ)
 
     # values from env override values from toml
     assert os.environ.get('LLM_MODEL') is None
-    assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
-    assert default_config.sandbox.volumes == '/tmp/test:/workspace:ro'
-    assert default_config.sandbox.timeout == 1000
-    assert default_config.sandbox.user_id == 1002
+    assert default_runtime.config.get_llm_config().model == 'test-model'
+    assert default_runtime.config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
+    assert default_runtime.config.sandbox.volumes == '/tmp/test:/workspace:ro'
+    assert default_runtime.config.sandbox.timeout == 1000
+    assert default_runtime.config.sandbox.user_id == 1002
 
     finalize_config(default_config)
     # after finalize_config, workspace_mount_path is set based on sandbox.volumes
-    assert default_config.workspace_mount_path == os.path.abspath('/tmp/test')
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_mount_path == os.path.abspath('/tmp/test')
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
 
 
 def test_sandbox_config_from_toml(monkeypatch, default_config, temp_toml_file):
@@ -333,15 +333,15 @@ user_id = 1001
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
 
-    assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.sandbox.volumes == '/opt/files/workspace:/workspace:rw'
-    assert default_config.workspace_mount_path == os.path.abspath(
+    assert default_runtime.config.get_llm_config().model == 'test-model'
+    assert default_runtime.config.sandbox.volumes == '/opt/files/workspace:/workspace:rw'
+    assert default_runtime.config.workspace_mount_path == os.path.abspath(
         '/opt/files/workspace'
     )
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.sandbox.timeout == 1
-    assert default_config.sandbox.base_container_image == 'custom_image'
-    assert default_config.sandbox.user_id == 1001
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.sandbox.timeout == 1
+    assert default_runtime.config.sandbox.base_container_image == 'custom_image'
+    assert default_runtime.config.sandbox.user_id == 1001
 
 
 def test_load_from_env_with_list(monkeypatch, default_config):
@@ -359,15 +359,15 @@ def test_load_from_env_with_list(monkeypatch, default_config):
     load_from_env(default_config, os.environ)
 
     # Verify that the list was correctly parsed
-    assert isinstance(default_config.sandbox.runtime_extra_build_args, list)
-    assert len(default_config.sandbox.runtime_extra_build_args) == 2
+    assert isinstance(default_runtime.config.sandbox.runtime_extra_build_args, list)
+    assert len(default_runtime.config.sandbox.runtime_extra_build_args) == 2
     assert (
         '--add-host=host.docker.internal:host-gateway'
-        in default_config.sandbox.runtime_extra_build_args
+        in default_runtime.config.sandbox.runtime_extra_build_args
     )
     assert (
         '--build-arg=https_proxy=https://my-proxy:912'
-        in default_config.sandbox.runtime_extra_build_args
+        in default_runtime.config.sandbox.runtime_extra_build_args
     )
 
 
@@ -389,13 +389,13 @@ security_analyzer = "semgrep"
         )
 
     load_from_toml(default_config, temp_toml_file)
-    assert default_config.security.confirmation_mode is False
-    assert default_config.security.security_analyzer == 'semgrep'
+    assert default_runtime.config.security.confirmation_mode is False
+    assert default_runtime.config.security.security_analyzer == 'semgrep'
 
 
 def test_security_config_from_dict():
     """Test creating SecurityConfig instance from dictionary."""
-    from openhands.core.config.security_config import SecurityConfig
+    from openhands.core.runtime.config.security_config import SecurityConfig
 
     # Test with all fields
     config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
@@ -403,26 +403,26 @@ def test_security_config_from_dict():
     security_config = SecurityConfig(**config_dict)
 
     # Verify all fields are correctly set
-    assert security_config.confirmation_mode is True
-    assert security_config.security_analyzer == 'some_analyzer'
+    assert security_runtime.config.confirmation_mode is True
+    assert security_runtime.config.security_analyzer == 'some_analyzer'
 
 
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
-    initial_defaults = default_config.defaults_dict
+    initial_defaults = default_runtime.config.defaults_dict
     assert initial_defaults['workspace_mount_path']['default'] is None
     assert initial_defaults['default_agent']['default'] == 'CodeActAgent'
 
     updated_config = OpenHandsConfig()
-    updated_config.get_llm_config().api_key = 'updated-api-key'
-    updated_config.get_llm_config('llm').api_key = 'updated-api-key'
-    updated_config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
-    updated_config.get_llm_config_from_agent(
+    updated_runtime.config.get_llm_config().api_key = 'updated-api-key'
+    updated_runtime.config.get_llm_config('llm').api_key = 'updated-api-key'
+    updated_runtime.config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
+    updated_runtime.config.get_llm_config_from_agent(
         'BrowsingAgent'
     ).api_key = 'updated-api-key'
-    updated_config.default_agent = 'BrowsingAgent'
+    updated_runtime.config.default_agent = 'BrowsingAgent'
 
-    defaults_after_updates = updated_config.defaults_dict
+    defaults_after_updates = updated_runtime.config.defaults_dict
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
     assert defaults_after_updates['workspace_mount_path']['default'] is None
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
@@ -445,16 +445,16 @@ def test_sandbox_volumes(monkeypatch, default_config):
 
     # Check that sandbox.volumes is set correctly
     assert (
-        default_config.sandbox.volumes
+        default_runtime.config.sandbox.volumes
         == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
     )
 
     # With the new behavior, workspace_base and workspace_mount_path should be None
     # when no explicit /workspace mount is found
-    assert default_config.workspace_base is None
-    assert default_config.workspace_mount_path is None
+    assert default_runtime.config.workspace_base is None
+    assert default_runtime.config.workspace_mount_path is None
     assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace'
+        default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
     )  # Default value
 
 
@@ -466,14 +466,14 @@ def test_sandbox_volumes_with_mode(monkeypatch, default_config):
     finalize_config(default_config)
 
     # Check that sandbox.volumes is set correctly
-    assert default_config.sandbox.volumes == '/host/path1:/container/path1:ro'
+    assert default_runtime.config.sandbox.volumes == '/host/path1:/container/path1:ro'
 
     # With the new behavior, workspace_base and workspace_mount_path should be None
     # when no explicit /workspace mount is found
-    assert default_config.workspace_base is None
-    assert default_config.workspace_mount_path is None
+    assert default_runtime.config.workspace_base is None
+    assert default_runtime.config.workspace_mount_path is None
     assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace'
+        default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
     )  # Default value
 
 
@@ -488,12 +488,12 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 
     load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
-    default_config.jwt_secret = None  # prevent leak
-    for llm in default_config.llms.values():
+    default_runtime.config.jwt_secret = None  # prevent leak
+    for llm in default_runtime.config.llms.values():
         llm.api_key = None  # prevent leak
-    assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
-    assert default_config.get_llm_config().custom_llm_provider is None
-    assert default_config.workspace_mount_path == '/home/user/project'
+    assert default_runtime.config.get_llm_config().model == 'gpt-5-turbo-1106'
+    assert default_runtime.config.get_llm_config().custom_llm_provider is None
+    assert default_runtime.config.workspace_mount_path == '/home/user/project'
 
 
 def test_load_from_toml_file_not_found(default_config):
@@ -508,9 +508,9 @@ def test_load_from_toml_file_not_found(default_config):
     load_from_toml(default_config, 'nonexistent.toml')
 
     # Verify that config object maintains default values
-    assert default_config.get_llm_config() is not None
-    assert default_config.get_agent_config() is not None
-    assert default_config.sandbox is not None
+    assert default_runtime.config.get_llm_config() is not None
+    assert default_runtime.config.get_agent_config() is not None
+    assert default_runtime.config.sandbox is not None
 
 
 def test_core_not_in_toml(default_config, temp_toml_file):
@@ -536,11 +536,11 @@ security_analyzer = "semgrep"
 """)
 
     load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_agent_config().enable_prompt_extensions is True
-    assert default_config.sandbox.base_container_image == 'custom_image'
-    assert default_config.sandbox.user_id == 1001
-    assert default_config.security.security_analyzer == 'semgrep'
+    assert default_runtime.config.get_llm_config().model == 'test-model'
+    assert default_runtime.config.get_agent_config().enable_prompt_extensions is True
+    assert default_runtime.config.sandbox.base_container_image == 'custom_image'
+    assert default_runtime.config.sandbox.user_id == 1001
+    assert default_runtime.config.security.security_analyzer == 'semgrep'
 
 
 def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
@@ -557,7 +557,7 @@ def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
 debug = true
 
 [llm]
-# Not set in `openhands/core/schema/config.py`
+# Not set in `openhands/core/schema/runtime.config.py`
 invalid_field = "test"
 model = "gpt-4"
 
@@ -577,13 +577,13 @@ invalid_field_in_sandbox = "test"
     openhands_logger.addHandler(handler)
 
     try:
-        # Since sandbox_config.from_toml_section now raises ValueError for invalid fields,
+        # Since sandbox_runtime.config.from_toml_section now raises ValueError for invalid fields,
         # we need to catch that exception
         with pytest.raises(ValueError) as excinfo:
             load_from_toml(default_config, temp_toml_file)
 
         # Verify the error message mentions the invalid sandbox field
-        assert 'Error in [sandbox] section in config.toml' in str(excinfo.value)
+        assert 'Error in [sandbox] section in runtime.config.toml' in str(excinfo.value)
 
         log_content = log_output.getvalue()
 
@@ -591,7 +591,7 @@ invalid_field_in_sandbox = "test"
         assert 'Cannot parse [llm] config from toml' in log_content
 
         # Verify valid configurations are loaded before the error was raised
-        assert default_config.debug is True
+        assert default_runtime.config.debug is True
     finally:
         openhands_logger.removeHandler(handler)
 
@@ -610,77 +610,77 @@ invalid_security_field = "test"
     with pytest.raises(ValueError) as excinfo:
         load_from_toml(default_config, temp_toml_file)
 
-    assert 'Error in [security] section in config.toml' in str(excinfo.value)
+    assert 'Error in [security] section in runtime.config.toml' in str(excinfo.value)
 
 
 def test_finalize_config(default_config):
     # Test finalize config
-    assert default_config.workspace_mount_path is None
-    default_config.workspace_base = None
+    assert default_runtime.config.workspace_mount_path is None
+    default_runtime.config.workspace_base = None
     finalize_config(default_config)
 
-    assert default_config.workspace_mount_path is None
+    assert default_runtime.config.workspace_mount_path is None
 
 
 def test_workspace_mount_path_default(default_config):
-    assert default_config.workspace_mount_path is None
-    default_config.workspace_base = '/home/user/project'
+    assert default_runtime.config.workspace_mount_path is None
+    default_runtime.config.workspace_base = '/home/user/project'
     finalize_config(default_config)
-    assert default_config.workspace_mount_path == os.path.abspath(
-        default_config.workspace_base
+    assert default_runtime.config.workspace_mount_path == os.path.abspath(
+        default_runtime.config.workspace_base
     )
 
 
 def test_workspace_mount_rewrite(default_config, monkeypatch):
-    default_config.workspace_base = '/home/user/project'
-    default_config.workspace_mount_rewrite = '/home/user:/sandbox'
+    default_runtime.config.workspace_base = '/home/user/project'
+    default_runtime.config.workspace_mount_rewrite = '/home/user:/sandbox'
     monkeypatch.setattr('os.getcwd', lambda: '/current/working/directory')
     finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/sandbox/project'
+    assert default_runtime.config.workspace_mount_path == '/sandbox/project'
 
 
 def test_cache_dir_creation(default_config, tmpdir):
-    default_config.cache_dir = str(tmpdir.join('test_cache'))
+    default_runtime.config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
-    assert os.path.exists(default_config.cache_dir)
+    assert os.path.exists(default_runtime.config.cache_dir)
 
 
 def test_sandbox_volumes_with_workspace(default_config):
     """Test that sandbox.volumes with explicit /workspace mount works correctly."""
-    default_config.sandbox.volumes = '/home/user/mydir:/workspace:rw,/data:/data:ro'
+    default_runtime.config.sandbox.volumes = '/home/user/mydir:/workspace:rw,/data:/data:ro'
     finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
+    assert default_runtime.config.workspace_mount_path == '/home/user/mydir'
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_base == '/home/user/mydir'
 
 
 def test_sandbox_volumes_without_workspace(default_config):
     """Test that sandbox.volumes without explicit /workspace mount doesn't set workspace paths."""
-    default_config.sandbox.volumes = '/data:/data:ro,/models:/models:ro'
+    default_runtime.config.sandbox.volumes = '/data:/data:ro,/models:/models:ro'
     finalize_config(default_config)
-    assert default_config.workspace_mount_path is None
-    assert default_config.workspace_base is None
+    assert default_runtime.config.workspace_mount_path is None
+    assert default_runtime.config.workspace_base is None
     assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace'
+        default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
     )  # Default value remains unchanged
 
 
 def test_sandbox_volumes_with_workspace_not_first(default_config):
     """Test that sandbox.volumes with /workspace mount not as first entry works correctly."""
-    default_config.sandbox.volumes = (
+    default_runtime.config.sandbox.volumes = (
         '/data:/data:ro,/home/user/mydir:/workspace:rw,/models:/models:ro'
     )
     finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
+    assert default_runtime.config.workspace_mount_path == '/home/user/mydir'
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_base == '/home/user/mydir'
 
 
 def test_agent_config_condenser_with_no_enabled():
     """Test default agent condenser with enable_default_condenser=False."""
     config = OpenHandsConfig(enable_default_condenser=False)
-    agent_config = config.get_agent_config()
-    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+    agent_config = runtime.config.get_agent_config()
+    assert isinstance(agent_runtime.config.condenser, NoOpCondenserConfig)
 
 
 def test_sandbox_volumes_toml(default_config, temp_toml_file):
@@ -697,13 +697,13 @@ timeout = 1
 
     # Check that sandbox.volumes is set correctly
     assert (
-        default_config.sandbox.volumes
+        default_runtime.config.sandbox.volumes
         == '/home/user/mydir:/workspace:rw,/data:/data:ro'
     )
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
-    assert default_config.sandbox.timeout == 1
+    assert default_runtime.config.workspace_mount_path == '/home/user/mydir'
+    assert default_runtime.config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_runtime.config.workspace_base == '/home/user/mydir'
+    assert default_runtime.config.sandbox.timeout == 1
 
 
 def test_condenser_config_from_toml_basic(default_config, temp_toml_file):
@@ -719,13 +719,13 @@ max_events = 15
     load_from_toml(default_config, temp_toml_file)
 
     # Verify that the condenser config is correctly assigned to the default agent config
-    agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
-    assert agent_config.condenser.keep_first == 3
-    assert agent_config.condenser.max_events == 15
+    agent_config = default_runtime.config.get_agent_config()
+    assert isinstance(agent_runtime.config.condenser, RecentEventsCondenserConfig)
+    assert agent_runtime.config.condenser.keep_first == 3
+    assert agent_runtime.config.condenser.max_events == 15
 
     # We can also verify the function works directly
-    from openhands.core.config.condenser_config import (
+    from openhands.core.runtime.config.condenser_config import (
         condenser_config_from_toml_section,
     )
 
@@ -756,18 +756,18 @@ max_size = 50
     load_from_toml(default_config, temp_toml_file)
 
     # Verify that the LLM config was loaded
-    assert 'condenser_llm' in default_config.llms
-    assert default_config.llms['condenser_llm'].model == 'gpt-4'
+    assert 'condenser_llm' in default_runtime.config.llms
+    assert default_runtime.config.llms['condenser_llm'].model == 'gpt-4'
 
     # Verify that the condenser config is correctly assigned to the default agent config
-    agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, LLMSummarizingCondenserConfig)
-    assert agent_config.condenser.keep_first == 2
-    assert agent_config.condenser.max_size == 50
-    assert agent_config.condenser.llm_config.model == 'gpt-4'
+    agent_config = default_runtime.config.get_agent_config()
+    assert isinstance(agent_runtime.config.condenser, LLMSummarizingCondenserConfig)
+    assert agent_runtime.config.condenser.keep_first == 2
+    assert agent_runtime.config.condenser.max_size == 50
+    assert agent_runtime.config.condenser.llm_runtime.config.model == 'gpt-4'
 
     # Test the condenser config with the LLM reference
-    from openhands.core.config.condenser_config import (
+    from openhands.core.runtime.config.condenser_config import (
         condenser_config_from_toml_section,
     )
 
@@ -778,14 +778,14 @@ max_size = 50
         'max_size': 50,
     }
     condenser_mapping = condenser_config_from_toml_section(
-        condenser_data, default_config.llms
+        condenser_data, default_runtime.config.llms
     )
 
     assert 'condenser' in condenser_mapping
     assert isinstance(condenser_mapping['condenser'], LLMSummarizingCondenserConfig)
     assert condenser_mapping['condenser'].keep_first == 2
     assert condenser_mapping['condenser'].max_size == 50
-    assert condenser_mapping['condenser'].llm_config.model == 'gpt-4'
+    assert condenser_mapping['condenser'].llm_runtime.config.model == 'gpt-4'
 
 
 def test_condenser_config_from_toml_with_missing_llm_reference(
@@ -804,7 +804,7 @@ max_size = 50
     load_from_toml(default_config, temp_toml_file)
 
     # Test the condenser config with a missing LLM reference
-    from openhands.core.config.condenser_config import (
+    from openhands.core.runtime.config.condenser_config import (
         condenser_config_from_toml_section,
     )
 
@@ -815,7 +815,7 @@ max_size = 50
         'max_size': 50,
     }
     condenser_mapping = condenser_config_from_toml_section(
-        condenser_data, default_config.llms
+        condenser_data, default_runtime.config.llms
     )
 
     assert 'condenser' in condenser_mapping
@@ -835,7 +835,7 @@ type = "invalid_type"
     load_from_toml(default_config, temp_toml_file)
 
     # Test the condenser config with an invalid type
-    from openhands.core.config.condenser_config import (
+    from openhands.core.runtime.config.condenser_config import (
         condenser_config_from_toml_section,
     )
 
@@ -862,7 +862,7 @@ max_events = 0   # Invalid: must be >= 1
     load_from_toml(default_config, temp_toml_file)
 
     # Test the condenser config with validation errors
-    from openhands.core.config.condenser_config import (
+    from openhands.core.runtime.config.condenser_config import (
         condenser_config_from_toml_section,
     )
 
@@ -884,14 +884,14 @@ def test_default_condenser_behavior_enabled(default_config, temp_toml_file):
 """)
 
     # Set enable_default_condenser to True
-    default_config.enable_default_condenser = True
+    default_runtime.config.enable_default_condenser = True
     load_from_toml(default_config, temp_toml_file)
 
     # Verify the default agent config has LLMSummarizingCondenserConfig
-    agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, LLMSummarizingCondenserConfig)
-    assert agent_config.condenser.keep_first == 1
-    assert agent_config.condenser.max_size == 100
+    agent_config = default_runtime.config.get_agent_config()
+    assert isinstance(agent_runtime.config.condenser, LLMSummarizingCondenserConfig)
+    assert agent_runtime.config.condenser.keep_first == 1
+    assert agent_runtime.config.condenser.max_size == 100
 
 
 def test_default_condenser_behavior_disabled(default_config, temp_toml_file):
@@ -904,18 +904,18 @@ def test_default_condenser_behavior_disabled(default_config, temp_toml_file):
 """)
 
     # Set enable_default_condenser to False
-    default_config.enable_default_condenser = False
+    default_runtime.config.enable_default_condenser = False
     load_from_toml(default_config, temp_toml_file)
 
     # Verify the agent config uses NoOpCondenserConfig
-    agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+    agent_config = default_runtime.config.get_agent_config()
+    assert isinstance(agent_runtime.config.condenser, NoOpCondenserConfig)
 
 
 def test_default_condenser_explicit_toml_override(default_config, temp_toml_file):
     """Test that explicit condenser in TOML takes precedence over the default."""
     # Set enable_default_condenser to True
-    default_config.enable_default_condenser = True
+    default_runtime.config.enable_default_condenser = True
 
     # Create a TOML file with an explicit condenser section
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -930,10 +930,10 @@ max_events = 15
     load_from_toml(default_config, temp_toml_file)
 
     # Verify the explicit condenser from TOML takes precedence
-    agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
-    assert agent_config.condenser.keep_first == 3
-    assert agent_config.condenser.max_events == 15
+    agent_config = default_runtime.config.get_agent_config()
+    assert isinstance(agent_runtime.config.condenser, RecentEventsCondenserConfig)
+    assert agent_runtime.config.condenser.keep_first == 3
+    assert agent_runtime.config.condenser.max_events == 15
 
 
 def test_api_keys_repr_str():
@@ -1046,8 +1046,8 @@ max_budget_per_task = 4.7
 
     load_from_toml(config, temp_toml_file)
 
-    assert config.max_iterations == 42
-    assert config.max_budget_per_task == 4.7
+    assert runtime.config.max_iterations == 42
+    assert runtime.config.max_budget_per_task == 4.7
 
 
 def test_get_llm_config_arg(temp_toml_file):
@@ -1069,7 +1069,7 @@ api_key="redacted"
         f.write(temp_toml)
 
     llm_config = get_llm_config_arg('gpt3', temp_toml_file)
-    assert llm_config.model == 'gpt-3.5-turbo'
+    assert llm_runtime.config.model == 'gpt-3.5-turbo'
 
 
 def test_get_agent_configs(default_config, temp_toml_file):
@@ -1090,10 +1090,10 @@ enable_jupyter = false
 
     load_from_toml(default_config, temp_toml_file)
 
-    codeact_config = default_config.get_agent_configs().get('CodeActAgent')
-    assert codeact_config.enable_prompt_extensions is True
-    browsing_config = default_config.get_agent_configs().get('BrowsingAgent')
-    assert browsing_config.enable_jupyter is False
+    codeact_config = default_runtime.config.get_agent_configs().get('CodeActAgent')
+    assert codeact_runtime.config.enable_prompt_extensions is True
+    browsing_config = default_runtime.config.get_agent_configs().get('BrowsingAgent')
+    assert browsing_runtime.config.enable_jupyter is False
 
 
 def test_get_agent_config_arg(temp_toml_file):
@@ -1115,8 +1115,8 @@ enable_jupyter = false
         f.write(temp_toml)
 
     agent_config = get_agent_config_arg('CodeActAgent', temp_toml_file)
-    assert not agent_config.enable_prompt_extensions
-    assert not agent_config.enable_browsing
+    assert not agent_runtime.config.enable_prompt_extensions
+    assert not agent_runtime.config.enable_browsing
 
     agent_config2 = get_agent_config_arg('BrowsingAgent', temp_toml_file)
     assert agent_config2.enable_prompt_extensions
@@ -1139,7 +1139,7 @@ enable_prompt_extensions = false
 
     # just a sanity check that load app config wouldn't fail
     app_config = load_openhands_config(config_file=temp_toml_file)
-    assert app_config.max_iterations == 99
+    assert app_runtime.config.max_iterations == 99
 
     # run_infer in evaluation can use `get_agent_config_arg` to load custom
     # agent configs with any group name (not just agent name)
@@ -1151,7 +1151,7 @@ enable_prompt_extensions = false
 
 def test_agent_config_from_toml_section():
     """Test that AgentConfig.from_toml_section correctly parses agent configurations from TOML."""
-    from openhands.core.config.agent_config import AgentConfig
+    from openhands.core.runtime.config.agent_config import AgentConfig
 
     # Test with base config and custom configs
     agent_section = {
@@ -1187,7 +1187,7 @@ def test_agent_config_from_toml_section():
 
 def test_agent_config_from_toml_section_with_invalid_base():
     """Test that AgentConfig.from_toml_section handles invalid base configurations gracefully."""
-    from openhands.core.config.agent_config import AgentConfig
+    from openhands.core.runtime.config.agent_config import AgentConfig
 
     # Test with invalid base config but valid custom configs
     agent_section = {

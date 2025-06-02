@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.openhands_config import OpenHandsConfig
+from openhands.core.runtime.config.llm_config import LLMConfig
+from openhands.core.runtime.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream

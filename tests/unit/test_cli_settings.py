@@ -32,36 +32,36 @@ class TestDisplaySettings:
     def app_config(self):
         config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
-        llm_config.base_url = None
-        llm_config.model = 'openai/gpt-4'
-        llm_config.api_key = SecretStr('test-api-key')
-        config.get_llm_config.return_value = llm_config
-        config.default_agent = 'test-agent'
+        llm_runtime.config.base_url = None
+        llm_runtime.config.model = 'openai/gpt-4'
+        llm_runtime.config.api_key = SecretStr('test-api-key')
+        runtime.config.get_llm_config.return_value = llm_config
+        runtime.config.default_agent = 'test-agent'
 
         # Set up security as a separate mock
         security_mock = MagicMock()
         security_mock.confirmation_mode = True
-        config.security = security_mock
+        runtime.config.security = security_mock
 
-        config.enable_default_condenser = True
+        runtime.config.enable_default_condenser = True
         return config
 
     @pytest.fixture
     def advanced_app_config(self):
         config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
-        llm_config.base_url = 'https://custom-api.com'
-        llm_config.model = 'custom-model'
-        llm_config.api_key = SecretStr('test-api-key')
-        config.get_llm_config.return_value = llm_config
-        config.default_agent = 'test-agent'
+        llm_runtime.config.base_url = 'https://custom-api.com'
+        llm_runtime.config.model = 'custom-model'
+        llm_runtime.config.api_key = SecretStr('test-api-key')
+        runtime.config.get_llm_config.return_value = llm_config
+        runtime.config.default_agent = 'test-agent'
 
         # Set up security as a separate mock
         security_mock = MagicMock()
         security_mock.confirmation_mode = True
-        config.security = security_mock
+        runtime.config.security = security_mock
 
-        config.enable_default_condenser = True
+        runtime.config.enable_default_condenser = True
         return config
 
     @patch('openhands.cli.settings.print_container')
@@ -116,20 +116,20 @@ class TestModifyLLMSettingsBasic:
     def app_config(self):
         config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
-        llm_config.model = 'openai/gpt-4'
-        llm_config.api_key = SecretStr('test-api-key')
-        llm_config.base_url = None
-        config.get_llm_config.return_value = llm_config
-        config.set_llm_config = MagicMock()
-        config.set_agent_config = MagicMock()
+        llm_runtime.config.model = 'openai/gpt-4'
+        llm_runtime.config.api_key = SecretStr('test-api-key')
+        llm_runtime.config.base_url = None
+        runtime.config.get_llm_config.return_value = llm_config
+        runtime.config.set_llm_config = MagicMock()
+        runtime.config.set_agent_config = MagicMock()
 
         agent_config = MagicMock()
-        config.get_agent_config.return_value = agent_config
+        runtime.config.get_agent_config.return_value = agent_config
 
         # Set up security as a separate mock
         security_mock = MagicMock()
         security_mock.confirmation_mode = True
-        config.security = security_mock
+        runtime.config.security = security_mock
 
         return config
 
@@ -185,8 +185,8 @@ class TestModifyLLMSettingsBasic:
         await modify_llm_settings_basic(app_config, settings_store)
 
         # Verify LLM config was updated
-        app_config.set_llm_config.assert_called_once()
-        args, kwargs = app_config.set_llm_config.call_args
+        app_runtime.config.set_llm_config.assert_called_once()
+        args, kwargs = app_runtime.config.set_llm_config.call_args
         assert args[0].model == 'openai/gpt-4'
         assert args[0].api_key.get_secret_value() == 'new-api-key'
         assert args[0].base_url is None
@@ -231,7 +231,7 @@ class TestModifyLLMSettingsBasic:
         await modify_llm_settings_basic(app_config, settings_store)
 
         # Verify settings were not changed
-        app_config.set_llm_config.assert_not_called()
+        app_runtime.config.set_llm_config.assert_not_called()
         settings_store.store.assert_not_called()
 
     @pytest.mark.asyncio
@@ -299,7 +299,7 @@ class TestModifyLLMSettingsBasic:
         assert model_error_found, 'No error message for invalid model'
 
         # Verify LLM config was updated with correct values
-        app_config.set_llm_config.assert_called_once()
+        app_runtime.config.set_llm_config.assert_called_once()
 
         # Verify settings were saved
         settings_store.store.assert_called_once()
@@ -315,20 +315,20 @@ class TestModifyLLMSettingsAdvanced:
     def app_config(self):
         config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
-        llm_config.model = 'custom-model'
-        llm_config.api_key = SecretStr('test-api-key')
-        llm_config.base_url = 'https://custom-api.com'
-        config.get_llm_config.return_value = llm_config
-        config.set_llm_config = MagicMock()
-        config.set_agent_config = MagicMock()
+        llm_runtime.config.model = 'custom-model'
+        llm_runtime.config.api_key = SecretStr('test-api-key')
+        llm_runtime.config.base_url = 'https://custom-api.com'
+        runtime.config.get_llm_config.return_value = llm_config
+        runtime.config.set_llm_config = MagicMock()
+        runtime.config.set_agent_config = MagicMock()
 
         agent_config = MagicMock()
-        config.get_agent_config.return_value = agent_config
+        runtime.config.get_agent_config.return_value = agent_config
 
         # Set up security as a separate mock
         security_mock = MagicMock()
         security_mock.confirmation_mode = True
-        config.security = security_mock
+        runtime.config.security = security_mock
 
         return config
 
@@ -376,8 +376,8 @@ class TestModifyLLMSettingsAdvanced:
         await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify LLM config was updated
-        app_config.set_llm_config.assert_called_once()
-        args, kwargs = app_config.set_llm_config.call_args
+        app_runtime.config.set_llm_config.assert_called_once()
+        args, kwargs = app_runtime.config.set_llm_config.call_args
         assert args[0].model == 'new-model'
         assert args[0].api_key.get_secret_value() == 'new-api-key'
         assert args[0].base_url == 'https://new-url'
@@ -416,7 +416,7 @@ class TestModifyLLMSettingsAdvanced:
         await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify settings were not changed
-        app_config.set_llm_config.assert_not_called()
+        app_runtime.config.set_llm_config.assert_not_called()
         settings_store.store.assert_not_called()
 
     @pytest.mark.asyncio
@@ -468,7 +468,7 @@ class TestModifyLLMSettingsAdvanced:
         assert 'Invalid agent' in args[0].value
 
         # Verify settings were not changed
-        app_config.set_llm_config.assert_not_called()
+        app_runtime.config.set_llm_config.assert_not_called()
         settings_store.store.assert_not_called()
 
     @pytest.mark.asyncio
@@ -508,5 +508,5 @@ class TestModifyLLMSettingsAdvanced:
         await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify settings were not changed
-        app_config.set_llm_config.assert_not_called()
+        app_runtime.config.set_llm_config.assert_not_called()
         settings_store.store.assert_not_called()

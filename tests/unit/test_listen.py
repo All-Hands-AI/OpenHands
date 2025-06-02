@@ -48,8 +48,8 @@ def test_load_file_upload_config_invalid_max_size():
 
 def test_is_extension_allowed():
     with (
-        patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True),
-        patch('openhands.server.file_config.ALLOWED_EXTENSIONS', ['.txt', '.pdf']),
+        patch('openhands.server.file_runtime.config.RESTRICT_FILE_TYPES', True),
+        patch('openhands.server.file_runtime.config.ALLOWED_EXTENSIONS', ['.txt', '.pdf']),
     ):
         assert is_extension_allowed('file.txt')
         assert is_extension_allowed('file.pdf')
@@ -58,7 +58,7 @@ def test_is_extension_allowed():
 
 
 def test_is_extension_allowed_no_restrictions():
-    with patch('openhands.server.file_config.RESTRICT_FILE_TYPES', False):
+    with patch('openhands.server.file_runtime.config.RESTRICT_FILE_TYPES', False):
         assert is_extension_allowed('file.txt')
         assert is_extension_allowed('file.pdf')
         assert is_extension_allowed('file.doc')
@@ -67,8 +67,8 @@ def test_is_extension_allowed_no_restrictions():
 
 def test_is_extension_allowed_wildcard():
     with (
-        patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True),
-        patch('openhands.server.file_config.ALLOWED_EXTENSIONS', ['.*']),
+        patch('openhands.server.file_runtime.config.RESTRICT_FILE_TYPES', True),
+        patch('openhands.server.file_runtime.config.ALLOWED_EXTENSIONS', ['.*']),
     ):
         assert is_extension_allowed('file.txt')
         assert is_extension_allowed('file.pdf')

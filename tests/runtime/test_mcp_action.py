@@ -8,13 +8,16 @@ import time
 import docker
 import pytest
 from conftest import (
-    _load_runtime,
+    create_test_runtime,
 )
 
 import openhands
 from openhands.core.config import MCPConfig
-from openhands.core.config.mcp_config import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.runtime.config.mcp_config import (
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.events.action import CmdRunAction, MCPAction
 from openhands.events.observation import CmdOutputObservation, MCPObservation
 
@@ -108,7 +111,9 @@ def sse_mcp_docker_server():
 
 def test_default_activated_tools():
     project_root = os.path.dirname(openhands.__file__)
-    mcp_config_path = os.path.join(project_root, 'runtime', 'mcp', 'config.json')
+    mcp_config_path = os.path.join(
+        project_root, 'runtime', 'mcp', 'runtime.config.json'
+    )
     assert os.path.exists(mcp_config_path), (
         f'MCP config file not found at {mcp_config_path}'
     )
@@ -125,7 +130,7 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
         name='fetch', command='uvx', args=['mcp-server-fetch']
     )
     override_mcp_config = MCPConfig(stdio_servers=[mcp_stdio_server_config])
-    runtime, config = _load_runtime(
+    runtime = create_test_runtime(
         temp_dir, runtime_cls, run_as_openhands, override_mcp_config=override_mcp_config
     )
 
@@ -174,7 +179,7 @@ async def test_filesystem_mcp_via_sse(
     try:
         mcp_sse_server_config = MCPSSEServerConfig(url=sse_url)
         override_mcp_config = MCPConfig(sse_servers=[mcp_sse_server_config])
-        runtime, config = _load_runtime(
+        runtime = create_test_runtime(
             temp_dir,
             runtime_cls,
             run_as_openhands,
@@ -213,7 +218,7 @@ async def test_both_stdio_and_sse_mcp(
         override_mcp_config = MCPConfig(
             sse_servers=[mcp_sse_server_config], stdio_servers=[mcp_stdio_server_config]
         )
-        runtime, config = _load_runtime(
+        runtime = create_test_runtime(
             temp_dir,
             runtime_cls,
             run_as_openhands,
@@ -286,7 +291,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
             ],
         )
         override_mcp_config = MCPConfig(stdio_servers=[filesystem_config])
-        runtime, config = _load_runtime(
+        runtime = create_test_runtime(
             temp_dir,
             runtime_cls,
             run_as_openhands,

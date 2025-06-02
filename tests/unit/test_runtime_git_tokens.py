@@ -5,7 +5,7 @@ import pytest
 from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
+from openhands.core.runtime.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation
@@ -242,7 +242,7 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
 async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir):
     """Test that git init is run when no repository is selected, no user_id, and no workspace_base"""
     config = OpenHandsConfig()
-    config.workspace_base = None  # Ensure workspace_base is not set
+    runtime.config.workspace_base = None  # Ensure workspace_base is not set
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -263,7 +263,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
 async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_dir):
     """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
     config = OpenHandsConfig()
-    config.workspace_base = '/some/path'  # Set workspace_base
+    runtime.config.workspace_base = '/some/path'  # Set workspace_base
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(

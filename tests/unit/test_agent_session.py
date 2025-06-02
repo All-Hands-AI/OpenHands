@@ -6,7 +6,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, OpenHandsConfig
-from openhands.core.config.agent_config import AgentConfig
+from openhands.core.runtime.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -29,13 +29,13 @@ def mock_agent():
     agent_config = MagicMock(spec=AgentConfig)
 
     # Configure the LLM config
-    llm_config.model = 'test-model'
-    llm_config.base_url = 'http://test'
-    llm_config.max_message_chars = 1000
+    llm_runtime.config.model = 'test-model'
+    llm_runtime.config.base_url = 'http://test'
+    llm_runtime.config.max_message_chars = 1000
 
     # Configure the agent config
-    agent_config.disabled_microagents = []
-    agent_config.enable_mcp = True
+    agent_runtime.config.disabled_microagents = []
+    agent_runtime.config.enable_mcp = True
 
     # Set up the chain of mocks
     llm.metrics = metrics

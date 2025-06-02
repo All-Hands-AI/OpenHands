@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 from conftest import (
-    _load_runtime,
+    create_test_runtime,
 )
 
 from openhands.core.setup import initialize_repository_for_runtime
@@ -14,7 +14,7 @@ from openhands.integrations.service_types import ProviderType, Repository
 
 def test_initialize_repository_for_runtime(temp_dir, runtime_cls, run_as_openhands):
     """Test that the initialize_repository_for_runtime function works."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     mock_repo = Repository(
         id=1232,
         full_name='All-Hands-AI/OpenHands',
@@ -36,7 +36,7 @@ def test_initialize_repository_for_runtime(temp_dir, runtime_cls, run_as_openhan
 
 def test_maybe_run_setup_script(temp_dir, runtime_cls, run_as_openhands):
     """Test that setup script is executed when it exists."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     setup_script = '.openhands/setup.sh'
     write_obs = runtime.write(
@@ -59,7 +59,7 @@ def test_maybe_run_setup_script_with_long_timeout(
     temp_dir, runtime_cls, run_as_openhands
 ):
     """Test that setup script is executed when it exists."""
-    runtime, config = _load_runtime(
+    runtime = create_test_runtime(
         temp_dir,
         runtime_cls,
         run_as_openhands,

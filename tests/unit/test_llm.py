@@ -39,8 +39,8 @@ def default_config():
 
 def test_llm_init_with_default_config(default_config):
     llm = LLM(default_config)
-    assert llm.config.model == 'gpt-4o'
-    assert llm.config.api_key.get_secret_value() == 'test_key'
+    assert llm.runtime.config.model == 'gpt-4o'
+    assert llm.runtime.config.api_key.get_secret_value() == 'test_key'
     assert isinstance(llm.metrics, Metrics)
     assert llm.metrics.model_name == 'gpt-4o'
 
@@ -131,8 +131,8 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
     }
     llm = LLM(default_config)
     llm.init_model_info()
-    assert llm.config.max_input_tokens == 8000
-    assert llm.config.max_output_tokens == 2000
+    assert llm.runtime.config.max_input_tokens == 8000
+    assert llm.runtime.config.max_output_tokens == 2000
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -140,8 +140,8 @@ def test_llm_init_without_model_info(mock_get_model_info, default_config):
     mock_get_model_info.side_effect = Exception('Model info not available')
     llm = LLM(default_config)
     llm.init_model_info()
-    assert llm.config.max_input_tokens == 4096
-    assert llm.config.max_output_tokens == 4096
+    assert llm.runtime.config.max_input_tokens == 4096
+    assert llm.runtime.config.max_output_tokens == 4096
 
 
 def test_llm_init_with_custom_config():
@@ -155,13 +155,13 @@ def test_llm_init_with_custom_config():
         top_k=None,
     )
     llm = LLM(custom_config)
-    assert llm.config.model == 'custom-model'
-    assert llm.config.api_key.get_secret_value() == 'custom_key'
-    assert llm.config.max_input_tokens == 5000
-    assert llm.config.max_output_tokens == 1500
-    assert llm.config.temperature == 0.8
-    assert llm.config.top_p == 0.9
-    assert llm.config.top_k is None
+    assert llm.runtime.config.model == 'custom-model'
+    assert llm.runtime.config.api_key.get_secret_value() == 'custom_key'
+    assert llm.runtime.config.max_input_tokens == 5000
+    assert llm.runtime.config.max_output_tokens == 1500
+    assert llm.runtime.config.temperature == 0.8
+    assert llm.runtime.config.top_p == 0.9
+    assert llm.runtime.config.top_k is None
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -274,15 +274,15 @@ def test_llm_reset():
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
-    default_config.model = 'openrouter:gpt-4o-mini'
+    default_runtime.config.model = 'openrouter:gpt-4o-mini'
     mock_get_model_info.return_value = {
         'max_input_tokens': 7000,
         'max_output_tokens': 1500,
     }
     llm = LLM(default_config)
     llm.init_model_info()
-    assert llm.config.max_input_tokens == 7000
-    assert llm.config.max_output_tokens == 1500
+    assert llm.runtime.config.max_input_tokens == 7000
+    assert llm.runtime.config.max_output_tokens == 1500
     mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
 
 
@@ -360,9 +360,9 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         mock_sleep.assert_called_once()
         wait_time = mock_sleep.call_args[0][0]
         assert (
-            default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
+            default_runtime.config.retry_min_wait <= wait_time <= default_runtime.config.retry_max_wait
         ), (
-            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+            f'Expected wait time between {default_runtime.config.retry_min_wait} and {default_runtime.config.retry_max_wait} seconds, but got {wait_time}'
         )
 
 
@@ -503,7 +503,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
         )
 
     # Verify that litellm_completion was called the expected number of times
-    assert mock_litellm_completion.call_count == default_config.num_retries
+    assert mock_litellm_completion.call_count == default_runtime.config.num_retries
 
     # Check that all calls used the original temperature
     for call in mock_litellm_completion.call_args_list:
@@ -710,7 +710,7 @@ def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
 
     # Check if the correct arguments were passed to litellm_completion
     call_args = mock_litellm_completion.call_args[1]  # Get keyword arguments
-    assert call_args['model'] == default_config.model
+    assert call_args['model'] == default_runtime.config.model
     assert call_args['messages'] == [{'role': 'user', 'content': 'Hello!'}]
     assert not call_args['stream']
 
@@ -738,7 +738,7 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     # Check if the correct arguments were passed to litellm_completion
     call_args, call_kwargs = mock_litellm_completion.call_args
     assert (
-        call_kwargs['model'] == default_config.model
+        call_kwargs['model'] == default_runtime.config.model
     )  # Should use the model from config, not the first arg
     assert call_kwargs['messages'] == [
         {'role': 'user', 'content': 'Hello from positional args!'}
@@ -761,7 +761,7 @@ def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
 
     assert token_count == 42
     mock_token_counter.assert_called_once_with(
-        model=default_config.model, messages=messages, custom_tokenizer=None
+        model=default_runtime.config.model, messages=messages, custom_tokenizer=None
     )
 
 
@@ -797,7 +797,7 @@ def test_get_token_count_with_custom_tokenizer(
     mock_token_counter.return_value = 42
 
     config = copy.deepcopy(default_config)
-    config.custom_tokenizer = 'custom/tokenizer'
+    runtime.config.custom_tokenizer = 'custom/tokenizer'
     llm = LLM(config)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
@@ -806,7 +806,7 @@ def test_get_token_count_with_custom_tokenizer(
     assert token_count == 42
     mock_create_tokenizer.assert_called_once_with('custom/tokenizer')
     mock_token_counter.assert_called_once_with(
-        model=config.model, messages=messages, custom_tokenizer=mock_tokenizer
+        model=runtime.config.model, messages=messages, custom_tokenizer=mock_tokenizer
     )
 
 
@@ -965,8 +965,8 @@ def test_accumulated_token_usage(mock_litellm_completion, default_config):
 @patch('openhands.llm.llm.litellm_completion')
 def test_completion_with_log_completions(mock_litellm_completion, default_config):
     with tempfile.TemporaryDirectory() as temp_dir:
-        default_config.log_completions = True
-        default_config.log_completions_folder = temp_dir
+        default_runtime.config.log_completions = True
+        default_runtime.config.log_completions_folder = temp_dir
         mock_response = {
             'choices': [{'message': {'content': 'This is a mocked response.'}}]
         }

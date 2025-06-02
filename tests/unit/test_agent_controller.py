@@ -13,7 +13,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.agent_config import AgentConfig
+from openhands.core.runtime.config.agent_config import AgentConfig
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
@@ -59,7 +59,7 @@ def mock_agent():
 
     # Add config with enable_mcp attribute
     agent.config = MagicMock(spec=AgentConfig)
-    agent.config.enable_mcp = True
+    agent.runtime.config.enable_mcp = True
 
     # Add a proper system message mock
     system_message = SystemMessageAction(
@@ -244,7 +244,7 @@ async def test_run_controller_with_fatal_error(
     mock_agent.step = agent_step_fn
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = config.get_llm_config()
+    mock_agent.llm.config = runtime.config.get_llm_config()
 
     runtime = MagicMock(spec=ActionExecutionClient)
 
@@ -309,7 +309,7 @@ async def test_run_controller_stop_with_stuck(
     mock_agent.step = agent_step_fn
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = config.get_llm_config()
+    mock_agent.llm.config = runtime.config.get_llm_config()
 
     runtime = MagicMock(spec=ActionExecutionClient)
 
@@ -660,7 +660,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = config.get_llm_config()
+    mock_agent.llm.config = runtime.config.get_llm_config()
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -1001,7 +1001,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     step_state = StepState()
     mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
-    mock_agent.config.enable_history_truncation = False
+    mock_agent.runtime.config.enable_history_truncation = False
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
@@ -1069,7 +1069,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
     # Create a proper agent that returns an action without an ID
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = config.get_llm_config()
+    mock_agent.llm.config = runtime.config.get_llm_config()
 
     # Create a real action to return from the mocked step function
     def agent_step_fn(state):

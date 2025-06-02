@@ -6,7 +6,7 @@ import pytest
 from conftest import (
     TEST_IN_CI,
     _close_test_runtime,
-    _load_runtime,
+    create_test_runtime,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -34,7 +34,7 @@ from openhands.events.observation import (
     reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
 )
 def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
@@ -110,7 +110,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
 )
 def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -186,7 +186,7 @@ def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
     reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
 )
 def test_ipython_simple(temp_dir, runtime_cls):
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime = create_test_runtime(temp_dir, runtime_cls)
 
     # Test run ipython
     # get username
@@ -214,7 +214,7 @@ def test_ipython_simple(temp_dir, runtime_cls):
 )
 def test_ipython_chdir(temp_dir, runtime_cls):
     """Test that os.chdir correctly handles paths with slashes."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime = create_test_runtime(temp_dir, runtime_cls)
 
     # Create a test directory and get its absolute path
     test_code = """
@@ -264,7 +264,7 @@ shutil.rmtree('test_dir', ignore_errors=True)
 )
 def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -303,7 +303,7 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
 )
 def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     """Test file editor permission behavior when running as different users."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands=True)
 
     # Create a file owned by root with restricted permissions
     action = CmdRunAction(

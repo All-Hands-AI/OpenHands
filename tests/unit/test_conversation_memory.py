@@ -6,7 +6,7 @@ import pytest
 from litellm import ChatCompletionMessageToolCall
 
 from openhands.controller.state.state import State
-from openhands.core.config.agent_config import AgentConfig
+from openhands.core.runtime.config.agent_config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     AgentFinishAction,
@@ -780,7 +780,7 @@ def test_process_events_with_microagent_observation_extensions_disabled(
 ):
     """Test processing a RecallObservation when prompt extensions are disabled."""
     # Modify the agent config to disable prompt extensions
-    agent_config.enable_prompt_extensions = False
+    agent_runtime.config.enable_prompt_extensions = False
 
     obs = RecallObservation(
         recall_type=RecallType.WORKSPACE_CONTEXT,
@@ -851,8 +851,8 @@ It may or may not be relevant to the user's request.
 
     # Create a mock agent config
     agent_config = MagicMock(spec=AgentConfig)
-    agent_config.enable_prompt_extensions = True
-    agent_config.disabled_microagents = []
+    agent_runtime.config.enable_prompt_extensions = True
+    agent_runtime.config.disabled_microagents = []
 
     # Create a PromptManager
     prompt_manager = PromptManager(prompt_dir=prompt_dir)
@@ -932,7 +932,7 @@ each of which has a corresponding port:
 
     # Create a mock agent config
     agent_config = MagicMock(spec=AgentConfig)
-    agent_config.enable_prompt_extensions = True
+    agent_runtime.config.enable_prompt_extensions = True
 
     # Create a PromptManager
     prompt_manager = PromptManager(prompt_dir=prompt_dir)

@@ -25,7 +25,7 @@ def cli_runtime(temp_dir):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('test', file_store)
     config = OpenHandsConfig()
-    config.workspace_base = temp_dir
+    runtime.config.workspace_base = temp_dir
     runtime = CLIRuntime(config, event_stream)
     runtime._runtime_initialized = True  # Skip initialization
     return runtime

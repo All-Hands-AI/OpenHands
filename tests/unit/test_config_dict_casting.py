@@ -21,14 +21,14 @@ def test_load_from_env_with_dict(monkeypatch, default_config):
     load_from_env(default_config, os.environ)
 
     # Verify that the dict was correctly parsed
-    assert isinstance(default_config.sandbox.docker_runtime_kwargs, dict)
-    assert default_config.sandbox.docker_runtime_kwargs.get('mem_limit') == '2g'
-    assert default_config.sandbox.docker_runtime_kwargs.get('cpu_count') == 2
+    assert isinstance(default_runtime.config.sandbox.docker_runtime_kwargs, dict)
+    assert default_runtime.config.sandbox.docker_runtime_kwargs.get('mem_limit') == '2g'
+    assert default_runtime.config.sandbox.docker_runtime_kwargs.get('cpu_count') == 2
     assert isinstance(
-        default_config.sandbox.docker_runtime_kwargs.get('environment'), dict
+        default_runtime.config.sandbox.docker_runtime_kwargs.get('environment'), dict
     )
     assert (
-        default_config.sandbox.docker_runtime_kwargs.get('environment').get('TEST_VAR')
+        default_runtime.config.sandbox.docker_runtime_kwargs.get('environment').get('TEST_VAR')
         == 'test_value'
     )
 

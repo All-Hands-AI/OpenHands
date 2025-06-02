@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from conftest import _close_test_runtime, _load_runtime
+from conftest import _close_test_runtime, create_test_runtime
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -27,7 +27,7 @@ from openhands.events.observation import (
     reason='CLIRuntime does not support browsing actions',
 )
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test browse
     action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
@@ -75,7 +75,7 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     reason='CLIRuntime does not support browsing actions',
 )
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a PDF file using reportlab in the host environment
         from reportlab.lib.pagesizes import letter
@@ -94,7 +94,7 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         c.save()
 
         # Copy the PDF to the sandbox
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = runtime.config.workspace_mount_path_in_sandbox
         runtime.copy_to(pdf_path, sandbox_dir)
 
         # Start HTTP server
@@ -149,7 +149,7 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
     reason='CLIRuntime does not support browsing actions',
 )
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a PNG file using PIL in the host environment
         from PIL import Image, ImageDraw
@@ -163,7 +163,7 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         img.save(png_path)
 
         # Copy the PNG to the sandbox
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = runtime.config.workspace_mount_path_in_sandbox
         runtime.copy_to(png_path, sandbox_dir)
 
         # Verify the file exists in the sandbox

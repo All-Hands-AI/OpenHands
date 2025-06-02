@@ -7,11 +7,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from conftest import (
     _close_test_runtime,
-    _load_runtime,
+    create_test_runtime,
 )
 
 from openhands.core.config import MCPConfig
-from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands.core.runtime.config.mcp_config import MCPStdioServerConfig
 from openhands.mcp.utils import add_mcp_tools_to_agent
 from openhands.microagent import KnowledgeMicroagent, RepoMicroagent
 
@@ -68,7 +68,7 @@ def test_load_microagents_with_trailing_slashes(
     """Test loading microagents when directory paths have trailing slashes."""
     # Create test files
     _create_test_microagents(temp_dir)
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
@@ -103,7 +103,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
     repo_dir.mkdir(parents=True)
     _create_test_microagents(str(repo_dir))
 
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents with selected repository
         loaded_agents = runtime.get_microagents_from_selected_repo(
@@ -152,7 +152,7 @@ Repository-specific test instructions.
 """
     (microagents_dir / 'repo.md').write_text(repo_agent)
 
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
@@ -208,7 +208,7 @@ async def test_add_mcp_tools_from_microagents():
     """Test that add_mcp_tools_to_agent adds tools from microagents."""
     # Import ActionExecutionClient for mocking
 
-    from openhands.core.config.openhands_config import OpenHandsConfig
+    from openhands.core.runtime.config.openhands_config import OpenHandsConfig
     from openhands.runtime.impl.action_execution.action_execution_client import (
         ActionExecutionClient,
     )
@@ -231,7 +231,7 @@ async def test_add_mcp_tools_from_microagents():
 
     # Configure the mock runtime
     mock_runtime.runtime_initialized = True
-    mock_runtime.get_mcp_config.return_value = mock_microagent_mcp_config
+    mock_runtime.get_mcp_runtime.config.return_value = mock_microagent_mcp_config
 
     # Mock the fetch_mcp_tools_from_config function to return a mock tool
     mock_tool = {
@@ -256,8 +256,8 @@ async def test_add_mcp_tools_from_microagents():
         mock_memory.get_microagent_mcp_tools.assert_called_once()
 
         # Verify that the runtime's get_mcp_config was called with the extra stdio servers
-        mock_runtime.get_mcp_config.assert_called_once()
-        args, kwargs = mock_runtime.get_mcp_config.call_args
+        mock_runtime.get_mcp_runtime.config.assert_called_once()
+        args, kwargs = mock_runtime.get_mcp_runtime.config.call_args
         assert len(args) == 1
         assert len(args[0]) == 1
         assert args[0][0].name == 'test-tool'

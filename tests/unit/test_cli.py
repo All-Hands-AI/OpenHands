@@ -114,16 +114,16 @@ async def test_cleanup_session_handles_exceptions(
 @pytest_asyncio.fixture
 def mock_config():
     config = MagicMock()
-    config.runtime = 'local'
-    config.cli_multiline_input = False
-    config.workspace_base = '/test/dir'
+    runtime.config.runtime = 'local'
+    runtime.config.cli_multiline_input = False
+    runtime.config.workspace_base = '/test/dir'
 
     # Mock search_api_key with get_secret_value method
     search_api_key_mock = MagicMock()
     search_api_key_mock.get_secret_value.return_value = (
         ''  # Empty string, not starting with 'tvly-'
     )
-    config.search_api_key = search_api_key_mock
+    runtime.config.search_api_key = search_api_key_mock
 
     return config
 
@@ -351,9 +351,9 @@ async def test_main_without_task(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
-    mock_config.cli_multiline_input = False
-    mock_setup_config.return_value = mock_config
+    mock_runtime.config.workspace_base = '/test/dir'
+    mock_runtime.config.cli_multiline_input = False
+    mock_setup_runtime.config.return_value = mock_config
 
     # Mock settings store
     mock_settings_store = AsyncMock()
@@ -385,7 +385,7 @@ async def test_main_without_task(
 
     # Assertions
     mock_parse_args.assert_called_once()
-    mock_setup_config.assert_called_once_with(mock_args)
+    mock_setup_runtime.config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
     mock_check_security.assert_called_once_with(mock_config, '/test/dir')
@@ -427,9 +427,9 @@ async def test_main_with_task(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
-    mock_config.cli_multiline_input = False
-    mock_setup_config.return_value = mock_config
+    mock_runtime.config.workspace_base = '/test/dir'
+    mock_runtime.config.cli_multiline_input = False
+    mock_setup_runtime.config.return_value = mock_config
 
     # Mock settings store
     mock_settings_store = AsyncMock()
@@ -462,7 +462,7 @@ async def test_main_with_task(
 
     # Assertions
     mock_parse_args.assert_called_once()
-    mock_setup_config.assert_called_once_with(mock_args)
+    mock_setup_runtime.config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
     mock_check_security.assert_called_once_with(mock_config, '/test/dir')
@@ -523,9 +523,9 @@ async def test_main_with_session_name_passes_name_to_run_session(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
-    mock_config.cli_multiline_input = False
-    mock_setup_config.return_value = mock_config
+    mock_runtime.config.workspace_base = '/test/dir'
+    mock_runtime.config.cli_multiline_input = False
+    mock_setup_runtime.config.return_value = mock_config
 
     # Mock settings store
     mock_settings_store = AsyncMock()
@@ -557,7 +557,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
 
     # Assertions
     mock_parse_args.assert_called_once()
-    mock_setup_config.assert_called_once_with(mock_args)
+    mock_setup_runtime.config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
     mock_check_security.assert_called_once_with(mock_config, '/test/dir')
@@ -695,8 +695,8 @@ async def test_main_security_check_fails(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
-    mock_setup_config.return_value = mock_config
+    mock_runtime.config.workspace_base = '/test/dir'
+    mock_setup_runtime.config.return_value = mock_config
 
     # Mock settings store
     mock_settings_store = AsyncMock()
@@ -717,7 +717,7 @@ async def test_main_security_check_fails(
 
     # Assertions
     mock_parse_args.assert_called_once()
-    mock_setup_config.assert_called_once_with(mock_args)
+    mock_setup_runtime.config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
     mock_check_security.assert_called_once_with(mock_config, '/test/dir')
@@ -767,13 +767,13 @@ async def test_config_loading_order(
 
     # Mock config with mock methods to track changes
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
-    mock_config.cli_multiline_input = False
-    mock_config.get_llm_config = MagicMock(return_value=MagicMock())
-    mock_config.set_llm_config = MagicMock()
-    mock_config.get_agent_config = MagicMock(return_value=MagicMock())
-    mock_config.set_agent_config = MagicMock()
-    mock_setup_config.return_value = mock_config
+    mock_runtime.config.workspace_base = '/test/dir'
+    mock_runtime.config.cli_multiline_input = False
+    mock_runtime.config.get_llm_config = MagicMock(return_value=MagicMock())
+    mock_runtime.config.set_llm_config = MagicMock()
+    mock_runtime.config.get_agent_config = MagicMock(return_value=MagicMock())
+    mock_runtime.config.set_agent_config = MagicMock()
+    mock_setup_runtime.config.return_value = mock_config
 
     # Mock settings store with specific values
     mock_settings_store = AsyncMock()
@@ -800,29 +800,29 @@ async def test_config_loading_order(
 
     # Assertions for argument parsing and config setup
     mock_parse_args.assert_called_once()
-    mock_setup_config.assert_called_once_with(mock_args)
+    mock_setup_runtime.config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
 
     # Verify agent is set from command line args (overriding settings)
     # In the actual implementation, default_agent is set in setup_config_from_args
     # We need to set it on our mock to simulate this behavior
-    mock_config.default_agent = 'cmd-line-agent'
+    mock_runtime.config.default_agent = 'cmd-line-agent'
 
     # Verify LLM config is set from settings (since no cmd line arg)
-    assert mock_config.set_llm_config.called
-    llm_config_call = mock_config.set_llm_config.call_args[0][0]
+    assert mock_runtime.config.set_llm_config.called
+    llm_config_call = mock_runtime.config.set_llm_config.call_args[0][0]
     assert llm_config_call.model == 'settings-model'
     assert llm_config_call.api_key == 'settings-api-key'
     assert llm_config_call.base_url == 'settings-base-url'
 
     # Verify confirmation mode is set from settings
-    assert mock_config.security.confirmation_mode is True
+    assert mock_runtime.config.security.confirmation_mode is True
 
     # Verify default condenser is set up correctly
-    assert mock_config.set_agent_config.called
+    assert mock_runtime.config.set_agent_config.called
     assert mock_llm_condenser.called
-    assert mock_config.enable_default_condenser is True
+    assert mock_runtime.config.enable_default_condenser is True
 
     # Verify that run_session was called with the correct arguments
     mock_run_session.assert_called_once()

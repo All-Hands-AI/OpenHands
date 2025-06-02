@@ -2,10 +2,10 @@ from unittest.mock import patch
 
 from pydantic import SecretStr
 
-from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.core.config.sandbox_config import SandboxConfig
-from openhands.core.config.security_config import SecurityConfig
+from openhands.core.runtime.config.llm_config import LLMConfig
+from openhands.core.runtime.config.openhands_config import OpenHandsConfig
+from openhands.core.runtime.config.sandbox_config import SandboxConfig
+from openhands.core.runtime.config.security_config import SecurityConfig
 from openhands.server.routes.settings import convert_to_settings
 from openhands.storage.data_models.settings import Settings
 

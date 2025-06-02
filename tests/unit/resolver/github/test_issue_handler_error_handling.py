@@ -239,9 +239,9 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
         # Validate wait time
         wait_time = mock_sleep.call_args[0][0]
         assert (
-            default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
+            default_runtime.config.retry_min_wait <= wait_time <= default_runtime.config.retry_max_wait
         ), (
-            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
+            f'Expected wait time between {default_runtime.config.retry_min_wait} and {default_runtime.config.retry_max_wait} seconds, but got {wait_time}'
         )
 
 
@@ -277,5 +277,5 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
 
     # Assertions
     assert (
-        mock_completion.call_count == default_config.num_retries
+        mock_completion.call_count == default_runtime.config.num_retries
     )  # Initial call + retries

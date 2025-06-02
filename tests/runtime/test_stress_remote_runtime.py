@@ -163,7 +163,7 @@ def test_stress_remote_runtime_eval(n_eval_workers: int = 64):
             instruction = 'dummy instruction'
             agent = Agent.get_cls(metadata.agent_class)(
                 llm=LLM(config=metadata.llm_config),
-                config=config.get_agent_config(metadata.agent_class),
+                config=runtime.config.get_agent_config(metadata.agent_class),
             )
 
             def next_command(*args, **kwargs):

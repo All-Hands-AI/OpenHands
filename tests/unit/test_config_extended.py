@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from openhands.core.config.extended_config import ExtendedConfig
-from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.core.config.utils import load_from_toml
+from openhands.core.runtime.config.extended_config import ExtendedConfig
+from openhands.core.runtime.config.openhands_config import OpenHandsConfig
+from openhands.core.runtime.config.utils import load_from_toml
 
 
 def test_extended_config_from_dict():
@@ -103,7 +103,7 @@ llm = "overridden"  # even a key like 'llm' is accepted in extended
 [agent]
 enable_prompt_extensions = true
 """
-    config_file = tmp_path / 'config.toml'
+    config_file = tmp_path / 'runtime.config.toml'
     config_file.write_text(config_content)
 
     # Load the TOML into the OpenHandsConfig instance
@@ -111,10 +111,10 @@ enable_prompt_extensions = true
     load_from_toml(config, str(config_file))
 
     # Verify that extended section is applied
-    assert config.extended.custom1 == 'custom_value'
-    assert config.extended.custom2 == 42
+    assert runtime.config.extended.custom1 == 'custom_value'
+    assert runtime.config.extended.custom2 == 42
     # Even though 'llm' is defined in extended, it should not affect the main llm config.
-    assert config.get_llm_config().model == 'test-model'
+    assert runtime.config.get_llm_config().model == 'test-model'
 
 
 def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
@@ -134,14 +134,14 @@ api_key = "toml-api-key"
 [agent]
 enable_prompt_extensions = true
 """
-    config_file = tmp_path / 'config.toml'
+    config_file = tmp_path / 'runtime.config.toml'
     config_file.write_text(config_content)
 
     config = OpenHandsConfig()
     load_from_toml(config, str(config_file))
 
     # Extended config should be empty
-    assert config.extended.root == {}
+    assert runtime.config.extended.root == {}
 
 
 def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
@@ -158,14 +158,14 @@ workspace_base = "/tmp/workspace"
 random_key = "random_value"
 another_key = 3.14
 """
-    config_file = tmp_path / 'config.toml'
+    config_file = tmp_path / 'runtime.config.toml'
     config_file.write_text(config_content)
 
     config = OpenHandsConfig()
     load_from_toml(config, str(config_file))
 
     # Verify that extended config holds the arbitrary keys with correct values.
-    assert config.extended.random_key == 'random_value'
-    assert config.extended.another_key == 3.14
+    assert runtime.config.extended.random_key == 'random_value'
+    assert runtime.config.extended.another_key == 3.14
     # Verify the root dictionary contains all keys
-    assert config.extended.root == {'random_key': 'random_value', 'another_key': 3.14}
+    assert runtime.config.extended.root == {'random_key': 'random_value', 'another_key': 3.14}

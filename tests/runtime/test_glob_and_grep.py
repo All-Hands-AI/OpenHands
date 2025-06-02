@@ -5,7 +5,7 @@ import os
 import pytest
 from conftest import (
     _close_test_runtime,
-    _load_runtime,
+    create_test_runtime,
 )
 
 from openhands.agenthub.readonly_agent.function_calling import (
@@ -50,7 +50,7 @@ def test_grep_to_cmdrun_basic():
 
 def test_grep_to_cmdrun_quotes(temp_dir, runtime_cls, run_as_openhands):
     """Test patterns with different types of quotes."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Double quotes in pattern
         cmd = grep_to_cmdrun(r'const message = "Hello"', '/workspace')
@@ -82,7 +82,7 @@ def test_grep_to_cmdrun_quotes(temp_dir, runtime_cls, run_as_openhands):
 
 def test_grep_to_cmdrun_special_chars(runtime_cls, run_as_openhands, temp_dir):
     """Test patterns with special shell characters."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test directory and files with special pattern content
         setup_cmd = """
@@ -155,7 +155,7 @@ def test_grep_to_cmdrun_special_chars(runtime_cls, run_as_openhands, temp_dir):
 
 def test_grep_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_dir):
     """Test paths with spaces and special characters."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test files with content in paths with spaces
         setup_cmd = """
@@ -209,7 +209,7 @@ def test_glob_to_cmdrun_basic():
 
 def test_glob_to_cmdrun_special_patterns(runtime_cls, run_as_openhands, temp_dir):
     """Test glob patterns with special characters."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test files matching the patterns we'll test
         setup_cmd = r"""
@@ -267,7 +267,7 @@ def test_glob_to_cmdrun_special_patterns(runtime_cls, run_as_openhands, temp_dir
 
 def test_glob_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_dir):
     """Test paths with spaces and special characters for glob command."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = create_test_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test directories with spaces and special characters
         setup_cmd = """

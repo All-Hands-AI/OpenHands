@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.runtime.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.mcp import MCPClient, create_mcp_clients, fetch_mcp_tools_from_config
 
 
@@ -49,7 +49,7 @@ async def test_fetch_mcp_tools_with_timeout():
     mock_config = mock.MagicMock(spec=MCPConfig)
 
     # Configure the mock config
-    mock_config.sse_servers = ['http://server1:8080']
+    mock_runtime.config.sse_servers = ['http://server1:8080']
 
     # Mock create_mcp_clients to return an empty list (simulating all connections failing)
     with mock.patch('openhands.mcp.utils.create_mcp_clients', return_value=[]):
@@ -67,7 +67,7 @@ async def test_mixed_connection_results():
     mock_config = mock.MagicMock(spec=MCPConfig)
 
     # Configure the mock config
-    mock_config.sse_servers = ['http://server1:8080', 'http://server2:8080']
+    mock_runtime.config.sse_servers = ['http://server1:8080', 'http://server2:8080']
 
     # Create a successful client
     successful_client = mock.MagicMock(spec=MCPClient)

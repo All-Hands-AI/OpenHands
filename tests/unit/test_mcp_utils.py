@@ -5,7 +5,7 @@ import pytest
 
 # Import the module, not the functions directly to avoid circular imports
 import openhands.mcp.utils
-from openhands.core.config.mcp_config import MCPSSEServerConfig
+from openhands.core.runtime.config.mcp_config import MCPSSEServerConfig
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 
