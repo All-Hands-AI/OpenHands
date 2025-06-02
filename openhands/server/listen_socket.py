@@ -50,7 +50,7 @@ def create_provider_tokens_object(
 
 
 async def setup_init_convo_settings(
-    user_id: str | None, providers_set: list[ProviderType]
+    user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
 ) -> ConversationInitData:
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -124,7 +124,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'User {user_id} is allowed to connect to conversation {conversation_id}'
         )
 
-        conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set
+        )
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
