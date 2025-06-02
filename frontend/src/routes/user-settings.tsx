@@ -30,9 +30,9 @@ function UserSettingsScreen() {
 
     try {
       setIsSaving(true);
-      
-      // Send email as part of settings update
-      await openHands.post('/api/settings', { email });
+      await openHands.post("/api/email", {
+        email,
+      });
 
       setOriginalEmail(email);
       setSaveSuccess(true);
