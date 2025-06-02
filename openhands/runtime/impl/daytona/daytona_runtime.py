@@ -52,7 +52,7 @@ class DaytonaRuntime(ActionExecutionClient):
 
         daytona_config = DaytonaConfig(
             api_key=config.daytona_api_key.get_secret_value(),
-            server_url=config.daytona_api_url,
+            api_url=config.daytona_api_url,
             target=config.daytona_target,
         )
         self.daytona = Daytona(daytona_config)
