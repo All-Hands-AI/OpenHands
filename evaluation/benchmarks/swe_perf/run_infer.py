@@ -75,19 +75,20 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     # TODO: Change to testbed?
     instruction = f"""
 <uploaded_files>
-/testbed/{workspace_dir_name}
+/workspace/{workspace_dir_name}
 </uploaded_files>
 
-I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following workload to be optimized:
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following workload file which measures the runtime of a specific workload:
 
 <workload>
 {instance.workload}
 </workload>
 
 Can you help me implement the necessary changes to the repository to optimize this workload to run faster and also make sure that existing test cases remain intact and unchanged?
+You only need to worry about speeding up the code that runs in the `workload()` function: you do not need to worry about optimizing any setup work that occurs outside of this function.
 Assume that no test cases will be changing: you should make sure that your changes do not result in any tests changing in status.
 Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /testbed/{workspace_dir_name} directory to ensure the the workload provided becomes faster without breaking the current correctness of the tests.
+Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the the workload provided becomes faster without breaking the current correctness of the tests.
 
 Follow these phases to resolve the issue:
 
@@ -304,14 +305,14 @@ def initialize_runtime(
         f'Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}',
     )
 
-    action = CmdRunAction(command=f'cd /testbed/{workspace_dir_name}')
+    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
         obs.exit_code == 0,
-        f'Failed to cd to /testbed/{workspace_dir_name}: {str(obs)}',
+        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
     action = CmdRunAction(command='git reset --hard')
@@ -361,7 +362,7 @@ def complete_runtime(
     obs: CmdOutputObservation
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
 
-    action = CmdRunAction(command=f'cd /testbed/{workspace_dir_name}')
+    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -376,7 +377,7 @@ def complete_runtime(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         # Then run the command again
-        action = CmdRunAction(command=f'cd /testbed/{workspace_dir_name}')
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
         action.set_hard_timeout(600)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -391,7 +392,7 @@ def complete_runtime(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         # Then run the command again
-        action = CmdRunAction(command=f'cd /testbed/{workspace_dir_name}')
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
         action.set_hard_timeout(600)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -399,7 +400,7 @@ def complete_runtime(
 
     assert_and_raise(
         isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-        f'Failed to cd to /testbed/{workspace_dir_name}: {str(obs)}',
+        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
     action = CmdRunAction(command='git config --global core.pager ""')
@@ -678,6 +679,10 @@ if __name__ == '__main__':
     # dataset = load_dataset(args.dataset, split=args.split)
     # swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
     dataset = pd.read_json("/home/jjma_google_com/SWE-Perf/harness_data/initial_data.jsonl", lines=True)
+
+    # Convert created_at column to string.
+    dataset['created_at'] = dataset['created_at'].astype(str)
+
     swe_bench_tests = filter_dataset(dataset, 'instance_id')
 
     logger.info(
