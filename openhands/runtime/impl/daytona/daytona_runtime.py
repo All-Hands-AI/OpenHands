@@ -51,7 +51,7 @@ class DaytonaRuntime(ActionExecutionClient):
         self._vscode_url: str | None = None
 
         daytona_config = DaytonaConfig(
-            api_key=config.daytona_api_key.get_secret_value(),
+            api_key=config.daytona_api_key,
             api_url=config.daytona_api_url,
             target=config.daytona_target,
         )
