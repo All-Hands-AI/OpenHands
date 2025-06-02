@@ -12,7 +12,7 @@ import { BadgeInput } from "#/components/shared/inputs/badge-input";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
-  onLaunch: (description: string, target: string, triggers: string[]) => void;
+  onLaunch: (query: string, target: string, triggers: string[]) => void;
   eventId: number;
   selectedRepo?: string | null;
 }

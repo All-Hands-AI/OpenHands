@@ -207,6 +207,7 @@ class OpenHands {
     replayJson?: string,
     suggested_task?: SuggestedTask,
     selected_branch?: string,
+    conversationInstructions?: string,
   ): Promise<Conversation> {
     const body = {
       repository: selectedRepository,
@@ -216,6 +217,7 @@ class OpenHands {
       image_urls: imageUrls,
       replay_json: replayJson,
       suggested_task,
+      conversation_instructions: conversationInstructions,
     };
 
     const { data } = await openHands.post<Conversation>(

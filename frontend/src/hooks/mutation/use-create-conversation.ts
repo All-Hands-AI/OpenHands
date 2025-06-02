@@ -5,8 +5,19 @@ import { useDispatch, useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
 import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import { GitRepository } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { Provider } from "#/types/settings";
+
+interface CreateConversationVariables {
+  query?: string;
+  repository?: {
+    name: string;
+    gitProvider: Provider;
+    branch: string;
+  };
+  suggestedTask?: SuggestedTask;
+  conversationInstructions?: string;
+}
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
@@ -19,26 +30,21 @@ export const useCreateConversation = () => {
 
   return useMutation({
     mutationKey: ["create-conversation"],
-    mutationFn: async (variables: {
-      q?: string;
-      selectedRepository?: GitRepository | null;
-      selected_branch?: string;
-      suggested_task?: SuggestedTask;
-    }) => {
-      if (variables.q) dispatch(setInitialPrompt(variables.q));
+    mutationFn: async (variables: CreateConversationVariables) => {
+      const { query, repository, suggestedTask, conversationInstructions } =
+        variables;
+
+      if (query) dispatch(setInitialPrompt(query));
 
       return OpenHands.createConversation(
-        variables.selectedRepository
-          ? variables.selectedRepository.full_name
-          : undefined,
-        variables.selectedRepository
-          ? variables.selectedRepository.git_provider
-          : undefined,
-        variables.q,
+        repository?.name,
+        repository?.gitProvider,
+        query,
         files,
         replayJson || undefined,
-        variables.suggested_task || undefined,
-        variables.selected_branch,
+        suggestedTask,
+        repository?.branch,
+        conversationInstructions,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {

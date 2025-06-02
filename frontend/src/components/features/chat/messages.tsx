@@ -70,14 +70,31 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     );
 
     const handleLaunchMicroagent = (
-      description: string,
+      query: string,
       target: string,
       triggers: string[],
     ) => {
-      const query = `Target file: ${target}\n\nDescription: ${description}\n\nTriggers: ${triggers.join(", ")}`;
+      const conversationInstructions = `Target file: ${target}\n\nDescription: ${query}\n\nTriggers: ${triggers.join(", ")}`;
+      if (
+        !conversation ||
+        !conversation.selected_repository ||
+        !conversation.selected_branch ||
+        !conversation.git_provider
+      ) {
+        console.warn("No repository found to launch microagent");
+        return;
+      }
 
       createConversation(
-        { q: query },
+        {
+          query,
+          conversationInstructions,
+          repository: {
+            name: conversation.selected_repository,
+            branch: conversation.selected_branch,
+            gitProvider: conversation.git_provider,
+          },
+        },
         {
           onSuccess: (data) => {
             let baseUrl = "";
