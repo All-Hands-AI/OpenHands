@@ -436,8 +436,7 @@ class ActionExecutionClient(Runtime):
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
                     url=self.action_execution_server_url.rstrip('/') + '/sse',
-                    # No API key by default. Child runtime can override this when appropriate
-                    api_key=None,
+                    api_key=self.session_api_key,
                 )
             )
 
