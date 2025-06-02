@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Callable
 
 import httpx
@@ -22,8 +23,6 @@ from openhands.runtime.utils.request import RequestHTTPError
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
-SANDBOX_PREFIX = 'openhands-sandbox-'
-
 
 class DaytonaRuntime(ActionExecutionClient):
     """The DaytonaRuntime class is a DockerRuntime that utilizes Daytona sandbox as a runtime environment."""
@@ -46,7 +45,7 @@ class DaytonaRuntime(ActionExecutionClient):
 
         self.config = config
         self.sid = sid
-        self.sandbox_id = SANDBOX_PREFIX + sid
+        self.sandbox_id = os.environ.get(f'DAYTONA_SANDBOX_ID_{sid}')
         self.sandbox: Sandbox | None = None
         self._vscode_url: str | None = None
 
@@ -104,7 +103,6 @@ class DaytonaRuntime(ActionExecutionClient):
 
     def _create_sandbox(self) -> Sandbox:
         sandbox_params = CreateSandboxParams(
-            id=self.sandbox_id,
             language='python',
             image=self.config.sandbox.runtime_container_image,
             public=True,
@@ -181,6 +179,8 @@ class DaytonaRuntime(ActionExecutionClient):
         if self.sandbox is None:
             self.send_status_message('STATUS$PREPARING_CONTAINER')
             self.sandbox = await call_sync_from_async(self._create_sandbox)
+            self.sandbox_id = self.sandbox.id
+            os.environ[f'DAYTONA_SANDBOX_ID_{self.sid}'] = self.sandbox_id
             self.log('info', f'Created new sandbox with id: {self.sandbox_id}')
 
         self.api_url = self._construct_api_url(self._sandbox_port)
