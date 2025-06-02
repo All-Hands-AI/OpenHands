@@ -19,6 +19,7 @@ export interface ActionMessage {
   // LLM metrics information
   llm_metrics?: {
     accumulated_cost: number;
+    max_budget_per_task: number | null;
     accumulated_token_usage: {
       prompt_tokens: number;
       completion_tokens: number;

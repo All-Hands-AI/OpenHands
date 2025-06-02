@@ -48,12 +48,14 @@ class Metrics:
     """Metrics class can record various metrics during running and evaluation.
     We track:
       - accumulated_cost and costs
+      - max_budget_per_task (budget limit)
       - A list of ResponseLatency
       - A list of TokenUsage (one per call).
     """
 
     def __init__(self, model_name: str = 'default') -> None:
         self._accumulated_cost: float = 0.0
+        self._max_budget_per_task: float | None = None
         self._costs: list[Cost] = []
         self._response_latencies: list[ResponseLatency] = []
         self.model_name = model_name
@@ -77,6 +79,14 @@ class Metrics:
         if value < 0:
             raise ValueError('Total cost cannot be negative.')
         self._accumulated_cost = value
+        
+    @property
+    def max_budget_per_task(self) -> float | None:
+        return self._max_budget_per_task
+        
+    @max_budget_per_task.setter
+    def max_budget_per_task(self, value: float | None) -> None:
+        self._max_budget_per_task = value
 
     @property
     def costs(self) -> list[Cost]:
@@ -171,6 +181,11 @@ class Metrics:
     def merge(self, other: 'Metrics') -> None:
         """Merge 'other' metrics into this one."""
         self._accumulated_cost += other.accumulated_cost
+        
+        # Keep the max_budget_per_task from other if it's set and this one isn't
+        if self._max_budget_per_task is None and other.max_budget_per_task is not None:
+            self._max_budget_per_task = other.max_budget_per_task
+            
         self._costs += other._costs
         # use the property so older picked objects that lack the field won't crash
         self.token_usages += other.token_usages
@@ -185,6 +200,7 @@ class Metrics:
         """Return the metrics in a dictionary."""
         return {
             'accumulated_cost': self._accumulated_cost,
+            'max_budget_per_task': self._max_budget_per_task,
             'accumulated_token_usage': self.accumulated_token_usage.model_dump(),
             'costs': [cost.model_dump() for cost in self._costs],
             'response_latencies': [
@@ -195,6 +211,7 @@ class Metrics:
 
     def reset(self) -> None:
         self._accumulated_cost = 0.0
+        self._max_budget_per_task = None
         self._costs = []
         self._response_latencies = []
         self._token_usages = []

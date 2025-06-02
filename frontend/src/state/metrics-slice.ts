@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface MetricsState {
   cost: number | null;
+  max_budget: number | null;
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -14,6 +15,7 @@ interface MetricsState {
 
 const initialState: MetricsState = {
   cost: null,
+  max_budget: null,
   usage: null,
 };
 
@@ -23,6 +25,7 @@ const metricsSlice = createSlice({
   reducers: {
     setMetrics: (state, action: PayloadAction<MetricsState>) => {
       state.cost = action.payload.cost;
+      state.max_budget = action.payload.max_budget;
       state.usage = action.payload.usage;
     },
   },

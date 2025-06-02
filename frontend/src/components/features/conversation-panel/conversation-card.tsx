@@ -274,9 +274,36 @@ export function ConversationCard({
                     <span className="text-lg font-semibold">
                       {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
-                    <span className="font-semibold">
-                      ${metrics.cost.toFixed(4)}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className="font-semibold">
+                        ${metrics.cost.toFixed(4)}
+                      </span>
+                      {metrics?.max_budget !== null && metrics.max_budget > 0 && (
+                        <>
+                          <span className="text-xs text-neutral-400">
+                            {t(I18nKey.CONVERSATION$BUDGET)}: ${metrics.max_budget.toFixed(4)}
+                          </span>
+                          <div className="w-full h-1.5 bg-neutral-700 rounded-full overflow-hidden mt-1">
+                            <div
+                              className={`h-full transition-all duration-300 ${
+                                metrics.cost / metrics.max_budget > 0.8 ? "bg-red-500" : "bg-blue-500"
+                              }`}
+                              style={{
+                                width: `${Math.min(100, (metrics.cost / metrics.max_budget) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-neutral-400">
+                            {((metrics.cost / metrics.max_budget) * 100).toFixed(2)} {t(I18nKey.CONVERSATION$BUDGET_USAGE)}
+                          </span>
+                        </>
+                      )}
+                      {metrics?.max_budget !== null && metrics.max_budget === 0 && (
+                        <span className="text-xs text-neutral-400">
+                          {t(I18nKey.CONVERSATION$NO_BUDGET_LIMIT)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 
