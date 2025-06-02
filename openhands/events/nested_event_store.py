@@ -37,7 +37,7 @@ class NestedEventStore(EventStoreABC):
             if limit is not None:
                 search_params['limit'] = min(100, limit)
             search_str = urlencode(search_params)
-            url = f'{self.base_url}/events{search_str}'
+            url = f'{self.base_url}/events?{search_str}'
             headers = {}
             if self.session_api_key:
                 headers['X-Session-API-Key'] = self.session_api_key
