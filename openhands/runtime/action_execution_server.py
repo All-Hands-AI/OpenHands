@@ -978,6 +978,10 @@ if __name__ == '__main__':
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    @app.get('/')
+    async def home():
+        return JSONResponse(content={'message': 'Runtime server is running...'})
+
     @app.get('/alive')
     async def alive():
         if client is None or not client.initialized:
