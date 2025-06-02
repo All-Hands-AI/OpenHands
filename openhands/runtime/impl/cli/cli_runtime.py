@@ -120,6 +120,7 @@ class CLIRuntime(Runtime):
             'This runtime executes commands directly on the local system. '
             'Use with caution in untrusted environments.'
         )
+        config.workspace_mount_path_in_sandbox = self._workspace_path
 
     async def connect(self) -> None:
         """Initialize the runtime connection."""
