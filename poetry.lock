@@ -2459,14 +2459,14 @@ devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benc
 
 [[package]]
 name = "fastmcp"
-version = "2.5.1"
+version = "2.5.2"
 description = "The fast, Pythonic way to build MCP servers."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "fastmcp-2.5.1-py3-none-any.whl", hash = "sha256:a6fe50693954a6aed89fc6e43f227dcd66e112e3d3a1d633ee22b4f435ee8aed"},
-    {file = "fastmcp-2.5.1.tar.gz", hash = "sha256:0d10ec65a362ae4f78bdf3b639faf35b36cc0a1c8f5461a54fac906fe821b84d"},
+    {file = "fastmcp-2.5.2-py3-none-any.whl", hash = "sha256:4ea46ef35c1308b369eff7c8a10e4c9639bed046fd646449c1227ac7c3856d83"},
+    {file = "fastmcp-2.5.2.tar.gz", hash = "sha256:761c92fb54f561136f631d7d98b4920152978f6f0a66a4cef689a7983fd05c8b"},
 ]
 
 [package.dependencies]
@@ -11741,4 +11741,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "35d7c81745aee985169bd32fff6c02fbdb56d2902e630f89aa6e99f09f3c1c4e"
+content-hash = "42d590343d06314e3e2b0b47c82eae65cd1255d1fed0b76a229c702add0a4f55"

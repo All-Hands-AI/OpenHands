@@ -45,7 +45,15 @@ class MCPClient(BaseModel):
         try:
             # Use asyncio.wait_for to enforce the timeout
             async def connect_with_timeout():
-                headers = {'Authorization': f'Bearer {api_key}'} if api_key else {}
+                headers = (
+                    {
+                        'Authorization': f'Bearer {api_key}',
+                        's': api_key,  # We need this for action execution server's MCP Router
+                        'X-Session-API-Key': api_key,  # We need this for Remote Runtime
+                    }
+                    if api_key
+                    else {}
+                )
 
                 if conversation_id:
                     headers['X-OpenHands-Conversation-ID'] = conversation_id
