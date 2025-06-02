@@ -37,7 +37,7 @@ class NestedEventStore(EventStoreABC):
             if limit is not None:
                 search_params['limit'] = min(100, limit)
             search_str = urlencode(search_params)
-            url = f'{self.base_url}/events{search_str}'
+            url = f'{self.base_url}/events?{search_str}'
             headers = {}
             if self.session_api_key:
                 headers['X-Session-API-Key'] = self.session_api_key
@@ -45,7 +45,7 @@ class NestedEventStore(EventStoreABC):
             result_set = response.json()
             for result in result_set['results']:
                 event = event_from_dict(result)
-                start_id = event.id
+                start_id = max(start_id, event.id + 1)
                 if end_id == event.id:
                     if not filter or filter.include(event):
                         yield event
