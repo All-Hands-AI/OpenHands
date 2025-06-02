@@ -385,13 +385,15 @@ if LOG_TO_FILE:
     )  # default log to project root
     openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
+# Exclude LiteLLM from logging output as it can leak keys
+logging.getLogger('LiteLLM').disabled = True
+logging.getLogger('LiteLLM Router').disabled = True
+logging.getLogger('LiteLLM Proxy').disabled = True
+
 # Exclude loquacious loggers
 LOQUACIOUS_LOGGERS = [
     'engineio',
     'engineio.server',
-    'LiteLLM',
-    'LiteLLM Router',
-    'LiteLLM Proxy',
     'socketio',
     'socketio.client',
     'socketio.server',
