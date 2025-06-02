@@ -3011,7 +3011,7 @@ grpcio = {version = ">=1.49.1,<2.0dev", optional = true, markers = "python_versi
 grpcio-status = {version = ">=1.49.1,<2.0.dev0", optional = true, markers = "python_version >= \"3.11\" and extra == \"grpc\""}
 proto-plus = [
     {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0", markers = "python_version < \"3.13\""},
+    {version = ">=1.22.3,<2.0.0"},
 ]
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
 requests = ">=2.18.0,<3.0.0"
@@ -3230,7 +3230,7 @@ google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0"
 grpc-google-iam-v1 = ">=0.14.0,<1.0.0"
 proto-plus = [
     {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0"},
+    {version = ">=1.22.3,<2.0.0", markers = "python_version < \"3.13\""},
 ]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
 
@@ -5403,11 +5403,8 @@ files = [
     {file = "lxml-5.4.0-cp36-cp36m-win_amd64.whl", hash = "sha256:7ce1a171ec325192c6a636b64c94418e71a1964f56d002cc28122fceff0b6121"},
     {file = "lxml-5.4.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:795f61bcaf8770e1b37eec24edf9771b307df3af74d1d6f27d812e15a9ff3872"},
     {file = "lxml-5.4.0-cp37-cp37m-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:29f451a4b614a7b5b6c2e043d7b64a15bd8304d7e767055e8ab68387a8cacf4e"},
-    {file = "lxml-5.4.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:891f7f991a68d20c75cb13c5c9142b2a3f9eb161f1f12a9489c82172d1f133c0"},
     {file = "lxml-5.4.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4aa412a82e460571fad592d0f93ce9935a20090029ba08eca05c614f99b0cc92"},
-    {file = "lxml-5.4.0-cp37-cp37m-manylinux_2_28_aarch64.whl", hash = "sha256:ac7ba71f9561cd7d7b55e1ea5511543c0282e2b6450f122672a2694621d63b7e"},
     {file = "lxml-5.4.0-cp37-cp37m-manylinux_2_28_x86_64.whl", hash = "sha256:c5d32f5284012deaccd37da1e2cd42f081feaa76981f0eaa474351b68df813c5"},
-    {file = "lxml-5.4.0-cp37-cp37m-musllinux_1_2_aarch64.whl", hash = "sha256:ce31158630a6ac85bddd6b830cffd46085ff90498b397bd0a259f59d27a12188"},
     {file = "lxml-5.4.0-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:31e63621e073e04697c1b2d23fcb89991790eef370ec37ce4d5d469f40924ed6"},
     {file = "lxml-5.4.0-cp37-cp37m-win32.whl", hash = "sha256:be2ba4c3c5b7900246a8f866580700ef0d538f2ca32535e991027bdaba944063"},
     {file = "lxml-5.4.0-cp37-cp37m-win_amd64.whl", hash = "sha256:09846782b1ef650b321484ad429217f5154da4d6e786636c38e434fa32e94e49"},
@@ -7594,21 +7591,6 @@ files = [
 pyasn1 = ">=0.6.1,<0.7.0"
 
 [[package]]
-name = "pybind11"
-version = "2.13.6"
-description = "Seamless operability between C++11 and Python"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "pybind11-2.13.6-py3-none-any.whl", hash = "sha256:237c41e29157b962835d356b370ededd57594a26d5894a795960f0047cb5caf5"},
-    {file = "pybind11-2.13.6.tar.gz", hash = "sha256:ba6af10348c12b24e92fa086b39cfba0eff619b61ac77c406167d813b096d39a"},
-]
-
-[package.extras]
-global = ["pybind11-global (==2.13.6)"]
-
-[[package]]
 name = "pycodestyle"
 version = "2.13.0"
 description = "Python style guide checker"
@@ -7958,27 +7940,6 @@ groups = ["main"]
 files = [
     {file = "pylatexenc-2.10.tar.gz", hash = "sha256:3dd8fd84eb46dc30bee1e23eaab8d8fb5a7f507347b23e5f38ad9675c84f40d3"},
 ]
-
-[[package]]
-name = "pylcs"
-version = "0.1.1"
-description = "super fast cpp implementation of longest common subsequence"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "pylcs-0.1.1-cp310-cp310-win_amd64.whl", hash = "sha256:7b8adea6b41dff27332c967533ec3c42a5e94171be778d6f01f0c5cee82e7604"},
-    {file = "pylcs-0.1.1-cp311-cp311-win_amd64.whl", hash = "sha256:9ff06e037c54056cb67d6ef5ad946c0360afeff7d43be67ce09e55201ecc15cc"},
-    {file = "pylcs-0.1.1-cp35-cp35m-win_amd64.whl", hash = "sha256:d2ebf340aa180d841939d9ec1168dfd072992dda1d48148ceb07b65b1ab62ffa"},
-    {file = "pylcs-0.1.1-cp36-cp36m-win_amd64.whl", hash = "sha256:b6c43b63e20048f8fec7e122fbc08c238940a0ee5302bf84a70db22c7f8cc836"},
-    {file = "pylcs-0.1.1-cp37-cp37m-win_amd64.whl", hash = "sha256:db52d55cfdf813af974bcc164aedbd29274da83086877bf05778aa7fbf777f7f"},
-    {file = "pylcs-0.1.1-cp38-cp38-win_amd64.whl", hash = "sha256:954495f1c164ccb722b835e7028783f8a38d85ed5f6ff7b9d50143896c6cff9b"},
-    {file = "pylcs-0.1.1-cp39-cp39-win_amd64.whl", hash = "sha256:0f4c82fad8c0429abef9e98fb98904459c4f5f9fb9b6ce20e0df0841a6a48a54"},
-    {file = "pylcs-0.1.1.tar.gz", hash = "sha256:632c69235d77cda0ba524d82796878801d2f46131fc59e730c98767fc4ce1307"},
-]
-
-[package.dependencies]
-pybind11 = ">=2.2"
 
 [[package]]
 name = "pynacl"
@@ -12193,4 +12154,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "509493c2d53d5923054d7521079a212c6e67323389b75886b6e1dccc9869127c"
+content-hash = "071b19070a00bfbae9cab2332a58ce9e0f31fcf594bc4ad32fd647783611396c"
