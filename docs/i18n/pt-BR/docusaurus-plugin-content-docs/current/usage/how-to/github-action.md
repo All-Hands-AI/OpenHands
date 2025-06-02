@@ -47,5 +47,5 @@ As opções de personalização que você pode definir são:
 | `LLM_MODEL`                      | Variável  | Define o LLM a ser usado com OpenHands                                                              | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
 | `OPENHANDS_MAX_ITER`             | Variável  | Define o limite máximo para iterações do agente                                                     | `OPENHANDS_MAX_ITER=10`                            |
 | `OPENHANDS_MACRO`                | Variável  | Personaliza a macro padrão para invocar o resolver                                                  | `OPENHANDS_MACRO=@resolveit`                       |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variável  | Sandbox personalizado ([saiba mais](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variável  | Sandbox personalizado ([saiba mais](https://docs.all-hands.dev/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
 | `TARGET_BRANCH`                  | Variável  | Mesclar para uma branch diferente de `main`                                                         | `TARGET_BRANCH="dev"`                              |
