@@ -270,52 +270,50 @@ export function ConversationCard({
             <div className="rounded-md p-3">
               <div className="grid gap-3">
                 {metrics?.cost !== null && (
-                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                  <div className="flex justify-between items-center pb-2">
                     <span className="text-lg font-semibold">
                       {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
-                    <div className="flex flex-col items-end">
-                      <span className="font-semibold">
-                        ${metrics.cost.toFixed(4)}
-                      </span>
-                      {metrics?.max_budget_per_task !== null &&
-                        metrics.max_budget_per_task > 0 && (
-                          <>
-                            <span className="text-xs text-neutral-400">
-                              {t(I18nKey.CONVERSATION$BUDGET)}: $
-                              {metrics.max_budget_per_task.toFixed(4)}
-                            </span>
-                            <div className="w-full h-1.5 bg-neutral-700 rounded-full overflow-hidden mt-1">
-                              <div
-                                className={`h-full transition-all duration-300 ${
-                                  metrics.cost / metrics.max_budget_per_task >
-                                  0.8
-                                    ? "bg-red-500"
-                                    : "bg-blue-500"
-                                }`}
-                                style={{
-                                  width: `${Math.min(100, (metrics.cost / metrics.max_budget_per_task) * 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs text-neutral-400">
-                              {(
-                                (metrics.cost / metrics.max_budget_per_task) *
-                                100
-                              ).toFixed(2)}{" "}
-                              {t(I18nKey.CONVERSATION$BUDGET_USAGE)}
-                            </span>
-                          </>
-                        )}
-                      {metrics?.max_budget_per_task !== null &&
-                        metrics.max_budget_per_task === 0 && (
-                          <span className="text-xs text-neutral-400">
-                            {t(I18nKey.CONVERSATION$NO_BUDGET_LIMIT)}
-                          </span>
-                        )}
-                    </div>
+                    <span className="font-semibold">
+                      ${metrics.cost.toFixed(4)}/
+                      {metrics?.max_budget_per_task &&
+                        metrics.max_budget_per_task.toFixed(4)}
+                    </span>
                   </div>
                 )}
+                <div className="border-b border-neutral-700">
+                  {metrics?.max_budget_per_task !== null &&
+                    metrics.max_budget_per_task > 0 &&
+                    metrics?.cost !== null && (
+                      <>
+                        <div className="w-full h-1.5 bg-neutral-700 rounded-full overflow-hidden mt-1">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              metrics.cost / metrics.max_budget_per_task > 0.8
+                                ? "bg-red-500"
+                                : "bg-blue-500"
+                            }`}
+                            style={{
+                              width: `${Math.min(100, (metrics.cost / metrics.max_budget_per_task) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-neutral-400">
+                          {(
+                            (metrics.cost / metrics.max_budget_per_task) *
+                            100
+                          ).toFixed(2)}{" "}
+                          {t(I18nKey.CONVERSATION$BUDGET_USAGE)}
+                        </span>
+                      </>
+                    )}
+
+                  {metrics?.max_budget_per_task === null && (
+                    <span className="text-xs text-neutral-400">
+                      {t(I18nKey.CONVERSATION$NO_BUDGET_LIMIT)}
+                    </span>
+                  )}
+                </div>
 
                 {metrics?.usage !== null && (
                   <>
