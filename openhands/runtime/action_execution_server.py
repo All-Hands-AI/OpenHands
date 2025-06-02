@@ -26,8 +26,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from mcpm import MCPRouter, RouterConfig
-from mcpm.router.router import logger as mcp_router_logger
+from fastmcp import FastMCP
+from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
@@ -68,14 +68,16 @@ from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
-from openhands.runtime.utils.log_capture import capture_logs
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
-# Set MCP router logger to the same level as the main logger
-mcp_router_logger.setLevel(logger.getEffectiveLevel())
+# Configure FastMCP logger to use the same level as the main logger
+fastmcp_logger = fastmcp_get_logger('fastmcp')
+
+# Set FastMCP logger to the same level as the main logger
+fastmcp_logger.setLevel(logger.getEffectiveLevel())
 
 
 if sys.platform == 'win32':
@@ -475,7 +477,7 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                with open(filepath, 'rb') as file:  # noqa: ASYNC101
+                with open(filepath, 'rb') as file:
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -485,13 +487,13 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_image)
             elif filepath.lower().endswith('.pdf'):
-                with open(filepath, 'rb') as file:  # noqa: ASYNC101
+                with open(filepath, 'rb') as file:
                     pdf_data = file.read()
                     encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
                     encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
                 return FileReadObservation(path=filepath, content=encoded_pdf)
             elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
-                with open(filepath, 'rb') as file:  # noqa: ASYNC101
+                with open(filepath, 'rb') as file:
                     video_data = file.read()
                     encoded_video = base64.b64encode(video_data).decode('utf-8')
                     mime_type, _ = mimetypes.guess_type(filepath)
@@ -501,7 +503,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
+            with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
@@ -534,7 +536,7 @@ class ActionExecutor:
 
         mode = 'w' if not file_exists else 'r+'
         try:
-            with open(filepath, mode, encoding='utf-8') as file:  # noqa: ASYNC101
+            with open(filepath, mode, encoding='utf-8') as file:
                 if mode != 'w':
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
@@ -658,14 +660,12 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
-    mcp_router: MCPRouter | None = None
-    MCP_ROUTER_PROFILE_PATH = os.path.join(
-        os.path.dirname(__file__), 'mcp', 'config.json'
-    )
+    fastmcp_proxy: FastMCP | None = None
+    MCP_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'mcp', 'config.json')
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        global client, mcp_router
+        global client, fastmcp_proxy
         logger.info('Initializing ActionExecutor...')
         client = ActionExecutor(
             plugins_to_load,
@@ -680,26 +680,26 @@ if __name__ == '__main__':
         # Check if we're on Windows
         is_windows = sys.platform == 'win32'
 
-        # Initialize and mount MCP Router (skip on Windows)
+        # Initialize and mount FastMCP Proxy (skip on Windows)
         if is_windows:
-            logger.info('Skipping MCP Router initialization on Windows')
-            mcp_router = None
+            logger.info('Skipping FastMCP Proxy initialization on Windows')
+            fastmcp_proxy = None
         else:
-            logger.info('Initializing MCP Router...')
-            mcp_router = MCPRouter(
-                profile_path=MCP_ROUTER_PROFILE_PATH,
-                router_config=RouterConfig(
-                    api_key=SESSION_API_KEY,
-                    auth_enabled=bool(SESSION_API_KEY),
-                ),
+            logger.info('Initializing FastMCP Proxy...')
+            # Create a FastMCP proxy using the config file
+            fastmcp_proxy = FastMCP.as_proxy(
+                MCP_CONFIG_PATH,
+                name='OpenHandsActionExecutionProxy',
+                auth_enabled=bool(SESSION_API_KEY),
+                api_key=SESSION_API_KEY,
             )
             allowed_origins = ['*']
-            sse_app = await mcp_router.get_sse_server_app(
+            sse_app = await fastmcp_proxy.get_sse_server_app(
                 allow_origins=allowed_origins, include_lifespan=False
             )
 
-        # Only mount SSE app if MCP Router is initialized (not on Windows)
-        if mcp_router is not None:
+        # Only mount SSE app if FastMCP Proxy is initialized (not on Windows)
+        if fastmcp_proxy is not None:
             # Check for route conflicts before mounting
             main_app_routes = {route.path for route in app.routes}
             sse_app_routes = {route.path for route in sse_app.routes}
@@ -713,7 +713,7 @@ if __name__ == '__main__':
 
             app.mount('/', sse_app)
             logger.info(
-                f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
+                f'Mounted FastMCP Proxy SSE app at root path with allowed origins: {allowed_origins}'
             )
 
             # Additional debug logging
@@ -721,22 +721,22 @@ if __name__ == '__main__':
                 logger.debug('Main app routes:')
                 for route in main_app_routes:
                     logger.debug(f'  {route}')
-                logger.debug('MCP SSE server app routes:')
+                logger.debug('FastMCP SSE server app routes:')
                 for route in sse_app_routes:
                     logger.debug(f'  {route}')
 
         yield
 
         # Clean up & release the resources
-        logger.info('Shutting down MCP Router...')
-        if mcp_router:
+        logger.info('Shutting down FastMCP Proxy...')
+        if fastmcp_proxy:
             try:
-                await mcp_router.shutdown()
-                logger.info('MCP Router shutdown successfully.')
+                await fastmcp_proxy.shutdown()
+                logger.info('FastMCP Proxy shutdown successfully.')
             except Exception as e:
-                logger.error(f'Error shutting down MCP Router: {e}', exc_info=True)
+                logger.error(f'Error shutting down FastMCP Proxy: {e}', exc_info=True)
         else:
-            logger.info('MCP Router instance not found for shutdown.')
+            logger.info('FastMCP Proxy instance not found for shutdown.')
 
         logger.info('Closing ActionExecutor...')
         if client:
@@ -828,6 +828,9 @@ if __name__ == '__main__':
         # Check if we're on Windows
         is_windows = sys.platform == 'win32'
 
+        # Access the global fastmcp_proxy variable
+        global fastmcp_proxy
+
         if is_windows:
             # On Windows, just return a success response without doing anything
             logger.info(
@@ -842,17 +845,24 @@ if __name__ == '__main__':
             )
 
         # Non-Windows implementation
-        assert mcp_router is not None
-        assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
+        if fastmcp_proxy is None:
+            raise HTTPException(
+                status_code=500, detail='FastMCP Proxy is not initialized'
+            )
+        assert os.path.exists(MCP_CONFIG_PATH)
 
         # Use synchronous file operations outside of async function
-        def read_profile():
-            with open(MCP_ROUTER_PROFILE_PATH, 'r') as f:
+        def read_config():
+            with open(MCP_CONFIG_PATH, 'r') as f:
                 return json.load(f)
 
-        current_profile = read_profile()
-        assert 'default' in current_profile
-        assert isinstance(current_profile['default'], list)
+        current_config = read_config()
+
+        # Ensure the config has the expected structure
+        if 'mcpServers' not in current_config:
+            current_config['mcpServers'] = {}
+        if 'default' not in current_config['mcpServers']:
+            current_config['mcpServers']['default'] = {}
 
         # Get the request body
         mcp_tools_to_sync = await request.json()
@@ -862,29 +872,58 @@ if __name__ == '__main__':
             )
 
         logger.info(
-            f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious profile: {json.dumps(current_profile, indent=2)}'
+            f'Updating MCP server to: {json.dumps(mcp_tools_to_sync, indent=2)}.\nPrevious config: {json.dumps(current_config, indent=2)}'
         )
-        current_profile['default'] = mcp_tools_to_sync
+
+        # Update the config with the new tools
+        # In FastMCP, tools are configured differently than in MCPRouter
+        # We'll update the config to include the tools in the appropriate format
+        current_config['tools'] = mcp_tools_to_sync
 
         # Use synchronous file operations outside of async function
-        def write_profile(profile):
-            with open(MCP_ROUTER_PROFILE_PATH, 'w') as f:
-                json.dump(profile, f)
+        def write_config(config):
+            with open(MCP_CONFIG_PATH, 'w') as f:
+                json.dump(config, f)
 
-        write_profile(current_profile)
+        write_config(current_config)
 
-        # Manually reload the profile and update the servers
-        mcp_router.profile_manager.reload()
-        servers_wait_for_update = mcp_router.get_unique_servers()
-        async with capture_logs('mcpm.router.router') as log_capture:
-            await mcp_router.update_servers(servers_wait_for_update)
-        router_error_log = log_capture.getvalue()
+        # Create a new FastMCP proxy with the updated config
+        try:
+            # Shutdown the existing proxy
+            if fastmcp_proxy is not None:
+                await fastmcp_proxy.shutdown()
 
-        logger.info(
-            f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
-        )
-        if router_error_log:
-            logger.warning(f'Some MCP servers failed to be added: {router_error_log}')
+            # Create a new proxy with the updated config
+            new_proxy = FastMCP.as_proxy(
+                MCP_CONFIG_PATH,
+                name='OpenHandsActionExecutionProxy',
+                auth_enabled=bool(SESSION_API_KEY),
+                api_key=SESSION_API_KEY,
+            )
+
+            # Replace the global proxy with the new one
+            global fastmcp_proxy
+            fastmcp_proxy = new_proxy
+
+            # Get the SSE app and mount it
+            allowed_origins = ['*']
+            sse_app = await fastmcp_proxy.get_sse_server_app(
+                allow_origins=allowed_origins, include_lifespan=False
+            )
+
+            # Remove any existing mounts
+            for route in list(app.routes):
+                if getattr(route, 'path', '') == '/':
+                    app.routes.remove(route)
+
+            # Mount the new SSE app
+            app.mount('/', sse_app)
+
+            logger.info('FastMCP Proxy updated and remounted successfully')
+            router_error_log = ''
+        except Exception as e:
+            logger.error(f'Error updating FastMCP Proxy: {e}', exc_info=True)
+            router_error_log = str(e)
 
         return JSONResponse(
             status_code=200,
@@ -919,7 +958,7 @@ if __name__ == '__main__':
                     )
 
                 zip_path = os.path.join(full_dest_path, file.filename)
-                with open(zip_path, 'wb') as buffer:  # noqa: ASYNC101
+                with open(zip_path, 'wb') as buffer:
                     shutil.copyfileobj(file.file, buffer)
 
                 # Extract the zip file
@@ -932,7 +971,7 @@ if __name__ == '__main__':
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
-                with open(file_path, 'wb') as buffer:  # noqa: ASYNC101
+                with open(file_path, 'wb') as buffer:
                     shutil.copyfileobj(file.file, buffer)
                 logger.debug(f'Uploaded file {file.filename} to {destination}')
 
