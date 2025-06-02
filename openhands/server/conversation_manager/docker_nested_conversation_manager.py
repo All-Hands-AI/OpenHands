@@ -194,6 +194,8 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json = settings.model_dump(context={'expose_secrets': True})
                 settings_json.pop('custom_secrets', None)
                 settings_json.pop('git_provider_tokens', None)
+                if settings_json.get('git_provider'):
+                    settings_json['git_provider'] = settings_json['git_provider'].value
                 secrets_store = settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
