@@ -289,7 +289,7 @@ def _load_runtime(
 
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime, runtime.config
+    return runtime, config
 
 
 # Export necessary function
