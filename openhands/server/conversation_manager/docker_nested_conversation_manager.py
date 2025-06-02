@@ -194,6 +194,8 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json = settings.model_dump(context={'expose_secrets': True})
                 settings_json.pop('custom_secrets', None)
                 settings_json.pop('git_provider_tokens', None)
+                if settings_json.get('git_provider'):
+                    settings_json['git_provider'] = settings_json['git_provider'].value
                 secrets_store = settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
@@ -421,8 +423,12 @@ class DockerNestedConversationManager(ConversationManager):
         )
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
-        env_vars['USER'] = 'CURRENT_USER'
+        # TODO: In the long term we may come up with a more secure strategy for user management within the nested runtime.
+        env_vars['USER'] = 'root'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
+        # We need to be able to specify the nested conversation id within the nested runtime
+        env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
+        env_vars['WORKSPACE_BASE'] = f'/workspace'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
