@@ -48,7 +48,7 @@ For more details and manual initialization, view the entire [README.md](https://
 Common errors:
 
 ```
-daytona_sdk.common.errors.DaytonaError: Failed to create sandbox: Image docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik not found or not accessible
+daytona_sdk.common.errors.DaytonaError: Failed to create sandbox: Image docker.all-hands.dev/all-hands-ai/runtime:0.xy-nikolaik not found or not accessible
 ```
 
 If the image is not found on Daytona server, you can add it in your Daytona dashboard by following the steps below:
@@ -56,6 +56,6 @@ If the image is not found on Daytona server, you can add it in your Daytona dash
 1. Go to the Daytona dashboard.
 2. Click on the "Images" tab.
 3. Click on the "Create Image" button.
-4. Enter the image name (e.g. `docker.all-hands.dev/all-hands-ai/runtime:0.38-nikolaik`) and click on the "Create" button.
+4. Enter the image name (e.g. `docker.all-hands.dev/all-hands-ai/runtime:0.xy-nikolaik`) and click on the "Create" button.
 5. The image will be added to the Daytona server in ~5 minutes.
 6. You can now use the image in your Daytona sandbox.
