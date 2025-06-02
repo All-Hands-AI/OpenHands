@@ -19,6 +19,7 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -73,7 +74,11 @@ async def setup_init_convo_settings(
     if user_secrets:
         session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
-    return ConversationInitData(**session_init_args)
+    convo_init_data = ConversationInitData(**session_init_args)
+    # We should recreate the same experiment conditions when restarting a conversation
+    return ExperimentManagerImpl.run_conversation_variant_test(
+        user_id, convo_init_data, restart=True
+    )
 
 
 @sio.event
