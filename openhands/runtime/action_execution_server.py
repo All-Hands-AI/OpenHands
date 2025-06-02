@@ -284,7 +284,7 @@ class ActionExecutor:
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=60,
+            timeout=180,
         )
         logger.debug('All plugins initialized')
 
