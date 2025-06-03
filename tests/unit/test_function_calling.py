@@ -218,3 +218,45 @@ def test_invalid_json_arguments():
     with pytest.raises(RuntimeError) as exc_info:
         response_to_actions(response)
     assert 'Failed to parse tool call arguments' in str(exc_info.value)
+
+
+def test_put_session_id_in_path():
+    """Test put_session_id_in_path function with various path and session ID combinations."""
+    from openhands.agenthub.codeact_agent.function_calling import put_session_id_in_path
+
+    # Test cases from requirements
+    assert put_session_id_in_path('/workspace', '12344') == '/workspace/12344'
+    assert put_session_id_in_path('/workspace/', '12344') == '/workspace/12344'
+    assert (
+        put_session_id_in_path('/workspace/dir1/dir2/file.py', '12344')
+        == '/workspace/12344/dir1/dir2/file.py'
+    )
+    assert put_session_id_in_path('/workspace/xjzi', '12344') == '/workspace/12344/xjzi'
+    assert put_session_id_in_path('/workspacefoobar', '12344') == ''
+    assert put_session_id_in_path('/workspacexjzi', '12344') == ''
+
+    # Additional edge cases
+    assert put_session_id_in_path('/workspace/', '') == ''  # Empty session ID
+    assert put_session_id_in_path('', '12344') == ''  # Empty path
+    assert (
+        put_session_id_in_path('/workspace//dir', '12344') == '/workspace/12344/dir'
+    )  # Double slash
+    assert (
+        put_session_id_in_path('/workspace/dir/', '12344') == '/workspace/12344/dir'
+    )  # Trailing slash
+    assert (
+        put_session_id_in_path('/workspace/./dir', '12344') == '/workspace/12344/dir'
+    )  # Current directory
+    assert (
+        put_session_id_in_path('/workspace/../dir', '12344') == '/workspace/12344/dir'
+    )  # Parent directory
+    assert (
+        put_session_id_in_path('/workspace/.././dir/../../../.././file.py', '12344')
+        == '/workspace/12344/dir/file.py'
+    )  # Parent directory
+    assert (
+        put_session_id_in_path('../workspace/dir/file.py', '12344') == ''
+    )  # Parent directory
+    assert (
+        put_session_id_in_path('/workspace/dir/file.py', '') == ''
+    )  # Empty session ID

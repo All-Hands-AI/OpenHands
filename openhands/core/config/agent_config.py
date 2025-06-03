@@ -24,9 +24,9 @@ class AgentConfig(BaseModel):
     """
 
     llm_config: str | None = Field(default=None)
-    codeact_enable_browsing: bool = Field(default=True)
+    codeact_enable_browsing: bool = Field(default=False)
     codeact_enable_llm_editor: bool = Field(default=False)
-    codeact_enable_jupyter: bool = Field(default=True)
+    codeact_enable_jupyter: bool = Field(default=False)
     enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
@@ -37,6 +37,7 @@ class AgentConfig(BaseModel):
     a2a_server_urls: list[str] = Field(default_factory=list)
     enable_llm_router: bool = Field(default=False)
     llm_router_infer_url: str | None = Field(default=None)
+    enable_pyodide: bool = Field(default=False)
     model_config = {'extra': 'forbid'}
 
     @classmethod

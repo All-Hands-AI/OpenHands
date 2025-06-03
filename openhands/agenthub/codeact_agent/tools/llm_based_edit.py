@@ -116,7 +116,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
             'properties': {
                 'path': {
                     'type': 'string',
-                    'description': "The absolute path to the file to be edited. Eg: `/workspace/36eedc34afb34d84ba1a1bfdb13e0e97/file.py or /workspace/file.py`. If there's a session id, it should be included in the path, e.g. `/workspace/36eedc34afb34d84ba1a1bfdb13e0e97/file.py`.",
+                    'description': 'The absolute path to the file to be edited. Eg: `/workspace/file.py',
                 },
                 'content': {
                     'type': 'string',

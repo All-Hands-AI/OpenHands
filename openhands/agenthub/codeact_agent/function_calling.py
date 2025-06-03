@@ -145,7 +145,11 @@ def response_to_actions(
                     and sid not in path
                     and workspace_mount_path_in_sandbox_store_in_session
                 ):
-                    path = f"{path.rsplit('/', 1)[0]}/{sid}/{path.rsplit('/', 1)[1]}"
+                    path = put_session_id_in_path(path, sid)
+                    if path == '':
+                        raise FunctionCallValidationError(
+                            f'Invalid path: {path}. Original path: {arguments["path"]}. Please provide a valid path.'
+                        )
 
                 action = FileEditAction(
                     path=path,
@@ -168,10 +172,15 @@ def response_to_actions(
                 path = arguments['path']
                 if (
                     sid is not None
+                    and sid != ''
                     and sid not in path
                     and workspace_mount_path_in_sandbox_store_in_session
                 ):
-                    path = f"{path.rsplit('/', 1)[0]}/{sid}/{path.rsplit('/', 1)[1]}"
+                    path = put_session_id_in_path(path, sid)
+                    if path == '':
+                        raise FunctionCallValidationError(
+                            f'Invalid path: {path}. Original path: {arguments["path"]}. Please provide a valid path.'
+                        )
                 command = arguments['command']
                 other_kwargs = {
                     k: v for k, v in arguments.items() if k not in ['command', 'path']
@@ -227,9 +236,15 @@ def response_to_actions(
                     MCPClientTool.postfix(), ''
                 )
                 logger.info(f'Original action name: {original_action_name}')
+                arguments = json.loads(tool_call.function.arguments)
+                if 'pyodide' in original_action_name:
+                    # we don't trust sessionId passed by the LLM. Always use the one from the session to get deterministic results
+                    arguments['sessionId'] = sid
+                # Update the arguments string with the modified sessionId
+                updated_arguments_str = json.dumps(arguments)
                 action = McpAction(
                     name=original_action_name,
-                    arguments=tool_call.function.arguments,
+                    arguments=updated_arguments_str,
                 )
             # ================================================
             # A2A
@@ -285,6 +300,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
     llm: LLM | None = None,
+    enable_pyodide_bash: bool = False,
 ) -> list[ChatCompletionToolParam]:
     SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1']
 
@@ -295,11 +311,17 @@ def get_tools(
             for model_substr in SIMPLIFIED_TOOL_DESCRIPTION_LLM_SUBSTRS
         )
 
-    tools = [
-        create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
-        ThinkTool,
-        FinishTool,
-    ]
+    if not enable_pyodide_bash:
+        tools = [
+            create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
+            ThinkTool,
+            FinishTool,
+        ]
+    else:
+        tools = [
+            ThinkTool,
+            FinishTool,
+        ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
@@ -314,3 +336,32 @@ def get_tools(
             )
         )
     return tools
+
+
+def put_session_id_in_path(path: str, sid: str) -> str:
+    # Check if path starts with '/workspace' or '/workspace/'
+    if not sid:
+        return ''
+    if path == '/workspace' or path.startswith('/workspace/'):
+        # Manually clean . and .. without resolving above /workspace
+        parts = path.split('/')
+        cleaned_parts = ['/workspace']
+        for part in parts[2:]:  # Skip ['', 'workspace']
+            if part and part not in ('.', '..'):
+                cleaned_parts.append(part)
+        cleaned_path = '/'.join(cleaned_parts)
+        # Strip '/workspace' and get remaining path
+        remaining_path = (
+            cleaned_path[len('/workspace') :] if cleaned_path != '/workspace' else ''
+        )
+        # Handle empty sid case
+        if not sid:
+            return cleaned_path.rstrip('/')
+        # Construct path with sid, adding '/' only if remaining_path exists
+        result = (
+            f'/workspace/{sid}/{remaining_path.lstrip("/")}'
+            if remaining_path
+            else f'/workspace/{sid}'
+        )
+        return result.rstrip('/')
+    return ''

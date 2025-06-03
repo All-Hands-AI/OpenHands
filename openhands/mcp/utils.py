@@ -9,6 +9,7 @@ from openhands.core.config.search_engine import SearchEngineConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.observation import ObservationType
 from openhands.events.action.mcp import McpAction
+from openhands.events.observation.commands import IPythonRunCellObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
@@ -202,6 +203,8 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: McpAction) -> Obse
         ):
             # Handle the case where the response is not empty
             return planner_mcp_plan(action, response)
+        if action.name == 'pyodide_execute_python' and len(response.content) > 0:
+            return pyodide_mcp_response(action, response)
 
         return MCPObservation(content=f'{response.content[0].text}')
     except Exception as e:
@@ -273,3 +276,13 @@ def planner_mcp_plan(_: McpAction, response: CallToolResult) -> Observation:
 
     logger.info(f'Planner MCP observation: {observation}')
     return observation
+
+
+def pyodide_mcp_response(action: McpAction, response: CallToolResult) -> Observation:
+    code = response.content[0].text
+    content = response.content[1].text
+    if len(response.content) == 0 or not isinstance(response.content[0], TextContent):
+        return ErrorObservation(
+            f'Pyodide MCP response is empty or not text content: {response.content}'
+        )
+    return IPythonRunCellObservation(code=code, content=content)

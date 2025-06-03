@@ -90,7 +90,7 @@ class PromptManager:
     def get_followup_mode_message(self, **kwargs) -> str:
         return self.followup_mode_template.render(**kwargs).strip()
 
-    def get_example_user_message(self) -> str:
+    def get_example_user_message(self, session_id: str | None = None) -> str:
         """This is the initial user message provided to the agent
         before *actual* user instructions are provided.
 
@@ -103,11 +103,13 @@ class PromptManager:
 
         if self.user_prompt:
             return self.user_prompt
-        return self.user_template.render().strip()
+        return self.user_template.render(session_id=session_id).strip()
 
-    def add_examples_to_initial_message(self, message: Message) -> None:
+    def add_examples_to_initial_message(
+        self, message: Message, session_id: str | None = None
+    ) -> None:
         """Add example_message to the first user message."""
-        example_message = self.get_example_user_message() or None
+        example_message = self.get_example_user_message(session_id) or None
 
         # Insert it at the start of the TextContent list
         if example_message:

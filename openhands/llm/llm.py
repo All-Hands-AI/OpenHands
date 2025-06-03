@@ -376,7 +376,7 @@ class LLM(RetryMixin, DebugMixin):
                 log_file = os.path.join(
                     self.config.log_completions_folder,
                     # use the metric model name (for draft editor)
-                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    f"{self.metrics.model_name.replace('/', '__')}-{time.time()}.json",
                 )
 
                 # set up the dict to be logged
@@ -707,7 +707,7 @@ class LLM(RetryMixin, DebugMixin):
             boolean: True if executing a local model.
         """
         if self.config.base_url is not None:
-            for substring in ['localhost', '127.0.0.1' '0.0.0.0']:
+            for substring in ['localhost', '127.0.0.10.0.0.0']:
                 if substring in self.config.base_url:
                     return True
         elif self.config.model is not None:

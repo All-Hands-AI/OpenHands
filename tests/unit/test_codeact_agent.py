@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import pytest
 from litellm import ChatCompletionMessageToolCall, ModelResponse
 
+from openhands.agenthub.codeact_agent import function_calling
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
     BrowserTool,
@@ -18,10 +19,12 @@ from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
 )
+from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.schema.research import ResearchMode
 from openhands.events.action import (
     CmdRunAction,
     MessageAction,
@@ -404,3 +407,150 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     # Fifth message only has ImageContent, no TextContent to modify
     assert len(enhanced_messages[5].content) == 1
     assert isinstance(enhanced_messages[5].content[0], ImageContent)
+
+
+def test_select_tools_based_on_mode_chat_mode(agent: CodeActAgent):
+    """Test tool selection in CHAT mode."""
+    # Mock MCP tools
+    agent.mcp_tools = [
+        {
+            'function': {
+                'name': 'pyodide_execute_bash_mcp_tool_call',
+                'description': 'Execute bash command',
+            }
+        },
+        {
+            'function': {
+                'name': 'pyodide_str_replace_editor_mcp_tool_call',
+                'description': 'Edit file',
+            }
+        },
+    ]
+    agent.config.enable_pyodide = True
+
+    # Mock search tools
+    agent.search_tools = [
+        {'function': {'name': 'search_tool', 'description': 'Search tool'}}
+    ]
+
+    # Test with CHAT mode
+    tools = agent._select_tools_based_on_mode(ResearchMode.CHAT)
+
+    # Should include simplified tools, pyodide tools, and search tools
+    tool_names = [tool['function']['name'] for tool in tools]
+    assert 'search_tool' in tool_names
+    assert 'think' in tool_names
+    assert 'finish' in tool_names
+
+
+def test_select_tools_based_on_mode_follow_up_mode(agent: CodeActAgent):
+    """Test tool selection in FOLLOW_UP mode."""
+    # Mock MCP tools
+    agent.mcp_tools = [
+        {
+            'function': {
+                'name': 'pyodide_execute_bash_mcp_tool_call',
+                'description': 'Execute bash command',
+            }
+        }
+    ]
+
+    agent.config.enable_pyodide = False
+
+    # Test with FOLLOW_UP mode
+    tools = agent._select_tools_based_on_mode(ResearchMode.FOLLOW_UP)
+
+    # Should only include FinishTool
+    assert len(tools) == 1
+    assert tools[0] == FinishTool
+
+
+def test_select_tools_based_on_mode_no_mcp_tools(agent: CodeActAgent):
+    """Test tool selection when no MCP tools are available."""
+    agent.mcp_tools = None
+    agent.search_tools = [
+        {'function': {'name': 'search_tool', 'description': 'Search tool'}}
+    ]
+
+    # Test with CHAT mode
+    tools = agent._select_tools_based_on_mode(ResearchMode.CHAT)
+
+    # Should include base tools and search tools
+    tool_names = [tool['function']['name'] for tool in tools]
+    assert 'search_tool' in tool_names
+    assert 'execute_bash' in tool_names
+    assert 'think' in tool_names
+    assert 'finish' in tool_names
+    assert 'str_replace_editor' in tool_names
+    assert len(tools) > 1  # Should have base tools plus search tools
+
+
+def test_select_tools_based_on_mode_missing_pyodide_tools(agent: CodeActAgent):
+    """Test tool selection when some pyodide tools are missing."""
+    # Mock MCP tools with only bash tool
+    agent.mcp_tools = [
+        {
+            'function': {
+                'name': 'pyodide_execute_bash_mcp_tool_call',
+                'description': 'Execute bash command',
+            }
+        }
+    ]
+    agent.search_tools = [
+        {'function': {'name': 'search_tool', 'description': 'Search tool'}}
+    ]
+
+    agent.tools = function_calling.get_tools(
+        codeact_enable_browsing=agent.config.codeact_enable_browsing,
+        codeact_enable_jupyter=agent.config.codeact_enable_jupyter,
+        codeact_enable_llm_editor=agent.config.codeact_enable_llm_editor,
+        llm=None,
+        enable_pyodide_bash=True,
+    )
+
+    # Test with CHAT mode
+    tools = agent._select_tools_based_on_mode(ResearchMode.CHAT)
+
+    # Should not fall back to base tools since there are pyodide tools present
+    assert len(tools) == 4
+    tool_names = [tool['function']['name'] for tool in tools]
+    assert 'think' in tool_names
+    assert 'finish' in tool_names
+    assert 'search_tool' in tool_names
+    assert 'str_replace_editor' in tool_names
+
+
+def test_select_tools_based_on_mode_duplicate_tools(agent: CodeActAgent):
+    """Test tool selection with duplicate tool names."""
+    # Mock MCP tools with duplicate names
+    agent.mcp_tools = [
+        {
+            'function': {
+                'name': 'duplicate_tool_mcp_tool_call',
+                'description': 'First tool',
+            }
+        },
+        {
+            'function': {
+                'name': 'duplicate_tool_mcp_tool_call',
+                'description': 'Second tool',
+            }
+        },
+    ]
+
+    # Add duplicate to base tools
+    agent.tools = [
+        {
+            'function': {
+                'name': 'duplicate_tool_mcp_tool_call',
+                'description': 'Base tool',
+            }
+        }
+    ]
+
+    # Test with other mode
+    tools = agent._select_tools_based_on_mode('OTHER_MODE')
+
+    # Should deduplicate tools
+    tool_names = [tool['function']['name'] for tool in tools]
+    assert tool_names.count('duplicate_tool_mcp_tool_call') == 1

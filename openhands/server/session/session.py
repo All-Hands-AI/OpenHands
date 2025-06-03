@@ -193,6 +193,9 @@ class Session:
         except Exception as e:
             self.logger.warning(f'Error initializing A2A manager: {e}')
 
+        if self.config.runtime == 'pyodide':
+            agent_config.enable_pyodide = True
+
         agent = Agent.get_cls(agent_cls)(
             llm,
             agent_config,

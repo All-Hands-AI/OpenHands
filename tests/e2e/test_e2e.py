@@ -17,6 +17,7 @@ from openhands.core.cli import (
     shutdown,
     update_usage_metrics,
 )
+from openhands.core.schema.research import ResearchMode
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 
@@ -33,11 +34,14 @@ async def join_conversation(conversation_id: str, public_address: str):
     usage_metrics = UsageMetrics()
     metrics_lock = threading.Lock()
     sid = conversation_id  # Use conversation_id as session_id for shutdown
+    metrics = Metrics(model_name='default')
 
     # Helper to run update_usage_metrics with lock
-    def update_metrics_with_lock(event, metrics):
+    def update_metrics_with_lock():
         with metrics_lock:
-            update_usage_metrics(event, metrics)
+            event = Event()
+            event.llm_metrics = metrics
+            update_usage_metrics(event, usage_metrics)
 
     # Create query string with parameters
     query_string = (
@@ -67,6 +71,7 @@ async def join_conversation(conversation_id: str, public_address: str):
         async def disconnect():
             display_message('Disconnected from server')
             # Run shutdown in executor to handle synchronous prompt_toolkit calls
+            update_metrics_with_lock()
             await asyncio.get_event_loop().run_in_executor(
                 None, lambda: shutdown(usage_metrics, sid)
             )
@@ -83,10 +88,10 @@ async def join_conversation(conversation_id: str, public_address: str):
                 if 'llm_metrics' in data:
                     llm_metrics = data['llm_metrics']
                     print('event data: ', json.dumps(data))
-                    metrics = Metrics(model_name='default')
+                    metrics.reset()
                     cost = llm_metrics.get('accumulated_cost', 0.0)
-                    metrics.add_cost(cost)
                     token_data = llm_metrics.get('accumulated_token_usage', {})
+                    metrics.add_cost(cost)
                     metrics.add_token_usage(
                         prompt_tokens=token_data.get('prompt_tokens', 0),
                         completion_tokens=token_data.get('completion_tokens', 0),
@@ -94,13 +99,11 @@ async def join_conversation(conversation_id: str, public_address: str):
                         cache_write_tokens=token_data.get('cache_write_tokens', 0),
                         response_id=token_data.get('response_id', ''),
                     )
-                    event.llm_metrics = metrics
+                    print('llm_metrics: ', metrics)
 
                 # Display agent messages, mimicking MessageAction handling
                 if event.source == EventSource.AGENT and event.message:
                     display_message(event.message)
-                # Update usage metrics (synchronous, run in executor)
-                await asyncio.to_thread(update_metrics_with_lock, event, usage_metrics)
 
         # Start the CLI input loop in a separate task
         async def cli_input_loop():
@@ -138,11 +141,13 @@ async def join_conversation(conversation_id: str, public_address: str):
     except socketio.exceptions.ConnectionError as e:
         display_message(f'Connection failed: {e}')
         # Run shutdown to display metrics on connection failure
+        update_metrics_with_lock()
         await asyncio.get_event_loop().run_in_executor(
             None, lambda: shutdown(usage_metrics, sid)
         )
     except Exception as e:
         display_message(f'Error: {e}')
+        update_metrics_with_lock()
         # Run shutdown to display metrics on general error
         await asyncio.get_event_loop().run_in_executor(
             None, lambda: shutdown(usage_metrics, sid)
@@ -158,6 +163,7 @@ def create_conversation(
     public_address: Optional[str] = None,
     system_prompt: Optional[str] = None,
     user_prompt: Optional[str] = None,
+    research_mode: Optional[ResearchMode] = None,
 ) -> dict:
     payload = {
         'initial_user_msg': initial_user_msg,
@@ -167,6 +173,7 @@ def create_conversation(
         'replay_json': replay_json,
         'system_prompt': system_prompt,
         'user_prompt': user_prompt,
+        'research_mode': research_mode,
     }
     headers = {
         'Authorization': f'Bearer {public_address}',
@@ -199,6 +206,7 @@ if __name__ == '__main__':
                 replay_json=None,
                 public_address=public_address,
                 system_prompt=SYSTEM_PROMPT,
+                research_mode=ResearchMode.CHAT,
             )
             conversation_id = new_conversation_response['conversation_id']
         display_message(f'Conversation created with ID: {conversation_id}')

@@ -1063,8 +1063,8 @@ def test_agent_config_from_toml_section_with_invalid_base():
 
     # Verify a default base config was created despite the invalid fields
     assert 'agent' in result
-    assert result['agent'].codeact_enable_browsing is True  # Default value
-    assert result['agent'].codeact_enable_jupyter is True  # Default value
+    assert result['agent'].codeact_enable_browsing is False  # Default false
+    assert result['agent'].codeact_enable_jupyter is False  # Default false
 
     # Verify custom config was still processed correctly
     assert 'CustomAgent' in result

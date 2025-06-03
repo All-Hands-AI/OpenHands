@@ -226,13 +226,13 @@ model = "gpt-4o"
 [agent]
 
 # Whether the browsing tool is enabled
-codeact_enable_browsing = true
+codeact_enable_browsing = false
 
 # Whether the LLM draft editor is enabled
 codeact_enable_llm_editor = false
 
 # Whether the IPython tool is enabled
-codeact_enable_jupyter = true
+codeact_enable_jupyter = false
 
 # Whether to use the LLM router
 #enable_llm_router = true

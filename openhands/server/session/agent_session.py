@@ -180,19 +180,19 @@ class AgentSession:
                 )
 
             repo_directory = None
-            if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.full_name.split('/')[-1]
+            # if self.runtime and runtime_connected and selected_repository:
+            #     repo_directory = selected_repository.full_name.split("/")[-1]
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
             )
 
-            if git_provider_tokens:
-                self.logger.debug(
-                    f'Setting event stream secrets for {git_provider_tokens}'
-                )
-                provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
-                await provider_handler.set_event_stream_secrets(self.event_stream)
+            # if git_provider_tokens:
+            #     self.logger.debug(
+            #         f"Setting event stream secrets for {git_provider_tokens}"
+            #     )
+            #     provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
+            #     await provider_handler.set_event_stream_secrets(self.event_stream)
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -213,11 +213,15 @@ class AgentSession:
             self._starting = False
             success = finished and runtime_connected
             self.logger.info(
-                f'Agent session start: {json.dumps({
-                    "signal": "agent_session_start",
-                    "success": success,
-                    "duration": time.time() - started_at,
-                })}',
+                f"Agent session start: {
+                    json.dumps(
+                        {
+                            'signal': 'agent_session_start',
+                            'success': success,
+                            'duration': time.time() - started_at,
+                        }
+                    )
+                }",
             )
 
     async def close(self):

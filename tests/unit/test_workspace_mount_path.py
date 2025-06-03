@@ -143,7 +143,7 @@ class TestWorkspaceMountPath:
         # Assert
         assert len(actions) > 0
         assert isinstance(actions[0], FileEditAction)
-        assert actions[0].path == '/workspace/path/to/file/test-sid/file.txt'
+        assert actions[0].path == '/workspace/test-sid/path/to/file/file.txt'
 
     @patch('openhands.agenthub.codeact_agent.function_calling.ToolCallMetadata')
     def test_path_modification_in_function_calling_when_store_in_session_false(
@@ -270,7 +270,7 @@ class TestWorkspaceMountPath:
         # Assert
         assert len(actions) > 0
         assert isinstance(actions[0], FileEditAction)
-        assert actions[0].path == '/workspace/path/to/file/test-sid/file.txt'
+        assert actions[0].path == '/workspace/test-sid/path/to/file/file.txt'
 
     @patch('openhands.agenthub.codeact_agent.function_calling.ToolCallMetadata')
     def test_str_replace_editor_tool_path_modification_when_store_in_session_false(

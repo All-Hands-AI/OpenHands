@@ -37,5 +37,33 @@ async def login(request: Request):
     }
 
 
+@app.post('/api/threads')
+async def create_thread(request: Request):
+    payload = await request.json()
+    print(payload)
+    return {'msg': 'success'}
+
+
+@app.post('/api/knowledge/search')
+async def search_knowledge(request: Request):
+    payload = await request.json()
+    print(payload)
+    return {'msg': 'success'}
+
+
+@app.post('/api/threads/webhook/rag-job')
+async def rag_job(request: Request):
+    payload = await request.json()
+    print(payload)
+    return {'msg': 'success'}
+
+
+@app.post('/api/threads/delete-thread-by-conversation-id/{conversation_id}')
+async def delete_thread(request: Request, conversation_id: str):
+    payload = await request.json()
+    print(payload)
+    return {'msg': 'success'}
+
+
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=5000)

@@ -1,6 +1,7 @@
 import json
 import os
 from collections import deque
+from copy import deepcopy
 from typing import override
 
 from httpx import request
@@ -91,11 +92,8 @@ class CodeActAgent(Agent):
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             llm=self.llm,
+            enable_pyodide_bash=self.config.enable_pyodide,
         )
-        # Add A2A tools if A2A server URLs are provided
-        if self.config.a2a_server_urls:
-            built_in_tools.append(ListRemoteAgents)
-            built_in_tools.append(SendTask)
 
         self.tools = built_in_tools
 
@@ -110,6 +108,8 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.info(f'Using condenser: {type(self.condenser)}')
         self.routing_llms = routing_llms
+        self.search_tools: list[dict] = []
+        self.session_id: str | None = None
 
     @override
     def set_system_prompt(self, system_prompt: str) -> None:
@@ -134,6 +134,48 @@ class CodeActAgent(Agent):
         super().reset()
         self.pending_actions.clear()
 
+    def _select_tools_based_on_mode(self, research_mode: str | None) -> list[dict]:
+        """Selects the tools based on the mode of the agent."""
+        if research_mode == ResearchMode.FOLLOW_UP:
+            selected_tools = [FinishTool]
+        elif research_mode == ResearchMode.DEEP_RESEARCH:
+            # Start with built-in tools
+            selected_tools = deepcopy(self.tools)
+
+            if self.config.a2a_server_urls:
+                selected_tools.extend([ListRemoteAgents, SendTask])
+
+            # Add search tools, avoiding duplicates
+            existing_names = {tool['function']['name'] for tool in selected_tools}
+            unique_search_tools = [
+                tool
+                for tool in self.search_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            selected_tools.extend(unique_search_tools)
+
+            # Add MCP tools, avoiding duplicates
+            existing_names = {tool['function']['name'] for tool in selected_tools}
+            unique_mcp_tools = [
+                tool
+                for tool in self.mcp_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            selected_tools.extend(unique_mcp_tools)
+        else:
+            # For other modes, combine tools and search_tools with deduplication
+            selected_tools = deepcopy(self.tools)
+            existing_names = {tool['function']['name'] for tool in selected_tools}
+            unique_search_tools = [
+                tool
+                for tool in self.search_tools
+                if tool['function']['name'] not in existing_names
+            ]
+            selected_tools.extend(unique_search_tools)
+
+        logger.debug(f'Selected tools: {selected_tools}')
+        return selected_tools
+
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
 
@@ -149,6 +191,8 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+        if self.session_id is None:
+            self.session_id = state.session_id
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
@@ -180,39 +224,12 @@ class CodeActAgent(Agent):
 
         messages = self._get_messages(condensed_history, research_mode=research_mode)
 
-        # process the user input and check chatmode
-
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         # if chat mode, we need to use the search tools
-        params['tools'] = []
-
-        if research_mode is None or research_mode == ResearchMode.CHAT:
-            built_in_tools = codeact_function_calling.get_tools(
-                codeact_enable_browsing=False,
-                codeact_enable_jupyter=False,
-                codeact_enable_llm_editor=False,
-                llm=self.llm,
-            )
-            params['tools'] = built_in_tools + self.search_tools
-        elif research_mode == ResearchMode.FOLLOW_UP:
-            params['tools'] = [
-                # ThinkTool,
-                FinishTool,
-            ]
-        else:
-            params['tools'] = self.tools
-            if self.mcp_tools:
-                # Only add tools with unique names
-                existing_names = {tool['function']['name'] for tool in params['tools']}
-                unique_mcp_tools = [
-                    tool
-                    for tool in self.mcp_tools
-                    if tool['function']['name'] not in existing_names
-                ]
-                params['tools'] += unique_mcp_tools
+        params['tools'] = self._select_tools_based_on_mode(research_mode)
         logger.debug(f'Messages: {messages}')
         last_message = messages[-1]
         response = None
@@ -374,7 +391,9 @@ class CodeActAgent(Agent):
             if msg.role == 'user' and not is_first_message_handled:
                 is_first_message_handled = True
                 # compose the first user message with examples
-                self.prompt_manager.add_examples_to_initial_message(msg)
+                self.prompt_manager.add_examples_to_initial_message(
+                    msg, self.session_id
+                )
 
             elif msg.role == 'user':
                 # Add double newline between consecutive user messages
