@@ -194,5 +194,11 @@
       "chatgpt",
       "claude"
     ]
-  }
+  },
+  "redirects": [
+    {
+      "source": "/modules/:slug*",
+      "destination": "/:slug*"
+    }
+  ]
 }
