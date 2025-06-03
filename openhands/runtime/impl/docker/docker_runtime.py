@@ -322,7 +322,10 @@ class DockerRuntime(ActionExecutionClient):
             {
                 'port': str(self._container_port),
                 'PYTHONUNBUFFERED': '1',
+                # Passing in the ports means nested runtimes do not come up with their own ports!
                 'VSCODE_PORT': str(self._vscode_port),
+                'APP_PORT_1': str(self._app_ports[0]),
+                'APP_PORT_2': str(self._app_ports[1]),
                 'PIP_BREAK_SYSTEM_PACKAGES': '1',
             }
         )

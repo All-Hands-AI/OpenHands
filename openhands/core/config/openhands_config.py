@@ -1,3 +1,4 @@
+import os
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
@@ -104,7 +105,7 @@ class OpenHandsConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-    mcp_host: str = Field(default='localhost:3000')
+    mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     defaults_dict: ClassVar[dict] = {}

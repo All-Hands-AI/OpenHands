@@ -263,14 +263,12 @@ async def run_session(
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = (
+        _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 config.mcp_host, config, None
             )
         )
-        # FIXME: OpenHands' SSE server may not be running when CLI mode is started
-        # if openhands_mcp_server:
-        #     config.mcp.sse_servers.append(openhands_mcp_server)
+
         config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory, config)
