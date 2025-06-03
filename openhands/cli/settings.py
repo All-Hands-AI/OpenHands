@@ -18,7 +18,7 @@ from openhands.cli.utils import (
     organize_models_and_providers,
 )
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
@@ -29,7 +29,7 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.utils.llm import get_supported_llm_models
 
 
-def display_settings(config: AppConfig) -> None:
+def display_settings(config: OpenHandsConfig) -> None:
     llm_config = config.get_llm_config()
     advanced_llm_settings = True if llm_config.base_url else False
 
@@ -145,7 +145,7 @@ def save_settings_confirmation() -> bool:
 
 
 async def modify_llm_settings_basic(
-    config: AppConfig, settings_store: FileSettingsStore
+    config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
@@ -243,7 +243,7 @@ async def modify_llm_settings_basic(
 
 
 async def modify_llm_settings_advanced(
-    config: AppConfig, settings_store: FileSettingsStore
+    config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
     session = PromptSession(key_bindings=kb_cancel())
 

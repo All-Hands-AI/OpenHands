@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
@@ -207,7 +207,7 @@ async def test_update_conversation_with_title():
     # Create the conversation manager
     manager = StandaloneConversationManager(
         sio=sio,
-        config=AppConfig(),
+        config=OpenHandsConfig(),
         file_store=file_store,
         server_config=server_config,
         monitoring_listener=MonitoringListener(),

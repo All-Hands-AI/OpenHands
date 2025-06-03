@@ -30,7 +30,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -58,7 +58,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
-    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+    _get_swebench_workspace_dir_name(instance)
     instruction = f"""
 Consider the following issue description:
 
@@ -168,7 +168,7 @@ def get_instance_docker_image(instance_id: str, official_image: bool = False) ->
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
     use_official_image = bool(
         'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
@@ -197,7 +197,7 @@ def get_config(
         'REPO_PATH': f'/workspace/{workspace_dir_name}/',
     }
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
@@ -348,13 +348,13 @@ def initialize_runtime(
 
     # Check if an existing graph index file is available
     graph_index_file_path = os.path.join(
-        INDEX_BASE_DIR, 'graph_index_v2.3', f"{instance['instance_id']}.pkl"
+        INDEX_BASE_DIR, 'graph_index_v2.3', f'{instance["instance_id"]}.pkl'
     )
     if INDEX_BASE_DIR and os.path.exists(graph_index_file_path):
         logger.info(
-            f"Copying graph index from {graph_index_file_path} to /workspace/{workspace_dir_name}/_index_data/graph_index_v2.3"
+            f'Copying graph index from {graph_index_file_path} to /workspace/{workspace_dir_name}/_index_data/graph_index_v2.3'
         )
-    
+
         runtime.copy_to(
             graph_index_file_path,
             f'/workspace/{workspace_dir_name}/_index_data/graph_index_v2.3',
@@ -364,9 +364,13 @@ def initialize_runtime(
         )
         obs = runtime.run_action(action)
 
-        bm25_index_dir = os.path.join(INDEX_BASE_DIR, 'BM25_index', instance['instance_id'])
+        bm25_index_dir = os.path.join(
+            INDEX_BASE_DIR, 'BM25_index', instance['instance_id']
+        )
         runtime.copy_to(
-            bm25_index_dir, f'/workspace/{workspace_dir_name}/_index_data', recursive=True
+            bm25_index_dir,
+            f'/workspace/{workspace_dir_name}/_index_data',
+            recursive=True,
         )
         action = CmdRunAction(
             command=f'mv _index_data/{instance["instance_id"]} _index_data/bm25_index'
