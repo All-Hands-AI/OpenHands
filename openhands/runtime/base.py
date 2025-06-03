@@ -14,6 +14,8 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
+import tenacity
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
@@ -323,62 +325,36 @@ class Runtime(FileEditRuntimeMixin):
         self,
         event: Action,
         error: Exception,
+        retry_count: int,
         max_retries: int = 3,
         retry_delay: int = 10,
-    ) -> tuple[bool, Observation | None]:
+    ) -> None:
         """
         Handle runtime-related errors with retry logic.
 
         Args:
             event: The action that caused the error
             error: The exception that was raised
+            retry_count: Current retry attempt number
             max_retries: Maximum number of retry attempts
             retry_delay: Delay in seconds between retries
 
         Returns:
-            A tuple of (should_continue, observation)
-            - should_continue: True if the caller should continue processing, False if it should return
-            - observation: An observation to return if should_continue is False, None otherwise
+            None
         """
-        err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
         error_message = f'{type(error).__name__}: {str(error)}'
         self.log('error', f'Runtime error while running action: {error_message}')
         self.log('error', f'Problematic action: {str(event)}')
-
-        # Check if retry is enabled in config
-        if not self.config.sandbox.retry_on_unrecoverable_runtime_error:
-            self.send_error_message(err_id, error_message)
-            return False, None
-
-        # Initialize runtime error counter if it doesn't exist
-        if not hasattr(self, '_runtime_error_count'):
-            self._runtime_error_count = 0
-
-        # Increment the counter
-        self._runtime_error_count += 1
-
-        # Check if we've exceeded the maximum number of retries
-        if self._runtime_error_count > max_retries:
-            self.log(
-                'error',
-                f'Maximum runtime error retries exceeded ({self._runtime_error_count}). Stopping retries.',
-            )
-            # Reset the counter
-            self._runtime_error_count = 0
-            self.send_error_message(err_id, error_message)
-            return False, None
 
         # Create error message for the observation
         error_content = (
             f'Your command may have consumed too much resources, and the previous runtime died. '
             f'You are connected to a new runtime container, all dependencies you have installed '
-            f'outside /workspace may not be persisted. (Retry {self._runtime_error_count} of {max_retries})'
+            f'outside /workspace may not be persisted. (Retry {retry_count} of {max_retries})'
         )
 
         # Create an error observation
         observation = ErrorObservation(content=error_content)
-        # Store error content in a way that doesn't rely on extras property
-        # This will be accessible to the event stream
 
         # Add the observation to the event stream
         observation._cause = event.id  # type: ignore[attr-defined]
@@ -388,12 +364,25 @@ class Runtime(FileEditRuntimeMixin):
         # Log the retry attempt
         self.log(
             'warning',
-            f'Runtime error occurred. Retry {self._runtime_error_count} of {max_retries} in {retry_delay} seconds.',
+            f'Runtime error occurred. Retry {retry_count} of {max_retries}.',
         )
 
-        # Wait before retrying
-        await asyncio.sleep(retry_delay)
-        return True, observation
+    async def _execute_action_core(self, event: Action) -> Observation:
+        """
+        Core logic for executing an action.
+
+        Args:
+            event: The action to execute
+
+        Returns:
+            The observation resulting from the action
+        """
+        await self._export_latest_git_provider_tokens(event)
+        if isinstance(event, MCPAction):
+            observation: Observation = await self.call_tool_mcp(event)
+        else:
+            observation = await call_sync_from_async(self.run_action, event)
+        return observation
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
@@ -401,49 +390,61 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
 
-        while True:
-            try:
-                await self._export_latest_git_provider_tokens(event)
-                if isinstance(event, MCPAction):
-                    observation: Observation = await self.call_tool_mcp(event)
-                else:
-                    observation = await call_sync_from_async(self.run_action, event)
-
-                # Reset error counter on successful execution
-                if (
-                    hasattr(self, '_runtime_error_count')
-                    and self._runtime_error_count > 0
-                ):
-                    self.log(
-                        'debug',
-                        f'Resetting runtime error counter from {self._runtime_error_count} to 0 on successful action.',
-                    )
-                    self._runtime_error_count = 0
-
-                break  # Exit the loop on success
-
-            except (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError) as e:
-                should_continue, retry_observation = await self._handle_runtime_error(
-                    event, e
+        # Define a before_sleep callback for tenacity
+        async def before_sleep_callback(retry_state: tenacity.RetryCallState) -> None:
+            exception = retry_state.outcome.exception()
+            if exception:
+                await self._handle_runtime_error(
+                    event,
+                    exception,
+                    retry_state.attempt_number,
+                    max_retries=3,
+                    retry_delay=10,
                 )
-                if not should_continue:
-                    return
-                continue
 
-            except Exception as e:
-                err_id = ''
-                if isinstance(e, httpx.NetworkError):
-                    err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                error_message = f'{type(e).__name__}: {str(e)}'
-                self.log(
-                    'error', f'Unexpected error while running action: {error_message}'
-                )
-                self.log('error', f'Problematic action: {str(event)}')
-                self.send_error_message(err_id, error_message)
-                return
+        # Create a retry decorator based on configuration
+        if self.config.sandbox.retry_on_unrecoverable_runtime_error:
+            retry_decorator = retry(
+                retry=retry_if_exception_type(
+                    (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError)
+                ),
+                stop=stop_after_attempt(3),
+                wait=wait_fixed(10),
+                before_sleep=before_sleep_callback,
+                reraise=True,
+            )
+            execute_with_retry = retry_decorator(self._execute_action_core)
+        else:
+            # No retry if not enabled in config
+            execute_with_retry = self._execute_action_core
 
-        observation._cause = event.id  # type: ignore[attr-defined]
-        observation.tool_call_metadata = event.tool_call_metadata
+        try:
+            # Execute the action with retry if configured
+            observation: Observation = await execute_with_retry(event)
+
+            # Set observation metadata
+            observation._cause = event.id  # type: ignore[attr-defined]
+            observation.tool_call_metadata = event.tool_call_metadata
+
+        except (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError) as e:
+            # This will only be reached if retries are disabled or all retries failed
+            err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Runtime error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.send_error_message(err_id, error_message)
+            return
+
+        except Exception as e:
+            # Handle other exceptions
+            err_id = ''
+            if isinstance(e, httpx.NetworkError):
+                err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.send_error_message(err_id, error_message)
+            return
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
