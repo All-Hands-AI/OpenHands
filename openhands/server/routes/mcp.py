@@ -63,6 +63,8 @@ async def create_pr(
 
     request = get_http_request()
     headers = request.headers
+
+    print("request headers", headers)
     conversation_id = headers.get('X-OpenHands-ServerConversation-ID', None)
 
     provider_tokens = await get_provider_tokens(request)
