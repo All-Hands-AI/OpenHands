@@ -30,6 +30,7 @@ from openhands.utils.import_utils import get_impl
 class GitHubService(BaseGitService, GitService):
     """Default implementation of GitService for GitHub integration.
 
+    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
     This is an extension point in OpenHands that allows applications to customize GitHub
     integration behavior. Applications can substitute their own implementation by:
     1. Creating a class that inherits from GitService
