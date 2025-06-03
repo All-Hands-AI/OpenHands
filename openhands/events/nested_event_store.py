@@ -43,7 +43,7 @@ class NestedEventStore(EventStoreABC):
                 headers['X-Session-API-Key'] = self.session_api_key
             response = httpx.get(url, headers=headers)
             result_set = response.json()
-            for result in result_set['results']:
+            for result in result_set['events']:
                 event = event_from_dict(result)
                 start_id = max(start_id, event.id + 1)
                 if end_id == event.id:
