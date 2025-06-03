@@ -13,6 +13,7 @@ from openhands.server.types import AppMode
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    AZURE_DEVOPS = 'azure_devops'
 
 
 class TaskType(str, Enum):
@@ -50,6 +51,19 @@ class SuggestedTask(BaseModel):
                 'ciSystem': 'GitHub Actions',
                 'ciProvider': 'GitHub',
                 'requestVerb': 'pull request',
+            }
+        elif self.git_provider == ProviderType.AZURE_DEVOPS:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'Azure DevOps API',
+                'tokenEnvVar': 'AZURE_DEVOPS_TOKEN',
+                'ciSystem': 'Azure Pipelines',
+                'ciProvider': 'Azure DevOps',
+                'requestVerb': 'pull request',
+                'work item': 'work item',
+                'repository': 'repository',
+                'pull request': 'pull request',
             }
 
         raise ValueError(f'Provider {self.git_provider} for suggested task prompts')

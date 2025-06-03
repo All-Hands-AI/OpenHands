@@ -19,7 +19,7 @@ test("should redirect to /conversations after uploading a project zip", async ({
   await page.waitForURL(/\/conversations\/\d+/);
 });
 
-test("should redirect to /conversations after selecting a repo", async ({
+test("should redirect to /conversations after selecting a GitHub repo", async ({
   page,
 }) => {
   // enter a github token to view the repositories
@@ -38,6 +38,33 @@ test("should redirect to /conversations after selecting a repo", async ({
   await repoDropdown.click();
 
   const repoItem = page.getByTestId("github-repo-item").first();
+  await repoItem.click();
+
+  await page.waitForURL(/\/conversations\/\d+/);
+});
+
+test("should redirect to /conversations after selecting an Azure DevOps repo", async ({
+  page,
+}) => {
+  // enter an Azure DevOps token to view the repositories
+  const connectToAzureDevOpsButton = page.getByRole("button", {
+    name: /connect to azure devops/i,
+  });
+  await connectToAzureDevOpsButton.click();
+  const tokenInput = page.getByLabel(/azure devops token\*/i);
+  await tokenInput.fill("fake-token");
+
+  const organizationInput = page.getByLabel(/azure devops organization\*/i);
+  await organizationInput.fill("test-organization");
+
+  const submitButton = page.getByTestId("connect-to-azure-devops");
+  await submitButton.click();
+
+  // select a repository
+  const repoDropdown = page.getByLabel(/azure devops repository/i);
+  await repoDropdown.click();
+
+  const repoItem = page.getByTestId("azure-devops-repo-item").first();
   await repoItem.click();
 
   await page.waitForURL(/\/conversations\/\d+/);
