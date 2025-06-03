@@ -121,9 +121,15 @@ async def create_mcp_clients(
     return mcp_clients
 
 
-async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
+async def fetch_mcp_tools_from_config(
+    mcp_config: MCPConfig, conversation_id: str | None = None
+) -> list[dict]:
     """
     Retrieves the list of MCP tools from the MCP clients.
+
+    Args:
+        mcp_config: The MCP configuration
+        conversation_id: Optional conversation ID to associate with the MCP clients
 
     Returns:
         A list of tool dictionaries. Returns an empty list if no connections could be established.
@@ -141,7 +147,7 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse_servers, mcp_config.streamable_http_servers
+            mcp_config.sse_servers, mcp_config.streamable_http_servers, conversation_id
         )
 
         if not mcp_clients:

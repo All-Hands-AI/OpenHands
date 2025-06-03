@@ -30,7 +30,9 @@ async def test_sse_connection_timeout():
         ]
 
         # Call create_mcp_clients with the server URLs
-        clients = await create_mcp_clients(sse_servers=servers)
+        clients = await create_mcp_clients(
+            sse_servers=servers, streamable_http_servers=[]
+        )
 
         # Verify that no clients were successfully connected
         assert len(clients) == 0
@@ -50,11 +52,12 @@ async def test_fetch_mcp_tools_with_timeout():
 
     # Configure the mock config
     mock_config.sse_servers = ['http://server1:8080']
+    mock_config.streamable_http_servers = []
 
     # Mock create_mcp_clients to return an empty list (simulating all connections failing)
     with mock.patch('openhands.mcp.utils.create_mcp_clients', return_value=[]):
         # Call fetch_mcp_tools_from_config
-        tools = await fetch_mcp_tools_from_config(mock_config)
+        tools = await fetch_mcp_tools_from_config(mock_config, None)
 
         # Verify that an empty list of tools is returned
         assert tools == []
@@ -68,6 +71,7 @@ async def test_mixed_connection_results():
 
     # Configure the mock config
     mock_config.sse_servers = ['http://server1:8080', 'http://server2:8080']
+    mock_config.streamable_http_servers = []
 
     # Create a successful client
     successful_client = mock.MagicMock(spec=MCPClient)
@@ -78,7 +82,7 @@ async def test_mixed_connection_results():
         'openhands.mcp.utils.create_mcp_clients', return_value=[successful_client]
     ):
         # Call fetch_mcp_tools_from_config
-        tools = await fetch_mcp_tools_from_config(mock_config)
+        tools = await fetch_mcp_tools_from_config(mock_config, None)
 
         # Verify that tools were returned
         assert len(tools) > 0
