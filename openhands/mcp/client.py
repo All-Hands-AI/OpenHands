@@ -60,14 +60,21 @@ class MCPClient(BaseModel):
                 if conversation_id:
                     headers['X-OpenHands-Conversation-ID'] = conversation_id
 
+                # Convert float timeout to datetime.timedelta for consistency
+                timeout_delta = datetime.timedelta(seconds=timeout)
+
                 streams_context = sse_client(
                     url=server_url,
                     headers=headers if headers else None,
                     timeout=timeout,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
+                # Unpack the streams tuple and pass the read_timeout_seconds parameter
+                read_stream, write_stream, get_session_id = streams
                 self.session = await self.exit_stack.enter_async_context(
-                    ClientSession(*streams)
+                    ClientSession(
+                        read_stream, write_stream, read_timeout_seconds=timeout_delta
+                    )
                 )
                 await self._initialize_and_list_tools()
 
@@ -168,8 +175,12 @@ class MCPClient(BaseModel):
                     sse_read_timeout=sse_read_timeout_delta,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
+                # Unpack the streams tuple and pass the read_timeout_seconds parameter
+                read_stream, write_stream, get_session_id = streams
                 self.session = await self.exit_stack.enter_async_context(
-                    ClientSession(*streams)
+                    ClientSession(
+                        read_stream, write_stream, read_timeout_seconds=timeout_delta
+                    )
                 )
                 await self._initialize_and_list_tools()
 
