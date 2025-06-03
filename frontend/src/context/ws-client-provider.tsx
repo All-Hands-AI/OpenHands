@@ -16,12 +16,14 @@ import {
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
+  isAgentStateChangeObservation,
   isErrorObservation,
   isOpenHandsAction,
   isOpenHandsObservation,
+  isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
@@ -68,6 +70,7 @@ const isMessageAction = (
 export enum WsClientProviderStatus {
   CONNECTED,
   DISCONNECTED,
+  CONNECTING,
 }
 
 interface UseWsClient {
@@ -147,7 +150,7 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
-  const { data: conversation } = useUserConversation(conversationId);
+  const { data: conversation } = useActiveConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -159,10 +162,35 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    removeErrorMessage();
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    handleAssistantMessage(event);
+
     if (isOpenHandsEvent(event)) {
+      const isStatusUpdateError =
+        isStatusUpdate(event) && event.type === "error";
+
+      const isAgentStateChangeError =
+        isAgentStateChangeObservation(event) &&
+        event.extras.agent_state === "error";
+
+      if (isStatusUpdateError || isAgentStateChangeError) {
+        const errorMessage = isStatusUpdate(event)
+          ? event.message
+          : event.extras.reason || "Unknown error";
+
+        trackError({
+          message: errorMessage,
+          source: "chat",
+          metadata: { msgId: event.id },
+        });
+        setErrorMessage(errorMessage);
+
+        return;
+      }
+
       if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
         setParsedEvents((prevEvents) => [...prevEvents, event]);
       }
@@ -191,9 +219,14 @@ export function WsClientProvider({
         isFileWriteAction(event) ||
         isCommandAction(event)
       ) {
-        queryClient.removeQueries({
-          queryKey: ["file_changes", conversationId],
-        });
+        queryClient.invalidateQueries(
+          {
+            queryKey: ["file_changes", conversationId],
+          },
+          // Do not refetch if we are still receiving messages at a high rate (e.g., loading an existing conversation)
+          // This prevents unnecessary refetches when the user is still receiving messages
+          { cancelRefetch: false },
+        );
 
         // Invalidate file diff cache when a file is edited or written
         if (!isCommandAction(event)) {
@@ -224,8 +257,6 @@ export function WsClientProvider({
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
-
-    handleAssistantMessage(event);
   }
 
   function handleDisconnect(data: unknown) {
@@ -258,13 +289,18 @@ export function WsClientProvider({
 
   React.useEffect(() => {
     lastEventRef.current = null;
+
+    // reset events when conversationId changes
+    setEvents([]);
+    setParsedEvents([]);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
   }, [conversationId]);
 
   React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (!conversation) {
+    if (!conversation || conversation.status === "STARTING") {
       return () => undefined; // conversation not yet loaded
     }
 
@@ -304,7 +340,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [conversationId, conversation?.url]);
+  }, [conversationId, conversation?.url, conversation?.status]);
 
   React.useEffect(
     () => () => {

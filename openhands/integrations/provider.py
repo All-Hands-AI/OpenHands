@@ -134,6 +134,7 @@ class ProviderHandler:
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
+            base_domain=token.host,
         )
 
     async def get_user(self) -> User:

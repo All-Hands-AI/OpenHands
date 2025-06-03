@@ -1,16 +1,6 @@
 # flake8: noqa: E501
 
 import asyncio
-import dataclasses
-import json
-import os
-import pathlib
-import shutil
-import subprocess
-from argparse import Namespace
-from typing import Any
-from uuid import uuid4
-
 from pydantic import SecretStr
 from termcolor import colored
 
@@ -627,6 +617,8 @@ class IssueResolver:
         finally:
             output_fp.close()
             logger.info('Finished.')
+
+from openhands.resolver.issue_resolver import IssueResolver
 
 
 def main() -> None:

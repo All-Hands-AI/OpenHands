@@ -28,39 +28,58 @@ export const getEventContent = (
   let details: string = "";
 
   if (isOpenHandsAction(event)) {
-    title = (
-      <Trans
-        i18nKey={`ACTION_MESSAGE$${event.action.toUpperCase()}`}
-        values={{
-          path: hasPathProperty(event.args) && event.args.path,
-          command:
-            hasCommandProperty(event.args) && trimText(event.args.command, 80),
-        }}
-        components={{
-          path: <PathComponent />,
-          cmd: <MonoComponent />,
-        }}
-      />
-    );
+    const actionKey = `ACTION_MESSAGE$${event.action.toUpperCase()}`;
+
+    // If translation key exists, use Trans component
+    if (i18n.exists(actionKey)) {
+      title = (
+        <Trans
+          i18nKey={actionKey}
+          values={{
+            path: hasPathProperty(event.args) && event.args.path,
+            command:
+              hasCommandProperty(event.args) &&
+              trimText(event.args.command, 80),
+            mcp_tool_name: event.action === "call_tool_mcp" && event.args.name,
+          }}
+          components={{
+            path: <PathComponent />,
+            cmd: <MonoComponent />,
+          }}
+        />
+      );
+    } else {
+      // For generic actions, just use the uppercase type
+      title = event.action.toUpperCase();
+    }
     details = getActionContent(event);
   }
 
   if (isOpenHandsObservation(event)) {
-    title = (
-      <Trans
-        i18nKey={`OBSERVATION_MESSAGE$${event.observation.toUpperCase()}`}
-        values={{
-          path: hasPathProperty(event.extras) && event.extras.path,
-          command:
-            hasCommandProperty(event.extras) &&
-            trimText(event.extras.command, 80),
-        }}
-        components={{
-          path: <PathComponent />,
-          cmd: <MonoComponent />,
-        }}
-      />
-    );
+    const observationKey = `OBSERVATION_MESSAGE$${event.observation.toUpperCase()}`;
+
+    // If translation key exists, use Trans component
+    if (i18n.exists(observationKey)) {
+      title = (
+        <Trans
+          i18nKey={observationKey}
+          values={{
+            path: hasPathProperty(event.extras) && event.extras.path,
+            command:
+              hasCommandProperty(event.extras) &&
+              trimText(event.extras.command, 80),
+            mcp_tool_name: event.observation === "mcp" && event.extras.name,
+          }}
+          components={{
+            path: <PathComponent />,
+            cmd: <MonoComponent />,
+          }}
+        />
+      );
+    } else {
+      // For generic observations, just use the uppercase type
+      title = event.observation.toUpperCase();
+    }
     details = getObservationContent(event);
   }
 

@@ -13,7 +13,7 @@ from openhands.events.observation.mcp import MCPObservation
 @pytest.mark.asyncio
 async def test_create_mcp_clients_empty():
     """Test creating MCP clients with empty server list."""
-    clients = await openhands.mcp.utils.create_mcp_clients([])
+    clients = await openhands.mcp.utils.create_mcp_clients([], [])
     assert clients == []
 
 
@@ -32,7 +32,7 @@ async def test_create_mcp_clients_success(mock_mcp_client):
         MCPSSEServerConfig(url='http://server2:8080', api_key='test-key'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(server_configs)
+    clients = await openhands.mcp.utils.create_mcp_clients(server_configs, [])
 
     # Verify
     assert len(clients) == 2
@@ -40,10 +40,10 @@ async def test_create_mcp_clients_success(mock_mcp_client):
 
     # Check that connect_sse was called with correct parameters
     mock_client_instance.connect_sse.assert_any_call(
-        'http://server1:8080', api_key=None
+        'http://server1:8080', api_key=None, conversation_id=None
     )
     mock_client_instance.connect_sse.assert_any_call(
-        'http://server2:8080', api_key='test-key'
+        'http://server2:8080', api_key='test-key', conversation_id=None
     )
 
 
@@ -67,7 +67,7 @@ async def test_create_mcp_clients_connection_failure(mock_mcp_client):
         MCPSSEServerConfig(url='http://server2:8080'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(server_configs)
+    clients = await openhands.mcp.utils.create_mcp_clients(server_configs, [])
 
     # Verify only one client was successfully created
     assert len(clients) == 1

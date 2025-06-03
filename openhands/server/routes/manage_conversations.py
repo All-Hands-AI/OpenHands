@@ -1,15 +1,14 @@
+import asyncio
+import os
 import uuid
 from datetime import datetime, timezone
-from typing import Any
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.message import MessageAction
 from openhands.integrations.provider import (
-    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
@@ -24,10 +23,10 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.dependencies import get_dependencies
+from openhands.server.services.conversation_service import create_new_conversation
 from openhands.server.shared import (
     ConversationStoreImpl,
-    SettingsStoreImpl,
     config,
     conversation_manager,
 )
@@ -50,7 +49,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 class InitSessionRequest(BaseModel):
@@ -61,6 +60,10 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    conversation_instructions: str | None = None
+    # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
+    if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
+        conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
 
     model_config = {'extra': 'forbid'}
 
@@ -68,110 +71,7 @@ class InitSessionRequest(BaseModel):
 class InitSessionResponse(BaseModel):
     status: str
     conversation_id: str
-    conversation_url: str
-    session_api_key: str | None
     message: str | None = None
-
-
-async def _create_new_conversation(
-    user_id: str | None,
-    git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
-    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA | None,
-    selected_repository: str | None,
-    selected_branch: str | None,
-    initial_user_msg: str | None,
-    image_urls: list[str] | None,
-    replay_json: str | None,
-    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
-    attach_convo_id: bool = False,
-) -> AgentLoopInfo:
-    logger.info(
-        'Creating conversation',
-        extra={
-            'signal': 'create_conversation',
-            'user_id': user_id,
-            'trigger': conversation_trigger.value,
-        },
-    )
-    logger.info('Loading settings')
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    settings = await settings_store.load()
-    logger.info('Settings loaded')
-
-    session_init_args: dict[str, Any] = {}
-    if settings:
-        session_init_args = {**settings.__dict__, **session_init_args}
-        # We could use litellm.check_valid_key for a more accurate check,
-        # but that would run a tiny inference.
-        if (
-            not settings.llm_api_key
-            or settings.llm_api_key.get_secret_value().isspace()
-        ):
-            logger.warning(f'Missing api key for model {settings.llm_model}')
-            raise LLMAuthenticationError(
-                'Error authenticating with the LLM provider. Please check your API key'
-            )
-
-    else:
-        logger.warning('Settings not present, not starting conversation')
-        raise MissingSettingsError('Settings not found')
-
-    session_init_args['git_provider_tokens'] = git_provider_tokens
-    session_init_args['selected_repository'] = selected_repository
-    session_init_args['custom_secrets'] = custom_secrets
-    session_init_args['selected_branch'] = selected_branch
-    conversation_init_data = ConversationInitData(**session_init_args)
-    logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    logger.info('Conversation store loaded')
-
-    conversation_id = uuid.uuid4().hex
-    while await conversation_store.exists(conversation_id):
-        logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
-        conversation_id = uuid.uuid4().hex
-    logger.info(
-        f'New conversation ID: {conversation_id}',
-        extra={'user_id': user_id, 'session_id': conversation_id},
-    )
-
-    conversation_title = get_default_conversation_title(conversation_id)
-
-    logger.info(f'Saving metadata for conversation {conversation_id}')
-    await conversation_store.save_metadata(
-        ConversationMetadata(
-            trigger=conversation_trigger,
-            conversation_id=conversation_id,
-            title=conversation_title,
-            user_id=user_id,
-            selected_repository=selected_repository,
-            selected_branch=selected_branch,
-        )
-    )
-
-    logger.info(
-        f'Starting agent loop for conversation {conversation_id}',
-        extra={'user_id': user_id, 'session_id': conversation_id},
-    )
-    initial_message_action = None
-    if initial_user_msg or image_urls:
-        user_msg = (
-            initial_user_msg.format(conversation_id)
-            if attach_convo_id and initial_user_msg
-            else initial_user_msg
-        )
-        initial_message_action = MessageAction(
-            content=user_msg or '',
-            image_urls=image_urls or [],
-        )
-    agent_loop_info = await conversation_manager.maybe_start_agent_loop(
-        conversation_id,
-        conversation_init_data,
-        user_id,
-        initial_user_msg=initial_message_action,
-        replay_json=replay_json,
-    )
-    logger.info(f'Finished initializing conversation {agent_loop_info.conversation_id}')
-    return agent_loop_info
 
 
 @app.post('/conversations')
@@ -187,7 +87,7 @@ async def new_conversation(
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID.
     """
-    logger.info('Initializing new conversation')
+    logger.info(f'initializing_new_conversation:{data}')
     repository = data.repository
     selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
@@ -195,6 +95,7 @@ async def new_conversation(
     replay_json = data.replay_json
     suggested_task = data.suggested_task
     git_provider = data.git_provider
+    conversation_instructions = data.conversation_instructions
 
     conversation_trigger = ConversationTrigger.GUI
 
@@ -205,14 +106,27 @@ async def new_conversation(
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
+    if (
+        conversation_trigger == ConversationTrigger.REMOTE_API_KEY
+        and not initial_user_msg
+    ):
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Missing initial user message',
+                'msg_id': 'CONFIGURATION$MISSING_USER_MESSAGE',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     try:
         if repository:
             provider_handler = ProviderHandler(provider_tokens)
             # Check against git_provider, otherwise check all provider apis
             await provider_handler.verify_repo_provider(repository, git_provider)
 
-        # Create conversation with initial message
-        agent_loop_info = await _create_new_conversation(
+        conversation_id = getattr(data, 'conversation_id', None) or uuid.uuid4().hex
+        await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -222,13 +136,14 @@ async def new_conversation(
             image_urls=image_urls,
             replay_json=replay_json,
             conversation_trigger=conversation_trigger,
+            conversation_instructions=conversation_instructions,
+            git_provider=git_provider,
+            conversation_id=conversation_id,
         )
 
         return InitSessionResponse(
             status='ok',
-            conversation_id=agent_loop_info.conversation_id,
-            conversation_url=agent_loop_info.url,
-            session_api_key=agent_loop_info.session_api_key,
+            conversation_id=conversation_id,
         )
     except MissingSettingsError as e:
         return JSONResponse(
@@ -265,7 +180,6 @@ async def new_conversation(
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
-    user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
@@ -284,23 +198,27 @@ async def search_conversations(
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_results
     )
-    running_conversations = await conversation_manager.get_running_agent_loops(
-        user_id, conversation_ids
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
-    agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
-    agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
+    agent_loop_info = await conversation_manager.get_agent_loop_info(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info_by_conversation_id = {
+        info.conversation_id: info for info in agent_loop_info
+    }
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
-                is_running=conversation.conversation_id in running_conversations,
                 num_connections=sum(
-                    1 for conversation_id in connection_ids_to_conversation_ids.values()
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
-                agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),
-
+                agent_loop_info=agent_loop_info_by_conversation_id.get(
+                    conversation.conversation_id
+                ),
             )
             for conversation in filtered_results
         ),
@@ -316,11 +234,16 @@ async def get_conversation(
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
-        agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
+        num_connections = len(
+            await conversation_manager.get_connections(filter_to_sids={conversation_id})
+        )
+        agent_loop_infos = await conversation_manager.get_agent_loop_info(
+            filter_to_sids={conversation_id}
+        )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
-        conversation_info = await _get_conversation_info(metadata, is_running, num_connections, agent_loop_info)
+        conversation_info = await _get_conversation_info(
+            metadata, num_connections, agent_loop_info
+        )
         return conversation_info
     except FileNotFoundError:
         return None
@@ -347,7 +270,6 @@ async def delete_conversation(
 
 async def _get_conversation_info(
     conversation: ConversationMetadata,
-    is_running: bool,
     num_connections: int,
     agent_loop_info: AgentLoopInfo | None,
 ) -> ConversationInfo | None:
@@ -362,12 +284,18 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
+            selected_branch=conversation.selected_branch,
+            git_provider=conversation.git_provider,
             status=(
-                ConversationStatus.RUNNING if is_running else ConversationStatus.STOPPED
+                agent_loop_info.status
+                if agent_loop_info
+                else ConversationStatus.STOPPED
             ),
             num_connections=num_connections,
             url=agent_loop_info.url if agent_loop_info else None,
-            session_api_key=agent_loop_info.session_api_key if agent_loop_info else None,
+            session_api_key=agent_loop_info.session_api_key
+            if agent_loop_info
+            else None,
         )
     except Exception as e:
         logger.error(

@@ -4,8 +4,7 @@ import { useTranslation } from "react-i18next";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { I18nKey } from "#/i18n/declaration";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { useConversation } from "#/context/conversation-context";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -16,9 +15,7 @@ export function ActionSuggestions({
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
   const { providers } = useUserProviders();
-  const { conversationId } = useConversation();
-  const { data: conversation } = useUserConversation(conversationId);
-
+  const { data: conversation } = useActiveConversation();
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   const providersAreSet = providers.length > 0;
