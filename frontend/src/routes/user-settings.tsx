@@ -34,6 +34,8 @@ function UserSettingsScreen() {
       setIsSaving(true);
       await openHands.post("/api/email", {
         email,
+      }, {
+        withCredentials: true // Allow cookies to be set from the response
       });
 
       setOriginalEmail(email);
@@ -55,7 +57,9 @@ function UserSettingsScreen() {
       setIsResendingVerification(true);
       setResendSuccess(false);
 
-      await openHands.put("/api/email/verify");
+      await openHands.put("/api/email/verify", {}, {
+        withCredentials: true // Allow cookies to be set from the response
+      });
 
       setResendSuccess(true);
     } catch (error) {
