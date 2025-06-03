@@ -15,7 +15,7 @@ from docker.models.containers import Container
 from fastapi import status
 
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
@@ -30,7 +30,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 )
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.conversation import Conversation
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -45,10 +45,10 @@ from openhands.utils.import_utils import get_impl
 
 @dataclass
 class DockerNestedConversationManager(ConversationManager):
-    """Conversation manager where the agent loops exist inside the docker containers."""
+    """ServerConversation manager where the agent loops exist inside the docker containers."""
 
     sio: socketio.AsyncServer
-    config: AppConfig
+    config: OpenHandsConfig
     server_config: ServerConfig
     file_store: FileStore
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
@@ -65,11 +65,11 @@ class DockerNestedConversationManager(ConversationManager):
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
-    ) -> Conversation | None:
+    ) -> ServerConversation | None:
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
-    async def detach_from_conversation(self, conversation: Conversation):
+    async def detach_from_conversation(self, conversation: ServerConversation):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
@@ -124,14 +124,16 @@ class DockerNestedConversationManager(ConversationManager):
             )
 
         nested_url = self._get_nested_url(sid)
+        session_api_key = self._get_session_api_key_for_conversation(sid)
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            session_api_key=self._get_session_api_key_for_conversation(sid),
+            session_api_key=session_api_key,
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
                 user_id=user_id,
+                session_api_key=session_api_key,
             ),
             status=ConversationStatus.STARTING
             if sid in self._starting_conversation_ids
@@ -194,6 +196,8 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json = settings.model_dump(context={'expose_secrets': True})
                 settings_json.pop('custom_secrets', None)
                 settings_json.pop('git_provider_tokens', None)
+                if settings_json.get('git_provider'):
+                    settings_json['git_provider'] = settings_json['git_provider'].value
                 secrets_store = settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
@@ -309,7 +313,7 @@ class DockerNestedConversationManager(ConversationManager):
     def get_instance(
         cls,
         sio: socketio.AsyncServer,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener,
@@ -421,8 +425,12 @@ class DockerNestedConversationManager(ConversationManager):
         )
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
-        env_vars['USER'] = 'CURRENT_USER'
+        # TODO: In the long term we may come up with a more secure strategy for user management within the nested runtime.
+        env_vars['USER'] = 'root'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
+        # We need to be able to specify the nested conversation id within the nested runtime
+        env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
+        env_vars['WORKSPACE_BASE'] = f'/workspace'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
@@ -433,7 +441,7 @@ class DockerNestedConversationManager(ConversationManager):
             volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
         conversation_dir = get_conversation_dir(sid, user_id)
         volumes.append(
-            f'{config.file_store_path}/{conversation_dir}:{AppConfig.model_fields["file_store_path"].default}/{conversation_dir}:rw'
+            f'{config.file_store_path}/{conversation_dir}:{OpenHandsConfig.model_fields["file_store_path"].default}/{conversation_dir}:rw'
         )
         config.sandbox.volumes = ','.join(volumes)
 
@@ -447,7 +455,6 @@ class DockerNestedConversationManager(ConversationManager):
             plugins=agent.sandbox_plugins,
             headless_mode=False,
             attach_to_existing=False,
-            env_vars=env_vars,
             main_module='openhands.server',
         )
 

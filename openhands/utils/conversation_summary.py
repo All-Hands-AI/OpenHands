@@ -89,8 +89,6 @@ async def auto_generate_title(
     Returns:
         A generated title string
     """
-    logger.info(f'Auto-generating title for conversation {conversation_id}')
-
     try:
         # Create an event stream for the conversation
         event_stream = EventStream(conversation_id, file_store, user_id)

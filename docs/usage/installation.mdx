@@ -1,0 +1,159 @@
+---
+title: Quick Start
+description: Running OpenHands on the cloud or your local desktop
+icon: rocket
+---
+
+## OpenHands Cloud
+
+The easiest way to get started with OpenHands is on OpenHands Cloud, which comes with $50 in free credits for new users.
+
+To get started with OpenHands Cloud, visit [app.all-hands.dev](https://app.all-hands.dev).
+
+You'll be prompted to connect with your GitHub or GitLab account:
+
+1. Click `Log in with GitHub` or `Log in with GitLab`.
+2. Review the permissions requested by OpenHands and authorize the application.
+   - OpenHands will require certain permissions from your account. To read more about these permissions,
+     you can click the `Learn more` link on the authorization page.
+
+Once you've connected your account, you can:
+
+- [Install GitHub Integration](/usage/cloud/github-installation) to use OpenHands with your GitHub repositories
+- [Install GitLab Integration](/usage/cloud/gitlab-installation) to use OpenHands with your GitLab repositories
+- [Access the Cloud UI](/usage/cloud/cloud-ui) to interact with the web interface
+- [Use the Cloud API](/usage/cloud/cloud-api) to programmatically interact with OpenHands
+- [Set up the Cloud Issue Resolver](/usage/cloud/cloud-issue-resolver) to automate code fixes and provide intelligent assistance
+
+
+## Running OpenHands on your local desktop
+
+### System Requirements
+
+- MacOS with [Docker Desktop support](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)
+- Linux
+- Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and [Docker Desktop support](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)
+
+A system with a modern processor and a minimum of **4GB RAM** is recommended to run OpenHands.
+
+### Prerequisites
+
+<AccordionGroup>
+
+<Accordion title="MacOS">
+
+  **Docker Desktop**
+
+  1. [Install Docker Desktop on Mac](https://docs.docker.com/desktop/setup/install/mac-install).
+  2. Open Docker Desktop, go to `Settings > Advanced` and ensure `Allow the default Docker socket to be used` is enabled.
+</Accordion>
+
+<Accordion title="Linux">
+
+  <Note>
+  Tested with Ubuntu 22.04.
+  </Note>
+
+  **Docker Desktop**
+
+  1. [Install Docker Desktop on Linux](https://docs.docker.com/desktop/setup/install/linux/).
+
+</Accordion>
+
+<Accordion title="Windows">
+
+  **WSL**
+
+  1. [Install WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+  2. Run `wsl --version` in powershell and confirm `Default Version: 2`.
+
+  **Docker Desktop**
+
+  1. [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install).
+  2. Open Docker Desktop, go to `Settings` and confirm the following:
+  - General: `Use the WSL 2 based engine` is enabled.
+  - Resources > WSL Integration: `Enable integration with my default WSL distro` is enabled.
+
+  <Note>
+  The docker command below to start the app must be run inside the WSL terminal.
+  </Note>
+
+</Accordion>
+
+</AccordionGroup>
+
+### Start the App
+
+The easiest way to run OpenHands is in Docker.
+
+```bash
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik
+
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik \
+    -e LOG_ALL_EVENTS=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.39
+```
+
+You'll find OpenHands running at http://localhost:3000!
+
+You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes/docker#connecting-to-your-filesystem),
+run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
+or run it on tagged issues with [a GitHub action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+
+### Setup
+
+After launching OpenHands, you **must** select an `LLM Provider` and `LLM Model` and enter a corresponding `API Key`.
+This can be done during the initial settings popup or by selecting the `Settings`
+button (gear icon) in the UI.
+
+If the required model does not exist in the list, in `Settings` under the `LLM` tab, you can toggle `Advanced` options
+and manually enter it with the correct prefix in the `Custom Model` text box.
+The `Advanced` options also allow you to specify a `Base URL` if required.
+
+#### Getting an API Key
+
+OpenHands requires an API key to access most language models. Here's how to get an API key from the recommended providers:
+
+<AccordionGroup>
+
+<Accordion title="Anthropic (Claude)">
+
+1. [Create an Anthropic account](https://console.anthropic.com/).
+2. [Generate an API key](https://console.anthropic.com/settings/keys).
+3. [Set up billing](https://console.anthropic.com/settings/billing).
+
+Consider setting usage limits to control costs.
+
+</Accordion>
+
+<Accordion title="OpenAI">
+
+1. [Create an OpenAI account](https://platform.openai.com/).
+2. [Generate an API key](https://platform.openai.com/api-keys).
+3. [Set up billing](https://platform.openai.com/account/billing/overview).
+
+
+</Accordion>
+
+</AccordionGroup>
+
+Now you're ready to [get started with OpenHands](./getting-started).
+
+#### Versions
+
+The [docker command above](./installation#start-the-app) pulls the most recent stable release of OpenHands. You have other options as well:
+- For a specific release, replace `$VERSION` in `openhands:$VERSION` and `runtime:$VERSION`, with the version number.
+We use SemVer so `0.9` will automatically point to the latest `0.9.x` release, and `0` will point to the latest `0.x.x` release.
+- For the most up-to-date development version, replace `$VERSION` in `openhands:$VERSION` and `runtime:$VERSION`, with `main`.
+This version is unstable and is recommended for testing or development purposes only.
+
+For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+
+Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
