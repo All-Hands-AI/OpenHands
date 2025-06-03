@@ -6,10 +6,11 @@ from pydantic import BaseModel
 from openhands.controller.agent import Agent
 from openhands.microagent.microagent import KnowledgeMicroagent, TaskMicroagent
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import config, server_config
 from openhands.utils.llm import get_supported_llm_models
 
-app = APIRouter(prefix='/api/options')
+app = APIRouter(prefix='/api/options', dependencies=get_dependencies())
 
 
 @app.get('/models', response_model=list[str])

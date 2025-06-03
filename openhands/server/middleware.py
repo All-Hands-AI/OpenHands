@@ -1,7 +1,7 @@
 import asyncio
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any
 from urllib.parse import urlparse
 
 from fastapi import Request, status
@@ -23,11 +23,24 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     while using standard CORS rules for other origins.
     """
 
-    def __init__(self, app: ASGIApp, **kwargs: Any) -> None:
-        super().__init__(app, **kwargs)
+    def __init__(self, app: ASGIApp) -> None:
+        allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
+        if allow_origins_str:
+            allow_origins = tuple(
+                origin.strip() for origin in allow_origins_str.split(',')
+            )
+        else:
+            allow_origins = ()
+        super().__init__(
+            app,
+            allow_origins=allow_origins,
+            allow_credentials=True,
+            allow_methods=['*'],
+            allow_headers=['*'],
+        )
 
     def is_allowed_origin(self, origin: str) -> bool:
-        if origin:
+        if origin and not self.allow_origins and not self.allow_origin_regex:
             parsed = urlparse(origin)
             hostname = parsed.hostname or ''
 

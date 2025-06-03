@@ -1,4 +1,5 @@
 import asyncio
+import os
 from types import MappingProxyType
 from typing import Any
 from urllib.parse import parse_qs
@@ -47,6 +48,34 @@ def create_provider_tokens_object(
     return MappingProxyType(provider_information)
 
 
+async def setup_init_convo_settings(
+    user_id: str | None, providers_set: list[ProviderType]
+) -> ConversationInitData:
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+    settings = await settings_store.load()
+
+    secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
+    user_secrets: UserSecrets | None = await secrets_store.load()
+
+    if not settings:
+        raise ConnectionRefusedError(
+            'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
+        )
+
+    session_init_args: dict = {}
+    session_init_args = {**settings.__dict__, **session_init_args}
+
+    git_provider_tokens = create_provider_tokens_object(providers_set)
+    if server_config.app_mode != AppMode.SAAS and user_secrets:
+        git_provider_tokens = user_secrets.provider_tokens
+
+    session_init_args['git_provider_tokens'] = git_provider_tokens
+    if user_secrets:
+        session_init_args['custom_secrets'] = user_secrets.custom_secrets
+
+    return ConversationInitData(**session_init_args)
+
+
 @sio.event
 async def connect(connection_id: str, environ: dict) -> None:
     try:
@@ -61,6 +90,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             )
             latest_event_id = -1
         conversation_id = query_params.get('conversation_id', [None])[0]
+        logger.info(
+            f'Socket request for conversation {conversation_id} with connection_id {connection_id}'
+        )
         raw_list = query_params.get('providers_set', [])
         providers_list = []
         for item in raw_list:
@@ -72,6 +104,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             logger.error('No conversation_id in query params')
             raise ConnectionRefusedError('No conversation_id in query params')
 
+        if _invalid_session_api_key(query_params):
+            raise ConnectionRefusedError('invalid_session_api_key')
+
         cookies_str = environ.get('HTTP_COOKIE', '')
         # Get Authorization header from the environment
         # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
@@ -80,31 +115,11 @@ async def connect(connection_id: str, environ: dict) -> None:
         user_id = await conversation_validator.validate(
             conversation_id, cookies_str, authorization_header
         )
+        logger.info(
+            f'User {user_id} is allowed to connect to conversation {conversation_id}'
+        )
 
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        settings = await settings_store.load()
-
-        secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-        user_secrets: UserSecrets | None = await secrets_store.load()
-
-        if not settings:
-            raise ConnectionRefusedError(
-                'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
-            )
-        session_init_args: dict = {}
-        if settings:
-            session_init_args = {**settings.__dict__, **session_init_args}
-
-        git_provider_tokens = create_provider_tokens_object(providers_set)
-        if server_config.app_mode != AppMode.SAAS and user_secrets:
-            git_provider_tokens = user_secrets.provider_tokens
-
-        session_init_args['git_provider_tokens'] = git_provider_tokens
-        if user_secrets:
-            session_init_args['custom_secrets'] = user_secrets.custom_secrets
-
-        conversation_init_data = ConversationInitData(**session_init_args)
-
+        conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
@@ -160,3 +175,13 @@ async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
 async def disconnect(connection_id: str) -> None:
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)
+
+
+def _invalid_session_api_key(query_params: dict[str, list[Any]]):
+    session_api_key = os.getenv('SESSION_API_KEY')
+    if not session_api_key:
+        return False
+    query_api_keys = query_params['session_api_key']
+    if not query_api_keys:
+        return True
+    return query_api_keys[0] != session_api_key

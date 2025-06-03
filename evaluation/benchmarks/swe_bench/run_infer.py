@@ -40,10 +40,12 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
@@ -218,7 +220,7 @@ def get_instance_docker_image(
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
     use_swebench_official_image = 'swe-gym' not in metadata.dataset.lower()
     base_container_image = get_instance_docker_image(
@@ -242,7 +244,7 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
@@ -261,6 +263,7 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=False,
+        enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -756,6 +759,7 @@ if __name__ == '__main__':
         choices=['swe', 'swt', 'swt-ci'],
         help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
+
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -792,6 +796,21 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
+    # Get condenser config from environment variable
+    condenser_name = os.environ.get('EVAL_CONDENSER')
+    if condenser_name:
+        condenser_config = get_condenser_config_arg(condenser_name)
+        if condenser_config is None:
+            raise ValueError(
+                f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
+            )
+    else:
+        # If no specific condenser config is provided via env var, default to NoOpCondenser
+        condenser_config = NoOpCondenserConfig()
+        logger.debug(
+            'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
+        )
+
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
@@ -806,6 +825,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        condenser_config=condenser_config,
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')

@@ -6,7 +6,7 @@ from typing import Callable, Iterable
 
 import socketio
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
@@ -16,7 +16,7 @@ from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
-from openhands.server.session.conversation import Conversation
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -41,17 +41,17 @@ class StandaloneConversationManager(ConversationManager):
     """Manages conversations in standalone mode (single server instance)."""
 
     sio: socketio.AsyncServer
-    config: AppConfig
+    config: OpenHandsConfig
     file_store: FileStore
     server_config: ServerConfig
     # Defaulting monitoring_listener for temp backward compatibility.
     monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
-    _active_conversations: dict[str, tuple[Conversation, int]] = field(
+    _active_conversations: dict[str, tuple[ServerConversation, int]] = field(
         default_factory=dict
     )
-    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
+    _detached_conversations: dict[str, tuple[ServerConversation, float]] = field(
         default_factory=dict
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
@@ -69,7 +69,7 @@ class StandaloneConversationManager(ConversationManager):
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
-    ) -> Conversation | None:
+    ) -> ServerConversation | None:
         start_time = time.time()
         if not await session_exists(sid, self.file_store, user_id=user_id):
             return None
@@ -94,7 +94,7 @@ class StandaloneConversationManager(ConversationManager):
                 return conversation
 
             # Create new conversation if none exists
-            c = Conversation(
+            c = ServerConversation(
                 sid, file_store=self.file_store, config=self.config, user_id=user_id
             )
             try:
@@ -108,7 +108,7 @@ class StandaloneConversationManager(ConversationManager):
                 return None
             end_time = time.time()
             logger.info(
-                f'Conversation {c.sid} connected in {end_time - start_time} seconds'
+                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds'
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -129,7 +129,7 @@ class StandaloneConversationManager(ConversationManager):
         agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
         return agent_loop_info
 
-    async def detach_from_conversation(self, conversation: Conversation):
+    async def detach_from_conversation(self, conversation: ServerConversation):
         sid = conversation.sid
         async with self._conversations_lock:
             if sid in self._active_conversations:
@@ -377,7 +377,7 @@ class StandaloneConversationManager(ConversationManager):
     def get_instance(
         cls,
         sio: socketio.AsyncServer,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener | None,
@@ -480,12 +480,12 @@ class StandaloneConversationManager(ConversationManager):
         return AgentLoopInfo(
             conversation_id=session.sid,
             url=self._get_conversation_url(session.sid),
-            api_key=None,
+            session_api_key=None,
             event_store=session.agent_session.event_stream,
         )
 
     def _get_conversation_url(self, conversation_id: str):
-        return f'/conversations/{conversation_id}'
+        return f'/api/conversations/{conversation_id}'
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

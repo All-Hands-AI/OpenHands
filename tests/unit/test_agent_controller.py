@@ -12,7 +12,7 @@ from litellm import (
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State, TrafficControlState
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
@@ -55,7 +55,11 @@ def mock_agent():
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
-    agent.llm.config = AppConfig().get_llm_config()
+    agent.llm.config = OpenHandsConfig().get_llm_config()
+
+    # Add config with enable_mcp attribute
+    agent.config = MagicMock(spec=AgentConfig)
+    agent.config.enable_mcp = True
 
     # Add a proper system message mock
     system_message = SystemMessageAction(
@@ -231,7 +235,7 @@ async def test_react_to_content_policy_violation(
 async def test_run_controller_with_fatal_error(
     test_event_stream, mock_memory, mock_agent
 ):
-    config = AppConfig()
+    config = OpenHandsConfig()
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -296,7 +300,7 @@ async def test_run_controller_with_fatal_error(
 async def test_run_controller_stop_with_stuck(
     test_event_stream, mock_memory, mock_agent
 ):
-    config = AppConfig()
+    config = OpenHandsConfig()
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -649,7 +653,7 @@ async def test_reset_with_pending_action_no_metadata(
 async def test_run_controller_max_iterations_has_metrics(
     test_event_stream, mock_memory, mock_agent
 ):
-    config = AppConfig(
+    config = OpenHandsConfig(
         max_iterations=3,
     )
     event_stream = test_event_stream
@@ -801,7 +805,7 @@ async def test_context_window_exceeded_error_handling(
     # handles the truncation correctly.
     final_state = await asyncio.wait_for(
         run_controller(
-            config=AppConfig(max_iterations=max_iterations),
+            config=OpenHandsConfig(max_iterations=max_iterations),
             initial_user_action=MessageAction(content='INITIAL'),
             runtime=mock_runtime,
             sid='test',
@@ -939,7 +943,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=AppConfig(max_iterations=5),
+                config=OpenHandsConfig(max_iterations=5),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1015,7 +1019,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=AppConfig(max_iterations=3),
+                config=OpenHandsConfig(max_iterations=3),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1059,7 +1063,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
-    config = AppConfig()
+    config = OpenHandsConfig()
     event_stream = test_event_stream
 
     # Create a proper agent that returns an action without an ID
@@ -1326,7 +1330,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
     # Create an agent controller
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = AppConfig().get_llm_config()
+    mock_agent.llm.config = OpenHandsConfig().get_llm_config()
 
     controller = AgentController(
         agent=mock_agent,
@@ -1393,7 +1397,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
     mock_agent = MagicMock(spec=Agent)
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = AppConfig().get_llm_config()
+    mock_agent.llm.config = OpenHandsConfig().get_llm_config()
 
     # Create a controller with the mock agent
     controller = AgentController(
