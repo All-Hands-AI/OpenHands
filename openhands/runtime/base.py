@@ -346,6 +346,16 @@ class Runtime(FileEditRuntimeMixin):
         self.log('error', f'Runtime error while running action: {error_message}')
         self.log('error', f'Problematic action: {str(event)}')
 
+        # Reset MCP stdio servers tracking when error happens
+        if hasattr(self, '_last_updated_mcp_stdio_servers'):
+            from openhands.core.config.mcp_config import MCPStdioServerConfig
+
+            self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
+            self.log(
+                'debug',
+                'Reset _last_updated_mcp_stdio_servers to empty list due to runtime error',
+            )
+
         # Create error message for the observation
         error_content = (
             f'Your command may have consumed too much resources, and the previous runtime died. '
