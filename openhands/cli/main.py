@@ -445,7 +445,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         current_dir,
         task_str,
         session_name=args.name,
-        skip_banner=banner_shown,  # Skip banner if already shown during setup
+        skip_banner=banner_shown,
     )
 
     # If a new session was requested, run it
