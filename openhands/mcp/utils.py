@@ -100,7 +100,7 @@ async def create_mcp_clients(
 
             client = MCPClient()
             try:
-                await client.connect_sse(
+                await client.connect_streamable_http(
                     server_url.url,
                     api_key=server_url.api_key,
                     conversation_id=conversation_id,
