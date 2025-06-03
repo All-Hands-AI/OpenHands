@@ -408,6 +408,7 @@ class AgentController:
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
+        print("ON EVENT", event)
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -421,6 +422,7 @@ class AgentController:
             await self._handle_observation(event)
 
         should_step = self.should_step(event)
+        print("SHOULD STEP", should_step)
         if should_step:
             self.log(
                 'debug',
