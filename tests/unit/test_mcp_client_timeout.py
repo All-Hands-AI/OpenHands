@@ -46,4 +46,4 @@ async def test_connect_streamable_http_timeout():
     ):
         # Test with a very short timeout
         with pytest.raises(asyncio.TimeoutError):
-            await client.shttp_servers('http://example.com', timeout=0.1)
+            await client.connect_shttp('http://example.com', timeout=0.1)
