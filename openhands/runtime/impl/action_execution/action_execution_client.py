@@ -464,7 +464,7 @@ class ActionExecutionClient(Runtime):
         )
 
         # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, self.sid)
+        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid)
 
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state

@@ -19,8 +19,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP('mcp', dependencies=get_dependencies())
-
+mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies())
 
 async def save_pr_metadata(
     user_id: str, conversation_id: str, tool_result: str
