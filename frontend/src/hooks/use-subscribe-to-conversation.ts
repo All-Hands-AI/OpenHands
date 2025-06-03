@@ -1,10 +1,8 @@
-import { useCallback } from "react";
+import React, { useCallback } from "react";
 import toast from "react-hot-toast";
 import { useSocketIO } from "./use-socket-io";
-import {
-  isAgentStateChangeObservation,
-  isOpenHandsEvent,
-} from "#/types/core/guards";
+
+import { useConversationId } from "./use-conversation-id";
 
 export interface UseSubscribeToConversationOptions {
   conversation_id: string;
@@ -15,30 +13,35 @@ export interface UseSubscribeToConversationOptions {
 }
 
 export const useSubscribeToConversation = () => {
-  const handleOhEvent = useCallback((event: unknown) => {
-    console.warn(event);
-    if (isOpenHandsEvent(event)) {
-      if (isAgentStateChangeObservation(event)) {
-        toast(event.extras.agent_state, {
-          id: "status",
-          duration: Infinity,
-          position: "top-right",
-        });
-      }
-    }
-  }, []);
-
-  // Create event handlers object with the callback
-  const eventHandlers = {
-    oh_event: handleOhEvent,
-  };
+  const { conversationId: currentConversationId } = useConversationId();
 
   // Use the socket hook with the event handlers
-  const { connect, isConnected, isConnecting, error, socket } =
-    useSocketIO(eventHandlers);
+  const { connect, disconnect, isConnected, isConnecting, error, socket } =
+    useSocketIO();
+
+  const handleConnect = useCallback(
+    (
+      url: string,
+      options: UseSubscribeToConversationOptions,
+      eventHandlers?: Record<string, (data: unknown) => void>,
+    ) =>
+      connect(
+        {
+          url,
+          query: options,
+        },
+        eventHandlers,
+      ),
+    [connect],
+  );
+
+  React.useEffect(() => {
+    disconnect();
+    toast.dismiss("status");
+  }, [currentConversationId]);
 
   return {
-    connect,
+    connect: handleConnect,
     isConnected,
     isConnecting,
     error,

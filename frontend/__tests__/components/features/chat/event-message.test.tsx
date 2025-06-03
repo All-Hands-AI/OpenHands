@@ -20,8 +20,8 @@ function EventMessageWithPortalExit() {
         event={userMessage}
         hasObservationPair={false}
         isAwaitingUserConfirmation={false}
-        isFirstMessageWithResolverTrigger={false}
         isLastMessage={false}
+        assistantMessageActionButton={null}
       />
 
       <div id="modal-portal-exit" data-testid="modal-container" />
@@ -36,8 +36,8 @@ describe("EventMessage", () => {
         event={userMessage}
         hasObservationPair={false}
         isAwaitingUserConfirmation={false}
-        isFirstMessageWithResolverTrigger={false}
         isLastMessage={false}
+        assistantMessageActionButton={null}
       />,
     );
 

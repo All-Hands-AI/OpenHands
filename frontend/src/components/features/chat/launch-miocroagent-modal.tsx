@@ -15,6 +15,7 @@ interface LaunchMicroagentModalProps {
   onLaunch: (query: string, target: string, triggers: string[]) => void;
   eventId: number;
   selectedRepo?: string | null;
+  isLoading: boolean;
 }
 
 export function LaunchMicroagentModal({
@@ -22,6 +23,7 @@ export function LaunchMicroagentModal({
   onLaunch,
   eventId,
   selectedRepo,
+  isLoading,
 }: LaunchMicroagentModalProps) {
   const { conversationId } = useParams<{ conversationId: string }>();
   const { data: prompt } = useQuery({
@@ -101,7 +103,7 @@ export function LaunchMicroagentModal({
             <BrandButton type="button" variant="secondary" onClick={onClose}>
               Cancel
             </BrandButton>
-            <BrandButton type="submit" variant="primary">
+            <BrandButton type="submit" variant="primary" isDisabled={isLoading}>
               Launch
             </BrandButton>
           </div>

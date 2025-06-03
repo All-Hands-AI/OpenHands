@@ -18,13 +18,16 @@ describe("LaunchMicroagentModal", () => {
   const eventId = 12;
   const conversationId = "123";
 
-  const renderMicroagentModal = () =>
+  const renderMicroagentModal = (
+    { isLoading }: { isLoading: boolean } = { isLoading: false },
+  ) =>
     render(
       <LaunchMicroagentModal
         onClose={onCloseMock}
         onLaunch={onLaunchMock}
         eventId={eventId}
         selectedRepo="some-repo"
+        isLoading={isLoading}
       />,
       {
         wrapper: ({ children }) => (
@@ -123,5 +126,12 @@ describe("LaunchMicroagentModal", () => {
       "trigger1",
       "trigger2",
     ]);
+  });
+
+  it("should disable the launch button if isLoading is true", async () => {
+    renderMicroagentModal({ isLoading: true });
+
+    const launchButton = screen.getByRole("button", { name: "Launch" });
+    expect(launchButton).toBeDisabled();
   });
 });

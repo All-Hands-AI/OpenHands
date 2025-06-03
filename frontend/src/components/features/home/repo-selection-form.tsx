@@ -212,8 +212,11 @@ export function RepositorySelectionForm({
         }
         onClick={() =>
           createConversation({
-            selectedRepository,
-            selected_branch: selectedBranch?.name,
+            repository: {
+              name: selectedRepository?.full_name || "",
+              gitProvider: selectedRepository?.git_provider || "github",
+              branch: selectedBranch?.name || "main",
+            },
           })
         }
       >

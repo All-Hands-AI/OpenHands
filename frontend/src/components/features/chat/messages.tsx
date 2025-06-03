@@ -3,7 +3,12 @@ import { FaCircleUp } from "react-icons/fa6";
 import { createPortal } from "react-dom";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
+import {
+  isAgentStateChangeObservation,
+  isOpenHandsAction,
+  isOpenHandsEvent,
+  isOpenHandsObservation,
+} from "#/types/core/guards";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
@@ -16,6 +21,11 @@ import {
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
+import { AgentState } from "#/types/agent-state";
+import {
+  renderConversationFinishedToast,
+  renderConversationCreatedToast,
+} from "./microagent/conversation-created-toast";
 
 interface LaunchToMicroagentButtonProps {
   onClick: () => void;
@@ -43,7 +53,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
     const { providers } = useUserProviders();
-    const { mutate: createConversation } = useCreateConversation();
+    const { mutate: createConversation, isPending } = useCreateConversation();
     const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId);
 
@@ -111,10 +121,26 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               session_api_key: data.session_api_key,
               providers_set: providers,
             };
-            connect({
-              url: baseUrl,
-              query: opts,
-            });
+
+            const handleOhEvent = (event: unknown) => {
+              console.warn(event, data.conversation_id);
+
+              if (
+                isOpenHandsEvent(event) &&
+                isAgentStateChangeObservation(event)
+              ) {
+                if (event.extras.agent_state === AgentState.ERROR) {
+                  // Handle error state
+                } else if (event.extras.agent_state === AgentState.FINISHED) {
+                  renderConversationFinishedToast(data.conversation_id);
+                } else {
+                  renderConversationCreatedToast(data.conversation_id);
+                }
+              }
+            };
+
+            connect(baseUrl, opts, { oh_event: handleOhEvent });
+            setShowLaunchMicroagentModal(false);
           },
         },
       );
@@ -151,6 +177,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               onLaunch={handleLaunchMicroagent}
               eventId={selectedEventId}
               selectedRepo={conversation?.selected_repository?.split("/").pop()}
+              isLoading={isPending}
             />,
             document.getElementById("modal-portal-exit") || document.body,
           )}
