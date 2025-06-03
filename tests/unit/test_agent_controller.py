@@ -1419,7 +1419,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
         event_stream.add_event(user_message, EventSource.USER)
 
         # Give it a little time to process
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(1)
 
         # Get all events from the stream
         events = list(event_stream.get_events())
