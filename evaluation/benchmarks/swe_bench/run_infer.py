@@ -834,7 +834,7 @@ if __name__ == '__main__':
     # Run evaluation in iterative mode:
     # If a rollout fails to output AgentFinishAction, we will try again until it succeeds OR total 3 attempts have been made.
     ITERATIVE_EVAL_MODE = (
-        os.environ.get('ITERATIVE_EVAL_MODE', 'false').lower() == 'true'
+        os.environ.get('ITERATIVE_EVAL_MODE', 'true').lower() == 'true'
     )
     ITERATIVE_EVAL_MODE_MAX_ATTEMPTS = int(
         os.environ.get('ITERATIVE_EVAL_MODE_MAX_ATTEMPTS', '3')
