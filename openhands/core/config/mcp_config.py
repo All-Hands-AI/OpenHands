@@ -158,7 +158,7 @@ class OpenHandsMCPConfig:
             return MCPStdioServerConfig(
                 name='tavily',
                 command='npx',
-                args=['-y', 'tavily-mcp@0.1.4'],
+                args=['-y', 'tavily-mcp@0.2.1'],
                 env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
             )
         else:

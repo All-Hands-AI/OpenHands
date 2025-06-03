@@ -10,6 +10,7 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
+from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import ConversationStoreImpl, config
 from openhands.server.user_auth import (
     get_access_token,
@@ -18,7 +19,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP('mcp')
+mcp_server = FastMCP('mcp', dependencies=get_dependencies())
 
 
 async def save_pr_metadata(
@@ -57,7 +58,7 @@ async def create_pr(
     title: Annotated[str, Field(description='PR Title')],
     body: Annotated[str | None, Field(description='PR body')],
 ) -> str:
-    """Open a draft PR in GitHub"""
+    """Open a PR in GitHub"""
 
     logger.info('Calling OpenHands MCP create_pr')
 
@@ -112,7 +113,7 @@ async def create_mr(
     title: Annotated[str, Field(description='MR Title')],
     description: Annotated[str | None, Field(description='MR description')],
 ) -> str:
-    """Open a draft MR in GitLab"""
+    """Open a MR in GitLab"""
 
     logger.info('Calling OpenHands MCP create_mr')
 
