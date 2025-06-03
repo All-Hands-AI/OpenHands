@@ -95,7 +95,7 @@ async def create_mcp_clients(
     if streamable_http_servers:
         for server_url in streamable_http_servers:
             logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
+                f'Initializing MCP agent for {server_url} with Streamable HTTP connection...'
             )
 
             client = MCPClient()
