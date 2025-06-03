@@ -1381,6 +1381,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
     await controller.close()
 
 
+@pytest.mark.asyncio
 async def test_agent_controller_processes_null_observation_with_cause():
     """Test that AgentController processes NullObservation events with a cause value.
 
