@@ -41,7 +41,7 @@ docker run -it \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.39 \
-    python -m openhands.cli.main
+    python -m openhands.cli.main --override-cli-mode true
 ```
 
 This launches the CLI in Docker, allowing you to interact with OpenHands as described above.
