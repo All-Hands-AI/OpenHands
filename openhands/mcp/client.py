@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from contextlib import AsyncExitStack
 from typing import Optional
 
@@ -154,10 +155,17 @@ class MCPClient(BaseModel):
                 if conversation_id:
                     headers['X-OpenHands-Conversation-ID'] = conversation_id
 
+                # Convert float timeout to datetime.timedelta
+                timeout_delta = datetime.timedelta(seconds=timeout)
+                sse_read_timeout_delta = datetime.timedelta(
+                    seconds=timeout * 10
+                )  # 10x longer for read timeout
+
                 streams_context = streamablehttp_client(
                     url=server_url,
                     headers=headers if headers else None,
-                    timeout=timeout,
+                    timeout=timeout_delta,
+                    sse_read_timeout=sse_read_timeout_delta,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
                 self.session = await self.exit_stack.enter_async_context(
