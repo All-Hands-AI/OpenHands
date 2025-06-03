@@ -96,7 +96,7 @@ async def create_new_conversation(
             extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
-        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(conversation_id, conversation_init_data)
+        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, conversation_init_data)
         conversation_title = get_default_conversation_title(conversation_id)
 
         logger.info(f'Saving metadata for conversation {conversation_id}')

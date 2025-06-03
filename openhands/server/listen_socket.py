@@ -77,7 +77,7 @@ async def setup_init_convo_settings(
     convo_init_data = ConversationInitData(**session_init_args)
     # We should recreate the same experiment conditions when restarting a conversation
     return ExperimentManagerImpl.run_conversation_variant_test(
-        user_id, convo_init_data, restart=True
+        user_id, conversation_id, convo_init_data, restart=True
     )
 
 
