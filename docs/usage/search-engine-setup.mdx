@@ -8,15 +8,6 @@ icon: magnifying-glass
 
 OpenHands can be configured to use [Tavily](https://tavily.com/) as a search engine, which allows the agent to search the web for information when needed. This capability enhances the agent's ability to provide up-to-date information and solve problems that require external knowledge.
 
-### What is Tavily?
-
-Tavily is an AI-native search API designed specifically for AI applications. It provides:
-
-- High-quality, real-time web search results
-- Content extraction and summarization
-- Optimized for AI consumption
-- Built-in safety filters
-
 ### Getting a Tavily API Key
 
 To use the search functionality in OpenHands, you'll need to obtain a Tavily API key:
@@ -47,6 +38,7 @@ If you're running OpenHands in headless mode or via CLI, you can configure the s
 
 ```toml
 # In your OpenHands config file
+[core]
 search_api_key = "tvly-your-api-key-here"
 ```
 
@@ -55,7 +47,7 @@ search_api_key = "tvly-your-api-key-here"
 When the search engine is configured:
 
 1. The agent can decide to search the web when it needs external information
-2. Search queries are sent to Tavily's API
+2. Search queries are sent to Tavily's API via [Tavily's MCP server](https://github.com/tavily-ai/tavily-mcp) which includes a variety of [tools](https://docs.tavily.com/documentation/api-reference/introduction) (search, extract, crawl, map).
 3. Results are returned and incorporated into the agent's context
 4. The agent can use this information to provide more accurate and up-to-date responses
 
