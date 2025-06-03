@@ -7,8 +7,8 @@ if TYPE_CHECKING:
 
 from openhands.core.config.mcp_config import (
     MCPConfig,
+    MCPSHTTPServerConfig,
     MCPSSEServerConfig,
-    MCPStreamableHTTPServerConfig,
 )
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
@@ -51,7 +51,7 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 async def create_mcp_clients(
     sse_servers: list[MCPSSEServerConfig],
-    streamable_http_servers: list[MCPStreamableHTTPServerConfig],
+    shttp_servers: list[MCPSHTTPServerConfig],
     conversation_id: str | None = None,
 ) -> list[MCPClient]:
     import sys
@@ -92,15 +92,15 @@ async def create_mcp_clients(
                         f'Error during disconnect after failed connection: {str(disconnect_error)}'
                     )
 
-    if streamable_http_servers:
-        for server_url in streamable_http_servers:
+    if shttp_servers:
+        for server_url in shttp_servers:
             logger.info(
                 f'Initializing MCP agent for {server_url} with Streamable HTTP connection...'
             )
 
             client = MCPClient()
             try:
-                await client.connect_streamable_http(
+                await client.connect_shttp(
                     server_url.url,
                     api_key=server_url.api_key,
                     conversation_id=conversation_id,
@@ -147,7 +147,7 @@ async def fetch_mcp_tools_from_config(
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse_servers, mcp_config.streamable_http_servers, conversation_id
+            mcp_config.sse_servers, mcp_config.shttp_servers, conversation_id
         )
 
         if not mcp_clients:

@@ -126,7 +126,7 @@ class MCPClient(BaseModel):
             raise RuntimeError('Client session is not available.')
         return await self.session.call_tool(name=tool_name, arguments=args)
 
-    async def connect_streamable_http(
+    async def connect_shttp(
         self,
         server_url: str,
         api_key: str | None = None,

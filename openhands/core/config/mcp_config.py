@@ -54,7 +54,7 @@ class MCPStdioServerConfig(BaseModel):
             and set(self.env.items()) == set(other.env.items())
         )
 
-class MCPStreamableHTTPServerConfig(BaseModel):
+class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
 
@@ -69,7 +69,7 @@ class MCPConfig(BaseModel):
 
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
-    streamable_http_servers: list[MCPStreamableHTTPServerConfig] = Field(default_factory=list)
+    shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 
@@ -137,7 +137,7 @@ class MCPConfig(BaseModel):
                     servers.append(MCPStdioServerConfig(**server))
                 data['stdio_servers'] = servers
 
-            if 'streamable_http_servers' in data:
+            if 'shttp_servers' in data:
                 pass
 
             # Create SSE config if present
@@ -177,7 +177,7 @@ class OpenHandsMCPConfig:
     @staticmethod
     def create_default_mcp_server_config(
         host: str, config: 'OpenHandsConfig', user_id: str | None = None
-    ) -> tuple[MCPStreamableHTTPServerConfig, list[MCPStdioServerConfig]]:
+    ) -> tuple[MCPSHTTPServerConfig, list[MCPStdioServerConfig]]:
         """
         Create a default MCP server configuration.
 
@@ -192,8 +192,8 @@ class OpenHandsMCPConfig:
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
 
-        streamable_http_server = MCPStreamableHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
-        return streamable_http_server, stdio_servers
+        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
+        return shttp_servers, stdio_servers
 
 
 openhands_mcp_config_cls = os.environ.get(
