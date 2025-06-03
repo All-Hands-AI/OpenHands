@@ -124,9 +124,22 @@ async def connect(connection_id: str, environ: dict) -> None:
         conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
 
         # Create an EventStore to access the events before joining the conversation
-        event_store = EventStore(
-            conversation_id, conversation_manager.file_store, user_id
-        )
+        try:
+            event_store = EventStore(
+                conversation_id, conversation_manager.file_store, user_id
+            )
+        except FileNotFoundError:
+            logger.warning(
+                f'No events found for conversation {conversation_id}. Creating a new EventStore.'
+            )
+            event_store = EventStore(
+                conversation_id, conversation_manager.file_store, user_id, cur_id=0
+            )
+        except Exception as e:
+            logger.error(
+                f'Failed to create EventStore for conversation {conversation_id}: {e}'
+            )
+            raise ConnectionRefusedError(f'Failed to access conversation events: {e}')
 
         logger.info(
             f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
