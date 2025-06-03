@@ -325,7 +325,7 @@ async def run_session(
     return new_session_requested
 
 
-async def main(loop: asyncio.AbstractEventLoop) -> None:
+async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
 
@@ -417,11 +417,11 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         )
 
 
-if __name__ == '__main__':
+def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main(loop))
+        loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
@@ -443,3 +443,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(f'Error during cleanup: {e}')
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
