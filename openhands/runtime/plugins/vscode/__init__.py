@@ -62,6 +62,7 @@ class VSCodePlugin(Plugin):
                 f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.'
             )
             return
+        logger.warning(f"TRACE:vscode_plugin_started:{self.vscode_connection_token}:{self.vscode_port}")
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
