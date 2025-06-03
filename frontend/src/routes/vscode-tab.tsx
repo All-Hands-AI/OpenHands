@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
@@ -12,6 +12,30 @@ function VSCodeTab() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const [isCrossOrigin, setIsCrossOrigin] = useState(false);
+  const [iframeError, setIframeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (data?.url) {
+      try {
+        const urlObj = new URL(data.url);
+        const currentOrigin = window.location.origin;
+        const iframeOrigin = `${urlObj.protocol}//${urlObj.host}`;
+        
+        // Check if the iframe URL has a different origin than the current page
+        setIsCrossOrigin(currentOrigin !== iframeOrigin);
+      } catch (e) {
+        // Silently handle URL parsing errors
+        setIframeError(t("VSCODE$URL_PARSE_ERROR"));
+      }
+    }
+  }, [data?.url, t]);
+
+  const handleOpenInNewTab = () => {
+    if (data?.url) {
+      window.open(data.url, "_blank", t("VSCODE$NEW_TAB_OPTIONS"));
+    }
+  };
 
   if (isRuntimeInactive) {
     return (
@@ -29,14 +53,33 @@ function VSCodeTab() {
     );
   }
 
-  if (error || (data && data.error) || !data?.url) {
+  if (error || (data && data.error) || !data?.url || iframeError) {
     return (
       <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {data?.error || String(error) || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
+        {iframeError || data?.error || String(error) || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
       </div>
     );
   }
 
+  // If cross-origin, show a button to open in new tab
+  if (isCrossOrigin) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+        <div className="text-xl text-tertiary-light text-center max-w-md">
+          {t("VSCODE$CROSS_ORIGIN_WARNING")}
+        </div>
+        <button
+          type="button"
+          onClick={handleOpenInNewTab}
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors"
+        >
+          {t("VSCODE$OPEN_IN_NEW_TAB")}
+        </button>
+      </div>
+    );
+  }
+
+  // If same origin, use the iframe
   return (
     <div className="h-full w-full">
       <iframe
@@ -45,6 +88,8 @@ function VSCodeTab() {
         src={data.url}
         className="w-full h-full border-0"
         allow={t(I18nKey.VSCODE$IFRAME_PERMISSIONS)}
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+        data-credentialless="true"
       />
     </div>
   );
