@@ -268,7 +268,7 @@ async def run_session(
                 config.mcp_host, config, None
             )
         )
-        # FIXME: OpenHands' SSE server may not be running when CLI mode is started
+        # FIXME: OpenHands' streamable http server may not be running when CLI mode is started
         # if openhands_mcp_server:
         #     config.mcp.sse_servers.append(openhands_mcp_server)
         config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)

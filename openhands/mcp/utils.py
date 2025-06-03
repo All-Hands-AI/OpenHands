@@ -4,9 +4,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
+
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
+    MCPStreamableHTTPServerConfig,
 )
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
@@ -48,7 +50,9 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_servers: list[MCPSSEServerConfig], conversation_id: str | None = None
+    sse_servers: list[MCPSSEServerConfig],
+    streamable_http_servers: list[MCPStreamableHTTPServerConfig],
+    conversation_id: str | None = None,
 ) -> list[MCPClient]:
     import sys
 
@@ -88,6 +92,32 @@ async def create_mcp_clients(
                         f'Error during disconnect after failed connection: {str(disconnect_error)}'
                     )
 
+    if streamable_http_servers:
+        for server_url in streamable_http_servers:
+            logger.info(
+                f'Initializing MCP agent for {server_url} with SSE connection...'
+            )
+
+            client = MCPClient()
+            try:
+                await client.connect_sse(
+                    server_url.url,
+                    api_key=server_url.api_key,
+                    conversation_id=conversation_id,
+                )
+                # Only add the client to the list after a successful connection
+                mcp_clients.append(client)
+                logger.info(f'Connected to MCP server {server_url} via SSE')
+            except Exception as e:
+                logger.error(
+                    f'Failed to connect to {server_url}: {str(e)}', exc_info=True
+                )
+                try:
+                    await client.disconnect()
+                except Exception as disconnect_error:
+                    logger.error(
+                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
+                    )
     return mcp_clients
 
 
@@ -111,7 +141,7 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse_servers,
+            mcp_config.sse_servers, mcp_config.streamable_http_servers
         )
 
         if not mcp_clients:
