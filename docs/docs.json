@@ -31,59 +31,24 @@
             "pages": [
               "usage/cloud/openhands-cloud",
               {
-                "group": "Sign Up",
+                "group": "Installation",
                 "pages": [
                   "usage/cloud/github-installation",
                   "usage/cloud/gitlab-installation"
                 ]
               },
-              {
-                "group": "GUI Usage",
-                "pages": [
-                  "usage/cloud/cloud-ui"
-                ]
-              },
-              {
-                "group": "GitHub/GitLab Integration",
-                "pages": [
-                  "usage/cloud/cloud-issue-resolver"
-                ]
-              },
-              {
-                "group": "API Usage",
-                "pages": [
-                  "usage/cloud/cloud-api"
-                ]
-              }
+              "usage/cloud/cloud-ui",
+              "usage/cloud/cloud-issue-resolver",
+              "usage/cloud/cloud-api"
             ]
           },
           {
-            "group": "OpenHands Local",
+            "group": "Usage Methods",
             "pages": [
-              {
-                "group": "GUI Usage",
-                "pages": [
-                  "usage/how-to/gui-mode"
-                ]
-              },
-              {
-                "group": "CLI Usage",
-                "pages": [
-                  "usage/how-to/cli-mode"
-                ]
-              },
-              {
-                "group": "Headless Mode",
-                "pages": [
-                  "usage/how-to/headless-mode"
-                ]
-              },
-              {
-                "group": "GitHub Actions",
-                "pages": [
-                  "usage/how-to/github-action"
-                ]
-              }
+              "usage/how-to/gui-mode",
+              "usage/how-to/cli-mode",
+              "usage/how-to/headless-mode",
+              "usage/how-to/github-action"
             ]
           }
         ]
