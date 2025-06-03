@@ -129,13 +129,6 @@ async def connect(connection_id: str, environ: dict) -> None:
                 conversation_id, conversation_manager.file_store, user_id
             )
         except FileNotFoundError:
-            logger.warning(
-                f'No events found for conversation {conversation_id}. Creating a new EventStore.'
-            )
-            event_store = EventStore(
-                conversation_id, conversation_manager.file_store, user_id, cur_id=0
-            )
-        except Exception as e:
             logger.error(
                 f'Failed to create EventStore for conversation {conversation_id}: {e}'
             )
