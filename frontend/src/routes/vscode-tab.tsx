@@ -18,12 +18,14 @@ function VSCodeTab() {
   useEffect(() => {
     if (data?.url) {
       try {
-        const urlObj = new URL(data.url);
-        const currentOrigin = window.location.origin;
-        const iframeOrigin = `${urlObj.protocol}//${urlObj.host}`;
-        
+        const iframeHost = new URL(data.url).hostname;
+        const currentHost = window.location.hostname;
+
         // Check if the iframe URL has a different origin than the current page
-        setIsCrossOrigin(currentOrigin !== iframeOrigin);
+        setIsCrossOrigin(
+          iframeHost !== currentHost &&
+            !iframeHost.startsWith(`.${currentHost}`),
+        );
       } catch (e) {
         // Silently handle URL parsing errors
         setIframeError(t("VSCODE$URL_PARSE_ERROR"));
@@ -56,7 +58,10 @@ function VSCodeTab() {
   if (error || (data && data.error) || !data?.url || iframeError) {
     return (
       <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {iframeError || data?.error || String(error) || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
+        {iframeError ||
+          data?.error ||
+          String(error) ||
+          t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
       </div>
     );
   }
