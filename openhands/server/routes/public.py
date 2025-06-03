@@ -1,10 +1,8 @@
 from typing import Any
 
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from fastapi import APIRouter
 
 from openhands.controller.agent import Agent
-from openhands.microagent.microagent import KnowledgeMicroagent, TaskMicroagent
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import config, server_config
@@ -69,60 +67,3 @@ async def get_config() -> dict[str, Any]:
         dict[str, Any]: The current server configuration.
     """
     return server_config.get_config()
-
-
-class MicroagentInfo(BaseModel):
-    name: str
-    trigger: str
-    description: str
-
-
-@app.get('/microagents', response_model=list[dict[str, str]])
-async def get_microagents(
-    request: Request,
-) -> list[dict[str, str]]:
-    """Get all available microagents for the current session.
-
-    To get the microagents:
-    ```sh
-    curl http://localhost:3000/api/options/microagents
-    ```
-
-    Returns:
-        List[Dict[str, str]]: A list of microagent information including name and trigger.
-    """
-    # Check if we have a conversation in the request state
-    if not hasattr(request.state, 'conversation') or not request.state.conversation:
-        return []
-
-    # Get the runtime from the conversation
-    if (
-        not hasattr(request.state.conversation, 'runtime')
-        or not request.state.conversation.runtime
-    ):
-        return []
-
-    # Get the agent session from the runtime
-    runtime = request.state.conversation.runtime
-    if not hasattr(runtime, 'agent_session') or not runtime.agent_session:
-        return []
-
-    # Get the memory from the agent session
-    agent_session = runtime.agent_session
-    if not hasattr(agent_session, 'memory') or not agent_session.memory:
-        return []
-
-    # Get all knowledge microagents from memory
-    microagents = []
-    for agent in agent_session.memory.knowledge_microagents.values():
-        if isinstance(agent, (KnowledgeMicroagent, TaskMicroagent)) and agent.triggers:
-            # Use the first trigger as the main one
-            trigger = agent.triggers[0]
-            # Extract a short description from the content (first line or paragraph)
-            description = agent.content.strip().split('\n')[0][:100]
-
-            microagents.append(
-                {'name': agent.name, 'trigger': trigger, 'description': description}
-            )
-
-    return microagents
