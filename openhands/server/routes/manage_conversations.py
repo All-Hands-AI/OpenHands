@@ -70,28 +70,7 @@ class InitSessionRequest(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
-class InitSessionResponse(BaseModel):
-    status: str
-    conversation_id: str
-    message: str | None = None
-
-
-class StartConversationRequest(BaseModel):
-    initial_user_msg: str | None = None
-    replay_json: str | None = None
-    image_urls: list[str] | None = None
-
-    model_config = {'extra': 'forbid'}
-
-
-class StartConversationResponse(BaseModel):
-    status: str
-    conversation_id: str
-    message: str | None = None
-    agent_loop_info: AgentLoopInfo | None = None
-
-
-class StopConversationResponse(BaseModel):
+class ConversationResponse(BaseModel):
     status: str
     conversation_id: str
     message: str | None = None
@@ -104,7 +83,7 @@ async def new_conversation(
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
-) -> InitSessionResponse:
+) -> ConversationResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -164,7 +143,7 @@ async def new_conversation(
             conversation_id=conversation_id,
         )
 
-        return InitSessionResponse(
+        return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
         )
@@ -331,10 +310,9 @@ async def _get_conversation_info(
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
     conversation_id: str,
-    data: StartConversationRequest,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_settings),
-) -> StartConversationResponse:
+) -> ConversationResponse:
     """Start an agent loop for a conversation.
 
     This endpoint calls the conversation_manager's maybe_start_agent_loop method
@@ -344,28 +322,17 @@ async def start_conversation(
     logger.info(f'Starting conversation: {conversation_id}')
 
     try:
-        # Create a MessageAction if initial_user_msg is provided
-        initial_message = None
-        if data.initial_user_msg:
-            initial_message = MessageAction(
-                content=data.initial_user_msg, image_urls=data.image_urls
-            )
-            # Set the source to USER
-            setattr(initial_message, '_source', EventSource.USER)
 
         # Start the agent loop
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
             sid=conversation_id,
             settings=settings,
             user_id=user_id,
-            initial_user_msg=initial_message,
-            replay_json=data.replay_json,
         )
 
-        return StartConversationResponse(
+        return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
-            agent_loop_info=agent_loop_info,
         )
     except Exception as e:
         logger.error(
@@ -385,7 +352,7 @@ async def start_conversation(
 @app.post('/conversations/{conversation_id}/stop')
 async def stop_conversation(
     conversation_id: str,
-) -> StopConversationResponse:
+) -> ConversationResponse:
     """Stop an agent loop for a conversation.
 
     This endpoint calls the conversation_manager's close_session method
@@ -398,7 +365,7 @@ async def stop_conversation(
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
 
         if not is_running:
-            return StopConversationResponse(
+            return ConversationResponse(
                 status='ok',
                 conversation_id=conversation_id,
                 message='Conversation was not running',
@@ -407,7 +374,7 @@ async def stop_conversation(
         # Stop the conversation
         await conversation_manager.close_session(conversation_id)
 
-        return StopConversationResponse(
+        return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
             message='Conversation stopped successfully',
