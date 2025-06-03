@@ -354,6 +354,14 @@ class ActionExecutionClient(Runtime):
     def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
+        import sys
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            # Return empty MCP config on Windows
+            self.log('debug', 'MCP is disabled on Windows, returning empty config')
+            return MCPConfig(sse_servers=[], stdio_servers=[])
+
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
 
@@ -428,14 +436,22 @@ class ActionExecutionClient(Runtime):
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
                     url=self.action_execution_server_url.rstrip('/') + '/sse',
-                    # No API key by default. Child runtime can override this when appropriate
-                    api_key=None,
+                    api_key=self.session_api_key,
                 )
             )
 
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
+        import sys
+
+        from openhands.events.observation import ErrorObservation
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
+
         # Import here to avoid circular imports
         from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
         from openhands.mcp.utils import create_mcp_clients
@@ -448,7 +464,7 @@ class ActionExecutionClient(Runtime):
         )
 
         # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, self.sid)
+        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid)
 
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
