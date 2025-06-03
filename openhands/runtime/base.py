@@ -398,6 +398,10 @@ class Runtime(FileEditRuntimeMixin):
 
         domain = provider_domains[provider]
 
+        # If git_provider_tokens is provided, use the host from the token if available
+        if git_provider_tokens and provider in git_provider_tokens:
+            domain = git_provider_tokens[provider].host or domain
+
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
             git_token = git_provider_tokens[provider].token
@@ -886,6 +890,14 @@ fi
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return a path in the local filesystem."""
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    # ====================================================================
+    # Authentication
+    # ====================================================================
+
+    @property
+    def session_api_key(self) -> str | None:
+        return None
 
     # ====================================================================
     # VSCode

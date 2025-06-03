@@ -263,14 +263,12 @@ async def run_session(
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = (
+        _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 config.mcp_host, config, None
             )
         )
-        # FIXME: OpenHands' SSE server may not be running when CLI mode is started
-        # if openhands_mcp_server:
-        #     config.mcp.sse_servers.append(openhands_mcp_server)
+
         config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory, config)
@@ -327,7 +325,7 @@ async def run_session(
     return new_session_requested
 
 
-async def main(loop: asyncio.AbstractEventLoop) -> None:
+async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
 
@@ -419,11 +417,11 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         )
 
 
-if __name__ == '__main__':
+def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main(loop))
+        loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
@@ -445,3 +443,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(f'Error during cleanup: {e}')
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

@@ -138,7 +138,7 @@ class Session:
             )
         )
         if openhands_mcp_server:
-            self.config.mcp.sse_servers.append(openhands_mcp_server)
+            self.config.mcp.shttp_servers.append(openhands_mcp_server)
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         # TODO: override other LLM config & agent config groups (#2075)
