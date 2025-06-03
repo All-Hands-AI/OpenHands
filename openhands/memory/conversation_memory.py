@@ -434,6 +434,11 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = truncate_content(obs.content, max_message_chars)
+
+            # Check if there's an error message in extras
+            if hasattr(obs, 'extras') and obs.extras and 'error' in obs.extras:
+                text = truncate_content(obs.extras['error'], max_message_chars)
+
             text += '\n[Error occurred in processing last action]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):

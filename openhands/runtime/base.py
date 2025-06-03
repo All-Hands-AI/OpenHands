@@ -17,7 +17,10 @@ import httpx
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import AgentRuntimeDisconnectedError
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -321,23 +324,100 @@ class Runtime(FileEditRuntimeMixin):
             # We don't block the command if this is a default timeout action
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
-        try:
-            await self._export_latest_git_provider_tokens(event)
-            if isinstance(event, MCPAction):
-                observation: Observation = await self.call_tool_mcp(event)
-            else:
-                observation = await call_sync_from_async(self.run_action, event)
-        except Exception as e:
-            err_id = ''
-            if isinstance(e, httpx.NetworkError) or isinstance(
-                e, AgentRuntimeDisconnectedError
-            ):
+
+        # Initialize runtime error counter if it doesn't exist
+        if not hasattr(self, '_runtime_error_count'):
+            self._runtime_error_count = 0
+
+        max_retries = 3
+        retry_delay = 10  # seconds
+
+        while True:
+            try:
+                await self._export_latest_git_provider_tokens(event)
+                if isinstance(event, MCPAction):
+                    observation: Observation = await self.call_tool_mcp(event)
+                else:
+                    observation = await call_sync_from_async(self.run_action, event)
+
+                # Reset error counter on successful execution
+                if (
+                    hasattr(self, '_runtime_error_count')
+                    and self._runtime_error_count > 0
+                ):
+                    self.log(
+                        'debug',
+                        f'Resetting runtime error counter from {self._runtime_error_count} to 0 on successful action.',
+                    )
+                    self._runtime_error_count = 0
+
+                break  # Exit the loop on success
+
+            except (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError) as e:
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-            error_message = f'{type(e).__name__}: {str(e)}'
-            self.log('error', f'Unexpected error while running action: {error_message}')
-            self.log('error', f'Problematic action: {str(event)}')
-            self.send_error_message(err_id, error_message)
-            return
+                error_message = f'{type(e).__name__}: {str(e)}'
+                self.log(
+                    'error', f'Runtime error while running action: {error_message}'
+                )
+                self.log('error', f'Problematic action: {str(event)}')
+
+                # Check if retry is enabled in config
+                if not self.config.sandbox.retry_on_unrecoverable_runtime_error:
+                    self.send_error_message(err_id, error_message)
+                    return
+
+                # Increment the counter
+                self._runtime_error_count += 1
+
+                # Check if we've exceeded the maximum number of retries
+                if self._runtime_error_count > max_retries:
+                    self.log(
+                        'error',
+                        f'Maximum runtime error retries exceeded ({self._runtime_error_count}). Stopping retries.',
+                    )
+                    # Reset the counter
+                    self._runtime_error_count = 0
+                    self.send_error_message(err_id, error_message)
+                    return
+
+                # Create error message for the observation
+                error_content = (
+                    f'Your command may have consumed too much resources, and the previous runtime died. '
+                    f'You are connected to a new runtime container, all dependencies you have installed '
+                    f'outside /workspace may not be persisted. (Retry {self._runtime_error_count} of {max_retries})'
+                )
+
+                # Create an error observation
+                observation = ErrorObservation(content=error_content)
+                observation.extras = {'error': error_content}
+
+                # Add the observation to the event stream
+                observation._cause = event.id  # type: ignore[attr-defined]
+                observation.tool_call_metadata = event.tool_call_metadata
+                source = event.source if event.source else EventSource.AGENT
+                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)  # type: ignore[arg-type]
+
+                # Log the retry attempt
+                self.log(
+                    'warning',
+                    f'Runtime error occurred. Retry {self._runtime_error_count} of {max_retries} in {retry_delay} seconds.',
+                )
+
+                # Wait before retrying
+                await asyncio.sleep(retry_delay)
+                continue
+
+            except Exception as e:
+                err_id = ''
+                if isinstance(e, httpx.NetworkError):
+                    err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+                error_message = f'{type(e).__name__}: {str(e)}'
+                self.log(
+                    'error', f'Unexpected error while running action: {error_message}'
+                )
+                self.log('error', f'Problematic action: {str(event)}')
+                self.send_error_message(err_id, error_message)
+                return
 
         observation._cause = event.id  # type: ignore[attr-defined]
         observation.tool_call_metadata = event.tool_call_metadata
