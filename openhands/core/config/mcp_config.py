@@ -74,7 +74,7 @@ class MCPConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
     @staticmethod
-    def _normalize_sse_servers(servers_data: list[dict | str]) -> list[dict]:
+    def _normalize_servers(servers_data: list[dict | str]) -> list[dict]:
         """Helper method to normalize SSE server configurations."""
         normalized = []
         for server in servers_data:
@@ -87,8 +87,13 @@ class MCPConfig(BaseModel):
     @model_validator(mode='before')
     def convert_string_urls(cls, data):
         """Convert string URLs to MCPSSEServerConfig objects."""
-        if isinstance(data, dict) and 'sse_servers' in data:
-            data['sse_servers'] = cls._normalize_sse_servers(data['sse_servers'])
+        if isinstance(data, dict):
+            if 'sse_servers' in data:
+                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
+
+            if 'shttp_servers' in data:
+                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+
         return data
 
     def validate_servers(self) -> None:
@@ -124,7 +129,7 @@ class MCPConfig(BaseModel):
         try:
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
             if 'sse_servers' in data:
-                data['sse_servers'] = cls._normalize_sse_servers(data['sse_servers'])
+                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
                 servers = []
                 for server in data['sse_servers']:
                     servers.append(MCPSSEServerConfig(**server))
@@ -138,7 +143,11 @@ class MCPConfig(BaseModel):
                 data['stdio_servers'] = servers
 
             if 'shttp_servers' in data:
-                pass
+                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+                servers = []
+                for server in data['shttp_servers']:
+                    servers.append(MCPSHTTPServerConfig(**server))
+                data['shttp_servers'] = servers
 
             # Create SSE config if present
             mcp_config = MCPConfig.model_validate(data)
