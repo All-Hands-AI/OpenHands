@@ -54,6 +54,7 @@ class AppConfig(BaseModel):
         dict_mcp_config: dictionary of MCP configurations.
         condenser: Condenser configuration settings.
         evaluation_endpoint_url: URL of the evaluation endpoint.
+        evaluation_timeout: Timeout for the evaluation endpoint.
         enable_evaluation: Whether to enable the evaluation endpoint.
     """
 
@@ -110,6 +111,7 @@ class AppConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
     evaluation_endpoint_url: str | None = Field(default=None)
+    evaluation_timeout: int = Field(default=60)
     enable_evaluation: bool = Field(default=False)
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:

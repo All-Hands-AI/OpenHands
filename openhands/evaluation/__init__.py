@@ -35,7 +35,7 @@ def _json_serialize(data):
 async def should_step_after_call_evaluation_endpoint(
     session_id: str,
     log_func: Callable[[str, str], None],
-) -> tuple[bool, str]:
+) -> tuple[bool, str, str]:
     """
     Call the evaluation endpoint synchronously to check if the agent should proceed with finishing.
 
@@ -48,9 +48,10 @@ async def should_step_after_call_evaluation_endpoint(
     """
     config = load_app_config()
     evaluation_endpoint = config.evaluation_endpoint_url
+    evaluation_timeout = config.evaluation_timeout
     if not evaluation_endpoint:
         log_func('error', 'evaluation_endpoint_url not set in config.toml')
-        return True, ''
+        return True, '', ''
 
     payload = {'session_id': session_id, 'action': 'should_step'}
     log_func(
@@ -67,7 +68,7 @@ async def should_step_after_call_evaluation_endpoint(
             url=evaluation_endpoint,
             headers=headers,
             json=payload,
-            timeout=5.0,
+            timeout=evaluation_timeout,
         )
 
         log_func('info', f'Evaluation endpoint response: {response.status_code}')
@@ -81,12 +82,12 @@ async def should_step_after_call_evaluation_endpoint(
             log_func('info', f'Should proceed with finish action: {should_proceed}')
 
             reason = response_data.get('reason', '')
-
-            return should_proceed, reason
+            file_path = response_data.get('file_path', '')
+            return should_proceed, reason, file_path
 
         except Exception as e:
             log_func('error', f'Failed to parse JSON response: {str(e)}')
-            return True, ''
+            return True, '', ''
     except Exception as e:
         log_func('error', f'Failed to call evaluation endpoint: {str(e)}')
-        return True, ''
+        return True, '', ''

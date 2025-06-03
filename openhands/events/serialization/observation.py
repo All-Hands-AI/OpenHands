@@ -26,6 +26,7 @@ from openhands.events.observation.empty import (
     NullObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.evaluation import ReportVerificationObservation
 from openhands.events.observation.files import (
     FileEditObservation,
     FileReadObservation,
@@ -65,6 +66,7 @@ observations = (
     A2ASendTaskUpdateObservation,
     A2ASendTaskArtifactObservation,
     A2ASendTaskResponseObservation,
+    ReportVerificationObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

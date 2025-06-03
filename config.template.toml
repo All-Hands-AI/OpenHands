@@ -112,6 +112,7 @@
 
 # Evaluation config
 evaluation_endpoint_url = ""
+evaluation_timeout = 60
 enable_evaluation = false
 
 #################################### LLM #####################################

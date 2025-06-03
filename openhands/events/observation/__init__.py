@@ -22,6 +22,7 @@ from openhands.events.observation.empty import (
     NullObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.evaluation import ReportVerificationObservation
 from openhands.events.observation.files import (
     FileEditObservation,
     FileReadObservation,
@@ -58,4 +59,5 @@ __all__ = [
     'A2ASendTaskArtifactObservation',
     'A2ASendTaskUpdateObservation',
     'A2ASendTaskResponseObservation',
+    'ReportVerificationObservation',
 ]

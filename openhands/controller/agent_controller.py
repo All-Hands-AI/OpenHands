@@ -65,6 +65,7 @@ from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    ReportVerificationObservation,
 )
 from openhands.events.observation.a2a import (
     A2ASendTaskArtifactObservation,
@@ -372,6 +373,8 @@ class AgentController:
             ):
                 return False
             if isinstance(event, A2ASendTaskArtifactObservation):
+                return False
+            if isinstance(event, ReportVerificationObservation):
                 return False
             return True
         return False
@@ -859,13 +862,21 @@ class AgentController:
                         (
                             should_proceed,
                             reason,
+                            file_path,
                         ) = await should_step_after_call_evaluation_endpoint(
                             session_id=self.id,
                             log_func=log_wrapper,
                         )
 
                         if not should_proceed:
-                            # reason = 'I think there might be some issue with the facts presented in the report. Would you like me to check again?'
+                            self.event_stream.add_event(
+                                ReportVerificationObservation(
+                                    result=False,
+                                    content=reason,
+                                    file_path=file_path,
+                                ),
+                                EventSource.AGENT,
+                            )
                             content = f'{finish_message}'
                             content += f'\n\n{reason}'
                             self.event_stream.add_event(
@@ -879,7 +890,15 @@ class AgentController:
                                 AgentState.AWAITING_USER_INPUT
                             )
                             action = NullAction()
-
+                        else:
+                            self.event_stream.add_event(
+                                ReportVerificationObservation(
+                                    result=True,
+                                    content=reason,
+                                    file_path=file_path,
+                                ),
+                                EventSource.AGENT,
+                            )
                     except Exception as e:
                         self.log(
                             'error', f'Failed during finish action intercept: {str(e)}'

@@ -36,6 +36,7 @@ from openhands.events.observation import (
     FileReadObservation,
     IPythonRunCellObservation,
     PlanObservation,
+    ReportVerificationObservation,
     UserRejectObservation,
 )
 from openhands.events.observation.a2a import (
@@ -609,6 +610,8 @@ class ConversationMemory:
         elif isinstance(obs, A2ASendTaskArtifactObservation):
             text = self.prompt_manager.build_a2a_info(obs)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, ReportVerificationObservation):
+            return []
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message

@@ -1,22 +1,34 @@
+import base64
 import os
 import warnings
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+import aiofiles  # type: ignore
 from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi.responses import JSONResponse
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 
+from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.empty import NullAction
+from openhands.events.action.files import FileReadAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.event_store import EventStore
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.empty import NullObservation
+from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.files import FileReadObservation
 from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
 from openhands.security.options import SecurityAnalyzers
+from openhands.server import shared
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.file_config import FILES_TO_IGNORE
 from openhands.server.modules.conversation import conversation_module
 from openhands.server.routes.manage_conversations import _get_conversation_info
 from openhands.server.shared import (
@@ -33,7 +45,7 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 from openhands.server.shared import ConversationStoreImpl, config, server_config
-from openhands.utils.async_utils import wait_all
+from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 app = APIRouter(prefix='/api/options')
 
@@ -260,3 +272,136 @@ async def get_conversation_events(
         except Exception as e:
             logger.error(f'Error converting event to dict: {str(e)}')
     return result
+
+
+@app.get('/conversations/list-files-internal/{conversation_id}')
+async def list_files(
+    conversation_id: str,
+    # request: Request,
+    path: str | None = None,
+    x_key_oh: str = Depends(verify_thesis_backend_server),
+) -> Any:
+    conversation = await conversation_module._get_conversation_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail='Conversation not found')
+
+    session = await shared.conversation_manager.attach_to_conversation(
+        conversation_id, conversation.user_id
+    )
+
+    if not session:
+        return JSONResponse(
+            status_code=404,
+            content={'error': 'Session not found'},
+        )
+
+    if not session.runtime:
+        return JSONResponse(
+            status_code=404,
+            content={'error': 'Runtime not yet initialized'},
+        )
+    runtime: Runtime = session.runtime
+
+    try:
+        file_list = await call_sync_from_async(runtime.list_files, path)
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error listing files: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error listing files: {e}'},
+        )
+    if path:
+        file_list = [os.path.join(path, f) for f in file_list]
+
+    file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
+
+    async def filter_for_gitignore(file_list, base_path):
+        gitignore_path = os.path.join(base_path, '.gitignore')
+        try:
+            read_action = FileReadAction(gitignore_path)
+            observation = await call_sync_from_async(runtime.run_action, read_action)
+            spec = PathSpec.from_lines(
+                GitWildMatchPattern, observation.content.splitlines()
+            )
+        except Exception as e:
+            logger.warning(e)
+            return file_list
+        file_list = [entry for entry in file_list if not spec.match_file(entry)]
+        return file_list
+
+    try:
+        file_list = await filter_for_gitignore(file_list, '')
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error filtering files: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error filtering files: {e}'},
+        )
+    return file_list
+
+
+@app.get('/conversations/select-file-internal/{conversation_id}')
+async def select_file(
+    conversation_id: str,
+    file: str,
+    x_key_oh: str = Depends(verify_thesis_backend_server),
+) -> Any:
+    conversation = await conversation_module._get_conversation_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail='Conversation not found')
+
+    session = await shared.conversation_manager.attach_to_conversation(
+        conversation_id, conversation.user_id
+    )
+    if not session:
+        return JSONResponse(
+            status_code=404,
+            content={'error': 'Session not found'},
+        )
+    if not session.runtime:
+        return JSONResponse(
+            status_code=404,
+            content={'error': 'Runtime not yet initialized'},
+        )
+    runtime: Runtime = session.runtime
+
+    file = os.path.join(
+        runtime.config.workspace_mount_path_in_sandbox + '/' + runtime.sid, file
+    )
+    read_action = FileReadAction(file)
+    try:
+        observation = await call_sync_from_async(runtime.run_action, read_action)
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error opening file {file}: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error opening file: {e}'},
+        )
+
+    if isinstance(observation, FileReadObservation):
+        content = observation.content
+        return {'code': content}
+    elif isinstance(observation, ErrorObservation):
+        logger.error(f'Error opening file {file}: {observation}')
+
+        if 'ERROR_BINARY_FILE' in observation.message:
+            try:
+                async with aiofiles.open(file, 'rb') as f:
+                    binary_data = await f.read()
+                    base64_encoded = base64.b64encode(binary_data).decode('utf-8')
+                    return {'code': base64_encoded}
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content={'error': f'Error reading binary file: {e}'},
+                )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error opening file: {observation}'},
+            )
+
+    return JSONResponse(
+        status_code=500,
+        content={'error': f'Error opening file: {observation}'},
+    )
