@@ -175,8 +175,8 @@ class MCPClient(BaseModel):
                     sse_read_timeout=sse_read_timeout_delta,
                 )
                 streams = await self.exit_stack.enter_async_context(streams_context)
-                # Unpack the streams tuple and pass the read_timeout_seconds parameter
-                read_stream, write_stream, get_session_id = streams
+                # For StreamableHTTP client, we get read_stream, write_stream, and get_session_id (3 values)
+                read_stream, write_stream, _ = streams
                 self.session = await self.exit_stack.enter_async_context(
                     ClientSession(
                         read_stream, write_stream, read_timeout_seconds=timeout_delta
