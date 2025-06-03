@@ -63,61 +63,47 @@ async def create_mcp_clients(
         )
         return []
 
-    mcp_clients: list[MCPClient] = []
-    # Initialize SSE connections
-    if sse_servers:
-        for server_url in sse_servers:
-            logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
-            )
+    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = sse_servers.copy()
+    servers.extend(shttp_servers.copy())
 
-            client = MCPClient()
-            try:
+    if not servers:
+        return []
+
+    mcp_clients = []
+
+    for server in servers:
+        is_sse = isinstance(server, MCPSSEServerConfig)
+        connection_type = 'SSE' if is_sse else 'SHTTP'
+        logger.info(
+            f'Initializing MCP agent for {server} with {connection_type} connection...'
+        )
+        client = MCPClient()
+
+        try:
+            if is_sse:
                 await client.connect_sse(
-                    server_url.url,
-                    api_key=server_url.api_key,
+                    server.url,
+                    api_key=server.api_key,
                     conversation_id=conversation_id,
                 )
-                # Only add the client to the list after a successful connection
-                mcp_clients.append(client)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
-            except Exception as e:
-                logger.error(
-                    f'Failed to connect to {server_url}: {str(e)}', exc_info=True
-                )
-                try:
-                    await client.disconnect()
-                except Exception as disconnect_error:
-                    logger.error(
-                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                    )
-
-    if shttp_servers:
-        for server_url in shttp_servers:
-            logger.info(
-                f'Initializing MCP agent for {server_url} with Streamable HTTP connection...'
-            )
-
-            client = MCPClient()
-            try:
+            else:
                 await client.connect_shttp(
-                    server_url.url,
-                    api_key=server_url.api_key,
+                    server.url,
+                    api_key=server.api_key,
                     conversation_id=conversation_id,
                 )
-                # Only add the client to the list after a successful connection
-                mcp_clients.append(client)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
-            except Exception as e:
+
+            # Only add the client to the list after a successful connection
+            mcp_clients.append(client)
+
+        except Exception as e:
+            logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
+            try:
+                await client.disconnect()
+            except Exception as disconnect_error:
                 logger.error(
-                    f'Failed to connect to {server_url}: {str(e)}', exc_info=True
+                    f'Error during disconnect after failed connection: {str(disconnect_error)}'
                 )
-                try:
-                    await client.disconnect()
-                except Exception as disconnect_error:
-                    logger.error(
-                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                    )
     return mcp_clients
 
 

@@ -155,9 +155,6 @@ class MCPConfig(BaseModel):
 
 
 class OpenHandsMCPConfig:
-    URL = "https://{}/mcp/mcp"
-
-
     @staticmethod
     def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
         """Add search engine to the MCP config"""
@@ -195,7 +192,7 @@ class OpenHandsMCPConfig:
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
 
-        shttp_servers = MCPSHTTPServerConfig(url=OpenHandsMCPConfig.URL.format(host), api_key=None)
+        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
         return shttp_servers, stdio_servers
 
 
