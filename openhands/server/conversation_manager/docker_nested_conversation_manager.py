@@ -124,14 +124,16 @@ class DockerNestedConversationManager(ConversationManager):
             )
 
         nested_url = self._get_nested_url(sid)
+        session_api_key = self._get_session_api_key_for_conversation(sid)
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            session_api_key=self._get_session_api_key_for_conversation(sid),
+            session_api_key=session_api_key,
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
                 user_id=user_id,
+                session_api_key=session_api_key,
             ),
             status=ConversationStatus.STARTING
             if sid in self._starting_conversation_ids
