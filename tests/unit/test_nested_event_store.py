@@ -37,11 +37,11 @@ def create_mock_event(
 
 
 def create_mock_response(
-    results: list[dict[str, Any]], has_more: bool = False
+    events: list[dict[str, Any]], has_more: bool = False
 ) -> MagicMock:
     """Helper function to create a mock HTTP response."""
     mock_response = MagicMock()
-    mock_response.json.return_value = {'results': results, 'has_more': has_more}
+    mock_response.json.return_value = {'events': events, 'has_more': has_more}
     return mock_response
 
 
