@@ -5,7 +5,7 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable, ClassVar
+from typing import Callable
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -63,6 +63,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
+from openhands.events.event_filter import EventFilter
 from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
@@ -95,12 +96,6 @@ class AgentController:
     delegate: 'AgentController | None' = None
     _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
-    filter_out: ClassVar[tuple[type[Event], ...]] = (
-        NullAction,
-        NullObservation,
-        ChangeAgentStateAction,
-        AgentStateChangedObservation,
-    )
     _cached_first_user_message: MessageAction | None = None
 
     def __init__(
@@ -152,6 +147,18 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
+        # filter out events that are not relevant to the agent
+        # so they will not be included in the agent history
+        self.agent_history_filter = EventFilter(
+            exclude_types=(
+                NullAction,
+                NullObservation,
+                ChangeAgentStateAction,
+                AgentStateChangedObservation,
+            ),
+            exclude_hidden=True,
+        )
+
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
@@ -191,10 +198,14 @@ class AgentController:
         # Add the system message to the event stream
         # This should be done for all agents, including delegates
         system_message = self.agent.get_system_message()
-        logger.debug(f'System message got from agent: {system_message}')
-        if system_message:
+        if system_message and system_message.content:
+            preview = (
+                system_message.content[:50] + '...'
+                if len(system_message.content) > 50
+                else system_message.content
+            )
+            logger.debug(f'System message: {preview}')
             self.event_stream.add_event(system_message, EventSource.AGENT)
-            logger.debug(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -217,12 +228,11 @@ class AgentController:
             else self.event_stream.get_latest_event_id()
         )
         self.state.history = list(
-            self.event_stream.get_events(
+            self.event_stream.search_events(
                 start_id=start_id,
                 end_id=end_id,
                 reverse=False,
-                filter_out_type=self.filter_out,
-                filter_hidden=True,
+                filter=self.agent_history_filter,
             )
         )
 
@@ -442,7 +452,7 @@ class AgentController:
             return
 
         # if the event is not filtered out, add it to the history
-        if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
+        if self.agent_history_filter.include(event):
             self.state.history.append(event)
 
         if isinstance(event, Action):
@@ -1135,12 +1145,11 @@ class AgentController:
 
         # Get rest of history
         events_to_add = list(
-            self.event_stream.get_events(
+            self.event_stream.search_events(
                 start_id=start_id,
                 end_id=end_id,
                 reverse=False,
-                filter_out_type=self.filter_out,
-                filter_hidden=True,
+                filter=self.agent_history_filter,
             )
         )
         events.extend(events_to_add)

@@ -27,7 +27,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
@@ -180,7 +180,7 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
-def display_event(event: Event, config: AppConfig) -> None:
+def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
         if isinstance(event, Action):
@@ -376,7 +376,7 @@ def display_help() -> None:
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
         )
     )
 

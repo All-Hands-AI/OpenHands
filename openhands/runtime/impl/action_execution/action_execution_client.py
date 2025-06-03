@@ -9,7 +9,7 @@ import httpcore
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
@@ -65,7 +65,7 @@ class ActionExecutionClient(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -354,6 +354,14 @@ class ActionExecutionClient(Runtime):
     def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
+        import sys
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            # Return empty MCP config on Windows
+            self.log('debug', 'MCP is disabled on Windows, returning empty config')
+            return MCPConfig(sse_servers=[], stdio_servers=[])
+
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
 
@@ -400,10 +408,16 @@ class ActionExecutionClient(Runtime):
                 json=stdio_tools,
                 timeout=10,
             )
-
+            result = response.json()
             if response.status_code != 200:
                 self.log('warning', f'Failed to update MCP server: {response.text}')
             else:
+                if result.get('router_error_log'):
+                    self.log(
+                        'warning',
+                        f'Some MCP servers failed to be added: {result["router_error_log"]}',
+                    )
+
                 # Update our cached list with combined servers after successful update
                 self._last_updated_mcp_stdio_servers = combined_servers.copy()
                 self.log(
@@ -422,14 +436,22 @@ class ActionExecutionClient(Runtime):
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
                     url=self.action_execution_server_url.rstrip('/') + '/sse',
-                    # No API key by default. Child runtime can override this when appropriate
-                    api_key=None,
+                    api_key=self.session_api_key,
                 )
             )
 
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
+        import sys
+
+        from openhands.events.observation import ErrorObservation
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
+
         # Import here to avoid circular imports
         from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
         from openhands.mcp.utils import create_mcp_clients

@@ -1,19 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { GitChange } from "#/api/open-hands.types";
-import { RootState } from "#/store";
-import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 
 export const useGetGitChanges = () => {
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
   const [orderedChanges, setOrderedChanges] = React.useState<GitChange[]>([]);
   const previousDataRef = React.useRef<GitChange[]>(null);
-
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const runtimeIsReady = useRuntimeIsReady();
 
   const result = useQuery({
     queryKey: ["file_changes", conversationId],
@@ -21,7 +17,7 @@ export const useGetGitChanges = () => {
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
-    enabled: runtimeIsActive,
+    enabled: runtimeIsReady && !!conversationId,
     meta: {
       disableToast: true,
     },
