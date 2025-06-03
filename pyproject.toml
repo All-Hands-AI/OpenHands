@@ -104,7 +104,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 pytest-cov = "*"
-pytest-asyncio = "*"
+pytest-asyncio = "^1.0.0"
 pytest-forked = "*"
 pytest-xdist = "*"
 openai = "*"
