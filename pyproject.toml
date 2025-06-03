@@ -96,7 +96,6 @@ mypy = "1.15.0"
 pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
-memory-profiler = "^0.61.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -120,6 +119,7 @@ jupyterlab = "*"
 notebook = "*"
 jupyter_kernel_gateway = "*"
 flake8 = "*"
+memory-profiler = "^0.61.0"
 
 [tool.poetry.group.evaluation]
 optional = true

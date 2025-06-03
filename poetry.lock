@@ -5440,7 +5440,7 @@ version = "0.61.0"
 description = "A module for monitoring memory usage of a python program"
 optional = false
 python-versions = ">=3.5"
-groups = ["dev"]
+groups = ["runtime"]
 files = [
     {file = "memory_profiler-0.61.0-py3-none-any.whl", hash = "sha256:400348e61031e3942ad4d4109d18753b2fb08c2f6fb8290671c5513a34182d84"},
     {file = "memory_profiler-0.61.0.tar.gz", hash = "sha256:4e5b73d7864a1d1292fb76a03e82a3e78ef934d06828a698d9dada76da2067b0"},
@@ -7196,7 +7196,7 @@ version = "7.0.0"
 description = "Cross-platform lib for process and system monitoring in Python.  NOTE: the syntax of this script MUST be kept compatible with Python 2.7."
 optional = false
 python-versions = ">=3.6"
-groups = ["main", "dev", "runtime"]
+groups = ["main", "runtime"]
 files = [
     {file = "psutil-7.0.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:101d71dc322e3cffd7cea0650b09b3d08b8e7c4109dd6809fe452dfd00e58b25"},
     {file = "psutil-7.0.0-cp36-abi3-macosx_11_0_arm64.whl", hash = "sha256:39db632f6bb862eeccf56660871433e111b6ea58f2caea825571951d4b6aa3da"},
@@ -11757,4 +11757,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "0475697bfd0da4b7f414d4f267c1b25950333104e6769438816af89ecc1adb9b"
+content-hash = "eaa84e30dbafb061a75b4b173a8ba16542c4a03ab74583c55ab282cd6119e430"
