@@ -16,6 +16,7 @@ interface SettingsDropdownInputProps {
   selectedKey?: string;
   isClearable?: boolean;
   allowsCustomValue?: boolean;
+  required?: boolean;
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
@@ -34,6 +35,7 @@ export function SettingsDropdownInput({
   selectedKey,
   isClearable,
   allowsCustomValue,
+  required,
   onSelectionChange,
   onInputChange,
   defaultFilter,
@@ -59,6 +61,7 @@ export function SettingsDropdownInput({
         isDisabled={isDisabled}
         placeholder={placeholder}
         allowsCustomValue={allowsCustomValue}
+        isRequired={required}
         className="w-full"
         classNames={{
           popoverContent: "bg-tertiary rounded-xl border border-[#717888]",

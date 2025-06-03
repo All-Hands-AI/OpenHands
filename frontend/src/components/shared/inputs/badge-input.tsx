@@ -6,10 +6,16 @@ import { BrandBadge } from "../badge";
 interface BadgeInputProps {
   name?: string;
   value: string[];
+  placeholder?: string;
   onChange: (value: string[]) => void;
 }
 
-export function BadgeInput({ name, value, onChange }: BadgeInputProps) {
+export function BadgeInput({
+  name,
+  value,
+  placeholder,
+  onChange,
+}: BadgeInputProps) {
   const [inputValue, setInputValue] = React.useState("");
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -59,9 +65,10 @@ export function BadgeInput({ name, value, onChange }: BadgeInputProps) {
         data-testid={name || "badge-input"}
         name={name}
         value={inputValue}
+        placeholder={value.length === 0 ? placeholder : ""}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="flex-grow outline-none bg-trsansparent"
+        className="flex-grow outline-none bg-transparent"
       />
     </div>
   );

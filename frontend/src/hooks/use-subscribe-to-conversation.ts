@@ -35,6 +35,24 @@ export const useSubscribeToConversation = () => {
     [connect],
   );
 
+  const handleReconnect = useCallback(
+    (
+      url: string,
+      options: UseSubscribeToConversationOptions,
+      eventHandlers?: Record<string, (data: unknown) => void>,
+    ) => {
+      disconnect();
+      connect(
+        {
+          url,
+          query: options,
+        },
+        eventHandlers,
+      );
+    },
+    [connect, disconnect],
+  );
+
   React.useEffect(() => {
     disconnect();
     toast.dismiss("status");
@@ -42,6 +60,7 @@ export const useSubscribeToConversation = () => {
 
   return {
     connect: handleConnect,
+    reconnect: handleReconnect,
     isConnected,
     isConnecting,
     error,

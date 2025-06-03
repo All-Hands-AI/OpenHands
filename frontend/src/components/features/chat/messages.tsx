@@ -2,12 +2,16 @@ import React from "react";
 import { FaCircleUp } from "react-icons/fa6";
 import { createPortal } from "react-dom";
 import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsObservation } from "#/types/core/observations";
+import {
+  AgentStateChangeObservation,
+  OpenHandsObservation,
+} from "#/types/core/observations";
 import {
   isAgentStateChangeObservation,
   isOpenHandsAction,
   isOpenHandsEvent,
   isOpenHandsObservation,
+  isStatusUpdate,
 } from "#/types/core/guards";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
@@ -25,7 +29,25 @@ import { AgentState } from "#/types/agent-state";
 import {
   renderConversationFinishedToast,
   renderConversationCreatedToast,
+  renderConversationErroredToast,
 } from "./microagent/conversation-created-toast";
+
+const isErrorEvent = (
+  event: unknown,
+): event is { error: true; message: string } =>
+  typeof event === "object" &&
+  event !== null &&
+  "error" in event &&
+  event.error === true &&
+  "message" in event &&
+  typeof event.message === "string";
+
+const isAgentStatusError = (
+  event: unknown,
+): event is AgentStateChangeObservation =>
+  isOpenHandsEvent(event) &&
+  isAgentStateChangeObservation(event) &&
+  event.extras.agent_state === AgentState.ERROR;
 
 interface LaunchToMicroagentButtonProps {
   onClick: () => void;
@@ -57,7 +79,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId);
 
-    const { connect } = useSubscribeToConversation();
+    const { connect, reconnect } = useSubscribeToConversation();
     const optimisticUserMessage = getOptimisticUserMessage();
 
     const [selectedEventId, setSelectedEventId] = React.useState<number | null>(
@@ -123,18 +145,25 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             };
 
             const handleOhEvent = (event: unknown) => {
-              console.warn(event, data.conversation_id);
+              console.warn(event);
 
-              if (
+              if (isErrorEvent(event) || isAgentStatusError(event)) {
+                renderConversationErroredToast(event.message, () => {
+                  reconnect(baseUrl, opts, { oh_event: handleOhEvent });
+                });
+              } else if (isStatusUpdate(event)) {
+                if (
+                  event.type === "info" &&
+                  event.id === "STATUS$STARTING_RUNTIME"
+                ) {
+                  renderConversationCreatedToast(data.conversation_id);
+                }
+              } else if (
                 isOpenHandsEvent(event) &&
                 isAgentStateChangeObservation(event)
               ) {
-                if (event.extras.agent_state === AgentState.ERROR) {
-                  // Handle error state
-                } else if (event.extras.agent_state === AgentState.FINISHED) {
+                if (event.extras.agent_state === AgentState.FINISHED) {
                   renderConversationFinishedToast(data.conversation_id);
-                } else {
-                  renderConversationCreatedToast(data.conversation_id);
                 }
               }
             };

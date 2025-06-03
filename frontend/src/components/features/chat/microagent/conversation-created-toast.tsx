@@ -67,6 +67,34 @@ function ConversationFinishedToast({
   );
 }
 
+interface ConversationErroredToastProps {
+  errorMessage: string;
+  onClose: () => void;
+  onRetry: () => void;
+}
+
+function ConversationErroredToast({
+  errorMessage,
+  onClose,
+  onRetry,
+}: ConversationErroredToastProps) {
+  return (
+    <div className="flex items-start gap-2">
+      <SuccessIndicator status="error" />
+      <div>
+        {errorMessage}
+        <br />
+        <button type="button" className="underline" onClick={onRetry}>
+          Retry
+        </button>
+      </div>
+      <button type="button" onClick={onClose}>
+        <CloseIcon />
+      </button>
+    </div>
+  );
+}
+
 export const renderConversationCreatedToast = (conversationId: string) =>
   toast(
     (t) => (
@@ -88,6 +116,25 @@ export const renderConversationFinishedToast = (conversationId: string) =>
       <ConversationFinishedToast
         conversationId={conversationId}
         onClose={() => toast.dismiss(t.id)}
+      />
+    ),
+    {
+      ...TOAST_OPTIONS,
+      id: "status",
+      duration: Infinity,
+    },
+  );
+
+export const renderConversationErroredToast = (
+  errorMessage: string,
+  onRetry: () => void,
+) =>
+  toast(
+    (t) => (
+      <ConversationErroredToast
+        errorMessage={errorMessage}
+        onClose={() => toast.dismiss(t.id)}
+        onRetry={onRetry}
       />
     ),
     {

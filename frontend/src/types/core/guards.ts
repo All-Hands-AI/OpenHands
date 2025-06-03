@@ -86,7 +86,9 @@ export const isMcpObservation = (
 ): event is MCPObservation =>
   isOpenHandsObservation(event) && event.observation === "mcp";
 
-export const isStatusUpdate = (
-  event: OpenHandsParsedEvent,
-): event is StatusUpdate =>
-  "status_update" in event && "type" in event && "id" in event;
+export const isStatusUpdate = (event: unknown): event is StatusUpdate =>
+  typeof event === "object" &&
+  event !== null &&
+  "status_update" in event &&
+  "type" in event &&
+  "id" in event;
