@@ -2,20 +2,12 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
-    Field,
     SecretStr,
-    SerializationInfo,
-    field_serializer,
-    model_validator,
 )
-from pydantic.json import pydantic_encoder
 
-from openhands.core.config import load_app_config
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.integrations.provider import CustomSecret, ProviderToken, SecretStore
+from openhands.integrations.provider import CustomSecret, ProviderToken
 from openhands.integrations.service_types import ProviderType
-from openhands.storage.data_models.settings import Settings as BaseSettings
 from openhands.storage.data_models.settings import Settings
 
 
@@ -37,7 +29,9 @@ class POSTCustomSecrets(BaseModel):
 
 
 class GETSettingsModel(Settings):
-    """Settings with additional token data for the frontend."""
+    """
+    Settings with additional token data for the frontend
+    """
 
     provider_tokens_set: dict[ProviderType, str | None] | None = (
         None  # provider + base_domain key-value pair

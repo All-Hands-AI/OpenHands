@@ -319,18 +319,87 @@ class Runtime(FileEditRuntimeMixin):
                 f'Failed export latest github token to runtime: {self.sid}, {e}'
             )
 
-    async def _handle_action(self, event: Action) -> None:
-        if event.timeout is None:
-            # We don't block the command if this is a default timeout action
-            event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
-        assert event.timeout is not None
+    async def _handle_runtime_error(
+        self,
+        event: Action,
+        error: Exception,
+        max_retries: int = 3,
+        retry_delay: int = 10,
+    ) -> tuple[bool, Observation | None]:
+        """
+        Handle runtime-related errors with retry logic.
+
+        Args:
+            event: The action that caused the error
+            error: The exception that was raised
+            max_retries: Maximum number of retry attempts
+            retry_delay: Delay in seconds between retries
+
+        Returns:
+            A tuple of (should_continue, observation)
+            - should_continue: True if the caller should continue processing, False if it should return
+            - observation: An observation to return if should_continue is False, None otherwise
+        """
+        err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+        error_message = f'{type(error).__name__}: {str(error)}'
+        self.log('error', f'Runtime error while running action: {error_message}')
+        self.log('error', f'Problematic action: {str(event)}')
+
+        # Check if retry is enabled in config
+        if not self.config.sandbox.retry_on_unrecoverable_runtime_error:
+            self.send_error_message(err_id, error_message)
+            return False, None
 
         # Initialize runtime error counter if it doesn't exist
         if not hasattr(self, '_runtime_error_count'):
             self._runtime_error_count = 0
 
-        max_retries = 3
-        retry_delay = 10  # seconds
+        # Increment the counter
+        self._runtime_error_count += 1
+
+        # Check if we've exceeded the maximum number of retries
+        if self._runtime_error_count > max_retries:
+            self.log(
+                'error',
+                f'Maximum runtime error retries exceeded ({self._runtime_error_count}). Stopping retries.',
+            )
+            # Reset the counter
+            self._runtime_error_count = 0
+            self.send_error_message(err_id, error_message)
+            return False, None
+
+        # Create error message for the observation
+        error_content = (
+            f'Your command may have consumed too much resources, and the previous runtime died. '
+            f'You are connected to a new runtime container, all dependencies you have installed '
+            f'outside /workspace may not be persisted. (Retry {self._runtime_error_count} of {max_retries})'
+        )
+
+        # Create an error observation
+        observation = ErrorObservation(content=error_content)
+        # Store error content in a way that doesn't rely on extras property
+        # This will be accessible to the event stream
+
+        # Add the observation to the event stream
+        observation._cause = event.id  # type: ignore[attr-defined]
+        observation.tool_call_metadata = event.tool_call_metadata
+        self.event_stream.add_event(observation, EventSource.ENVIRONMENT)  # type: ignore[arg-type]
+
+        # Log the retry attempt
+        self.log(
+            'warning',
+            f'Runtime error occurred. Retry {self._runtime_error_count} of {max_retries} in {retry_delay} seconds.',
+        )
+
+        # Wait before retrying
+        await asyncio.sleep(retry_delay)
+        return True, observation
+
+    async def _handle_action(self, event: Action) -> None:
+        if event.timeout is None:
+            # We don't block the command if this is a default timeout action
+            event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
+        assert event.timeout is not None
 
         while True:
             try:
@@ -354,57 +423,11 @@ class Runtime(FileEditRuntimeMixin):
                 break  # Exit the loop on success
 
             except (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError) as e:
-                err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                error_message = f'{type(e).__name__}: {str(e)}'
-                self.log(
-                    'error', f'Runtime error while running action: {error_message}'
+                should_continue, retry_observation = await self._handle_runtime_error(
+                    event, e
                 )
-                self.log('error', f'Problematic action: {str(event)}')
-
-                # Check if retry is enabled in config
-                if not self.config.sandbox.retry_on_unrecoverable_runtime_error:
-                    self.send_error_message(err_id, error_message)
+                if not should_continue:
                     return
-
-                # Increment the counter
-                self._runtime_error_count += 1
-
-                # Check if we've exceeded the maximum number of retries
-                if self._runtime_error_count > max_retries:
-                    self.log(
-                        'error',
-                        f'Maximum runtime error retries exceeded ({self._runtime_error_count}). Stopping retries.',
-                    )
-                    # Reset the counter
-                    self._runtime_error_count = 0
-                    self.send_error_message(err_id, error_message)
-                    return
-
-                # Create error message for the observation
-                error_content = (
-                    f'Your command may have consumed too much resources, and the previous runtime died. '
-                    f'You are connected to a new runtime container, all dependencies you have installed '
-                    f'outside /workspace may not be persisted. (Retry {self._runtime_error_count} of {max_retries})'
-                )
-
-                # Create an error observation
-                observation = ErrorObservation(content=error_content)
-                observation.extras = {'error': error_content}
-
-                # Add the observation to the event stream
-                observation._cause = event.id  # type: ignore[attr-defined]
-                observation.tool_call_metadata = event.tool_call_metadata
-                source = event.source if event.source else EventSource.AGENT
-                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)  # type: ignore[arg-type]
-
-                # Log the retry attempt
-                self.log(
-                    'warning',
-                    f'Runtime error occurred. Retry {self._runtime_error_count} of {max_retries} in {retry_delay} seconds.',
-                )
-
-                # Wait before retrying
-                await asyncio.sleep(retry_delay)
                 continue
 
             except Exception as e:

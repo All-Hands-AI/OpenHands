@@ -37,17 +37,6 @@ class Event:
     INVALID_ID = -1
 
     @property
-    def extras(self) -> dict:
-        if hasattr(self, '_extras'):
-            extras_val = getattr(self, '_extras')
-            return extras_val if isinstance(extras_val, dict) else {}
-        return {}
-
-    @extras.setter
-    def extras(self, value: dict) -> None:
-        self._extras = value
-
-    @property
     def message(self) -> str | None:
         if hasattr(self, '_message'):
             msg = getattr(self, '_message')

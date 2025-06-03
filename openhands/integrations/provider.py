@@ -40,7 +40,7 @@ class ProviderToken(BaseModel):
 
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
-        """Factory method to create a ProviderToken from various input types."""
+        """Factory method to create a ProviderToken from various input types"""
         if isinstance(token_value, cls):
             return token_value
         elif isinstance(token_value, dict):
@@ -121,7 +121,7 @@ class ProviderHandler:
         return self._provider_tokens
 
     def _get_service(self, provider: ProviderType) -> GitService:
-        """Helper method to instantiate a service for a given provider."""
+        """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
         return service_class(
@@ -133,7 +133,7 @@ class ProviderHandler:
         )
 
     async def get_user(self) -> User:
-        """Get user information from the first available provider."""
+        """Get user information from the first available provider"""
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
@@ -149,18 +149,11 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
-    async def get_latest_provider_tokens(self) -> dict[ProviderType, SecretStr]:
-        """Get latest token from services."""
-        tokens = {}
-        for provider in self.provider_tokens:
-            service = self._get_service(provider)
-            tokens[provider] = await service.get_latest_token()
-        return tokens
-
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """
         Get repositories from providers
         """
+
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
