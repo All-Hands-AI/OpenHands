@@ -33,16 +33,11 @@ class AsyncBashSession:
         if username and sys.platform != 'win32':
             try:
                 user_info = pwd.getpwnam(username)
-                # Start with current environment to preserve important variables
-                env = os.environ.copy()
-                # Update with user-specific variables
-                env.update(
-                    {
-                        'HOME': user_info.pw_dir,
-                        'USER': username,
-                        'LOGNAME': username,
-                    }
-                )
+                env: dict[str, str] = {
+                    'HOME': user_info.pw_dir,
+                    'USER': username,
+                    'LOGNAME': username,
+                }
                 subprocess_kwargs['env'] = env
                 subprocess_kwargs['user'] = username
             except KeyError:
@@ -61,11 +56,8 @@ class AsyncBashSession:
                 output = stdout.decode('utf-8')
 
                 if stderr:
-                    stderr_text = stderr.decode('utf-8')
-                    # Append stderr to output instead of replacing it
-                    if stderr_text.strip():
-                        output += f'\n{stderr_text}'
-                        print(f'!##! Error running command: {stderr_text}')
+                    output = stderr.decode('utf-8')
+                    print(f'!##! Error running command: {stderr.decode("utf-8")}')
 
                 return CommandResult(content=output, exit_code=process.returncode or 0)
 
