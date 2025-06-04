@@ -1397,6 +1397,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
     # Create a mock agent with necessary attributes
     mock_agent = MagicMock(spec=Agent)
+    mock_agent.get_system_message = MagicMock(
+        return_value=None,
+    )
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = OpenHandsConfig().get_llm_config()
@@ -1414,9 +1417,42 @@ async def test_agent_controller_processes_null_observation_with_cause():
         sid='test-session',
     )
 
-    # Create a NullObservation with cause = 1 (non-zero)
-    null_observation = NullObservation(content='Test observation with cause=1')
-    null_observation._cause = 1  # type: ignore[attr-defined]
+    # Patch the controller's step method to track calls
+    with patch.object(controller, '_step') as mock_step:
+        # Create and add the first user message (will have ID 0)
+        user_message = MessageAction(content='First user message')
+        user_message._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(user_message, EventSource.USER)
+
+        # Give it a little time to process
+        await asyncio.sleep(1)
+
+        # Get all events from the stream
+        events = list(event_stream.get_events())
+
+        # Events in the stream:
+        # Event 0: MessageAction, ID: 0, Cause: None, Source: EventSource.USER, Content: First user message
+        # Event 1: RecallAction, ID: 1, Cause: None, Source: EventSource.USER, Content: N/A
+        # Event 2: NullObservation, ID: 2, Cause: 1, Source: EventSource.ENVIRONMENT, Content:
+        # Event 3: AgentStateChangedObservation, ID: 3, Cause: None, Source: EventSource.ENVIRONMENT, Content:
+
+        # Find the RecallAction event (should be automatically created)
+        recall_actions = [event for event in events if isinstance(event, RecallAction)]
+        assert len(recall_actions) > 0, 'No RecallAction was created'
+        recall_action = recall_actions[0]
+
+        # Find any NullObservation events
+        null_obs_events = [
+            event for event in events if isinstance(event, NullObservation)
+        ]
+        assert len(null_obs_events) > 0, 'No NullObservation was created'
+        null_observation = null_obs_events[0]
+
+        # Verify the NullObservation has a cause that points to the RecallAction
+        assert null_observation.cause is not None, 'NullObservation cause is None'
+        assert null_observation.cause == recall_action.id, (
+            f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
+        )
 
     # Verify the controller's should_step method returns True for this observation
     assert controller.should_step(null_observation), (

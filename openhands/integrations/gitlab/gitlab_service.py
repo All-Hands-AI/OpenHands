@@ -21,6 +21,17 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitLabService(BaseGitService, GitService):
+    """Default implementation of GitService for GitLab integration.
+
+    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
+    This is an extension point in OpenHands that allows applications to customize GitLab
+    integration behavior. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from GitService
+    2. Implementing all required methods
+    3. Setting server_config.gitlab_service_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
@@ -167,10 +178,14 @@ class GitLabService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)
 
+        # Use a default avatar URL if not provided
+        # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
+        avatar_url = response.get('avatar_url') or ''
+
         return User(
             id=response.get('id'),
             username=response.get('username'),
-            avatar_url=response.get('avatar_url'),
+            avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
