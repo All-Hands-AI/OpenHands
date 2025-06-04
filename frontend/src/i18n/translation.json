@@ -2207,22 +2207,6 @@
         "tr": "VS Code URL'si alınamadı",
         "uk": "Не вдалося отримати VS Code URL"
     },
-    "VSCODE$IFRAME_PERMISSIONS": {
-        "en": "clipboard-read; clipboard-write",
-        "ja": "clipboard-read; clipboard-write",
-        "zh-CN": "clipboard-read; clipboard-write",
-        "zh-TW": "clipboard-read; clipboard-write",
-        "ko-KR": "clipboard-read; clipboard-write",
-        "de": "clipboard-read; clipboard-write",
-        "no": "clipboard-read; clipboard-write",
-        "it": "clipboard-read; clipboard-write",
-        "pt": "clipboard-read; clipboard-write",
-        "es": "clipboard-read; clipboard-write",
-        "ar": "clipboard-read; clipboard-write",
-        "fr": "clipboard-read; clipboard-write",
-        "tr": "clipboard-read; clipboard-write",
-        "uk": "clipboard-read; clipboard-write"
-    },
     "VSCODE$CROSS_ORIGIN_WARNING": {
         "en": "The code editor cannot be embedded due to browser security restrictions. Cross-origin cookies are being blocked.",
         "ja": "ブラウザのセキュリティ制限により、コードエディタを埋め込むことができません。クロスオリジンCookieがブロックされています。",

@@ -12,26 +12,23 @@ function VSCodeTab() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
-  const [isCrossOrigin, setIsCrossOrigin] = useState(false);
+  const [isCrossProtocol, setIsCrossProtocol] = useState(false);
   const [iframeError, setIframeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (data?.url) {
       try {
-        const iframeHost = new URL(data.url).hostname;
-        const currentHost = window.location.hostname;
+        const iframeProtocol = new URL(data.url).protocol;
+        const currentProtocol = window.location.protocol;
 
-        // Check if the iframe URL has a different origin than the current page
-        setIsCrossOrigin(
-          iframeHost !== currentHost &&
-            !iframeHost.startsWith(`.${currentHost}`),
-        );
+        // Check if the iframe URL has a different protocol than the current page
+        setIsCrossProtocol(iframeProtocol !== currentProtocol);
       } catch (e) {
         // Silently handle URL parsing errors
         setIframeError(t("VSCODE$URL_PARSE_ERROR"));
       }
     }
-  }, [data?.url, t]);
+  }, [data?.url]);
 
   const handleOpenInNewTab = () => {
     if (data?.url) {
@@ -67,7 +64,7 @@ function VSCodeTab() {
   }
 
   // If cross-origin, show a button to open in new tab
-  if (isCrossOrigin) {
+  if (isCrossProtocol) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <div className="text-xl text-tertiary-light text-center max-w-md">
@@ -92,9 +89,7 @@ function VSCodeTab() {
         title={t(I18nKey.VSCODE$TITLE)}
         src={data.url}
         className="w-full h-full border-0"
-        allow={t(I18nKey.VSCODE$IFRAME_PERMISSIONS)}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
-        data-credentialless="true"
+        allow="clipboard-read; clipboard-write"
       />
     </div>
   );

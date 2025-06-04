@@ -47,6 +47,7 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
+  "allow",
   "className",
   "i18nKey",
   "testId",
@@ -69,6 +70,7 @@ const NON_TEXT_ATTRIBUTES = [
   "aria-describedby",
   "aria-hidden",
   "role",
+  "sandbox",
 ];
 
 function shouldIgnorePath(filePath) {
