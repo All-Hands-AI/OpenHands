@@ -5,7 +5,8 @@ from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.memory.view import View
 
 
-def test_from_events_simple():
+def test_view_preserves_uncondensed_lists() -> None:
+    """Tests that the view preserves event lists that don't contain condensation actions."""
     events: list[Event] = [MessageAction(content=f'Event {i}') for i in range(5)]
     set_ids(events)
     view = View.from_events(events)
@@ -13,26 +14,36 @@ def test_from_events_simple():
     assert view.events == events
 
 
-def test_from_events_condensation_remove_all():
-    events: list[Event] = [MessageAction(content=f'Event {i}') for i in range(5)]
-    condensation = CondensationAction(forgotten_event_ids=[0, 1, 2, 3, 4])
-    events.append(condensation)
+def test_view_forgets_events() -> None:
+    """Tests that views drop forgotten events and the condensation actions."""
+    events: list[Event] = [
+        *[MessageAction(content=f'Event {i}') for i in range(5)],
+        CondensationAction(forgotten_event_ids=[0, 1, 2, 3, 4]),
+    ]
     set_ids(events)
 
     view = View.from_events(events)
     assert view.events == []  # All events forgotten and condensation action removed
 
 
-def test_from_events_condensation_remove_second():
-    events: list[Event] = [MessageAction(content=f'Event {i}') for i in range(5)]
-    condensation = CondensationAction(forgotten_event_ids=[1])
-    events.append(condensation)
-    set_ids(events)
+def test_view_keeps_non_forgotten_events() -> None:
+    """Tests that views keep non-forgotten events."""
+    for forgotten_event_id in range(5):
+        events: list[Event] = [
+            *[MessageAction(content=f'Event {i}') for i in range(5)],
+            # Instead of forgetting all events like in
+            # `test_view_forgets_events`, in this test we only want to forget
+            # one of the events. That way we can check that the rest of the
+            # events are preserved.
+            CondensationAction(forgotten_event_ids=[forgotten_event_id]),
+        ]
+        set_ids(events)
 
-    view = View.from_events(events)
-    assert (
-        view.events == events[:1] + events[2:5]
-    )  # Exclude event 1 and the condensation action
+        view = View.from_events(events)
+        assert (
+            view.events
+            == events[:forgotten_event_id] + events[(forgotten_event_id + 1) : 5]
+        )
 
 
 def test_from_events_just_summary():
