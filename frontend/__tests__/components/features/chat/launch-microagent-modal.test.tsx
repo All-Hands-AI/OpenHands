@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { LaunchMicroagentModal } from "#/components/features/chat/launch-miocroagent-modal";
+import { LaunchMicroagentModal } from "#/components/features/chat/launch-microagent-modal";
 import { MemoryService } from "#/api/memory-service/memory-service.api";
 import { FileService } from "#/api/file-service/file-service.api";
 

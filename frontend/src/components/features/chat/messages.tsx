@@ -16,7 +16,7 @@ import {
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { LaunchMicroagentModal } from "./launch-miocroagent-modal";
+import { LaunchMicroagentModal } from "./launch-microagent-modal";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import {
   useSubscribeToConversation,
