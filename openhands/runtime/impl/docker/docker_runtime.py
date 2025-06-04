@@ -427,7 +427,7 @@ class DockerRuntime(ActionExecutionClient):
         )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(240) | stop_if_should_exit(),
+        int(os.environ.get('INIT_PLUGIN_TIMEOUT', '180')) + 60,
         retry=tenacity.retry_if_exception(_is_retryablewait_until_alive_error),
         reraise=True,
         wait=tenacity.wait_fixed(2),
