@@ -264,7 +264,7 @@ class DaytonaRuntime(ActionExecutionClient):
             return None
         self._vscode_url = (
             self._construct_api_url(self._vscode_port)
-            + f'/?tkn={token}&folder={self.config.sandbox_mount_path_in_sandbox}'
+            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         )
 
         self.log(
