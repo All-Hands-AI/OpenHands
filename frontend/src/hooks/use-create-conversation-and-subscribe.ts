@@ -3,7 +3,7 @@ import {
   renderConversationErroredToast,
   renderConversationCreatedToast,
   renderConversationFinishedToast,
-} from "#/components/features/chat/microagent/conversation-created-toast";
+} from "#/components/features/chat/microagent/microagent-status-toast";
 import { AgentState } from "#/types/agent-state";
 import {
   isOpenHandsEvent,
@@ -44,7 +44,7 @@ const isAgentStatusError = (
 export const useCreateConversationAndSubscribe = () => {
   const { mutate: createConversation, isPending } = useCreateConversation();
   const { providers } = useUserProviders();
-  const { connect, reconnect } = useSubscribeToConversation();
+  const { connect, reconnect, disconnect } = useSubscribeToConversation();
 
   const createConversationAndSubscribe = React.useCallback(
     ({
@@ -105,6 +105,7 @@ export const useCreateConversationAndSubscribe = () => {
               ) {
                 if (event.extras.agent_state === AgentState.FINISHED) {
                   renderConversationFinishedToast(data.conversation_id);
+                  disconnect();
                 }
               }
             };

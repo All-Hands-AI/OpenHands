@@ -44,6 +44,12 @@ export function LaunchMicroagentModal({
     }
   };
 
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    formAction(formData);
+  };
+
   return (
     <ModalBackdrop>
       <ModalBody className="items-start w-[728px]">
@@ -66,7 +72,7 @@ export function LaunchMicroagentModal({
 
         <form
           data-testid="launch-microagent-modal"
-          action={formAction}
+          onSubmit={onSubmit}
           className="flex flex-col gap-6 w-full"
         >
           <label

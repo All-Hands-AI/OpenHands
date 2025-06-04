@@ -7,7 +7,8 @@ interface UseSocketIOOptions {
   reconnectionDelay?: number;
   reconnectionDelayMax?: number;
   timeout?: number;
-  query?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  query?: Record<string, any>;
   path?: string;
   namespace?: string;
 }

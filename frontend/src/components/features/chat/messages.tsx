@@ -83,7 +83,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             hasObservationPair={actionHasObservationPair(message)}
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
-            assistantMessageActionButton={
+            userMessageActionButton={
               <LaunchToMicroagentButton
                 onClick={() => {
                   setSelectedEventId(message.id);

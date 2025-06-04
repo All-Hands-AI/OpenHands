@@ -61,6 +61,7 @@ export const useSubscribeToConversation = () => {
   return {
     connect: handleConnect,
     reconnect: handleReconnect,
+    disconnect,
     isConnected,
     isConnecting,
     error,

@@ -29,7 +29,7 @@ interface EventMessageProps {
   hasObservationPair: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
-  assistantMessageActionButton: React.ReactNode;
+  userMessageActionButton: React.ReactNode;
 }
 
 export function EventMessage({
@@ -37,7 +37,7 @@ export function EventMessage({
   hasObservationPair,
   isAwaitingUserConfirmation,
   isLastMessage,
-  assistantMessageActionButton,
+  userMessageActionButton,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
@@ -69,7 +69,7 @@ export function EventMessage({
       <ChatMessage
         type={event.source}
         message={isUserMessage(event) ? event.args.content : event.message}
-        actionButton={assistantMessageActionButton}
+        actionButton={userMessageActionButton}
       >
         {event.args.image_urls && event.args.image_urls.length > 0 && (
           <ImageCarousel size="small" images={event.args.image_urls} />

@@ -78,7 +78,7 @@ export function ChatMessage({
         </div>
 
         {/* Render action button on hover if provided */}
-        {actionButton && isHovering && (
+        {type === "user" && actionButton && isHovering && (
           <div className="absolute -bottom-2 -right-2">{actionButton}</div>
         )}
       </div>
