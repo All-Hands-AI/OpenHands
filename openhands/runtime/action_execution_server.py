@@ -253,7 +253,7 @@ class ActionExecutor:
         # If we get here, the browser is ready
         logger.debug('Browser is ready')
 
-    def _create_bash_session(self) -> BashSession | 'WindowsPowershellSession':  # type: ignore[name-defined]
+    def _create_bash_session(self):
         if sys.platform == 'win32':
             return WindowsPowershellSession(  # type: ignore[name-defined]
                 work_dir=self._initial_cwd,
