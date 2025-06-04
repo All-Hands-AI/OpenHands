@@ -8,7 +8,10 @@ interface SettingsButtonProps {
   disabled?: boolean;
 }
 
-export function SettingsButton({ onClick, disabled = false }: SettingsButtonProps) {
+export function SettingsButton({
+  onClick,
+  disabled = false,
+}: SettingsButtonProps) {
   const { t } = useTranslation();
 
   return (

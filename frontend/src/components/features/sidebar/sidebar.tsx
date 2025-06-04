@@ -72,7 +72,11 @@ export function Sidebar() {
             <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
-              onClick={() => settings?.EMAIL_VERIFIED === false ? null : setConversationPanelIsOpen((prev) => !prev)}
+              onClick={() =>
+                settings?.EMAIL_VERIFIED === false
+                  ? null
+                  : setConversationPanelIsOpen((prev) => !prev)
+              }
               disabled={settings?.EMAIL_VERIFIED === false}
             />
           </div>

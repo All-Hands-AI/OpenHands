@@ -30,7 +30,7 @@ export function ConversationPanelButton({
         size={22}
         className={cn(
           isOpen ? "text-white" : "text-[#9099AC]",
-          disabled && "opacity-50"
+          disabled && "opacity-50",
         )}
       />
     </TooltipButton>

@@ -16,7 +16,11 @@ export function DocsButton({ disabled = false }: DocsButtonProps) {
       href="https://docs.all-hands.dev"
       disabled={disabled}
     >
-      <DocsIcon width={28} height={28} className={`text-[#9099AC] ${disabled ? 'opacity-50' : ''}`} />
+      <DocsIcon
+        width={28}
+        height={28}
+        className={`text-[#9099AC] ${disabled ? "opacity-50" : ""}`}
+      />
     </TooltipButton>
   );
 }
