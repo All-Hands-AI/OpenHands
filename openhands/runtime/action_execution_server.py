@@ -253,7 +253,7 @@ class ActionExecutor:
         # If we get here, the browser is ready
         logger.debug('Browser is ready')
 
-    def _create_bash_session(self) -> BashSession | 'WindowsPowershellSession':
+    def _create_bash_session(self) -> BashSession | 'WindowsPowershellSession':  # type: ignore[name-defined]
         if sys.platform == 'win32':
             return WindowsPowershellSession(  # type: ignore[name-defined]
                 work_dir=self._initial_cwd,
@@ -396,7 +396,7 @@ class ActionExecutor:
             if action.is_static:
                 bash_session = self._create_bash_session()
             assert bash_session is not None
-            obs = await call_sync_from_async(self.bash_session.execute, action)
+            obs = await call_sync_from_async(bash_session.execute, action)
             return obs
         except Exception as e:
             logger.error(f'Error running command: {e}')
