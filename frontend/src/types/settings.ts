@@ -46,6 +46,7 @@ export type Settings = {
   IS_NEW_USER?: boolean;
   MCP_CONFIG?: MCPConfig;
   EMAIL?: string;
+  EMAIL_VERIFIED?: boolean;
 };
 
 export type ApiSettings = {
@@ -70,6 +71,7 @@ export type ApiSettings = {
     stdio_servers: MCPStdioServer[];
   };
   email?: string;
+  email_verified?: boolean;
 };
 
 export type PostSettings = Settings & {
