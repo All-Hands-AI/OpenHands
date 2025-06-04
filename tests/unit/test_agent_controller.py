@@ -1381,6 +1381,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
     await controller.close()
 
 
+@pytest.mark.asyncio
 async def test_agent_controller_processes_null_observation_with_cause():
     """Test that AgentController processes NullObservation events with a cause value.
 
@@ -1395,6 +1396,9 @@ async def test_agent_controller_processes_null_observation_with_cause():
 
     # Create a mock agent with necessary attributes
     mock_agent = MagicMock(spec=Agent)
+    mock_agent.get_system_message = MagicMock(
+        return_value=None,
+    )
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = OpenHandsConfig().get_llm_config()
@@ -1408,14 +1412,14 @@ async def test_agent_controller_processes_null_observation_with_cause():
     )
 
     # Patch the controller's step method to track calls
-    with patch.object(controller, 'step') as mock_step:
+    with patch.object(controller, '_step') as mock_step:
         # Create and add the first user message (will have ID 0)
         user_message = MessageAction(content='First user message')
         user_message._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(user_message, EventSource.USER)
 
         # Give it a little time to process
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(1)
 
         # Get all events from the stream
         events = list(event_stream.get_events())
