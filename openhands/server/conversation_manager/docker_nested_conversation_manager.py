@@ -440,8 +440,9 @@ class DockerNestedConversationManager(ConversationManager):
         else:
             volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
         conversation_dir = get_conversation_dir(sid, user_id)
+
         volumes.append(
-            f'{config.file_store_path}/{conversation_dir}:{OpenHandsConfig.model_fields["file_store_path"].default}/{conversation_dir}:rw'
+            f'{config.file_store_path}/{conversation_dir}:/root/openhands/file_store/{conversation_dir}:rw'
         )
         config.sandbox.volumes = ','.join(volumes)
 
