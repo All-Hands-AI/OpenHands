@@ -74,8 +74,8 @@ class SandboxConfig(BaseModel):
     browsergym_eval_env: str | None = Field(default=None)
     platform: str | None = Field(default=None)
     close_delay: int = Field(
-        default=int(os.environ.get('SANDBOX_CLOSE_DELAY_SECONDS', '3600')),
-        description='The delay in seconds before closing the sandbox after the agent is done. Can be configured via SANDBOX_CLOSE_DELAY_SECONDS env var.',
+        default=3600,
+        description='The delay in seconds before closing the sandbox after the agent is done.',
     )
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
