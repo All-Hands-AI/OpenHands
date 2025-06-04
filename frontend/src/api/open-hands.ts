@@ -42,7 +42,6 @@ class OpenHands {
    * Get the url for the conversation. If
    */
   static getConversationUrl(conversationId: string): string {
-    // The current conversation has not been reset yet...
     if (this.currentConversation?.conversation_id === conversationId) {
       if (this.currentConversation.url) {
         return this.currentConversation.url;
