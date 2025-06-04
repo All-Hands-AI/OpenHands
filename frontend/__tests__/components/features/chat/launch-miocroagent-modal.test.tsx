@@ -51,7 +51,7 @@ describe("LaunchMicroagentModal", () => {
     renderMicroagentModal();
 
     // inputs
-    screen.getByTestId("description-input");
+    screen.getByTestId("query-input");
     screen.getByTestId("target-input");
     screen.getByTestId("trigger-input");
 
@@ -74,7 +74,7 @@ describe("LaunchMicroagentModal", () => {
     renderMicroagentModal();
 
     expect(getPromptSpy).toHaveBeenCalledWith(conversationId, eventId);
-    const descriptionInput = screen.getByTestId("description-input");
+    const descriptionInput = screen.getByTestId("query-input");
     await waitFor(() =>
       expect(descriptionInput).toHaveValue("Generated prompt"),
     );
