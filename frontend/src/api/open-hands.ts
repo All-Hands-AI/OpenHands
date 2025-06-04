@@ -35,6 +35,7 @@ class OpenHands {
   static setCurrentConversation(
     currentConversation: Conversation | null,
   ): void {
+    console.log("TRACE:setCurrentConversation", currentConversation);
     this.currentConversation = currentConversation;
   }
 
@@ -42,6 +43,7 @@ class OpenHands {
    * Get the url for the conversation. If
    */
   static getConversationUrl(conversationId: string): string {
+    // The current conversation has not been reset yet...
     if (this.currentConversation?.conversation_id === conversationId) {
       if (this.currentConversation.url) {
         return this.currentConversation.url;
@@ -142,6 +144,7 @@ class OpenHands {
    */
   static async getWebHosts(conversationId: string): Promise<string[]> {
     const url = `${this.getConversationUrl(conversationId)}/web-hosts`;
+    console.log("TRACE:getWebHosts", url);
     const response = await openHands.get(url, {
       headers: this.getConversationHeaders(),
     });
