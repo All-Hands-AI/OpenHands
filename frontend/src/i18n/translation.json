@@ -8991,6 +8991,22 @@
         "de": "Sie müssen Ihre E-Mail-Adresse bestätigen, bevor Sie All Hands verwenden können",
         "uk": "Ви повинні підтвердити свою електронну адресу перед використанням All Hands"
     },
+    "SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE": {
+        "en": "Your access is limited until your email is verified. You can only access this settings page.",
+        "ja": "メールが確認されるまでアクセスが制限されています。この設定ページにのみアクセスできます。",
+        "zh-CN": "在验证您的电子邮件之前，您的访问权限受到限制。您只能访问此设置页面。",
+        "zh-TW": "在驗證您的電子郵件之前，您的訪問權限受到限制。您只能訪問此設置頁面。",
+        "ko-KR": "이메일이 확인될 때까지 액세스가 제한됩니다. 이 설정 페이지만 액세스할 수 있습니다.",
+        "no": "Din tilgang er begrenset til e-posten din er bekreftet. Du kan bare få tilgang til denne innstillingssiden.",
+        "it": "Il tuo accesso è limitato fino a quando la tua email non viene verificata. Puoi accedere solo a questa pagina delle impostazioni.",
+        "pt": "Seu acesso é limitado até que seu e-mail seja verificado. Você só pode acessar esta página de configurações.",
+        "es": "Su acceso es limitado hasta que se verifique su correo electrónico. Solo puede acceder a esta página de configuración.",
+        "ar": "وصولك محدود حتى يتم التحقق من بريدك الإلكتروني. يمكنك فقط الوصول إلى صفحة الإعدادات هذه.",
+        "fr": "Votre accès est limité jusqu'à ce que votre e-mail soit vérifié. Vous ne pouvez accéder qu'à cette page de paramètres.",
+        "tr": "E-postanız doğrulanana kadar erişiminiz sınırlıdır. Yalnızca bu ayarlar sayfasına erişebilirsiniz.",
+        "de": "Ihr Zugriff ist eingeschränkt, bis Ihre E-Mail-Adresse bestätigt wurde. Sie können nur auf diese Einstellungsseite zugreifen.",
+        "uk": "Ваш доступ обмежений, доки ваша електронна пошта не буде підтверджена. Ви можете отримати доступ лише до цієї сторінки налаштувань."
+    },
     "SETTINGS$RESEND_VERIFICATION": {
         "en": "Resend verification",
         "ja": "確認メールを再送信",

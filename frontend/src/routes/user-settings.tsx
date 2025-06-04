@@ -136,8 +136,19 @@ function UserSettingsScreen() {
               </div>
 
               {settings?.EMAIL_VERIFIED === false && (
-                <div className="text-sm text-red-500 mt-2">
+                <div className="text-sm text-red-500 mt-2 font-bold">
                   {t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}
+                </div>
+              )}
+              
+              {settings?.EMAIL_VERIFIED === false && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4" role="alert">
+                  <p className="font-bold">{t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}</p>
+                  <p className="text-sm">
+                    {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE", {
+                      defaultValue: "Your access is limited until your email is verified. You can only access this settings page."
+                    })}
+                  </p>
                 </div>
               )}
 
