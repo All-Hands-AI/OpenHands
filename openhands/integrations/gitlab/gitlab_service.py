@@ -476,38 +476,37 @@ class GitLabService(BaseGitService, GitService):
             - MR URL when successful
             - Error message when unsuccessful
         """
-        try:
-            # Convert string ID to URL-encoded path if needed
-            project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
-            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
 
-            # Set default description if none provided
-            if not description:
-                description = (
-                    f'Merging changes from {source_branch} into {target_branch}'
-                )
+        # Convert string ID to URL-encoded path if needed
+        project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
+        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
 
-            # Prepare the request payload
-            payload = {
-                'source_branch': source_branch,
-                'target_branch': target_branch,
-                'title': title,
-                'description': description,
-            }
-
-            # Make the POST request to create the MR
-            response, _ = await self._make_request(
-                url=url, params=payload, method=RequestMethod.POST
+        # Set default description if none provided
+        if not description:
+            description = (
+                f'Merging changes from {source_branch} into {target_branch}'
             )
 
-            # Return the web URL of the created MR
-            if 'web_url' in response:
-                return response['web_url']
-            else:
-                return f'MR created but URL not found in response: {response}'
+        # Prepare the request payload
+        payload = {
+            'source_branch': source_branch,
+            'target_branch': target_branch,
+            'title': title,
+            'description': description,
+        }
 
-        except Exception as e:
-            return f'Error creating merge request: {str(e)}'
+        # Make the POST request to create the MR
+        response, _ = await self._make_request(
+            url=url, params=payload, method=RequestMethod.POST
+        )
+
+        # Return the web URL of the created MR
+        if 'web_url' in response:
+            return response['web_url']
+        else:
+            return f'MR created but URL not found in response: {response}'
+
+
 
 
 gitlab_service_cls = os.environ.get(

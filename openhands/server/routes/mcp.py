@@ -2,6 +2,7 @@ import re
 from typing import Annotated
 
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
 from pydantic import Field
 
@@ -19,7 +20,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies())
+mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True)
 
 async def save_pr_metadata(
     user_id: str, conversation_id: str, tool_result: str
@@ -96,7 +97,8 @@ async def create_pr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        response = str(e)
+        error = f"Error creating pull request: {e}"
+        raise ToolError(str(error))
 
     return response
 
@@ -151,6 +153,7 @@ async def create_mr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        response = str(e)
+        error = f"Error creating merge request: {e}"
+        raise ToolError(str(error))
 
     return response
