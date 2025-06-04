@@ -54,6 +54,10 @@ class MCPStdioServerConfig(BaseModel):
             and set(self.env.items()) == set(other.env.items())
         )
 
+class MCPSHTTPServerConfig(BaseModel):
+    url: str
+    api_key: str | None = None
+
 
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
@@ -65,11 +69,12 @@ class MCPConfig(BaseModel):
 
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
+    shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 
     @staticmethod
-    def _normalize_sse_servers(servers_data: list[dict | str]) -> list[dict]:
+    def _normalize_servers(servers_data: list[dict | str]) -> list[dict]:
         """Helper method to normalize SSE server configurations."""
         normalized = []
         for server in servers_data:
@@ -82,8 +87,13 @@ class MCPConfig(BaseModel):
     @model_validator(mode='before')
     def convert_string_urls(cls, data):
         """Convert string URLs to MCPSSEServerConfig objects."""
-        if isinstance(data, dict) and 'sse_servers' in data:
-            data['sse_servers'] = cls._normalize_sse_servers(data['sse_servers'])
+        if isinstance(data, dict):
+            if 'sse_servers' in data:
+                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
+
+            if 'shttp_servers' in data:
+                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+
         return data
 
     def validate_servers(self) -> None:
@@ -119,7 +129,7 @@ class MCPConfig(BaseModel):
         try:
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
             if 'sse_servers' in data:
-                data['sse_servers'] = cls._normalize_sse_servers(data['sse_servers'])
+                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
                 servers = []
                 for server in data['sse_servers']:
                     servers.append(MCPSSEServerConfig(**server))
@@ -131,6 +141,13 @@ class MCPConfig(BaseModel):
                 for server in data['stdio_servers']:
                     servers.append(MCPStdioServerConfig(**server))
                 data['stdio_servers'] = servers
+
+            if 'shttp_servers' in data:
+                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+                servers = []
+                for server in data['shttp_servers']:
+                    servers.append(MCPSHTTPServerConfig(**server))
+                data['shttp_servers'] = servers
 
             # Create SSE config if present
             mcp_config = MCPConfig.model_validate(data)
@@ -169,7 +186,7 @@ class OpenHandsMCPConfig:
     @staticmethod
     def create_default_mcp_server_config(
         host: str, config: 'OpenHandsConfig', user_id: str | None = None
-    ) -> tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]:
+    ) -> tuple[MCPSHTTPServerConfig, list[MCPStdioServerConfig]]:
         """
         Create a default MCP server configuration.
 
@@ -179,12 +196,13 @@ class OpenHandsMCPConfig:
         Returns:
             tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]: A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
         """
-        sse_server = MCPSSEServerConfig(url=f'http://{host}/mcp/sse', api_key=None)
         stdio_servers = []
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
-        return sse_server, stdio_servers
+
+        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
+        return shttp_servers, stdio_servers
 
 
 openhands_mcp_config_cls = os.environ.get(
