@@ -38,7 +38,10 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 @dataclass
 class StandaloneConversationManager(ConversationManager):
-    """Manages conversations in standalone mode (single server instance)."""
+    """Default implementation of ConversationManager for single-server deployments.
+
+    See ConversationManager for extensibility details.
+    """
 
     sio: socketio.AsyncServer
     config: OpenHandsConfig
