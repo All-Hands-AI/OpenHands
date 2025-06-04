@@ -21,7 +21,16 @@ class AuthType(Enum):
 
 
 class UserAuth(ABC):
-    """Extensible class encapsulating user Authentication"""
+    """Abstract base class for user authentication.
+
+    This is an extension point in OpenHands that allows applications to provide their own
+    authentication mechanisms. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from UserAuth
+    2. Implementing all required methods
+    3. Setting server_config.user_auth_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
 
     _settings: Settings | None
 

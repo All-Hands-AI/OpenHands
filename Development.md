@@ -76,7 +76,7 @@ variables in your terminal. The final configurations are set from highest to low
 Environment variables > config.toml variables > default variables
 
 **Note on Alternative Models:**
-See [our documentation](https://docs.all-hands.dev/modules/usage/llms) for recommended models.
+See [our documentation](https://docs.all-hands.dev/usage/llms) for recommended models.
 
 ### 4. Running the application
 
@@ -136,7 +136,7 @@ poetry run pytest ./tests/unit/test_*.py
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker
 container image by setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
-Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.39-nikolaik`
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.40-nikolaik`
 
 ## Develop inside Docker container
 
