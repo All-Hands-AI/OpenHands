@@ -47,7 +47,7 @@ class UserAuth(ABC):
         """Get the provider tokens for the current user."""
 
     @abstractmethod
-    async def get_user_settings_store(self) -> SettingsStore | None:
+    async def get_user_settings_store(self) -> SettingsStore:
         """Get the settings store for the current user."""
 
     async def get_user_settings(self) -> Settings | None:
@@ -56,8 +56,6 @@ class UserAuth(ABC):
         if settings:
             return settings
         settings_store = await self.get_user_settings_store()
-        if settings_store is None:
-            return None
         settings = await settings_store.load()
         self._settings = settings
         return settings
@@ -80,11 +78,13 @@ class UserAuth(ABC):
 
 
 async def get_user_auth(request: Request) -> UserAuth:
-    user_auth = getattr(request.state, 'user_auth', None)
+    user_auth: UserAuth | None = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
     impl_name = server_config.user_auth_class
     impl = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
+    if user_auth is None:
+        raise ValueError('Failed to get user auth instance')
     request.state.user_auth = user_auth
     return user_auth

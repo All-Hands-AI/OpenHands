@@ -38,6 +38,12 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+vi.mock("react-router", () => ({
+  useParams: () => ({
+    conversationId: "test-conversation-id",
+  }),
+}));
+
 const renderActionSuggestions = () =>
   render(<ActionSuggestions onSuggestionsClick={() => {}} />, {
     wrapper: ({ children }) => (
@@ -65,6 +71,11 @@ describe("ActionSuggestions", () => {
   });
 
   it("should render both GitHub buttons when GitHub token is set and repository is selected", async () => {
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    // @ts-expect-error - only required for testing
+    getConversationSpy.mockResolvedValue({
+      selected_repository: "test-repo",
+    });
     renderActionSuggestions();
 
     // Find all buttons with data-testid="suggestion"

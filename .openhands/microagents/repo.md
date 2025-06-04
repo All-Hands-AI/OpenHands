@@ -1,8 +1,3 @@
----
-name: repo
-type: repo
-agent: CodeActAgent
----
 This repository contains the code for OpenHands, an automated AI software engineer. It has a Python backend
 (in the `openhands` directory) and React frontend (in the `frontend` directory).
 
@@ -14,7 +9,7 @@ IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-p
 
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
-* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+* If you've made changes to the backend, you should run `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml` (this will run on staged files).
 * If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
 
 The pre-commit hooks MUST pass successfully before pushing any changes to the repository. This is a mandatory requirement to maintain code quality and consistency.
@@ -71,3 +66,18 @@ These details may or may not be useful for your current task.
 - Actions with `thought` property are displayed in the UI based on their action type:
   - Regular actions (like "run", "edit") display the thought as a separate message
   - Special actions (like "think") are displayed as collapsible elements only
+
+#### Adding User Settings:
+- To add a new user setting to OpenHands, follow these steps:
+  1. Add the setting to the frontend:
+     - Add the setting to the `Settings` type in `frontend/src/types/settings.ts`
+     - Add the setting to the `ApiSettings` type in the same file
+     - Add the setting with an appropriate default value to `DEFAULT_SETTINGS` in `frontend/src/services/settings.ts`
+     - Update the `useSettings` hook in `frontend/src/hooks/query/use-settings.ts` to map the API response
+     - Update the `useSaveSettings` hook in `frontend/src/hooks/mutation/use-save-settings.ts` to include the setting in API requests
+     - Add UI components (like toggle switches) in the appropriate settings screen (e.g., `frontend/src/routes/app-settings.tsx`)
+     - Add i18n translations for the setting name and any tooltips in `frontend/src/i18n/translation.json`
+     - Add the translation key to `frontend/src/i18n/declaration.ts`
+  2. Add the setting to the backend:
+     - Add the setting to the `Settings` model in `openhands/storage/data_models/settings.py`
+     - Update any relevant backend code to apply the setting (e.g., in session creation)

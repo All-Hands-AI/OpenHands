@@ -22,7 +22,7 @@ const renderRepoConnector = () => {
       path: "/conversations/:conversationId",
     },
     {
-      Component: Outlet,
+      Component: () => <Outlet />,
       path: "/settings",
       children: [
         {
@@ -173,7 +173,6 @@ describe("RepoConnector", () => {
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
-      "gui",
       "rbren/polaris",
       "github",
       undefined,

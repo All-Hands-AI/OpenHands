@@ -15,6 +15,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
 from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
@@ -26,7 +27,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
@@ -40,10 +41,16 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileEditObservation,
     FileReadObservation,
 )
 from openhands.llm.metrics import Metrics
+
+ENABLE_STREAMING = False  # FIXME: this doesn't work
+
+# Global TextArea for streaming output
+streaming_output_text_area: TextArea | None = None
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -70,7 +77,7 @@ print_lock = threading.Lock()
 
 
 class UsageMetrics:
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: Metrics = Metrics()
         self.session_init_time: float = time.time()
 
@@ -78,7 +85,7 @@ class UsageMetrics:
 class CustomDiffLexer(Lexer):
     """Custom lexer for the specific diff format."""
 
-    def lex_document(self, document) -> StyleAndTextTuples:
+    def lex_document(self, document: Document) -> StyleAndTextTuples:
         lines = document.lines
 
         def get_line(lineno: int) -> StyleAndTextTuples:
@@ -144,14 +151,20 @@ def display_banner(session_id: str) -> None:
     print_formatted_text('')
 
 
-def display_welcome_message() -> None:
+def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
-    print_formatted_text(
-        HTML('What do you want to build? <grey>Type /help for help</grey>'),
-        style=DEFAULT_STYLE,
-    )
+    if message:
+        print_formatted_text(
+            HTML(f'{message} <grey>Type /help for help</grey>'),
+            style=DEFAULT_STYLE,
+        )
+    else:
+        print_formatted_text(
+            HTML('What do you want to build? <grey>Type /help for help</grey>'),
+            style=DEFAULT_STYLE,
+        )
 
 
 def display_initial_user_prompt(prompt: str) -> None:
@@ -167,7 +180,8 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
-def display_event(event: Event, config: AppConfig) -> None:
+def display_event(event: Event, config: OpenHandsConfig) -> None:
+    global streaming_output_text_area
     with print_lock:
         if isinstance(event, Action):
             if hasattr(event, 'thought'):
@@ -179,6 +193,8 @@ def display_event(event: Event, config: AppConfig) -> None:
                 display_message(event.content)
         if isinstance(event, CmdRunAction):
             display_command(event)
+            if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
+                initialize_streaming_output()
         if isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         if isinstance(event, FileEditObservation):
@@ -187,6 +203,8 @@ def display_event(event: Event, config: AppConfig) -> None:
             display_file_read(event)
         if isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
+        if isinstance(event, ErrorObservation):
+            display_error(event.content)
 
 
 def display_message(message: str) -> None:
@@ -196,20 +214,37 @@ def display_message(message: str) -> None:
         print_formatted_text(f'\n{message}')
 
 
-def display_command(event: CmdRunAction) -> None:
-    if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+def display_error(error: str) -> None:
+    error = error.strip()
+
+    if error:
         container = Frame(
             TextArea(
-                text=f'$ {event.command}',
+                text=error,
                 read_only=True,
-                style=COLOR_GREY,
+                style='ansired',
                 wrap_lines=True,
             ),
-            title='Action',
+            title='Error',
             style='ansired',
         )
         print_formatted_text('')
         print_container(container)
+
+
+def display_command(event: CmdRunAction) -> None:
+    container = Frame(
+        TextArea(
+            text=f'$ {event.command}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Command',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_command_output(output: str) -> None:
@@ -233,7 +268,7 @@ def display_command_output(output: str) -> None:
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Action Output',
+        title='Command Output',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -269,6 +304,36 @@ def display_file_read(event: FileReadObservation) -> None:
     )
     print_formatted_text('')
     print_container(container)
+
+
+def initialize_streaming_output():
+    """Initialize the streaming output TextArea."""
+    if not ENABLE_STREAMING:
+        return
+    global streaming_output_text_area
+    streaming_output_text_area = TextArea(
+        text='',
+        read_only=True,
+        style=COLOR_GREY,
+        wrap_lines=True,
+    )
+    container = Frame(
+        streaming_output_text_area,
+        title='Streaming Output',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def update_streaming_output(text: str):
+    """Update the streaming output TextArea with new text."""
+    global streaming_output_text_area
+
+    # Append the new text to the existing content
+    if streaming_output_text_area is not None:
+        current_text = streaming_output_text_area.text
+        streaming_output_text_area.text = current_text + text
 
 
 # Interactive command output display functions
@@ -311,7 +376,7 @@ def display_help() -> None:
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
         )
     )
 
@@ -427,7 +492,7 @@ def display_agent_state_change_message(agent_state: str) -> None:
 class CommandCompleter(Completer):
     """Custom completer for commands."""
 
-    def __init__(self, agent_state: str):
+    def __init__(self, agent_state: str) -> None:
         super().__init__()
         self.agent_state = agent_state
 
@@ -450,7 +515,7 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session() -> PromptSession:
+def create_prompt_session() -> PromptSession[str]:
     return PromptSession(style=DEFAULT_STYLE)
 
 
@@ -465,7 +530,7 @@ async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
             kb = KeyBindings()
 
             @kb.add('c-d')
-            def _(event) -> None:
+            def _(event: KeyPressEvent) -> None:
                 event.current_buffer.validate_and_handle()
 
             with patch_stdout():
@@ -538,11 +603,10 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
 def cli_confirm(
     question: str = 'Are you sure?', choices: list[str] | None = None
 ) -> int:
-    """
-    Display a confirmation prompt with the given question and choices.
+    """Display a confirmation prompt with the given question and choices.
+
     Returns the index of the selected choice.
     """
-
     if choices is None:
         choices = ['Yes', 'No']
     selected = [0]  # Using list to allow modification in closure
@@ -561,15 +625,15 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event) -> None:
+    def _(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
     @kb.add('down')
-    def _(event) -> None:
+    def _(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
     @kb.add('enter')
-    def _(event) -> None:
+    def _(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
@@ -601,7 +665,7 @@ def kb_cancel() -> KeyBindings:
     bindings = KeyBindings()
 
     @bindings.add('escape')
-    def _(event) -> None:
+    def _(event: KeyPressEvent) -> None:
         event.app.exit(exception=UserCancelledError, style='class:aborting')
 
     return bindings

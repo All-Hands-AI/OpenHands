@@ -14,6 +14,7 @@ class RuntimeInfo:
     date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+    custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -22,6 +23,20 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+
+
+@dataclass
+class ConversationInstructions:
+    """
+    Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
+
+    Examples include
+
+        1. Resolver instructions: you're responding to GitHub issue #1234, make sure to open a PR when you are done
+        2. Slack instructions: make sure to check whether any of the context attached is relevant to the task <context_messages>
+    """
+
+    content: str = ''
 
 
 class PromptManager:
@@ -73,6 +88,7 @@ class PromptManager:
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
+        conversation_instructions: ConversationInstructions | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -80,6 +96,7 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            conversation_instructions=conversation_instructions,
         ).strip()
 
     def build_microagent_info(

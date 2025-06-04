@@ -18,9 +18,12 @@ class ConversationValidator:
     """
 
     async def validate(
-        self, conversation_id: str, cookies_str: str
-    ) -> tuple[None, None]:
-        return None, None
+        self,
+        conversation_id: str,
+        cookies_str: str,
+        authorization_header: str | None = None,
+    ) -> str | None:
+        return None
 
 
 def create_conversation_validator() -> ConversationValidator:

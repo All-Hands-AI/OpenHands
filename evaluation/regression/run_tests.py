@@ -2,9 +2,9 @@ import argparse
 
 import pytest
 
-from openhands.config import load_app_config
+from openhands.config import load_openhands_config
 
-config = load_app_config()
+config = load_openhands_config()
 
 if __name__ == '__main__':
     """Main entry point of the script.

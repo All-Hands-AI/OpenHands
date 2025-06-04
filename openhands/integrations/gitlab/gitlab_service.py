@@ -178,10 +178,14 @@ class GitLabService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)
 
+        # Use a default avatar URL if not provided
+        # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
+        avatar_url = response.get('avatar_url') or ''
+
         return User(
             id=response.get('id'),
             username=response.get('username'),
-            avatar_url=response.get('avatar_url'),
+            avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
@@ -207,7 +211,7 @@ class GitLabService(BaseGitService, GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
-                is_public=True
+                is_public=True,
             )
             for repo in response
         ]
@@ -448,6 +452,62 @@ class GitLabService(BaseGitService, GitService):
                 break
 
         return all_branches
+
+    async def create_mr(
+        self,
+        id: int | str,
+        source_branch: str,
+        target_branch: str,
+        title: str,
+        description: str | None = None,
+    ) -> str:
+        """
+        Creates a merge request in GitLab
+
+        Args:
+            id: The ID or URL-encoded path of the project
+            source_branch: The name of the branch where your changes are implemented
+            target_branch: The name of the branch you want the changes merged into
+            title: The title of the merge request (optional, defaults to a generic title)
+            description: The description of the merge request (optional)
+            draft: Whether to create the MR as a draft (optional, defaults to False)
+
+        Returns:
+            - MR URL when successful
+            - Error message when unsuccessful
+        """
+        try:
+            # Convert string ID to URL-encoded path if needed
+            project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
+            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
+
+            # Set default description if none provided
+            if not description:
+                description = (
+                    f'Merging changes from {source_branch} into {target_branch}'
+                )
+
+            # Prepare the request payload
+            payload = {
+                'source_branch': source_branch,
+                'target_branch': target_branch,
+                'title': title,
+                'description': description,
+            }
+
+            # Make the POST request to create the MR
+            response, _ = await self._make_request(
+                url=url, params=payload, method=RequestMethod.POST
+            )
+
+            # Return the web URL of the created MR
+            if 'web_url' in response:
+                return response['web_url']
+            else:
+                return f'MR created but URL not found in response: {response}'
+
+        except Exception as e:
+            return f'Error creating merge request: {str(e)}'
 
 
 gitlab_service_cls = os.environ.get(
