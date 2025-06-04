@@ -68,11 +68,11 @@ class DaytonaRuntime(ActionExecutionClient):
             config,
             event_stream,
             sid,
-            [],
+            plugins,
             env_vars,
             status_callback,
             attach_to_existing,
-            headless_mode=True,
+            headless_mode,
         )
 
     def _get_sandbox(self) -> Sandbox | None:
