@@ -37,9 +37,10 @@ from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
     get_user_secrets,
+    get_user_settings,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_conversation_store, get_settings
+from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -311,7 +312,7 @@ async def _get_conversation_info(
 async def start_conversation(
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_user_settings),
 ) -> ConversationResponse:
     """Start an agent loop for a conversation.
 
@@ -333,6 +334,7 @@ async def start_conversation(
         return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
+            message=agent_loop_info.status.value,
         )
     except Exception as e:
         logger.error(
