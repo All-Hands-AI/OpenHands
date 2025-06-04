@@ -36,6 +36,11 @@ const isAgentStatusError = (
   isAgentStateChangeObservation(event) &&
   event.extras.agent_state === AgentState.ERROR;
 
+/**
+ * Custom hook to create a conversation and subscribe to it. Used for launching
+ * microagents and subscribing to their events.
+ * @returns
+ */
 export const useCreateConversationAndSubscribe = () => {
   const { mutate: createConversation, isPending } = useCreateConversation();
   const { providers } = useUserProviders();
