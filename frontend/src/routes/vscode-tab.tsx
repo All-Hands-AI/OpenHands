@@ -32,7 +32,7 @@ function VSCodeTab() {
 
   const handleOpenInNewTab = () => {
     if (data?.url) {
-      window.open(data.url, "_blank", t("VSCODE$NEW_TAB_OPTIONS"));
+      window.open(data.url, "_blank", "noopener,noreferrer");
     }
   };
 

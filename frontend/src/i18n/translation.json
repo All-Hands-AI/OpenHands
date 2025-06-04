@@ -2239,22 +2239,6 @@
         "tr": "URL ayrıştırma hatası",
         "uk": "Помилка аналізу URL"
     },
-    "VSCODE$NEW_TAB_OPTIONS": {
-        "en": "noopener,noreferrer",
-        "ja": "noopener,noreferrer",
-        "zh-CN": "noopener,noreferrer",
-        "zh-TW": "noopener,noreferrer",
-        "ko-KR": "noopener,noreferrer",
-        "de": "noopener,noreferrer",
-        "no": "noopener,noreferrer",
-        "it": "noopener,noreferrer",
-        "pt": "noopener,noreferrer",
-        "es": "noopener,noreferrer",
-        "ar": "noopener,noreferrer",
-        "fr": "noopener,noreferrer",
-        "tr": "noopener,noreferrer",
-        "uk": "noopener,noreferrer"
-    },
     "VSCODE$OPEN_IN_NEW_TAB": {
         "en": "Open in New Tab",
         "ja": "新しいタブで開く",
