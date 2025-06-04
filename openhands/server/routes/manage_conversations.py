@@ -7,8 +7,6 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -315,6 +313,7 @@ async def start_conversation(
     conversation_id: str,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationResponse:
     """Start an agent loop for a conversation.
 
@@ -325,6 +324,18 @@ async def start_conversation(
     logger.info(f'Starting conversation: {conversation_id}')
 
     try:
+
+        # Check that the conversation exists
+        try:
+            await conversation_store.get_metadata(conversation_id)
+        except Exception:
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'conversation_id': conversation_id,
+                },
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
         # Start the agent loop
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(

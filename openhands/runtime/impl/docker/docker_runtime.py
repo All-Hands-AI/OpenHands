@@ -374,28 +374,11 @@ class DockerRuntime(ActionExecutionClient):
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
-        except docker.errors.APIError as e:
-            if '409' in str(e):
-                self.log(
-                    'warning',
-                    f'Container {self.container_name} already exists. Removing...',
-                )
-                stop_all_containers(self.container_name)
-                return self.init_container()
-
-            else:
-                self.log(
-                    'error',
-                    f'Error: Instance {self.container_name} FAILED to start container!\n',
-                )
-                self.log('error', str(e))
-                raise e
         except Exception as e:
             self.log(
                 'error',
                 f'Error: Instance {self.container_name} FAILED to start container!\n',
             )
-            self.log('error', str(e))
             self.close()
             raise e
 

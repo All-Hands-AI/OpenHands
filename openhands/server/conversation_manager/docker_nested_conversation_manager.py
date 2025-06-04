@@ -438,6 +438,7 @@ class DockerNestedConversationManager(ConversationManager):
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
         env_vars['WORKSPACE_BASE'] = f'/workspace'
+        env_vars['SANDBOX_CLOSE_DELAY'] = '0'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
@@ -449,7 +450,7 @@ class DockerNestedConversationManager(ConversationManager):
         conversation_dir = get_conversation_dir(sid, user_id)
 
         volumes.append(
-            f'{config.file_store_path}/{conversation_dir}:/root/openhands/file_store/{conversation_dir}:rw'
+            f'{config.file_store_path}/{conversation_dir}:/root/.openhands/file_store/{conversation_dir}:rw'
         )
         config.sandbox.volumes = ','.join(volumes)
         if not config.sandbox.runtime_container_image:
@@ -476,8 +477,10 @@ class DockerNestedConversationManager(ConversationManager):
     async def _start_existing_container(self, runtime: DockerRuntime) -> bool:
         try:
             container = self.docker_client.containers.get(runtime.container_name)
-            if container and container.status == 'exited':
-                await call_sync_from_async(container.start())
+            if container:
+                status = container.status
+                if status == 'exited':
+                    await call_sync_from_async(container.start())
                 return True
             return False
         except docker.errors.NotFound as e:
