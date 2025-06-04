@@ -97,7 +97,8 @@ async def create_pr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        raise ToolError(str(e))
+        error = f"Error creating pull request: {e}"
+        raise ToolError(str(error))
 
     return response
 
@@ -152,6 +153,7 @@ async def create_mr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        raise ToolError(str(e))
+        error = f"Error creating merge request: {e}"
+        raise ToolError(str(error))
 
     return response
