@@ -110,6 +110,9 @@ class CLIRuntime(Runtime):
             )
             logger.info(f'Created temporary workspace at {self._workspace_path}')
 
+        # Runtime tests rely on this being set correctly.
+        self.config.workspace_mount_path_in_sandbox = self._workspace_path
+
         # Initialize runtime state
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)

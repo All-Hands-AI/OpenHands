@@ -25,7 +25,7 @@ async def test_create_mcp_clients_timeout_with_invalid_url():
 
         # Call create_mcp_clients with the invalid URL
         start_time = asyncio.get_event_loop().time()
-        clients = await create_mcp_clients([invalid_url])
+        clients = await create_mcp_clients([invalid_url], [])
         end_time = asyncio.get_event_loop().time()
 
         # Verify that no clients were successfully connected
@@ -61,7 +61,7 @@ async def test_create_mcp_clients_with_unreachable_host():
 
         # Call create_mcp_clients with the unreachable URL
         start_time = asyncio.get_event_loop().time()
-        clients = await create_mcp_clients([unreachable_url])
+        clients = await create_mcp_clients([unreachable_url], [])
         end_time = asyncio.get_event_loop().time()
 
         # Verify that no clients were successfully connected
