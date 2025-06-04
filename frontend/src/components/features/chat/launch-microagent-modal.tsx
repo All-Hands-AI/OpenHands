@@ -1,16 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
 import React from "react";
 import { FaCircleInfo } from "react-icons/fa6";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
-import { MemoryService } from "#/api/memory-service/memory-service.api";
 import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
-import { FileService } from "#/api/file-service/file-service.api";
 import { BadgeInput } from "#/components/shared/inputs/badge-input";
 import { cn } from "#/utils/utils";
 import CloseIcon from "#/icons/close.svg?react";
+import { useMicroagentPrompt } from "#/hooks/query/use-microagent-prompt";
+import { useGetMicroagents } from "#/hooks/query/use-get-microagents";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
@@ -27,23 +25,13 @@ export function LaunchMicroagentModal({
   selectedRepo,
   isLoading,
 }: LaunchMicroagentModalProps) {
-  const { conversationId } = useParams<{ conversationId: string }>();
-  const { data: prompt, isLoading: promptIsLoading } = useQuery({
-    queryKey: ["memory", "prompt", conversationId, eventId],
-    queryFn: () => MemoryService.getPrompt(conversationId!, eventId),
-    enabled: !!conversationId,
-  });
+  const { data: prompt, isLoading: promptIsLoading } =
+    useMicroagentPrompt(eventId);
 
   const microagentPath = selectedRepo
     ? `${selectedRepo}/.openhands/microagents/`
     : ".openhands/microagents/";
-  const { data: microagents } = useQuery({
-    queryKey: ["files", "microagents", conversationId, microagentPath],
-    queryFn: () => FileService.getFiles(conversationId!, microagentPath),
-    enabled: !!conversationId,
-    select: (data) =>
-      data.map((fileName) => fileName.replace(microagentPath, "")),
-  });
+  const { data: microagents } = useGetMicroagents(microagentPath);
 
   const [triggers, setTriggers] = React.useState<string[]>([]);
 

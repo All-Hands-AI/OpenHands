@@ -7,7 +7,7 @@ interface UseSocketIOOptions {
   reconnectionDelay?: number;
   reconnectionDelayMax?: number;
   timeout?: number;
-  query?: Record<string, any>;
+  query?: Record<string, unknown>;
   path?: string;
   namespace?: string;
 }
