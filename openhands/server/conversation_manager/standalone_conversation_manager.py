@@ -154,6 +154,10 @@ class StandaloneConversationManager(ConversationManager):
                         await conversation.disconnect()
                         self._detached_conversations.pop(sid, None)
 
+                # Implies disconnected sandboxes stay open indefinitely
+                if not self.config.sandbox.close_delay:
+                    return
+
                 close_threshold = time.time() - self.config.sandbox.close_delay
                 running_loops = list(self._local_agent_loops_by_sid.items())
                 running_loops.sort(key=lambda item: item[1].last_active_ts)

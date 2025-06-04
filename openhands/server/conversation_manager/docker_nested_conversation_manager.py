@@ -54,6 +54,7 @@ class DockerNestedConversationManager(ConversationManager):
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
     _conversation_store_class: type[ConversationStore] | None = None
     _starting_conversation_ids: set[str] = field(default_factory=set)
+    _runtime_container_image: str | None = None
 
     async def __aenter__(self):
         # No action is required on startup for this implementation
@@ -155,6 +156,12 @@ class DockerNestedConversationManager(ConversationManager):
         try:
             # Build the runtime container image if it is missing
             await call_sync_from_async(runtime.maybe_build_runtime_container_image)
+            self._runtime_container_image = runtime.runtime_container_image
+
+            # check that the container already exists...
+            if await self._start_existing_container(runtime):
+                self._starting_conversation_ids.discard(sid)
+                return
 
             # initialize the container but dont wait for it to start
             await call_sync_from_async(runtime.init_container)
@@ -172,7 +179,7 @@ class DockerNestedConversationManager(ConversationManager):
             )
 
         except Exception:
-            self._starting_conversation_ids.remove(sid)
+            self._starting_conversation_ids.discard(sid)
             raise
 
     async def _start_conversation(
@@ -262,7 +269,7 @@ class DockerNestedConversationManager(ConversationManager):
                 )
                 assert response.status_code == status.HTTP_200_OK
         finally:
-            self._starting_conversation_ids.remove(sid)
+            self._starting_conversation_ids.discard(sid)
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
@@ -431,6 +438,7 @@ class DockerNestedConversationManager(ConversationManager):
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
         env_vars['WORKSPACE_BASE'] = f'/workspace'
+        env_vars['SANDBOX_CLOSE_DELAY'] = '0'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
@@ -442,9 +450,11 @@ class DockerNestedConversationManager(ConversationManager):
         conversation_dir = get_conversation_dir(sid, user_id)
 
         volumes.append(
-            f'{config.file_store_path}/{conversation_dir}:/root/openhands/file_store/{conversation_dir}:rw'
+            f'{config.file_store_path}/{conversation_dir}:/root/.openhands/file_store/{conversation_dir}:rw'
         )
         config.sandbox.volumes = ','.join(volumes)
+        if not config.sandbox.runtime_container_image:
+            config.sandbox.runtime_container_image = self._runtime_container_image
 
         # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
         event_stream = EventStream(sid, self.file_store, user_id)
@@ -463,6 +473,18 @@ class DockerNestedConversationManager(ConversationManager):
         runtime.setup_initial_env = lambda: None  # type:ignore
 
         return runtime
+
+    async def _start_existing_container(self, runtime: DockerRuntime) -> bool:
+        try:
+            container = self.docker_client.containers.get(runtime.container_name)
+            if container:
+                status = container.status
+                if status == 'exited':
+                    await call_sync_from_async(container.start())
+                return True
+            return False
+        except docker.errors.NotFound as e:
+            return False
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
