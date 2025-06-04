@@ -58,3 +58,11 @@ jobs:
         run: |
           echo "Image pushed: oraichain/thesis-be:${{ env.SHORT_SHA }}"
           echo "image-tag=${{ env.SHORT_SHA }}" >> $GITHUB_OUTPUT
+
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_INFRA_DEPLOYMENT_TOKEN }}
+          repository: oraichain/infra-deployments
+          event-type: image-tag
+          client-payload: '{"chart_name": "thesis-be", "tag": "${{ env.SHORT_SHA }}", "target": "staging", "env": "staging"}'
