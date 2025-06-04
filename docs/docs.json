@@ -43,8 +43,9 @@
             ]
           },
           {
-            "group": "Usage Methods",
+            "group": "Running OpenHands Locally",
             "pages": [
+              "usage/local-setup",
               "usage/how-to/gui-mode",
               "usage/how-to/cli-mode",
               "usage/how-to/headless-mode",
