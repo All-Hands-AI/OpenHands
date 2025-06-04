@@ -1,4 +1,3 @@
-import asyncio
 import os
 import uuid
 from datetime import datetime, timezone
@@ -207,32 +206,23 @@ async def search_conversations(
     agent_loop_info_by_conversation_id = {
         info.conversation_id: info for info in agent_loop_info
     }
-
-    # Create a list of ConversationInfo objects using wait_all for parallel processing
+    # Filter out None values from the results
     conversation_infos = await wait_all(
-        [
-            _get_conversation_info(
-                conversation=conversation,
-                num_connections=sum(
-                    1
-                    for conversation_id in connection_ids_to_conversation_ids.values()
-                    if conversation_id == conversation.conversation_id
-                ),
-                agent_loop_info=agent_loop_info_by_conversation_id.get(
-                    conversation.conversation_id
-                ),
-            )
-            for conversation in filtered_results
-        ]
+        _get_conversation_info(
+            conversation=conversation,
+            num_connections=sum(
+                1
+                for conversation_id in connection_ids_to_conversation_ids.values()
+                if conversation_id == conversation.conversation_id
+            ),
+            agent_loop_info=agent_loop_info_by_conversation_id.get(
+                conversation.conversation_id
+            ),
+        )
+        for conversation in filtered_results
     )
-
-    # Filter out None values that might result from errors
-    conversation_infos = [info for info in conversation_infos if info is not None]
-    # Explicitly cast to the expected type
-    typed_conversation_infos: list[ConversationInfo] = conversation_infos  # type: ignore
-
     result = ConversationInfoResultSet(
-        results=typed_conversation_infos,
+        results=[info for info in conversation_infos if info is not None],
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
@@ -258,12 +248,6 @@ async def get_conversation(
         return conversation_info
     except FileNotFoundError:
         return None
-    except Exception as e:
-        logger.error(
-            f'Error loading conversation {conversation_id}: {str(e)}',
-            extra={'session_id': conversation_id},
-        )
-        return None
 
 
 @app.delete('/conversations/{conversation_id}')
@@ -288,7 +272,7 @@ async def delete_conversation(
 async def _get_conversation_info(
     conversation: ConversationMetadata,
     num_connections: int,
-    agent_loop_info: AgentLoopInfo | None = None,
+    agent_loop_info: AgentLoopInfo | None,
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
