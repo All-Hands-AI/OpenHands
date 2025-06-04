@@ -275,7 +275,6 @@ class ActionExecutor:
             bash_session.initialize()
             return bash_session
 
-
     async def ainit(self):
         # bash needs to be initialized first
         logger.debug('Initializing bash session')
