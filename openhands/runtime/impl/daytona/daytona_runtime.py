@@ -10,6 +10,7 @@ from daytona_sdk import (
     DaytonaConfig,
     SessionExecuteRequest,
     Sandbox,
+    SandboxResources,
 )
 
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -107,6 +108,7 @@ class DaytonaRuntime(ActionExecutionClient):
             image=self.config.sandbox.runtime_container_image,
             public=True,
             env_vars=self._get_creation_env_vars(),
+            resources=SandboxResources(cpu=2, memory=4)
         )
         sandbox = self.daytona.create(sandbox_params)
         return sandbox
