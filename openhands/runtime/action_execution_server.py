@@ -284,7 +284,7 @@ class ActionExecutor:
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
+            timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '180')) + 60,
         )
         logger.debug('All plugins initialized')
 
@@ -984,6 +984,14 @@ if __name__ == '__main__':
             return {'status': 'not initialized'}
         return {'status': 'ok'}
 
+    @app.get('/version')
+    async def version():
+        try:
+            short_sha = open('version.txt').read().strip()
+        except Exception:
+
+            short_sha = "unknown"
+        return {'version': short_sha}
     # ================================
     # VSCode-specific operations
     # ================================
