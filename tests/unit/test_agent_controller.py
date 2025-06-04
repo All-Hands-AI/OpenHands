@@ -1385,8 +1385,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
 async def test_agent_controller_processes_null_observation_with_cause():
     """Test that AgentController processes NullObservation events with a cause value.
 
-    This test verifies that the controller's should_step method returns the correct
-    value based on the cause of a NullObservation.
+    And that the agent's step method is called as a result.
     """
     # Create an in-memory file store and real event stream
     file_store = InMemoryFileStore()
@@ -1403,11 +1402,6 @@ async def test_agent_controller_processes_null_observation_with_cause():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = OpenHandsConfig().get_llm_config()
-
-    # Fix for the mock system message
-    system_message = SystemMessageAction(content='Test system message')
-    system_message._id = Event.INVALID_ID  # Ensure the ID is invalid
-    mock_agent.get_system_message.return_value = system_message
 
     # Create a controller with the mock agent
     controller = AgentController(
@@ -1454,22 +1448,24 @@ async def test_agent_controller_processes_null_observation_with_cause():
             f'Expected cause={recall_action.id}, got cause={null_observation.cause}'
         )
 
-    # Verify the controller's should_step method returns True for this observation
-    assert controller.should_step(null_observation), (
-        'should_step should return True for NullObservation with cause=1'
-    )
+        # Verify the controller's should_step method returns True for this observation
+        assert controller.should_step(null_observation), (
+            'should_step should return True for this NullObservation'
+        )
 
-    # Create a NullObservation with cause = 0
-    null_observation_zero = NullObservation(content='Test observation with cause=0')
-    null_observation_zero._cause = 0  # type: ignore[attr-defined]
+        # Verify the controller's step method was called
+        # This means the controller processed the NullObservation
+        assert mock_step.called, "Controller's step method was not called"
 
-    # Verify the controller's should_step method returns False for this observation
-    assert not controller.should_step(null_observation_zero), (
-        'should_step should return False for NullObservation with cause=0'
-    )
+        # Now test with a NullObservation that has cause=0
+        # Create a NullObservation with cause = 0 (pointing to the first user message)
+        null_observation_zero = NullObservation(content='Test observation with cause=0')
+        null_observation_zero._cause = 0  # type: ignore[attr-defined]
 
-    # Clean up
-    await controller.close()
+        # Verify the controller's should_step method would return False for this observation
+        assert not controller.should_step(null_observation_zero), (
+            'should_step should return False for NullObservation with cause=0'
+        )
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agent):
