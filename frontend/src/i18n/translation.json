@@ -5343,6 +5343,22 @@
         "ja": "セキュリティアナライザー",
         "uk": "Увімкнути аналізатор безпеки"
     },
+    "SETTINGS$SECURITY_ANALYZER_PLACEHOLDER":{
+        "en": "Select a security analyzer…",
+        "de": "Wählen Sie einen Sicherheitsanalysator aus…",
+        "zh-CN": "选择一个安全分析器…",
+        "zh-TW": "選擇一個安全分析器…",
+        "ko-KR": "보안 분석기를 선택하세요…",
+        "no": "Velg en sikkerhetsanalysator…",
+        "it": "Seleziona un analizzatore di sicurezza…",
+        "pt": "Selecione um analisador de segurança…",
+        "es": "Seleccione un analizador de seguridad…",
+        "ar": "اختر محلل الأمان…",
+        "fr": "Sélectionnez un analyseur de sécurité…",
+        "tr": "Bir güvenlik analizörü seçin…",
+        "ja": "セキュリティアナライザーを選択…",
+        "uk": "Виберіть аналізатор безпеки…"
+    },
     "SETTINGS$DONT_KNOW_API_KEY": {
         "en": "Don't know your API key?",
         "ja": "APIキーがわかりませんか？",
