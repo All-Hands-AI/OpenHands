@@ -46,40 +46,39 @@ def test_view_keeps_non_forgotten_events() -> None:
         )
 
 
-def test_from_events_just_summary():
-    events: list[Event] = [MessageAction(content=f'Event {i}') for i in range(5)]
-    condensation = CondensationAction(
-        forgotten_event_ids=[], summary='My Summary', summary_offset=0
-    )
-    events.append(condensation)
-    set_ids(events)
-    view = View.from_events(events)
-    assert len(view) == 6  # 5 message events + 1 summary observation
-    assert isinstance(
-        view[0], AgentCondensationObservation
-    )  # Summary inserted at offset 0
-    assert view[0].content == 'My Summary'
+def test_view_inserts_summary() -> None:
+    """Tests that views insert a summary observation at the specified offset."""
+    for offset in range(5):
+        events: list[Event] = [
+            *[MessageAction(content=f'Event {i}') for i in range(5)],
+            CondensationAction(
+                forgotten_event_ids=[], summary='My Summary', summary_offset=offset
+            ),
+        ]
+        set_ids(events)
+        view = View.from_events(events)
+
+        assert len(view) == 6  # 5 message events + 1 summary observation
+        for index, event in enumerate(view):
+            print(index, event.content)
+            if index == offset:
+                assert isinstance(event, AgentCondensationObservation)
+                assert event.content == 'My Summary'
+
+            # Events before where the summary is inserted will have content
+            # matching their index.
+            elif index < offset:
+                assert isinstance(event, MessageAction)
+                assert event.content == f'Event {index}'
+
+            # Events after where the summary is inserted will be offset by one
+            # from the original list.
+            else:
+                assert isinstance(event, MessageAction)
+                assert event.content == f'Event {index - 1}'
 
 
-def test_from_events_summary_stays():
-    events: list[Event] = [
-        MessageAction(content='Event 0'),
-        CondensationAction(
-            forgotten_event_ids=[], summary='My Summary', summary_offset=1
-        ),
-        MessageAction(content='Event 1'),
-    ]
-    set_ids(events)
-    view = View.from_events(events)
-    assert len(view) == 3  # 2 message events + 1 summary observation
-    assert [e.content for e in view] == [
-        'Event 0',
-        'My Summary',  # Summary inserted at offset 1
-        'Event 1',
-    ]
-
-
-def test_no_condensation_action_in_view():
+def test_no_condensation_action_in_view() -> None:
     """Ensure that CondensationAction events are never present in the resulting view."""
     events: list[Event] = [
         MessageAction(content='Event 0'),
@@ -93,9 +92,7 @@ def test_no_condensation_action_in_view():
 
     # Check that no CondensationAction is present in the view
     for event in view:
-        assert not isinstance(event, CondensationAction), (
-            'CondensationAction should not be present in the view'
-        )
+        assert not isinstance(event, CondensationAction)
 
     # The view should only contain the non-forgotten MessageActions
     assert len(view) == 3  # Event 1, Event 2, Event 3 (Event 0 was forgotten)
