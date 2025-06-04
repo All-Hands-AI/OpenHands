@@ -177,8 +177,6 @@ describe("RepoConnector", () => {
       "github",
       undefined,
       undefined,
-      undefined,
-      undefined,
       "main",
       undefined,
     );

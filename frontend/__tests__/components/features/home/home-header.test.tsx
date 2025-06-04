@@ -72,8 +72,6 @@ describe("HomeHeader", () => {
       undefined,
       undefined,
       undefined,
-      undefined,
-      undefined,
     );
 
     // expect to be redirected to /conversations/:conversationId

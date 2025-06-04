@@ -88,8 +88,6 @@ describe("TaskCard", () => {
         MOCK_RESPOSITORIES[0].full_name,
         MOCK_RESPOSITORIES[0].git_provider,
         undefined,
-        undefined,
-        undefined,
         {
           git_provider: "github",
           issue_number: 123,

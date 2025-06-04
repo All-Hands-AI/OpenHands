@@ -28,8 +28,6 @@ export const useCreateConversation = () => {
         repository?.name,
         repository?.gitProvider,
         query,
-        undefined,
-        undefined,
         suggestedTask,
         repository?.branch,
         conversationInstructions,
@@ -44,7 +42,6 @@ export const useCreateConversation = () => {
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
-      // navigate(`/conversations/${conversationId}`);
     },
   });
 };
