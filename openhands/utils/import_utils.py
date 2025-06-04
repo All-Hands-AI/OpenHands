@@ -1,11 +1,11 @@
 import importlib
 from functools import lru_cache
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar('T')
 
 
-def import_from(qual_name: str):
+def import_from(qual_name: str) -> Any:
     """Import a value from its fully qualified name.
 
     This function is a utility to dynamically import any Python value (class, function, variable)

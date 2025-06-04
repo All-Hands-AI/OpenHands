@@ -210,21 +210,23 @@ async def search_conversations(
     agent_loop_info_by_conversation_id = {
         info.conversation_id: info for info in agent_loop_info
     }
+    # Filter out None values from the results
+    conversation_infos = await wait_all(
+        _get_conversation_info(
+            conversation=conversation,
+            num_connections=sum(
+                1
+                for conversation_id in connection_ids_to_conversation_ids.values()
+                if conversation_id == conversation.conversation_id
+            ),
+            agent_loop_info=agent_loop_info_by_conversation_id.get(
+                conversation.conversation_id
+            ),
+        )
+        for conversation in filtered_results
+    )
     result = ConversationInfoResultSet(
-        results=await wait_all(
-            _get_conversation_info(
-                conversation=conversation,
-                num_connections=sum(
-                    1
-                    for conversation_id in connection_ids_to_conversation_ids.values()
-                    if conversation_id == conversation.conversation_id
-                ),
-                agent_loop_info=agent_loop_info_by_conversation_id.get(
-                    conversation.conversation_id
-                ),
-            )
-            for conversation in filtered_results
-        ),
+        results=[info for info in conversation_infos if info is not None],
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result

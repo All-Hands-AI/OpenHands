@@ -15,15 +15,15 @@ Hopefully, this will be fixed soon and we can remove this abomination.
 """
 
 import contextlib
-from typing import Callable
+from typing import Any, Callable, Iterator
 
 import httpx
 
 
 @contextlib.contextmanager
-def ensure_httpx_close():
-    wrapped_class = httpx.Client
-    proxys = []
+def ensure_httpx_close() -> Iterator[None]:
+    wrapped_class = httpx.Client  # Store the original class
+    proxys: list['ClientProxy'] = []
 
     class ClientProxy:
         """
@@ -32,47 +32,49 @@ def ensure_httpx_close():
         where a client is reused, we need to be able to reuse the client even after closing it.
         """
 
-        client_constructor: Callable
-        args: tuple
-        kwargs: dict
-        client: httpx.Client
+        client_constructor: Callable[..., Any]
+        args: tuple[Any, ...]
+        kwargs: dict[str, Any]
+        client: httpx.Client | None
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             self.args = args
             self.kwargs = kwargs
             self.client = wrapped_class(*self.args, **self.kwargs)
             proxys.append(self)
 
-        def __getattr__(self, name):
+        def __getattr__(self, name: str) -> Any:
             # Invoke a method on the proxied client - create one if required
             if self.client is None:
                 self.client = wrapped_class(*self.args, **self.kwargs)
             return getattr(self.client, name)
 
-        def close(self):
+        def close(self) -> None:
             # Close the client if it is open
             if self.client:
                 self.client.close()
                 self.client = None
 
-        def __iter__(self, *args, **kwargs):
+        def __iter__(self) -> Iterator[Any]:
             # We have to override this as debuggers invoke it causing the client to reopen
-            if self.client:
-                return self.client.iter(*args, **kwargs)
-            return object.__getattribute__(self, 'iter')(*args, **kwargs)
+            # Just return an empty iterator as this is only called by debuggers
+            return iter([])
 
         @property
-        def is_closed(self):
+        def is_closed(self) -> bool:
             # Check if closed
             if self.client is None:
                 return True
-            return self.client.is_closed
+            return bool(self.client.is_closed)
 
-    httpx.Client = ClientProxy
+    # Monkey patching
+    original_client = httpx.Client
+    setattr(httpx, 'Client', ClientProxy)
     try:
         yield
     finally:
-        httpx.Client = wrapped_class
+        # Restoring the original class
+        setattr(httpx, 'Client', original_client)
         while proxys:
             proxy = proxys.pop()
             proxy.close()
