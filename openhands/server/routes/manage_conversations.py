@@ -75,6 +75,7 @@ class ConversationResponse(BaseModel):
     status: str
     conversation_id: str
     message: str | None = None
+    conversation_status: ConversationStatus | None = None
 
 
 @app.post('/conversations')
@@ -129,7 +130,7 @@ async def new_conversation(
             await provider_handler.verify_repo_provider(repository, git_provider)
 
         conversation_id = getattr(data, 'conversation_id', None) or uuid.uuid4().hex
-        await create_new_conversation(
+        agent_loop_info = await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -147,6 +148,7 @@ async def new_conversation(
         return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
+            conversation_status=agent_loop_info.status,
         )
     except MissingSettingsError as e:
         return JSONResponse(
@@ -334,7 +336,7 @@ async def start_conversation(
         return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
-            message=agent_loop_info.status.value,
+            conversation_status=agent_loop_info.status,
         )
     except Exception as e:
         logger.error(
@@ -354,6 +356,7 @@ async def start_conversation(
 @app.post('/conversations/{conversation_id}/stop')
 async def stop_conversation(
     conversation_id: str,
+    user_id: str = Depends(get_user_id),
 ) -> ConversationResponse:
     """Stop an agent loop for a conversation.
 
@@ -364,13 +367,15 @@ async def stop_conversation(
 
     try:
         # Check if the conversation is running
-        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+        agent_loop_info = await conversation_manager.get_agent_loop_info(user_id=user_id, filter_to_sids={conversation_id})
+        conversation_status = agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
 
-        if not is_running:
+        if conversation_status not in (ConversationStatus.STARTING, ConversationStatus.RUNNING):
             return ConversationResponse(
                 status='ok',
                 conversation_id=conversation_id,
                 message='Conversation was not running',
+                conversation_status=conversation_status,
             )
 
         # Stop the conversation
@@ -380,6 +385,7 @@ async def stop_conversation(
             status='ok',
             conversation_id=conversation_id,
             message='Conversation stopped successfully',
+            conversation_status=conversation_status,
         )
     except Exception as e:
         logger.error(
