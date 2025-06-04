@@ -73,6 +73,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install --with dev,test,runtime
       - name: Run Windows unit tests
-        run: poetry run pytest -svv tests/unit/test_windows_bash.py
+        run: DEBUG=1 poetry run pytest -svv tests/unit/test_windows_bash.py
       - name: Run Windows runtime tests with LocalRuntime
-        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
+        run: $env:TEST_RUNTIME="local"; DEBUG=1 poetry run pytest -svv tests/runtime/test_bash.py
+
