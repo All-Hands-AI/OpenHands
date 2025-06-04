@@ -142,7 +142,6 @@ class OpenHands {
    */
   static async getWebHosts(conversationId: string): Promise<string[]> {
     const url = `${this.getConversationUrl(conversationId)}/web-hosts`;
-    console.log("TRACE:getWebHosts", url);
     const response = await openHands.get(url, {
       headers: this.getConversationHeaders(),
     });
