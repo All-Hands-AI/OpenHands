@@ -28,5 +28,5 @@ export function EmailVerificationGuard({
     }
   }, [settings?.EMAIL_VERIFIED, pathname, navigate, isLoading]);
 
-  return <>{children}</>;
+  return children;
 }

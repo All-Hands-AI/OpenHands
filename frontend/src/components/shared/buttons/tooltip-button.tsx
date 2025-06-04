@@ -82,7 +82,7 @@ export function TooltipButton({
           "opacity-50 cursor-not-allowed",
           className,
         )}
-        disabled={true}
+        disabled
       >
         {children}
       </button>
@@ -108,7 +108,7 @@ export function TooltipButton({
         aria-label={ariaLabel}
         data-testid={testId}
         className={cn("opacity-50 cursor-not-allowed", className)}
-        disabled={true}
+        disabled
       >
         {children}
       </button>
