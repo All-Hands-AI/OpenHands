@@ -436,8 +436,7 @@ class ActionExecutionClient(Runtime):
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
                     url=self.action_execution_server_url.rstrip('/') + '/sse',
-                    # No API key by default. Child runtime can override this when appropriate
-                    api_key=None,
+                    api_key=self.session_api_key,
                 )
             )
 
@@ -465,7 +464,7 @@ class ActionExecutionClient(Runtime):
         )
 
         # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, self.sid)
+        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid)
 
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
