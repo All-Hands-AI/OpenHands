@@ -32,11 +32,15 @@ function UserSettingsScreen() {
 
     try {
       setIsSaving(true);
-      await openHands.post("/api/email", {
-        email,
-      }, {
-        withCredentials: true // Allow cookies to be set from the response
-      });
+      await openHands.post(
+        "/api/email",
+        {
+          email,
+        },
+        {
+          withCredentials: true, // Allow cookies to be set from the response
+        },
+      );
 
       setOriginalEmail(email);
       setSaveSuccess(true);
@@ -57,9 +61,13 @@ function UserSettingsScreen() {
       setIsResendingVerification(true);
       setResendSuccess(false);
 
-      await openHands.put("/api/email/verify", {}, {
-        withCredentials: true // Allow cookies to be set from the response
-      });
+      await openHands.put(
+        "/api/email/verify",
+        {},
+        {
+          withCredentials: true, // Allow cookies to be set from the response
+        },
+      );
 
       setResendSuccess(true);
     } catch (error) {
@@ -108,20 +116,30 @@ function UserSettingsScreen() {
                   {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  disabled={isResendingVerification}
-                  className={`px-4 py-2 rounded ${
-                    !isResendingVerification
-                      ? "bg-primary text-white hover:bg-primary-dark"
-                      : "bg-tertiary text-secondary cursor-not-allowed"
-                  }`}
-                  data-testid="resend-verification-button"
-                >
-                  {isResendingVerification ? t("SETTINGS$SENDING") : t("SETTINGS$RESEND_VERIFICATION")}
-                </button>
+                {settings?.EMAIL_VERIFIED === false && (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isResendingVerification}
+                    className={`px-4 py-2 rounded ${
+                      !isResendingVerification
+                        ? "bg-primary text-white hover:bg-primary-dark"
+                        : "bg-tertiary text-secondary cursor-not-allowed"
+                    }`}
+                    data-testid="resend-verification-button"
+                  >
+                    {isResendingVerification
+                      ? t("SETTINGS$SENDING")
+                      : t("SETTINGS$RESEND_VERIFICATION")}
+                  </button>
+                )}
               </div>
+
+              {settings?.EMAIL_VERIFIED === false && (
+                <div className="text-sm text-red-500 mt-2">
+                  {t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}
+                </div>
+              )}
 
               {saveSuccess && (
                 <div className="text-sm text-green-500 mt-1">
