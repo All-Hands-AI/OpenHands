@@ -1,4 +1,5 @@
 import asyncio
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -60,7 +61,9 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
     conversation_instructions: str | None = None
-    conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
+    if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
+        conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
 
     model_config = {'extra': 'forbid'}
 
@@ -122,7 +125,7 @@ async def new_conversation(
             # Check against git_provider, otherwise check all provider apis
             await provider_handler.verify_repo_provider(repository, git_provider)
 
-        conversation_id = data.conversation_id
+        conversation_id = getattr(data, 'conversation_id', None) or uuid.uuid4().hex
         await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
