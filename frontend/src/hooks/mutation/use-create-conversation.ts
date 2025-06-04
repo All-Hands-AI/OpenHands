@@ -9,7 +9,7 @@ interface CreateConversationVariables {
   repository?: {
     name: string;
     gitProvider: Provider;
-    branch: string;
+    branch?: string;
   };
   suggestedTask?: SuggestedTask;
   conversationInstructions?: string;

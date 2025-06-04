@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
@@ -25,6 +26,7 @@ interface RepositorySelectionFormProps {
 export function RepositorySelectionForm({
   onRepoSelection,
 }: RepositorySelectionFormProps) {
+  const navigate = useNavigate();
   const [selectedRepository, setSelectedRepository] =
     React.useState<GitRepository | null>(null);
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
@@ -211,13 +213,19 @@ export function RepositorySelectionForm({
           isRepositoriesError
         }
         onClick={() =>
-          createConversation({
-            repository: {
-              name: selectedRepository?.full_name || "",
-              gitProvider: selectedRepository?.git_provider || "github",
-              branch: selectedBranch?.name || "main",
+          createConversation(
+            {
+              repository: {
+                name: selectedRepository?.full_name || "",
+                gitProvider: selectedRepository?.git_provider || "github",
+                branch: selectedBranch?.name || "main",
+              },
             },
-          })
+            {
+              onSuccess: (data) =>
+                navigate(`/conversations/${data.conversation_id}`),
+            },
+          )
         }
       >
         {!isCreatingConversation && "Launch"}

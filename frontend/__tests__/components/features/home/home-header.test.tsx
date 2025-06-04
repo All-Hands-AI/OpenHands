@@ -17,12 +17,12 @@ vi.mock("react-i18next", async () => {
       t: (key: string) => {
         // Return a mock translation for the test
         const translations: Record<string, string> = {
-          "HOME$LETS_START_BUILDING": "Let's start building",
-          "HOME$LAUNCH_FROM_SCRATCH": "Launch from Scratch",
-          "HOME$LOADING": "Loading...",
-          "HOME$OPENHANDS_DESCRIPTION": "OpenHands is an AI software engineer",
-          "HOME$NOT_SURE_HOW_TO_START": "Not sure how to start?",
-          "HOME$READ_THIS": "Read this"
+          HOME$LETS_START_BUILDING: "Let's start building",
+          HOME$LAUNCH_FROM_SCRATCH: "Launch from Scratch",
+          HOME$LOADING: "Loading...",
+          HOME$OPENHANDS_DESCRIPTION: "OpenHands is an AI software engineer",
+          HOME$NOT_SURE_HOW_TO_START: "Not sure how to start?",
+          HOME$READ_THIS: "Read this",
         };
         return translations[key] || key;
       },
@@ -69,7 +69,8 @@ describe("HomeHeader", () => {
       undefined,
       undefined,
       undefined,
-      [],
+      undefined,
+      undefined,
       undefined,
       undefined,
       undefined,
