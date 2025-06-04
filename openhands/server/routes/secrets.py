@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -73,31 +74,62 @@ async def check_provider_tokens(
 ) -> str:
     msg = ''
     if incoming_provider_tokens.provider_tokens:
+        logger.info('Validating provider tokens')
         # Determine whether tokens are valid
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
-            if token_value.token:
-                confirmed_token_type = await validate_provider_token(
-                    token_value.token, token_value.host
-                )  # FE always sends latest host
-                msg = process_token_validation_result(confirmed_token_type, token_type)
+            logger.info(f'Checking token for provider type: {token_type}')
+            try:
+                if token_value.token:
+                    logger.info(
+                        f'Validating new token for {token_type} with host {token_value.host}'
+                    )
+                    confirmed_token_type = await validate_provider_token(
+                        token_value.token, token_value.host
+                    )  # FE always sends latest host
 
-            existing_token = (
-                existing_provider_tokens.get(token_type, None)
-                if existing_provider_tokens
-                else None
-            )
-            if (
-                existing_token
-                and (existing_token.host != token_value.host)
-                and existing_token.token
-            ):
-                confirmed_token_type = await validate_provider_token(
-                    existing_token.token, token_value.host
-                )  # Host has changed, check it against existing token
-                if not confirmed_token_type or confirmed_token_type != token_type:
+                    if not confirmed_token_type:
+                        logger.warning(
+                            f'Token validation failed for {token_type}: Invalid token'
+                        )
+                    elif confirmed_token_type != token_type:
+                        logger.warning(
+                            f'Token validation failed for {token_type}: Token is for {confirmed_token_type}'
+                        )
+
                     msg = process_token_validation_result(
                         confirmed_token_type, token_type
                     )
+
+                existing_token = (
+                    existing_provider_tokens.get(token_type, None)
+                    if existing_provider_tokens
+                    else None
+                )
+                if (
+                    existing_token
+                    and (existing_token.host != token_value.host)
+                    and existing_token.token
+                ):
+                    logger.info(
+                        f'Host changed for {token_type} from {existing_token.host} to {token_value.host}, validating existing token'
+                    )
+                    confirmed_token_type = await validate_provider_token(
+                        existing_token.token, token_value.host
+                    )  # Host has changed, check it against existing token
+
+                    if not confirmed_token_type or confirmed_token_type != token_type:
+                        logger.warning(
+                            f'Existing token validation failed for {token_type} with new host {token_value.host}'
+                        )
+                        msg = process_token_validation_result(
+                            confirmed_token_type, token_type
+                        )
+            except Exception as e:
+                logger.error(
+                    f'Error during token validation for {token_type}: {e}',
+                    exc_info=True,
+                )
+                msg = f'Error validating {token_type} token: {str(e)}'
 
     return msg
 
@@ -108,24 +140,54 @@ async def store_provider_tokens(
     secrets_store: SecretsStore = Depends(get_secrets_store),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
 ) -> JSONResponse:
-    provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
-    if provider_err_msg:
-        # We don't have direct access to user_id here, but we can log the provider info
-        logger.info(
-            f'Returning 401 Unauthorized - Provider token error: {provider_err_msg}'
-        )
+    logger.info('Processing add-git-providers request')
+
+    try:
+        provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
+        if provider_err_msg:
+            # We don't have direct access to user_id here, but we can log the provider info
+            logger.warning(
+                f'Returning 401 Unauthorized - Provider token error: {provider_err_msg}'
+            )
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': provider_err_msg},
+            )
+    except httpx.HTTPStatusError as e:
+        error_msg = f'HTTP status error during token validation: {e.response.status_code} - {e.response.reason_phrase}'
+        logger.error(error_msg)
+        if hasattr(e.response, 'text'):
+            logger.error(f'Response content: {e.response.text}')
         return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': provider_err_msg},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
+    except httpx.HTTPError as e:
+        error_msg = f'HTTP error during token validation: {type(e).__name__} - {str(e)}'
+        logger.error(error_msg)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
+    except Exception as e:
+        error_msg = f'Unexpected error during token validation: {str(e)}'
+        logger.error(error_msg, exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
         )
 
     try:
         user_secrets = await secrets_store.load()
         if not user_secrets:
             user_secrets = UserSecrets()
+            logger.info('Creating new UserSecrets as none exists')
 
         if provider_info.provider_tokens:
             existing_providers = [provider for provider in user_secrets.provider_tokens]
+            logger.info(
+                f'Processing provider tokens. Existing providers: {existing_providers}'
+            )
 
             # Merge incoming settings store with the existing one
             for provider, token_value in list(provider_info.provider_tokens.items()):
@@ -133,22 +195,27 @@ async def store_provider_tokens(
                     existing_token = user_secrets.provider_tokens.get(provider)
                     if existing_token and existing_token.token:
                         provider_info.provider_tokens[provider] = existing_token
+                        logger.info(f'Using existing token for provider {provider}')
 
                 provider_info.provider_tokens[provider] = provider_info.provider_tokens[
                     provider
                 ].model_copy(update={'host': token_value.host})
+                logger.info(
+                    f'Updated host for provider {provider} to {token_value.host}'
+                )
 
         updated_secrets = user_secrets.model_copy(
             update={'provider_tokens': provider_info.provider_tokens}
         )
         await secrets_store.store(updated_secrets)
+        logger.info('Successfully stored updated provider tokens')
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Git providers stored'},
         )
     except Exception as e:
-        logger.warning(f'Something went wrong storing git providers: {e}')
+        logger.error(f'Error storing git providers: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong storing git providers'},
