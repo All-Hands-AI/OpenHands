@@ -50,13 +50,10 @@ class View(BaseModel):
         for event in events:
             if isinstance(event, CondensationAction):
                 forgotten_event_ids.update(event.forgotten)
+                # Make sure we also forget the condensation action itself
+                forgotten_event_ids.add(event.id)
 
-        kept_events = [
-            event
-            for event in events
-            if event.id not in forgotten_event_ids
-            and not isinstance(event, CondensationAction)
-        ]
+        kept_events = [event for event in events if event.id not in forgotten_event_ids]
 
         # If we have a summary, insert it at the specified offset.
         summary: str | None = None
