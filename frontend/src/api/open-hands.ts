@@ -35,7 +35,6 @@ class OpenHands {
   static setCurrentConversation(
     currentConversation: Conversation | null,
   ): void {
-    console.log("TRACE:setCurrentConversation", currentConversation);
     this.currentConversation = currentConversation;
   }
 
