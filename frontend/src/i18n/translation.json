@@ -8975,6 +8975,22 @@
         "de": "E-Mail erfolgreich gespeichert",
         "uk": "Електронну пошту успішно збережено"
     },
+    "SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY": {
+        "en": "Your email has been verified successfully!",
+        "ja": "メールアドレスの確認が完了しました！",
+        "zh-CN": "您的邮箱已成功验证！",
+        "zh-TW": "您的郵箱已成功驗證！",
+        "ko-KR": "이메일이 성공적으로 인증되었습니다!",
+        "no": "E-posten din er bekreftet!",
+        "it": "La tua email è stata verificata con successo!",
+        "pt": "Seu email foi verificado com sucesso!",
+        "es": "¡Tu correo electrónico ha sido verificado con éxito!",
+        "ar": "تم التحقق من بريدك الإلكتروني بنجاح!",
+        "fr": "Votre email a été vérifié avec succès !",
+        "tr": "E-postanız başarıyla doğrulandı!",
+        "de": "Ihre E-Mail wurde erfolgreich verifiziert!",
+        "uk": "Вашу електронну пошту успішно підтверджено!"
+    },
     "SETTINGS$FAILED_TO_SAVE_EMAIL": {
         "en": "Failed to save email",
         "ja": "メールの保存に失敗しました",

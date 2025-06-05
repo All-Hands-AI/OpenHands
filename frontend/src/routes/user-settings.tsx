@@ -22,10 +22,10 @@ function UserSettingsScreen() {
       setOriginalEmail(settings.EMAIL);
     }
   }, [settings?.EMAIL]);
-  
+
   // Track previous verification status to detect changes
   const prevVerificationStatusRef = useRef<boolean | undefined>(undefined);
-  
+
   // Set up polling for email verification status when email is not verified
   useEffect(() => {
     // Clear any existing interval
@@ -33,7 +33,7 @@ function UserSettingsScreen() {
       window.clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
-    
+
     // Check if verification status changed from false to true
     if (prevVerificationStatusRef.current === false && settings?.EMAIL_VERIFIED === true) {
       // Show success message when email is verified
@@ -44,10 +44,10 @@ function UserSettingsScreen() {
         queryClient.invalidateQueries({ queryKey: ["settings"] });
       }, 2000);
     }
-    
+
     // Update previous verification status reference
     prevVerificationStatusRef.current = settings?.EMAIL_VERIFIED;
-    
+
     // Only start polling if email is not verified
     if (settings?.EMAIL_VERIFIED === false) {
       // Check for email verification every 5 seconds
@@ -56,7 +56,7 @@ function UserSettingsScreen() {
         refetch();
       }, 5000);
     }
-    
+
     // Clean up interval on unmount or when email becomes verified
     return () => {
       if (pollingIntervalRef.current) {
@@ -199,9 +199,7 @@ function UserSettingsScreen() {
               {saveSuccess && (
                 <div className="text-sm text-green-500 mt-1">
                   {settings?.EMAIL_VERIFIED === true && prevVerificationStatusRef.current === false
-                    ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY", {
-                        defaultValue: "Your email has been verified successfully! You will be redirected shortly."
-                      })
+                    ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
                     : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY")}
                 </div>
               )}
