@@ -83,7 +83,7 @@ async def new_conversation(
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
-) -> ConversationResponse | JSONResponse:
+) -> ConversationResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -314,7 +314,7 @@ async def start_conversation(
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
-) -> ConversationResponse | JSONResponse:
+) -> ConversationResponse:
     """Start an agent loop for a conversation.
 
     This endpoint calls the conversation_manager's maybe_start_agent_loop method
@@ -368,7 +368,7 @@ async def start_conversation(
 async def stop_conversation(
     conversation_id: str,
     user_id: str = Depends(get_user_id),
-) -> ConversationResponse | JSONResponse:
+) -> ConversationResponse:
     """Stop an agent loop for a conversation.
 
     This endpoint calls the conversation_manager's close_session method
