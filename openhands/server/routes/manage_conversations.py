@@ -1,5 +1,6 @@
 import itertools
 import re
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -39,6 +40,8 @@ from openhands.server.data_models.conversation_info_result_set import (
 )
 from openhands.server.services.conversation_service import create_new_conversation
 from openhands.server.session.conversation import ServerConversation
+from openhands.server.dependencies import get_dependencies
+from openhands.server.services.conversation_service import create_new_conversation
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
@@ -51,21 +54,23 @@ from openhands.server.user_auth import (
     get_user_id,
     get_user_secrets,
     get_user_settings_store,
+    get_user_settings,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_conversation_state, get_conversation_store
+from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 class InitSessionRequest(BaseModel):
@@ -77,15 +82,18 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
     conversation_instructions: str | None = None
-    conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
+    if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
+        conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
 
     model_config = {'extra': 'forbid'}
 
 
-class InitSessionResponse(BaseModel):
+class ConversationResponse(BaseModel):
     status: str
     conversation_id: str
     message: str | None = None
+    conversation_status: ConversationStatus | None = None
 
 
 @app.post('/conversations')
@@ -95,7 +103,7 @@ async def new_conversation(
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
-) -> InitSessionResponse:
+) -> ConversationResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -139,8 +147,8 @@ async def new_conversation(
             # Check against git_provider, otherwise check all provider apis
             await provider_handler.verify_repo_provider(repository, git_provider)
 
-        conversation_id = data.conversation_id
-        await create_new_conversation(
+        conversation_id = getattr(data, 'conversation_id', None) or uuid.uuid4().hex
+        agent_loop_info = await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -155,9 +163,10 @@ async def new_conversation(
             conversation_id=conversation_id,
         )
 
-        return InitSessionResponse(
+        return ConversationResponse(
             status='ok',
             conversation_id=conversation_id,
+            conversation_status=agent_loop_info.status,
         )
     except MissingSettingsError as e:
         return JSONResponse(
@@ -286,7 +295,7 @@ async def delete_conversation(
 async def get_prompt(
     event_id: int,
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation: ServerConversation | None = Depends(get_conversation_state),
+    conversation: ServerConversation | None = Depends(get_conversation)
 ):
     if conversation is None:
         return JSONResponse(
@@ -368,6 +377,8 @@ async def _get_conversation_info(
             last_updated_at=conversation.last_updated_at,
             created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
+            selected_branch=conversation.selected_branch,
+            git_provider=conversation.git_provider,
             status=(
                 agent_loop_info.status
                 if agent_loop_info
@@ -385,6 +396,111 @@ async def _get_conversation_info(
             extra={'session_id': conversation.conversation_id},
         )
         return None
+
+
+@app.post('/conversations/{conversation_id}/start')
+async def start_conversation(
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+    settings: Settings = Depends(get_user_settings),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+) -> ConversationResponse:
+    """Start an agent loop for a conversation.
+
+    This endpoint calls the conversation_manager's maybe_start_agent_loop method
+    to start a conversation. If the conversation is already running, it will
+    return the existing agent loop info.
+    """
+    logger.info(f'Starting conversation: {conversation_id}')
+
+    try:
+
+        # Check that the conversation exists
+        try:
+            await conversation_store.get_metadata(conversation_id)
+        except Exception:
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'conversation_id': conversation_id,
+                },
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Start the agent loop
+        agent_loop_info = await conversation_manager.maybe_start_agent_loop(
+            sid=conversation_id,
+            settings=settings,
+            user_id=user_id,
+        )
+
+        return ConversationResponse(
+            status='ok',
+            conversation_id=conversation_id,
+            conversation_status=agent_loop_info.status,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error starting conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'conversation_id': conversation_id,
+                'message': f'Failed to start conversation: {str(e)}',
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@app.post('/conversations/{conversation_id}/stop')
+async def stop_conversation(
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+) -> ConversationResponse:
+    """Stop an agent loop for a conversation.
+
+    This endpoint calls the conversation_manager's close_session method
+    to stop a conversation.
+    """
+    logger.info(f'Stopping conversation: {conversation_id}')
+
+    try:
+        # Check if the conversation is running
+        agent_loop_info = await conversation_manager.get_agent_loop_info(user_id=user_id, filter_to_sids={conversation_id})
+        conversation_status = agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
+
+        if conversation_status not in (ConversationStatus.STARTING, ConversationStatus.RUNNING):
+            return ConversationResponse(
+                status='ok',
+                conversation_id=conversation_id,
+                message='Conversation was not running',
+                conversation_status=conversation_status,
+            )
+
+        # Stop the conversation
+        await conversation_manager.close_session(conversation_id)
+
+        return ConversationResponse(
+            status='ok',
+            conversation_id=conversation_id,
+            message='Conversation stopped successfully',
+            conversation_status=conversation_status,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error stopping conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'conversation_id': conversation_id,
+                'message': f'Failed to stop conversation: {str(e)}',
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:

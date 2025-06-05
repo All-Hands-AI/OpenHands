@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 
+from openhands.integrations.service_types import ProviderType
+
 
 class ConversationTrigger(Enum):
     RESOLVER = 'resolver'
@@ -17,6 +19,7 @@ class ConversationMetadata:
     selected_repository: str | None
     user_id: str | None = None
     selected_branch: str | None = None
+    git_provider: ProviderType | None = None
     title: str | None = None
     last_updated_at: datetime | None = None
     trigger: ConversationTrigger | None = None

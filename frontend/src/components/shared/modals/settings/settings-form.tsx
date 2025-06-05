@@ -96,7 +96,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             testId="llm-api-key-help-anchor"
             text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
             linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-            href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+            href="https://docs.all-hands.dev/usage/installation#getting-an-api-key"
           />
         </div>
 

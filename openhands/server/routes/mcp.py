@@ -2,6 +2,7 @@ import re
 from typing import Annotated
 
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
 from pydantic import Field
 
@@ -10,6 +11,7 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
+from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import ConversationStoreImpl, config
 from openhands.server.user_auth import (
     get_access_token,
@@ -18,8 +20,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP('mcp')
-
+mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True)
 
 async def save_pr_metadata(
     user_id: str, conversation_id: str, tool_result: str
@@ -57,7 +58,7 @@ async def create_pr(
     title: Annotated[str, Field(description='PR Title')],
     body: Annotated[str | None, Field(description='PR body')],
 ) -> str:
-    """Open a draft PR in GitHub"""
+    """Open a PR in GitHub"""
 
     logger.info('Calling OpenHands MCP create_pr')
 
@@ -96,7 +97,8 @@ async def create_pr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        response = str(e)
+        error = f"Error creating pull request: {e}"
+        raise ToolError(str(error))
 
     return response
 
@@ -112,7 +114,7 @@ async def create_mr(
     title: Annotated[str, Field(description='MR Title')],
     description: Annotated[str | None, Field(description='MR description')],
 ) -> str:
-    """Open a draft MR in GitLab"""
+    """Open a MR in GitLab"""
 
     logger.info('Calling OpenHands MCP create_mr')
 
@@ -151,6 +153,7 @@ async def create_mr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        response = str(e)
+        error = f"Error creating merge request: {e}"
+        raise ToolError(str(error))
 
     return response

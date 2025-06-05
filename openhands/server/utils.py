@@ -1,10 +1,9 @@
 import uuid
 
-from fastapi import Request
+from fastapi import Depends, Request
 
-from openhands.server.session.conversation import ServerConversation
-from openhands.server.shared import ConversationStoreImpl, config
-from openhands.server.user_auth import get_user_auth
+from openhands.server.shared import ConversationStoreImpl, config, conversation_manager
+from openhands.server.user_auth import get_user_id
 from openhands.storage.conversation.conversation_store import ConversationStore
 
 
@@ -14,25 +13,10 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     )
     if conversation_store:
         return conversation_store
-    user_auth = await get_user_auth(request)
-    user_id = await user_auth.get_user_id()
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     request.state.conversation_store = conversation_store
     return conversation_store
-
-
-def get_conversation_state(request: Request) -> ServerConversation | None:
-    """
-    Get the conversation object from the request state.
-
-    Args:
-        request: The FastAPI request object.
-
-    Returns:
-        The conversation object.
-    """
-    conversation = getattr(request.state, 'conversation', None)
-    return conversation
 
 
 async def generate_unique_conversation_id(
@@ -42,3 +26,16 @@ async def generate_unique_conversation_id(
     while await conversation_store.exists(conversation_id):
         conversation_id = uuid.uuid4().hex
     return conversation_id
+
+
+async def get_conversation(
+    conversation_id: str, user_id: str | None = Depends(get_user_id)
+):
+    """Grabs conversation id set by middleware. Adds the conversation_id to the openapi schema."""
+    conversation = await conversation_manager.attach_to_conversation(
+        conversation_id, user_id
+    )
+    try:
+        yield conversation
+    finally:
+        await conversation_manager.detach_from_conversation(conversation)
