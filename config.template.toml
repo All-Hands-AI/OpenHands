@@ -206,6 +206,22 @@ model = "gpt-4o"
 api_key = ""
 model = "gpt-4o"
 
+# DeepSeek R1-0528 configuration - cost-effective alternative
+[llm.deepseek-r1]
+api_key = ""
+model = "deepseek-r1-0528"
+base_url = "https://api.deepseek.com"
+temperature = 0.0
+max_output_tokens = 4096
+timeout = 60
+# DeepSeek R1 is very cost-effective: ~$0.014 per 1K input tokens, $0.028 per 1K output tokens
+
+# Example fallback configuration with DeepSeek as backup
+[llm.primary-with-fallback]
+api_key = ""
+model = "gpt-4o"
+# This would be used with the fallback manager to automatically switch to DeepSeek on failures
+
 
 #################################### Agent ###################################
 # Configuration for agents (group name starts with 'agent')
