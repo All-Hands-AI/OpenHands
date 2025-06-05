@@ -8927,21 +8927,21 @@
         "de": "E-Mail",
         "uk": "Електронна пошта"
     },
-    "SETTINGS$USER_EMAIL_NOT_AVAILABLE": {
-        "en": "Email not available",
-        "ja": "メールは利用できません",
-        "zh-CN": "邮箱不可用",
-        "zh-TW": "郵箱不可用",
-        "ko-KR": "이메일을 사용할 수 없습니다",
-        "no": "E-post ikke tilgjengelig",
-        "it": "Email non disponibile",
-        "pt": "Email não disponível",
-        "es": "Correo electrónico no disponible",
-        "ar": "البريد الإلكتروني غير متوفر",
-        "fr": "Email non disponible",
-        "tr": "E-posta mevcut değil",
-        "de": "E-Mail nicht verfügbar",
-        "uk": "Електронна пошта недоступна"
+    "SETTINGS$USER_EMAIL_LOADING": {
+        "en": "Loading...",
+        "ja": "読み込み中...",
+        "zh-CN": "加载中...",
+        "zh-TW": "加載中...",
+        "ko-KR": "로딩 중...",
+        "no": "Laster...",
+        "it": "Caricamento...",
+        "pt": "Carregando...",
+        "es": "Cargando...",
+        "ar": "جار التحميل...",
+        "fr": "Chargement...",
+        "tr": "Yükleniyor...",
+        "de": "Wird geladen...",
+        "uk": "Завантаження..."
     },
     "SETTINGS$SAVE": {
         "en": "Save",

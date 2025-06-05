@@ -143,7 +143,7 @@ function UserSettingsScreen() {
                   value={email}
                   onChange={handleEmailChange}
                   className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary flex-grow"
-                  placeholder={t("SETTINGS$USER_EMAIL_NOT_AVAILABLE")}
+                  placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
                   data-testid="email-input"
                 />
               </div>
