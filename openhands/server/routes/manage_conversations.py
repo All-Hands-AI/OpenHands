@@ -57,7 +57,7 @@ from openhands.server.user_auth import (
     get_user_settings,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_conversation_store
+from openhands.server.utils import get_conversation_store, get_conversation as get_conversation_object
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -295,7 +295,7 @@ async def delete_conversation(
 async def get_prompt(
     event_id: int,
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation: ServerConversation | None = Depends(get_conversation)
+    conversation: ServerConversation | None = Depends(get_conversation_object)
 ):
     if conversation is None:
         return JSONResponse(
