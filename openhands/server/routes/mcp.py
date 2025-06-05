@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Annotated
 
@@ -10,17 +11,40 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
-from openhands.integrations.service_types import ProviderType
+from openhands.integrations.service_types import GitService, ProviderType
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import ConversationStoreImpl, config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_access_token,
     get_provider_tokens,
     get_user_id,
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.server.shared import server_config
 
 mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True)
+
+HOST = f'https://{os.getenv('WEB_HOST', 'app.all-hands.dev').strip()}'
+CONVO_URL = HOST + '/{}'
+
+async def get_convo_link(
+    service: GitService,
+    conversation_id: str,
+    body: str
+) -> str:
+
+    if server_config.APP_MODE != AppMode.SAAS:
+        return body
+
+    user = await service.get_user()
+    username = user.name
+    convo_url = CONVO_URL.format(conversation_id)
+    convo_link = f"@{username} can click here to [continue refining the PR]({convo_url})"
+    body += f'\n\n{convo_link}'
+    return body
+
+
 
 async def save_pr_metadata(
     user_id: str, conversation_id: str, tool_result: str
@@ -85,6 +109,11 @@ async def create_pr(
     )
 
     try:
+        body = await get_convo_link(github_service, conversation_id, body or "")
+    except Exception as e:
+        logger.warning(f'Failed to append convo link: {e}')
+
+    try:
         response = await github_service.create_pr(
             repo_name=repo_name,
             source_branch=source_branch,
@@ -132,7 +161,7 @@ async def create_mr(
         else ProviderToken()
     )
 
-    github_service = GitLabServiceImpl(
+    gitlab_service = GitLabServiceImpl(
         user_id=github_token.user_id,
         external_auth_id=user_id,
         external_auth_token=access_token,
@@ -141,7 +170,13 @@ async def create_mr(
     )
 
     try:
-        response = await github_service.create_mr(
+        body: str = await get_convo_link(gitlab_service, conversation_id, body or "")
+    except Exception as e:
+        logger.warning(f'Failed to append convo link: {e}')
+
+
+    try:
+        response = await gitlab_service.create_mr(
             id=id,
             source_branch=source_branch,
             target_branch=target_branch,
