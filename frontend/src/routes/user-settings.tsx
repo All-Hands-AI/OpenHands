@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
 import { openHands } from "#/api/open-hands-axios";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 function EmailInputSection({
   email,
@@ -88,30 +89,7 @@ function VerificationAlert() {
   );
 }
 
-function SaveSuccessMessage({
-  emailVerified,
-  wasPreviouslyUnverified,
-}: {
-  emailVerified?: boolean;
-  wasPreviouslyUnverified: boolean;
-}) {
-  const { t } = useTranslation();
-  const message =
-    emailVerified && wasPreviouslyUnverified
-      ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
-      : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY");
-
-  return <div className="text-sm text-green-500 mt-1">{message}</div>;
-}
-
-function ResendSuccessMessage() {
-  const { t } = useTranslation();
-  return (
-    <div className="text-sm text-green-500 mt-1">
-      {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
-    </div>
-  );
-}
+// These components have been replaced with toast notifications
 
 function UserSettingsScreen() {
   const { t } = useTranslation();
@@ -119,9 +97,7 @@ function UserSettingsScreen() {
   const [email, setEmail] = useState("");
   const [originalEmail, setOriginalEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
   const queryClient = useQueryClient();
   const pollingIntervalRef = useRef<number | null>(null);
   const prevVerificationStatusRef = useRef<boolean | undefined>(undefined);
@@ -143,8 +119,8 @@ function UserSettingsScreen() {
       prevVerificationStatusRef.current === false &&
       settings?.EMAIL_VERIFIED === true
     ) {
-      setSaveSuccess(true);
-      setResendSuccess(false);
+      // Display toast notification instead of setting state
+      displaySuccessToast(t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY"));
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["settings"] });
       }, 2000);
@@ -164,11 +140,10 @@ function UserSettingsScreen() {
         pollingIntervalRef.current = null;
       }
     };
-  }, [settings?.EMAIL_VERIFIED, refetch, queryClient]);
+  }, [settings?.EMAIL_VERIFIED, refetch, queryClient, t]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
-    setSaveSuccess(false);
   };
 
   const handleSaveEmail = async () => {
@@ -177,7 +152,8 @@ function UserSettingsScreen() {
       setIsSaving(true);
       await openHands.post("/api/email", { email }, { withCredentials: true });
       setOriginalEmail(email);
-      setSaveSuccess(true);
+      // Display toast notification instead of setting state
+      displaySuccessToast(t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY"));
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -190,9 +166,9 @@ function UserSettingsScreen() {
   const handleResendVerification = async () => {
     try {
       setIsResendingVerification(true);
-      setResendSuccess(false);
       await openHands.put("/api/email/verify", {}, { withCredentials: true });
-      setResendSuccess(true);
+      // Display toast notification instead of setting state
+      displaySuccessToast(t("SETTINGS$VERIFICATION_EMAIL_SENT"));
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(t("SETTINGS$FAILED_TO_RESEND_VERIFICATION"), error);
@@ -220,15 +196,6 @@ function UserSettingsScreen() {
             emailVerified={settings?.EMAIL_VERIFIED}
           >
             {settings?.EMAIL_VERIFIED === false && <VerificationAlert />}
-            {saveSuccess && (
-              <SaveSuccessMessage
-                emailVerified={settings?.EMAIL_VERIFIED}
-                wasPreviouslyUnverified={
-                  prevVerificationStatusRef.current === false
-                }
-              />
-            )}
-            {resendSuccess && <ResendSuccessMessage />}
           </EmailInputSection>
         )}
       </div>
