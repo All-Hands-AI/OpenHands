@@ -43,7 +43,7 @@ default, it is set to 1.
 
 **Skipping errors on build**
 
-To continue evaluation when an instance reaches maximum retries instead of failing the entire run, set `export EVAL_SKIP_ERRORS=true`
+For debugging purposes, you can set `export EVAL_SKIP_ERRORS=true` to continue evaluation even when instances reach maximum build retries. After evaluation completes, check `maximum_retries_exceeded.txt` for a list of failed instances, fix those images, and then run the evaluation again with `export EVAL_SKIP_ERRORS=false`.
 
 The results will be generated in evaluation/evaluation_outputs/outputs/XXX/CodeActAgent/YYY/output.jsonl, you can refer to the [example](examples/output.jsonl).
 

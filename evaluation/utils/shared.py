@@ -306,15 +306,13 @@ def check_maximum_retries_exceeded(eval_output_dir):
 
     retries_file_path = os.path.join(eval_output_dir, 'maximum_retries_exceeded.txt')
     if os.path.exists(retries_file_path):
-        with open(retries_file_path, 'r') as f:
-            content = f.read().strip()
-            if content:
-                failed_instances = content.split('\n')
-                failed_count = len(failed_instances)
-                logger.info(
-                    f'ATTENTION: {failed_count} instances reached maximum error retries and were skipped.'
-                )
-                logger.info(f'These instances are listed in: {retries_file_path}')
+        logger.info(
+            'ATTENTION: Some instances reached maximum error retries and were skipped.'
+        )
+        logger.info(f'These instances are listed in: {retries_file_path}')
+        logger.info(
+            'Fix these instances and run evaluation again with EVAL_SKIP_ERRORS=false'
+        )
 
 
 def _process_instance_wrapper(
@@ -379,7 +377,7 @@ def _process_instance_wrapper(
                     # Instead of raising an error, log it and return an EvalOutput with the error
                     logger.exception(e)
                     logger.error(
-                        f'Maximum error retries reached for instance {instance.instance_id}. Skipping this instance and continuing with others.'
+                        f'Maximum error retries reached for instance {instance.instance_id}. Could not build instance image. Check maximum_retries_exceeded.txt, fix the image and run evaluation again. Skipping this instance and continuing with others.'
                     )
 
                     # Add the instance name to maximum_retries_exceeded.txt in the same folder as output.jsonl
@@ -388,7 +386,13 @@ def _process_instance_wrapper(
                             metadata.eval_output_dir, 'maximum_retries_exceeded.txt'
                         )
                         try:
+                            # Check if file exists, if not add header
+                            file_exists = os.path.exists(retries_file_path)
                             with open(retries_file_path, 'a') as f:
+                                if not file_exists:
+                                    f.write(
+                                        'These instances could not be built, please fix them and run evaluation again.\n'
+                                    )
                                 f.write(f'{instance.instance_id}\n')
                             logger.info(
                                 f'Added instance {instance.instance_id} to {retries_file_path}'
