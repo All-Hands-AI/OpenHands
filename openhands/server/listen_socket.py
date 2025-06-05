@@ -20,6 +20,7 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -50,7 +51,7 @@ def create_provider_tokens_object(
 
 
 async def setup_init_convo_settings(
-    user_id: str | None, providers_set: list[ProviderType]
+    user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
 ) -> ConversationInitData:
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -74,7 +75,11 @@ async def setup_init_convo_settings(
     if user_secrets:
         session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
-    return ConversationInitData(**session_init_args)
+    convo_init_data = ConversationInitData(**session_init_args)
+    # We should recreate the same experiment conditions when restarting a conversation
+    return ExperimentManagerImpl.run_conversation_variant_test(
+        user_id, conversation_id, convo_init_data
+    )
 
 
 @sio.event
@@ -120,10 +125,6 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'User {user_id} is allowed to connect to conversation {conversation_id}'
         )
 
-        # First, get the conversation initialization data
-        conversation_init_data = await setup_init_convo_settings(user_id, providers_set)
-
-        # Create an EventStore to access the events before joining the conversation
         try:
             event_store = EventStore(
                 conversation_id, conversation_manager.file_store, user_id
@@ -166,7 +167,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'Finished replaying event stream for conversation {conversation_id}'
         )
 
-        # Now join the conversation after replaying the event stream
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set
+        )
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,

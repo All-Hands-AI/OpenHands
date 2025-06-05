@@ -38,7 +38,10 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 @dataclass
 class StandaloneConversationManager(ConversationManager):
-    """Manages conversations in standalone mode (single server instance)."""
+    """Default implementation of ConversationManager for single-server deployments.
+
+    See ConversationManager for extensibility details.
+    """
 
     sio: socketio.AsyncServer
     config: OpenHandsConfig
@@ -108,7 +111,8 @@ class StandaloneConversationManager(ConversationManager):
                 return None
             end_time = time.time()
             logger.info(
-                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds'
+                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
+                extra={'session_id': sid}
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -150,6 +154,10 @@ class StandaloneConversationManager(ConversationManager):
                     for sid, (conversation, detach_time) in items:
                         await conversation.disconnect()
                         self._detached_conversations.pop(sid, None)
+
+                # Implies disconnected sandboxes stay open indefinitely
+                if not self.config.sandbox.close_delay:
+                    return
 
                 close_threshold = time.time() - self.config.sandbox.close_delay
                 running_loops = list(self._local_agent_loops_by_sid.items())

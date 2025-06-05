@@ -1,8 +1,10 @@
+import os
 import uuid
 from typing import Any
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
@@ -77,6 +79,8 @@ async def create_new_conversation(
     session_init_args['git_provider'] = git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
+
+
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('ServerConversation store loaded')
@@ -84,28 +88,30 @@ async def create_new_conversation(
     # For nested runtimes, we allow a single conversation id, passed in on container creation
     if conversation_id is None:
         conversation_id = uuid.uuid4().hex
-    while await conversation_store.exists(conversation_id):
-        logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
-        conversation_id = uuid.uuid4().hex
-    logger.info(
-        f'New conversation ID: {conversation_id}',
-        extra={'user_id': user_id, 'session_id': conversation_id},
-    )
 
-    conversation_title = get_default_conversation_title(conversation_id)
+    if not await conversation_store.exists(conversation_id):
 
-    logger.info(f'Saving metadata for conversation {conversation_id}')
-    await conversation_store.save_metadata(
-        ConversationMetadata(
-            trigger=conversation_trigger,
-            conversation_id=conversation_id,
-            title=conversation_title,
-            user_id=user_id,
-            selected_repository=selected_repository,
-            selected_branch=selected_branch,
-            git_provider=git_provider,
+        logger.info(
+            f'New conversation ID: {conversation_id}',
+            extra={'user_id': user_id, 'session_id': conversation_id},
         )
-    )
+
+        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, conversation_init_data)
+        conversation_title = get_default_conversation_title(conversation_id)
+
+        logger.info(f'Saving metadata for conversation {conversation_id}')
+        await conversation_store.save_metadata(
+            ConversationMetadata(
+                trigger=conversation_trigger,
+                conversation_id=conversation_id,
+                title=conversation_title,
+                user_id=user_id,
+                selected_repository=selected_repository,
+                selected_branch=selected_branch,
+                git_provider=git_provider,
+                llm_model=settings.llm_model,
+            )
+        )
 
     logger.info(
         f'Starting agent loop for conversation {conversation_id}',

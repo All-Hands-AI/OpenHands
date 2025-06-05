@@ -284,7 +284,7 @@ class ActionExecutor:
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=60,
+            timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
         )
         logger.debug('All plugins initialized')
 
@@ -677,44 +677,53 @@ if __name__ == '__main__':
         await client.ainit()
         logger.info('ActionExecutor initialized.')
 
-        # Initialize and mount MCP Router
-        logger.info('Initializing MCP Router...')
-        mcp_router = MCPRouter(
-            profile_path=MCP_ROUTER_PROFILE_PATH,
-            router_config=RouterConfig(
-                api_key=SESSION_API_KEY,
-                auth_enabled=bool(SESSION_API_KEY),
-            ),
-        )
-        allowed_origins = ['*']
-        sse_app = await mcp_router.get_sse_server_app(
-            allow_origins=allowed_origins, include_lifespan=False
-        )
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
 
-        # Check for route conflicts before mounting
-        main_app_routes = {route.path for route in app.routes}
-        sse_app_routes = {route.path for route in sse_app.routes}
-        conflicting_routes = main_app_routes.intersection(sse_app_routes)
-
-        if conflicting_routes:
-            logger.error(f'Route conflicts detected: {conflicting_routes}')
-            raise RuntimeError(
-                f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+        # Initialize and mount MCP Router (skip on Windows)
+        if is_windows:
+            logger.info('Skipping MCP Router initialization on Windows')
+            mcp_router = None
+        else:
+            logger.info('Initializing MCP Router...')
+            mcp_router = MCPRouter(
+                profile_path=MCP_ROUTER_PROFILE_PATH,
+                router_config=RouterConfig(
+                    api_key=SESSION_API_KEY,
+                    auth_enabled=bool(SESSION_API_KEY),
+                ),
+            )
+            allowed_origins = ['*']
+            sse_app = await mcp_router.get_sse_server_app(
+                allow_origins=allowed_origins, include_lifespan=False
             )
 
-        app.mount('/', sse_app)
-        logger.info(
-            f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
-        )
+        # Only mount SSE app if MCP Router is initialized (not on Windows)
+        if mcp_router is not None:
+            # Check for route conflicts before mounting
+            main_app_routes = {route.path for route in app.routes}
+            sse_app_routes = {route.path for route in sse_app.routes}
+            conflicting_routes = main_app_routes.intersection(sse_app_routes)
 
-        # Additional debug logging
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('Main app routes:')
-            for route in main_app_routes:
-                logger.debug(f'  {route}')
-            logger.debug('MCP SSE server app routes:')
-            for route in sse_app_routes:
-                logger.debug(f'  {route}')
+            if conflicting_routes:
+                logger.error(f'Route conflicts detected: {conflicting_routes}')
+                raise RuntimeError(
+                    f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+                )
+
+            app.mount('/', sse_app)
+            logger.info(
+                f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
+            )
+
+            # Additional debug logging
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('Main app routes:')
+                for route in main_app_routes:
+                    logger.debug(f'  {route}')
+                logger.debug('MCP SSE server app routes:')
+                for route in sse_app_routes:
+                    logger.debug(f'  {route}')
 
         yield
 
@@ -816,6 +825,23 @@ if __name__ == '__main__':
 
     @app.post('/update_mcp_server')
     async def update_mcp_server(request: Request):
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        if is_windows:
+            # On Windows, just return a success response without doing anything
+            logger.info(
+                'MCP server update request received on Windows - skipping as MCP is disabled'
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    'detail': 'MCP server update skipped (MCP is disabled on Windows)',
+                    'router_error_log': '',
+                },
+            )
+
+        # Non-Windows implementation
         assert mcp_router is not None
         assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
 

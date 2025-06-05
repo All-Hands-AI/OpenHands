@@ -293,7 +293,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
+        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
