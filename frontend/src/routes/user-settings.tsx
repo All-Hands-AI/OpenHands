@@ -188,10 +188,7 @@ function UserSettingsScreen() {
                     {t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}
                   </p>
                   <p className="text-sm">
-                    {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE", {
-                      defaultValue:
-                        "Your access is limited until your email is verified. You can only access this settings page.",
-                    })}
+                    {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
                   </p>
                 </div>
               )}
