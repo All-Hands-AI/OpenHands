@@ -167,13 +167,6 @@ class DockerNestedConversationManager(ConversationManager):
             # check that the container already exists...
             if await self._start_existing_container(runtime):
                 self._starting_conversation_ids.discard(sid)
-                # Return the agent loop info for the existing container
-                return AgentLoopInfo(
-                    conversation_id=sid,
-                    url=f'/api/conversations/{sid}',
-                    session_api_key=self._get_session_api_key_for_conversation(sid),
-                    event_store=None,
-                )
 
             # initialize the container but dont wait for it to start
             await call_sync_from_async(runtime.init_container)
