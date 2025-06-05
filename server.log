@@ -310,3 +310,44 @@ INFO:     10.2.34.24:49740 - "GET / HTTP/1.1" 200 OK
 INFO:     10.2.74.140:38064 - "GET /health HTTP/1.1" 200 OK
 INFO:     10.2.56.141:36188 - "GET /health HTTP/1.1" 200 OK
 INFO:     10.2.56.141:57378 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.74.140:57816 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:48720 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:50234 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.34.24:50234 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:41232 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:51404 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:49938 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:49938 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:33408 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:42142 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:43252 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:43252 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:53234 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:48692 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:36944 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:36944 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:51546 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:49358 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:51886 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:58428 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:58428 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:39540 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:41484 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:41484 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.34.24:33990 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.56.141:57488 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:49684 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:49684 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:43406 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:59402 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:59402 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:38336 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:32896 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:32896 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:34336 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:55378 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.56.141:55378 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4190]
