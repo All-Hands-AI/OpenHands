@@ -1,6 +1,8 @@
 from typing import Optional
 
-from fastmcp.client import Client
+from fastmcp import Client
+from fastmcp.client.transports import SSETransport, StreamableHttpTransport
+from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
@@ -25,7 +27,8 @@ class MCPClient(BaseModel):
         if not self.client:
             raise RuntimeError('Session not initialized.')
 
-        tools = await self.client.list_tools()
+        async with self.client:
+            tools = await self.client.list_tools()
 
         # Clear existing tools
         self.tools = []
@@ -49,12 +52,11 @@ class MCPClient(BaseModel):
         api_key: str | None = None,
         conversation_id: str | None = None,
         timeout: float = 30.0,
+        is_shttp=True,
     ):
         """Connect to MCP server using SHTTP or SSE transport"""
         if not server_url:
             raise ValueError('Server URL is required.')
-        if self.client:
-            await self.disconnect()
 
         try:
             headers = (
@@ -70,24 +72,32 @@ class MCPClient(BaseModel):
             if conversation_id:
                 headers['X-OpenHands-Conversation-ID'] = conversation_id
 
-            self.client = Client(
-                server_url, headers=headers if headers else None, timeout=timeout
-            )
+            # Instantiate custom transports due to custom headers
+            if is_shttp:
+                transport = StreamableHttpTransport(
+                    url=server_url,
+                    headers=headers if headers else None,
+                )
+            else:
+                transport = SSETransport(
+                    url=server_url,
+                    headers=headers if headers else None,
+                )
+
+            self.client = Client(transport, timeout=timeout)
 
             await self._initialize_and_list_tools()
         except TimeoutError:
             logger.error(
                 f'Connection to {server_url} timed out after {timeout} seconds'
             )
-            await self.disconnect()  # Clean up resources
             raise  # Re-raise the TimeoutError
 
         except Exception as e:
             logger.error(f'Error connecting to {server_url}: {str(e)}')
-            await self.disconnect()  # Clean up resources
             raise
 
-    async def call_tool(self, tool_name: str, args: dict):
+    async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
@@ -96,16 +106,4 @@ class MCPClient(BaseModel):
             raise RuntimeError('Client session is not available.')
 
         async with self.client:
-            await self.client.call_tool_mcp(name=tool_name, arguments=args)
-
-    async def disconnect(self) -> None:
-        """Disconnect from the MCP server and clean up resources."""
-        if self.client:
-            try:
-                await self.client.close()
-            except Exception as e:
-                logger.error(f'Error during disconnect: {str(e)}')
-            finally:
-                self.client = None
-                self.tools = []
-                logger.info('Disconnected from MCP server')
+            return await self.client.call_tool_mcp(name=tool_name, arguments=args)

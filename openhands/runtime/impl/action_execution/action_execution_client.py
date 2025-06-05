@@ -469,11 +469,6 @@ class ActionExecutionClient(Runtime):
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
         result = await call_tool_mcp_handler(mcp_clients, action)
-
-        # Reset client state (no active connections to worry about)
-        for client in mcp_clients:
-            await client.disconnect()
-
         return result
 
     def close(self) -> None:
