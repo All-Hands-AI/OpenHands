@@ -952,6 +952,9 @@ fi
         exit_code = 0
         content = ''
 
+        if isinstance(obs, ErrorObservation):
+            exit_code = -1
+
         if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code
         if hasattr(obs, 'content'):
