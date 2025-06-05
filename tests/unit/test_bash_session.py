@@ -158,12 +158,7 @@ def test_interactive_command():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 3 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == ''
 
     obs = session.execute(CmdRunAction('line 1', is_input=True))
