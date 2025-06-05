@@ -280,7 +280,25 @@ class DockerNestedConversationManager(ConversationManager):
         raise ValueError('unsupported_operation')
 
     async def close_session(self, sid: str):
-        stop_all_containers(f'openhands-runtime-{sid}')
+        # First try to graceful stop server.
+        try:
+            container = self.docker_client.containers.get(f'openhands-runtime-{sid}')
+        except docker.errors.NotFound as e:
+            return
+        try:
+            nested_url = self.get_nested_url_for_container(container)
+            async with httpx.AsyncClient(
+                headers={
+                    'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
+                }
+            ) as client:
+                response = await client.post(f'{nested_url}/api/conversations/{sid}/stop')
+                response.raise_for_status()
+                # Wait for stopped...
+                #await asyncio.sleep(8)
+        except Exception:
+            logger.error("error_stopping_container")
+        container.stop()
 
     async def get_agent_loop_info(self, user_id=None, filter_to_sids=None):
         results = []

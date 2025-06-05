@@ -369,6 +369,7 @@ class StandaloneConversationManager(ConversationManager):
             extra={'session_id': sid},
         )
         for connection_id in connection_ids_to_remove:
+            await self.sio.disconnect(connection_id)
             self._local_connection_id_to_session_id.pop(connection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)

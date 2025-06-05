@@ -261,6 +261,7 @@ export function WsClientProvider({
   }
 
   function handleDisconnect(data: unknown) {
+    console.log("TRACE:handleDisconnect");
     setStatus(WsClientProviderStatus.DISCONNECTED);
     const sio = sioRef.current;
     if (!sio) {
