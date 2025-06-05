@@ -35,7 +35,7 @@ function EmailInputSection({
             type="email"
             value={email}
             onChange={onEmailChange}
-            className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary flex-grow"
+            className="text-base text-white p-2 bg-base-tertiary rounded border border-tertiary flex-grow focus:outline-none focus:border-transparent focus:ring-0"
             placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
             data-testid="email-input"
           />
