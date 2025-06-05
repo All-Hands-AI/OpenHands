@@ -1,5 +1,6 @@
 import toast from "react-hot-toast";
 import { Spinner } from "@heroui/react";
+import { useTranslation } from "react-i18next";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
 import CloseIcon from "#/icons/close.svg?react";
 import { SuccessIndicator } from "../success-indicator";
@@ -13,12 +14,12 @@ function ConversationCreatedToast({
   conversationId,
   onClose,
 }: ConversationCreatedToastProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-2">
       <Spinner size="sm" />
       <div>
-        OpenHands is adding this new context to your respository. We&nbsp;ll let
-        you know when the pull request is ready.
+        {t("MICROAGENT$ADDING_CONTEXT")}
         <br />
         <a
           href={`/conversations/${conversationId}`}
@@ -26,7 +27,7 @@ function ConversationCreatedToast({
           rel="noopener noreferrer"
           className="underline"
         >
-          View Conversation
+          {t("MICROAGENT$VIEW_CONVERSATION")}
         </a>
       </div>
       <button type="button" onClick={onClose}>
@@ -45,11 +46,12 @@ function ConversationFinishedToast({
   conversationId,
   onClose,
 }: ConversationFinishedToastProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-2">
       <SuccessIndicator status="success" />
       <div>
-        Success! Your microagent pull request is ready.
+        {t("MICROAGENT$SUCCESS_PR_READY")}
         <br />
         <a
           href={`/conversations/${conversationId}`}
@@ -57,7 +59,7 @@ function ConversationFinishedToast({
           rel="noopener noreferrer"
           className="underline"
         >
-          View Conversation
+          {t("MICROAGENT$VIEW_CONVERSATION")}
         </a>
       </div>
       <button type="button" onClick={onClose}>

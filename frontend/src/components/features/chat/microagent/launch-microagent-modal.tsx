@@ -1,5 +1,6 @@
 import React from "react";
 import { FaCircleInfo } from "react-icons/fa6";
+import { useTranslation } from "react-i18next";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../../settings/brand-button";
@@ -28,6 +29,7 @@ export function LaunchMicroagentModal({
   selectedRepo,
   isLoading,
 }: LaunchMicroagentModalProps) {
+  const { t } = useTranslation();
   const { runtimeActive } = useHandleRuntimeActive();
   const { data: prompt, isLoading: promptIsLoading } =
     useMicroagentPrompt(eventId);
@@ -61,7 +63,7 @@ export function LaunchMicroagentModal({
         <ModalBody className="items-start w-[728px]">
           <div className="flex items-center justify-between w-full">
             <h2 className="font-bold text-[20px] leading-6 -tracking-[0.01em] flex items-center gap-2">
-              Add to Microagent
+              {t("MICROAGENT$ADD_TO_MICROAGENT")}
               <a
                 href="https://docs.all-hands.dev/usage/prompting/microagents-overview#microagents-overview"
                 target="_blank"
@@ -85,7 +87,7 @@ export function LaunchMicroagentModal({
               htmlFor="query-input"
               className="flex flex-col gap-2.5 w-full text-sm"
             >
-              What would you like to add to the Microagent?
+              {t("MICROAGENT$WHAT_TO_ADD")}
               {promptIsLoading && <LoadingMicroagentTextarea />}
               {!promptIsLoading && (
                 <textarea
@@ -106,7 +108,7 @@ export function LaunchMicroagentModal({
             <SettingsDropdownInput
               testId="target-input"
               name="target-input"
-              label="Where should we put it?"
+              label={t("MICROAGENT$WHERE_TO_PUT")}
               placeholder="Select a microagent file or enter a custom value"
               required
               allowsCustomValue
@@ -122,7 +124,7 @@ export function LaunchMicroagentModal({
               htmlFor="trigger-input"
               className="flex flex-col gap-2.5 w-full text-sm"
             >
-              Add a trigger for the microagent
+              {t("MICROAGENT$ADD_TRIGGER")}
               <BadgeInput
                 name="trigger-input"
                 value={triggers}

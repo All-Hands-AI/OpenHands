@@ -1,5 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
@@ -19,6 +20,7 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
+    const { t } = useTranslation();
     const { createConversationAndSubscribe, isPending } =
       useCreateConversationAndSubscribe();
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
@@ -58,7 +60,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         !conversation.selected_branch ||
         !conversation.git_provider
       ) {
-        console.warn("No repository found to launch microagent");
+        console.warn(t("MICROAGENT$NO_REPOSITORY_FOUND"));
         return;
       }
 
