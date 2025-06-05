@@ -1,8 +1,9 @@
 import asyncio
 import time
+import types
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable
 
 import socketio
 
@@ -61,11 +62,16 @@ class StandaloneConversationManager(ConversationManager):
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'StandaloneConversationManager':
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
+    ) -> None:
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
@@ -132,7 +138,7 @@ class StandaloneConversationManager(ConversationManager):
         agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
         return agent_loop_info
 
-    async def detach_from_conversation(self, conversation: ServerConversation):
+    async def detach_from_conversation(self, conversation: ServerConversation) -> None:
         sid = conversation.sid
         async with self._conversations_lock:
             if sid in self._active_conversations:
@@ -144,7 +150,7 @@ class StandaloneConversationManager(ConversationManager):
                     self._active_conversations.pop(sid)
                     self._detached_conversations[sid] = (conversation, time.time())
 
-    async def _cleanup_stale(self):
+    async def _cleanup_stale(self) -> None:
         while should_continue():
             try:
                 async with self._conversations_lock:
@@ -324,7 +330,7 @@ class StandaloneConversationManager(ConversationManager):
             pass  # Already subscribed - take no action
         return session
 
-    async def send_to_event_stream(self, connection_id: str, data: dict):
+    async def send_to_event_stream(self, connection_id: str, data: dict) -> None:
         # If there is a local session running, send to that
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
@@ -337,7 +343,7 @@ class StandaloneConversationManager(ConversationManager):
 
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
 
-    async def disconnect_from_session(self, connection_id: str):
+    async def disconnect_from_session(self, connection_id: str) -> None:
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
         logger.info(
             f'disconnect_from_session:{connection_id}:{sid}', extra={'session_id': sid}
@@ -350,12 +356,12 @@ class StandaloneConversationManager(ConversationManager):
             )
             return
 
-    async def close_session(self, sid: str):
+    async def close_session(self, sid: str) -> None:
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             await self._close_session(sid)
 
-    async def _close_session(self, sid: str):
+    async def _close_session(self, sid: str) -> None:
         logger.info(f'_close_session:{sid}', extra={'session_id': sid})
 
         # Clear up local variables
@@ -402,8 +408,8 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         conversation_id: str,
         settings: Settings,
-    ) -> Callable:
-        def callback(event, *args, **kwargs):
+    ) -> Callable[[Any], None]:
+        def callback(event: Any) -> None:
             call_async_from_sync(
                 self._update_conversation_for_event,
                 GENERAL_TIMEOUT,
@@ -420,8 +426,8 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str,
         conversation_id: str,
         settings: Settings,
-        event=None,
-    ):
+        event: Any = None,
+    ) -> None:
         conversation_store = await self._get_conversation_store(user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
@@ -473,7 +479,7 @@ class StandaloneConversationManager(ConversationManager):
 
     async def get_agent_loop_info(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
-    ):
+    ) -> list[AgentLoopInfo]:
         results = []
         for session in self._local_agent_loops_by_sid.values():
             if user_id and session.user_id != user_id:
@@ -483,7 +489,7 @@ class StandaloneConversationManager(ConversationManager):
             results.append(self._agent_loop_info_from_session(session))
         return results
 
-    def _agent_loop_info_from_session(self, session: Session):
+    def _agent_loop_info_from_session(self, session: Session) -> AgentLoopInfo:
         return AgentLoopInfo(
             conversation_id=session.sid,
             url=self._get_conversation_url(session.sid),
@@ -491,7 +497,7 @@ class StandaloneConversationManager(ConversationManager):
             event_store=session.agent_session.event_stream,
         )
 
-    def _get_conversation_url(self, conversation_id: str):
+    def _get_conversation_url(self, conversation_id: str) -> str:
         return f'/api/conversations/{conversation_id}'
 
 
