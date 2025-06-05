@@ -14,8 +14,8 @@ from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.events.event import Event
 from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.security.analyzer import SecurityAnalyzer
-from openhands.security.ltl_predicates import PredicateExtractor
-from openhands.security.ltl_specs import LTLSpecification, LTLChecker
+from openhands.security.ltl.predicates import PredicateExtractor
+from openhands.security.ltl.specs import LTLSpecification, LTLChecker
 
 
 class LTLSecurityAnalyzer(SecurityAnalyzer):
