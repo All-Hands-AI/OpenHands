@@ -80,18 +80,11 @@ async def create_mcp_clients(
         client = MCPClient()
 
         try:
-            if is_sse:
-                await client.connect_sse(
-                    server.url,
-                    api_key=server.api_key,
-                    conversation_id=conversation_id,
-                )
-            else:
-                await client.connect_shttp(
-                    server.url,
-                    api_key=server.api_key,
-                    conversation_id=conversation_id,
-                )
+            await client.connect_http(
+                server.url,
+                api_key=server.api_key,
+                conversation_id=conversation_id,
+            )
 
             # Only add the client to the list after a successful connection
             mcp_clients.append(client)
