@@ -2,6 +2,7 @@ import asyncio
 import copy
 import os
 import traceback
+import uuid
 from typing import Callable, ClassVar, Type
 
 import litellm  # noqa
@@ -59,7 +60,11 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
+
+# Add new imports for event retrieval
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.event import Event
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
@@ -80,8 +85,21 @@ from openhands.events.serialization.event import (
 )
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
-from openhands.server.mem0 import process_single_event_for_mem0, search_knowledge_mem0
-from openhands.server.thesis_auth import check_feature_credit, webhook_rag_conversation
+from openhands.server.mem0 import (
+    _db_pool_instance,
+    _extract_content_from_event,
+    _extract_file_text_from_tool_call,
+    process_single_event_for_mem0,
+    search_knowledge_mem0,
+)
+from openhands.server.thesis_auth import (
+    check_feature_credit,
+    search_knowledge,
+    webhook_rag_conversation,
+)
+from openhands.storage import get_file_store
+
+# Remove database imports from module level to avoid circular imports
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -115,6 +133,7 @@ class AgentController:
     thread_follow_up: int | None = None
     user_id: str | None = None
     raw_followup_conversation_id: str | None = None
+    followup_conversation_events: list[dict] = []
 
     def __init__(
         self,
@@ -195,6 +214,7 @@ class AgentController:
         self.thread_follow_up = thread_follow_up
         self.user_id = user_id
         self.raw_followup_conversation_id = raw_followup_conversation_id
+        self.followup_conversation_events = []
         print(f'raw_followup_conversation_id: {self.raw_followup_conversation_id}')
 
     async def close(self, set_stop_state=True) -> None:
@@ -510,6 +530,147 @@ class AgentController:
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
 
+    async def _get_followup_conversation_events(self) -> list[dict]:
+        if not self.raw_followup_conversation_id:
+            return []
+        if len(self.followup_conversation_events) > 0:
+            return self.followup_conversation_events
+
+        try:
+            conn = None
+            user_id = None
+            try:
+                conn = _db_pool_instance.get_connection()
+                if not conn:
+                    self.log('error', 'Failed to get database connection from pool')
+                    return []
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT user_id FROM conversations WHERE conversation_id = %s LIMIT 1',
+                    (self.raw_followup_conversation_id,),
+                )
+                result = cursor.fetchone()
+                cursor.close()
+
+                if result:
+                    user_id = result[0]
+                else:
+                    self.log(
+                        'warning',
+                        f'Followup conversation not found in database: {self.raw_followup_conversation_id}',
+                    )
+                    return []
+
+            except Exception as e:
+                self.log('error', f'Error querying conversation user_id: {str(e)}')
+                return []
+            finally:
+                # Always release the connection back to the pool
+                if conn:
+                    _db_pool_instance.release_connection(conn)
+
+            config = load_app_config()
+            file_store = get_file_store(config.file_store, config.file_store_path)
+
+            event_store = EventStore(
+                self.raw_followup_conversation_id,
+                file_store,
+                user_id,
+            )
+
+            if not event_store or event_store.cur_id == 0:
+                self.log(
+                    'warning',
+                    f'No events found for followup conversation: {self.raw_followup_conversation_id}',
+                )
+                return []
+            async_store = AsyncEventStoreWrapper(event_store, 0)
+            result = []
+            async for event in async_store:
+                if isinstance(
+                    event,
+                    (
+                        NullAction,
+                        NullObservation,
+                        RecallAction,
+                        AgentStateChangedObservation,
+                    ),
+                ):
+                    continue
+                event_dict = None
+                try:
+                    event_dict = event_to_dict(event)
+
+                except Exception as e:
+                    print(f'error: {e}')
+                    continue
+                content = _extract_content_from_event(event_dict)
+                source = event_dict.get('source')
+                action = event_dict.get('action')
+                observation = event_dict.get('observation')
+                if (
+                    not content
+                    and not (source == 'agent' and observation == 'edit')
+                    and action != 'finish'
+                ):
+                    continue
+                if source == 'agent':
+                    if observation == 'edit' or action == 'finish':
+                        tool_call_metadata = event_dict.get('tool_call_metadata', {})
+                        model_response = tool_call_metadata.get('model_response', {})
+                        choices = model_response.get('choices', [])
+                        if choices and 'message' in choices[0]:
+                            message_obj = choices[0]['message']
+                            edit_content = message_obj.get('content')
+                            if edit_content:
+                                event_dict['content'] = edit_content
+                            file_text = _extract_file_text_from_tool_call(
+                                message_obj.get('tool_calls', [])
+                            )
+                            if file_text:
+                                result.append(
+                                    {
+                                        'chunkId': str(uuid.uuid4()),
+                                        'content': file_text,
+                                    }
+                                )
+
+            self.log(
+                'info',
+                f'Retrieved {len(result)} events from followup conversation: {self.raw_followup_conversation_id} (user_id: {user_id})',
+            )
+            return result
+
+        except Exception as e:
+            self.log(
+                'error', f'Error retrieving followup conversation events: {str(e)}'
+            )
+            return []
+
+    async def _search_knowledge(self, query: str):
+        if self.user_id and (self.space_id or self.thread_follow_up):
+            knowledge_base = await search_knowledge_mem0(
+                query,
+                self.space_id,
+                self.raw_followup_conversation_id,
+                self.user_id,
+            )
+            if knowledge_base and len(knowledge_base) > 0:
+                self.agent.update_agent_knowledge_base(knowledge_base)
+            else:
+                knowledge_base = await search_knowledge(
+                    query,
+                    self.space_id,
+                    self.thread_follow_up,
+                    self.user_id,
+                )
+                if knowledge_base and len(knowledge_base) > 0:
+                    self.agent.update_agent_knowledge_base(knowledge_base)
+                else:
+                    events = await self._get_followup_conversation_events()
+                    if events and len(events) > 0:
+                        self.agent.update_agent_knowledge_base(events)
+
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
 
@@ -569,19 +730,9 @@ class AgentController:
                 if is_first_user_message
                 else RecallType.KNOWLEDGE
             )
-            print(f'raw_followup_conversation_id: {self.raw_followup_conversation_id}')
-            print(f'self.thread_follow_up: {self.thread_follow_up}')
 
             # update new knowledge base with the user message
-            if self.user_id and (self.space_id or self.thread_follow_up):
-                knowledge_base = await search_knowledge_mem0(
-                    action.content,
-                    self.space_id,
-                    self.raw_followup_conversation_id,
-                    self.user_id,
-                )
-                if knowledge_base:
-                    self.agent.update_agent_knowledge_base(knowledge_base)
+            await self._search_knowledge(action.content)
 
             recall_action = RecallAction(query=action.content, recall_type=recall_type)
             self._pending_action = recall_action

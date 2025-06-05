@@ -23,6 +23,16 @@ async def mock_webhook_rag(*args, **kwargs):
     return True
 
 
+async def mock_search_knowledge(*args, **kwargs):
+    print('Mock search_knowledge called')
+    return []
+
+
+async def mock_search_knowledge_mem0(*args, **kwargs):
+    print('Mock search_knowledge_mem0 called')
+    return []
+
+
 class DummyAgent:
     def __init__(self):
         self.name = 'dummy'
@@ -38,6 +48,9 @@ class DummyAgent:
     def reset(self):
         pass
 
+    def update_agent_knowledge_base(self, knowledge_base):
+        pass
+
 
 @pytest.mark.asyncio
 async def test_iteration_limit_extends_on_user_message():
@@ -47,7 +60,7 @@ async def test_iteration_limit_extends_on_user_message():
     agent = DummyAgent()
     initial_max_iterations = 100
 
-    # Create patches for both async functions
+    # Create patches for all async functions
     process_patch = patch(
         'openhands.controller.agent_controller.process_single_event_for_mem0',
         new=AsyncMock(side_effect=mock_process_event),
@@ -56,9 +69,17 @@ async def test_iteration_limit_extends_on_user_message():
         'openhands.controller.agent_controller.webhook_rag_conversation',
         new=AsyncMock(side_effect=mock_webhook_rag),
     )
+    search_knowledge_patch = patch(
+        'openhands.controller.agent_controller.search_knowledge',
+        new=AsyncMock(side_effect=mock_search_knowledge),
+    )
+    search_knowledge_mem0_patch = patch(
+        'openhands.controller.agent_controller.search_knowledge_mem0',
+        new=AsyncMock(side_effect=mock_search_knowledge_mem0),
+    )
 
-    # Apply both patches
-    with process_patch, webhook_patch:
+    # Apply all patches
+    with process_patch, webhook_patch, search_knowledge_patch, search_knowledge_mem0_patch:
         print('Mocks installed - starting test')
         controller = AgentController(
             agent=agent,
