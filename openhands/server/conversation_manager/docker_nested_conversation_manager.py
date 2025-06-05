@@ -296,7 +296,7 @@ class DockerNestedConversationManager(ConversationManager):
                 response = await client.post(f'{nested_url}/api/conversations/{sid}/stop')
                 response.raise_for_status()
         except Exception:
-            logger.error("error_stopping_container")
+            logger.exception("error_stopping_container")
         container.stop()
 
     async def get_agent_loop_info(self, user_id: str | None = None, filter_to_sids: set[str] | None = None) -> list[AgentLoopInfo]:
