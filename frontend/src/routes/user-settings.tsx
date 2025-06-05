@@ -15,6 +15,7 @@ function UserSettingsScreen() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const queryClient = useQueryClient();
   const pollingIntervalRef = useRef<number | null>(null);
+  const prevVerificationStatusRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
     if (settings?.EMAIL) {
@@ -23,44 +24,31 @@ function UserSettingsScreen() {
     }
   }, [settings?.EMAIL]);
 
-  // Track previous verification status to detect changes
-  const prevVerificationStatusRef = useRef<boolean | undefined>(undefined);
-
-  // Set up polling for email verification status when email is not verified
   useEffect(() => {
-    // Clear any existing interval
     if (pollingIntervalRef.current) {
       window.clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
 
-    // Check if verification status changed from false to true
     if (
       prevVerificationStatusRef.current === false &&
       settings?.EMAIL_VERIFIED === true
     ) {
-      // Show success message when email is verified
       setSaveSuccess(true);
-      setResendSuccess(false); // Hide any resend success message
+      setResendSuccess(false);
       setTimeout(() => {
-        // Redirect will happen automatically via EmailVerificationGuard
         queryClient.invalidateQueries({ queryKey: ["settings"] });
       }, 2000);
     }
 
-    // Update previous verification status reference
     prevVerificationStatusRef.current = settings?.EMAIL_VERIFIED;
 
-    // Only start polling if email is not verified
     if (settings?.EMAIL_VERIFIED === false) {
-      // Check for email verification every 5 seconds
       pollingIntervalRef.current = window.setInterval(() => {
-        // Refetch settings to check if email has been verified
         refetch();
       }, 5000);
     }
 
-    // Clean up interval on unmount or when email becomes verified
     return () => {
       if (pollingIntervalRef.current) {
         window.clearInterval(pollingIntervalRef.current);
@@ -76,27 +64,13 @@ function UserSettingsScreen() {
 
   const handleSaveEmail = async () => {
     if (email === originalEmail) return;
-
     try {
       setIsSaving(true);
-      await openHands.post(
-        "/api/email",
-        {
-          email,
-        },
-        {
-          withCredentials: true, // Allow cookies to be set from the response
-        },
-      );
-
+      await openHands.post("/api/email", { email }, { withCredentials: true });
       setOriginalEmail(email);
       setSaveSuccess(true);
-
-      // Invalidate settings query to refresh data
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     } catch (error) {
-      // Log error but don't show to user
-      // eslint-disable-next-line no-console
       console.error(t("SETTINGS$FAILED_TO_SAVE_EMAIL"), error);
     } finally {
       setIsSaving(false);
@@ -107,19 +81,9 @@ function UserSettingsScreen() {
     try {
       setIsResendingVerification(true);
       setResendSuccess(false);
-
-      await openHands.put(
-        "/api/email/verify",
-        {},
-        {
-          withCredentials: true, // Allow cookies to be set from the response
-        },
-      );
-
+      await openHands.put("/api/email/verify", {}, { withCredentials: true });
       setResendSuccess(true);
     } catch (error) {
-      // Log error but don't show to user
-      // eslint-disable-next-line no-console
       console.error(t("SETTINGS$FAILED_TO_RESEND_VERIFICATION"), error);
     } finally {
       setIsResendingVerification(false);
@@ -134,78 +98,140 @@ function UserSettingsScreen() {
         {isLoading ? (
           <div className="animate-pulse h-8 w-64 bg-tertiary rounded" />
         ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm">{t("SETTINGS$USER_EMAIL")}</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary flex-grow"
-                  placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
-                  data-testid="email-input"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={handleSaveEmail}
-                  disabled={!isEmailChanged || isSaving}
-                  className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
-                  data-testid="save-email-button"
-                >
-                  {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
-                </button>
-
-                {settings?.EMAIL_VERIFIED === false && (
-                  <button
-                    type="button"
-                    onClick={handleResendVerification}
-                    disabled={isResendingVerification}
-                    className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
-                    data-testid="resend-verification-button"
-                  >
-                    {isResendingVerification
-                      ? t("SETTINGS$SENDING")
-                      : t("SETTINGS$RESEND_VERIFICATION")}
-                  </button>
-                )}
-              </div>
-
-              {settings?.EMAIL_VERIFIED === false && (
-                <div
-                  className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4"
-                  role="alert"
-                >
-                  <p className="font-bold">
-                    {t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}
-                  </p>
-                  <p className="text-sm">
-                    {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
-                  </p>
-                </div>
-              )}
-
-              {saveSuccess && (
-                <div className="text-sm text-green-500 mt-1">
-                  {settings?.EMAIL_VERIFIED === true &&
+          <EmailInputSection
+            email={email}
+            onEmailChange={handleEmailChange}
+            onSaveEmail={handleSaveEmail}
+            onResendVerification={handleResendVerification}
+            isSaving={isSaving}
+            isResendingVerification={isResendingVerification}
+            isEmailChanged={isEmailChanged}
+            emailVerified={settings?.EMAIL_VERIFIED}
+            t={t}
+          >
+            {settings?.EMAIL_VERIFIED === false && <VerificationAlert t={t} />}
+            {saveSuccess && (
+              <SaveSuccessMessage
+                emailVerified={settings?.EMAIL_VERIFIED}
+                wasPreviouslyUnverified={
                   prevVerificationStatusRef.current === false
-                    ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
-                    : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY")}
-                </div>
-              )}
-
-              {resendSuccess && (
-                <div className="text-sm text-green-500 mt-1">
-                  {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
-                </div>
-              )}
-            </div>
-          </div>
+                }
+                t={t}
+              />
+            )}
+            {resendSuccess && <ResendSuccessMessage t={t} />}
+          </EmailInputSection>
         )}
       </div>
+    </div>
+  );
+}
+
+function EmailInputSection({
+  email,
+  onEmailChange,
+  onSaveEmail,
+  onResendVerification,
+  isSaving,
+  isResendingVerification,
+  isEmailChanged,
+  emailVerified,
+  t,
+  children,
+}: {
+  email: string;
+  onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSaveEmail: () => void;
+  onResendVerification: () => void;
+  isSaving: boolean;
+  isResendingVerification: boolean;
+  isEmailChanged: boolean;
+  emailVerified?: boolean;
+  t: any;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label className="text-sm">{t("SETTINGS$USER_EMAIL")}</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="email"
+            value={email}
+            onChange={onEmailChange}
+            className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary flex-grow"
+            placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
+            data-testid="email-input"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            type="button"
+            onClick={onSaveEmail}
+            disabled={!isEmailChanged || isSaving}
+            className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+            data-testid="save-email-button"
+          >
+            {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
+          </button>
+
+          {emailVerified === false && (
+            <button
+              type="button"
+              onClick={onResendVerification}
+              disabled={isResendingVerification}
+              className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+              data-testid="resend-verification-button"
+            >
+              {isResendingVerification
+                ? t("SETTINGS$SENDING")
+                : t("SETTINGS$RESEND_VERIFICATION")}
+            </button>
+          )}
+        </div>
+
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function VerificationAlert({ t }: { t: any }) {
+  return (
+    <div
+      className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4"
+      role="alert"
+    >
+      <p className="font-bold">{t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}</p>
+      <p className="text-sm">
+        {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
+      </p>
+    </div>
+  );
+}
+
+function SaveSuccessMessage({
+  emailVerified,
+  wasPreviouslyUnverified,
+  t,
+}: {
+  emailVerified?: boolean;
+  wasPreviouslyUnverified: boolean;
+  t: any;
+}) {
+  const message =
+    emailVerified && wasPreviouslyUnverified
+      ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
+      : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY");
+
+  return <div className="text-sm text-green-500 mt-1">{message}</div>;
+}
+
+function ResendSuccessMessage({ t }: { t: any }) {
+  return (
+    <div className="text-sm text-green-500 mt-1">
+      {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
     </div>
   );
 }
