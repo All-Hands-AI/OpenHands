@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import os
+import types
 from base64 import urlsafe_b64encode
 from dataclasses import dataclass, field
 from types import MappingProxyType
@@ -56,11 +57,16 @@ class DockerNestedConversationManager(ConversationManager):
     _starting_conversation_ids: set[str] = field(default_factory=set)
     _runtime_container_image: str | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'DockerNestedConversationManager':
         # No action is required on startup for this implementation
-        pass
+        return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
+    ) -> None:
         # No action is required on shutdown for this implementation
         pass
 
@@ -70,7 +76,7 @@ class DockerNestedConversationManager(ConversationManager):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
-    async def detach_from_conversation(self, conversation: ServerConversation):
+    async def detach_from_conversation(self, conversation: ServerConversation) -> None:
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
@@ -148,7 +154,7 @@ class DockerNestedConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None,
         replay_json: str | None,
-    ):
+    ) -> AgentLoopInfo:
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
         await self.ensure_num_conversations_below_limit(sid, user_id)
         runtime = await self._create_runtime(sid, user_id, settings)
@@ -161,7 +167,12 @@ class DockerNestedConversationManager(ConversationManager):
             # check that the container already exists...
             if await self._start_existing_container(runtime):
                 self._starting_conversation_ids.discard(sid)
-                return
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url=f'/api/conversations/{sid}',
+                    session_api_key=self._get_session_api_key_for_conversation(sid),
+                    event_store=None,
+                )
 
             # initialize the container but dont wait for it to start
             await call_sync_from_async(runtime.init_container)
@@ -178,6 +189,14 @@ class DockerNestedConversationManager(ConversationManager):
                 )
             )
 
+            # Return the agent loop info
+            return AgentLoopInfo(
+                conversation_id=sid,
+                url=f'/api/conversations/{sid}',
+                session_api_key=self._get_session_api_key_for_conversation(sid),
+                event_store=None,
+            )
+
         except Exception:
             self._starting_conversation_ids.discard(sid)
             raise
@@ -190,7 +209,7 @@ class DockerNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None,
         replay_json: str | None,
         api_url: str,
-    ):
+    ) -> AgentLoopInfo:
         try:
             await call_sync_from_async(runtime.wait_until_alive)
             await call_sync_from_async(runtime.setup_initial_env)
@@ -268,21 +287,31 @@ class DockerNestedConversationManager(ConversationManager):
                     f'_start_agent_loop:{response.status_code}:{response.json()}'
                 )
                 assert response.status_code == status.HTTP_200_OK
+
+                # Return the agent loop info
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url=f'/api/conversations/{sid}',
+                    session_api_key=self._get_session_api_key_for_conversation(sid),
+                    event_store=None,
+                )
         finally:
             self._starting_conversation_ids.discard(sid)
 
-    async def send_to_event_stream(self, connection_id: str, data: dict):
+    async def send_to_event_stream(self, connection_id: str, data: dict) -> None:
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
-    async def disconnect_from_session(self, connection_id: str):
+    async def disconnect_from_session(self, connection_id: str) -> None:
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
-    async def close_session(self, sid: str):
+    async def close_session(self, sid: str) -> None:
         stop_all_containers(f'openhands-runtime-{sid}')
 
-    async def get_agent_loop_info(self, user_id=None, filter_to_sids=None):
+    async def get_agent_loop_info(
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+    ) -> list[AgentLoopInfo]:
         results = []
         containers = self.docker_client.containers.list()
         for container in containers:
@@ -353,7 +382,7 @@ class DockerNestedConversationManager(ConversationManager):
         nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}/api/conversations/{conversation_id}'
         return nested_url
 
-    def _get_session_api_key_for_conversation(self, conversation_id: str):
+    def _get_session_api_key_for_conversation(self, conversation_id: str) -> str:
         jwt_secret = self.config.jwt_secret.get_secret_value()  # type:ignore
         conversation_key = f'{jwt_secret}:{conversation_id}'.encode()
         session_api_key = (
@@ -363,7 +392,9 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return session_api_key
 
-    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str | None):
+    async def ensure_num_conversations_below_limit(
+        self, sid: str, user_id: str | None
+    ) -> None:
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
@@ -395,7 +426,7 @@ class DockerNestedConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-    def _get_provider_handler(self, settings: Settings):
+    def _get_provider_handler(self, settings: Settings) -> ProviderHandler:
         provider_tokens = None
         if isinstance(settings, ConversationInitData):
             provider_tokens = settings.git_provider_tokens
@@ -405,7 +436,9 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return provider_handler
 
-    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings):
+    async def _create_runtime(
+        self, sid: str, user_id: str | None, settings: Settings
+    ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
         session = Session(
@@ -437,7 +470,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
-        env_vars['WORKSPACE_BASE'] = f'/workspace'
+        env_vars['WORKSPACE_BASE'] = '/workspace'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
 
         # Set up mounted volume for conversation directory within workspace
@@ -483,7 +516,7 @@ class DockerNestedConversationManager(ConversationManager):
                     await call_sync_from_async(container.start())
                 return True
             return False
-        except docker.errors.NotFound as e:
+        except docker.errors.NotFound:
             return False
 
 

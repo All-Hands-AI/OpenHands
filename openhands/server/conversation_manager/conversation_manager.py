@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 from abc import ABC, abstractmethod
 
 import socketio
@@ -47,11 +48,16 @@ class ConversationManager(ABC):
     conversation_store: ConversationStore
 
     @abstractmethod
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'ConversationManager':
         """Initialize the conversation manager."""
 
     @abstractmethod
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
+    ) -> None:
         """Clean up the conversation manager."""
 
     @abstractmethod
@@ -61,7 +67,7 @@ class ConversationManager(ABC):
         """Attach to an existing conversation or create a new one."""
 
     @abstractmethod
-    async def detach_from_conversation(self, conversation: ServerConversation):
+    async def detach_from_conversation(self, conversation: ServerConversation) -> None:
         """Detach from a conversation."""
 
     @abstractmethod
@@ -103,15 +109,15 @@ class ConversationManager(ABC):
         """Start an event loop if one is not already running"""
 
     @abstractmethod
-    async def send_to_event_stream(self, connection_id: str, data: dict):
+    async def send_to_event_stream(self, connection_id: str, data: dict) -> None:
         """Send data to an event stream."""
 
     @abstractmethod
-    async def disconnect_from_session(self, connection_id: str):
+    async def disconnect_from_session(self, connection_id: str) -> None:
         """Disconnect from a session."""
 
     @abstractmethod
-    async def close_session(self, sid: str):
+    async def close_session(self, sid: str) -> None:
         """Close a session."""
 
     @abstractmethod
