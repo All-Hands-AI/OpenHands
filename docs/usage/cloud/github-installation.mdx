@@ -1,30 +1,22 @@
 ---
-title: GitHub Installation
-description: This guide walks you through the process of installing and configuring OpenHands Cloud for your GitHub repositories.
+title: GitHub Integration
+description: This guide walks you through the process of installing OpenHands Cloud for your GitHub repositories. Once
+  set up, it will allow OpenHands to work with your GitHub repository through the Cloud UI or straight from GitHub issues!
 ---
 
 ## Prerequisites
 
-- A GitHub account
-- Access to OpenHands Cloud
+- Signed in to [OpenHands Cloud](https://app.all-hands.dev) with [a GitHub account](/usage/cloud/openhands-cloud).
 
-## Installation Steps
+## Adding GitHub Repository Access
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. If you haven't connected your GitHub account yet:
-   - Click on `Connect to GitHub`
-   - Review and accept the terms of service
-   - Authorize the OpenHands AI application
+You can grant OpenHands access to specific GitHub repositories:
 
-## Adding Repository Access
-
-You can grant OpenHands access to specific repositories:
-
-1. Click on `Add GitHub repos`
+1. Click on `Add GitHub repos` on the landing page.
 2. Select your organization and choose the specific repositories to grant OpenHands access to.
-   - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
+<Accordion title="OpenHands permissions">
+  - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
      - Actions: Read and write
-     - Administration: Read-only
      - Commit statuses: Read and write
      - Contents: Read and write
      - Issues: Read and write
@@ -35,20 +27,45 @@ You can grant OpenHands access to specific repositories:
    - Repository access for a user is granted based on:
      - Permission granted for the repository
      - User's GitHub permissions (owner/collaborator)
-3. Click `Install & Authorize`
+</Accordion>
+
+3. Click `Install & Authorize`.
 
 ## Modifying Repository Access
 
-You can modify repository access at any time by visiting the Settings page and selecting `Configure GitHub Repositories` under the `Git` tab.
+You can modify GitHub repository access at any time by:
+- Selecting `Add GitHub repos` on the landing page or
+- Visiting the Settings page and selecting `Configure GitHub Repositories` under the `Git` tab
 
-## Using OpenHands with GitHub
+## Working With Github Repos in Openhands Cloud
 
-Once you've granted repository access, you can use OpenHands with your GitHub repositories.
+Once you've granted GitHub repository access, you can start working with your GitHub repository. Use the `select a repo`
+and `select a branch` dropdowns to select the appropriate repository and branch you'd like OpenHands to work on. Then
+click on `Launch` to start the session!
 
-For details on how to use OpenHands with GitHub issues and pull requests, see the [Cloud Issue Resolver](./cloud-issue-resolver) documentation.
+![Connect Repo](/static/img/connect-repo.png)
+
+## Working on Github Issues and Pull Requests Using Openhands
+
+Giving GitHub repository access to OpenHands also allows you to work on GitHub issues and pull requests directly.
+
+### Working with Issues
+
+On your repository, label an issue with `openhands` or add a message starting with
+`@openhands`. OpenHands will:
+1. Comment on the issue to let you know it is working on it.
+   - You can click on the link to track the progress on OpenHands Cloud.
+2. Open a pull request if it determines that the issue has been successfully resolved.
+3. Comment on the issue with a summary of the performed tasks and a link to the PR.
+
+### Working with Pull Requests
+
+To get OpenHands to work on pull requests, mention `@openhands` in the comments to:
+- Ask questions
+- Request updates
+- Get code explanations
 
 ## Next Steps
 
 - [Access the Cloud UI](./cloud-ui) to interact with the web interface
-- [Use the Cloud Issue Resolver](./cloud-issue-resolver) to automate code fixes and get assistance
 - [Use the Cloud API](./cloud-api) to programmatically interact with OpenHands
