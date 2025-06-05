@@ -60,7 +60,31 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
+
+def check_maximum_retries_exceeded(eval_output_dir):
+    """Check if maximum_retries_exceeded.txt exists and output a message."""
+    retries_file_path = os.path.join(eval_output_dir, 'maximum_retries_exceeded.txt')
+    if os.path.exists(retries_file_path):
+        with open(retries_file_path, 'r') as f:
+            content = f.read().strip()
+            if content:
+                failed_instances = content.split('\n')
+                failed_count = len(failed_instances)
+                logger.warning(
+                    f'ATTENTION: {failed_count} instances reached maximum error retries and were skipped.'
+                )
+                logger.warning(f'These instances are listed in: {retries_file_path}')
+                print(
+                    f'\n\033[1;33mATTENTION: {failed_count} instances reached maximum error retries and were skipped.\033[0m'
+                )
+                print(
+                    f'\033[1;33mThese instances are listed in: {retries_file_path}\033[0m'
+                )
+
+
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
+RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+BenchMode = Literal['swe', 'swt', 'swt-ci']
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
@@ -860,6 +884,9 @@ if __name__ == '__main__':
             * 60,  # 8 hour PER instance should be more than enough
             max_retries=5,
         )
+
+        # Check if maximum_retries_exceeded.txt exists and output a message
+        check_maximum_retries_exceeded(metadata.eval_output_dir)
     else:
         critic = AgentFinishedCritic()
 
@@ -973,3 +1000,6 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
+
+        # Check if maximum_retries_exceeded.txt exists and output a message
+        check_maximum_retries_exceeded(metadata.eval_output_dir)
