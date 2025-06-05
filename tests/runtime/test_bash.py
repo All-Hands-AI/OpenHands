@@ -57,7 +57,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
             assert '[The command timed out after 1.0 seconds.]' in obs.metadata.suffix
         else:
             assert (
-                "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+                "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]"
                 in obs.metadata.suffix
             )
 

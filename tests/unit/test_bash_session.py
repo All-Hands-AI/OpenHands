@@ -87,7 +87,7 @@ def test_long_running_command_follow_by_execute():
         '\n[The command has no new output after 2 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
     )
     assert obs.metadata.prefix == ''
 
@@ -100,7 +100,7 @@ def test_long_running_command_follow_by_execute():
         '\n[The command has no new output after 2 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
     )
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
@@ -146,7 +146,7 @@ def test_interactive_command():
         '\n[The command has no new output after 3 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
     )
     assert obs.metadata.prefix == ''
 
@@ -168,7 +168,7 @@ def test_interactive_command():
         '\n[The command has no new output after 3 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
     )
     assert obs.metadata.prefix == ''
 
@@ -180,7 +180,7 @@ def test_interactive_command():
         '\n[The command has no new output after 3 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
     )
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
@@ -192,7 +192,8 @@ def test_interactive_command():
         '\n[The command has no new output after 3 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, '
+        'or use the timeout parameter in execute_bash to set a longer timeout for future commands.]'
     )
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
@@ -220,7 +221,7 @@ def test_ctrl_c():
         '\n[The command has no new output after 2 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
         'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
+        'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
     )
     assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running

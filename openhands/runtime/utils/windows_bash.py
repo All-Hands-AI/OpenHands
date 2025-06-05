@@ -561,7 +561,7 @@ class WindowsPowershellSession:
                     f'\n[The command timed out after {timeout_seconds} seconds. '
                     "You may wait longer to see additional output by sending empty command '', "
                     'send other commands to interact with the current process, '
-                    'or send keys to interrupt/kill the command.]'
+                    'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
                 )
 
             return CmdOutputObservation(
@@ -1333,7 +1333,7 @@ class WindowsPowershellSession:
                 f'\n[The command timed out after {timeout_seconds} seconds. '
                 "You may wait longer to see additional output by sending empty command '', "
                 'send other commands to interact with the current process, '
-                'or send keys to interrupt/kill the command.]'
+                'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
             )
         elif shutdown_requested:
             # Align suffix with bash.py equivalent (though bash.py might not have specific shutdown message)
