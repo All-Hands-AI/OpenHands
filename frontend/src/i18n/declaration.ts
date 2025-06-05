@@ -1,5 +1,6 @@
 // this file generate by script, don't modify it manually!!!
 export enum I18nKey {
+  STATUS$WEBSOCKET_CLOSED = "STATUS$WEBSOCKET_CLOSED",
   HOME$LAUNCH_FROM_SCRATCH = "HOME$LAUNCH_FROM_SCRATCH",
   HOME$READ_THIS = "HOME$READ_THIS",
   AUTH$LOGGING_BACK_IN = "AUTH$LOGGING_BACK_IN",
