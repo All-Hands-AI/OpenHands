@@ -357,6 +357,23 @@ def _process_instance_wrapper(
                 logger.error(
                     f'Maximum error retries reached for instance {instance.instance_id}. Skipping this instance and continuing with others.'
                 )
+
+                # Add the instance name to maximum_retries_exceeded.txt in the same folder as output.jsonl
+                if metadata and metadata.eval_output_dir:
+                    retries_file_path = os.path.join(
+                        metadata.eval_output_dir, 'maximum_retries_exceeded.txt'
+                    )
+                    try:
+                        with open(retries_file_path, 'a') as f:
+                            f.write(f'{instance.instance_id}\n')
+                        logger.info(
+                            f'Added instance {instance.instance_id} to {retries_file_path}'
+                        )
+                    except Exception as write_error:
+                        logger.error(
+                            f'Failed to write to maximum_retries_exceeded.txt: {write_error}'
+                        )
+
                 return EvalOutput(
                     instance_id=instance.instance_id,
                     test_result={},
