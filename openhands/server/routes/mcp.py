@@ -33,6 +33,9 @@ async def get_convo_link(
     conversation_id: str,
     body: str
 ) -> str:
+    """
+        Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR
+    """
 
     if server_config.APP_MODE != AppMode.SAAS:
         return body
