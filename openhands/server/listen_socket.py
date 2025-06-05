@@ -132,20 +132,21 @@ async def connect(connection_id: str, environ: dict) -> None:
         agent_state_changed = None
         if agent_loop_info is None:
             raise ConnectionRefusedError('Failed to join conversation')
-        async_store = AsyncEventStoreWrapper(
-            agent_loop_info.event_store, latest_event_id + 1
-        )
-        async for event in async_store:
-            logger.debug(f'oh_event: {event.__class__.__name__}')
-            if isinstance(
-                event,
-                (NullAction, NullObservation, RecallAction),
-            ):
-                continue
-            elif isinstance(event, AgentStateChangedObservation):
-                agent_state_changed = event
-            else:
-                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+        if agent_loop_info.event_store:
+            async_store = AsyncEventStoreWrapper(
+                agent_loop_info.event_store, latest_event_id + 1
+            )
+            async for event in async_store:
+                logger.debug(f'oh_event: {event.__class__.__name__}')
+                if isinstance(
+                    event,
+                    (NullAction, NullObservation, RecallAction),
+                ):
+                    continue
+                elif isinstance(event, AgentStateChangedObservation):
+                    agent_state_changed = event
+                else:
+                    await sio.emit('oh_event', event_to_dict(event), to=connection_id)
         if agent_state_changed:
             await sio.emit(
                 'oh_event', event_to_dict(agent_state_changed), to=connection_id

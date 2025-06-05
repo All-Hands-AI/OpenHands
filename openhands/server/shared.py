@@ -58,7 +58,7 @@ ConversationManagerImpl = get_impl(
     server_config.conversation_manager_class,
 )
 
-conversation_manager = ConversationManagerImpl.get_instance(
+conversation_manager: ConversationManager = ConversationManagerImpl.get_instance(
     sio, config, file_store, server_config, monitoring_listener
 )
 

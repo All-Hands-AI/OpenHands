@@ -27,4 +27,5 @@ async def get_conversation(
     try:
         yield conversation
     finally:
-        await conversation_manager.detach_from_conversation(conversation)
+        if conversation:
+            await conversation_manager.detach_from_conversation(conversation)
