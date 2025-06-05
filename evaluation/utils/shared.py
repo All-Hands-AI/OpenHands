@@ -313,7 +313,7 @@ def check_maximum_retries_exceeded(eval_output_dir):
         )
         logger.info(f'These instances are listed in: {retries_file_path}')
         logger.info(
-            'Fix these instances and run evaluation again with EVAL_SKIP_ERRORS=false'
+            'Fix these instances and run evaluation again with EVAL_SKIP_BUILD_ERRORS=false'
         )
 
 
@@ -370,9 +370,9 @@ def _process_instance_wrapper(
                     + '-' * 10
                 )
 
-                # Check if EVAL_SKIP_ERRORS is set to true
+                # Check if EVAL_SKIP_BUILD_ERRORS is set to true
                 skip_errors = (
-                    os.environ.get('EVAL_SKIP_ERRORS', 'false').lower() == 'true'
+                    os.environ.get('EVAL_SKIP_BUILD_ERRORS', 'false').lower() == 'true'
                 )
 
                 if skip_errors:

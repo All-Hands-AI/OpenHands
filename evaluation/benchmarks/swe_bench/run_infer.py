@@ -63,7 +63,9 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-EVAL_SKIP_ERRORS = os.environ.get('EVAL_SKIP_ERRORS', 'false').lower() == 'true'
+EVAL_SKIP_BUILD_ERRORS = (
+    os.environ.get('EVAL_SKIP_BUILD_ERRORS', 'false').lower() == 'true'
+)
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 

@@ -47,7 +47,9 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'true').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-EVAL_SKIP_ERRORS = os.environ.get('EVAL_SKIP_ERRORS', 'false').lower() == 'true'
+EVAL_SKIP_BUILD_ERRORS = (
+    os.environ.get('EVAL_SKIP_BUILD_ERRORS', 'false').lower() == 'true'
+)
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 # TODO: 适应所有的语言
