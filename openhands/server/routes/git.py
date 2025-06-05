@@ -68,13 +68,17 @@ async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
 ):
-    if provider_tokens:
-        client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
-        )
-
+    if provider_tokens:       
         try:
+            client = ProviderHandler(
+                provider_tokens=provider_tokens, external_auth_token=access_token
+            )            
             user: User = await client.get_user()
+            if user is None:
+                return JSONResponse(
+                    content=str("User not found."),
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
             return user
 
         except AuthenticationError as e:

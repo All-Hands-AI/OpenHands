@@ -66,7 +66,7 @@ class AzureDevOpsService(GitService):
             print(f'Error loading Azure DevOps settings: {e}')
             pass
 
-    async def _get_azuredevops_headers(self) -> dict:
+    async def _get_azuredevops_headers(self, contentType = "application/json") -> dict:
         """
         Retrieve the Azure DevOps Token to construct the headers
         """
@@ -82,7 +82,7 @@ class AzureDevOpsService(GitService):
 
         return {
             'Authorization': f'Basic {credentials}',
-            'Content-Type': 'application/json',
+            'Content-Type': contentType,
         }
 
     def _has_token_expired(self, status_code: int) -> bool:
@@ -111,36 +111,52 @@ class AzureDevOpsService(GitService):
         """
         Get the authenticated user's information from Azure DevOps
         """
-        headers = await self._get_azuredevops_headers()
+        headers = await self._get_azuredevops_headers("application/json-patch+json")
 
         await self.load_settings()
         try:
 
+            print(f"Azure DevOps base url: {self.BASE_URL}")
+            print(f"Project: {self.project}")
             # Get the current user profile
+            url = (
+                f"{self.BASE_URL}/_apis/wit/workitems/$Task"
+                f"?api-version=7.1-preview.3&validateOnly=true"
+            )
+
+            payload = [
+                {
+                    "op": "add",
+                    "path": "/fields/System.Title",
+                    "value": "Teste para identificar usuário do PAT"
+                }
+            ]
+
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{self.BASE_VSAEX_URL}/_apis/connectionData?api-version=7.2-preview.1",
+                response = await client.post(
+                    url,
                     headers=headers,
+                    json=payload
                 )
 
             if response.status_code == 401:
-                raise AuthenticationError('Invalid Azure DevOps credentials')
+                raise UnknownException('Invalid Azure DevOps PAT')
             elif response.status_code != 200:
                 raise UnknownException(
-                    f'Failed to get user information: {response.status_code} {response.text}'
+                    f'Failed to simulate Work Item creation: {response.status_code} {response.text}'
                 )
 
-            user_data = response.json().get('authenticatedUser', {})
+            data = response.json()
+            created_by = data.get("fields", {}).get("System.CreatedBy", {})
 
-            # Convert string ID to integer by hashing it
-            user_id = hash(user_data.get('id', '')) % (2**31)
+            user_id = hash(created_by.get("id", "")) % (2**31)
 
             return User(
                 id=user_id,
-                login=user_data.get('properties.Account.$value', ''),
-                avatar_url=user_data.get('imageUrl', ''),
-                name=user_data.get('providerDisplayName', ''),
-                email=user_data.get('properties.Account.$value', ''),
+                login=created_by.get("uniqueName", ""),
+                avatar_url=created_by.get("imageUrl", ""),
+                name=created_by.get("displayName", ""),
+                email=created_by.get("uniqueName", ""),
                 company=None,
             )
         except httpx.RequestError as e:            
