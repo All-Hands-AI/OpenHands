@@ -31,7 +31,7 @@
             "pages": [
               "usage/cloud/openhands-cloud",
               {
-                "group": "Installation",
+                "group": "Install in your Repos",
                 "pages": [
                   "usage/cloud/github-installation",
                   "usage/cloud/gitlab-installation"
@@ -43,7 +43,7 @@
             ]
           },
           {
-            "group": "Usage Methods",
+            "group": "OpenHands Local",
             "pages": [
               "usage/how-to/gui-mode",
               "usage/how-to/cli-mode",
