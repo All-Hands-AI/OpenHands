@@ -1,0 +1,22 @@
+# Example configuration for local DeepSeek R1-0528 deployment
+# Copy this file to config.toml and modify as needed
+
+[core]
+workspace_base = "/tmp/openhands_workspace"
+persist_sandbox = false
+run_as_openhands = true
+runtime = "docker"
+sandbox_container_image = "ghcr.io/all-hands-ai/runtime:latest"
+max_iterations = 100
+max_budget_per_task = 10.0
+
+[llm]
+# Local DeepSeek R1-0528 configuration
+model = "deepseek-ai/DeepSeek-R1-0528"
+api_key = "local-no-key-required"
+base_url = "http://localhost:8000/v1"
+
+# Alternative: Use external DeepSeek API
+# model = "deepseek-r1-0528"
+# api_key = "your-deepseek-api-key"
+# base_url = "https://api.deepseek.com"
