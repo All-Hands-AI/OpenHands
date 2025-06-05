@@ -295,8 +295,6 @@ class DockerNestedConversationManager(ConversationManager):
             ) as client:
                 response = await client.post(f'{nested_url}/api/conversations/{sid}/stop')
                 response.raise_for_status()
-                # Wait for stopped...
-                #await asyncio.sleep(8)
         except Exception:
             logger.error("error_stopping_container")
         container.stop()
