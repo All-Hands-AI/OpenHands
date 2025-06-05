@@ -28,6 +28,7 @@ import {
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { I18nKey } from "#/i18n/declaration";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -274,7 +275,7 @@ export function WsClientProvider({
     setErrorMessage(
       hasValidMessageProperty(data)
         ? data.message
-        : "The WebSocket connection was closed.",
+        : I18nKey.STATUS$WEBSOCKET_CLOSED,
     );
   }
 
