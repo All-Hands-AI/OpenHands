@@ -72,8 +72,8 @@ async def create_mcp_clients(
     mcp_clients = []
 
     for server in servers:
-        is_sse = isinstance(server, MCPSSEServerConfig)
-        connection_type = 'SSE' if is_sse else 'SHTTP'
+        is_shttp = isinstance(server, MCPSHTTPServerConfig)
+        connection_type = 'SHTTP' if is_shttp else 'SSE'
         logger.info(
             f'Initializing MCP agent for {server} with {connection_type} connection...'
         )
@@ -84,6 +84,7 @@ async def create_mcp_clients(
                 server.url,
                 api_key=server.api_key,
                 conversation_id=conversation_id,
+                is_shttp=is_shttp,
             )
 
             # Only add the client to the list after a successful connection
