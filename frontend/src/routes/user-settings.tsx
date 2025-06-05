@@ -4,6 +4,115 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
 import { openHands } from "#/api/open-hands-axios";
 
+function EmailInputSection({
+  email,
+  onEmailChange,
+  onSaveEmail,
+  onResendVerification,
+  isSaving,
+  isResendingVerification,
+  isEmailChanged,
+  emailVerified,
+  children,
+}: {
+  email: string;
+  onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSaveEmail: () => void;
+  onResendVerification: () => void;
+  isSaving: boolean;
+  isResendingVerification: boolean;
+  isEmailChanged: boolean;
+  emailVerified?: boolean;
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label className="text-sm">{t("SETTINGS$USER_EMAIL")}</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="email"
+            value={email}
+            onChange={onEmailChange}
+            className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary flex-grow"
+            placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
+            data-testid="email-input"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            type="button"
+            onClick={onSaveEmail}
+            disabled={!isEmailChanged || isSaving}
+            className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+            data-testid="save-email-button"
+          >
+            {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
+          </button>
+
+          {emailVerified === false && (
+            <button
+              type="button"
+              onClick={onResendVerification}
+              disabled={isResendingVerification}
+              className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
+              data-testid="resend-verification-button"
+            >
+              {isResendingVerification
+                ? t("SETTINGS$SENDING")
+                : t("SETTINGS$RESEND_VERIFICATION")}
+            </button>
+          )}
+        </div>
+
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function VerificationAlert() {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4"
+      role="alert"
+    >
+      <p className="font-bold">{t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}</p>
+      <p className="text-sm">
+        {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
+      </p>
+    </div>
+  );
+}
+
+function SaveSuccessMessage({
+  emailVerified,
+  wasPreviouslyUnverified,
+}: {
+  emailVerified?: boolean;
+  wasPreviouslyUnverified: boolean;
+}) {
+  const { t } = useTranslation();
+  const message =
+    emailVerified && wasPreviouslyUnverified
+      ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
+      : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY");
+
+  return <div className="text-sm text-green-500 mt-1">{message}</div>;
+}
+
+function ResendSuccessMessage() {
+  const { t } = useTranslation();
+  return (
+    <div className="text-sm text-green-500 mt-1">
+      {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
+    </div>
+  );
+}
+
 function UserSettingsScreen() {
   const { t } = useTranslation();
   const { data: settings, isLoading, refetch } = useSettings();
@@ -71,6 +180,7 @@ function UserSettingsScreen() {
       setSaveSuccess(true);
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(t("SETTINGS$FAILED_TO_SAVE_EMAIL"), error);
     } finally {
       setIsSaving(false);
@@ -84,6 +194,7 @@ function UserSettingsScreen() {
       await openHands.put("/api/email/verify", {}, { withCredentials: true });
       setResendSuccess(true);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(t("SETTINGS$FAILED_TO_RESEND_VERIFICATION"), error);
     } finally {
       setIsResendingVerification(false);
@@ -107,131 +218,20 @@ function UserSettingsScreen() {
             isResendingVerification={isResendingVerification}
             isEmailChanged={isEmailChanged}
             emailVerified={settings?.EMAIL_VERIFIED}
-            t={t}
           >
-            {settings?.EMAIL_VERIFIED === false && <VerificationAlert t={t} />}
+            {settings?.EMAIL_VERIFIED === false && <VerificationAlert />}
             {saveSuccess && (
               <SaveSuccessMessage
                 emailVerified={settings?.EMAIL_VERIFIED}
                 wasPreviouslyUnverified={
                   prevVerificationStatusRef.current === false
                 }
-                t={t}
               />
             )}
-            {resendSuccess && <ResendSuccessMessage t={t} />}
+            {resendSuccess && <ResendSuccessMessage />}
           </EmailInputSection>
         )}
       </div>
-    </div>
-  );
-}
-
-function EmailInputSection({
-  email,
-  onEmailChange,
-  onSaveEmail,
-  onResendVerification,
-  isSaving,
-  isResendingVerification,
-  isEmailChanged,
-  emailVerified,
-  t,
-  children,
-}: {
-  email: string;
-  onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSaveEmail: () => void;
-  onResendVerification: () => void;
-  isSaving: boolean;
-  isResendingVerification: boolean;
-  isEmailChanged: boolean;
-  emailVerified?: boolean;
-  t: any;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <label className="text-sm">{t("SETTINGS$USER_EMAIL")}</label>
-        <div className="flex items-center gap-3">
-          <input
-            type="email"
-            value={email}
-            onChange={onEmailChange}
-            className="text-base text-primary p-2 bg-base-tertiary rounded border border-tertiary flex-grow"
-            placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
-            data-testid="email-input"
-          />
-        </div>
-
-        <div className="flex items-center gap-3 mt-2">
-          <button
-            type="button"
-            onClick={onSaveEmail}
-            disabled={!isEmailChanged || isSaving}
-            className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
-            data-testid="save-email-button"
-          >
-            {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
-          </button>
-
-          {emailVerified === false && (
-            <button
-              type="button"
-              onClick={onResendVerification}
-              disabled={isResendingVerification}
-              className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
-              data-testid="resend-verification-button"
-            >
-              {isResendingVerification
-                ? t("SETTINGS$SENDING")
-                : t("SETTINGS$RESEND_VERIFICATION")}
-            </button>
-          )}
-        </div>
-
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function VerificationAlert({ t }: { t: any }) {
-  return (
-    <div
-      className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4"
-      role="alert"
-    >
-      <p className="font-bold">{t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}</p>
-      <p className="text-sm">
-        {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
-      </p>
-    </div>
-  );
-}
-
-function SaveSuccessMessage({
-  emailVerified,
-  wasPreviouslyUnverified,
-  t,
-}: {
-  emailVerified?: boolean;
-  wasPreviouslyUnverified: boolean;
-  t: any;
-}) {
-  const message =
-    emailVerified && wasPreviouslyUnverified
-      ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
-      : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY");
-
-  return <div className="text-sm text-green-500 mt-1">{message}</div>;
-}
-
-function ResendSuccessMessage({ t }: { t: any }) {
-  return (
-    <div className="text-sm text-green-500 mt-1">
-      {t("SETTINGS$VERIFICATION_EMAIL_SENT")}
     </div>
   );
 }
