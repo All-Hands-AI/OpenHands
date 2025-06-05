@@ -39,7 +39,7 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 >
 > **Skipping errors on build**
 >
-> For debugging purposes, you can set `export EVAL_SKIP_ERRORS=true` to continue evaluation even when instances reach maximum build retries. After evaluation completes, check `maximum_retries_exceeded.txt` for a list of failed instances, fix those images, and then run the evaluation again with `export EVAL_SKIP_ERRORS=false`.
+> For debugging purposes, you can set `export EVAL_SKIP_ERRORS=true` to continue evaluation even when instances reach maximum build retries. After evaluation completes, check `build_error_maximum_retries_exceeded.txt` for a list of failed instances, fix those images, and then run the evaluation again with `export EVAL_SKIP_ERRORS=false`.
 
 
 ### Running Locally with Docker

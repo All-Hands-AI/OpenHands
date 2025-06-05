@@ -301,10 +301,12 @@ def assert_and_raise(condition: bool, msg: str):
 
 
 def check_maximum_retries_exceeded(eval_output_dir):
-    """Check if maximum_retries_exceeded.txt exists and output a message."""
+    """Check if build_error_maximum_retries_exceeded.txt exists and output a message."""
     from openhands.core.logger import openhands_logger as logger
 
-    retries_file_path = os.path.join(eval_output_dir, 'maximum_retries_exceeded.txt')
+    retries_file_path = os.path.join(
+        eval_output_dir, 'build_error_maximum_retries_exceeded.txt'
+    )
     if os.path.exists(retries_file_path):
         logger.info(
             'ATTENTION: Some instances reached maximum error retries and were skipped.'
@@ -377,13 +379,14 @@ def _process_instance_wrapper(
                     # Instead of raising an error, log it and return an EvalOutput with the error
                     logger.exception(e)
                     logger.error(
-                        f'Maximum error retries reached for instance {instance.instance_id}. Could not build instance image. Check maximum_retries_exceeded.txt, fix the image and run evaluation again. Skipping this instance and continuing with others.'
+                        f'Maximum error retries reached for instance {instance.instance_id}. Could not build instance image. Check build_error_maximum_retries_exceeded.txt, fix the image and run evaluation again. Skipping this instance and continuing with others.'
                     )
 
-                    # Add the instance name to maximum_retries_exceeded.txt in the same folder as output.jsonl
+                    # Add the instance name to build_error_maximum_retries_exceeded.txt in the same folder as output.jsonl
                     if metadata and metadata.eval_output_dir:
                         retries_file_path = os.path.join(
-                            metadata.eval_output_dir, 'maximum_retries_exceeded.txt'
+                            metadata.eval_output_dir,
+                            'build_error_maximum_retries_exceeded.txt',
                         )
                         try:
                             # Check if file exists, if not add header
@@ -399,7 +402,7 @@ def _process_instance_wrapper(
                             )
                         except Exception as write_error:
                             logger.error(
-                                f'Failed to write to maximum_retries_exceeded.txt: {write_error}'
+                                f'Failed to write to build_error_maximum_retries_exceeded.txt: {write_error}'
                             )
 
                     return EvalOutput(
