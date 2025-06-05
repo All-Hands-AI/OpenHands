@@ -17,6 +17,7 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from openhands.events.observation.credit import CreditErrorObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import (
     NullObservation,
@@ -60,4 +61,5 @@ __all__ = [
     'A2ASendTaskUpdateObservation',
     'A2ASendTaskResponseObservation',
     'ReportVerificationObservation',
+    'CreditErrorObservation',
 ]

@@ -76,3 +76,5 @@ class ObservationType(str, Enum):
 
     REPORT_VERIFICATION = 'report_verification'
     """Result of the evaluation pipeline verifying the generated report. The response is a boolean."""
+    CREDIT_ERROR = 'credit_error'
+    """Result of a credit check."""

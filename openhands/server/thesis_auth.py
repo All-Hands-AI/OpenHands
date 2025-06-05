@@ -1,6 +1,6 @@
 import os
 import time
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 import httpx
 from fastapi import HTTPException, status
@@ -15,6 +15,16 @@ class UserStatus(IntEnum):
     ACTIVE = 1
     WHITELISTED = 1
     BLACKLISTED = 0
+
+
+class FeatureCode(Enum):
+    FOLLOW_UP = ('follow_up',)
+    WEBSEARCH = ('websearch',)
+    DEEP_RESEARCH = ('deep_research',)
+    DISCOVER_PUBLISHING = ('discover_publishing',)
+    SPACES = ('spaces',)
+    AUTONOMOUS_EXECUTION = ('autonomous_execution',)
+    MULTI_AGENTS = 'multi_agents'
 
 
 class ThesisUser(BaseModel):
@@ -262,7 +272,7 @@ async def search_knowledge(
     try:
         async with httpx.AsyncClient(
             timeout=30.0,
-            base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
+            base_url=os.getenv('THESIS_AUTH_SERVER_URL', ''),
             headers={'Content-Type': 'application/json'},
         ) as client:
             response = await client.post(url, headers=headers, json=payload)
@@ -300,7 +310,7 @@ async def webhook_rag_conversation(
     }
     try:
         async with httpx.AsyncClient(
-            base_url=os.getenv('THESIS_AUTH_SERVER_URL'),
+            base_url=os.getenv('THESIS_AUTH_SERVER_URL', ''),
             timeout=30.0,
         ) as client:
             response = await client.post(url, headers=headers, json=payload)
@@ -398,3 +408,41 @@ async def get_thread_by_id(
     except httpx.RequestError as exc:
         logger.error(f'Request error while getting thread: {str(exc)}')
         return None
+
+
+async def check_feature_credit(
+    user_id: str, feature_code: str, run_on_oh: bool = False
+) -> dict | None:
+    url = '/api/subcription/check-pricing'
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+    }
+    payload = {'featureCode': feature_code, 'userId': user_id}
+    logger.debug(f'payload: {payload}')
+    try:
+        if run_on_oh:
+            async with httpx.AsyncClient(
+                base_url=os.getenv('THESIS_AUTH_SERVER_URL', ''),
+                timeout=30.0,
+            ) as client:
+                response = await client.post(url, headers=headers, json=payload)
+        else:
+            response = await thesis_auth_client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to check feature credit: {response.status_code} - {response.text}'
+            )
+            if not run_on_oh:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=response.json().get('msg', 'Unknown error'),
+                )
+
+        return response.json()
+    except httpx.RequestError as exc:
+        logger.error(f'Request error while check feature credit: {str(exc)}')
+        raise HTTPException(status_code=500, detail='Could not connect to auth server')
+    except Exception as e:
+        logger.exception('Unexpected error while check feature credit')
+        raise HTTPException(status_code=500, detail=str(e))

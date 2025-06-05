@@ -48,6 +48,7 @@ from openhands.events.observation.agent import (
     MicroagentKnowledge,
     RecallObservation,
 )
+from openhands.events.observation.credit import CreditErrorObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
@@ -611,6 +612,8 @@ class ConversationMemory:
             text = self.prompt_manager.build_a2a_info(obs)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ReportVerificationObservation):
+            return []
+        elif isinstance(obs, CreditErrorObservation):
             return []
         else:
             # If an observation message is not returned, it will cause an error
