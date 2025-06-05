@@ -111,7 +111,8 @@ class StandaloneConversationManager(ConversationManager):
                 return None
             end_time = time.time()
             logger.info(
-                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds'
+                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
+                extra={'session_id': sid}
             )
             self._active_conversations[sid] = (c, 1)
             return c
