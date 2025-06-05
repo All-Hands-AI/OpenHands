@@ -3,6 +3,7 @@ from typing import Optional
 from fastmcp import Client
 from fastmcp.client.transports import SSETransport, StreamableHttpTransport
 from mcp.types import CallToolResult
+from mcp import McpError
 from pydantic import BaseModel, Field
 
 from openhands.core.config.mcp_config import MCPSHTTPServerConfig, MCPSSEServerConfig
@@ -89,14 +90,14 @@ class MCPClient(BaseModel):
             self.client = Client(transport, timeout=timeout)
 
             await self._initialize_and_list_tools()
-        except TimeoutError:
+        except McpError as e:
             logger.error(
-                f'Connection to {server_url} timed out after {timeout} seconds'
+                f'McpError connecting to {server_url}: {e}'
             )
-            raise  # Re-raise the TimeoutError
+            raise  # Re-raise the error
 
         except Exception as e:
-            logger.error(f'Error connecting to {server_url}: {str(e)}')
+            logger.error(f'Error connecting to {server_url}: {e}')
             raise
 
     async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:
