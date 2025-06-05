@@ -6,7 +6,7 @@ import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { LaunchMicroagentModal } from "./launch-microagent-modal";
+import { LaunchMicroagentModal } from "./microagent/launch-microagent-modal";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { LaunchToMicroagentButton } from "./microagent/launch-to-microagent-button";
