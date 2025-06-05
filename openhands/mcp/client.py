@@ -5,6 +5,7 @@ from fastmcp.client.transports import SSETransport, StreamableHttpTransport
 from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
+from openhands.core.config.mcp_config import MCPSHTTPServerConfig, MCPSSEServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.tool import MCPClientTool
 
@@ -48,13 +49,14 @@ class MCPClient(BaseModel):
 
     async def connect_http(
         self,
-        server_url: str,
-        api_key: str | None = None,
+        server: MCPSSEServerConfig | MCPSHTTPServerConfig,
         conversation_id: str | None = None,
         timeout: float = 30.0,
-        is_shttp=True,
     ):
         """Connect to MCP server using SHTTP or SSE transport"""
+        server_url = server.url
+        api_key = server.api_key
+
         if not server_url:
             raise ValueError('Server URL is required.')
 
@@ -73,7 +75,7 @@ class MCPClient(BaseModel):
                 headers['X-OpenHands-Conversation-ID'] = conversation_id
 
             # Instantiate custom transports due to custom headers
-            if is_shttp:
+            if isinstance(server, MCPSHTTPServerConfig):
                 transport = StreamableHttpTransport(
                     url=server_url,
                     headers=headers if headers else None,
