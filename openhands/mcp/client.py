@@ -2,8 +2,8 @@ from typing import Optional
 
 from fastmcp import Client
 from fastmcp.client.transports import SSETransport, StreamableHttpTransport
-from mcp.types import CallToolResult
 from mcp import McpError
+from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.config.mcp_config import MCPSHTTPServerConfig, MCPSSEServerConfig
@@ -91,9 +91,7 @@ class MCPClient(BaseModel):
 
             await self._initialize_and_list_tools()
         except McpError as e:
-            logger.error(
-                f'McpError connecting to {server_url}: {e}'
-            )
+            logger.error(f'McpError connecting to {server_url}: {e}')
             raise  # Re-raise the error
 
         except Exception as e:
