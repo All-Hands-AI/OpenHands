@@ -23,7 +23,7 @@ def get_timeout_suffix(timeout_seconds):
     """Helper function to generate the expected timeout suffix."""
     return (
         f'[The command timed out after {timeout_seconds} seconds. '
-        f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
+        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
     )
 
 

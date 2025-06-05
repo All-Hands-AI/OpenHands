@@ -560,7 +560,7 @@ class WindowsPowershellSession:
             else:
                 metadata.suffix = (
                     f'\n[The command timed out after {timeout_seconds} seconds. '
-                    f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
+                    f'{TIMEOUT_MESSAGE_TEMPLATE}]'
                 )
 
             return CmdOutputObservation(
@@ -1330,7 +1330,7 @@ class WindowsPowershellSession:
             # Align suffix with bash.py timeout message
             suffix = (
                 f'\n[The command timed out after {timeout_seconds} seconds. '
-                f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
+                f'{TIMEOUT_MESSAGE_TEMPLATE}]'
             )
         elif shutdown_requested:
             # Align suffix with bash.py equivalent (though bash.py might not have specific shutdown message)

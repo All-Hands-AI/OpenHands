@@ -380,7 +380,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-            f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
             command,
@@ -413,7 +413,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command timed out after {timeout} seconds. '
-            f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="a higher timeout", timeout_action="")}]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
             command,
