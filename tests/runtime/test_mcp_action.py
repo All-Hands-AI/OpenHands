@@ -114,11 +114,9 @@ def test_default_activated_tools():
     )
     with open(mcp_config_path, 'r') as f:
         mcp_config = json.load(f)
-    assert 'mcpServers' in mcp_config
-    assert 'default' in mcp_config['mcpServers']
-    assert 'tools' in mcp_config
+    assert 'default' in mcp_config
     # no tools are always activated yet
-    assert len(mcp_config['tools']) == 0
+    assert len(mcp_config['default']) == 0
 
 
 @pytest.mark.asyncio
