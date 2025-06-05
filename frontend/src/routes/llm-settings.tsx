@@ -469,6 +469,9 @@ function LlmSettingsScreen() {
                       label: analyzer,
                     })) || []
                   }
+                  placeholder={t(
+                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
+                  )}
                   defaultSelectedKey={settings.SECURITY_ANALYZER}
                   isClearable
                   showOptionalTag
