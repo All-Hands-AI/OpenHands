@@ -28,7 +28,6 @@ import {
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
-import { I18nKey } from "#/i18n/declaration";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -262,7 +261,6 @@ export function WsClientProvider({
   }
 
   function handleDisconnect(data: unknown) {
-    console.log("TRACE:handleDisconnect");
     setStatus(WsClientProviderStatus.DISCONNECTED);
     const sio = sioRef.current;
     if (!sio) {
@@ -272,11 +270,7 @@ export function WsClientProvider({
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
     updateStatusWhenErrorMessagePresent(data);
 
-    setErrorMessage(
-      hasValidMessageProperty(data)
-        ? data.message
-        : I18nKey.STATUS$WEBSOCKET_CLOSED,
-    );
+    setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }
 
   function handleError(data: unknown) {
