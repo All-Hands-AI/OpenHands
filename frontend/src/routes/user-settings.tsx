@@ -153,11 +153,7 @@ function UserSettingsScreen() {
                   type="button"
                   onClick={handleSaveEmail}
                   disabled={!isEmailChanged || isSaving}
-                  className={`px-4 py-2 rounded ${
-                    isEmailChanged && !isSaving
-                      ? "bg-primary text-white hover:bg-primary-dark"
-                      : "bg-tertiary text-secondary cursor-not-allowed"
-                  }`}
+                  className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                   data-testid="save-email-button"
                 >
                   {isSaving ? t("SETTINGS$SAVING") : t("SETTINGS$SAVE")}
@@ -168,11 +164,7 @@ function UserSettingsScreen() {
                     type="button"
                     onClick={handleResendVerification}
                     disabled={isResendingVerification}
-                    className={`px-4 py-2 rounded ${
-                      !isResendingVerification
-                        ? "bg-primary text-white hover:bg-primary-dark"
-                        : "bg-tertiary text-secondary cursor-not-allowed"
-                    }`}
+                    className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                     data-testid="resend-verification-button"
                   >
                     {isResendingVerification
